@@ -7,11 +7,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useAction } from 'next-safe-action/hooks';
 import { useForm, useWatch } from 'react-hook-form';
 
+import { renderRequirementInput } from '@/features/profile/service-provider/lib/render-requirement-input';
+import { BillingType, Languages } from '@prisma/client';
 import { registerServiceProvider } from '../lib/service-provider-actions';
 import {
   type ServiceProviderFormType,
   serviceProviderSchema,
 } from '../lib/service-provider-schema';
+
+const ACCEPTED_IMAGE_TYPES = ['.jpg', '.jpeg', '.png', '.webp'];
 
 type Props = {
   serviceProviderTypes: Array<{ id: string; name: string }>;
@@ -30,6 +34,15 @@ type Props = {
     isRequired: boolean;
     serviceProviderTypeId: string;
     validationConfig?: any;
+    displayPriority?: number;
+  }>;
+  languages: Array<{
+    id: Languages;
+    name: Languages;
+  }>;
+  billingTypes: Array<{
+    id: BillingType;
+    name: BillingType;
   }>;
 };
 
@@ -37,6 +50,8 @@ function ServiceProviderForm({
   serviceProviderTypes,
   services,
   requirementTypes,
+  languages,
+  billingTypes,
 }: Props): JSX.Element {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -46,8 +61,21 @@ function ServiceProviderForm({
     formState: { errors, isSubmitting },
     control,
     watch,
+    setValue,
   } = useForm<ServiceProviderFormType>({
     resolver: zodResolver(serviceProviderSchema),
+    defaultValues: {
+      serviceProviderTypeId: '',
+      name: '',
+      bio: '',
+      image: undefined,
+      languages: [],
+      billingType: undefined,
+      website: '',
+      services: [],
+      requirements: [],
+      termsAccepted: undefined
+    }
   });
 
   const { execute, status, result } = useAction(registerServiceProvider, {
@@ -76,7 +104,13 @@ function ServiceProviderForm({
   };
 
   const onSubmit = async (data: ServiceProviderFormType) => {
-    await execute(data);
+    try {
+      console.log('onSubmit reached with data:', data);
+      const result = await execute(data);
+      console.log('Execute result:', result);
+    } catch (error) {
+      console.error('Submit error:', error);
+    }
   };
 
   const selectedProviderType = useWatch({
@@ -93,7 +127,20 @@ function ServiceProviderForm({
   );
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl">
+    <form 
+      onSubmit={(e) => {
+        e.preventDefault();
+        console.log('Form submit event triggered');
+        console.log('Form errors:', errors);
+        console.log('Form values:', watch());
+        
+        handleSubmit((data) => {
+          console.log('handleSubmit callback reached');
+          return onSubmit(data);
+        })(e);
+      }}
+      className="space-y-6"
+    >
       {/* Service Provider Details */}
       <section className="mb-8 space-y-4 rounded-lg p-4">
         <h3 className="mb-8 text-xl font-semibold">Service Provider Details</h3>
@@ -108,12 +155,33 @@ function ServiceProviderForm({
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="">Select a provider type...</option>
-              {serviceProviderTypes.map((type) => (
-                <option key={type.id} value={type.id}>
-                  {type.name}
-                </option>
-              ))}
+              {serviceProviderTypes
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.name}
+                  </option>
+                ))}
             </select>
+            {errors.serviceProviderTypeId && (
+              <p className="mt-1 text-sm text-red-500">{errors.serviceProviderTypeId.message}</p>
+            )}
+          </label>
+        </div>
+
+        {/* Name */}
+        <div className="space-y-2">
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+            Name
+            <input
+              type="text"
+              id="name"
+              {...register('name')}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+            {errors.name && (
+              <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>
+            )}
           </label>
         </div>
 
@@ -127,6 +195,9 @@ function ServiceProviderForm({
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               rows={4}
             />
+            {errors.bio && (
+              <p className="mt-1 text-sm text-red-500">{errors.bio.message}</p>
+            )}
           </label>
         </div>
 
@@ -140,6 +211,7 @@ function ServiceProviderForm({
               accept={ACCEPTED_IMAGE_TYPES.join(',')}
               {...register('image')}
               onChange={(e) => {
+                console.log('File selected:', e.target.files?.[0]);
                 register('image').onChange(e);
                 handleImageChange(e);
               }}
@@ -167,13 +239,17 @@ function ServiceProviderForm({
               {...register('languages')}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="English">English</option>
-              <option value="IsiZulu">IsiZulu</option>
-              <option value="IsiXhosa">IsiXhosa</option>
-              <option value="Afrikaans">Afrikaans</option>
+              {languages.map((language) => (
+                <option key={language.id} value={language.id}>
+                  {language.name}
+                </option>
+              ))}
             </select>
+            {errors.languages && (
+              <p className="mt-1 text-sm text-red-500">{errors.languages.message}</p>
+            )}
           </label>
-          <p className="text-sm text-gray-500">Hold Ctrl/Cmd to select multiple languages</p>
+          <p className="text-sm text-gray-500">Hold Ctrl/Cmd to select multiple languages</p>          
         </div>
 
         {/* Billing Type */}
@@ -185,12 +261,16 @@ function ServiceProviderForm({
               {...register('billingType')}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="PRIVATE_ONLY">Private Payments Only</option>
-              <option value="MEDICAL_AID_ONLY">Medical Aid Only</option>
-              <option value="MEDICAL_AID_AND_PRIVATE">Medical Aid and Private Payments</option>
-              <option value="INSURANCE_ONLY">Insurance Only</option>
-              <option value="ALL">All Payment Types</option>
+              <option value="">Select billing type...</option>
+              {billingTypes.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.name}
+                </option>
+              ))}
             </select>
+            {errors.billingType && (
+              <p className="mt-1 text-sm text-red-500">{errors.billingType.message}</p>
+            )}
           </label>
         </div>
 
@@ -205,6 +285,9 @@ function ServiceProviderForm({
               placeholder="https://example.com"
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
+            {errors.website && (
+              <p className="mt-1 text-sm text-red-500">{errors.website.message}</p>
+            )}
           </label>
         </div>
       </section>
@@ -229,11 +312,16 @@ function ServiceProviderForm({
                       id={`service-${service.id}`}
                       value={service.id}
                       {...register('services')}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className={`h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${
+                        errors.services ? 'border-red-500' : ''
+                      }`}
                     />
                     <span className="text-sm text-gray-700">{service.name}</span>
                   </label>
                 ))}
+              {errors.services && (
+                <p className="mt-2 text-sm text-red-500">{errors.services.message}</p>
+              )}
             </div>
           </section>
 
@@ -241,7 +329,9 @@ function ServiceProviderForm({
           <section className="mb-8 space-y-4 rounded-lg p-4">
             <h3 className="mb-8 text-xl font-semibold">Requirements</h3>
             <div className="space-y-8">
-              {filteredRequirements.map((requirement) => (
+              {filteredRequirements
+                .sort((a, b) => (a.displayPriority ?? 0) - (b.displayPriority ?? 0))
+                .map((requirement, index) => (
                 <div key={requirement.id}>
                   <label
                     htmlFor={`requirement-${requirement.id}`}
@@ -251,7 +341,17 @@ function ServiceProviderForm({
                     {requirement.isRequired && ' *'}
                   </label>
                   {requirement.description && <p className="text-sm">{requirement.description}</p>}
-                  {renderRequirementInput(requirement, { register, errors })}
+                  {renderRequirementInput(requirement, {
+                    register: (name) => register(`requirements.${index}.${name}`),
+                    watch: (name) => watch(`requirements.${index}.${name}`),
+                    setValue: (name, value) => setValue(`requirements.${index}.${name}`, value),
+                    errors: errors?.requirements?.[index]
+                  })}
+                  {errors?.requirements?.[index] && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.requirements[index]?.message}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -272,6 +372,9 @@ function ServiceProviderForm({
             />
             <span className="text-sm">I agree to the terms and conditions</span>
           </label>
+          {errors.termsAccepted && (
+            <p className="mt-1 text-sm text-red-500">{errors.termsAccepted.message}</p>
+          )}
         </div>
       </section>
 

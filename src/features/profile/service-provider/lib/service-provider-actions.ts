@@ -1,17 +1,18 @@
 'use server';
 
+import { actionClient } from '@/lib/safe-action';
 import { put } from '@vercel/blob';
-import { createSafeAction } from 'next-safe-action';
 
 import { prisma } from '@/lib/prisma';
 
 import { serviceProviderSchema } from './service-provider-schema';
 
-async function uploadToBlob(file: File) {
+async function uploadToBlob(file: File, userId: string) {
   try {
-    const blob = await put(`profile-images/${Date.now()}-${file.name}`, file, {
+    const uniqueFilename = `${Date.now()}-${userId}`;
+    const blob = await put(`profile-images/${uniqueFilename}`, file, {
       access: 'public',
-      addRandomSuffix: true,
+      addRandomSuffix: false,
     });
     return { url: blob.url, success: true };
   } catch (error) {
@@ -20,25 +21,26 @@ async function uploadToBlob(file: File) {
   }
 }
 
-export const registerServiceProvider = createSafeAction(
-  serviceProviderSchema,
-  async ({ image, ...data }) => {
+export const registerServiceProvider = actionClient
+  .schema(serviceProviderSchema)
+  .action(async ({ image, userId, ...data }) => {
     try {
-      let imageUrl: string | undefined;
-
-      if (image) {
-        const uploadResult = await uploadToBlob(image);
-        if (!uploadResult.success) {
-          return { success: false, error: uploadResult.error };
-        }
-        imageUrl = uploadResult.url;
+      console.log('Received image in action:', image);
+      const imageUrl = image ? (await uploadToBlob(image, userId)).url : undefined;
+      console.log('Image URL after upload:', imageUrl);
+      
+      if (image && !imageUrl) {
+        return { success: false, error: 'Failed to upload image' };
       }
 
       // Save provider data with image URL
       const provider = await prisma.serviceProvider.create({
         data: {
           ...data,
-          imageUrl,
+          image: imageUrl,
+          name: data.name,
+          user: data.user,
+          serviceProviderType: data.serviceProviderType,
         },
       });
 
@@ -53,5 +55,4 @@ export const registerServiceProvider = createSafeAction(
         error: 'Failed to register provider. Please try again.',
       };
     }
-  }
-);
+  });

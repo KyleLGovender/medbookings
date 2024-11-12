@@ -5,10 +5,10 @@ CREATE TYPE "UserRole" AS ENUM ('USER', 'ADMIN', 'SUPER_ADMIN');
 CREATE TYPE "ServiceProviderStatus" AS ENUM ('PENDING', 'TRIAL', 'TRIAL_EXPIRED', 'APPROVED', 'ACTIVE', 'SUSPENDED', 'CANCELLED', 'REJECTED');
 
 -- CreateEnum
-CREATE TYPE "Language" AS ENUM ('English', 'IsiZulu', 'IsiXhosa', 'Afrikaans', 'Sepedi', 'Setswana', 'Sesotho', 'IsiNdebele', 'SiSwati', 'Tshivenda', 'Xitsonga', 'Portuguese', 'French', 'Hindi', 'German', 'Mandarin');
+CREATE TYPE "Languages" AS ENUM ('English', 'IsiZulu', 'IsiXhosa', 'Afrikaans', 'Sepedi', 'Setswana', 'Sesotho', 'IsiNdebele', 'SiSwati', 'Tshivenda', 'Xitsonga', 'Portuguese', 'French', 'Hindi', 'German', 'Mandarin');
 
 -- CreateEnum
-CREATE TYPE "BillingType" AS ENUM ('MEDICAL_AID_ONLY', 'PRIVATE_ONLY', 'MEDICAL_AID_AND_PRIVATE', 'INSURANCE_ONLY', 'ALL');
+CREATE TYPE "BillingType" AS ENUM ('MEDICAL_AID_ONLY', 'PRIVATE_ONLY', 'MEDICAL_AID_AND_PRIVATE', 'ALL');
 
 -- CreateEnum
 CREATE TYPE "RequirementValidationType" AS ENUM ('BOOLEAN', 'DOCUMENT', 'TEXT', 'DATE', 'FUTURE_DATE', 'PAST_DATE', 'NUMBER', 'PREDEFINED_LIST');
@@ -84,6 +84,7 @@ CREATE TABLE "ServiceProviderType" (
 -- CreateTable
 CREATE TABLE "ServiceProvider" (
     "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "serviceProviderTypeId" TEXT NOT NULL,
     "bio" TEXT,
@@ -99,7 +100,7 @@ CREATE TABLE "ServiceProvider" (
     "averageRating" DOUBLE PRECISION,
     "totalReviews" INTEGER NOT NULL DEFAULT 0,
     "image" TEXT,
-    "languages" "Language"[],
+    "languages" "Languages"[],
     "billingType" "BillingType" NOT NULL DEFAULT 'PRIVATE_ONLY',
     "website" TEXT,
 

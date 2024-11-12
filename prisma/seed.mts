@@ -205,18 +205,18 @@ async function main() {
         validationType: 'PREDEFINED_LIST',
         validationConfig: {
           options: [
-            'University of Cape Town',
-            'University of the Witwatersrand',
-            'University of Pretoria',
-            'Stellenbosch University',
-            'University of KwaZulu-Natal',
-            'University of the Free State',
-            'Walter Sisulu University',
-            'Sefako Makgatho Health Sciences University',
+            { value: 'UCT', label: 'University of Cape Town' },
+            { value: 'WITS', label: 'University of the Witwatersrand' },
+            { value: 'UP', label: 'University of Pretoria' },
+            { value: 'SU', label: 'Stellenbosch University' },
+            { value: 'UKZN', label: 'University of KwaZulu-Natal' },
+            { value: 'UFS', label: 'University of the Free State' },
+            { value: 'WSU', label: 'Walter Sisulu University' },
+            { value: 'SMU', label: 'Sefako Makgatho Health Sciences University' },
           ],
           allowMultiple: false,
-          allowOther: true, // Set to true to allow custom input
-          otherLabel: 'Other medical school (please specify)', // Optional label for the custom input field
+          allowOther: true,
+          otherLabel: 'Other medical school (please specify)',
           otherValidation: {
             minLength: 3,
             maxLength: 100,

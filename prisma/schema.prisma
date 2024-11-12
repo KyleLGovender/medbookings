@@ -66,6 +66,7 @@ model ServiceProviderType {
 // Service Provider
 model ServiceProvider {
   id              String        @id @default(cuid())
+  name            String        // Added name property
   user            User          @relation(fields: [userId], references: [id])
   userId          String        @unique
   serviceProviderType    ServiceProviderType  @relation(fields: [serviceProviderTypeId], references: [id])
@@ -89,8 +90,8 @@ model ServiceProvider {
   averageRating         Float?    // Cached average rating
   totalReviews          Int       @default(0)
   reviews               Review[]
-  image            String?       // URL to provider's image in Vercel Blob
-  languages        Language[]    // Array of languages spoken
+  image            String       // URL to provider's image in Vercel Blob
+  languages        Languages[]    // Array of languages spoken
   billingType      BillingType  @default(PRIVATE_ONLY)
   website          String?      @db.Text  // Must be a valid URL
 }
@@ -106,7 +107,7 @@ enum ServiceProviderStatus {
   REJECTED           // Application rejected
 }
 
-enum Language {
+enum Languages {  // Renamed from Language
   English
   IsiZulu
   IsiXhosa
@@ -129,7 +130,6 @@ enum BillingType {
   MEDICAL_AID_ONLY           // Only accepts medical aid
   PRIVATE_ONLY              // Only accepts private payments
   MEDICAL_AID_AND_PRIVATE   // Accepts both medical aid and private payments
-  INSURANCE_ONLY           // Only accepts insurance
   ALL                      // Accepts all payment types
 }
 
