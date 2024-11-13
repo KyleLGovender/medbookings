@@ -20,7 +20,7 @@ export function ServiceProvider({ serviceProvider }: ServiceProviderProps) {
                 src={serviceProvider.image}
               />
             )}
-            <Link href="/profile/service-provider/calendar/availability">
+            <Link href="/profile/service-provider/calendar">
               <Button className="mx-auto mt-4 max-w-md">
                 Manage Availability
               </Button>

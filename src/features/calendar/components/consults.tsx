@@ -1,11 +1,14 @@
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import {
   CalendarIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   EllipsisHorizontalIcon,
   MapPinIcon,
-} from '@heroicons/react/20/solid'
+} from '@heroicons/react/20/solid';
+
+import { generateDaysForConsultsCalendar } from '@/features/calendar/lib/helper';
+import classNames from '@/lib/classNames';
 
 const meetings = [
   {
@@ -20,58 +23,18 @@ const meetings = [
   },
   // More meetings...
 ]
-const days = [
-  { date: '2021-12-27' },
-  { date: '2021-12-28' },
-  { date: '2021-12-29' },
-  { date: '2021-12-30' },
-  { date: '2021-12-31' },
-  { date: '2022-01-01', isCurrentMonth: true },
-  { date: '2022-01-02', isCurrentMonth: true },
-  { date: '2022-01-03', isCurrentMonth: true },
-  { date: '2022-01-04', isCurrentMonth: true },
-  { date: '2022-01-05', isCurrentMonth: true },
-  { date: '2022-01-06', isCurrentMonth: true },
-  { date: '2022-01-07', isCurrentMonth: true },
-  { date: '2022-01-08', isCurrentMonth: true },
-  { date: '2022-01-09', isCurrentMonth: true },
-  { date: '2022-01-10', isCurrentMonth: true },
-  { date: '2022-01-11', isCurrentMonth: true },
-  { date: '2022-01-12', isCurrentMonth: true, isToday: true },
-  { date: '2022-01-13', isCurrentMonth: true },
-  { date: '2022-01-14', isCurrentMonth: true },
-  { date: '2022-01-15', isCurrentMonth: true },
-  { date: '2022-01-16', isCurrentMonth: true },
-  { date: '2022-01-17', isCurrentMonth: true },
-  { date: '2022-01-18', isCurrentMonth: true },
-  { date: '2022-01-19', isCurrentMonth: true },
-  { date: '2022-01-20', isCurrentMonth: true },
-  { date: '2022-01-21', isCurrentMonth: true },
-  { date: '2022-01-22', isCurrentMonth: true, isSelected: true },
-  { date: '2022-01-23', isCurrentMonth: true },
-  { date: '2022-01-24', isCurrentMonth: true },
-  { date: '2022-01-25', isCurrentMonth: true },
-  { date: '2022-01-26', isCurrentMonth: true },
-  { date: '2022-01-27', isCurrentMonth: true },
-  { date: '2022-01-28', isCurrentMonth: true },
-  { date: '2022-01-29', isCurrentMonth: true },
-  { date: '2022-01-30', isCurrentMonth: true },
-  { date: '2022-01-31', isCurrentMonth: true },
-  { date: '2022-02-01' },
-  { date: '2022-02-02' },
-  { date: '2022-02-03' },
-  { date: '2022-02-04' },
-  { date: '2022-02-05' },
-  { date: '2022-02-06' },
-]
 
-function classNames(...classes) {
-  return classes.filter(Boolean).join(' ')
+interface ConsultsCalendarProps {
+  currentDate: Date
+  onDateChange: (date: Date) => void
 }
 
-export default function ConsultsCalendar() {
+export default function ConsultsCalendar({ currentDate, onDateChange }: ConsultsCalendarProps) {
+  const days = generateDaysForConsultsCalendar(currentDate)
+  const month = currentDate.toLocaleString('default', { month: 'long' })
+
   return (
-    <div>
+    <div className="p-8">
       <h2 className="text-base font-semibold text-gray-900">Upcoming meetings</h2>
       <div className="lg:grid lg:grid-cols-12 lg:gap-x-16">
         <div className="mt-10 text-center lg:col-start-8 lg:col-end-13 lg:row-start-1 lg:mt-9 xl:col-start-9">
@@ -79,14 +42,16 @@ export default function ConsultsCalendar() {
             <button
               type="button"
               className="-m-1.5 flex flex-none items-center justify-center p-1.5 text-gray-400 hover:text-gray-500"
+              onClick={() => onDateChange(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
             >
               <span className="sr-only">Previous month</span>
               <ChevronLeftIcon className="size-5" aria-hidden="true" />
             </button>
-            <div className="flex-auto text-sm font-semibold">January</div>
+            <div className="flex-auto text-sm font-semibold">{month}</div>
             <button
               type="button"
               className="-m-1.5 flex flex-none items-center justify-center p-1.5 text-gray-400 hover:text-gray-500"
+              onClick={() => onDateChange(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
             >
               <span className="sr-only">Next month</span>
               <ChevronRightIcon className="size-5" aria-hidden="true" />
