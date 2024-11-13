@@ -252,7 +252,7 @@ export default function WeekCalendar() {
               {/* Horizontal lines */}
               <div
                 className="col-start-1 col-end-2 row-start-1 grid divide-y divide-gray-100"
-                style={{ gridTemplateRows: 'repeat(48, minmax(3.5rem, 1fr))' }}
+                style={{ gridTemplateRows: 'repeat(48, minmax(1.0rem, 1fr))' }}
               >
                 <div ref={containerOffset} className="row-end-1 h-7"></div>
                 <div>

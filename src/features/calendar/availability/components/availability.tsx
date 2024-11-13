@@ -17,7 +17,7 @@ const ServiceProviderAvailability: React.FC<ServiceProviderAvailabilityProps> = 
   providerId,
   providerName,
 }) => {
-  const [view, setView] = useState<ViewType>('day')
+  const [view, setView] = useState<ViewType>('week')
 
   const renderCalendar = () => {
     switch (view) {
