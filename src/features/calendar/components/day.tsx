@@ -1,6 +1,6 @@
 'use client'
 
-import { generateDaysForDayCalendar } from '@/features/calendar/lib/helper';
+import { formatDateTime, generateDaysForDayCalendar } from '@/features/calendar/lib/helper';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid';
 import { useEffect, useRef } from 'react';
 
@@ -20,7 +20,11 @@ export default function DayCalendar({ currentDate, onDateChange }: DayCalendarPr
   const days = generateDaysForDayCalendar(currentDate)
 
   function handleDateClick(dateString: string) {
-    onDateChange(new Date(dateString))
+    const newDate = new Date(dateString)
+    newDate.setHours(currentDate.getHours())
+    newDate.setMinutes(currentDate.getMinutes())
+    newDate.setSeconds(currentDate.getSeconds())
+    onDateChange(newDate)
   }
 
   useEffect(() => {
@@ -34,6 +38,7 @@ export default function DayCalendar({ currentDate, onDateChange }: DayCalendarPr
       1440
   }, [])
 
+  
   // Rest of your existing JSX remains the same, but update the button onClick:
   return (
     <div className="flex h-full flex-col">
@@ -275,6 +280,7 @@ export default function DayCalendar({ currentDate, onDateChange }: DayCalendarPr
             {days.map((day, dayIdx) => (
               <button
                 key={day.date}
+                onClick={() => handleDateClick(day.date)}
                 type="button"
                 className={classNames(
                   'py-1.5 hover:bg-gray-100 focus:z-10',
@@ -291,7 +297,7 @@ export default function DayCalendar({ currentDate, onDateChange }: DayCalendarPr
                 )}
               >
                 <time
-                  dateTime={day.date}
+                  dateTime={formatDateTime(day.date)}
                   className={classNames(
                     'mx-auto flex size-7 items-center justify-center rounded-full',
                     day.isSelected && day.isToday && 'bg-indigo-600',

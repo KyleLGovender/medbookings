@@ -182,3 +182,9 @@ function isSameDay(date1: Date, date2: Date) {
     )
 }
 
+// Add this function to format the datetime consistently
+export function formatDateTime(date: string) {
+    return new Date(date).toISOString().split('.')[0].slice(0, -3)
+}
+
+

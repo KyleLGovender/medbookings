@@ -1,6 +1,6 @@
 'use client'
 
-import { generateDaysForWeekCalendar } from '@/features/calendar/lib/helper'
+import { formatDateTime, generateDaysForWeekCalendar } from '@/features/calendar/lib/helper'
 import { useEffect, useRef } from 'react'
 
 interface WeekCalendarProps {
@@ -235,7 +235,7 @@ export default function WeekCalendar({ currentDate, onDateChange }: WeekCalendar
                   >
                     <p className="order-1 font-semibold text-blue-700">Breakfast</p>
                     <p className="text-blue-500 group-hover:text-blue-700">
-                      <time dateTime="2022-01-12T06:00">6:00 AM</time>
+                      <time dateTime={formatDateTime(new Date('2022-01-12T06:00').toISOString())}>6:00 AM</time>
                     </p>
                   </a>
                 </li>
@@ -246,7 +246,7 @@ export default function WeekCalendar({ currentDate, onDateChange }: WeekCalendar
                   >
                     <p className="order-1 font-semibold text-pink-700">Flight to Paris</p>
                     <p className="text-pink-500 group-hover:text-pink-700">
-                      <time dateTime="2022-01-12T07:30">7:30 AM</time>
+                      <time dateTime={formatDateTime(new Date('2022-01-12T07:30').toISOString())}>7:30 AM</time>
                     </p>
                   </a>
                 </li>
@@ -257,7 +257,7 @@ export default function WeekCalendar({ currentDate, onDateChange }: WeekCalendar
                   >
                     <p className="order-1 font-semibold text-gray-700">Meeting with design team at Disney</p>
                     <p className="text-gray-500 group-hover:text-gray-700">
-                      <time dateTime="2022-01-15T10:00">10:00 AM</time>
+                      <time dateTime={formatDateTime(new Date('2022-01-15T10:00').toISOString())}>10:00 AM</time>
                     </p>
                   </a>
                 </li>
