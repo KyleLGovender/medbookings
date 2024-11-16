@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import AppFooter from '@/components/app-footer';
-import AppNavbar from '@/components/app-navbar';
 import Providers from '@/components/providers';
 
+import TailwindsNavbar from '@/components/app-navbar/tailwinds-navbar';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -21,11 +21,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <link
         rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💡</text></svg>"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📅</text></svg>"
       />
       <body className="h-screen w-screen">
         <Providers>
-          <AppNavbar />
+          {/* <AppNavbar /> */}
+          {/* <ShadcnAppNavbar /> */}
+          <TailwindsNavbar />
           <main className="flex-grow overflow-auto bg-cover">
             <Suspense>{children}</Suspense>
           </main>
