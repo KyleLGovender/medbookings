@@ -1,17 +1,22 @@
 'use client';
 
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import {
-  Avatar,
   Button,
-  CircularProgress,
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
+  CircularProgress
 } from '@nextui-org/react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 
-export default function AuthButton() {
+interface MenuItemType {
+  label: string;
+  href: string;
+}
+
+interface AuthButtonProps {
+  profileMenuItems?: MenuItemType[];
+}
+
+export default function AuthButton({ profileMenuItems = [] }: AuthButtonProps) {
   const { data, status } = useSession();
 
   if (status === 'loading') {
@@ -20,33 +25,50 @@ export default function AuthButton() {
 
   if (status === 'authenticated') {
     return (
-      <Dropdown placement="bottom-end">
-        <DropdownTrigger>
-          <Avatar
-            isBordered
-            as="button"
-            className="transition-transform"
-            showFallback={!data?.user?.image}
-            src={data?.user?.image ?? undefined}
-          />
-        </DropdownTrigger>
-        <DropdownMenu aria-label="Profile Actions" variant="flat">
-          <DropdownItem key="profile" className="h-14 gap-2" textValue="Profile">
-            <p className="font-semibold">Signed in as</p>
-            <p className="font-semibold">{data?.user?.email}</p>
-          </DropdownItem>
-          <DropdownItem key="logout" color="danger" onClick={() => signOut({ callbackUrl: '/' })}>
-            Sign Out
-          </DropdownItem>
-        </DropdownMenu>
-      </Dropdown>
+      <Menu as="div" className="relative ml-3">
+        <div>
+          <MenuButton className="relative flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            <span className="absolute -inset-1.5" />
+            <span className="sr-only">Open user menu</span>
+            <img
+              alt=""
+              src={data?.user?.image ?? undefined}
+              className="size-8 rounded-full"
+            />
+          </MenuButton>
+        </div>
+        <MenuItems
+          transition
+          className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 transition focus:outline-none data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in"
+        >
+          {profileMenuItems.map((item) => (
+            <MenuItem key={item.label}>
+              <a
+                href={item.href}
+                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none"
+              >
+                {item.label}
+              </a>
+            </MenuItem>
+          ))}
+          <MenuItem>
+            <a
+              href="#"
+              onClick={() => signOut({ callbackUrl: '/' })}
+              className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none"
+            >
+              Sign out
+            </a>
+          </MenuItem>
+        </MenuItems>
+      </Menu>
     );
   }
 
   return (
     <Button
       onClick={() => signIn('google', { callbackUrl: '/profile' })}
-      className="border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50"
+      className="border-gray-200 ml-3 bg-white text-gray-700 shadow-sm hover:bg-gray-50"
       variant="bordered"
       startContent={
         <svg width="24" height="24" viewBox="0 0 24 24">

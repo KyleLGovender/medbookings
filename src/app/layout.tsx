@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import AppFooter from '@/components/app-footer';
 import Providers from '@/components/providers';
 
-import TailwindsNavbar from '@/components/app-navbar/tailwinds-navbar';
+import AppNavbar from '@/components/app-navbar';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -25,9 +25,7 @@ export default function RootLayout({
       />
       <body className="h-screen w-screen">
         <Providers>
-          {/* <AppNavbar /> */}
-          {/* <ShadcnAppNavbar /> */}
-          <TailwindsNavbar />
+          <AppNavbar />
           <main className="flex-grow overflow-auto bg-cover">
             <Suspense>{children}</Suspense>
           </main>
