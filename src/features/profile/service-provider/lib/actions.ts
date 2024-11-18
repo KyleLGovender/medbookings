@@ -1,9 +1,11 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { redirect } from 'next/navigation';
+
 import { BillingType, Languages } from '@prisma/client';
 import { put } from '@vercel/blob';
-import { redirect } from 'next/navigation';
+
+import { prisma } from '@/lib/prisma';
 
 async function uploadToBlob(file: File, userId: string) {
   try {
@@ -26,10 +28,10 @@ export async function registerServiceProvider(prevState: any, formData: FormData
     const services = formData.getAll('services') as string[];
     const languages = formData.getAll('languages') as Languages[];
     const billingType = formData.get('billingType') as BillingType;
-    
+
     // Handle image upload
     const imageUrl = imageFile ? (await uploadToBlob(imageFile, userId)).url : undefined;
-    
+
     if (imageFile && !imageUrl) {
       return { success: false, error: 'Failed to upload image' };
     }

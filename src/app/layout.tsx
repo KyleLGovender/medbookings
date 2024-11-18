@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import AppFooter from '@/components/app-footer';
+import AppNavbar from '@/components/app-navbar';
 import Providers from '@/components/providers';
 
-import AppNavbar from '@/components/app-navbar';
 import './globals.css';
 
 export const metadata: Metadata = {

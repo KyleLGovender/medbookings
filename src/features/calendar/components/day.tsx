@@ -1,44 +1,55 @@
-'use client'
+'use client';
 
-import { formatDateTime, generateDaysForDayCalendar } from '@/features/calendar/lib/helper';
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid';
 import { useEffect, useRef } from 'react';
 
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid';
+
+import { formatDateTime, generateDaysForDayCalendar } from '@/features/calendar/lib/helper';
 import classNames from '@/lib/classNames';
 
 interface DayCalendarProps {
-  currentDate: Date
-  onDateChange: (date: Date) => void
+  currentDate: string;
+  onDateChange: (dateStr: string) => void;
 }
 
 export default function DayCalendar({ currentDate, onDateChange }: DayCalendarProps) {
-  const container = useRef<HTMLDivElement>(null)
-  const containerNav = useRef<HTMLDivElement>(null)
-  const containerOffset = useRef<HTMLDivElement>(null)
+  const container = useRef<HTMLDivElement>(null);
+  const containerNav = useRef<HTMLDivElement>(null);
+  const containerOffset = useRef<HTMLDivElement>(null);
+
+  const currentDateObj = new Date(currentDate);
 
   // Generate days array for the mini month view
-  const days = generateDaysForDayCalendar(currentDate)
+  const days = generateDaysForDayCalendar(currentDateObj);
+
+  // Generate an array of dates for the week containing the current date
+  const weekDates = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(currentDateObj);
+    date.setDate(currentDateObj.getDate() - currentDateObj.getDay() + i);
+    return date;
+  });
 
   function handleDateClick(dateString: string) {
-    const newDate = new Date(dateString)
-    newDate.setHours(currentDate.getHours())
-    newDate.setMinutes(currentDate.getMinutes())
-    newDate.setSeconds(currentDate.getSeconds())
-    onDateChange(newDate)
+    const newDate = new Date(dateString);
+    newDate.setHours(currentDateObj.getHours());
+    newDate.setMinutes(currentDateObj.getMinutes());
+    newDate.setSeconds(currentDateObj.getSeconds());
+    onDateChange(newDate.toISOString());
   }
 
   useEffect(() => {
     // Scroll to current time
-    if (!container.current || !containerNav.current || !containerOffset.current) return
-    
-    const currentMinute = new Date().getHours() * 60
-    container.current.scrollTop =
-      ((container.current.scrollHeight - containerNav.current.offsetHeight - containerOffset.current.offsetHeight) *
-        currentMinute) /
-      1440
-  }, [])
+    if (!container.current || !containerNav.current || !containerOffset.current) return;
 
-  
+    const currentMinute = new Date().getHours() * 60;
+    container.current.scrollTop =
+      ((container.current.scrollHeight -
+        containerNav.current.offsetHeight -
+        containerOffset.current.offsetHeight) *
+        currentMinute) /
+      1440;
+  }, []);
+
   // Rest of your existing JSX remains the same, but update the button onClick:
   return (
     <div className="flex h-full flex-col">
@@ -48,50 +59,42 @@ export default function DayCalendar({ currentDate, onDateChange }: DayCalendarPr
             ref={containerNav}
             className="sticky top-0 z-10 grid flex-none grid-cols-7 bg-white text-xs text-gray-500 shadow ring-1 ring-black/5 md:hidden"
           >
-            <button type="button" className="flex flex-col items-center pb-1.5 pt-3">
-              <span>W</span>
-              {/* Default: "text-gray-900", Selected: "bg-gray-900 text-white", Today (Not Selected): "text-indigo-600", Today (Selected): "bg-indigo-600 text-white" */}
-              <span className="mt-3 flex size-8 items-center justify-center rounded-full text-base font-semibold text-gray-900">
-                19
-              </span>
-            </button>
-            <button type="button" className="flex flex-col items-center pb-1.5 pt-3">
-              <span>T</span>
-              <span className="mt-3 flex size-8 items-center justify-center rounded-full text-base font-semibold text-indigo-600">
-                20
-              </span>
-            </button>
-            <button type="button" className="flex flex-col items-center pb-1.5 pt-3">
-              <span>F</span>
-              <span className="mt-3 flex size-8 items-center justify-center rounded-full text-base font-semibold text-gray-900">
-                21
-              </span>
-            </button>
-            <button type="button" className="flex flex-col items-center pb-1.5 pt-3">
-              <span>S</span>
-              <span className="mt-3 flex size-8 items-center justify-center rounded-full bg-gray-900 text-base font-semibold text-white">
-                22
-              </span>
-            </button>
-            <button type="button" className="flex flex-col items-center pb-1.5 pt-3">
-              <span>S</span>
-              <span className="mt-3 flex size-8 items-center justify-center rounded-full text-base font-semibold text-gray-900">
-                23
-              </span>
-            </button>
-            <button type="button" className="flex flex-col items-center pb-1.5 pt-3">
-              <span>M</span>
-              <span className="mt-3 flex size-8 items-center justify-center rounded-full text-base font-semibold text-gray-900">
-                24
-              </span>
-            </button>
-            <button type="button" className="flex flex-col items-center pb-1.5 pt-3">
-              <span>T</span>
-              <span className="mt-3 flex size-8 items-center justify-center rounded-full text-base font-semibold text-gray-900">
-                25
-              </span>
-            </button>
+            {weekDates.map((date) => {
+              const isSelected = date.toDateString() === currentDateObj.toDateString();
+              const isToday = date.toDateString() === new Date().toDateString();
+
+              return (
+                <button
+                  key={date.toISOString()}
+                  type="button"
+                  onClick={() => onDateChange(date.toISOString())}
+                  className="flex flex-col items-center pb-1.5 pt-3"
+                >
+                  <span>{date.toLocaleDateString('en-US', { weekday: 'short' })[0]}</span>
+                  <span
+                    className={classNames(
+                      'mt-3 flex size-8 items-center justify-center rounded-full text-base font-semibold',
+                      isSelected && 'bg-gray-900 text-white',
+                      isToday && !isSelected && 'text-indigo-600',
+                      !isSelected && !isToday && 'text-gray-900'
+                    )}
+                  >
+                    {date.getDate()}
+                  </span>
+                </button>
+              );
+            })}
           </div>
+          <header className="flex items-center justify-center border-b border-gray-200 px-6 py-4">
+            <h1 className="text-lg font-semibold text-gray-900">
+              {currentDateObj.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </h1>
+          </header>
           <div className="flex w-full flex-auto">
             <div className="w-14 flex-none bg-white ring-1 ring-gray-100" />
             <div className="grid flex-auto grid-cols-1 grid-rows-1">
@@ -100,101 +103,149 @@ export default function DayCalendar({ currentDate, onDateChange }: DayCalendarPr
                 className="col-start-1 col-end-2 row-start-1 grid divide-y divide-gray-100"
                 style={{ gridTemplateRows: 'repeat(48, minmax(1.0rem, 1fr))' }}
               >
-                <div ref={containerOffset} className="row-end-1 h-7"></div>
+                <div ref={containerOffset} className="row-end-1 h-7" />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">12AM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    12AM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">1AM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    1AM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">2AM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    2AM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">3AM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    3AM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">4AM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    4AM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">5AM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    5AM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">6AM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    6AM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">7AM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    7AM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">8AM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    8AM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">9AM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    9AM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">10AM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    10AM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">11AM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    11AM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">12PM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    12PM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">1PM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    1PM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">2PM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    2PM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">3PM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    3PM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">4PM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    4PM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">5PM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    5PM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">6PM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    6PM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">7PM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    7PM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">8PM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    8PM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">9PM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    9PM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">10PM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    10PM
+                  </div>
                 </div>
                 <div />
                 <div>
-                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">11PM</div>
+                  <div className="sticky left-0 -ml-14 -mt-2.5 w-14 pr-2 text-right text-xs/5 text-gray-400">
+                    11PM
+                  </div>
                 </div>
                 <div />
               </div>
@@ -235,7 +286,9 @@ export default function DayCalendar({ currentDate, onDateChange }: DayCalendarPr
                     className="group absolute inset-1 flex flex-col overflow-y-auto rounded-lg bg-indigo-50 p-2 text-xs/5 hover:bg-indigo-100"
                   >
                     <p className="order-1 font-semibold text-indigo-700">Sightseeing</p>
-                    <p className="order-1 text-indigo-500 group-hover:text-indigo-700">Eiffel Tower</p>
+                    <p className="order-1 text-indigo-500 group-hover:text-indigo-700">
+                      Eiffel Tower
+                    </p>
                     <p className="text-indigo-500 group-hover:text-indigo-700">
                       <time dateTime="2022-01-22T11:00">11:00 AM</time>
                     </p>
@@ -249,18 +302,26 @@ export default function DayCalendar({ currentDate, onDateChange }: DayCalendarPr
           <div className="flex items-center text-center text-gray-900">
             <button
               type="button"
-              onClick={() => onDateChange(new Date(currentDate.setMonth(currentDate.getMonth() - 1)))}
+              onClick={() =>
+                onDateChange(
+                  new Date(currentDateObj.setMonth(currentDateObj.getMonth() - 1)).toISOString()
+                )
+              }
               className="-m-1.5 flex flex-none items-center justify-center p-1.5 text-gray-400 hover:text-gray-500"
             >
               <span className="sr-only">Previous month</span>
               <ChevronLeftIcon className="size-5" aria-hidden="true" />
             </button>
             <div className="flex-auto text-sm font-semibold">
-              {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+              {currentDateObj.toLocaleString('default', { month: 'long', year: 'numeric' })}
             </div>
             <button
               type="button"
-              onClick={() => onDateChange(new Date(currentDate.setMonth(currentDate.getMonth() + 1)))}
+              onClick={() =>
+                onDateChange(
+                  new Date(currentDateObj.setMonth(currentDateObj.getMonth() + 1)).toISOString()
+                )
+              }
               className="-m-1.5 flex flex-none items-center justify-center p-1.5 text-gray-400 hover:text-gray-500"
             >
               <span className="sr-only">Next month</span>
@@ -293,7 +354,7 @@ export default function DayCalendar({ currentDate, onDateChange }: DayCalendarPr
                   dayIdx === 0 && 'rounded-tl-lg',
                   dayIdx === 6 && 'rounded-tr-lg',
                   dayIdx === days.length - 7 && 'rounded-bl-lg',
-                  dayIdx === days.length - 1 && 'rounded-br-lg',
+                  dayIdx === days.length - 1 && 'rounded-br-lg'
                 )}
               >
                 <time
@@ -301,7 +362,7 @@ export default function DayCalendar({ currentDate, onDateChange }: DayCalendarPr
                   className={classNames(
                     'mx-auto flex size-7 items-center justify-center rounded-full',
                     day.isSelected && day.isToday && 'bg-indigo-600',
-                    day.isSelected && !day.isToday && 'bg-gray-900',
+                    day.isSelected && !day.isToday && 'bg-gray-900'
                   )}
                 >
                   {day.date.split('-').pop()?.replace(/^0/, '') || ''}
@@ -312,5 +373,5 @@ export default function DayCalendar({ currentDate, onDateChange }: DayCalendarPr
         </div>
       </div>
     </div>
-  )
+  );
 }

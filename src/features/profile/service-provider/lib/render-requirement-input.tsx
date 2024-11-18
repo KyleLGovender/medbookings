@@ -1,7 +1,8 @@
-import { ServiceProviderFormType } from "@/features/profile/service-provider/lib/service-provider-schema";
-import { getLocalTimeZone, now, parseDate } from "@internationalized/date";
-import { DatePicker, DateValue } from "@nextui-org/react";
-import { UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form";
+import { getLocalTimeZone, now, parseDate } from '@internationalized/date';
+import { DatePicker, DateValue } from '@nextui-org/react';
+import { UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
+
+import { ServiceProviderFormType } from '@/features/profile/service-provider/lib/service-provider-schema';
 
 type RequirementType = {
   id: string;
@@ -118,7 +119,7 @@ export const renderRequirementInput = (
         <div>
           <select
             id={inputId}
-          required={requirement.isRequired}
+            required={requirement.isRequired}
             {...form.register(`requirements.${requirement.index}.value`)}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >

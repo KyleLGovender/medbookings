@@ -1,152 +1,111 @@
-'use client'
+'use client';
 
-import { CalendarHeader } from '@/features/calendar/components/calendar-header'
-import ConsultsCalendar from '@/features/calendar/components/consults'
-import DayCalendar from '@/features/calendar/components/day'
-import MonthCalendar from '@/features/calendar/components/month'
-import WeekCalendar from '@/features/calendar/components/week'
-import { useState } from 'react'
+import { useState } from 'react';
 
-type ViewType = 'day' | 'week' | 'month' | 'consults'
+import { addDays } from 'date-fns';
+import { DateRange } from 'react-day-picker';
+
+import { CalendarHeader } from '@/features/calendar/components/calendar-header';
+import ConsultsCalendar from '@/features/calendar/components/consults';
+import DayCalendar from '@/features/calendar/components/day';
+import { Schedule } from '@/features/calendar/components/schedule';
+import WeekCalendar from '@/features/calendar/components/week';
+
+type ViewType = 'day' | 'week' | 'consults' | 'schedule';
 
 interface ServiceProviderCalendarProps {
-  providerId: string
-  providerName: string
+  providerId: string;
+  providerName: string;
 }
 
-const ServiceProviderCalendar: React.FC<ServiceProviderCalendarProps> = ({
-  providerId,
-  providerName,
-}) => {
-  const [view, setView] = useState<ViewType>('week')
-  const [currentDate, setCurrentDate] = useState(new Date())
+function ServiceProviderCalendar({ providerId, providerName }: ServiceProviderCalendarProps) {
+  const [view, setView] = useState<ViewType>('week');
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: new Date(),
+    to: addDays(new Date(), 7),
+  });
 
   const handlePrevious = () => {
-    setCurrentDate(prev => {
-      const newDate = new Date(prev)
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev);
       switch (view) {
         case 'day':
-          newDate.setDate(prev.getDate() - 1)
-          break
+          newDate.setDate(prev.getDate() - 1);
+          break;
         case 'week':
-          newDate.setDate(prev.getDate() - 7)
-          break
-        case 'month':
-          newDate.setMonth(prev.getMonth() - 1)
-          break
+          newDate.setDate(prev.getDate() - 7);
+          break;
         default:
-          newDate.setDate(prev.getDate() - 1)
+          newDate.setDate(prev.getDate() - 1);
       }
-      return newDate
-    })
-  }
+      return newDate;
+    });
+  };
 
   const handleNext = () => {
-    setCurrentDate(prev => {
-      const newDate = new Date(prev)
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev);
       switch (view) {
         case 'day':
-          newDate.setDate(prev.getDate() + 1)
-          break
+          newDate.setDate(prev.getDate() + 1);
+          break;
         case 'week':
-          newDate.setDate(prev.getDate() + 7)
-          break
-        case 'month':
-          newDate.setMonth(prev.getMonth() + 1)
-          break
+          newDate.setDate(prev.getDate() + 7);
+          break;
         default:
-          newDate.setDate(prev.getDate() + 1)
+          newDate.setDate(prev.getDate() + 1);
       }
-      return newDate
-    })
-  }
+      return newDate;
+    });
+  };
 
   const handleToday = () => {
-    setCurrentDate(new Date())
-  }
-
-  const formatTitle = (date: Date, view: ViewType): string => {
-    switch (view) {
-      case 'day':
-        return date.toLocaleDateString('en-ZA', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'short', 
-          day: '2-digit' 
-        })
-      case 'week': {
-        // Get Monday of the current week
-        const monday = new Date(date)
-        monday.setDate(date.getDate() - date.getDay() + 1)
-        
-        // Get Sunday of the current week
-        const sunday = new Date(monday)
-        sunday.setDate(monday.getDate() + 6)
-        
-        // Format as "Week of Mon 1 - Sun 7 January"
-        return `${monday.toLocaleDateString('en-ZA', { 
-          weekday: 'short', 
-          day: '2-digit'
-        })} - ${sunday.toLocaleDateString('en-ZA', { 
-          weekday: 'short', 
-          day: '2-digit',
-          month: 'short'
-        })}`
-      }
-      case 'month':
-        return date.toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' })
-      default:
-        return date.toLocaleDateString('en-ZA', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'short', 
-          day: '2-digit' 
-        })
-    }
-  }
+    setCurrentDate(new Date());
+  };
 
   const renderCalendar = () => {
     const props = {
       currentDate,
       onDateChange: setCurrentDate,
-    }
+    };
 
     switch (view) {
       case 'day':
-        return <DayCalendar {...props} />
+        return <DayCalendar {...props} />;
       case 'week':
-        return <WeekCalendar {...props} />
-      case 'month':
-        return <MonthCalendar {...props} />
+        return <WeekCalendar {...props} onViewChange={setView} />;
+      case 'schedule':
+        return <Schedule {...props} view={view} dateRange={dateRange} />;
       case 'consults':
-        return <ConsultsCalendar {...props} />
+        return <ConsultsCalendar {...props} />;
       default:
-        return <WeekCalendar {...props} />
+        return <ConsultsCalendar {...props} />;
     }
-  }
+  };
 
   return (
     <div className="max-w-[100vw] overflow-x-hidden p-4">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {providerName}'s Availability
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-900">{providerName}&apos;s Availability</h1>
       </div>
 
       <div className="rounded-lg bg-white shadow">
         <CalendarHeader
           view={view}
-          onViewChange={setView}
           currentDate={currentDate}
-          title={formatTitle(currentDate, view)}
+          dateRange={dateRange}
+          onDateSelect={(date: Date | undefined) => date && setCurrentDate(date)}
+          onDateRangeSelect={setDateRange}
           onPrevious={handlePrevious}
           onNext={handleNext}
           onToday={handleToday}
+          onViewChange={setView}
         />
         {renderCalendar()}
       </div>
     </div>
-  )
+  );
 }
 
-export default ServiceProviderCalendar
+export default ServiceProviderCalendar;

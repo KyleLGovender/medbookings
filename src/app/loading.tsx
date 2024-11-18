@@ -1,13 +1,9 @@
-import { CircularProgress } from '@nextui-org/react';
+import { Spinner } from '@/components/ui/spinner';
 
 export default function Loading() {
   return (
-    <CircularProgress
-      className="mx-auto p-12"
-      classNames={{
-        svg: 'w-24 h-24',
-      }}
-      aria-label="Loading page..."
-    />
+    <div className="mx-auto w-64 p-12">
+      <Spinner className="h-8 w-8" />
+    </div>
   );
 }

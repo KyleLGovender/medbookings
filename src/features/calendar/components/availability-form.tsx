@@ -1,82 +1,149 @@
-'use client'
+'use client';
 
-import { Button, Checkbox, Input, Select, SelectItem } from '@nextui-org/react'
-import { useFormState, useFormStatus } from 'react-dom'
-import { createAvailability } from '../lib/actions'
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
-function SubmitButton() {
-  const { pending } = useFormStatus()
-  
-  return (
-    <Button 
-      type="submit" 
-      color="primary"
-      isLoading={pending}
-    >
-      Add Availability
-    </Button>
-  )
-}
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+import { createAvailability } from '../lib/actions';
+
+// Define the form schema with Zod
+const formSchema = z.object({
+  dayOfWeek: z.string({
+    required_error: 'Please select a day of the week',
+  }),
+  startTime: z.string({
+    required_error: 'Please select a start time',
+  }),
+  endTime: z.string({
+    required_error: 'Please select an end time',
+  }),
+  isRecurring: z.boolean().default(true),
+});
 
 export function AvailabilityForm() {
-  const [state, formAction] = useFormState(createAvailability, null)
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      isRecurring: true,
+    },
+  });
 
-  const daysOfWeek = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
-  ]
+  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const formData = new FormData();
+    Object.entries(values).forEach(([key, value]) => {
+      formData.append(key, value.toString());
+    });
+    await createAvailability(formData);
+  }
 
   return (
-    <form action={formAction}>
-      <div className="flex flex-col gap-4">
-        <Select
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
           name="dayOfWeek"
-          label="Day of Week"
-          placeholder="Select a day"
-          isRequired
-          errorMessage={state?.errors?.dayOfWeek}
-        >
-          {daysOfWeek.map((day) => (
-            <SelectItem key={day} value={day}>
-              {day}
-            </SelectItem>
-          ))}
-        </Select>
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Day of Week</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a day" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {daysOfWeek.map((day) => (
+                    <SelectItem key={day} value={day}>
+                      {day}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-        <Input
-          type="time"
+        <FormField
+          control={form.control}
           name="startTime"
-          label="Start Time"
-          isRequired
-          errorMessage={state?.errors?.startTime}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Start Time</FormLabel>
+              <FormControl>
+                <input
+                  type="time"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
 
-        <Input
-          type="time" 
+        <FormField
+          control={form.control}
           name="endTime"
-          label="End Time"
-          isRequired
-          errorMessage={state?.errors?.endTime}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>End Time</FormLabel>
+              <FormControl>
+                <input
+                  type="time"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
 
-        <Checkbox 
-          name="isRecurring" 
-          defaultSelected
-        >
-          Recurring weekly
-        </Checkbox>
+        <FormField
+          control={form.control}
+          name="isRecurring"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormControl>
+                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+              </FormControl>
+              <FormLabel className="font-normal">Recurring weekly</FormLabel>
+            </FormItem>
+          )}
+        />
 
-        {state?.error && (
-          <p className="text-danger text-sm">{state.error}</p>
-        )}
-
-        <SubmitButton />
-      </div>
-    </form>
-  )
+        <Button type="submit" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting ? (
+            <>
+              <span className="loading loading-spinner" />
+              Adding...
+            </>
+          ) : (
+            'Add Availability'
+          )}
+        </Button>
+      </form>
+    </Form>
+  );
 }

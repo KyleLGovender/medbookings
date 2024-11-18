@@ -1,18 +1,17 @@
-import { generateDaysForMonthCalendar } from '@/features/calendar/lib/helper';
-import classNames from '@/lib/classNames';
-import {
-  ClockIcon
-} from '@heroicons/react/20/solid';
+import { ClockIcon } from '@heroicons/react/20/solid';
 import { isSameDay } from 'date-fns';
 
+import { generateDaysForMonthCalendar } from '@/features/calendar/lib/helper';
+import classNames from '@/lib/classNames';
+
 interface MonthCalendarProps {
-  currentDate: Date
-  onDateChange: (date: Date) => void
+  currentDate: Date;
+  onDateChange: (date: Date) => void;
 }
 
 export default function MonthCalendar({ currentDate, onDateChange }: MonthCalendarProps) {
   // Generate days array for the month view
-  const days = generateDaysForMonthCalendar(currentDate)
+  const days = generateDaysForMonthCalendar(currentDate);
 
   return (
     <div className="lg:flex lg:h-full lg:flex-col">
@@ -47,7 +46,7 @@ export default function MonthCalendar({ currentDate, onDateChange }: MonthCalend
                 key={day.date}
                 className={classNames(
                   day.isCurrentMonth ? 'bg-white' : 'bg-gray-50 text-gray-500',
-                  'relative px-3 py-2',
+                  'relative px-3 py-2'
                 )}
               >
                 <time
@@ -77,7 +76,9 @@ export default function MonthCalendar({ currentDate, onDateChange }: MonthCalend
                         </a>
                       </li>
                     ))}
-                    {day.events.length > 2 && <li className="text-gray-500">+ {day.events.length - 2} more</li>}
+                    {day.events.length > 2 && (
+                      <li className="text-gray-500">+ {day.events.length - 2} more</li>
+                    )}
                   </ol>
                 )}
               </div>
@@ -96,7 +97,7 @@ export default function MonthCalendar({ currentDate, onDateChange }: MonthCalend
                   !day.isSelected && day.isToday && 'text-indigo-600',
                   !day.isSelected && day.isCurrentMonth && !day.isToday && 'text-gray-900',
                   !day.isSelected && !day.isCurrentMonth && !day.isToday && 'text-gray-500',
-                  'flex h-14 flex-col px-3 py-2 hover:bg-gray-100 focus:z-10',
+                  'flex h-14 flex-col px-3 py-2 hover:bg-gray-100 focus:z-10'
                 )}
               >
                 <time
@@ -105,7 +106,7 @@ export default function MonthCalendar({ currentDate, onDateChange }: MonthCalend
                     day.isSelected && 'flex size-6 items-center justify-center rounded-full',
                     day.isSelected && day.isToday && 'bg-indigo-600',
                     day.isSelected && !day.isToday && 'bg-gray-900',
-                    'ml-auto',
+                    'ml-auto'
                   )}
                 >
                   {day.date.split('-').pop().replace(/^0/, '')}
@@ -114,7 +115,10 @@ export default function MonthCalendar({ currentDate, onDateChange }: MonthCalend
                 {day.events.length > 0 && (
                   <span className="-mx-0.5 mt-auto flex flex-wrap-reverse">
                     {day.events.map((event) => (
-                      <span key={event.id} className="mx-0.5 mb-1 size-1.5 rounded-full bg-gray-400" />
+                      <span
+                        key={event.id}
+                        className="mx-0.5 mb-1 size-1.5 rounded-full bg-gray-400"
+                      />
                     ))}
                   </span>
                 )}
@@ -123,29 +127,38 @@ export default function MonthCalendar({ currentDate, onDateChange }: MonthCalend
           </div>
         </div>
       </div>
-      {currentDate && days.find(day => isSameDay(new Date(day.date), currentDate))?.events.length > 0 && (
-        <div className="px-4 py-10 sm:px-6 lg:hidden">
-          <ol className="divide-y divide-gray-100 overflow-hidden rounded-lg bg-white text-sm shadow ring-1 ring-black/5">
-            {days.find(day => isSameDay(new Date(day.date), currentDate))?.events.map((event) => (
-              <li key={event.id} className="group flex p-4 pr-6 focus-within:bg-gray-50 hover:bg-gray-50">
-                <div className="flex-auto">
-                  <p className="font-semibold text-gray-900">{event.name}</p>
-                  <time dateTime={event.datetime} className="mt-2 flex items-center text-gray-700">
-                    <ClockIcon className="mr-2 size-5 text-gray-400" aria-hidden="true" />
-                    {event.time}
-                  </time>
-                </div>
-                <a
-                  href={event.href}
-                  className="ml-6 flex-none self-center rounded-md bg-white px-3 py-2 font-semibold text-gray-900 opacity-0 shadow-sm ring-1 ring-inset ring-gray-300 hover:ring-gray-400 focus:opacity-100 group-hover:opacity-100"
-                >
-                  Edit<span className="sr-only">, {event.name}</span>
-                </a>
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
+      {currentDate &&
+        days.find((day) => isSameDay(new Date(day.date), currentDate))?.events.length > 0 && (
+          <div className="px-4 py-10 sm:px-6 lg:hidden">
+            <ol className="divide-y divide-gray-100 overflow-hidden rounded-lg bg-white text-sm shadow ring-1 ring-black/5">
+              {days
+                .find((day) => isSameDay(new Date(day.date), currentDate))
+                ?.events.map((event) => (
+                  <li
+                    key={event.id}
+                    className="group flex p-4 pr-6 focus-within:bg-gray-50 hover:bg-gray-50"
+                  >
+                    <div className="flex-auto">
+                      <p className="font-semibold text-gray-900">{event.name}</p>
+                      <time
+                        dateTime={event.datetime}
+                        className="mt-2 flex items-center text-gray-700"
+                      >
+                        <ClockIcon className="mr-2 size-5 text-gray-400" aria-hidden="true" />
+                        {event.time}
+                      </time>
+                    </div>
+                    <a
+                      href={event.href}
+                      className="ml-6 flex-none self-center rounded-md bg-white px-3 py-2 font-semibold text-gray-900 opacity-0 shadow-sm ring-1 ring-inset ring-gray-300 hover:ring-gray-400 focus:opacity-100 group-hover:opacity-100"
+                    >
+                      Edit<span className="sr-only">, {event.name}</span>
+                    </a>
+                  </li>
+                ))}
+            </ol>
+          </div>
+        )}
     </div>
-  )
+  );
 }

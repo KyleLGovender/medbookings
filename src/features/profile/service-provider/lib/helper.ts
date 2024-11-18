@@ -4,7 +4,6 @@ export function parseAbsoluteToLocal(date: Date) {
   return now(getLocalTimeZone()).set({
     year: date.getFullYear(),
     month: date.getMonth() + 1,
-    day: date.getDate()
+    day: date.getDate(),
   });
 }
-

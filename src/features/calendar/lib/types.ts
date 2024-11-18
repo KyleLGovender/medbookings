@@ -1,1 +1,1 @@
-export type ViewType = 'day' | 'week' | 'month' | 'consults' 
+export type ViewType = 'day' | 'week' | 'month' | 'consults' | 'schedule';

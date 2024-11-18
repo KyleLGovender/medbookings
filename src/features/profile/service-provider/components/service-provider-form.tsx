@@ -4,15 +4,12 @@ import Image from 'next/image';
 import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { BillingType, Languages } from '@prisma/client';
 import { useFormState } from 'react-dom';
 import { useForm, useWatch } from 'react-hook-form';
 
-import { BillingType, Languages } from '@prisma/client';
 import { registerServiceProvider } from '../lib/actions';
-import {
-  type ServiceProviderFormType,
-  serviceProviderSchema,
-} from '../lib/schema';
+import { type ServiceProviderFormType, serviceProviderSchema } from '../lib/schema';
 
 const ACCEPTED_IMAGE_TYPES = ['.jpg', '.jpeg', '.png', '.webp'];
 
@@ -69,8 +66,8 @@ function ServiceProviderForm({
       website: '',
       services: [],
       requirements: [],
-      termsAccepted: undefined
-    }
+      termsAccepted: undefined,
+    },
   });
 
   // Handle image preview
@@ -104,7 +101,7 @@ function ServiceProviderForm({
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
       if (Array.isArray(value)) {
-        value.forEach(item => formData.append(key, String(item)));
+        value.forEach((item) => formData.append(key, String(item)));
       } else if (value instanceof File) {
         formData.append(key, value);
       } else if (typeof value === 'object' && value !== null) {
@@ -113,7 +110,7 @@ function ServiceProviderForm({
         formData.append(key, String(value ?? ''));
       }
     });
-    
+
     formAction(formData);
   };
 
@@ -144,7 +141,9 @@ function ServiceProviderForm({
                 ))}
             </select>
             {form.formState.errors.serviceProviderTypeId && (
-              <p className="mt-1 text-sm text-red-500">{form.formState.errors.serviceProviderTypeId.message}</p>
+              <p className="mt-1 text-sm text-red-500">
+                {form.formState.errors.serviceProviderTypeId.message}
+              </p>
             )}
           </label>
         </div>
@@ -193,12 +192,16 @@ function ServiceProviderForm({
                 onChange: (e) => {
                   console.log('File selected:', e.target.files);
                   handleImageChange(e);
-                }
+                },
               })}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </label>
-          {form.formState.errors.image && <p className="text-sm text-red-500">{form.formState.errors.image.message?.toString()}</p>}
+          {form.formState.errors.image && (
+            <p className="text-sm text-red-500">
+              {form.formState.errors.image.message?.toString()}
+            </p>
+          )}
           {imagePreview && (
             <div className="relative h-32 w-32 overflow-hidden rounded-lg">
               <Image src={imagePreview} alt="Profile preview" fill className="object-cover" />
@@ -229,7 +232,7 @@ function ServiceProviderForm({
               <p className="mt-1 text-sm text-red-500">{form.formState.errors.languages.message}</p>
             )}
           </label>
-          <p className="text-sm text-gray-500">Hold Ctrl/Cmd to select multiple languages</p>          
+          <p className="text-sm text-gray-500">Hold Ctrl/Cmd to select multiple languages</p>
         </div>
 
         {/* Billing Type */}
@@ -249,7 +252,9 @@ function ServiceProviderForm({
               ))}
             </select>
             {form.formState.errors.billingType && (
-              <p className="mt-1 text-sm text-red-500">{form.formState.errors.billingType.message}</p>
+              <p className="mt-1 text-sm text-red-500">
+                {form.formState.errors.billingType.message}
+              </p>
             )}
           </label>
         </div>
@@ -300,7 +305,9 @@ function ServiceProviderForm({
                   </label>
                 ))}
               {form.formState.errors.services && (
-                <p className="mt-2 text-sm text-red-500">{form.formState.errors.services.message}</p>
+                <p className="mt-2 text-sm text-red-500">
+                  {form.formState.errors.services.message}
+                </p>
               )}
             </div>
           </section>
@@ -353,16 +360,16 @@ function ServiceProviderForm({
             <span className="text-sm">I agree to the terms and conditions</span>
           </label>
           {form.formState.errors.termsAccepted && (
-            <p className="mt-1 text-sm text-red-500">{form.formState.errors.termsAccepted.message}</p>
+            <p className="mt-1 text-sm text-red-500">
+              {form.formState.errors.termsAccepted.message}
+            </p>
           )}
         </div>
       </section>
 
       {/* Form Status Messages */}
       {state?.error && (
-        <div className="mb-4 rounded-md bg-red-50 p-4 text-red-700">
-          {state.error}
-        </div>
+        <div className="mb-4 rounded-md bg-red-50 p-4 text-red-700">{state.error}</div>
       )}
 
       <button

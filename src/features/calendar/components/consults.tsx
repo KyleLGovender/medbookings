@@ -22,16 +22,16 @@ const meetings = [
     location: 'Starbucks',
   },
   // More meetings...
-]
+];
 
 interface ConsultsCalendarProps {
-  currentDate: Date
-  onDateChange: (date: Date) => void
+  currentDate: Date;
+  onDateChange: (date: Date) => void;
 }
 
 export default function ConsultsCalendar({ currentDate, onDateChange }: ConsultsCalendarProps) {
-  const days = generateDaysForConsultsCalendar(currentDate)
-  const month = currentDate.toLocaleString('default', { month: 'long' })
+  const days = generateDaysForConsultsCalendar(currentDate);
+  const month = currentDate.toLocaleString('default', { month: 'long' });
 
   return (
     <div className="p-8">
@@ -42,7 +42,9 @@ export default function ConsultsCalendar({ currentDate, onDateChange }: Consults
             <button
               type="button"
               className="-m-1.5 flex flex-none items-center justify-center p-1.5 text-gray-400 hover:text-gray-500"
-              onClick={() => onDateChange(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
+              onClick={() =>
+                onDateChange(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
+              }
             >
               <span className="sr-only">Previous month</span>
               <ChevronLeftIcon className="size-5" aria-hidden="true" />
@@ -51,7 +53,9 @@ export default function ConsultsCalendar({ currentDate, onDateChange }: Consults
             <button
               type="button"
               className="-m-1.5 flex flex-none items-center justify-center p-1.5 text-gray-400 hover:text-gray-500"
-              onClick={() => onDateChange(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
+              onClick={() =>
+                onDateChange(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))
+              }
             >
               <span className="sr-only">Next month</span>
               <ChevronRightIcon className="size-5" aria-hidden="true" />
@@ -82,7 +86,7 @@ export default function ConsultsCalendar({ currentDate, onDateChange }: Consults
                   dayIdx === 0 && 'rounded-tl-lg',
                   dayIdx === 6 && 'rounded-tr-lg',
                   dayIdx === days.length - 7 && 'rounded-bl-lg',
-                  dayIdx === days.length - 1 && 'rounded-br-lg',
+                  dayIdx === days.length - 1 && 'rounded-br-lg'
                 )}
               >
                 <time
@@ -90,7 +94,7 @@ export default function ConsultsCalendar({ currentDate, onDateChange }: Consults
                   className={classNames(
                     'mx-auto flex size-7 items-center justify-center rounded-full',
                     day.isSelected && day.isToday && 'bg-indigo-600',
-                    day.isSelected && !day.isToday && 'bg-gray-900',
+                    day.isSelected && !day.isToday && 'bg-gray-900'
                   )}
                 >
                   {day.date.split('-').pop().replace(/^0/, '')}
@@ -126,7 +130,10 @@ export default function ConsultsCalendar({ currentDate, onDateChange }: Consults
                   </div>
                 </dl>
               </div>
-              <Menu as="div" className="absolute right-0 top-6 xl:relative xl:right-auto xl:top-auto xl:self-center">
+              <Menu
+                as="div"
+                className="absolute right-0 top-6 xl:relative xl:right-auto xl:top-auto xl:self-center"
+              >
                 <div>
                   <MenuButton className="-m-2 flex items-center rounded-full p-2 text-gray-500 hover:text-gray-600">
                     <span className="sr-only">Open options</span>
@@ -163,5 +170,5 @@ export default function ConsultsCalendar({ currentDate, onDateChange }: Consults
         </ol>
       </div>
     </div>
-  )
+  );
 }

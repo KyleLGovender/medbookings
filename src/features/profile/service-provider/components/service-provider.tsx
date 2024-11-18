@@ -1,5 +1,10 @@
-import { Button, Card, CardBody, Image } from '@nextui-org/react';
+import Image from 'next/image';
 import Link from 'next/link';
+
+import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { buttonVariants } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { ServiceProviderWithRelations } from '../lib/types';
 
 interface ServiceProviderProps {
@@ -10,48 +15,70 @@ export function ServiceProvider({ serviceProvider }: ServiceProviderProps) {
   return (
     <>
       <Card className="mx-auto mt-4 max-w-md">
-        <CardBody className="text-center">
+        <CardContent className="pt-6 text-center">
           <div className="space-y-6">
             {serviceProvider.image && (
-              <Image
-                width="100%"
-                className="mx-auto"
-                alt="NextUI hero Image"
-                src={serviceProvider.image}
-              />
+              <AspectRatio ratio={16 / 9} className="overflow-hidden rounded-md">
+                <Image
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover"
+                  alt="Service Provider Image"
+                  src={serviceProvider.image}
+                  priority
+                />
+              </AspectRatio>
             )}
-            <Link href="/profile/service-provider/calendar">
-              <Button className="mx-auto mt-4 max-w-md">
-                Manage Availability
-              </Button>
+            <Link
+              href="/profile/service-provider/calendar"
+              className={buttonVariants({ className: 'w-full' })}
+            >
+              Manage Availability
             </Link>
+
             {/* Basic Info */}
-            <div className="rounded-lg border p-6">
-              <h2 className="text-2xl font-bold mb-4">{serviceProvider.serviceProviderType.name}</h2>
-              <div className="space-y-2">
-                <p><span className="font-semibold">Name:</span> {serviceProvider.name}</p>
-                <p><span className="font-semibold">Email:</span> {serviceProvider.user.email}</p>
+            <Card>
+              <CardHeader>
+                <CardTitle>{serviceProvider.serviceProviderType.name}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p>
+                  <span className="font-semibold">Name:</span> {serviceProvider.name}
+                </p>
+                <p>
+                  <span className="font-semibold">Email:</span> {serviceProvider.user.email}
+                </p>
                 {serviceProvider.bio && (
-                  <p><span className="font-semibold">Bio:</span> {serviceProvider.bio}</p>
+                  <p>
+                    <span className="font-semibold">Bio:</span> {serviceProvider.bio}
+                  </p>
                 )}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Services */}
-            <div className="rounded-lg border p-6">
-              <h2 className="text-2xl font-bold mb-4">Services Offered</h2>
-              <div className="grid gap-4">
-                {serviceProvider.services.map((service) => (
-                  <div key={service.id} className="border rounded p-4">
-                    <h3 className="text-lg font-semibold">{service.name}</h3>
-                    <p className="text-md">{service.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Services Offered</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  {serviceProvider.services.map((service) => (
+                    <Card key={service.id}>
+                      <CardHeader>
+                        <CardTitle className="text-lg">{service.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">{service.description}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardBody>
+        </CardContent>
       </Card>
     </>
   );
-} 
+}
