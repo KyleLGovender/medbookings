@@ -1,47 +1,43 @@
 import { prisma } from '@/lib/prisma';
 
+import { expandRecurringAvailability } from './helper';
+import { AvailabilityWithBookings } from './types';
+
 export async function getAvailabilitiesInRange(
-  serviceProviderId: string,
   startDate: Date,
   endDate: Date
-) {
-  return prisma.availability.findMany({
+): Promise<AvailabilityWithBookings[]> {
+  const availabilities = await prisma.availability.findMany({
     where: {
-      serviceProviderId,
-      OR: [
-        // One-time availabilities within range
-        {
-          isRecurring: false,
-          startTime: {
-            gte: startDate,
-            lte: endDate,
-          },
-        },
-        // Recurring availabilities that overlap with range
-        {
-          isRecurring: true,
-          recurrenceEndDate: {
-            gte: startDate,
-          },
-          startTime: {
-            lte: endDate,
-          },
-        },
-      ],
+      startTime: { gte: startDate, lte: endDate },
     },
     include: {
       bookings: {
         include: {
-          client: {
-            select: {
-              name: true,
-            },
-          },
+          client: { select: { name: true } },
         },
       },
     },
-    orderBy: {
-      startTime: 'asc',
-    },
+    orderBy: { startTime: 'asc' },
   });
+
+  // Convert Decimal to number and expand recurring availabilities
+  const expandedAvailabilities = availabilities.flatMap((availability) => {
+    const processed = {
+      ...availability,
+      price: Number(availability.price),
+      bookings: availability.bookings.map((booking) => ({
+        ...booking,
+        price: Number(booking.price),
+        status: booking.status as 'PENDING' | 'CONFIRMED' | 'NO_SHOW' | 'CANCELLED' | 'COMPLETED',
+        client: {
+          name: booking.client?.name ?? null,
+        },
+      })),
+    };
+
+    return expandRecurringAvailability(processed, endDate);
+  });
+
+  return expandedAvailabilities satisfies AvailabilityWithBookings[];
 }

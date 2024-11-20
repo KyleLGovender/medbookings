@@ -1,6 +1,5 @@
+import { ServiceProviderWithRelations } from '@/features/profile/service-provider/lib/types';
 import { prisma } from '@/lib/prisma';
-
-import { ServiceProviderWithRelations } from './types';
 
 export async function getServiceProvider(
   userId: string

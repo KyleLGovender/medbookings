@@ -1,3 +1,5 @@
+'use client';
+
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { DateRange } from 'react-day-picker';
@@ -9,8 +11,9 @@ import { AvailabilityDialog } from './availability-dialog';
 import { CalendarNavigation } from './calendar-navigation';
 
 interface CalendarHeaderProps {
-  view: 'schedule' | 'day' | 'week' | 'consults';
+  view: 'schedule' | 'day' | 'week';
   currentDate: Date;
+  // eslint-disable-next-line react/require-default-props
   dateRange?: DateRange;
   onDateSelect: (date: Date | undefined) => void;
   onDateRangeSelect: (range: DateRange | undefined) => void;
@@ -23,7 +26,7 @@ interface CalendarHeaderProps {
 export function CalendarHeader({
   view,
   currentDate,
-  dateRange,
+  dateRange = undefined,
   onDateSelect,
   onDateRangeSelect,
   onPrevious,
@@ -61,33 +64,17 @@ export function CalendarHeader({
               className="absolute right-0 z-10 mt-3 w-36 origin-top-right overflow-hidden rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in"
             >
               <div className="py-1">
-                <MenuItem>
-                  <button
-                    type="button"
-                    onClick={() => onViewChange('day')}
-                    className="block w-full px-4 py-2 text-left text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900 data-[focus]:outline-none"
-                  >
-                    Day view
-                  </button>
-                </MenuItem>
-                <MenuItem>
-                  <button
-                    type="button"
-                    onClick={() => onViewChange('week')}
-                    className="block w-full px-4 py-2 text-left text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900 data-[focus]:outline-none"
-                  >
-                    Week view
-                  </button>
-                </MenuItem>
-                <MenuItem>
-                  <button
-                    type="button"
-                    onClick={() => onViewChange('schedule')}
-                    className="block w-full px-4 py-2 text-left text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900 data-[focus]:outline-none"
-                  >
-                    Schedule view
-                  </button>
-                </MenuItem>
+                {['day', 'week', 'schedule'].map((viewOption) => (
+                  <MenuItem key={viewOption}>
+                    <button
+                      type="button"
+                      onClick={() => onViewChange(viewOption as 'day' | 'week' | 'schedule')}
+                      className="block w-full px-4 py-2 text-left text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900 data-[focus]:outline-none"
+                    >
+                      {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} view
+                    </button>
+                  </MenuItem>
+                ))}
               </div>
             </MenuItems>
           </Menu>

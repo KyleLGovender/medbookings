@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { useQuery } from '@tanstack/react-query';
 import { addDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
@@ -9,20 +10,42 @@ import { CalendarHeader } from '@/features/calendar/components/calendar-header';
 import DayCalendar from '@/features/calendar/components/day';
 import { Schedule } from '@/features/calendar/components/schedule';
 import WeekCalendar from '@/features/calendar/components/week';
+import { AvailabilityWithBookings } from '@/features/calendar/lib/types';
 
 type ViewType = 'day' | 'week' | 'schedule';
 
 interface CalendarProps {
+  initialData: AvailabilityWithBookings[];
   providerId: string;
-  providerName: string;
 }
 
-function Calendar({ providerId, providerName }: CalendarProps) {
+function Calendar({ initialData, providerId }: CalendarProps) {
   const [view, setView] = useState<ViewType>('schedule');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(),
     to: addDays(new Date(), 7),
+  });
+
+  const { data: availabilityData = initialData } = useQuery({
+    queryKey: ['availability', providerId, dateRange],
+    queryFn: async () => {
+      const response = await fetch(`/api/calendar/${providerId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          startDate: dateRange.from,
+          endDate: dateRange.to,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch availability');
+      }
+
+      return response.json();
+    },
+    initialData,
   });
 
   const handlePrevious = () => {
@@ -75,16 +98,16 @@ function Calendar({ providerId, providerName }: CalendarProps) {
       case 'week':
         return <WeekCalendar {...props} onViewChange={setView} />;
       case 'schedule':
-        return <Schedule {...props} view={view} dateRange={dateRange} />;
+        return <Schedule filteredSchedule={availabilityData} />;
       default:
-        return <Schedule {...props} />;
+        return <Schedule filteredSchedule={availabilityData} />;
     }
   };
 
   return (
     <div className="max-w-[100vw] overflow-x-hidden p-4">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{providerName}&apos;s Availability</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Manage your Calendar</h1>
       </div>
 
       <div className="rounded-lg bg-white shadow">

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,6 +26,7 @@ interface AvailabilityFormProps {
 export function AvailabilityForm({ onSuccess }: AvailabilityFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<AvailabilityFormValues>({
     resolver: zodResolver(availabilityFormSchema),
@@ -76,6 +78,7 @@ export function AvailabilityForm({ onSuccess }: AvailabilityFormProps) {
         description: 'Availability has been created successfully.',
       });
 
+      router.refresh();
       onSuccess?.();
     } catch (error) {
       toast({

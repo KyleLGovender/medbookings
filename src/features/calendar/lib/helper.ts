@@ -1,10 +1,30 @@
-import { startOfWeek as dateFnsStartOfWeek } from 'date-fns';
+import { startOfWeek as dateFnsStartOfWeek, eachDayOfInterval } from 'date-fns';
+
+import { AvailabilityWithBookings } from './types';
 
 interface CalendarDay {
   date: string;
   isCurrentMonth: boolean;
   isToday: boolean;
   isSelected: boolean;
+}
+
+function isSameDay(date1: Date | null | undefined, date2: Date | null | undefined): boolean {
+  // Return false if either date is null/undefined
+  if (!date1 || !date2) return false;
+
+  // Ensure both are Date objects
+  const d1 = date1 instanceof Date ? date1 : new Date(date1);
+  const d2 = date2 instanceof Date ? date2 : new Date(date2);
+
+  // Check if either date is invalid using Number.isNaN
+  if (Number.isNaN(d1.getTime()) || Number.isNaN(d2.getTime())) return false;
+
+  return (
+    d1.getDate() === d2.getDate() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getFullYear() === d2.getFullYear()
+  );
 }
 
 export function generateDaysForDayCalendar(currentDate: Date) {
@@ -174,25 +194,59 @@ export function generateDaysForConsultsCalendar(currentDate: Date) {
   return days;
 }
 
-function isSameDay(date1: Date | null | undefined, date2: Date | null | undefined): boolean {
-  // Return false if either date is null/undefined
-  if (!date1 || !date2) return false;
-
-  // Ensure both are Date objects
-  const d1 = date1 instanceof Date ? date1 : new Date(date1);
-  const d2 = date2 instanceof Date ? date2 : new Date(date2);
-
-  // Check if either date is invalid using Number.isNaN
-  if (Number.isNaN(d1.getTime()) || Number.isNaN(d2.getTime())) return false;
-
-  return (
-    d1.getDate() === d2.getDate() &&
-    d1.getMonth() === d2.getMonth() &&
-    d1.getFullYear() === d2.getFullYear()
-  );
-}
-
 // Add this function to format the datetime consistently
 export function formatDateTime(date: string) {
   return new Date(date).toISOString().split('.')[0].slice(0, -3);
+}
+
+// Helper function to expand recurring availabilities
+export function expandRecurringAvailability(
+  availability: AvailabilityWithBookings,
+  endDate: Date
+): AvailabilityWithBookings[] {
+  if (!availability.isRecurring || !availability.recurringDays) {
+    return [availability];
+  }
+
+  // Ensure both dates are valid Date objects
+  const calendarEndDate = new Date(endDate);
+  const recurringEndDate = availability.recurrenceEndDate
+    ? new Date(availability.recurrenceEndDate)
+    : null;
+
+  // Use the earlier of endDate and recurringEndDate if it exists
+  const effectiveEndDate = recurringEndDate
+    ? new Date(Math.min(calendarEndDate.getTime(), recurringEndDate.getTime()))
+    : calendarEndDate;
+
+  // Generate dates within the interval
+  const dates = eachDayOfInterval({
+    start: new Date(availability.startTime),
+    end: effectiveEndDate,
+  });
+
+  // Filter dates based on recurringDays
+  const recurringDays = new Set(availability.recurringDays);
+  const filteredDates = dates.filter((date) => recurringDays.has(date.getDay()));
+
+  return filteredDates.map((date) => {
+    const startTime = new Date(date);
+    startTime.setHours(availability.startTime.getHours(), availability.startTime.getMinutes());
+
+    const endTime = new Date(date);
+    endTime.setHours(availability.endTime.getHours(), availability.endTime.getMinutes());
+
+    // Only include bookings that match this specific day
+    const relevantBookings = availability.bookings.filter((booking) =>
+      isSameDay(booking.startTime, date)
+    );
+
+    return {
+      ...availability,
+      id: `${availability.id}-${date.toISOString()}`,
+      startTime,
+      endTime,
+      bookings: relevantBookings,
+    };
+  });
 }

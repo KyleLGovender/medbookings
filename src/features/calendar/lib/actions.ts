@@ -5,9 +5,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 
-import { availabilityFormSchema } from './types';
+import { Availability, availabilityFormSchema } from './types';
 
-export async function createAvailability(formData: FormData) {
+export async function createAvailability(
+  formData: FormData
+): Promise<{ data?: Availability; error?: string }> {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {

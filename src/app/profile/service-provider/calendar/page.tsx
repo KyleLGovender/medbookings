@@ -1,18 +1,25 @@
-import { Metadata } from 'next';
+import { redirect } from 'next/navigation';
+
+import { addDays } from 'date-fns';
 
 import Calendar from '@/features/calendar/components/calendar';
+import { getAvailabilitiesInRange } from '@/features/calendar/lib/queries';
+import { getCurrentUser } from '@/lib/auth';
+import { getServiceProviderId } from '@/lib/queries';
 
-export const metadata: Metadata = {
-  title: 'Manage Availability | Service Provider Dashboard',
-  description: 'Manage your availability and schedule as a service provider',
-};
+export default async function CalendarPage() {
+  const user = await getCurrentUser();
+  const initialData = await getAvailabilitiesInRange(new Date(), addDays(new Date(), 7));
 
-export default function AvailabilityPage() {
-  // TODO: Fetch provider details from your auth/context/api
-  const mockProviderDetails = {
-    id: '123',
-    name: 'John Doe',
-  };
+  if (!user?.id) {
+    redirect('/auth/login');
+  }
+
+  const serviceProviderId = await getServiceProviderId(user.id);
+
+  if (!serviceProviderId) {
+    redirect('/profile/service-provider');
+  }
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -25,7 +32,7 @@ export default function AvailabilityPage() {
         </div>
 
         <div className="rounded-lg bg-white shadow">
-          <Calendar providerId={mockProviderDetails.id} providerName={mockProviderDetails.name} />
+          <Calendar initialData={initialData} providerId={serviceProviderId} />
         </div>
       </div>
     </main>
