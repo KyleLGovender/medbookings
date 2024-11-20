@@ -5,7 +5,7 @@ import { addDays } from 'date-fns';
 import Calendar from '@/features/calendar/components/calendar';
 import { getAvailabilitiesInRange } from '@/features/calendar/lib/queries';
 import { getCurrentUser } from '@/lib/auth';
-import { getServiceProviderId } from '@/lib/queries';
+import { getAuthenticatedServiceProvider } from '@/lib/helper';
 
 export default async function CalendarPage() {
   const user = await getCurrentUser();
@@ -15,7 +15,7 @@ export default async function CalendarPage() {
     redirect('/auth/login');
   }
 
-  const serviceProviderId = await getServiceProviderId(user.id);
+  const { serviceProviderId } = await getAuthenticatedServiceProvider();
 
   if (!serviceProviderId) {
     redirect('/profile/service-provider');

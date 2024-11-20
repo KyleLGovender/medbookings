@@ -34,6 +34,7 @@ export async function POST(request: NextRequest, { params }: { params: { provide
       const processed = {
         ...avail,
         price: Number(avail.price),
+        recurrenceEndDate: avail.recurrenceEndDate,
         bookings: avail.bookings.map((booking) => ({
           ...booking,
           price: Number(booking.price),

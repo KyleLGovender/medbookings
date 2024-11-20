@@ -10,10 +10,10 @@ export const availabilityFormSchema = z.object({
   price: z.number().min(0),
   isOnlineAvailable: z.boolean(),
   isInPersonAvailable: z.boolean(),
-  location: z.string().optional(),
+  location: z.string(),
   isRecurring: z.boolean(),
-  recurringDays: z.array(z.number().int().min(0).max(6)).optional(),
-  recurrenceEndDate: z.date().optional(),
+  recurringDays: z.array(z.number()).optional().default([]),
+  recurrenceEndDate: z.date().nullable().optional(),
 });
 
 export type AvailabilityFormValues = z.infer<typeof availabilityFormSchema>;
@@ -25,8 +25,8 @@ export interface Availability extends Omit<PrismaAvailability, 'price'> {
   remainingSpots: number;
   serviceProviderId: string;
   isRecurring: boolean;
-  recurringDays: number[] | null;
-  recurringEndDate: Date | null;
+  recurringDays: number[];
+  recurrenceEndDate: Date | null;
 }
 
 export interface Booking extends Omit<PrismaBooking, 'price'> {

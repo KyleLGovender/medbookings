@@ -1,81 +1,51 @@
 'use server';
 
-import { getServerSession } from 'next-auth';
-
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { getAuthenticatedServiceProvider } from '@/lib/helper';
 import { prisma } from '@/lib/prisma';
 
-import { Availability, availabilityFormSchema } from './types';
+import {
+  checkAvailabilityAccess,
+  checkForOverlappingAvailability,
+  validateAvailabilityFormData,
+} from './server-helper';
+import { Availability } from './types';
 
 export async function createAvailability(
   formData: FormData
 ): Promise<{ data?: Availability; error?: string }> {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    return {
-      error: 'Unauthorized',
-    };
-  }
+  const { serviceProviderId, error: authError } = await getAuthenticatedServiceProvider();
+  if (authError) return { error: authError };
 
   try {
-    const serviceProvider = await prisma.serviceProvider.findUnique({
-      where: {
-        userId: session.user.id,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (!serviceProvider) {
-      return {
-        error: 'No service provider profile found',
-      };
+    const { data, error: validationError } = validateAvailabilityFormData(formData);
+    if (validationError) {
+      return { error: validationError };
     }
 
-    const recurringDaysString = formData.get('recurringDays') as string;
-    const recurringDays = recurringDaysString ? JSON.parse(recurringDaysString) : [];
+    // Check for overlapping availability
+    const { hasOverlap, overlappingPeriod } = await checkForOverlappingAvailability(
+      serviceProviderId!,
+      new Date(data.startTime),
+      new Date(data.endTime),
+      data.isRecurring,
+      data.recurringDays,
+      data.recurrenceEndDate
+    );
 
-    const validatedFields = availabilityFormSchema.safeParse({
-      startTime: new Date(formData.get('startTime') as string),
-      endTime: new Date(formData.get('endTime') as string),
-      duration: parseInt(formData.get('duration') as string, 10),
-      price: parseFloat(formData.get('price') as string),
-      isOnlineAvailable: formData.get('isOnlineAvailable') === 'true',
-      isInPersonAvailable: formData.get('isInPersonAvailable') === 'true',
-      location: formData.get('location'),
-      isRecurring: formData.get('isRecurring') === 'true',
-      recurringDays,
-      recurrenceEndDate: formData.get('recurrenceEndDate')
-        ? new Date(formData.get('recurrenceEndDate') as string)
-        : undefined,
-    });
-
-    if (!validatedFields.success) {
+    if (hasOverlap) {
       return {
-        error: 'Invalid form data',
-        errors: validatedFields.error.flatten().fieldErrors,
+        error: `Cannot create availability: Overlaps with existing period (${new Date(
+          overlappingPeriod!.startTime
+        ).toLocaleString()} - ${new Date(overlappingPeriod!.endTime).toLocaleString()})`,
       };
     }
-
-    const { data } = validatedFields;
 
     const availability = await prisma.availability.create({
       data: {
-        startTime: data.startTime,
-        endTime: data.endTime,
-        duration: data.duration,
-        price: data.price,
-        isOnlineAvailable: data.isOnlineAvailable,
-        isInPersonAvailable: data.isInPersonAvailable,
-        location: data.location,
-        isRecurring: data.isRecurring,
-        recurringDays: data.recurringDays,
-        recurrenceEndDate: data.recurrenceEndDate,
+        ...data,
         maxBookings: 1,
         remainingSpots: 1,
-        serviceProviderId: serviceProvider.id,
+        serviceProviderId: serviceProviderId!,
       },
     });
 
@@ -87,7 +57,96 @@ export async function createAvailability(
     };
   } catch (error) {
     return {
-      error: 'Failed to create availability',
+      error: error instanceof Error ? error.message : 'Failed to create availability',
+    };
+  }
+}
+
+export async function deleteAvailability(
+  availabilityId: string
+): Promise<{ success?: boolean; error?: string }> {
+  const { serviceProviderId, error: authError } = await getAuthenticatedServiceProvider();
+  if (authError) return { error: authError };
+
+  try {
+    const { availability, error: accessError } = await checkAvailabilityAccess(
+      availabilityId,
+      serviceProviderId!
+    );
+
+    if (accessError) {
+      return { error: accessError };
+    }
+
+    await prisma.availability.delete({
+      where: { id: availabilityId },
+    });
+
+    return { success: true };
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? `Failed to delete availability: ${error.message}`
+          : 'Failed to delete availability',
+    };
+  }
+}
+
+export async function updateAvailability(
+  availabilityId: string,
+  formData: FormData
+): Promise<{ data?: Availability; error?: string }> {
+  const { serviceProviderId, error: authError } = await getAuthenticatedServiceProvider();
+  if (authError) return { error: authError };
+
+  try {
+    const { availability, error: accessError } = await checkAvailabilityAccess(
+      availabilityId,
+      serviceProviderId!
+    );
+    if (accessError) {
+      return { error: accessError };
+    }
+
+    const { data, error: validationError } = validateAvailabilityFormData(formData);
+    if (validationError) {
+      return { error: validationError };
+    }
+
+    // Check for overlapping availability
+    const { hasOverlap, overlappingPeriod } = await checkForOverlappingAvailability(
+      serviceProviderId!,
+      new Date(data.startTime),
+      new Date(data.endTime),
+      data.isRecurring,
+      data.recurringDays,
+      data.recurrenceEndDate,
+      availabilityId // Exclude current availability
+    );
+
+    if (hasOverlap) {
+      return {
+        error: `Cannot update availability: Overlaps with existing period (${new Date(
+          overlappingPeriod!.startTime
+        ).toLocaleString()} - ${new Date(overlappingPeriod!.endTime).toLocaleString()})`,
+      };
+    }
+
+    const updated = await prisma.availability.update({
+      where: { id: availabilityId },
+      data,
+    });
+
+    return {
+      data: {
+        ...updated,
+        price: Number(updated.price),
+      },
+    };
+  } catch (error) {
+    return {
+      error: 'Failed to update availability',
       details: error instanceof Error ? error.message : 'Unknown error',
     };
   }

@@ -16,27 +16,55 @@ import { TimePicker } from '@/components/ui/time-picker';
 import { WeekdayPicker } from '@/components/ui/weekday-picker';
 import { useToast } from '@/hooks/use-toast';
 
-import { createAvailability } from '../lib/actions';
+import { createAvailability, updateAvailability } from '../lib/actions';
 import { AvailabilityFormValues, availabilityFormSchema } from '../lib/types';
 
 interface AvailabilityFormProps {
+  availability?: AvailabilityWithBookings;
+  mode: 'create' | 'edit';
   onSuccess?: () => void;
 }
 
-export function AvailabilityForm({ onSuccess }: AvailabilityFormProps) {
+export function AvailabilityForm({
+  availability,
+  mode,
+  onSuccess = () => {},
+}: AvailabilityFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
   const form = useForm<AvailabilityFormValues>({
     resolver: zodResolver(availabilityFormSchema),
-    defaultValues: {
-      isOnlineAvailable: false,
-      isInPersonAvailable: false,
-      isRecurring: false,
-      duration: 15,
-      price: 600,
-    },
+    defaultValues: availability
+      ? {
+          date: new Date(availability.startTime),
+          startTime: new Date(availability.startTime),
+          endTime: new Date(availability.endTime),
+          duration: availability.duration,
+          price: availability.price,
+          isOnlineAvailable: availability.isOnlineAvailable,
+          isInPersonAvailable: availability.isInPersonAvailable,
+          location: availability.location || '',
+          isRecurring: availability.isRecurring,
+          recurringDays: availability.recurringDays,
+          recurrenceEndDate: availability.recurrenceEndDate
+            ? new Date(availability.recurrenceEndDate)
+            : null,
+        }
+      : {
+          date: new Date(),
+          startTime: new Date(),
+          endTime: new Date(),
+          duration: 15,
+          price: 600,
+          isOnlineAvailable: false,
+          isInPersonAvailable: false,
+          location: '',
+          isRecurring: false,
+          recurringDays: [],
+          recurrenceEndDate: null,
+        },
   });
 
   async function onSubmit(values: AvailabilityFormValues) {
@@ -53,16 +81,15 @@ export function AvailabilityForm({ onSuccess }: AvailabilityFormProps) {
       formData.append('isInPersonAvailable', values.isInPersonAvailable.toString());
       formData.append('location', values.location || '');
       formData.append('isRecurring', values.isRecurring.toString());
-
-      if (values.isRecurring && values.recurringDays?.length > 0) {
-        formData.append('recurringDays', JSON.stringify(values.recurringDays));
-      }
-
-      if (values.isRecurring && values.recurrenceEndDate) {
+      formData.append('recurringDays', JSON.stringify(values.recurringDays || []));
+      if (values.recurrenceEndDate) {
         formData.append('recurrenceEndDate', values.recurrenceEndDate.toISOString());
       }
 
-      const response = await createAvailability(formData);
+      const response =
+        mode === 'create'
+          ? await createAvailability(formData)
+          : await updateAvailability(availability?.id.split('-')[0] || '', formData);
 
       if (response.error) {
         toast({
@@ -75,11 +102,14 @@ export function AvailabilityForm({ onSuccess }: AvailabilityFormProps) {
 
       toast({
         title: 'Success',
-        description: 'Availability has been created successfully.',
+        description:
+          mode === 'create'
+            ? 'Availability created successfully'
+            : 'Availability updated successfully',
       });
 
+      onSuccess();
       router.refresh();
-      onSuccess?.();
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -93,7 +123,13 @@ export function AvailabilityForm({ onSuccess }: AvailabilityFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-xl space-y-6">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          return form.handleSubmit(onSubmit)(e);
+        }}
+        className="w-full max-w-xl space-y-6"
+      >
         <FormField
           control={form.control}
           name="date"
@@ -263,14 +299,19 @@ export function AvailabilityForm({ onSuccess }: AvailabilityFormProps) {
           />
         )}
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={isSubmitting}
+          onClick={() => console.log('Button clicked')}
+        >
           {isSubmitting ? (
             <>
               <Spinner className="mr-2" />
-              Creating...
+              {`${mode === 'create' ? 'Creating' : 'Updating'}...`}
             </>
           ) : (
-            'Create Availability'
+            `${mode === 'create' ? 'Create' : 'Update'} Availability`
           )}
         </Button>
       </form>
