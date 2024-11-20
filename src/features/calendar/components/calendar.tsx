@@ -6,12 +6,11 @@ import { addDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
 import { CalendarHeader } from '@/features/calendar/components/calendar-header';
-import ConsultsCalendar from '@/features/calendar/components/consults';
 import DayCalendar from '@/features/calendar/components/day';
 import { Schedule } from '@/features/calendar/components/schedule';
 import WeekCalendar from '@/features/calendar/components/week';
 
-type ViewType = 'day' | 'week' | 'consults' | 'schedule';
+type ViewType = 'day' | 'week' | 'schedule';
 
 interface ServiceProviderCalendarProps {
   providerId: string;
@@ -19,7 +18,7 @@ interface ServiceProviderCalendarProps {
 }
 
 function ServiceProviderCalendar({ providerId, providerName }: ServiceProviderCalendarProps) {
-  const [view, setView] = useState<ViewType>('week');
+  const [view, setView] = useState<ViewType>('schedule');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(),
@@ -77,10 +76,8 @@ function ServiceProviderCalendar({ providerId, providerName }: ServiceProviderCa
         return <WeekCalendar {...props} onViewChange={setView} />;
       case 'schedule':
         return <Schedule {...props} view={view} dateRange={dateRange} />;
-      case 'consults':
-        return <ConsultsCalendar {...props} />;
       default:
-        return <ConsultsCalendar {...props} />;
+        return <Schedule {...props} />;
     }
   };
 

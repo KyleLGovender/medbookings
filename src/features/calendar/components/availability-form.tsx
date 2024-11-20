@@ -1,146 +1,273 @@
 'use client';
 
+import { useState } from 'react';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import * as z from 'zod';
 
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Form, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
+import { TimePicker } from '@/components/ui/time-picker';
+import { WeekdayPicker } from '@/components/ui/weekday-picker';
+import { useToast } from '@/hooks/use-toast';
 
 import { createAvailability } from '../lib/actions';
+import { AvailabilityFormValues, availabilityFormSchema } from '../lib/types';
 
-// Define the form schema with Zod
-const formSchema = z.object({
-  dayOfWeek: z.string({
-    required_error: 'Please select a day of the week',
-  }),
-  startTime: z.string({
-    required_error: 'Please select a start time',
-  }),
-  endTime: z.string({
-    required_error: 'Please select an end time',
-  }),
-  isRecurring: z.boolean().default(true),
-});
+interface AvailabilityFormProps {
+  onSuccess?: () => void;
+}
 
-export function AvailabilityForm() {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+export function AvailabilityForm({ onSuccess }: AvailabilityFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<AvailabilityFormValues>({
+    resolver: zodResolver(availabilityFormSchema),
     defaultValues: {
-      isRecurring: true,
+      isOnlineAvailable: false,
+      isInPersonAvailable: false,
+      isRecurring: false,
+      duration: 15,
+      price: 600,
     },
   });
 
-  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  async function onSubmit(values: AvailabilityFormValues) {
+    setIsSubmitting(true);
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    const formData = new FormData();
-    Object.entries(values).forEach(([key, value]) => {
-      formData.append(key, value.toString());
-    });
-    await createAvailability(formData);
+    try {
+      const formData = new FormData();
+
+      formData.append('startTime', values.startTime.toISOString());
+      formData.append('endTime', values.endTime.toISOString());
+      formData.append('duration', values.duration.toString());
+      formData.append('price', values.price.toString());
+      formData.append('isOnlineAvailable', values.isOnlineAvailable.toString());
+      formData.append('isInPersonAvailable', values.isInPersonAvailable.toString());
+      formData.append('location', values.location || '');
+      formData.append('isRecurring', values.isRecurring.toString());
+
+      if (values.isRecurring && values.recurringDays?.length > 0) {
+        formData.append('recurringDays', JSON.stringify(values.recurringDays));
+      }
+
+      if (values.isRecurring && values.recurrenceEndDate) {
+        formData.append('recurrenceEndDate', values.recurrenceEndDate.toISOString());
+      }
+
+      const response = await createAvailability(formData);
+
+      if (response.error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: response.error,
+        });
+        return;
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Availability has been created successfully.',
+      });
+
+      onSuccess?.();
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Something went wrong. Please try again.',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-xl space-y-6">
         <FormField
           control={form.control}
-          name="dayOfWeek"
+          name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Day of Week</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a day" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {daysOfWeek.map((day) => (
-                    <SelectItem key={day} value={day}>
-                      {day}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
+              <FormLabel className="mb-2">Date</FormLabel>
+              <DatePicker date={field.value} onChange={field.onChange} />
             </FormItem>
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="startTime"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Start Time</FormLabel>
-              <FormControl>
-                <input
-                  type="time"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  {...field}
+        <div className="flex gap-6">
+          <FormField
+            control={form.control}
+            name="startTime"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel className="mb-2">Start Time</FormLabel>
+                <TimePicker
+                  date={field.value}
+                  onChange={(time) => {
+                    const date = form.getValues('date');
+                    if (!date) return;
+
+                    const datetime = new Date(date);
+                    datetime.setHours(time.getHours());
+                    datetime.setMinutes(time.getMinutes());
+                    field.onChange(datetime);
+                  }}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="endTime"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>End Time</FormLabel>
-              <FormControl>
-                <input
-                  type="time"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  {...field}
+          <FormField
+            control={form.control}
+            name="endTime"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel className="mb-2">End Time</FormLabel>
+                <TimePicker
+                  date={field.value}
+                  onChange={(time) => {
+                    const date = form.getValues('date');
+                    if (!date) return;
+
+                    const datetime = new Date(date);
+                    datetime.setHours(time.getHours());
+                    datetime.setMinutes(time.getMinutes());
+                    field.onChange(datetime);
+                  }}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+              </FormItem>
+            )}
+          />
+        </div>
 
-        <FormField
-          control={form.control}
-          name="isRecurring"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-              <FormControl>
-                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-              </FormControl>
-              <FormLabel className="font-normal">Recurring weekly</FormLabel>
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="duration"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="mb-2">Duration (minutes)</FormLabel>
+                <Input
+                  type="number"
+                  {...field}
+                  onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
+                />
+              </FormItem>
+            )}
+          />
 
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? (
+          <FormField
+            control={form.control}
+            name="price"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="mb-2">Price</FormLabel>
+                <Input
+                  type="number"
+                  step="0.01"
+                  {...field}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="isRecurring"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">Recurring Weekly</FormLabel>
+                </div>
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
+              </FormItem>
+            )}
+          />
+
+          {form.watch('isRecurring') && (
             <>
-              <span className="loading loading-spinner" />
-              Adding...
+              <FormField
+                control={form.control}
+                name="recurringDays"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Recurring Days</FormLabel>
+                    <WeekdayPicker {...field} value={field.value || []} />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="recurrenceEndDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="mb-2">Recurrence End Date</FormLabel>
+                    <DatePicker date={field.value} onChange={field.onChange} />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+
+          <FormField
+            control={form.control}
+            name="isOnlineAvailable"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">Online Available</FormLabel>
+                </div>
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="isInPersonAvailable"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">In-Person Available</FormLabel>
+                </div>
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {form.watch('isInPersonAvailable') && (
+          <FormField
+            control={form.control}
+            name="location"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="mb-2">Location</FormLabel>
+                <Input {...field} value={field.value || ''} />
+              </FormItem>
+            )}
+          />
+        )}
+
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Spinner className="mr-2" />
+              Creating...
             </>
           ) : (
-            'Add Availability'
+            'Create Availability'
           )}
         </Button>
       </form>

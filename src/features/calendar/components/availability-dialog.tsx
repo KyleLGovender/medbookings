@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -13,14 +15,16 @@ import {
 import { AvailabilityForm } from './availability-form';
 
 export function AvailabilityDialog() {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="mx-auto w-full max-w-sm rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 md:ml-2 md:w-auto">
+        <Button className="mx-auto w-full max-w-md rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 md:ml-2 md:w-auto">
           Add availability
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Add Availability</DialogTitle>
           <DialogDescription>
@@ -28,7 +32,7 @@ export function AvailabilityDialog() {
             different days.
           </DialogDescription>
         </DialogHeader>
-        <AvailabilityForm />
+        <AvailabilityForm onSuccess={() => setIsOpen(false)} />
       </DialogContent>
     </Dialog>
   );

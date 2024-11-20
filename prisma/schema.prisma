@@ -7,6 +7,12 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Add this new generator configuration
+generator zod {
+  provider = "zod-prisma-types"
+  output   = "./zod"  // This will create a /zod directory in your prisma folder
+}
+
 // Base User model and auth
 model User {
   id                    String               @id @default(cuid())
@@ -196,8 +202,6 @@ model Service {
   serviceProviderTypeId  String
   displayPriority Int             @default(0)
   providers       ServiceProvider[] // Many-to-many relation with providers who offer this service
-  availabilities  Availability[]   // Add this line for the reverse relation
-  bookings        Booking[]        // Add this line for the reverse relation
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -221,7 +225,6 @@ model Availability {
   isOnlineAvailable Boolean         @default(false)
   isInPersonAvailable Boolean       @default(false)
   location          String?          // For in-person consultations
-  availableServices Service[]        // Services available during this time slot
   
   maxBookings        Int              @default(1)     // For group sessions
   remainingSpots     Int
@@ -246,7 +249,6 @@ model Booking {
   price             Decimal          @db.Decimal(10,2)
   isOnline          Boolean          // Which type was chosen
   location          String?          // If in-person
-  selectedServices  Service[]        // Services selected for this booking
   
   startTime          DateTime
   endTime            DateTime

@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import AppFooter from '@/components/app-footer';
 import AppNavbar from '@/components/app-navbar';
 import Providers from '@/components/providers';
+import { Toaster } from '@/components/ui/toaster';
 
 import './globals.css';
 
@@ -31,6 +32,7 @@ export default function RootLayout({
           </main>
           <AppFooter />
         </Providers>
+        <Toaster />
       </body>
     </html>
   );
