@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/table';
 import { AvailabilityDialog } from '@/features/calendar/components/availability-dialog';
 import { deleteAvailability, deleteBooking } from '@/features/calendar/lib/actions';
-import { Schedule } from '@/features/calendar/lib/types';
+import { Booking, Schedule } from '@/features/calendar/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -24,12 +24,12 @@ interface ScheduleProps {
 }
 
 export function ScheduleCalendar({ scheduleData }: ScheduleProps) {
-  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | undefined>();
+  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | Booking | undefined>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const handleEdit = (schedule: Schedule) => {
+  const handleEdit = (schedule: Schedule | Booking) => {
     setSelectedSchedule(schedule);
     setIsDialogOpen(true);
   };

@@ -7,11 +7,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Schedule } from '@/features/calendar/lib/types';
 
 import { AvailabilityForm } from './availability-form';
 
 interface AvailabilityDialogProps {
-  availability?: AvailabilityWithBookings;
+  availability?: Schedule;
   mode: 'create' | 'edit';
   onOpenChange: (open: boolean) => void;
   open: boolean;

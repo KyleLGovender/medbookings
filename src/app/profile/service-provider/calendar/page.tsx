@@ -5,7 +5,7 @@ import { addDays } from 'date-fns';
 import Calendar from '@/features/calendar/components/calendar';
 import { getScheduleInRange } from '@/features/calendar/lib/queries';
 import { getCurrentUser } from '@/lib/auth';
-import { getAuthenticatedServiceProvider } from '@/lib/helper';
+import { getAuthenticatedServiceProvider } from '@/lib/server-helper';
 
 export default async function CalendarPage() {
   const user = await getCurrentUser();

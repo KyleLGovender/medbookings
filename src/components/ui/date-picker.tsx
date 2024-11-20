@@ -12,10 +12,11 @@ import { cn } from '@/lib/utils';
 
 interface DatePickerProps {
   date?: Date;
+  defaultMonth?: Date;
   onChange?: (date?: Date) => void;
 }
 
-export function DatePicker({ date, onChange }: DatePickerProps) {
+export function DatePicker({ date, defaultMonth, onChange }: DatePickerProps) {
   const [open, setOpen] = useState(false);
 
   const handleSelect = (date?: Date) => {
@@ -38,7 +39,13 @@ export function DatePicker({ date, onChange }: DatePickerProps) {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar mode="single" selected={date} onSelect={handleSelect} initialFocus />
+        <Calendar
+          mode="single"
+          selected={date}
+          defaultMonth={defaultMonth}
+          onSelect={handleSelect}
+          initialFocus
+        />
       </PopoverContent>
     </Popover>
   );

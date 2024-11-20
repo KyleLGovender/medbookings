@@ -1,7 +1,7 @@
 'use server';
 
-import { getAuthenticatedServiceProvider } from '@/lib/helper';
 import { prisma } from '@/lib/prisma';
+import { getAuthenticatedServiceProvider } from '@/lib/server-helper';
 
 import {
   checkAvailabilityAccess,
@@ -31,6 +31,9 @@ export async function createAvailability(
       data.recurringDays,
       data.recurrenceEndDate
     );
+
+    console.log('hasOverlap', hasOverlap);
+    console.log('overlappingPeriod', overlappingPeriod);
 
     if (hasOverlap) {
       return {

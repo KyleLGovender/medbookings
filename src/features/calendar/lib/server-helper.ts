@@ -13,6 +13,10 @@ export async function checkForOverlappingAvailability(
   recurrenceEndDate?: Date | null,
   excludeAvailabilityId?: string
 ) {
+  const defaultRecurrenceEndDate = new Date(startTime);
+  defaultRecurrenceEndDate.setFullYear(defaultRecurrenceEndDate.getFullYear() + 1);
+  const effectiveRecurrenceEndDate = recurrenceEndDate || defaultRecurrenceEndDate;
+
   const baseWhere = {
     serviceProviderId,
     OR: [
@@ -31,7 +35,7 @@ export async function checkForOverlappingAvailability(
     ],
   };
 
-  if (isRecurring && recurringDays?.length && recurrenceEndDate) {
+  if (isRecurring && recurringDays?.length) {
     baseWhere.OR.push({
       isRecurring: true,
       recurringDays: {
@@ -39,7 +43,7 @@ export async function checkForOverlappingAvailability(
       },
       AND: [
         {
-          startTime: { lte: recurrenceEndDate },
+          startTime: { lte: effectiveRecurrenceEndDate },
         },
         {
           recurrenceEndDate: {

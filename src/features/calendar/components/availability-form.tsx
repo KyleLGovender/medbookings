@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
@@ -15,17 +16,18 @@ import { Switch } from '@/components/ui/switch';
 import { TimePicker } from '@/components/ui/time-picker';
 import { WeekdayPicker } from '@/components/ui/weekday-picker';
 import { useToast } from '@/hooks/use-toast';
+import { getServiceProviderQuery } from '@/lib/helper';
 
 import { createAvailability, updateAvailability } from '../lib/actions';
-import { AvailabilityFormValues, availabilityFormSchema } from '../lib/types';
+import { AvailabilityFormValues, Schedule, availabilityFormSchema } from '../lib/types';
 
 interface AvailabilityFormProps {
-  availability?: AvailabilityWithBookings;
+  availability?: Schedule;
   mode: 'create' | 'edit';
   onSuccess?: () => void;
 }
 
-export function AvailabilityForm({
+export async function AvailabilityForm({
   availability,
   mode,
   onSuccess = () => {},
@@ -33,6 +35,17 @@ export function AvailabilityForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const { data: { serviceProviderId } = {}, isLoading, error } = useQuery(getServiceProviderQuery);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error.message}</div>;
+  }
 
   const form = useForm<AvailabilityFormValues>({
     resolver: zodResolver(availabilityFormSchema),
@@ -50,7 +63,11 @@ export function AvailabilityForm({
           recurringDays: availability.recurringDays,
           recurrenceEndDate: availability.recurrenceEndDate
             ? new Date(availability.recurrenceEndDate)
-            : null,
+            : (() => {
+                const date = new Date(availability.startTime);
+                date.setMonth(date.getMonth() + 3);
+                return date;
+              })(),
         }
       : {
           date: new Date(),
@@ -63,7 +80,11 @@ export function AvailabilityForm({
           location: '',
           isRecurring: false,
           recurringDays: [],
-          recurrenceEndDate: null,
+          recurrenceEndDate: (() => {
+            const date = new Date();
+            date.setMonth(date.getMonth() + 3);
+            return date;
+          })(),
         },
   });
 
@@ -108,8 +129,8 @@ export function AvailabilityForm({
             : 'Availability updated successfully',
       });
 
+      await queryClient.invalidateQueries({ queryKey: ['schedule', serviceProviderId] });
       onSuccess();
-      router.refresh();
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -136,7 +157,16 @@ export function AvailabilityForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel className="mb-2">Date</FormLabel>
-              <DatePicker date={field.value} onChange={field.onChange} />
+              <DatePicker
+                date={field.value}
+                onChange={(date) => {
+                  if (!date) return;
+                  field.onChange(date);
+                  const endDate = new Date(date);
+                  endDate.setMonth(endDate.getMonth() + 3);
+                  form.setValue('recurrenceEndDate', endDate);
+                }}
+              />
             </FormItem>
           )}
         />
@@ -252,7 +282,11 @@ export function AvailabilityForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="mb-2">Recurrence End Date</FormLabel>
-                    <DatePicker date={field.value} onChange={field.onChange} />
+                    <DatePicker
+                      date={field.value || undefined}
+                      defaultMonth={field.value || undefined}
+                      onChange={field.onChange}
+                    />
                   </FormItem>
                 )}
               />
