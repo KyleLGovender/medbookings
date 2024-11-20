@@ -3,13 +3,13 @@ import { redirect } from 'next/navigation';
 import { addDays } from 'date-fns';
 
 import Calendar from '@/features/calendar/components/calendar';
-import { getAvailabilitiesInRange } from '@/features/calendar/lib/queries';
+import { getScheduleInRange } from '@/features/calendar/lib/queries';
 import { getCurrentUser } from '@/lib/auth';
 import { getAuthenticatedServiceProvider } from '@/lib/helper';
 
 export default async function CalendarPage() {
   const user = await getCurrentUser();
-  const initialData = await getAvailabilitiesInRange(new Date(), addDays(new Date(), 7));
+  const initialData = await getScheduleInRange(new Date(), addDays(new Date(), 7));
 
   if (!user?.id) {
     redirect('/auth/login');

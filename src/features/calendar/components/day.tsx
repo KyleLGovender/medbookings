@@ -8,8 +8,8 @@ import { formatDateTime, generateDaysForDayCalendar } from '@/features/calendar/
 import classNames from '@/lib/classNames';
 
 interface DayCalendarProps {
-  currentDate: string;
-  onDateChange: (dateStr: string) => void;
+  currentDate: Date;
+  onDateChange: (date: Date) => void;
 }
 
 export default function DayCalendar({ currentDate, onDateChange }: DayCalendarProps) {
@@ -31,10 +31,10 @@ export default function DayCalendar({ currentDate, onDateChange }: DayCalendarPr
 
   function handleDateClick(dateString: string) {
     const newDate = new Date(dateString);
-    newDate.setHours(currentDateObj.getHours());
-    newDate.setMinutes(currentDateObj.getMinutes());
-    newDate.setSeconds(currentDateObj.getSeconds());
-    onDateChange(newDate.toISOString());
+    newDate.setHours(currentDate.getHours());
+    newDate.setMinutes(currentDate.getMinutes());
+    newDate.setSeconds(currentDate.getSeconds());
+    onDateChange(newDate);
   }
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function DayCalendar({ currentDate, onDateChange }: DayCalendarPr
                 <button
                   key={date.toISOString()}
                   type="button"
-                  onClick={() => onDateChange(date.toISOString())}
+                  onClick={() => onDateChange(date)}
                   className="flex flex-col items-center pb-1.5 pt-3"
                 >
                   <span>{date.toLocaleDateString('en-US', { weekday: 'short' })[0]}</span>
@@ -303,9 +303,7 @@ export default function DayCalendar({ currentDate, onDateChange }: DayCalendarPr
             <button
               type="button"
               onClick={() =>
-                onDateChange(
-                  new Date(currentDateObj.setMonth(currentDateObj.getMonth() - 1)).toISOString()
-                )
+                onDateChange(new Date(currentDateObj.setMonth(currentDateObj.getMonth() - 1)))
               }
               className="-m-1.5 flex flex-none items-center justify-center p-1.5 text-gray-400 hover:text-gray-500"
             >
@@ -318,9 +316,7 @@ export default function DayCalendar({ currentDate, onDateChange }: DayCalendarPr
             <button
               type="button"
               onClick={() =>
-                onDateChange(
-                  new Date(currentDateObj.setMonth(currentDateObj.getMonth() + 1)).toISOString()
-                )
+                onDateChange(new Date(currentDateObj.setMonth(currentDateObj.getMonth() + 1)))
               }
               className="-m-1.5 flex flex-none items-center justify-center p-1.5 text-gray-400 hover:text-gray-500"
             >

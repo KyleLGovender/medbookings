@@ -17,7 +17,7 @@ export async function createAvailability(
   if (authError) return { error: authError };
 
   try {
-    const { data, error: validationError } = validateAvailabilityFormData(formData);
+    const { data, error: validationError } = await validateAvailabilityFormData(formData);
     if (validationError) {
       return { error: validationError };
     }
@@ -36,7 +36,19 @@ export async function createAvailability(
       return {
         error: `Cannot create availability: Overlaps with existing period (${new Date(
           overlappingPeriod!.startTime
-        ).toLocaleString()} - ${new Date(overlappingPeriod!.endTime).toLocaleString()})`,
+        ).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        })} - ${new Date(overlappingPeriod!.endTime).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        })})`,
       };
     }
 
@@ -60,6 +72,14 @@ export async function createAvailability(
       error: error instanceof Error ? error.message : 'Failed to create availability',
     };
   }
+}
+
+// TODO: Implement deleteBooking function
+export async function deleteBooking(
+  bookingId: string
+): Promise<{ success?: boolean; error?: string }> {
+  // TODO: Add implementation
+  return { error: 'Not implemented' }; // Temporary return until implementation
 }
 
 export async function deleteAvailability(
@@ -109,7 +129,8 @@ export async function updateAvailability(
       return { error: accessError };
     }
 
-    const { data, error: validationError } = validateAvailabilityFormData(formData);
+    const { data, error: validationError } = await validateAvailabilityFormData(formData);
+
     if (validationError) {
       return { error: validationError };
     }
@@ -129,7 +150,19 @@ export async function updateAvailability(
       return {
         error: `Cannot update availability: Overlaps with existing period (${new Date(
           overlappingPeriod!.startTime
-        ).toLocaleString()} - ${new Date(overlappingPeriod!.endTime).toLocaleString()})`,
+        ).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        })} - ${new Date(overlappingPeriod!.endTime).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        })})`,
       };
     }
 

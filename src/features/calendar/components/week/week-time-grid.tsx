@@ -2,7 +2,7 @@ interface WeekTimeGridProps {
   containerRef: RefObject<HTMLDivElement>;
   navRef: RefObject<HTMLDivElement>;
   offsetRef: RefObject<HTMLDivElement>;
-  filteredSchedule: AvailabilityWithBookings[];
+  filteredSchedule: Schedule[];
 }
 
 export function WeekTimeGrid({

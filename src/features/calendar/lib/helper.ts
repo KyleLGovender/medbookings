@@ -1,6 +1,6 @@
 import { startOfWeek as dateFnsStartOfWeek, eachDayOfInterval } from 'date-fns';
 
-import { AvailabilityWithBookings } from './types';
+import { Schedule } from './types';
 
 interface CalendarDay {
   date: string;
@@ -89,17 +89,14 @@ export function formatDateTime(date: string) {
   return new Date(date).toISOString().split('.')[0].slice(0, -3);
 }
 
-export function expandRecurringAvailability(
-  availability: AvailabilityWithBookings,
-  endDate: Date
-): AvailabilityWithBookings[] {
-  if (!availability.isRecurring || !availability.recurringDays) {
-    return [availability];
+export function expandRecurringSchedule(schedule: Schedule, endDate: Date): Schedule[] {
+  if (!schedule.isRecurring || !schedule.recurringDays) {
+    return [schedule];
   }
 
   const calendarEndDate = new Date(endDate);
-  const recurrenceEndDate = availability.recurrenceEndDate
-    ? new Date(availability.recurrenceEndDate)
+  const recurrenceEndDate = schedule.recurrenceEndDate
+    ? new Date(schedule.recurrenceEndDate)
     : null;
 
   const effectiveEndDate = recurrenceEndDate
@@ -107,27 +104,27 @@ export function expandRecurringAvailability(
     : calendarEndDate;
 
   const dates = eachDayOfInterval({
-    start: new Date(availability.startTime),
+    start: new Date(schedule.startTime),
     end: effectiveEndDate,
   });
 
-  const recurringDays = new Set(availability.recurringDays);
+  const recurringDays = new Set(schedule.recurringDays);
   const filteredDates = dates.filter((date) => recurringDays.has(date.getDay()));
 
   return filteredDates.map((date) => {
     const startTime = new Date(date);
-    startTime.setHours(availability.startTime.getHours(), availability.startTime.getMinutes());
+    startTime.setHours(schedule.startTime.getHours(), schedule.startTime.getMinutes());
 
     const endTime = new Date(date);
-    endTime.setHours(availability.endTime.getHours(), availability.endTime.getMinutes());
+    endTime.setHours(schedule.endTime.getHours(), schedule.endTime.getMinutes());
 
-    const relevantBookings = availability.bookings.filter((booking) =>
+    const relevantBookings = schedule.bookings.filter((booking) =>
       isSameDay(booking.startTime, date)
     );
 
     return {
-      ...availability,
-      id: `${availability.id}-${date.toISOString()}`,
+      ...schedule,
+      id: `${schedule.id}-${date.toISOString()}`,
       startTime,
       endTime,
       bookings: relevantBookings,

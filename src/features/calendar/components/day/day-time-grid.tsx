@@ -4,7 +4,7 @@ interface DayTimeGridProps {
   navRef: RefObject<HTMLDivElement>;
   offsetRef: RefObject<HTMLDivElement>;
   currentDate: string;
-  filteredSchedule: AvailabilityWithBookings[];
+  filteredSchedule: Schedule[];
 }
 
 export function DayTimeGrid({

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { expandRecurringAvailability } from '@/features/calendar/lib/helper';
+import { expandRecurringSchedule } from '@/features/calendar/lib/helper';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest, { params }: { params: { providerId: string } }) {
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest, { params }: { params: { provide
     const end = new Date(endDate);
 
     // Reuse the getAvailabilitiesInRange function with provider filter
-    const availability = await prisma.availability.findMany({
+    const schedule = await prisma.availability.findMany({
       where: {
         serviceProviderId: params.providerId,
         startTime: { gte: start },
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest, { params }: { params: { provide
     });
 
     // Process and expand recurring availabilities
-    const expandedAvailabilities = availability.flatMap((avail) => {
+    const expandedSchedule = schedule.flatMap((avail) => {
       const processed = {
         ...avail,
         price: Number(avail.price),
@@ -45,10 +45,10 @@ export async function POST(request: NextRequest, { params }: { params: { provide
         })),
       };
 
-      return expandRecurringAvailability(processed, end);
+      return expandRecurringSchedule(processed, end);
     });
 
-    return NextResponse.json(expandedAvailabilities);
+    return NextResponse.json(expandedSchedule);
   } catch (error) {
     console.error('Error fetching availability:', error);
     return NextResponse.json({ error: 'Failed to fetch availability' }, { status: 500 });

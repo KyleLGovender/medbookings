@@ -38,7 +38,7 @@ export interface Booking extends Omit<PrismaBooking, 'price'> {
   isOnline: boolean;
 }
 
-export interface AvailabilityWithBookings extends Availability {
+export interface Schedule extends Availability {
   bookings: (Omit<Booking, 'client'> & {
     client: {
       name: string | null;

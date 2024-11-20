@@ -8,14 +8,14 @@ import { DateRange } from 'react-day-picker';
 
 import { CalendarHeader } from '@/features/calendar/components/calendar-header';
 import DayCalendar from '@/features/calendar/components/day';
-import { Schedule } from '@/features/calendar/components/schedule';
+import { ScheduleCalendar } from '@/features/calendar/components/schedule';
 import WeekCalendar from '@/features/calendar/components/week';
-import { AvailabilityWithBookings } from '@/features/calendar/lib/types';
+import { Schedule } from '@/features/calendar/lib/types';
 
 type ViewType = 'day' | 'week' | 'schedule';
 
 interface CalendarProps {
-  initialData: AvailabilityWithBookings[];
+  initialData: Schedule[];
   providerId: string;
 }
 
@@ -27,8 +27,8 @@ function Calendar({ initialData, providerId }: CalendarProps) {
     to: addDays(new Date(), 7),
   });
 
-  const { data: availabilityData = initialData } = useQuery({
-    queryKey: ['availability', providerId, dateRange],
+  const { data: scheduleData = initialData } = useQuery({
+    queryKey: ['schedule', providerId, dateRange],
     queryFn: async () => {
       const response = await fetch(`/api/calendar/${providerId}`, {
         method: 'POST',
@@ -40,7 +40,7 @@ function Calendar({ initialData, providerId }: CalendarProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch availability');
+        throw new Error('Failed to fetch schedule');
       }
 
       return response.json();
@@ -98,9 +98,9 @@ function Calendar({ initialData, providerId }: CalendarProps) {
       case 'week':
         return <WeekCalendar {...props} onViewChange={setView} />;
       case 'schedule':
-        return <Schedule filteredSchedule={availabilityData} />;
+        return <ScheduleCalendar scheduleData={scheduleData} />;
       default:
-        return <Schedule filteredSchedule={availabilityData} />;
+        return <ScheduleCalendar scheduleData={scheduleData} />;
     }
   };
 
@@ -116,7 +116,7 @@ function Calendar({ initialData, providerId }: CalendarProps) {
           currentDate={currentDate}
           dateRange={dateRange}
           onDateSelect={(date: Date | undefined) => date && setCurrentDate(date)}
-          onDateRangeSelect={setDateRange}
+          onDateRangeSelect={(range: DateRange | undefined) => range && setDateRange(range)}
           onPrevious={handlePrevious}
           onNext={handleNext}
           onToday={handleToday}

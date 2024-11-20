@@ -299,12 +299,7 @@ export function AvailabilityForm({
           />
         )}
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={isSubmitting}
-          onClick={() => console.log('Button clicked')}
-        >
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? (
             <>
               <Spinner className="mr-2" />

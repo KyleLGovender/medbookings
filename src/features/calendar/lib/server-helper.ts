@@ -2,7 +2,6 @@
 
 import { prisma } from '@/lib/prisma';
 
-import type { AvailabilityWithBookings } from './types';
 import { availabilityFormSchema } from './types';
 
 export async function checkForOverlappingAvailability(
@@ -103,7 +102,7 @@ export async function checkAvailabilityAccess(
   availabilityId: string,
   serviceProviderId: string
 ): Promise<{
-  availability?: AvailabilityWithBookings;
+  availability?: Schedule;
   error?: string;
 }> {
   const availability = await prisma.availability.findFirst({
@@ -168,4 +167,32 @@ export async function validateAvailabilityFormData(formData: FormData): Promise<
       recurrenceEndDate: data.recurrenceEndDate?.toISOString() || null,
     },
   };
+}
+
+export async function checkScheduleAccess(
+  scheduleId: string,
+  serviceProviderId: string
+): Promise<{
+  schedule?: Schedule;
+  error?: string;
+}> {
+  const schedule = await prisma.availability.findFirst({
+    where: {
+      id: scheduleId,
+      serviceProviderId,
+    },
+    include: {
+      bookings: true,
+    },
+  });
+
+  if (!schedule) {
+    return { error: 'Schedule not found' };
+  }
+
+  if (schedule.bookings.some((booking) => booking.status === 'CONFIRMED')) {
+    return { error: 'Cannot modify schedule with confirmed bookings' };
+  }
+
+  return { schedule };
 }
