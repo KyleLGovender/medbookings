@@ -12,12 +12,12 @@ import WeekCalendar from '@/features/calendar/components/week';
 
 type ViewType = 'day' | 'week' | 'schedule';
 
-interface ServiceProviderCalendarProps {
+interface CalendarProps {
   providerId: string;
   providerName: string;
 }
 
-function ServiceProviderCalendar({ providerId, providerName }: ServiceProviderCalendarProps) {
+function Calendar({ providerId, providerName }: CalendarProps) {
   const [view, setView] = useState<ViewType>('schedule');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -105,4 +105,4 @@ function ServiceProviderCalendar({ providerId, providerName }: ServiceProviderCa
   );
 }
 
-export default ServiceProviderCalendar;
+export default Calendar;

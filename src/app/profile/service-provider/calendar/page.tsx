@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 
-import ServiceProviderCalendar from '@/features/calendar/components/calendar';
+import Calendar from '@/features/calendar/components/calendar';
 
 export const metadata: Metadata = {
   title: 'Manage Availability | Service Provider Dashboard',
@@ -25,10 +25,7 @@ export default function AvailabilityPage() {
         </div>
 
         <div className="rounded-lg bg-white shadow">
-          <ServiceProviderCalendar
-            providerId={mockProviderDetails.id}
-            providerName={mockProviderDetails.name}
-          />
+          <Calendar providerId={mockProviderDetails.id} providerName={mockProviderDetails.name} />
         </div>
       </div>
     </main>
