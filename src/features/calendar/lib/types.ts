@@ -1,32 +1,67 @@
-import type { Availability as PrismaAvailability, Booking as PrismaBooking } from '@prisma/client';
 import { z } from 'zod';
 
 export type ViewType = 'day' | 'week' | 'schedule';
 
-export const availabilityFormSchema = z.object({
-  startTime: z.date(),
-  endTime: z.date(),
-  duration: z.number().min(1),
-  price: z.number().min(0),
-  isOnlineAvailable: z.boolean(),
-  isInPersonAvailable: z.boolean(),
-  location: z.string(),
-  isRecurring: z.boolean(),
-  recurringDays: z.array(z.number()).optional().default([]),
-  recurrenceEndDate: z.date().nullable().optional(),
-});
+export const availabilityFormSchema = z
+  .object({
+    date: z.date(),
+    startTime: z.date(),
+    endTime: z.date(),
+    duration: z.number().min(1),
+    price: z.number().min(10),
+    isOnlineAvailable: z.boolean(),
+    isInPersonAvailable: z.boolean(),
+    location: z.string(),
+    isRecurring: z.boolean(),
+    recurringDays: z.array(z.number()),
+    recurrenceEndDate: z.date().nullable(),
+  })
+  .refine((data) => data.isOnlineAvailable || data.isInPersonAvailable, {
+    message: 'At least one availability type (Online or In-Person) must be selected',
+  })
+  .refine((data) => !data.isRecurring || (data.recurringDays && data.recurringDays.length > 0), {
+    message: 'Recurring days must be selected when recurring is enabled',
+  });
 
 export type AvailabilityFormValues = z.infer<typeof availabilityFormSchema>;
 
-// Extend Prisma types with frontend-specific modifications
-export interface Availability extends Omit<PrismaAvailability, 'price'> {
-  price: number; // Convert Decimal to number for frontend
-  maxBookings: number;
-  remainingSpots: number;
+export interface Availability {
+  id: string;
   serviceProviderId: string;
+  startTime: string;
+  endTime: string;
   isRecurring: boolean;
   recurringDays: number[];
-  recurrenceEndDate: Date | null;
+  recurrenceEndDate: string | null;
+  duration: number;
+  price: number;
+  isOnlineAvailable: boolean;
+  isInPersonAvailable: boolean;
+  location: string;
+  maxBookings: number;
+  remainingSpots: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function transformAvailability(availability: any): Availability {
+  return {
+    ...availability,
+    price:
+      typeof availability.price === 'object' && 'toNumber' in availability.price
+        ? availability.price.toNumber()
+        : Number(availability.price),
+    startTime: new Date(availability.startTime).toISOString(),
+    endTime: new Date(availability.endTime).toISOString(),
+    recurrenceEndDate: availability.recurrenceEndDate
+      ? new Date(availability.recurrenceEndDate).toISOString()
+      : null,
+    createdAt: new Date(availability.createdAt).toISOString(),
+    updatedAt: new Date(availability.updatedAt).toISOString(),
+    recurringDays: Array.isArray(availability.recurringDays)
+      ? availability.recurringDays
+      : JSON.parse(availability.recurringDays || '[]'),
+  };
 }
 
 export interface Booking extends Omit<PrismaBooking, 'price'> {

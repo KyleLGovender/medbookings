@@ -1,5 +1,6 @@
 'use server';
 
+import { calculateAvailableSpots } from '@/features/calendar/lib/helper';
 import { prisma } from '@/lib/prisma';
 
 import { availabilityFormSchema } from './types';
@@ -130,47 +131,71 @@ export async function checkAvailabilityAccess(
   return { availability };
 }
 
-export async function validateAvailabilityFormData(formData: FormData): Promise<{
-  data?: any;
-  error?: string;
-  errors?: Record<string, string[]>;
-}> {
+export async function validateAvailabilityFormData(formData: FormData) {
   const recurringDaysString = formData.get('recurringDays') as string;
   const recurringDays = recurringDaysString ? JSON.parse(recurringDaysString) : [];
   const recurrenceEndDateString = formData.get('recurrenceEndDate');
 
+  const serviceProviderId = formData.get('serviceProviderId') as string;
+  if (!serviceProviderId) return { error: 'Service provider ID is required' };
+
+  const startTime = new Date(formData.get('startTime') as string);
+  const endTime = new Date(formData.get('endTime') as string);
+  const duration = parseInt(formData.get('duration') as string);
+
+  const remainingSpots = calculateAvailableSpots({
+    startTime,
+    endTime,
+    duration,
+  });
+
+  // Validate that we have at least one slot
+  if (remainingSpots < 1) {
+    return {
+      error: 'Time slot is too short for the specified duration',
+    };
+  }
+
+  const priceValue = parseFloat(formData.get('price') as string);
+
   const data = {
-    startTime: new Date(formData.get('startTime') as string),
-    endTime: new Date(formData.get('endTime') as string),
-    duration: parseInt(formData.get('duration') as string, 10),
-    price: parseFloat(formData.get('price') as string),
+    date: new Date(formData.get('date') as string),
+    startTime,
+    endTime,
+    duration,
+    price: priceValue,
     isOnlineAvailable: formData.get('isOnlineAvailable') === 'true',
     isInPersonAvailable: formData.get('isInPersonAvailable') === 'true',
-    location: formData.get('location') || '',
+    location: formData.get('location') as string,
     isRecurring: formData.get('isRecurring') === 'true',
-    recurringDays,
-    ...(formData.get('isRecurring') === 'true' && recurrenceEndDateString
-      ? { recurrenceEndDate: new Date(recurrenceEndDateString) }
-      : { recurrenceEndDate: null }),
+    recurringDays: JSON.parse((formData.get('recurringDays') as string) || '[]'),
+    recurrenceEndDate: formData.get('recurrenceEndDate')
+      ? new Date(formData.get('recurrenceEndDate') as string)
+      : null,
+    remainingSpots: remainingSpots,
+    serviceProviderId: serviceProviderId,
   };
 
   const validatedFields = availabilityFormSchema.safeParse(data);
 
   if (!validatedFields.success) {
+    const formattedErrors = validatedFields.error.flatten();
+    console.log('Validation errors:', formattedErrors);
+
     return {
-      error: 'Invalid form data',
-      errors: validatedFields.error.flatten().fieldErrors,
+      error: 'Validation failed',
+      fieldErrors: formattedErrors.fieldErrors,
+      formErrors: formattedErrors.formErrors,
     };
   }
 
-  return {
-    data: {
-      ...validatedFields.data,
-      startTime: data.startTime.toISOString(),
-      endTime: data.endTime.toISOString(),
-      recurrenceEndDate: data.recurrenceEndDate?.toISOString() || null,
-    },
+  const { date, ...dataWithoutDate } = validatedFields.data;
+  const finalData = {
+    ...dataWithoutDate,
+    remainingSpots,
   };
+
+  return { data: finalData };
 }
 
 export async function checkScheduleAccess(

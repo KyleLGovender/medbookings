@@ -1,131 +1,48 @@
-'use client';
+import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
-import { useState } from 'react';
-
-import { useQuery } from '@tanstack/react-query';
 import { addDays } from 'date-fns';
-import { DateRange } from 'react-day-picker';
 
-import { CalendarHeader } from '@/features/calendar/components/calendar-header';
-import DayCalendar from '@/features/calendar/components/day';
-import { ScheduleCalendar } from '@/features/calendar/components/schedule';
-import WeekCalendar from '@/features/calendar/components/week';
-import { Schedule } from '@/features/calendar/lib/types';
+import { CalendarWrapper } from '@/features/calendar/components/calendar-wrapper';
+import { getServiceProviderScheduleInRange } from '@/features/calendar/lib/queries';
+import { getCurrentUser } from '@/lib/auth';
+import { getAuthenticatedServiceProvider } from '@/lib/server-helper';
 
-type ViewType = 'day' | 'week' | 'schedule';
+export async function Calendar() {
+  const user = await getCurrentUser();
 
-interface CalendarProps {
-  initialData: Schedule[];
-  providerId: string;
-  serviceProviderId: string;
-}
+  if (!user?.id) {
+    redirect('/auth/login');
+  }
 
-export function Calendar({ initialData, providerId, serviceProviderId }: CalendarProps) {
-  const [view, setView] = useState<ViewType>('schedule');
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: new Date(),
-    to: addDays(new Date(), 7),
-  });
+  const { serviceProviderId } = await getAuthenticatedServiceProvider();
 
-  const { data: scheduleData = initialData } = useQuery({
-    queryKey: ['schedule', providerId, dateRange],
-    queryFn: async () => {
-      const response = await fetch(`/api/calendar/${providerId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          startDate: dateRange.from,
-          endDate: dateRange.to,
-        }),
-      });
+  if (!serviceProviderId) {
+    redirect('/profile/service-provider');
+  }
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch schedule');
-      }
-
-      return response.json();
-    },
-    initialData,
-  });
-
-  const handlePrevious = () => {
-    setCurrentDate((prev) => {
-      const newDate = new Date(prev);
-      switch (view) {
-        case 'day':
-          newDate.setDate(prev.getDate() - 1);
-          break;
-        case 'week':
-          newDate.setDate(prev.getDate() - 7);
-          break;
-        default:
-          newDate.setDate(prev.getDate() - 1);
-      }
-      return newDate;
-    });
-  };
-
-  const handleNext = () => {
-    setCurrentDate((prev) => {
-      const newDate = new Date(prev);
-      switch (view) {
-        case 'day':
-          newDate.setDate(prev.getDate() + 1);
-          break;
-        case 'week':
-          newDate.setDate(prev.getDate() + 7);
-          break;
-        default:
-          newDate.setDate(prev.getDate() + 1);
-      }
-      return newDate;
-    });
-  };
-
-  const handleToday = () => {
-    setCurrentDate(new Date());
-  };
-
-  const renderCalendar = () => {
-    const props = {
-      currentDate,
-      onDateChange: setCurrentDate,
-    };
-
-    switch (view) {
-      case 'day':
-        return <DayCalendar {...props} />;
-      case 'week':
-        return <WeekCalendar {...props} onViewChange={setView} />;
-      case 'schedule':
-        return <ScheduleCalendar scheduleData={scheduleData} />;
-      default:
-        return <ScheduleCalendar scheduleData={scheduleData} />;
-    }
-  };
+  const initialData = await getServiceProviderScheduleInRange(
+    serviceProviderId,
+    new Date(),
+    addDays(new Date(), 7)
+  );
 
   return (
-    <div className="max-w-[100vw] overflow-x-hidden p-4">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Manage your Calendar</h1>
-      </div>
+    <main className="min-h-screen bg-gray-50">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Manage Calendar</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Set your available time slots and manage your schedule
+          </p>
+        </div>
 
-      <div className="rounded-lg bg-white shadow">
-        <CalendarHeader
-          view={view}
-          currentDate={currentDate}
-          dateRange={dateRange}
-          serviceProviderId={serviceProviderId}
-          onDateSelect={(date: Date | undefined) => date && setCurrentDate(date)}
-          onDateRangeSelect={(range: DateRange | undefined) => range && setDateRange(range)}
-          onPrevious={handlePrevious}
-          onNext={handleNext}
-          onToday={handleToday}
-          onViewChange={setView}
-        />
-        {renderCalendar()}
+        <Suspense fallback={<div className="h-[600px] animate-pulse rounded-lg bg-gray-100" />}>
+          <div className="rounded-lg bg-white shadow">
+            <CalendarWrapper initialData={initialData} serviceProviderId={serviceProviderId} />
+          </div>
+        </Suspense>
       </div>
-    </div>
+    </main>
   );
 }

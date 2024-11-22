@@ -8,24 +8,21 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-import { Schedule } from '../lib/types';
+import { Availability } from '../lib/types';
 import { AvailabilityForm } from './availability-form';
 
 interface AvailabilityDialogProps {
-  availability?: Schedule;
+  availability?: Availability;
   mode: 'create' | 'edit';
   onOpenChange: (open: boolean) => void;
   open: boolean;
   serviceProviderId: string;
+  onRefresh: () => Promise<void>;
 }
 
-export function AvailabilityDialog({
-  availability,
-  mode,
-  onOpenChange,
-  open,
-  serviceProviderId,
-}: AvailabilityDialogProps) {
+export function AvailabilityDialog(props: AvailabilityDialogProps) {
+  const { availability, mode, onOpenChange, open, serviceProviderId, onRefresh } = props;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
@@ -41,7 +38,8 @@ export function AvailabilityDialog({
           serviceProviderId={serviceProviderId}
           availability={availability}
           mode={mode}
-          onSuccess={() => onOpenChange(false)}
+          onClose={() => onOpenChange(false)}
+          onRefresh={onRefresh}
         />
       </DialogContent>
     </Dialog>

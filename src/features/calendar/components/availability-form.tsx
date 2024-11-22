@@ -4,12 +4,11 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Form, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Form, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
@@ -18,25 +17,26 @@ import { WeekdayPicker } from '@/components/ui/weekday-picker';
 import { useToast } from '@/hooks/use-toast';
 
 import { createAvailability, updateAvailability } from '../lib/actions';
-import { AvailabilityFormValues, Schedule, availabilityFormSchema } from '../lib/types';
+import { Availability, AvailabilityFormValues, availabilityFormSchema } from '../lib/types';
 
 interface AvailabilityFormProps {
   serviceProviderId: string;
-  availability?: Schedule;
+  availability?: Availability;
   mode: 'create' | 'edit';
-  onSuccess?: () => void;
+  onClose: () => void;
+  onRefresh: () => Promise<void>;
 }
 
 export function AvailabilityForm({
   serviceProviderId,
   availability,
   mode,
-  onSuccess = () => {},
+  onClose,
+  onRefresh,
 }: AvailabilityFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   const form = useForm<AvailabilityFormValues>({
     resolver: zodResolver(availabilityFormSchema),
@@ -79,22 +79,69 @@ export function AvailabilityForm({
         },
   });
 
+  const {
+    formState: { errors },
+  } = form;
+
   async function onSubmit(values: AvailabilityFormValues) {
     setIsSubmitting(true);
 
     try {
-      const formData = new FormData();
+      const startDateTime = new Date(values.date);
+      startDateTime.setHours(values.startTime.getHours(), values.startTime.getMinutes());
 
-      formData.append('startTime', values.startTime.toISOString());
-      formData.append('endTime', values.endTime.toISOString());
-      formData.append('duration', values.duration.toString());
-      formData.append('price', values.price.toString());
-      formData.append('isOnlineAvailable', values.isOnlineAvailable.toString());
-      formData.append('isInPersonAvailable', values.isInPersonAvailable.toString());
-      formData.append('location', values.location || '');
-      formData.append('isRecurring', values.isRecurring.toString());
-      formData.append('recurringDays', JSON.stringify(values.recurringDays || []));
-      if (values.recurrenceEndDate) {
+      const endDateTime = new Date(values.date);
+      endDateTime.setHours(values.endTime.getHours(), values.endTime.getMinutes());
+
+      if (endDateTime <= startDateTime) {
+        toast({
+          variant: 'destructive',
+          title: 'Invalid Time Range',
+          description: 'End time must be after start time',
+        });
+        return;
+      }
+
+      // Validate price and duration
+      if (values.duration <= 0 || values.price < 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Invalid Values',
+          description: 'Duration must be positive and price must be non-negative',
+        });
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('serviceProviderId', serviceProviderId);
+      formData.append('date', values.date.toISOString());
+      formData.append('startTime', startDateTime.toISOString());
+      formData.append('endTime', endDateTime.toISOString());
+      formData.append('duration', String(Math.max(1, Math.round(values.duration))));
+      formData.append('price', String(Math.max(0, values.price)));
+      formData.append('isOnlineAvailable', String(values.isOnlineAvailable));
+      formData.append('isInPersonAvailable', String(values.isInPersonAvailable));
+      formData.append('location', values.location?.trim() || '');
+      formData.append('isRecurring', String(values.isRecurring));
+
+      if (values.isRecurring) {
+        if (!values.recurringDays?.length) {
+          toast({
+            variant: 'destructive',
+            title: 'Invalid Recurring Days',
+            description: 'Please select at least one recurring day',
+          });
+          return;
+        }
+        if (!values.recurrenceEndDate) {
+          toast({
+            variant: 'destructive',
+            title: 'Invalid End Date',
+            description: 'Please select a recurrence end date',
+          });
+          return;
+        }
+        formData.append('recurringDays', JSON.stringify(values.recurringDays));
         formData.append('recurrenceEndDate', values.recurrenceEndDate.toISOString());
       }
 
@@ -103,12 +150,34 @@ export function AvailabilityForm({
           ? await createAvailability(formData)
           : await updateAvailability(availability?.id.split('-')[0] || '', formData);
 
+      console.log('response', response);
       if (response.error) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: response.error,
-        });
+        // Set field errors if they exist
+        if (response.fieldErrors) {
+          Object.entries(response.fieldErrors).forEach(([field, errors]) => {
+            form.setError(field as any, {
+              type: 'server',
+              message: errors[0],
+            });
+          });
+        }
+
+        // Show toast for form-level errors
+        if (response.formErrors?.length) {
+          toast({
+            variant: 'destructive',
+            title: 'Validation Error',
+            description: response.formErrors[0],
+          });
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: response.error,
+          });
+        }
+
+        setIsSubmitting(false);
         return;
       }
 
@@ -120,13 +189,16 @@ export function AvailabilityForm({
             : 'Availability updated successfully',
       });
 
-      await queryClient.invalidateQueries({ queryKey: ['schedule', serviceProviderId] });
-      onSuccess();
+      router.refresh();
+      await onRefresh();
+      onClose();
     } catch (error) {
+      console.error('Availability form error:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Something went wrong. Please try again.',
+        description:
+          error instanceof Error ? error.message : 'Something went wrong. Please try again.',
       });
     } finally {
       setIsSubmitting(false);
@@ -135,13 +207,7 @@ export function AvailabilityForm({
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          return form.handleSubmit(onSubmit)(e);
-        }}
-        className="w-full max-w-xl space-y-6"
-      >
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-xl space-y-6">
         <FormField
           control={form.control}
           name="date"
@@ -158,6 +224,7 @@ export function AvailabilityForm({
                   form.setValue('recurrenceEndDate', endDate);
                 }}
               />
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -181,6 +248,7 @@ export function AvailabilityForm({
                     field.onChange(datetime);
                   }}
                 />
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -203,6 +271,7 @@ export function AvailabilityForm({
                     field.onChange(datetime);
                   }}
                 />
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -220,6 +289,7 @@ export function AvailabilityForm({
                   {...field}
                   onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
                 />
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -232,25 +302,77 @@ export function AvailabilityForm({
                 <FormLabel className="mb-2">Price</FormLabel>
                 <Input
                   type="number"
-                  step="0.01"
+                  step="10"
                   {...field}
                   onChange={(e) => field.onChange(parseFloat(e.target.value))}
                 />
+                <FormMessage />
               </FormItem>
             )}
           />
         </div>
 
         <div className="space-y-4">
+          <div className="space-y-2">
+            <FormField
+              control={form.control}
+              name="isOnlineAvailable"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Online Available</FormLabel>
+                    </div>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="isInPersonAvailable"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">In-Person Available</FormLabel>
+                    </div>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {form.watch('isInPersonAvailable') && (
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="mb-2">Location</FormLabel>
+                    <Input {...field} value={field.value || ''} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
+
           <FormField
             control={form.control}
             name="isRecurring"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">Recurring Weekly</FormLabel>
+              <FormItem className="space-y-2">
+                <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Recurring Weekly</FormLabel>
+                  </div>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
                 </div>
-                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -264,6 +386,7 @@ export function AvailabilityForm({
                   <FormItem>
                     <FormLabel>Recurring Days</FormLabel>
                     <WeekdayPicker {...field} value={field.value || []} />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -278,51 +401,13 @@ export function AvailabilityForm({
                       defaultMonth={field.value || undefined}
                       onChange={field.onChange}
                     />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
             </>
           )}
-
-          <FormField
-            control={form.control}
-            name="isOnlineAvailable"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">Online Available</FormLabel>
-                </div>
-                <Switch checked={field.value} onCheckedChange={field.onChange} />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="isInPersonAvailable"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">In-Person Available</FormLabel>
-                </div>
-                <Switch checked={field.value} onCheckedChange={field.onChange} />
-              </FormItem>
-            )}
-          />
         </div>
-
-        {form.watch('isInPersonAvailable') && (
-          <FormField
-            control={form.control}
-            name="location"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="mb-2">Location</FormLabel>
-                <Input {...field} value={field.value || ''} />
-              </FormItem>
-            )}
-          />
-        )}
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? (

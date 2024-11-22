@@ -1,13 +1,16 @@
 'use client';
 
+import { useState } from 'react';
+
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { DateRange } from 'react-day-picker';
 
 import { DatePicker } from '@/components/ui/date-picker';
 import { DateRangeSelector } from '@/components/ui/date-range-selector';
-import { AddAvailabilityButton } from '@/features/calendar/components/add-availability-button';
 import { CalendarNavigation } from '@/features/calendar/components/calendar-navigation';
+
+import { AvailabilityDialog } from './availability-dialog';
 
 interface CalendarHeaderProps {
   view: 'schedule' | 'day' | 'week';
@@ -20,6 +23,7 @@ interface CalendarHeaderProps {
   onNext: () => void;
   onToday: () => void;
   onViewChange: (view: 'schedule' | 'day' | 'week') => void;
+  onRefresh: () => Promise<void>;
 }
 
 export function CalendarHeader({
@@ -33,7 +37,10 @@ export function CalendarHeader({
   onNext,
   onToday,
   onViewChange,
+  onRefresh,
 }: CalendarHeaderProps) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   return (
     <header className="flex flex-col gap-4 border-b border-gray-200 px-6 py-4 md:flex-row md:items-center md:justify-between">
       <div className="mx-auto flex flex-col gap-2 md:mx-0 md:flex-row md:items-center">
@@ -47,7 +54,6 @@ export function CalendarHeader({
         )}
       </div>
 
-      {/* Navigation - centered on mobile, centered in middle section on desktop */}
       <div className="mx-auto flex flex-col gap-2 md:flex-row md:items-center md:justify-center">
         <div className="mx-auto md:ml-4 md:flex md:items-center">
           <Menu as="div" className="relative">
@@ -81,9 +87,23 @@ export function CalendarHeader({
         </div>
       </div>
 
-      {/* Action Buttons */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
-        <AddAvailabilityButton serviceProviderId={serviceProviderId} />
+        <>
+          <AvailabilityDialog
+            mode="create"
+            open={isDialogOpen}
+            onOpenChange={setIsDialogOpen}
+            serviceProviderId={serviceProviderId}
+            onRefresh={onRefresh}
+          />
+          <button
+            type="button"
+            onClick={() => setIsDialogOpen(true)}
+            className="mx-auto w-full max-w-sm rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 md:ml-2 md:w-auto"
+          >
+            Add availability
+          </button>
+        </>
       </div>
     </header>
   );

@@ -10,69 +10,69 @@ import {
 } from './server-helper';
 import { Availability } from './types';
 
-export async function createAvailability(
-  formData: FormData
-): Promise<{ data?: Availability; error?: string }> {
-  const { serviceProviderId, error: authError } = await getAuthenticatedServiceProvider();
-  if (authError) return { error: authError };
-
+export async function createAvailability(formData: FormData): Promise<{
+  data?: Availability;
+  error?: string;
+  fieldErrors?: Record<string, string[]>;
+  formErrors?: string[];
+}> {
   try {
-    const { data, error: validationError } = await validateAvailabilityFormData(formData);
-    if (validationError) {
-      return { error: validationError };
+    // 1. Validate form data
+    const validationResult = await validateAvailabilityFormData(formData);
+    if (!validationResult.data || validationResult.error) {
+      return {
+        error: validationResult.error,
+        fieldErrors: validationResult.fieldErrors,
+        formErrors: validationResult.formErrors,
+      };
     }
+    const data = validationResult.data;
 
-    // Check for overlapping availability
-    const { hasOverlap, overlappingPeriod } = await checkForOverlappingAvailability(
-      serviceProviderId!,
-      new Date(data.startTime),
-      new Date(data.endTime),
+    // 2. Check for overlapping availability
+    const overlap = await checkForOverlappingAvailability(
+      formData.get('serviceProviderId') as string,
+      data.startTime,
+      data.endTime,
       data.isRecurring,
       data.recurringDays,
       data.recurrenceEndDate
     );
 
-    console.log('hasOverlap', hasOverlap);
-    console.log('overlappingPeriod', overlappingPeriod);
-
-    if (hasOverlap) {
-      return {
-        error: `Cannot create availability: Overlaps with existing period (${new Date(
-          overlappingPeriod!.startTime
-        ).toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: 'short',
-          year: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-        })} - ${new Date(overlappingPeriod!.endTime).toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: 'short',
-          year: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-        })})`,
-      };
+    if (overlap.hasOverlap) {
+      return { error: 'This time slot overlaps with existing availability' };
     }
 
+    // Create the availability
     const availability = await prisma.availability.create({
       data: {
         ...data,
-        maxBookings: 1,
-        remainingSpots: 1,
-        serviceProviderId: serviceProviderId!,
+        serviceProvider: {
+          connect: {
+            id: formData.get('serviceProviderId') as string,
+          },
+        },
       },
     });
 
     return {
       data: {
         ...availability,
+        startTime: availability.startTime.toISOString(),
+        endTime: availability.endTime.toISOString(),
+        recurrenceEndDate: availability.recurrenceEndDate?.toISOString() || null,
         price: Number(availability.price),
+        location: availability.location || '',
+        createdAt: availability.createdAt.toISOString(),
+        updatedAt: availability.updatedAt.toISOString(),
       },
     };
   } catch (error) {
+    console.error('Create availability error:', error);
     return {
-      error: error instanceof Error ? error.message : 'Failed to create availability',
+      error:
+        error instanceof Error
+          ? `Server error: ${error.message}`
+          : 'Unexpected server error occurred',
     };
   }
 }
@@ -120,13 +120,13 @@ export async function updateAvailability(
   availabilityId: string,
   formData: FormData
 ): Promise<{ data?: Availability; error?: string }> {
-  const { serviceProviderId, error: authError } = await getAuthenticatedServiceProvider();
-  if (authError) return { error: authError };
+  const serviceProviderId = formData.get('serviceProviderId') as string;
+  if (!serviceProviderId) return { error: 'Service provider ID is required' };
 
   try {
     const { availability, error: accessError } = await checkAvailabilityAccess(
       availabilityId,
-      serviceProviderId!
+      serviceProviderId
     );
     if (accessError) {
       return { error: accessError };
@@ -168,6 +168,8 @@ export async function updateAvailability(
         })})`,
       };
     }
+
+    console.log('Updated data:', data);
 
     const updated = await prisma.availability.update({
       where: { id: availabilityId },

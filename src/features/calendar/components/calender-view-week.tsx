@@ -4,18 +4,18 @@ import { useEffect, useRef } from 'react';
 
 import { formatDateTime, generateDaysForWeekCalendar } from '@/features/calendar/lib/helper';
 
-interface WeekCalendarProps {
+interface CalendarViewWeekProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   // eslint-disable-next-line react/require-default-props
   onViewChange?: (view: 'day') => void;
 }
 
-export default function WeekCalendar({
+export function CalendarViewWeek({
   currentDate,
   onDateChange,
   onViewChange = () => {},
-}: WeekCalendarProps) {
+}: CalendarViewWeekProps) {
   const container = useRef<HTMLDivElement>(null);
   const containerNav = useRef<HTMLDivElement>(null);
   const containerOffset = useRef<HTMLDivElement>(null);

@@ -7,12 +7,12 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid';
 import { formatDateTime, generateDaysForDayCalendar } from '@/features/calendar/lib/helper';
 import classNames from '@/lib/classNames';
 
-interface DayCalendarProps {
+interface CalendarViewDayProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
 }
 
-export default function DayCalendar({ currentDate, onDateChange }: DayCalendarProps) {
+export function CalendarViewDay({ currentDate, onDateChange }: CalendarViewDayProps) {
   const container = useRef<HTMLDivElement>(null);
   const containerNav = useRef<HTMLDivElement>(null);
   const containerOffset = useRef<HTMLDivElement>(null);

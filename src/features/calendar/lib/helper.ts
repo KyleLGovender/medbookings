@@ -1,4 +1,4 @@
-import { startOfWeek as dateFnsStartOfWeek, eachDayOfInterval } from 'date-fns';
+import { addDays, startOfWeek as dateFnsStartOfWeek, eachDayOfInterval } from 'date-fns';
 
 import { Schedule } from './types';
 
@@ -7,6 +7,28 @@ interface CalendarDay {
   isCurrentMonth: boolean;
   isToday: boolean;
   isSelected: boolean;
+}
+
+interface CalculateSpotsParams {
+  startTime: Date;
+  endTime: Date;
+  duration: number;
+}
+
+/**
+ * Calculates the number of available appointment slots based on time window and duration
+ * @param startTime - Start time of the availability window
+ * @param endTime - End time of the availability window
+ * @param duration - Duration of each appointment in minutes
+ * @returns number of available slots
+ */
+export function calculateAvailableSpots({
+  startTime,
+  endTime,
+  duration,
+}: CalculateSpotsParams): number {
+  const totalMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
+  return Math.floor(totalMinutes / duration);
 }
 
 export function isSameDay(date1: Date | null | undefined, date2: Date | null | undefined): boolean {
@@ -130,4 +152,10 @@ export function expandRecurringSchedule(schedule: Schedule, endDate: Date): Sche
       bookings: relevantBookings,
     };
   });
+}
+
+export function getDateRange(date: Date, view: 'day' | 'week' | 'schedule') {
+  if (view === 'day') return { from: date, to: addDays(date, 1) };
+  if (view === 'week') return { from: date, to: addDays(date, 7) };
+  return { from: date, to: addDays(date, 7) };
 }

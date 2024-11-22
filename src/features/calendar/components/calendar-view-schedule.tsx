@@ -1,7 +1,7 @@
+import { useRouter } from 'next/navigation';
 import * as React from 'react';
 import { useState } from 'react';
 
-import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
@@ -15,29 +15,43 @@ import {
 } from '@/components/ui/table';
 import { AvailabilityDialog } from '@/features/calendar/components/availability-dialog';
 import { deleteAvailability, deleteBooking } from '@/features/calendar/lib/actions';
-import { Booking, Schedule } from '@/features/calendar/lib/types';
+import { Availability, Booking, Schedule } from '@/features/calendar/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-interface ScheduleProps {
+interface CalendarViewScheduleProps {
   scheduleData: Schedule[];
+  serviceProviderId: string;
+  onRefresh: () => Promise<void>;
 }
 
-export function ScheduleCalendar({ scheduleData }: ScheduleProps) {
-  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | Booking | undefined>();
+export function CalendarViewSchedule({
+  scheduleData,
+  serviceProviderId,
+  onRefresh,
+}: CalendarViewScheduleProps) {
+  const [selectedAvailability, setSelectedAvailability] = useState<Availability | undefined>();
+  const [selectedBooking, setSelectedBooking] = useState<Booking | undefined>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const router = useRouter();
 
-  const handleEdit = (schedule: Schedule | Booking) => {
-    setSelectedSchedule(schedule);
+  const handleEdit = (schedule: Schedule | Booking, type: 'availability' | 'booking') => {
+    if (type === 'availability') {
+      setSelectedAvailability(schedule as Availability);
+    }
+    if (type === 'booking') {
+      setSelectedBooking(schedule as Booking);
+    }
+
     setIsDialogOpen(true);
   };
 
   const handleDialogChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      setSelectedSchedule(undefined);
+      setSelectedAvailability(undefined);
+      setSelectedBooking(undefined);
     }
   };
 
@@ -56,12 +70,13 @@ export function ScheduleCalendar({ scheduleData }: ScheduleProps) {
       return;
     }
 
-    queryClient.invalidateQueries({ queryKey: ['schedule'] });
-
     toast({
       title: 'Success',
       description: `${type === 'availability' ? 'Availability' : 'Booking'} deleted successfully`,
     });
+
+    router.refresh();
+    await onRefresh();
   };
 
   return (
@@ -83,19 +98,19 @@ export function ScheduleCalendar({ scheduleData }: ScheduleProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {[...scheduleData]
+              {scheduleData
                 .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-                .map((availability) => (
-                  <React.Fragment key={availability.id}>
+                .map((schedule) => (
+                  <React.Fragment key={schedule.id}>
                     {/* Availability Row */}
                     <TableRow className="bg-slate-50">
                       <TableCell>Availability</TableCell>
-                      <TableCell>{format(availability.startTime, 'EEE, MMM dd')}</TableCell>
+                      <TableCell>{format(new Date(schedule.startTime), 'EEE, MMM dd')}</TableCell>
                       <TableCell>
-                        {format(availability.startTime, 'HH:mm')} -{' '}
-                        {format(availability.endTime, 'HH:mm')}
+                        {format(new Date(schedule.startTime), 'HH:mm')} -{' '}
+                        {format(new Date(schedule.endTime), 'HH:mm')}
                       </TableCell>
-                      <TableCell>{availability.duration} mins</TableCell>
+                      <TableCell>{schedule.duration} mins</TableCell>
                       <TableCell className="hidden md:table-cell">-</TableCell>
                       <TableCell className="hidden md:table-cell">-</TableCell>
                       <TableCell className="hidden md:table-cell">
@@ -104,21 +119,21 @@ export function ScheduleCalendar({ scheduleData }: ScheduleProps) {
                         </span>
                       </TableCell>
                       <TableCell className="hidden text-right md:table-cell">
-                        R{Number(availability.price).toFixed(2)}
+                        R{Number(schedule.price).toFixed(2)}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <div className="flex items-center gap-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleEdit(availability)}
+                            onClick={() => handleEdit(schedule, 'availability')}
                           >
                             Edit
                           </Button>
                           <Button
                             variant="destructive"
                             size="sm"
-                            onClick={() => handleDelete(availability.id, 'availability')}
+                            onClick={() => handleDelete(schedule.id, 'availability')}
                           >
                             Delete
                           </Button>
@@ -127,17 +142,19 @@ export function ScheduleCalendar({ scheduleData }: ScheduleProps) {
                     </TableRow>
 
                     {/* Nested Booking Rows */}
-                    {[...availability.bookings]
+                    {(schedule.bookings || [])
                       .sort(
                         (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
                       )
                       .map((booking) => (
                         <TableRow key={booking.id} className="bg-white">
                           <TableCell className="pl-8">Booking</TableCell>
-                          <TableCell>{format(booking.startTime, 'EEE, MMM dd')}</TableCell>
                           <TableCell>
-                            {format(booking.startTime, 'HH:mm')} -{' '}
-                            {format(booking.endTime, 'HH:mm')}
+                            {format(new Date(booking.startTime), 'EEE, MMM dd')}
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(booking.startTime), 'HH:mm')} -{' '}
+                            {format(new Date(booking.endTime), 'HH:mm')}
                           </TableCell>
                           <TableCell>{booking.duration} mins</TableCell>
                           <TableCell className="hidden md:table-cell">
@@ -167,7 +184,7 @@ export function ScheduleCalendar({ scheduleData }: ScheduleProps) {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleEdit(booking)}
+                                onClick={() => handleEdit(booking, 'booking')}
                               >
                                 Edit
                               </Button>
@@ -189,10 +206,12 @@ export function ScheduleCalendar({ scheduleData }: ScheduleProps) {
         </div>
       </div>
       <AvailabilityDialog
-        availability={selectedSchedule}
+        availability={selectedAvailability}
+        serviceProviderId={serviceProviderId}
         mode="edit"
         open={isDialogOpen}
         onOpenChange={handleDialogChange}
+        onRefresh={onRefresh}
       />
     </>
   );
