@@ -7,8 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Schedule } from '@/features/calendar/lib/types';
 
+import { Schedule } from '../lib/types';
 import { AvailabilityForm } from './availability-form';
 
 interface AvailabilityDialogProps {
@@ -16,6 +16,7 @@ interface AvailabilityDialogProps {
   mode: 'create' | 'edit';
   onOpenChange: (open: boolean) => void;
   open: boolean;
+  serviceProviderId: string;
 }
 
 export function AvailabilityDialog({
@@ -23,6 +24,7 @@ export function AvailabilityDialog({
   mode,
   onOpenChange,
   open,
+  serviceProviderId,
 }: AvailabilityDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -36,6 +38,7 @@ export function AvailabilityDialog({
           </DialogDescription>
         </DialogHeader>
         <AvailabilityForm
+          serviceProviderId={serviceProviderId}
           availability={availability}
           mode={mode}
           onSuccess={() => onOpenChange(false)}

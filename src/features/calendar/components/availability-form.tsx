@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
@@ -16,18 +16,19 @@ import { Switch } from '@/components/ui/switch';
 import { TimePicker } from '@/components/ui/time-picker';
 import { WeekdayPicker } from '@/components/ui/weekday-picker';
 import { useToast } from '@/hooks/use-toast';
-import { getServiceProviderQuery } from '@/lib/helper';
 
 import { createAvailability, updateAvailability } from '../lib/actions';
 import { AvailabilityFormValues, Schedule, availabilityFormSchema } from '../lib/types';
 
 interface AvailabilityFormProps {
+  serviceProviderId: string;
   availability?: Schedule;
   mode: 'create' | 'edit';
   onSuccess?: () => void;
 }
 
-export async function AvailabilityForm({
+export function AvailabilityForm({
+  serviceProviderId,
   availability,
   mode,
   onSuccess = () => {},
@@ -36,16 +37,6 @@ export async function AvailabilityForm({
   const { toast } = useToast();
   const router = useRouter();
   const queryClient = useQueryClient();
-
-  const { data: { serviceProviderId } = {}, isLoading, error } = useQuery(getServiceProviderQuery);
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  }
 
   const form = useForm<AvailabilityFormValues>({
     resolver: zodResolver(availabilityFormSchema),

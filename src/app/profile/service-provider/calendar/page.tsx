@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { addDays } from 'date-fns';
 
-import Calendar from '@/features/calendar/components/calendar';
+import { Calendar } from '@/features/calendar/components/calendar';
 import { getScheduleInRange } from '@/features/calendar/lib/queries';
 import { getCurrentUser } from '@/lib/auth';
 import { getAuthenticatedServiceProvider } from '@/lib/server-helper';
@@ -32,7 +32,11 @@ export default async function CalendarPage() {
         </div>
 
         <div className="rounded-lg bg-white shadow">
-          <Calendar initialData={initialData} providerId={serviceProviderId} />
+          <Calendar
+            initialData={initialData}
+            providerId={serviceProviderId}
+            serviceProviderId={serviceProviderId}
+          />
         </div>
       </div>
     </main>

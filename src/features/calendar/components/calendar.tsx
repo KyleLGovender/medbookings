@@ -17,9 +17,10 @@ type ViewType = 'day' | 'week' | 'schedule';
 interface CalendarProps {
   initialData: Schedule[];
   providerId: string;
+  serviceProviderId: string;
 }
 
-function Calendar({ initialData, providerId }: CalendarProps) {
+export function Calendar({ initialData, providerId, serviceProviderId }: CalendarProps) {
   const [view, setView] = useState<ViewType>('schedule');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -115,6 +116,7 @@ function Calendar({ initialData, providerId }: CalendarProps) {
           view={view}
           currentDate={currentDate}
           dateRange={dateRange}
+          serviceProviderId={serviceProviderId}
           onDateSelect={(date: Date | undefined) => date && setCurrentDate(date)}
           onDateRangeSelect={(range: DateRange | undefined) => range && setDateRange(range)}
           onPrevious={handlePrevious}
@@ -127,5 +129,3 @@ function Calendar({ initialData, providerId }: CalendarProps) {
     </div>
   );
 }
-
-export default Calendar;
