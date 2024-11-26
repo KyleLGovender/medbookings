@@ -54,16 +54,25 @@ export function AvailabilityForm({
           recurringDays: availability.recurringDays,
           recurrenceEndDate: availability.recurrenceEndDate
             ? new Date(availability.recurrenceEndDate)
-            : (() => {
-                const date = new Date(availability.startTime);
-                date.setMonth(date.getMonth() + 3);
-                return date;
-              })(),
+            : null,
         }
       : {
           date: new Date(),
-          startTime: new Date(),
-          endTime: new Date(),
+          startTime: (() => {
+            const now = new Date();
+            now.setMinutes(0); // Round to nearest hour
+            now.setSeconds(0);
+            now.setMilliseconds(0);
+            return now;
+          })(),
+          endTime: (() => {
+            const now = new Date();
+            now.setMinutes(0);
+            now.setSeconds(0);
+            now.setMilliseconds(0);
+            now.setHours(now.getHours() + 1); // Set to next hour
+            return now;
+          })(),
           duration: 15,
           price: 600,
           isOnlineAvailable: false,
@@ -87,6 +96,16 @@ export function AvailabilityForm({
     setIsSubmitting(true);
 
     try {
+      if (!values.date || !values.startTime || !values.endTime) {
+        toast({
+          variant: 'destructive',
+          title: 'Missing Fields',
+          description: 'Please select date and time values',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       const startDateTime = new Date(values.date);
       startDateTime.setHours(values.startTime.getHours(), values.startTime.getMinutes());
 
@@ -150,7 +169,6 @@ export function AvailabilityForm({
           ? await createAvailability(formData)
           : await updateAvailability(availability?.id.split('-')[0] || '', formData);
 
-      console.log('response', response);
       if (response.error) {
         // Set field errors if they exist
         if (response.fieldErrors) {
@@ -325,7 +343,11 @@ export function AvailabilityForm({
                     </div>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </div>
-                  <FormMessage />
+                  {form.formState.errors.root?.message && (
+                    <div className="text-sm text-destructive">
+                      {form.formState.errors.root.message}
+                    </div>
+                  )}
                 </FormItem>
               )}
             />
@@ -341,10 +363,20 @@ export function AvailabilityForm({
                     </div>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </div>
-                  <FormMessage />
+                  {form.formState.errors.root?.message && (
+                    <div className="text-sm text-destructive">
+                      {form.formState.errors.root.message}
+                    </div>
+                  )}
                 </FormItem>
               )}
             />
+
+            {!form.getValues('isOnlineAvailable') && !form.getValues('isInPersonAvailable') && (
+              <div className="mt-2 text-sm text-destructive">
+                At least one availability type (Online or In-Person) must be selected
+              </div>
+            )}
 
             {form.watch('isInPersonAvailable') && (
               <FormField
@@ -408,6 +440,19 @@ export function AvailabilityForm({
             </>
           )}
         </div>
+
+        {Object.keys(form.formState.errors).length > 0 && (
+          <div className="rounded-lg border border-destructive p-4 text-sm text-destructive">
+            <p className="mb-1 font-semibold">Please fix the following errors:</p>
+            <ul className="list-disc pl-4">
+              {Object.entries(form.formState.errors).map(([key, error]) => (
+                <li key={key}>
+                  {error?.message || `Invalid ${key.replace(/([A-Z])/g, ' $1').toLowerCase()}`}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? (

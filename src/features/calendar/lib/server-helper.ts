@@ -5,6 +5,22 @@ import { prisma } from '@/lib/prisma';
 
 import { availabilityFormSchema } from './types';
 
+function hasTimeOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
+  return start1 < end2 && start2 < end1;
+}
+
+function hasTimeOfDayOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
+  // Convert to minutes since midnight for comparison
+  const getMinutesSinceMidnight = (date: Date) => date.getHours() * 60 + date.getMinutes();
+
+  const start1Minutes = getMinutesSinceMidnight(start1);
+  const end1Minutes = getMinutesSinceMidnight(end1);
+  const start2Minutes = getMinutesSinceMidnight(start2);
+  const end2Minutes = getMinutesSinceMidnight(end2);
+
+  return start1Minutes < end2Minutes && start2Minutes < end1Minutes;
+}
+
 export async function checkForOverlappingAvailability(
   serviceProviderId: string,
   startTime: Date,
@@ -14,57 +30,13 @@ export async function checkForOverlappingAvailability(
   recurrenceEndDate?: Date | null,
   excludeAvailabilityId?: string
 ) {
-  const defaultRecurrenceEndDate = new Date(startTime);
-  defaultRecurrenceEndDate.setFullYear(defaultRecurrenceEndDate.getFullYear() + 1);
-  const effectiveRecurrenceEndDate = recurrenceEndDate || defaultRecurrenceEndDate;
-
-  const baseWhere = {
-    serviceProviderId,
-    OR: [
-      {
-        startTime: { lte: startTime },
-        endTime: { gt: startTime },
-      },
-      {
-        startTime: { lt: endTime },
-        endTime: { gte: endTime },
-      },
-      {
-        startTime: { gte: startTime },
-        endTime: { lte: endTime },
-      },
-    ],
-  };
-
-  if (isRecurring && recurringDays?.length) {
-    baseWhere.OR.push({
-      isRecurring: true,
-      recurringDays: {
-        hasSome: recurringDays,
-      },
-      AND: [
-        {
-          startTime: { lte: effectiveRecurrenceEndDate },
-        },
-        {
-          recurrenceEndDate: {
-            gte: startTime,
-          },
-        },
-      ],
-    });
-  }
-
-  const where = excludeAvailabilityId
-    ? {
-        ...baseWhere,
-        NOT: { id: excludeAvailabilityId },
-      }
-    : baseWhere;
-
-  const overlapping = await prisma.availability.findFirst({
-    where,
+  const availabilities = await prisma.availability.findMany({
+    where: {
+      serviceProviderId,
+      ...(excludeAvailabilityId ? { NOT: { id: excludeAvailabilityId } } : {}),
+    },
     select: {
+      id: true,
       startTime: true,
       endTime: true,
       isRecurring: true,
@@ -73,34 +45,66 @@ export async function checkForOverlappingAvailability(
     },
   });
 
-  if (!overlapping) {
-    return { hasOverlap: false };
-  }
+  for (const existing of availabilities) {
+    if (!existing.isRecurring && !isRecurring) {
+      const hasOverlap = hasTimeOverlap(startTime, endTime, existing.startTime, existing.endTime);
+      if (hasOverlap) {
+        return {
+          hasOverlap: true,
+          overlappingPeriod: {
+            startTime: existing.startTime,
+            endTime: existing.endTime,
+          },
+        };
+      }
+    } else if (existing.isRecurring || isRecurring) {
+      const existingEndDate =
+        existing.recurrenceEndDate ||
+        new Date(
+          existing.startTime.getFullYear() + 1,
+          existing.startTime.getMonth(),
+          existing.startTime.getDate()
+        );
+      const newEndDate =
+        recurrenceEndDate ||
+        new Date(startTime.getFullYear() + 1, startTime.getMonth(), startTime.getDate());
 
-  if (!overlapping.isRecurring) {
-    return {
-      hasOverlap: true,
-      overlappingPeriod: {
-        startTime: overlapping.startTime,
-        endTime: overlapping.endTime,
-      },
-    };
-  }
+      const dateRangeOverlap = hasTimeOverlap(
+        startTime,
+        newEndDate,
+        existing.startTime,
+        existingEndDate
+      );
 
-  const startDay = startTime.getDay();
-  const hasOverlappingDay = overlapping.recurringDays?.some(
-    (day) => recurringDays?.includes(day) || day === startDay
-  );
+      if (dateRangeOverlap) {
+        const existingDays = new Set(existing.recurringDays);
+        const newDays = new Set(isRecurring ? recurringDays : [startTime.getDay()]);
 
-  return {
-    hasOverlap: hasOverlappingDay,
-    overlappingPeriod: hasOverlappingDay
-      ? {
-          startTime: overlapping.startTime,
-          endTime: overlapping.endTime,
+        const hasOverlappingDay = [...existingDays].some((day) => newDays.has(day));
+
+        if (hasOverlappingDay) {
+          const timeOverlap = hasTimeOfDayOverlap(
+            startTime,
+            endTime,
+            existing.startTime,
+            existing.endTime
+          );
+
+          if (timeOverlap) {
+            return {
+              hasOverlap: true,
+              overlappingPeriod: {
+                startTime: existing.startTime,
+                endTime: existing.endTime,
+              },
+            };
+          }
         }
-      : undefined,
-  };
+      }
+    }
+  }
+
+  return { hasOverlap: false };
 }
 
 export async function checkAvailabilityAccess(

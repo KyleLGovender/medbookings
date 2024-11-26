@@ -16,11 +16,22 @@ export const availabilityFormSchema = z
     recurringDays: z.array(z.number()),
     recurrenceEndDate: z.date().nullable(),
   })
-  .refine((data) => data.isOnlineAvailable || data.isInPersonAvailable, {
-    message: 'At least one availability type (Online or In-Person) must be selected',
-  })
-  .refine((data) => !data.isRecurring || (data.recurringDays && data.recurringDays.length > 0), {
-    message: 'Recurring days must be selected when recurring is enabled',
+  .superRefine((data, ctx) => {
+    if (!data.isOnlineAvailable && !data.isInPersonAvailable) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'At least one availability type (Online or In-Person) must be selected',
+        path: ['root'],
+      });
+    }
+
+    if (data.isRecurring && (!data.recurringDays || data.recurringDays.length === 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Please select at least one day for recurring availability',
+        path: ['recurringDays'],
+      });
+    }
   });
 
 export type AvailabilityFormValues = z.infer<typeof availabilityFormSchema>;

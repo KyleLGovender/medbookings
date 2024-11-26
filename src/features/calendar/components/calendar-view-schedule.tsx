@@ -104,7 +104,9 @@ export function CalendarViewSchedule({
                   <React.Fragment key={schedule.id}>
                     {/* Availability Row */}
                     <TableRow className="bg-slate-50">
-                      <TableCell>Availability</TableCell>
+                      <TableCell>
+                        {schedule.isRecurring ? 'Availability Series' : 'Availability'}
+                      </TableCell>
                       <TableCell>{format(new Date(schedule.startTime), 'EEE, MMM dd')}</TableCell>
                       <TableCell>
                         {format(new Date(schedule.startTime), 'HH:mm')} -{' '}

@@ -38,8 +38,6 @@ export function CalendarWrapper({ initialData, serviceProviderId }: CalendarProp
     };
   });
 
-  console.log('dateRange', dateRange);
-
   // Update URL when dateRange changes
   useEffect(() => {
     if (dateRange.from && dateRange.to) {
@@ -173,10 +171,6 @@ export function CalendarWrapper({ initialData, serviceProviderId }: CalendarProp
 
   return (
     <div className="max-w-[100vw] overflow-x-hidden p-4">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Manage your Calendar</h1>
-      </div>
-
       <div className="rounded-lg bg-white shadow">
         <CalendarHeader
           view={view}
