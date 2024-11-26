@@ -1,3 +1,9 @@
+import { RefObject } from 'react';
+
+import { CalendarViewEventItem } from '@/features/calendar/components/calendar-view-event-item';
+import { getEventGridPosition } from '@/features/calendar/lib/helper';
+import { Schedule } from '@/features/calendar/lib/types';
+
 import { CalendarViewTimeColumn } from '../calendar-view-time-column';
 
 // Server Component

@@ -47,16 +47,23 @@ export function CalendarWrapper({
     params.delete('end');
     params.delete('date');
 
-    // Set new params based on what was provided
-    if (updates.range?.from && updates.range.to) {
-      params.set('start', updates.range.from.toISOString().split('T')[0]);
-      params.set('end', updates.range.to.toISOString().split('T')[0]);
-    } else if (updates.date) {
+    // Set view parameter if provided
+    if (updates.view) {
+      params.set('view', updates.view);
+    }
+
+    // Get current view (either from updates or existing state)
+    const currentView = updates.view || view;
+
+    // Set date parameter for day/week views
+    if (['day', 'week'].includes(currentView) && updates.date) {
       params.set('date', updates.date.toISOString().split('T')[0]);
     }
 
-    if (updates.view) {
-      params.set('view', updates.view);
+    // Set range parameters for schedule view
+    if (currentView === 'schedule' && updates.range?.from && updates.range.to) {
+      params.set('start', updates.range.from.toISOString().split('T')[0]);
+      params.set('end', updates.range.to.toISOString().split('T')[0]);
     }
 
     router.push(`?${params.toString()}`, { scroll: false });
@@ -99,8 +106,9 @@ export function CalendarWrapper({
   });
 
   const handlePrevious = () => {
+    let newDate: Date;
     setCurrentDate((prev) => {
-      const newDate = new Date(prev);
+      newDate = new Date(prev);
       switch (view) {
         case 'day':
           newDate.setDate(prev.getDate() - 1);
@@ -111,16 +119,19 @@ export function CalendarWrapper({
         default:
           newDate.setDate(prev.getDate() - 1);
       }
-      const range = getDateRange(newDate, view);
-      setDateRange(range);
-      updateScheduleData(range);
       return newDate;
     });
+
+    const range = getDateRange(newDate!, view);
+    setDateRange(range);
+    updateUrlParams({ date: newDate!, range });
+    updateScheduleData(range);
   };
 
   const handleNext = () => {
+    let newDate: Date;
     setCurrentDate((prev) => {
-      const newDate = new Date(prev);
+      newDate = new Date(prev);
       switch (view) {
         case 'day':
           newDate.setDate(prev.getDate() + 1);
@@ -131,17 +142,21 @@ export function CalendarWrapper({
         default:
           newDate.setDate(prev.getDate() + 1);
       }
-      const range = getDateRange(newDate, view);
-      setDateRange(range);
-      updateScheduleData(range);
       return newDate;
     });
+
+    const range = getDateRange(newDate!, view);
+    setDateRange(range);
+    updateUrlParams({ date: newDate!, range });
+    updateScheduleData(range);
   };
 
   const handleToday = () => {
-    setCurrentDate(new Date());
-    const range = getDateRange(new Date(), view);
+    const today = new Date();
+    setCurrentDate(today);
+    const range = getDateRange(today, view);
     setDateRange(range);
+    updateUrlParams({ date: today, range });
     updateScheduleData(range);
   };
 

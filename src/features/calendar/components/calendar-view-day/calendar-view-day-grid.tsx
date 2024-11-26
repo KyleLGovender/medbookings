@@ -1,6 +1,8 @@
 'use client';
 
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
+
+import classNames from '@/lib/classNames';
 
 import { Schedule } from '../../lib/types';
 import { CalendarViewDayTimeGrid } from './calendar-view-day-time-grid';
