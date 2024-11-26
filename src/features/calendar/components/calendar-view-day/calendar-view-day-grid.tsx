@@ -1,11 +1,21 @@
 'use client';
 
-interface DayCalendarGridProps {
+import { useRef } from 'react';
+
+import { Schedule } from '../../lib/types';
+import { CalendarViewDayTimeGrid } from './calendar-view-day-time-grid';
+
+interface CalendarViewDayGridProps {
   currentDate: string;
   onDateChange: (dateStr: string) => void;
+  scheduleData: Schedule[];
 }
 
-export function DayCalendarGrid({ currentDate, onDateChange }: DayCalendarGridProps) {
+export function CalendarViewDayGrid({
+  currentDate,
+  onDateChange,
+  scheduleData,
+}: CalendarViewDayGridProps) {
   const container = useRef<HTMLDivElement>(null);
   const containerNav = useRef<HTMLDivElement>(null);
   const containerOffset = useRef<HTMLDivElement>(null);
@@ -65,12 +75,12 @@ export function DayCalendarGrid({ currentDate, onDateChange }: DayCalendarGridPr
             })}
           </div>
 
-          <DayTimeGrid
+          <CalendarViewDayTimeGrid
             containerRef={container}
             navRef={containerNav}
             offsetRef={containerOffset}
             currentDate={currentDate}
-            filteredSchedule={filteredSchedule}
+            scheduleData={scheduleData}
           />
         </div>
       </div>

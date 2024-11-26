@@ -39,7 +39,20 @@ export function CalendarHeader({
   onViewChange,
   onRefresh,
 }: CalendarHeaderProps) {
+  console.log('CalendarHeader - Current props:', {
+    view,
+    currentDate,
+    dateRange,
+  });
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleDateRangeChange = (newRange: DateRange | undefined) => {
+    console.log('handleDateRangeChange:', newRange);
+    if (newRange?.from && newRange?.to) {
+      onDateRangeSelect(newRange);
+    }
+  };
 
   return (
     <header className="flex flex-col gap-4 border-b border-gray-200 px-6 py-4 md:flex-row md:items-center md:justify-between">

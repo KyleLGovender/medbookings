@@ -159,3 +159,46 @@ export function getDateRange(date: Date, view: 'day' | 'week' | 'schedule') {
   if (view === 'week') return { from: date, to: addDays(date, 7) };
   return { from: date, to: addDays(date, 7) };
 }
+
+// Add these new functions to the existing helper.ts file
+
+export function getEventGridPosition(startTime: Date | string, endTime: Date | string) {
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+
+  const startMinutes = start.getHours() * 60 + start.getMinutes();
+  const endMinutes = end.getHours() * 60 + end.getMinutes();
+
+  // Calculate grid positions (each row represents 5 minutes)
+  const rowStart = Math.floor(startMinutes / 5) + 2; // +2 for header offset
+  const rowSpan = Math.ceil((endMinutes - startMinutes) / 5);
+
+  console.log('getEventGridPosition calculation:', {
+    startTime,
+    endTime,
+    startMinutes,
+    endMinutes,
+    rowStart,
+    rowSpan,
+    result: `${rowStart} / span ${rowSpan}`,
+  });
+
+  return `${rowStart} / span ${rowSpan}`;
+}
+
+export function filterScheduleForWeek(schedule: Schedule[], currentDate: Date): Schedule[] {
+  const startOfWeek = startOfWeek(currentDate);
+  const endOfWeek = endOfWeek(currentDate);
+
+  return schedule.filter((item) => {
+    const itemDate = new Date(item.startTime);
+    return itemDate >= startOfWeek && itemDate <= endOfWeek;
+  });
+}
+
+export function filterScheduleForDay(schedule: Schedule[], currentDate: Date): Schedule[] {
+  return schedule.filter((item) => {
+    const itemDate = new Date(item.startTime);
+    return isSameDay(itemDate, currentDate);
+  });
+}

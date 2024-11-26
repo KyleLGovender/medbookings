@@ -1,16 +1,34 @@
 'use client';
 
-interface WeekCalendarGridProps {
+import { useEffect, useRef } from 'react';
+
+import { CalendarViewWeekTimeGrid } from '@/features/calendar/components/calendar-view-week/calendar-view-week-time-grid';
+import { generateDaysForWeekCalendar } from '@/features/calendar/lib/helper';
+import { Schedule } from '@/features/calendar/lib/types';
+
+interface CalendarViewWeekGridProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   onViewChange?: (view: 'day') => void;
+  scheduleData: Schedule[];
+  serviceProviderId: string;
+  onRefresh: () => Promise<void>;
 }
 
-export function WeekCalendarGrid({
+export function CalendarViewWeekGrid({
   currentDate,
   onDateChange,
   onViewChange = () => {},
-}: WeekCalendarGridProps) {
+  scheduleData = [],
+  serviceProviderId,
+  onRefresh,
+}: CalendarViewWeekGridProps) {
+  console.log('CalendarViewWeekGrid - Received scheduleData:', {
+    count: scheduleData.length,
+    data: scheduleData,
+    currentDate,
+  });
+
   const container = useRef<HTMLDivElement>(null);
   const containerNav = useRef<HTMLDivElement>(null);
   const containerOffset = useRef<HTMLDivElement>(null);
@@ -67,11 +85,13 @@ export function WeekCalendarGrid({
             </div>
           </div>
 
-          <WeekTimeGrid
+          <CalendarViewWeekTimeGrid
             containerRef={container}
             navRef={containerNav}
             offsetRef={containerOffset}
-            filteredSchedule={filteredSchedule}
+            scheduleData={scheduleData}
+            serviceProviderId={serviceProviderId}
+            onRefresh={onRefresh}
           />
         </div>
       </div>

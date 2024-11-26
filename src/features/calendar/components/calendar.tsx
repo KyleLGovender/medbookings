@@ -8,7 +8,9 @@ import { getServiceProviderScheduleInRange } from '@/features/calendar/lib/queri
 import { getCurrentUser } from '@/lib/auth';
 import { getAuthenticatedServiceProvider } from '@/lib/server-helper';
 
-export async function Calendar() {
+type SearchParams = { [key: string]: string | string[] | undefined };
+
+export async function Calendar({ searchParams }: { searchParams: SearchParams }) {
   const user = await getCurrentUser();
 
   if (!user?.id) {
@@ -21,11 +23,45 @@ export async function Calendar() {
     redirect('/profile/service-provider');
   }
 
-  const initialData = await getServiceProviderScheduleInRange(
+  // Get date range or single date from URL
+  const start = searchParams.start as string;
+  const end = searchParams.end as string;
+  const date = searchParams.date as string;
+  const view = searchParams.view as string;
+
+  // Determine dates based on URL parameters
+  let startDate: Date;
+  let endDate: Date;
+
+  if (date) {
+    // If single date is provided, use it for both start and end
+    startDate = new Date(date);
+    endDate = new Date(date);
+  } else {
+    // Otherwise use range or defaults
+    startDate = start ? new Date(start) : new Date();
+    endDate = end ? new Date(end) : addDays(new Date(), 7);
+  }
+
+  // Fetch initial data based on URL params or default range
+  const initialScheduleData = await getServiceProviderScheduleInRange(
     serviceProviderId,
-    new Date(),
-    addDays(new Date(), 7)
+    startDate,
+    endDate
   );
+
+  console.log('Calendar - Initial render:', {
+    urlParams: { start, end, date, view },
+    startDate,
+    endDate,
+    initialDataCount: initialScheduleData.length,
+  });
+
+  const isValidView = (v: string | undefined): v is 'day' | 'schedule' | 'week' => {
+    return v === 'day' || v === 'schedule' || v === 'week';
+  };
+
+  const validView = isValidView(view) ? view : undefined;
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -39,7 +75,16 @@ export async function Calendar() {
 
         <Suspense fallback={<div className="h-[600px] animate-pulse rounded-lg bg-gray-100" />}>
           <div className="rounded-lg bg-white shadow">
-            <CalendarWrapper initialData={initialData} serviceProviderId={serviceProviderId} />
+            <CalendarWrapper
+              initialData={initialScheduleData}
+              serviceProviderId={serviceProviderId}
+              initialDateRange={{
+                from: startDate,
+                to: endDate,
+              }}
+              initialView={validView}
+              initialDate={date ? new Date(date) : undefined}
+            />
           </div>
         </Suspense>
       </div>

@@ -1,5 +1,9 @@
 import { Calendar } from '@/features/calendar/components/calendar';
 
-export default async function CalendarPage() {
-  return <Calendar />;
+export default function CalendarPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  return <Calendar searchParams={searchParams} />;
 }

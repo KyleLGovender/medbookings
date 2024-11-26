@@ -1,78 +1,102 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useState, useTransition } from 'react';
+import { Suspense, useCallback, useState, useTransition } from 'react';
 
-import { addDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
 import { CalendarHeader } from '@/features/calendar/components/calendar-header';
 import { CalendarSkeleton } from '@/features/calendar/components/calendar-skeleton';
 import { CalendarViewDay } from '@/features/calendar/components/calendar-view-day';
 import { CalendarViewSchedule } from '@/features/calendar/components/calendar-view-schedule';
-import { CalendarViewWeek } from '@/features/calendar/components/calender-view-week';
+import { CalendarViewWeek } from '@/features/calendar/components/calendar-view-week';
 import { getDateRange } from '@/features/calendar/lib/helper';
 import { getServiceProviderScheduleInRange } from '@/features/calendar/lib/queries';
 import { Schedule } from '@/features/calendar/lib/types';
 
-interface CalendarProps {
+interface CalendarWrapperProps {
   initialData: Schedule[];
   serviceProviderId: string;
+  initialDateRange: DateRange;
+  initialView?: 'day' | 'week' | 'schedule';
+  initialDate?: Date;
 }
 
-export function CalendarWrapper({ initialData, serviceProviderId }: CalendarProps) {
+export function CalendarWrapper({
+  initialData,
+  serviceProviderId,
+  initialDateRange,
+  initialView = 'schedule',
+  initialDate,
+}: CalendarWrapperProps) {
   const [isPending, startTransition] = useTransition();
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  // Initialize with props instead of reading URL directly
+  const [dateRange, setDateRange] = useState<DateRange>(initialDateRange);
   const [scheduleData, setScheduleData] = useState<Schedule[]>(initialData);
-  const [view, setView] = useState<'day' | 'week' | 'schedule'>('schedule');
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [view, setView] = useState<'day' | 'week' | 'schedule'>(initialView);
+  const [currentDate, setCurrentDate] = useState(initialDate || new Date());
 
-  // Initialize dateRange from URL or defaults
-  const [dateRange, setDateRange] = useState<DateRange>(() => {
-    const start = searchParams.get('start');
-    const end = searchParams.get('end');
-    return {
-      from: start ? new Date(start) : new Date(),
-      to: end ? new Date(end) : addDays(new Date(), 7),
-    };
-  });
+  const updateUrlParams = (updates: { range?: DateRange; view?: string; date?: Date }) => {
+    const params = new URLSearchParams(searchParams);
 
-  // Update URL when dateRange changes
-  useEffect(() => {
-    if (dateRange.from && dateRange.to) {
-      const params = new URLSearchParams(searchParams);
-      params.set('start', dateRange.from.toISOString().split('T')[0]);
-      params.set('end', dateRange.to.toISOString().split('T')[0]);
-      router.replace(`?${params.toString()}`);
+    // Clear existing date-related params
+    params.delete('start');
+    params.delete('end');
+    params.delete('date');
 
-      // Fetch updated data
+    // Set new params based on what was provided
+    if (updates.range?.from && updates.range.to) {
+      params.set('start', updates.range.from.toISOString().split('T')[0]);
+      params.set('end', updates.range.to.toISOString().split('T')[0]);
+    } else if (updates.date) {
+      params.set('date', updates.date.toISOString().split('T')[0]);
+    }
+
+    if (updates.view) {
+      params.set('view', updates.view);
+    }
+
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
+
+  const handleViewChange = (newView: 'day' | 'week' | 'schedule') => {
+    setView(newView);
+    updateUrlParams({ view: newView });
+  };
+
+  const handleDateChange = (newDate: Date | undefined) => {
+    if (!newDate) return;
+    setCurrentDate(newDate);
+    updateUrlParams({ date: newDate });
+  };
+
+  const handleDateRangeSelect = (range: DateRange | undefined) => {
+    // If range is undefined or incomplete, just update the state
+    setDateRange(range || { from: undefined, to: undefined });
+
+    // Only update URL and fetch data when we have a complete range
+    if (range?.from && range?.to) {
+      updateUrlParams({ range });
       startTransition(async () => {
         const data = await getServiceProviderScheduleInRange(
           serviceProviderId,
-          dateRange.from!,
-          dateRange.to!
+          range.from!,
+          range.to!
         );
         setScheduleData(data);
       });
     }
-  }, [dateRange, router, searchParams, serviceProviderId]);
-
-  const updateScheduleData = (range: DateRange) => {
-    if (!range.from || !range.to) return;
-
-    console.log('Fetching data for range:', range);
-
-    startTransition(async () => {
-      const data = await getServiceProviderScheduleInRange(
-        serviceProviderId,
-        range.from!,
-        range.to!
-      );
-      console.log('Received data:', data);
-      setScheduleData(data);
-    });
   };
+
+  console.log('CalendarWrapper - Current state:', {
+    view,
+    currentDate,
+    scheduleDataCount: scheduleData.length,
+    dateRange,
+  });
 
   const handlePrevious = () => {
     setCurrentDate((prev) => {
@@ -121,13 +145,6 @@ export function CalendarWrapper({ initialData, serviceProviderId }: CalendarProp
     updateScheduleData(range);
   };
 
-  const handleDateRangeSelect = (range: DateRange | undefined) => {
-    if (range) {
-      setDateRange(range);
-      updateScheduleData(range);
-    }
-  };
-
   const refreshData = useCallback(async () => {
     startTransition(async () => {
       const data = await getServiceProviderScheduleInRange(
@@ -139,11 +156,29 @@ export function CalendarWrapper({ initialData, serviceProviderId }: CalendarProp
     });
   }, [serviceProviderId, dateRange]);
 
+  const updateScheduleData = (range: DateRange) => {
+    startTransition(async () => {
+      const data = await getServiceProviderScheduleInRange(
+        serviceProviderId,
+        range.from!,
+        range.to!
+      );
+      setScheduleData(data);
+    });
+  };
+
   const renderCalendar = () => {
     const props = {
       currentDate,
+      scheduleData,
       onDateChange: setCurrentDate,
     };
+
+    console.log('renderCalendar - Passing props:', {
+      view,
+      scheduleDataCount: scheduleData.length,
+      currentDate: currentDate.toISOString(),
+    });
 
     switch (view) {
       case 'day':
@@ -177,12 +212,12 @@ export function CalendarWrapper({ initialData, serviceProviderId }: CalendarProp
           currentDate={currentDate}
           dateRange={dateRange}
           serviceProviderId={serviceProviderId}
-          onDateSelect={(date: Date | undefined) => date && setCurrentDate(date)}
+          onDateSelect={handleDateChange}
           onDateRangeSelect={handleDateRangeSelect}
           onPrevious={handlePrevious}
           onNext={handleNext}
           onToday={handleToday}
-          onViewChange={setView}
+          onViewChange={handleViewChange}
           onRefresh={refreshData}
         />
         <Suspense fallback={<CalendarSkeleton />}>{renderCalendar()}</Suspense>
