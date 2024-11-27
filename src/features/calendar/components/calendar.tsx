@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { addDays } from 'date-fns';
 
 import { CalendarWrapper } from '@/features/calendar/components/calendar-wrapper';
+import { getDateRange } from '@/features/calendar/lib/helper';
 import { getServiceProviderScheduleInRange } from '@/features/calendar/lib/queries';
 import { getCurrentUser } from '@/lib/auth';
 import { getAuthenticatedServiceProvider } from '@/lib/server-helper';
@@ -23,45 +24,62 @@ export async function Calendar({ searchParams }: { searchParams: SearchParams })
     redirect('/profile/service-provider');
   }
 
-  // Get date range or single date from URL
-  const start = searchParams.start as string;
-  const end = searchParams.end as string;
-  const date = searchParams.date as string;
-  const view = searchParams.view as string;
-
-  // Determine dates based on URL parameters
-  let startDate: Date;
-  let endDate: Date;
-
-  if (date) {
-    // If single date is provided, use it for both start and end
-    startDate = new Date(date);
-    endDate = new Date(date);
-  } else {
-    // Otherwise use range or defaults
-    startDate = start ? new Date(start) : new Date();
-    endDate = end ? new Date(end) : addDays(new Date(), 7);
-  }
-
-  // Fetch initial data based on URL params or default range
-  const initialScheduleData = await getServiceProviderScheduleInRange(
-    serviceProviderId,
-    startDate,
-    endDate
-  );
-
-  console.log('Calendar - Initial render:', {
-    urlParams: { start, end, date, view },
-    startDate,
-    endDate,
-    initialDataCount: initialScheduleData.length,
-  });
-
   const isValidView = (v: string | undefined): v is 'day' | 'schedule' | 'week' => {
     return v === 'day' || v === 'schedule' || v === 'week';
   };
 
-  const validView = isValidView(view) ? view : undefined;
+  const view = searchParams.view as string;
+  const validView = isValidView(view) ? view : 'schedule';
+
+  const start = searchParams.start as string;
+  const end = searchParams.end as string;
+  const date = searchParams.date as string;
+
+  let startDate: Date | undefined;
+  let endDate: Date | undefined;
+  let currentDate: Date | undefined;
+
+  if (validView === 'schedule') {
+    if (start && end) {
+      startDate = new Date(start);
+      endDate = new Date(end);
+    } else if (start) {
+      startDate = new Date(start);
+      endDate = addDays(startDate, 7);
+    } else if (end) {
+      endDate = new Date(end);
+      startDate = addDays(endDate, -7);
+    } else {
+      startDate = new Date();
+      endDate = addDays(startDate, 7);
+    }
+  }
+
+  if (validView === 'day') {
+    const dateToUse = date ? new Date(date) : new Date();
+    const { from: dayStart, to: dayEnd } = getDateRange(dateToUse, validView) ?? {
+      from: new Date(),
+      to: addDays(new Date(), 1),
+    };
+    startDate = dayStart;
+    endDate = dayEnd;
+  }
+
+  if (validView === 'week') {
+    const dateToUse = date ? new Date(date) : new Date();
+    const { from: dayStart, to: dayEnd } = getDateRange(dateToUse, validView) ?? {
+      from: new Date(),
+      to: addDays(new Date(), 1),
+    };
+    startDate = dayStart;
+    endDate = dayEnd;
+  }
+
+  const initialScheduleData = await getServiceProviderScheduleInRange(
+    serviceProviderId,
+    startDate ?? new Date(),
+    endDate ?? addDays(new Date(), 7)
+  );
 
   return (
     <main className="min-h-screen bg-gray-50">

@@ -169,8 +169,6 @@ export async function updateAvailability(
       };
     }
 
-    console.log('Updated data:', data);
-
     const updated = await prisma.availability.update({
       where: { id: availabilityId },
       data,

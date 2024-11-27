@@ -18,7 +18,7 @@ interface CalendarWrapperProps {
   initialData: Schedule[];
   serviceProviderId: string;
   initialDateRange: DateRange;
-  initialView?: 'day' | 'week' | 'schedule';
+  initialView: 'day' | 'week' | 'schedule';
   initialDate?: Date;
 }
 
@@ -26,14 +26,13 @@ export function CalendarWrapper({
   initialData,
   serviceProviderId,
   initialDateRange,
-  initialView = 'schedule',
+  initialView,
   initialDate,
 }: CalendarWrapperProps) {
   const [isPending, startTransition] = useTransition();
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Initialize with props instead of reading URL directly
   const [dateRange, setDateRange] = useState<DateRange>(initialDateRange);
   const [scheduleData, setScheduleData] = useState<Schedule[]>(initialData);
   const [view, setView] = useState<'day' | 'week' | 'schedule'>(initialView);
@@ -75,9 +74,21 @@ export function CalendarWrapper({
   };
 
   const handleDateChange = (newDate: Date | undefined) => {
-    if (!newDate) return;
+    if (!newDate) {
+      return;
+    }
+
     setCurrentDate(newDate);
-    updateUrlParams({ date: newDate });
+
+    // Get new range and update data
+    const range = getDateRange(newDate, view);
+
+    updateUrlParams({ date: newDate, range });
+    updateScheduleData(range);
+  };
+
+  const handleDateSelect = (newDate: Date) => {
+    handleDateChange(newDate);
   };
 
   const handleDateRangeSelect = (range: DateRange | undefined) => {
@@ -97,13 +108,6 @@ export function CalendarWrapper({
       });
     }
   };
-
-  console.log('CalendarWrapper - Current state:', {
-    view,
-    currentDate,
-    scheduleDataCount: scheduleData.length,
-    dateRange,
-  });
 
   const handlePrevious = () => {
     let newDate: Date;
@@ -186,20 +190,28 @@ export function CalendarWrapper({
     const props = {
       currentDate,
       scheduleData,
-      onDateChange: setCurrentDate,
+      onDateChange: handleDateChange, // Note: using handleDateChange instead of setCurrentDate directly
     };
-
-    console.log('renderCalendar - Passing props:', {
-      view,
-      scheduleDataCount: scheduleData.length,
-      currentDate: currentDate.toISOString(),
-    });
 
     switch (view) {
       case 'day':
-        return <CalendarViewDay {...props} />;
+        return (
+          <CalendarViewDay
+            {...props}
+            serviceProviderId={serviceProviderId}
+            onRefresh={refreshData}
+            onViewChange={setView}
+          />
+        );
       case 'week':
-        return <CalendarViewWeek {...props} onViewChange={setView} />;
+        return (
+          <CalendarViewWeek
+            {...props}
+            serviceProviderId={serviceProviderId}
+            onRefresh={refreshData}
+            onViewChange={setView}
+          />
+        );
       case 'schedule':
         return (
           <CalendarViewSchedule

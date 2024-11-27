@@ -10,13 +10,19 @@ import { CalendarViewDayTimeGrid } from './calendar-view-day-time-grid';
 interface CalendarViewDayGridProps {
   currentDate: string;
   onDateChange: (dateStr: string) => void;
+  onViewChange?: (view: 'day') => void;
   scheduleData: Schedule[];
+  serviceProviderId: string;
+  onRefresh: () => Promise<void>;
 }
 
 export function CalendarViewDayGrid({
   currentDate,
   onDateChange,
+  onViewChange = () => {},
   scheduleData,
+  serviceProviderId,
+  onRefresh,
 }: CalendarViewDayGridProps) {
   const container = useRef<HTMLDivElement>(null);
   const containerNav = useRef<HTMLDivElement>(null);
@@ -83,6 +89,8 @@ export function CalendarViewDayGrid({
             offsetRef={containerOffset}
             currentDate={currentDate}
             scheduleData={scheduleData}
+            serviceProviderId={serviceProviderId}
+            onRefresh={onRefresh}
           />
         </div>
       </div>

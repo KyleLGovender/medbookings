@@ -1,4 +1,5 @@
-import { addDays, startOfWeek as dateFnsStartOfWeek, eachDayOfInterval } from 'date-fns';
+import { startOfWeek as dateFnsStartOfWeek, eachDayOfInterval } from 'date-fns';
+import { DateRange } from 'react-day-picker';
 
 import { Schedule } from './types';
 
@@ -135,10 +136,12 @@ export function expandRecurringSchedule(schedule: Schedule, endDate: Date): Sche
 
   return filteredDates.map((date) => {
     const startTime = new Date(date);
-    startTime.setHours(schedule.startTime.getHours(), schedule.startTime.getMinutes());
+    const scheduleStart = new Date(schedule.startTime);
+    startTime.setHours(scheduleStart.getHours(), scheduleStart.getMinutes());
 
     const endTime = new Date(date);
-    endTime.setHours(schedule.endTime.getHours(), schedule.endTime.getMinutes());
+    const scheduleEndTime = new Date(schedule.endTime);
+    endTime.setHours(scheduleEndTime.getHours(), scheduleEndTime.getMinutes());
 
     const relevantBookings = schedule.bookings.filter((booking) =>
       isSameDay(booking.startTime, date)
@@ -147,17 +150,33 @@ export function expandRecurringSchedule(schedule: Schedule, endDate: Date): Sche
     return {
       ...schedule,
       id: `${schedule.id}-${date.toISOString()}`,
-      startTime,
-      endTime,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
       bookings: relevantBookings,
     };
   });
 }
 
-export function getDateRange(date: Date, view: 'day' | 'week' | 'schedule') {
-  if (view === 'day') return { from: date, to: addDays(date, 1) };
-  if (view === 'week') return { from: date, to: addDays(date, 7) };
-  return { from: date, to: addDays(date, 7) };
+export function getDateRange(date: Date, view: 'day' | 'week' | 'schedule'): DateRange {
+  const startDate = new Date(date);
+  const endDate = new Date(date);
+
+  switch (view) {
+    case 'week':
+      const day = startDate.getDay();
+      startDate.setDate(startDate.getDate() - day);
+      endDate.setDate(startDate.getDate() + 6);
+      break;
+    case 'day':
+      endDate.setDate(startDate.getDate());
+      break;
+    case 'schedule':
+      startDate.setDate(1);
+      endDate.setMonth(startDate.getMonth() + 1, 0);
+      break;
+  }
+
+  return { from: startDate, to: endDate };
 }
 
 // Add these new functions to the existing helper.ts file
@@ -172,16 +191,6 @@ export function getEventGridPosition(startTime: Date | string, endTime: Date | s
   // Calculate grid positions (each row represents 5 minutes)
   const rowStart = Math.floor(startMinutes / 5) + 2; // +2 for header offset
   const rowSpan = Math.ceil((endMinutes - startMinutes) / 5);
-
-  console.log('getEventGridPosition calculation:', {
-    startTime,
-    endTime,
-    startMinutes,
-    endMinutes,
-    rowStart,
-    rowSpan,
-    result: `${rowStart} / span ${rowSpan}`,
-  });
 
   return `${rowStart} / span ${rowSpan}`;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { CalendarViewWeekTimeGrid } from '@/features/calendar/components/calendar-view-week/calendar-view-week-time-grid';
 import { generateDaysForWeekCalendar } from '@/features/calendar/lib/helper';
@@ -23,34 +23,38 @@ export function CalendarViewWeekGrid({
   serviceProviderId,
   onRefresh,
 }: CalendarViewWeekGridProps) {
-  console.log('CalendarViewWeekGrid - Received scheduleData:', {
-    count: scheduleData.length,
-    data: scheduleData,
-    currentDate,
-  });
-
   const container = useRef<HTMLDivElement>(null);
   const containerNav = useRef<HTMLDivElement>(null);
   const containerOffset = useRef<HTMLDivElement>(null);
 
-  const weekDays = generateDaysForWeekCalendar(currentDate);
+  const weekDays = useMemo(() => generateDaysForWeekCalendar(currentDate), [currentDate]);
 
-  const handleDayClick = (date: Date) => {
-    onDateChange(date);
-    onViewChange('day');
-  };
+  const handleDayClick = useCallback(
+    (date: Date) => {
+      onDateChange(date);
+      onViewChange('day');
+    },
+    [onDateChange, onViewChange]
+  );
 
-  // Keep scroll to current time effect
   useEffect(() => {
     if (!container.current || !containerNav.current || !containerOffset.current) return;
 
-    const currentMinute = new Date().getHours() * 60;
-    container.current.scrollTop =
-      ((container.current.scrollHeight -
-        containerNav.current.offsetHeight -
-        containerOffset.current.offsetHeight) *
-        currentMinute) /
-      1440;
+    const updateScrollPosition = () => {
+      const currentMinute = new Date().getHours() * 60 + new Date().getMinutes();
+      container.current!.scrollTop =
+        ((container.current!.scrollHeight -
+          containerNav.current!.offsetHeight -
+          containerOffset.current!.offsetHeight) *
+          currentMinute) /
+        1440;
+    };
+
+    updateScrollPosition();
+
+    const intervalId = setInterval(updateScrollPosition, 60000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   return (

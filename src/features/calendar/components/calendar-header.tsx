@@ -39,16 +39,25 @@ export function CalendarHeader({
   onViewChange,
   onRefresh,
 }: CalendarHeaderProps) {
-  console.log('CalendarHeader - Current props:', {
-    view,
-    currentDate,
-    dateRange,
-  });
-
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  const handlePrevious = () => {
+    onPrevious();
+  };
+
+  const handleNext = () => {
+    onNext();
+  };
+
+  const handleToday = () => {
+    onToday();
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    onDateSelect(date);
+  };
+
   const handleDateRangeChange = (newRange: DateRange | undefined) => {
-    console.log('handleDateRangeChange:', newRange);
     if (newRange?.from && newRange?.to) {
       onDateRangeSelect(newRange);
     }
@@ -58,11 +67,15 @@ export function CalendarHeader({
     <header className="flex flex-col gap-4 border-b border-gray-200 px-6 py-4 md:flex-row md:items-center md:justify-between">
       <div className="mx-auto flex flex-col gap-2 md:mx-0 md:flex-row md:items-center">
         {view === 'schedule' ? (
-          <DateRangeSelector dateRange={dateRange} onSelect={onDateRangeSelect} />
+          <DateRangeSelector dateRange={dateRange} onSelect={handleDateRangeChange} />
         ) : (
           <>
-            <DatePicker date={currentDate} onChange={onDateSelect} />
-            <CalendarNavigation onPrevious={onPrevious} onNext={onNext} onToday={onToday} />
+            <DatePicker date={currentDate} onChange={handleDateSelect} />
+            <CalendarNavigation
+              onPrevious={handlePrevious}
+              onNext={handleNext}
+              onToday={handleToday}
+            />
           </>
         )}
       </div>

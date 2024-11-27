@@ -24,8 +24,12 @@ export function DatePicker({ date, defaultMonth, onChange }: DatePickerProps) {
     setOpen(false);
   };
 
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+  };
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -33,6 +37,7 @@ export function DatePicker({ date, defaultMonth, onChange }: DatePickerProps) {
             'w-full justify-start text-left font-normal',
             !date && 'text-muted-foreground'
           )}
+          onClick={() => console.debug('[DatePicker] Trigger clicked')}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {date ? format(date, 'PPP') : <span>Pick a date</span>}

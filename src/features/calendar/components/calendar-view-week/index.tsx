@@ -8,6 +8,8 @@ interface CalendarViewWeekProps {
   scheduleData: Schedule[];
   onDateChange: (date: Date) => void;
   onViewChange?: (view: 'day') => void;
+  serviceProviderId: string;
+  onRefresh: () => void;
 }
 
 export function CalendarViewWeek({
@@ -15,11 +17,12 @@ export function CalendarViewWeek({
   scheduleData = [],
   onDateChange,
   onViewChange = () => {},
+  serviceProviderId,
+  onRefresh,
 }: CalendarViewWeekProps) {
-  console.log('CalendarViewWeek - Received scheduleData:', {
-    count: scheduleData.length,
-    data: scheduleData,
-  });
+  const handleRefresh = async () => {
+    await onRefresh();
+  };
 
   return (
     <CalendarViewWeekGrid
@@ -27,6 +30,8 @@ export function CalendarViewWeek({
       scheduleData={scheduleData}
       onDateChange={onDateChange}
       onViewChange={onViewChange}
+      serviceProviderId={serviceProviderId}
+      onRefresh={handleRefresh}
     />
   );
 }

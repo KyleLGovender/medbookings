@@ -5,13 +5,32 @@ import { useState } from 'react';
 import { formatTime } from '@/lib/helper';
 import { cn } from '@/lib/utils';
 
-import { Schedule } from '../lib/types';
-
 interface CalendarViewEventItemProps {
-  schedule: Schedule;
+  schedule: {
+    id: string;
+    type: 'BOOKING';
+    startTime: string;
+    endTime: string;
+    client: {
+      name: string | null;
+    };
+    bookings?: Array<{
+      id: string;
+      client: {
+        name: string | null;
+      };
+      isOnline: boolean;
+    }>;
+    maxBookings?: number;
+    duration?: number;
+    price?: number;
+    isOnlineAvailable?: boolean;
+    isInPersonAvailable?: boolean;
+    isRecurring?: boolean;
+  };
   gridPosition: string;
   gridColumn: number;
-  onEventClick?: (schedule: Schedule) => void;
+  onEventClick?: (schedule: CalendarViewEventItemProps['schedule']) => void;
 }
 
 export function CalendarViewEventItem({
@@ -26,17 +45,17 @@ export function CalendarViewEventItem({
     endTime: schedule.endTime,
     gridPosition,
     gridColumn,
-    hasBookings: schedule.bookings?.length > 0,
+    hasBookings: (schedule.bookings ?? []).length > 0,
   });
 
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
-  const hasBookings = schedule.bookings?.length > 0;
+  const hasBookings = (schedule.bookings ?? []).length > 0;
 
   function getStatusIndicator() {
-    if (schedule.bookings?.length >= schedule.maxBookings) {
+    if ((schedule.bookings ?? []).length >= (schedule.maxBookings ?? 0)) {
       return 'bg-red-500'; // Fully booked
     }
-    if (schedule.bookings?.length > 0) {
+    if ((schedule.bookings ?? []).length > 0) {
       return 'bg-yellow-500'; // Partially booked
     }
     return 'bg-green-500'; // Available
@@ -115,7 +134,7 @@ export function CalendarViewEventItem({
               {hasBookings && (
                 <div className="mt-1 border-t pt-1">
                   <p className="font-semibold">Bookings:</p>
-                  {schedule.bookings.map((booking) => (
+                  {schedule.bookings?.map((booking) => (
                     <p key={booking.id} className="text-gray-600">
                       {booking.client.name} ({booking.isOnline ? 'Online' : 'In-Person'})
                     </p>

@@ -7,7 +7,7 @@ interface CalendarViewTimeColumnProps {
 export function CalendarViewTimeColumn({ offsetRef }: CalendarViewTimeColumnProps) {
   return (
     <div
-      className="col-start-1 col-end-2 row-start-1 grid divide-y divide-gray-100"
+      className="pointer-events-none z-20 col-start-1 col-end-2 row-start-1 grid divide-y divide-gray-100"
       style={{ gridTemplateRows: 'repeat(48, minmax(1.0rem, 1fr))' }}
     >
       <div ref={offsetRef} className="row-end-1 h-7" />

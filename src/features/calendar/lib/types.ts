@@ -1,3 +1,4 @@
+import { type Availability as ZodAvailability, type Booking as ZodBooking } from '@prisma/zod';
 import { z } from 'zod';
 
 export type ViewType = 'day' | 'week' | 'schedule';
@@ -36,21 +37,15 @@ export const availabilityFormSchema = z
 
 export type AvailabilityFormValues = z.infer<typeof availabilityFormSchema>;
 
-export interface Availability {
-  id: string;
-  serviceProviderId: string;
+export interface Availability
+  extends Omit<
+    ZodAvailability,
+    'price' | 'startTime' | 'endTime' | 'recurrenceEndDate' | 'createdAt' | 'updatedAt'
+  > {
+  price: number;
   startTime: string;
   endTime: string;
-  isRecurring: boolean;
-  recurringDays: number[];
   recurrenceEndDate: string | null;
-  duration: number;
-  price: number;
-  isOnlineAvailable: boolean;
-  isInPersonAvailable: boolean;
-  location: string;
-  maxBookings: number;
-  remainingSpots: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -75,17 +70,17 @@ export function transformAvailability(availability: any): Availability {
   };
 }
 
-export interface Booking extends Omit<PrismaBooking, 'price'> {
+export interface Booking extends Omit<ZodBooking, 'price'> {
   price: number;
   client: {
     name: string;
   };
-  status: 'PENDING' | 'CONFIRMED' | 'NO_SHOW' | 'CANCELLED' | 'COMPLETED';
-  isOnline: boolean;
 }
 
 export interface Schedule extends Availability {
+  type: 'AVAILABILITY';
   bookings: (Omit<Booking, 'client'> & {
+    type: 'BOOKING';
     client: {
       name: string | null;
     };
