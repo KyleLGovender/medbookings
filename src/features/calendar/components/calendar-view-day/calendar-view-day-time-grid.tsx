@@ -36,7 +36,6 @@ export function CalendarViewDayTimeGrid({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleEventClick = (schedule: Schedule) => {
-    console.debug('Availability clicked:', schedule);
     setSelectedSchedule(schedule);
     setIsDialogOpen(true);
   };

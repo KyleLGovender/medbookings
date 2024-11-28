@@ -31,15 +31,9 @@ export function CalendarViewWeekTimeGrid({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleEventClick = (schedule: Schedule) => {
-    console.debug('Availability clicked:', schedule);
     setSelectedSchedule(schedule);
     setIsDialogOpen(true);
   };
-
-  console.debug('[CalendarViewWeekTimeGrid] Rendering with scheduleData:', {
-    scheduleData,
-    serviceProviderId,
-  });
 
   // Filter for current week's data and separate availabilities and bookings
   const { weekSchedule, bookings } = useMemo(() => {
