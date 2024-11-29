@@ -1,9 +1,11 @@
 'use server';
 
+import { z } from 'zod';
+
 import { calculateAvailableSpots } from '@/features/calendar/lib/helper';
 import { prisma } from '@/lib/prisma';
 
-import { availabilityFormSchema } from './types';
+import { type BookingFormData, BookingFormSchema, availabilityFormSchema } from './types';
 
 function hasTimeOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
   return start1 < end2 && start2 < end1;
@@ -228,4 +230,80 @@ export async function checkScheduleAccess(
   }
 
   return { schedule };
+}
+
+export async function validateBookingFormData(formData: FormData): Promise<{
+  data?: BookingFormData;
+  error?: string;
+  fieldErrors?: Record<string, string[]>;
+  formErrors?: string[];
+}> {
+  try {
+    const rawData = {
+      startTime: formData.get('startTime'),
+      endTime: formData.get('endTime'),
+      clientId: formData.get('clientId'),
+      serviceProviderId: formData.get('serviceProviderId'),
+      availabilityId: formData.get('availabilityId'),
+      notes: formData.get('notes'),
+      status: formData.get('status'),
+      clientName: formData.get('clientName'),
+      clientEmail: formData.get('clientEmail'),
+      clientPhone: formData.get('clientPhone'),
+      duration: parseInt(formData.get('duration') as string),
+      price: parseFloat(formData.get('price') as string),
+      isOnline: formData.get('isOnline') === 'true',
+      location: formData.get('location'),
+      notificationPreferences: {
+        email: formData.get('notificationPreferences.email') === 'true',
+        sms: formData.get('notificationPreferences.sms') === 'true',
+      },
+    };
+
+    const validatedData = BookingFormSchema.parse(rawData);
+    return { data: validatedData };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const fieldErrors: Record<string, string[]> = {};
+      error.errors.forEach((err) => {
+        const field = err.path[0] as string;
+        if (!fieldErrors[field]) {
+          fieldErrors[field] = [];
+        }
+        fieldErrors[field].push(err.message);
+      });
+      return { fieldErrors };
+    }
+    return { error: 'Invalid form data' };
+  }
+}
+
+export async function checkBookingAccess(
+  bookingId: string,
+  serviceProviderId: string
+): Promise<{
+  booking?: any;
+  error?: string;
+}> {
+  try {
+    const booking = await prisma.booking.findFirst({
+      where: {
+        id: bookingId,
+        serviceProviderId: serviceProviderId,
+      },
+    });
+
+    if (!booking) {
+      return {
+        error: 'Booking not found or you do not have permission to access it',
+      };
+    }
+
+    return { booking };
+  } catch (error) {
+    console.error('Check booking access error:', error);
+    return {
+      error: 'Failed to verify booking access',
+    };
+  }
 }

@@ -239,8 +239,15 @@ model Booking {
   id                  String           @id @default(cuid())
   serviceProvider     ServiceProvider  @relation(fields: [serviceProviderId], references: [id])
   serviceProviderId   String
-  client             User             @relation(fields: [clientId], references: [id])
-  clientId           String
+  client             User?            @relation(fields: [clientId], references: [id])
+  clientId           String?
+  guestName          String?
+  guestEmail         String?
+  guestPhone         String?          // For SMS notifications
+  guestWhatsapp      String?          // For WhatsApp notifications
+  notifyViaEmail     Boolean          @default(false)
+  notifyViaSMS       Boolean          @default(false)
+  notifyViaWhatsapp  Boolean          @default(false)
   availability       Availability     @relation(fields: [availabilityId], references: [id])
   availabilityId     String
   

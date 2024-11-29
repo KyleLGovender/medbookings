@@ -1,14 +1,18 @@
 'use server';
 
+import { NotificationService } from '@/features/notifications/notification-service';
+import { TemplateService } from '@/features/notifications/template-service';
 import { prisma } from '@/lib/prisma';
 import { getAuthenticatedServiceProvider } from '@/lib/server-helper';
 
 import {
   checkAvailabilityAccess,
+  checkBookingAccess,
   checkForOverlappingAvailability,
   validateAvailabilityFormData,
+  validateBookingFormData,
 } from './server-helper';
-import { Availability } from './types';
+import { Availability, Booking } from './types';
 
 export async function createAvailability(formData: FormData): Promise<{
   data?: Availability;
@@ -184,6 +188,276 @@ export async function updateAvailability(
     return {
       error: 'Failed to update availability',
       details: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+export async function lookupUser(email: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        whatsapp: true,
+        notificationPreferences: {
+          select: {
+            email: true,
+            sms: true,
+            whatsapp: true,
+          },
+        },
+      },
+    });
+    return user;
+  } catch (error) {
+    console.error('User lookup error:', error);
+    return null;
+  }
+}
+
+async function sendBookingNotifications(booking: Booking) {
+  const notificationPromises = [];
+  const template = TemplateService.getBookingConfirmationTemplate(
+    booking,
+    booking.client?.name || booking.guestName
+  );
+
+  if (booking.client) {
+    // Handle registered user notifications
+    const recipient = {
+      name: booking.client.name,
+      email: booking.client.email,
+      phone: booking.client.phone,
+      whatsapp: booking.client.whatsapp,
+    };
+
+    if (booking.client.notificationPreferences?.email && recipient.email) {
+      notificationPromises.push(NotificationService.sendEmail(recipient, template));
+    }
+    if (booking.client.notificationPreferences?.sms && recipient.phone) {
+      notificationPromises.push(NotificationService.sendSMS(recipient, template));
+    }
+    if (booking.client.notificationPreferences?.whatsapp && recipient.whatsapp) {
+      notificationPromises.push(NotificationService.sendWhatsApp(recipient, template));
+    }
+  } else {
+    // Handle guest notifications
+    const recipient = {
+      name: booking.guestName,
+      email: booking.guestEmail,
+      phone: booking.guestPhone,
+      whatsapp: booking.guestWhatsapp,
+    };
+
+    if (booking.notifyViaEmail && recipient.email) {
+      notificationPromises.push(NotificationService.sendEmail(recipient, template));
+    }
+    if (booking.notifyViaSMS && recipient.phone) {
+      notificationPromises.push(NotificationService.sendSMS(recipient, template));
+    }
+    if (booking.notifyViaWhatsapp && recipient.whatsapp) {
+      notificationPromises.push(NotificationService.sendWhatsApp(recipient, template));
+    }
+  }
+
+  // Send all notifications in parallel
+  const results = await Promise.allSettled(notificationPromises);
+
+  // Log any failures
+  results.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      console.error(`Notification ${index} failed:`, result.reason);
+    }
+  });
+}
+
+export async function createBooking(formData: FormData): Promise<{
+  data?: Booking;
+  error?: string;
+  fieldErrors?: Record<string, string[]>;
+  formErrors?: string[];
+}> {
+  try {
+    // 1. Validate form data
+    const validationResult = await validateBookingFormData(formData);
+    if (!validationResult.data || validationResult.error) {
+      return {
+        error: validationResult.error,
+        fieldErrors: validationResult.fieldErrors,
+        formErrors: validationResult.formErrors,
+      };
+    }
+    const data = validationResult.data;
+
+    // 2. Check if the time slot is still available
+    const overlap = await prisma.booking.findFirst({
+      where: {
+        serviceProviderId: formData.get('serviceProviderId') as string,
+        OR: [
+          {
+            AND: [{ startTime: { lte: data.startTime } }, { endTime: { gt: data.startTime } }],
+          },
+          {
+            AND: [{ startTime: { lt: data.endTime } }, { endTime: { gte: data.endTime } }],
+          },
+        ],
+      },
+    });
+
+    if (overlap) {
+      return { error: 'This time slot is no longer available' };
+    }
+
+    // 3. Prepare booking data based on booking type
+    const bookingData: any = {
+      serviceProvider: {
+        connect: { id: formData.get('serviceProviderId') as string },
+      },
+      availability: formData.get('availabilityId')
+        ? { connect: { id: formData.get('availabilityId') as string } }
+        : undefined,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      duration: data.duration,
+      price: data.price,
+      isOnline: data.isOnline,
+      location: data.location,
+      notes: data.notes,
+      status: 'PENDING',
+    };
+
+    // Add user or guest data
+    if (data.bookingType === 'USER' && data.userId) {
+      bookingData.client = { connect: { id: data.userId } };
+    } else {
+      bookingData.guestName = data.guestName;
+      bookingData.guestEmail = data.guestEmail;
+      bookingData.guestPhone = data.guestPhone;
+      bookingData.guestWhatsapp = data.guestWhatsapp;
+      bookingData.notifyViaEmail = data.notificationPreferences.email;
+      bookingData.notifyViaSMS = data.notificationPreferences.sms;
+      bookingData.notifyViaWhatsapp = data.notificationPreferences.whatsapp;
+    }
+
+    // 4. Create the booking
+    const booking = await prisma.booking.create({
+      data: bookingData,
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            whatsapp: true,
+            notificationPreferences: true,
+          },
+        },
+      },
+    });
+
+    if (booking) {
+      await sendBookingNotifications(booking);
+    }
+
+    return {
+      data: {
+        ...booking,
+        startTime: booking.startTime.toISOString(),
+        endTime: booking.endTime.toISOString(),
+        createdAt: booking.createdAt.toISOString(),
+        updatedAt: booking.updatedAt.toISOString(),
+      },
+    };
+  } catch (error) {
+    console.error('Create booking error:', error);
+    return {
+      error:
+        error instanceof Error
+          ? `Server error: ${error.message}`
+          : 'Unexpected server error occurred',
+    };
+  }
+}
+
+export async function updateBooking(
+  bookingId: string,
+  formData: FormData
+): Promise<{
+  data?: Booking;
+  error?: string;
+  fieldErrors?: Record<string, string[]>;
+  formErrors?: string[];
+}> {
+  try {
+    // 1. Check access to the booking
+    const { booking: existingBooking, error: accessError } = await checkBookingAccess(
+      bookingId,
+      formData.get('serviceProviderId') as string
+    );
+    if (accessError) {
+      return { error: accessError };
+    }
+
+    // 2. Validate form data
+    const validationResult = await validateBookingFormData(formData);
+    if (!validationResult.data || validationResult.error) {
+      return {
+        error: validationResult.error,
+        fieldErrors: validationResult.fieldErrors,
+        formErrors: validationResult.formErrors,
+      };
+    }
+    const data = validationResult.data;
+
+    // 3. Check for overlapping bookings (excluding current booking)
+    const overlap = await prisma.booking.findFirst({
+      where: {
+        id: { not: bookingId },
+        serviceProviderId: formData.get('serviceProviderId') as string,
+        OR: [
+          {
+            AND: [{ startTime: { lte: data.startTime } }, { endTime: { gt: data.startTime } }],
+          },
+          {
+            AND: [{ startTime: { lt: data.endTime } }, { endTime: { gte: data.endTime } }],
+          },
+        ],
+      },
+    });
+
+    if (overlap) {
+      return { error: 'This time slot conflicts with another booking' };
+    }
+
+    // 4. Update the booking
+    const updatedBooking = await prisma.booking.update({
+      where: { id: bookingId },
+      data,
+      include: {
+        client: true,
+      },
+    });
+
+    return {
+      data: {
+        ...updatedBooking,
+        startTime: updatedBooking.startTime.toISOString(),
+        endTime: updatedBooking.endTime.toISOString(),
+        createdAt: updatedBooking.createdAt.toISOString(),
+        updatedAt: updatedBooking.updatedAt.toISOString(),
+      },
+    };
+  } catch (error) {
+    console.error('Update booking error:', error);
+    return {
+      error:
+        error instanceof Error
+          ? `Server error: ${error.message}`
+          : 'Unexpected server error occurred',
     };
   }
 }

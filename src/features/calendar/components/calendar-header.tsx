@@ -11,6 +11,7 @@ import { DateRangeSelector } from '@/components/ui/date-range-selector';
 import { CalendarNavigation } from '@/features/calendar/components/calendar-navigation';
 
 import { AvailabilityDialog } from './availability-dialog';
+import { BookingDialog } from './booking-dialog';
 
 interface CalendarHeaderProps {
   view: 'schedule' | 'day' | 'week';
@@ -39,7 +40,8 @@ export function CalendarHeader({
   onViewChange,
   onRefresh,
 }: CalendarHeaderProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
+  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
 
   const handlePrevious = () => {
     onPrevious();
@@ -117,18 +119,34 @@ export function CalendarHeader({
         <>
           <AvailabilityDialog
             mode="create"
-            open={isDialogOpen}
-            onOpenChange={setIsDialogOpen}
+            open={isAvailabilityDialogOpen}
+            onOpenChange={setIsAvailabilityDialogOpen}
             serviceProviderId={serviceProviderId}
             onRefresh={onRefresh}
           />
-          <button
-            type="button"
-            onClick={() => setIsDialogOpen(true)}
-            className="mx-auto w-full max-w-sm rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 md:ml-2 md:w-auto"
-          >
-            Add availability
-          </button>
+          <BookingDialog
+            mode="create"
+            open={isBookingDialogOpen}
+            onOpenChange={setIsBookingDialogOpen}
+            serviceProviderId={serviceProviderId}
+            onRefresh={onRefresh}
+          />
+          <div className="flex flex-col gap-2 md:flex-row">
+            <button
+              type="button"
+              onClick={() => setIsBookingDialogOpen(true)}
+              className="mx-auto w-full max-w-sm rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 md:ml-2 md:w-auto"
+            >
+              Add booking
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsAvailabilityDialogOpen(true)}
+              className="mx-auto w-full max-w-sm rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 md:ml-2 md:w-auto"
+            >
+              Add availability
+            </button>
+          </div>
         </>
       </div>
     </header>
