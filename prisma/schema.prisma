@@ -19,6 +19,10 @@ model User {
   name                  String?
   email                 String?              @unique
   emailVerified        DateTime?
+  phone                String?
+  phoneVerified        DateTime?
+  whatsapp             String?
+  whatsappVerified     DateTime?
   password             String?
   image                String?
   role                 UserRole             @default(USER)
@@ -241,10 +245,10 @@ model Booking {
   serviceProviderId   String
   client             User?            @relation(fields: [clientId], references: [id])
   clientId           String?
-  guestName          String?
-  guestEmail         String?
-  guestPhone         String?          // For SMS notifications
-  guestWhatsapp      String?          // For WhatsApp notifications
+  clientName         String?          // Renamed from guestName
+  clientEmail        String?          // Renamed from guestEmail
+  clientPhone        String?          // Renamed from guestPhone
+  clientWhatsapp     String?          // Renamed from guestWhatsapp
   notifyViaEmail     Boolean          @default(false)
   notifyViaSMS       Boolean          @default(false)
   notifyViaWhatsapp  Boolean          @default(false)

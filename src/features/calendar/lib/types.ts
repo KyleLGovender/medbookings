@@ -18,74 +18,59 @@ export type ViewType = 'day' | 'week' | 'schedule';
 // Form Schemas
 export const BookingFormSchema = z
   .object({
+    // Booking type
     bookingType: z.enum(['USER', 'GUEST']),
+
     // User booking fields
-    userId: z.string().optional(),
+    clientId: z.string().optional(),
+
     // Guest booking fields
-    guestName: z.string().optional(),
-    guestEmail: z.string().email().optional(),
-    guestPhone: z.string().optional(),
-    guestWhatsapp: z.string().optional(),
+    clientName: z.string().optional(),
+    clientEmail: z.string().email().optional(),
+    clientPhone: z.string().optional(),
+    clientWhatsapp: z.string().optional(),
+
     // Notification preferences
-    notificationPreferences: z.object({
-      email: z.boolean(),
-      sms: z.boolean(),
-      whatsapp: z.boolean(),
-    }),
+    notifyViaEmail: z.boolean().default(false),
+    notifyViaSMS: z.boolean().default(false),
+    notifyViaWhatsapp: z.boolean().default(false),
+
     // Booking details
-    startTime: BookingSchema.shape.startTime,
-    endTime: BookingSchema.shape.endTime,
-    duration: BookingSchema.shape.duration,
+    startTime: z.coerce.date(),
+    endTime: z.coerce.date(),
+    duration: z.number().int(),
     price: z.number().min(0),
-    isOnline: BookingSchema.shape.isOnline,
-    location: BookingSchema.shape.location,
-    notes: BookingSchema.shape.notes,
-    serviceProviderId: BookingSchema.shape.serviceProviderId,
-    availabilityId: z.string().optional(),
-    status: BookingStatusSchema.default('PENDING'),
+    isOnline: z.boolean(),
+    location: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
+    serviceProviderId: z.string(),
+    availabilityId: z.string(),
+    status: z.lazy(() => BookingStatusSchema).default('PENDING'),
   })
   .refine(
     (data) => {
-      // Validate user booking has userId
-      if (data.bookingType === 'USER' && !data.userId) {
+      // Validate user booking has clientId
+      if (data.bookingType === 'USER' && !data.clientId) {
+        return false;
+      }
+      // Validate guest booking has required fields
+      if (data.bookingType === 'GUEST' && !data.clientName) {
+        return false;
+      }
+      // Validate notification methods have corresponding contact info
+      if (data.notifyViaEmail && !data.clientEmail) {
+        return false;
+      }
+      if (data.notifyViaSMS && !data.clientPhone) {
+        return false;
+      }
+      if (data.notifyViaWhatsapp && !data.clientWhatsapp) {
         return false;
       }
       return true;
     },
     {
-      message: 'User ID is required for user bookings',
-      path: ['userId'],
-    }
-  )
-  .refine(
-    (data) => {
-      // Validate guest booking has required fields
-      if (data.bookingType === 'GUEST') {
-        return !!data.guestName;
-      }
-      return true;
-    },
-    {
-      message: 'Guest name is required for guest bookings',
-      path: ['guestName'],
-    }
-  )
-  .refine(
-    (data) => {
-      // Validate at least one notification method is selected with corresponding contact info
-      const hasEmail =
-        data.notificationPreferences.email && (data.bookingType === 'USER' || data.guestEmail);
-      const hasSMS =
-        data.notificationPreferences.sms && (data.bookingType === 'USER' || data.guestPhone);
-      const hasWhatsapp =
-        data.notificationPreferences.whatsapp &&
-        (data.bookingType === 'USER' || data.guestWhatsapp);
-
-      return hasEmail || hasSMS || hasWhatsapp;
-    },
-    {
-      message: 'At least one valid notification method with contact information is required',
-      path: ['notificationPreferences'],
+      message: 'Invalid booking data',
     }
   );
 

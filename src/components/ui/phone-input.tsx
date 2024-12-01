@@ -34,16 +34,10 @@ const PhoneInput: React.ForwardRefExoticComponent<PhoneInputProps> = React.forwa
       flagComponent={FlagComponent}
       countrySelectComponent={CountrySelect}
       inputComponent={InputComponent}
+      defaultCountry="ZA"
+      international
+      withCountryCallingCode
       smartCaret={false}
-      /**
-       * Handles the onChange event.
-       *
-       * react-phone-number-input might trigger the onChange event as undefined
-       * when a valid phone number is not entered. To prevent this,
-       * the value is coerced to an empty string.
-       *
-       * @param {E164Number | undefined} value - The entered value
-       */
       onChange={(value) => onChange?.(value || ('' as RPNInput.Value))}
       {...props}
     />
@@ -142,8 +136,12 @@ const FlagComponent = ({ country, countryName }: RPNInput.FlagProps) => {
   const Flag = flags[country];
 
   return (
-    <span className="flex h-4 w-6 overflow-hidden rounded-sm bg-foreground/20">
-      {Flag && <Flag title={countryName} />}
+    <span className="flex h-4 w-6 overflow-hidden rounded-sm">
+      {Flag && (
+        <span className="flex h-full w-full">
+          <Flag title={countryName} />
+        </span>
+      )}
     </span>
   );
 };
