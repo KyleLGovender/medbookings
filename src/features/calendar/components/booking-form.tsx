@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { debounce } from 'lodash';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
@@ -100,28 +101,32 @@ export function BookingForm({
                 <div className="flex gap-4">
                   <div className="flex-1">
                     <FormControl>
-                      <DatePicker
-                        date={field.value}
-                        onChange={(date) => {
-                          if (date) {
-                            const currentTime = field.value || new Date();
-                            date.setHours(currentTime.getHours());
-                            date.setMinutes(currentTime.getMinutes());
-                            field.onChange(date);
-                          }
-                        }}
-                      />
+                      <Suspense
+                        fallback={<div className="h-10 w-full animate-pulse rounded-md bg-muted" />}
+                      >
+                        <DatePicker
+                          date={field.value}
+                          onChange={(date) => {
+                            if (date) {
+                              const currentTime = field.value || new Date();
+                              date.setHours(currentTime.getHours());
+                              date.setMinutes(currentTime.getMinutes());
+                              field.onChange(date);
+                            }
+                          }}
+                        />
+                      </Suspense>
                     </FormControl>
                   </div>
                   <div className="w-[140px]">
                     <FormControl>
                       <TimePicker
                         date={field.value}
-                        onChange={(date) => {
+                        onChange={debounce((date) => {
                           if (date) {
                             field.onChange(date);
                           }
-                        }}
+                        }, 150)}
                       />
                     </FormControl>
                   </div>
