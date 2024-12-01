@@ -20,9 +20,7 @@ export const TimePicker = memo(({ date, onChange }: TimePickerProps) => {
 
   const formattedTime = date && isValid(date) ? format(date, 'HH:mm') : '00:00';
 
-  return (
-    <Input type="time" value={formattedTime} onChange={handleTimeChange} defaultValue="00:00" />
-  );
+  return <Input type="time" value={formattedTime} onChange={handleTimeChange} />;
 });
 
 TimePicker.displayName = 'TimePicker';

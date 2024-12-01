@@ -33,6 +33,7 @@ const defaultValues: Partial<BookingFormData> = {
   status: 'PENDING',
   clientWhatsapp: '',
   clientPhone: '',
+  clientName: '',
 };
 
 interface BookingFormProps {
