@@ -292,33 +292,25 @@ export async function createBooking(formData: FormData): Promise<{
     }
     const data = validationResult.data;
 
-    // 2. Check if the time slot is still available
-    const overlap = await prisma.booking.findFirst({
+    // 2. Check for service provider availability
+    const availability = await prisma.availability.findFirst({
       where: {
         serviceProviderId: formData.get('serviceProviderId') as string,
-        OR: [
-          {
-            AND: [{ startTime: { lte: data.startTime } }, { endTime: { gt: data.startTime } }],
-          },
-          {
-            AND: [{ startTime: { lt: data.endTime } }, { endTime: { gte: data.endTime } }],
-          },
-        ],
+        startTime: { lte: data.startTime },
+        endTime: { gte: data.endTime },
       },
     });
 
-    if (overlap) {
-      return { error: 'This time slot is no longer available' };
+    if (!availability) {
+      return { error: 'No availability found for the requested time slot' };
     }
 
-    // 3. Prepare booking data based on booking type
+    // 3. Prepare booking data
     const bookingData: any = {
       serviceProvider: {
         connect: { id: formData.get('serviceProviderId') as string },
       },
-      availability: formData.get('availabilityId')
-        ? { connect: { id: formData.get('availabilityId') as string } }
-        : undefined,
+      availability: { connect: { id: availability.id } },
       startTime: data.startTime,
       endTime: data.endTime,
       duration: data.duration,
@@ -413,30 +405,26 @@ export async function updateBooking(
     }
     const data = validationResult.data;
 
-    // 3. Check for overlapping bookings (excluding current booking)
-    const overlap = await prisma.booking.findFirst({
+    // 3. Check for service provider availability
+    const availability = await prisma.availability.findFirst({
       where: {
-        id: { not: bookingId },
         serviceProviderId: formData.get('serviceProviderId') as string,
-        OR: [
-          {
-            AND: [{ startTime: { lte: data.startTime } }, { endTime: { gt: data.startTime } }],
-          },
-          {
-            AND: [{ startTime: { lt: data.endTime } }, { endTime: { gte: data.endTime } }],
-          },
-        ],
+        startTime: { lte: data.startTime },
+        endTime: { gte: data.endTime },
       },
     });
 
-    if (overlap) {
-      return { error: 'This time slot conflicts with another booking' };
+    if (!availability) {
+      return { error: 'No availability for the requested booking period' };
     }
 
     // 4. Update the booking
     const updatedBooking = await prisma.booking.update({
       where: { id: bookingId },
-      data,
+      data: {
+        ...data,
+        availability: { connect: { id: availability.id } },
+      },
       include: {
         client: true,
       },

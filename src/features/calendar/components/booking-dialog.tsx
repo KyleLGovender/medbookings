@@ -23,9 +23,7 @@ interface BookingDialogProps {
 
 export function BookingDialog({
   availability,
-  booking,
   serviceProviderId,
-  mode,
   open,
   onOpenChange,
   onRefresh,
@@ -41,9 +39,7 @@ export function BookingDialog({
         </DialogHeader>
         <BookingForm
           serviceProviderId={serviceProviderId}
-          availability={availability}
-          booking={booking}
-          mode={mode}
+          availabilityId={availability?.id ?? ''}
           onClose={() => onOpenChange(false)}
           onRefresh={onRefresh}
         />

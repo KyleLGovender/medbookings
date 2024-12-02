@@ -44,7 +44,6 @@ export const BookingFormSchema = z
     location: z.string().optional().nullable(),
     notes: z.string().optional().nullable(),
     serviceProviderId: z.string(),
-    availabilityId: z.string(),
     status: z.lazy(() => BookingStatusSchema).default('PENDING'),
   })
   .refine(
