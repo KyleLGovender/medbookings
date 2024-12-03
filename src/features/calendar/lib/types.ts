@@ -45,6 +45,17 @@ export const BookingFormSchema = z
     notes: z.string().optional().nullable(),
     serviceProviderId: z.string(),
     status: z.lazy(() => BookingStatusSchema).default('PENDING'),
+    guestName: z.string().optional(),
+    guestEmail: z.string().email().optional(),
+    guestPhone: z.string().optional(),
+    guestWhatsapp: z.string().optional(),
+    notificationPreferences: z
+      .object({
+        email: z.boolean(),
+        sms: z.boolean(),
+        whatsapp: z.boolean(),
+      })
+      .optional(),
   })
   .refine(
     (data) => {
@@ -304,4 +315,10 @@ export interface BookingWithRelations extends z.infer<typeof BookingSchema> {
   serviceProvider: z.infer<typeof ServiceProviderSchema>;
   availability: z.infer<typeof AvailabilitySchema>;
   notifications: z.infer<typeof NotificationLogSchema>[];
+}
+
+export interface TimeSlot {
+  startTime: Date;
+  endTime: Date;
+  isAvailable: boolean;
 }

@@ -1,5 +1,7 @@
 'use server';
 
+import { z } from 'zod';
+
 import { NotificationService } from '@/features/notifications/notification-service';
 import { TemplateService } from '@/features/notifications/template-service';
 import { prisma } from '@/lib/prisma';
@@ -12,7 +14,7 @@ import {
   validateAvailabilityFormData,
   validateBookingFormData,
 } from './server-helper';
-import { Availability, Booking } from './types';
+import { Availability, Booking, BookingFormSchema } from './types';
 
 export async function createAvailability(formData: FormData): Promise<{
   data?: Availability;
@@ -274,103 +276,100 @@ async function sendBookingNotifications(booking: Booking) {
   });
 }
 
-export async function createBooking(formData: FormData): Promise<{
+type BookingResponse = {
   data?: Booking;
   error?: string;
   fieldErrors?: Record<string, string[]>;
   formErrors?: string[];
-}> {
+};
+
+export async function createBooking(formData: FormData): Promise<BookingResponse> {
+  console.log('createBooking: formData:', formData);
   try {
-    // 1. Validate form data
-    const validationResult = await validateBookingFormData(formData);
-    if (!validationResult.data || validationResult.error) {
-      return {
-        error: validationResult.error,
-        fieldErrors: validationResult.fieldErrors,
-        formErrors: validationResult.formErrors,
-      };
-    }
-    const data = validationResult.data;
+    // Parse notification preferences back to object
+    const notificationPreferences = JSON.parse(formData.get('notificationPreferences') as string);
 
-    // 2. Check for service provider availability
-    const availability = await prisma.availability.findFirst({
-      where: {
-        serviceProviderId: formData.get('serviceProviderId') as string,
-        startTime: { lte: data.startTime },
-        endTime: { gte: data.endTime },
-      },
-    });
-
-    if (!availability) {
-      return { error: 'No availability found for the requested time slot' };
-    }
-
-    // 3. Prepare booking data
-    const bookingData: any = {
-      serviceProvider: {
-        connect: { id: formData.get('serviceProviderId') as string },
-      },
-      availability: { connect: { id: availability.id } },
-      startTime: data.startTime,
-      endTime: data.endTime,
-      duration: data.duration,
-      price: data.price,
-      isOnline: data.isOnline,
-      location: data.location,
-      notes: data.notes,
-      status: 'PENDING',
+    const bookingData = {
+      bookingType: formData.get('bookingType'),
+      serviceProviderId: formData.get('serviceProviderId'),
+      startTime: new Date(formData.get('startTime') as string),
+      endTime: new Date(formData.get('endTime') as string),
+      duration: Number(formData.get('duration')),
+      status: formData.get('status'),
+      isOnline: formData.get('isOnline') === 'true',
+      clientName: formData.get('clientName'),
+      clientEmail: formData.get('clientEmail') || null,
+      clientPhone: formData.get('clientPhone') || null,
+      clientWhatsapp: formData.get('clientWhatsapp') || null,
+      notificationPreferences,
+      price: Number(formData.get('price')),
+      location: formData.get('location') || null,
+      notes: formData.get('notes') || null,
     };
 
-    // Add user or guest data
-    if (data.bookingType === 'USER' && data.userId) {
-      bookingData.client = { connect: { id: data.userId } };
-    } else {
-      bookingData.guestName = data.guestName;
-      bookingData.guestEmail = data.guestEmail;
-      bookingData.guestPhone = data.guestPhone;
-      bookingData.guestWhatsapp = data.guestWhatsapp;
-      bookingData.notifyViaEmail = data.notificationPreferences.email;
-      bookingData.notifyViaSMS = data.notificationPreferences.sms;
-      bookingData.notifyViaWhatsapp = data.notificationPreferences.whatsapp;
-    }
+    try {
+      const validated = BookingFormSchema.parse(bookingData);
 
-    // 4. Create the booking
-    const booking = await prisma.booking.create({
-      data: bookingData,
-      include: {
-        client: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            whatsapp: true,
-            notificationPreferences: true,
-          },
+      // Find matching availability
+      const availability = await prisma.availability.findFirst({
+        where: {
+          serviceProviderId: validated.serviceProviderId,
+          startTime: { lte: validated.startTime },
+          endTime: { gte: validated.endTime },
         },
-      },
-    });
+      });
 
-    if (booking) {
-      await sendBookingNotifications(booking);
+      if (!availability) {
+        return { error: 'No availability found for the requested time slot' };
+      }
+
+      // Create the booking with availabilityId
+      const booking = await prisma.booking.create({
+        data: {
+          ...validated,
+          availabilityId: availability.id,
+        },
+        include: {
+          client: true,
+        },
+      });
+
+      return {
+        data: {
+          ...booking,
+          startTime: booking.startTime.toISOString(),
+          endTime: booking.endTime.toISOString(),
+          createdAt: booking.createdAt.toISOString(),
+          updatedAt: booking.updatedAt.toISOString(),
+          cancelledAt: booking.cancelledAt?.toISOString() || null,
+          price: Number(booking.price),
+          client: booking.client
+            ? {
+                id: booking.client.id,
+                name: booking.client.name,
+                email: booking.client.email,
+                phone: booking.client.phone,
+                whatsapp: booking.client.whatsapp,
+              }
+            : undefined,
+          guestName: null,
+          guestEmail: null,
+          guestPhone: null,
+          guestWhatsapp: null,
+        },
+      };
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        return {
+          fieldErrors: validationError.flatten().fieldErrors,
+        };
+      }
+      throw validationError; // Re-throw if it's not a Zod error
     }
-
-    return {
-      data: {
-        ...booking,
-        startTime: booking.startTime.toISOString(),
-        endTime: booking.endTime.toISOString(),
-        createdAt: booking.createdAt.toISOString(),
-        updatedAt: booking.updatedAt.toISOString(),
-      },
-    };
   } catch (error) {
     console.error('Create booking error:', error);
     return {
-      error:
-        error instanceof Error
-          ? `Server error: ${error.message}`
-          : 'Unexpected server error occurred',
+      error: error instanceof Error ? error.message : 'An unexpected error occurred',
     };
   }
 }

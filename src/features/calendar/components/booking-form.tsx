@@ -22,11 +22,22 @@ import { Switch } from '@/components/ui/switch';
 import { TimePicker } from '@/components/ui/time-picker';
 import { useToast } from '@/hooks/use-toast';
 
-import { createBooking } from '../lib/actions';
-import { type BookingFormData, BookingFormSchema } from '../lib/types';
+import { createBooking, updateBooking } from '../lib/actions';
+import {
+  Availability,
+  Booking,
+  type BookingFormData,
+  BookingFormSchema,
+  BookingFormValues,
+} from '../lib/types';
 
 const defaultValues: Partial<BookingFormData> = {
   bookingType: 'GUEST',
+  notificationPreferences: {
+    email: false,
+    sms: false,
+    whatsapp: true,
+  },
   isOnline: true,
   duration: 15,
   notifyViaEmail: false,
@@ -45,9 +56,19 @@ interface BookingFormProps {
   mode: 'create' | 'edit';
   onClose: () => void;
   onRefresh?: () => Promise<void>;
+  selectedDate: Date;
+  availability?: Availability;
 }
 
-export function BookingForm({ serviceProviderId, booking, onClose, onRefresh }: BookingFormProps) {
+export function BookingForm({
+  serviceProviderId,
+  booking,
+  mode,
+  onClose,
+  onRefresh,
+  selectedDate,
+  availability,
+}: BookingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const form = useForm<BookingFormData>({
@@ -57,10 +78,6 @@ export function BookingForm({ serviceProviderId, booking, onClose, onRefresh }: 
       serviceProviderId,
     },
   });
-
-  useEffect(() => {
-    console.log('Current form values:', form.getValues());
-  }, [form]);
 
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
@@ -77,80 +94,97 @@ export function BookingForm({ serviceProviderId, booking, onClose, onRefresh }: 
     return () => subscription.unsubscribe();
   }, [form]);
 
-  useEffect(() => {
-    const subscription = form.watch((data) => {
-      console.log('Form data changed:', data);
-      form.trigger().then((isValid) => {
-        console.log('Form validation result:', isValid);
-        console.log('Form errors:', form.formState.errors);
-      });
-    });
-
-    return () => subscription.unsubscribe();
-  }, [form]);
-
   const onSubmit = async (values: BookingFormValues) => {
     setIsSubmitting(true);
-
+    console.log('onSubmit: Current form values:', values);
     try {
+      if (!values.startTime || !values.endTime) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Start time and end time are required',
+        });
+        return;
+      }
+
       const formData = new FormData();
+
+      // Core booking details
+      formData.append('bookingType', 'GUEST');
       formData.append('serviceProviderId', serviceProviderId);
       formData.append('startTime', values.startTime.toISOString());
       formData.append('endTime', values.endTime.toISOString());
       formData.append('duration', String(values.duration));
-      formData.append('price', String(values.price));
+      formData.append('status', 'PENDING');
       formData.append('isOnline', String(values.isOnline));
-      formData.append('location', values.location?.trim() || '');
-      formData.append('notes', values.notes?.trim() || '');
 
-      // Add client/guest information
-      if (values.bookingType === 'USER' && values.userId) {
-        formData.append('bookingType', 'USER');
-        formData.append('userId', values.userId);
-      } else {
-        formData.append('bookingType', 'GUEST');
-        formData.append('guestName', values.guestName.trim());
-        formData.append('guestEmail', values.guestEmail.trim());
-        formData.append('guestPhone', values.guestPhone?.trim() || '');
-        formData.append('guestWhatsapp', values.guestWhatsapp?.trim() || '');
-        // Notification preferences
-        formData.append('notifyViaEmail', String(values.notificationPreferences?.email || false));
-        formData.append('notifyViaSMS', String(values.notificationPreferences?.sms || false));
-        formData.append(
-          'notifyViaWhatsapp',
-          String(values.notificationPreferences?.whatsapp || false)
-        );
-      }
+      // Client details - use empty string for optional fields
+      formData.append('clientName', values.clientName?.trim() ?? '');
+      formData.append('clientEmail', values.clientEmail?.trim() ?? '');
+      formData.append('clientPhone', values.clientPhone?.trim() ?? '');
+      formData.append('clientWhatsapp', values.clientWhatsapp?.trim() ?? '');
+
+      // Notification preferences as JSON string
+      formData.append(
+        'notificationPreferences',
+        JSON.stringify({
+          email: values.notifyViaEmail || false,
+          sms: values.notifyViaSMS || false,
+          whatsapp: values.notifyViaWhatsapp || false,
+        })
+      );
+
+      // Optional fields
+      if (values.location) formData.append('location', values.location.trim());
+      if (values.notes) formData.append('notes', values.notes.trim());
+      formData.append('price', String(values.price || 0));
 
       const response =
         mode === 'create'
           ? await createBooking(formData)
           : await updateBooking(booking?.id || '', formData);
 
-      if (response.error) {
+      if (!response) {
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: response.error,
+          description: 'No response from server',
         });
-        setIsSubmitting(false);
+        return;
+      }
+
+      if (response.error || response.fieldErrors || response.formErrors) {
+        if (response.fieldErrors) {
+          Object.entries(response.fieldErrors).forEach(([field, errors]) => {
+            toast({
+              variant: 'destructive',
+              title: `Error in ${field}`,
+              description: errors.join(', '),
+            });
+          });
+        } else if (response.error) {
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: response.error,
+          });
+        }
         return;
       }
 
       toast({
         title: 'Success',
-        description: 'Booking created successfully',
+        description: `Booking ${mode === 'create' ? 'created' : 'updated'} successfully`,
       });
 
-      await onRefresh();
+      await onRefresh?.();
       onClose();
     } catch (error) {
-      console.error('Booking form error:', error);
+      console.error('Booking submission error:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description:
-          error instanceof Error ? error.message : 'Something went wrong. Please try again.',
+        description: 'An unexpected error occurred',
       });
     } finally {
       setIsSubmitting(false);
@@ -168,7 +202,15 @@ export function BookingForm({ serviceProviderId, booking, onClose, onRefresh }: 
               <FormItem>
                 <FormLabel>Name</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Enter your name" />
+                  <Input
+                    {...field}
+                    placeholder="Enter your name"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                      }
+                    }}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -243,7 +285,14 @@ export function BookingForm({ serviceProviderId, booking, onClose, onRefresh }: 
                         <PhoneInput
                           defaultCountry="ZA"
                           value={field.value ?? ''}
-                          onChange={field.onChange}
+                          onChange={(value) => {
+                            field.onChange(value);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                            }
+                          }}
                         />
                       )}
                     />
@@ -271,6 +320,11 @@ export function BookingForm({ serviceProviderId, booking, onClose, onRefresh }: 
                           defaultCountry="ZA"
                           value={field.value ?? ''}
                           onChange={field.onChange}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                            }
+                          }}
                         />
                       )}
                     />

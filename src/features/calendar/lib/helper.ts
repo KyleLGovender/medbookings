@@ -211,3 +211,33 @@ export function filterScheduleForDay(schedule: Schedule[], currentDate: Date): S
     return isSameDay(itemDate, currentDate);
   });
 }
+
+export function generateTimeSlots(availability: Availability): TimeSlot[] {
+  const slots: TimeSlot[] = [];
+  const startTime = new Date(availability.startTime);
+  const endTime = new Date(availability.endTime);
+
+  // Generate 15-minute slots
+  let currentSlot = new Date(startTime);
+  while (currentSlot < endTime) {
+    const slotEnd = new Date(currentSlot);
+    slotEnd.setMinutes(slotEnd.getMinutes() + 15);
+
+    // Check if this slot overlaps with any bookings
+    const isAvailable = !availability.bookings.some((booking) => {
+      const bookingStart = new Date(booking.startTime);
+      const bookingEnd = new Date(booking.endTime);
+      return currentSlot < bookingEnd && slotEnd > bookingStart;
+    });
+
+    slots.push({
+      startTime: new Date(currentSlot),
+      endTime: new Date(slotEnd),
+      isAvailable,
+    });
+
+    currentSlot = slotEnd;
+  }
+
+  return slots;
+}
