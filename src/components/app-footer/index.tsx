@@ -7,7 +7,7 @@ export default function AppFooter() {
       <div className="w-[100px]" />
 
       {/* Centered text */}
-      <span className="text-center text-small text-default-600">
+      <span className="text-small text-default-600 text-center">
         © 2024 Your Company Name. All rights reserved.
       </span>
 

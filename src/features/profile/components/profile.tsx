@@ -7,11 +7,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
-import { getServiceProvider } from '../../../lib/server-helper';
+import { getServiceProviderId } from '../../../lib/server-helper';
 
 export default async function Profile() {
   const session = await getServerSession(authOptions);
-  const serviceProvider = session?.user?.id ? await getServiceProvider(session.user.id) : null;
+  const serviceProvider = session?.user?.id ? await getServiceProviderId(session.user.id) : null;
 
   return (
     <>
