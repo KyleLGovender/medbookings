@@ -92,8 +92,8 @@ export function generateDaysForDayCalendar(currentDate: Date) {
   return days;
 }
 
-export function generateDaysForWeekCalendar(currentDate: Date) {
-  const startOfWeek = dateFnsStartOfWeek(currentDate, { weekStartsOn: 1 });
+export function generateDaysForWeekCalendar(rangeStartDate: Date) {
+  const startOfWeek = dateFnsStartOfWeek(rangeStartDate, { weekStartsOn: 1 });
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const date = new Date(startOfWeek);
@@ -101,7 +101,7 @@ export function generateDaysForWeekCalendar(currentDate: Date) {
     return {
       date,
       isToday: isSameDay(date, new Date()),
-      isSelected: isSameDay(date, currentDate),
+      isSelected: isSameDay(date, rangeStartDate),
     };
   });
 
@@ -163,12 +163,13 @@ export function getDateRange(date: Date, view: 'day' | 'week' | 'schedule'): Dat
 
   switch (view) {
     case 'week':
-      const day = startDate.getDay();
-      startDate.setDate(startDate.getDate() - day);
+      let day = startDate.getDay();
+      if (day === 0) day = 7;
+      startDate.setDate(startDate.getDate() - (day - 1));
       endDate.setDate(startDate.getDate() + 6);
       break;
     case 'day':
-      endDate.setDate(startDate.getDate());
+      endDate.setDate(startDate.getDate() + 1);
       break;
     case 'schedule':
       startDate.setDate(1);
@@ -240,4 +241,40 @@ export function generateTimeSlots(availability: Availability): TimeSlot[] {
   }
 
   return slots;
+}
+
+export function getNextDate(rangeStartDate: Date, view: 'day' | 'week' | 'schedule'): Date {
+  const newDate = new Date(rangeStartDate);
+
+  switch (view) {
+    case 'week':
+      newDate.setDate(newDate.getDate() + 7);
+      break;
+    case 'schedule':
+      newDate.setMonth(newDate.getMonth() + 1);
+      break;
+    case 'day':
+      newDate.setDate(newDate.getDate() + 1);
+      break;
+  }
+
+  return newDate;
+}
+
+export function getPreviousDate(rangeStartDate: Date, view: 'day' | 'week' | 'schedule'): Date {
+  const newDate = new Date(rangeStartDate);
+
+  switch (view) {
+    case 'week':
+      newDate.setDate(newDate.getDate() - 7);
+      break;
+    case 'schedule':
+      newDate.setMonth(newDate.getMonth() - 1);
+      break;
+    case 'day':
+      newDate.setDate(newDate.getDate() - 1);
+      break;
+  }
+
+  return newDate;
 }

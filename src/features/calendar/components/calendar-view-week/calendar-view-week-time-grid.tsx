@@ -1,6 +1,6 @@
 'use client';
 
-import { RefObject, useMemo, useState } from 'react';
+import { RefObject, useState } from 'react';
 
 import { addDays, startOfWeek } from 'date-fns';
 
@@ -14,6 +14,7 @@ interface CalendarViewWeekTimeGridProps {
   containerRef: RefObject<HTMLDivElement>;
   navRef: RefObject<HTMLDivElement>;
   offsetRef: RefObject<HTMLDivElement>;
+  rangeStartDate: string;
   scheduleData?: Schedule[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
@@ -23,6 +24,7 @@ export function CalendarViewWeekTimeGrid({
   containerRef,
   navRef,
   offsetRef,
+  rangeStartDate,
   scheduleData = [],
   serviceProviderId,
   onRefresh,
@@ -35,50 +37,33 @@ export function CalendarViewWeekTimeGrid({
     setIsDialogOpen(true);
   };
 
-  // Filter for current week's data and separate availabilities and bookings
-  const { weekSchedule, bookings } = useMemo(() => {
-    // Guard against empty scheduleData
-    if (!scheduleData.length) {
-      return { weekSchedule: [], bookings: [] };
-    }
+  // Convert string to Date for calculations
+  const dateObj = new Date(rangeStartDate);
+  const weekStart = startOfWeek(dateObj);
+  const weekEnd = addDays(weekStart, 6);
 
-    // Get the earliest schedule date to use as reference
-    const firstScheduleDate = new Date(
-      Math.min(...scheduleData.map((s) => new Date(s.startTime).getTime()))
-    );
-    const weekStart = startOfWeek(firstScheduleDate);
-    const weekEnd = addDays(weekStart, 6);
-
-    // Expand all schedules for the week
-    const expandedSchedules = scheduleData.flatMap((schedule) => {
+  // Expand all schedules for the week
+  const weekSchedule = scheduleData
+    .flatMap((schedule) => {
       if (schedule.isRecurring) {
         const endDate = schedule.recurrenceEndDate
           ? new Date(schedule.recurrenceEndDate)
-          : addDays(new Date(), 30); // Default to 30 days from now
+          : addDays(new Date(), 30);
         return expandRecurringSchedule(schedule, endDate);
       }
       return [schedule];
-    });
-
-    // Filter schedules within the week
-    const filteredSchedules = expandedSchedules.filter((schedule) => {
+    })
+    .filter((schedule) => {
       const scheduleDate = new Date(schedule.startTime);
       return scheduleDate >= weekStart && scheduleDate <= weekEnd;
     });
 
-    // Get bookings from the filtered schedules
-    const allBookings = filteredSchedules.flatMap((schedule) =>
-      schedule.bookings.map((booking) => ({
-        ...booking,
-        availabilityId: schedule.id,
-      }))
-    );
-
-    return {
-      weekSchedule: filteredSchedules,
-      bookings: allBookings,
-    };
-  }, [scheduleData]);
+  const bookings = weekSchedule.flatMap((schedule) =>
+    schedule.bookings.map((booking) => ({
+      ...booking,
+      availabilityId: schedule.id,
+    }))
+  );
 
   return (
     <>
@@ -129,8 +114,8 @@ export function CalendarViewWeekTimeGrid({
                 schedule={{
                   ...booking,
                   type: 'BOOKING',
-                  startTime: booking.startTime.toISOString(),
-                  endTime: booking.endTime.toISOString(),
+                  startTime: booking.startTime,
+                  endTime: booking.endTime,
                 }}
                 gridPosition={getEventGridPosition(booking.startTime, booking.endTime)}
                 gridColumn={((new Date(booking.startTime).getDay() + 6) % 7) + 1}

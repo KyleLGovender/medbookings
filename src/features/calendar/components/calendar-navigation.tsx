@@ -2,13 +2,43 @@
 
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid';
 
+type ViewType = 'day' | 'week' | 'schedule';
+
 interface CalendarNavigationProps {
+  viewType: ViewType;
   onPrevious: () => void;
   onNext: () => void;
   onToday: () => void;
+  onThisWeek: () => void;
 }
 
-export function CalendarNavigation({ onPrevious, onNext, onToday }: CalendarNavigationProps) {
+export function CalendarNavigation({
+  viewType,
+  onPrevious,
+  onNext,
+  onToday,
+  onThisWeek,
+}: CalendarNavigationProps) {
+  const handleMiddleButtonClick = () => {
+    if (viewType === 'day') {
+      onToday();
+    } else if (viewType === 'week' || viewType === 'schedule') {
+      onThisWeek();
+    }
+  };
+
+  const getMiddleButtonText = () => {
+    switch (viewType) {
+      case 'day':
+        return 'Today';
+      case 'week':
+      case 'schedule':
+        return 'This Week';
+      default:
+        return 'Today';
+    }
+  };
+
   return (
     <div className="mx-auto flex items-center gap-1">
       {/* Desktop view */}
@@ -23,10 +53,10 @@ export function CalendarNavigation({ onPrevious, onNext, onToday }: CalendarNavi
         </button>
         <button
           type="button"
-          onClick={onToday}
-          className="border-y border-gray-300 px-3.5 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus:relative"
+          onClick={handleMiddleButtonClick}
+          className="whitespace-nowrap border-y border-gray-300 px-5 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus:relative"
         >
-          Today
+          {getMiddleButtonText()}
         </button>
         <button
           type="button"
@@ -50,10 +80,10 @@ export function CalendarNavigation({ onPrevious, onNext, onToday }: CalendarNavi
         </button>
         <button
           type="button"
-          onClick={onToday}
-          className="h-9 whitespace-nowrap rounded-md border border-gray-300 px-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus:relative"
+          onClick={handleMiddleButtonClick}
+          className="h-9 whitespace-nowrap rounded-md border border-gray-300 px-5 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus:relative"
         >
-          Today
+          {getMiddleButtonText()}
         </button>
         <button
           type="button"

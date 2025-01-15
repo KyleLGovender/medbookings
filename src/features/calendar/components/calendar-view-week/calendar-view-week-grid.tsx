@@ -7,7 +7,7 @@ import { generateDaysForWeekCalendar } from '@/features/calendar/lib/helper';
 import { Schedule } from '@/features/calendar/lib/types';
 
 interface CalendarViewWeekGridProps {
-  currentDate: Date;
+  rangeStartDate: Date;
   onDateChange: (date: Date) => void;
   onViewChange?: (view: 'day') => void;
   scheduleData: Schedule[];
@@ -15,8 +15,17 @@ interface CalendarViewWeekGridProps {
   onRefresh: () => Promise<void>;
 }
 
+function formatDateRange(weekDays: { date: Date }[]): string {
+  if (!weekDays.length) return '';
+
+  const startDate = weekDays[0].date;
+  const endDate = weekDays[weekDays.length - 1].date;
+
+  return `${startDate.toLocaleDateString('en-US', { weekday: 'short' })} ${startDate.getDate()} ${startDate.toLocaleDateString('en-US', { month: 'short' })} - ${endDate.toLocaleDateString('en-US', { weekday: 'short' })} ${endDate.getDate()} ${endDate.toLocaleDateString('en-US', { month: 'short' })}`;
+}
+
 export function CalendarViewWeekGrid({
-  currentDate,
+  rangeStartDate,
   onDateChange,
   onViewChange = () => {},
   scheduleData = [],
@@ -27,7 +36,7 @@ export function CalendarViewWeekGrid({
   const containerNav = useRef<HTMLDivElement>(null);
   const containerOffset = useRef<HTMLDivElement>(null);
 
-  const weekDays = useMemo(() => generateDaysForWeekCalendar(currentDate), [currentDate]);
+  const weekDays = useMemo(() => generateDaysForWeekCalendar(rangeStartDate), [rangeStartDate]);
 
   const handleDayClick = useCallback(
     (date: Date) => {
@@ -59,6 +68,10 @@ export function CalendarViewWeekGrid({
 
   return (
     <div className="flex h-full flex-col">
+      <h2 className="flex items-center justify-center border-b px-4 py-2 text-lg font-semibold text-gray-900">
+        {formatDateRange(weekDays)}
+      </h2>
+
       <div ref={container} className="isolate flex flex-auto flex-col overflow-auto bg-white">
         <div className="flex max-w-full flex-none flex-col">
           <div
@@ -93,6 +106,7 @@ export function CalendarViewWeekGrid({
             containerRef={container}
             navRef={containerNav}
             offsetRef={containerOffset}
+            rangeStartDate={rangeStartDate.toISOString()}
             scheduleData={scheduleData}
             serviceProviderId={serviceProviderId}
             onRefresh={onRefresh}

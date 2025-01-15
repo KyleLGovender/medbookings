@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useState, useTransition } from 'react';
 
+import { startOfWeek } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
 import { CalendarHeader } from '@/features/calendar/components/calendar-header';
@@ -10,7 +11,7 @@ import { CalendarSkeleton } from '@/features/calendar/components/calendar-skelet
 import { CalendarViewDay } from '@/features/calendar/components/calendar-view-day';
 import { CalendarViewSchedule } from '@/features/calendar/components/calendar-view-schedule';
 import { CalendarViewWeek } from '@/features/calendar/components/calendar-view-week';
-import { getDateRange } from '@/features/calendar/lib/helper';
+import { getDateRange, getNextDate, getPreviousDate } from '@/features/calendar/lib/helper';
 import { getServiceProviderScheduleInRange } from '@/features/calendar/lib/queries';
 import { Schedule } from '@/features/calendar/lib/types';
 
@@ -19,7 +20,6 @@ interface CalendarWrapperProps {
   serviceProviderId: string;
   initialDateRange: DateRange;
   initialView: 'day' | 'week' | 'schedule';
-  initialDate?: Date;
 }
 
 export function CalendarWrapper({
@@ -27,7 +27,6 @@ export function CalendarWrapper({
   serviceProviderId,
   initialDateRange,
   initialView,
-  initialDate,
 }: CalendarWrapperProps) {
   const [isPending, startTransition] = useTransition();
   const searchParams = useSearchParams();
@@ -36,33 +35,28 @@ export function CalendarWrapper({
   const [dateRange, setDateRange] = useState<DateRange>(initialDateRange);
   const [scheduleData, setScheduleData] = useState<Schedule[]>(initialData);
   const [view, setView] = useState<'day' | 'week' | 'schedule'>(initialView);
-  const [currentDate, setCurrentDate] = useState(initialDate || new Date());
 
-  const updateUrlParams = (updates: { range?: DateRange; view?: string; date?: Date }) => {
+  const rangeStartDate = dateRange.from!;
+
+  const updateUrlParams = (updates: { range?: DateRange; view?: string }) => {
     const params = new URLSearchParams(searchParams);
 
-    // Clear existing date-related params
-    params.delete('start');
-    params.delete('end');
-    params.delete('date');
+    // Only clear dates if we're updating the range
+    if (updates.range) {
+      params.delete('start');
+      params.delete('end');
+
+      if (updates.range.from) {
+        params.set('start', updates.range.from.toISOString().split('T')[0]);
+      }
+      if (updates.range.to) {
+        params.set('end', updates.range.to.toISOString().split('T')[0]);
+      }
+    }
 
     // Set view parameter if provided
     if (updates.view) {
       params.set('view', updates.view);
-    }
-
-    // Get current view (either from updates or existing state)
-    const currentView = updates.view || view;
-
-    // Set date parameter for day/week views
-    if (['day', 'week'].includes(currentView) && updates.date) {
-      params.set('date', updates.date.toISOString().split('T')[0]);
-    }
-
-    // Set range parameters for schedule view
-    if (currentView === 'schedule' && updates.range?.from && updates.range.to) {
-      params.set('start', updates.range.from.toISOString().split('T')[0]);
-      params.set('end', updates.range.to.toISOString().split('T')[0]);
     }
 
     router.push(`?${params.toString()}`, { scroll: false });
@@ -73,22 +67,18 @@ export function CalendarWrapper({
     updateUrlParams({ view: newView });
   };
 
-  const handleDateChange = (newDate: Date | undefined) => {
+  const handleDateSelect = (newDate: Date | undefined) => {
     if (!newDate) {
       return;
     }
 
-    setCurrentDate(newDate);
-
     // Get new range and update data
     const range = getDateRange(newDate, view);
 
-    updateUrlParams({ date: newDate, range });
+    // Update all three: state, URL, and data
+    setDateRange(range);
+    updateUrlParams({ range });
     updateScheduleData(range);
-  };
-
-  const handleDateSelect = (newDate: Date) => {
-    handleDateChange(newDate);
   };
 
   const handleDateRangeSelect = (range: DateRange | undefined) => {
@@ -110,58 +100,38 @@ export function CalendarWrapper({
   };
 
   const handlePrevious = () => {
-    let newDate: Date;
-    setCurrentDate((prev) => {
-      newDate = new Date(prev);
-      switch (view) {
-        case 'day':
-          newDate.setDate(prev.getDate() - 1);
-          break;
-        case 'week':
-          newDate.setDate(prev.getDate() - 7);
-          break;
-        default:
-          newDate.setDate(prev.getDate() - 1);
-      }
-      return newDate;
-    });
-
-    const range = getDateRange(newDate!, view);
+    const newDate = getPreviousDate(dateRange.from!, view);
+    const range = getDateRange(newDate, view);
     setDateRange(range);
-    updateUrlParams({ date: newDate!, range });
+    updateUrlParams({ range });
     updateScheduleData(range);
   };
 
   const handleNext = () => {
-    let newDate: Date;
-    setCurrentDate((prev) => {
-      newDate = new Date(prev);
-      switch (view) {
-        case 'day':
-          newDate.setDate(prev.getDate() + 1);
-          break;
-        case 'week':
-          newDate.setDate(prev.getDate() + 7);
-          break;
-        default:
-          newDate.setDate(prev.getDate() + 1);
-      }
-      return newDate;
-    });
-
-    const range = getDateRange(newDate!, view);
+    const newDate = getNextDate(dateRange.from!, view);
+    const range = getDateRange(newDate, view);
     setDateRange(range);
-    updateUrlParams({ date: newDate!, range });
+    updateUrlParams({ range });
     updateScheduleData(range);
   };
 
   const handleToday = () => {
     const today = new Date();
-    setCurrentDate(today);
-    const range = getDateRange(today, view);
-    setDateRange(range);
-    updateUrlParams({ date: today, range });
-    updateScheduleData(range);
+    const newRange = getDateRange(today, view);
+
+    setDateRange(newRange);
+    updateUrlParams({ range: newRange });
+    updateScheduleData(newRange);
+  };
+
+  const handleThisWeek = () => {
+    const today = new Date();
+    const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Start week on Monday
+    const newRange = getDateRange(weekStart, view);
+
+    setDateRange(newRange);
+    updateUrlParams({ range: newRange });
+    updateScheduleData(newRange);
   };
 
   const refreshData = useCallback(async () => {
@@ -188,9 +158,9 @@ export function CalendarWrapper({
 
   const renderCalendar = () => {
     const props = {
-      currentDate,
+      rangeStartDate,
       scheduleData,
-      onDateChange: handleDateChange, // Note: using handleDateChange instead of setCurrentDate directly
+      onDateChange: handleDateSelect,
     };
 
     switch (view) {
@@ -236,14 +206,15 @@ export function CalendarWrapper({
       <div className="rounded-lg bg-white shadow">
         <CalendarHeader
           view={view}
-          currentDate={currentDate}
+          rangeStartDate={rangeStartDate}
           dateRange={dateRange}
           serviceProviderId={serviceProviderId}
-          onDateSelect={handleDateChange}
+          onDateSelect={handleDateSelect}
           onDateRangeSelect={handleDateRangeSelect}
           onPrevious={handlePrevious}
           onNext={handleNext}
           onToday={handleToday}
+          onThisWeek={handleThisWeek}
           onViewChange={handleViewChange}
           onRefresh={refreshData}
         />

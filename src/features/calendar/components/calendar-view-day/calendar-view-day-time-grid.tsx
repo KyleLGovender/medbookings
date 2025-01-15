@@ -16,7 +16,7 @@ interface CalendarViewDayTimeGridProps {
   containerRef: RefObject<HTMLDivElement>;
   navRef: RefObject<HTMLDivElement>;
   offsetRef: RefObject<HTMLDivElement>;
-  currentDate: string;
+  rangeStartDate: string;
   scheduleData: Schedule[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
@@ -26,12 +26,12 @@ export function CalendarViewDayTimeGrid({
   containerRef,
   navRef,
   offsetRef,
-  currentDate,
+  rangeStartDate,
   scheduleData,
   serviceProviderId,
   onRefresh,
 }: CalendarViewDayTimeGridProps) {
-  const currentDateObj = new Date(currentDate);
+  const dateObj = new Date(rangeStartDate);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -45,11 +45,11 @@ export function CalendarViewDayTimeGrid({
     .flatMap((schedule) => {
       // Handle both recurring and single instances
       if (schedule.isRecurring) {
-        return expandRecurringSchedule(schedule, currentDateObj);
+        return expandRecurringSchedule(schedule, dateObj);
       }
       return [schedule];
     })
-    .filter((schedule) => isSameDay(new Date(schedule.startTime), currentDateObj));
+    .filter((schedule) => isSameDay(new Date(schedule.startTime), dateObj));
 
   // Get bookings from the schedule
   const bookings = daySchedule.flatMap((schedule) =>
@@ -63,7 +63,7 @@ export function CalendarViewDayTimeGrid({
     <>
       <header className="flex items-center justify-center border-b border-gray-200 px-6 py-4">
         <h1 className="text-lg font-semibold text-gray-900">
-          {currentDateObj.toLocaleDateString('en-US', {
+          {dateObj.toLocaleDateString('en-US', {
             weekday: 'long',
             month: 'long',
             day: 'numeric',
@@ -111,8 +111,8 @@ export function CalendarViewDayTimeGrid({
                 schedule={{
                   ...booking,
                   type: 'BOOKING',
-                  startTime: booking.startTime.toISOString(),
-                  endTime: booking.endTime.toISOString(),
+                  startTime: booking.startTime,
+                  endTime: booking.endTime,
                 }}
                 gridPosition={getEventGridPosition(booking.startTime, booking.endTime)}
                 gridColumn={1}

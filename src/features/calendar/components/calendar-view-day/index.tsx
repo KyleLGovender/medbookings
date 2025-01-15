@@ -2,7 +2,7 @@ import { Schedule } from '../../lib/types';
 import { CalendarViewDayGrid } from './calendar-view-day-grid';
 
 interface CalendarViewDayProps {
-  currentDate: Date;
+  rangeStartDate: Date;
   scheduleData: Schedule[];
   onDateChange: (date: Date) => void;
   onViewChange?: (view: 'day') => void;
@@ -11,7 +11,7 @@ interface CalendarViewDayProps {
 }
 
 export function CalendarViewDay({
-  currentDate,
+  rangeStartDate,
   scheduleData,
   onDateChange,
   onViewChange = () => {},
@@ -23,7 +23,7 @@ export function CalendarViewDay({
   };
   return (
     <CalendarViewDayGrid
-      currentDate={currentDate.toISOString()}
+      rangeStartDate={rangeStartDate.toISOString()}
       onDateChange={(dateStr: string) => onDateChange(new Date(dateStr))}
       scheduleData={scheduleData}
       onViewChange={onViewChange}

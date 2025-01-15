@@ -15,7 +15,7 @@ import { BookingDialog } from './booking-dialog';
 
 interface CalendarHeaderProps {
   view: 'schedule' | 'day' | 'week';
-  currentDate: Date;
+  rangeStartDate: Date;
   dateRange?: DateRange;
   serviceProviderId: string;
   onDateSelect: (date: Date | undefined) => void;
@@ -25,11 +25,12 @@ interface CalendarHeaderProps {
   onToday: () => void;
   onViewChange: (view: 'schedule' | 'day' | 'week') => void;
   onRefresh: () => Promise<void>;
+  onThisWeek: () => void;
 }
 
 export function CalendarHeader({
   view,
-  currentDate,
+  rangeStartDate,
   dateRange = undefined,
   serviceProviderId,
   onDateSelect,
@@ -39,6 +40,7 @@ export function CalendarHeader({
   onToday,
   onViewChange,
   onRefresh,
+  onThisWeek,
 }: CalendarHeaderProps) {
   const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
@@ -68,22 +70,7 @@ export function CalendarHeader({
   return (
     <header className="flex flex-col gap-4 border-b border-gray-200 px-6 py-4 md:flex-row md:items-center md:justify-between">
       <div className="mx-auto flex flex-col gap-2 md:mx-0 md:flex-row md:items-center">
-        {view === 'schedule' ? (
-          <DateRangeSelector dateRange={dateRange} onSelect={handleDateRangeChange} />
-        ) : (
-          <>
-            <DatePicker date={currentDate} onChange={handleDateSelect} />
-            <CalendarNavigation
-              onPrevious={handlePrevious}
-              onNext={handleNext}
-              onToday={handleToday}
-            />
-          </>
-        )}
-      </div>
-
-      <div className="mx-auto flex flex-col gap-2 md:flex-row md:items-center md:justify-center">
-        <div className="mx-auto md:ml-4 md:flex md:items-center">
+        <div className="mx-auto md:flex md:items-center">
           <Menu as="div" className="relative">
             <MenuButton
               type="button"
@@ -113,6 +100,23 @@ export function CalendarHeader({
             </MenuItems>
           </Menu>
         </div>
+      </div>
+
+      <div className="mx-auto flex flex-col gap-2 md:flex-row md:items-center md:justify-center">
+        {view === 'schedule' ? (
+          <DateRangeSelector dateRange={dateRange} onSelect={handleDateRangeChange} />
+        ) : (
+          <>
+            <DatePicker date={rangeStartDate} onChange={handleDateSelect} />
+            <CalendarNavigation
+              viewType={view}
+              onPrevious={handlePrevious}
+              onNext={handleNext}
+              onToday={handleToday}
+              onThisWeek={onThisWeek}
+            />
+          </>
+        )}
       </div>
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center">

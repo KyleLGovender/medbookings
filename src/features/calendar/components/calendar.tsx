@@ -1,8 +1,6 @@
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
-import { addDays } from 'date-fns';
-
 import { CalendarWrapper } from '@/features/calendar/components/calendar-wrapper';
 import { getDateRange } from '@/features/calendar/lib/helper';
 import { getServiceProviderScheduleInRange } from '@/features/calendar/lib/queries';
@@ -33,52 +31,24 @@ export async function Calendar({ searchParams }: { searchParams: SearchParams })
 
   const start = searchParams.start as string;
   const end = searchParams.end as string;
-  const date = searchParams.date as string;
 
-  let startDate: Date | undefined;
-  let endDate: Date | undefined;
-  let currentDate: Date | undefined;
+  let startDate: Date;
+  let endDate: Date;
 
-  if (validView === 'schedule') {
-    if (start && end) {
-      startDate = new Date(start);
-      endDate = new Date(end);
-    } else if (start) {
-      startDate = new Date(start);
-      endDate = addDays(startDate, 7);
-    } else if (end) {
-      endDate = new Date(end);
-      startDate = addDays(endDate, -7);
-    } else {
-      startDate = new Date();
-      endDate = addDays(startDate, 7);
-    }
+  if (start) {
+    startDate = new Date(start);
+  } else {
+    startDate = new Date();
   }
 
-  if (validView === 'day') {
-    const dateToUse = date ? new Date(date) : new Date();
-    const { from: dayStart, to: dayEnd } = getDateRange(dateToUse, validView) ?? {
-      from: new Date(),
-      to: addDays(new Date(), 1),
-    };
-    startDate = dayStart;
-    endDate = dayEnd;
-  }
-
-  if (validView === 'week') {
-    const dateToUse = date ? new Date(date) : new Date();
-    const { from: dayStart, to: dayEnd } = getDateRange(dateToUse, validView) ?? {
-      from: new Date(),
-      to: addDays(new Date(), 1),
-    };
-    startDate = dayStart;
-    endDate = dayEnd;
-  }
+  const dateRange = getDateRange(startDate, validView);
+  startDate = dateRange.from!;
+  endDate = dateRange.to!;
 
   const initialScheduleData = await getServiceProviderScheduleInRange(
     serviceProviderId,
-    startDate ?? new Date(),
-    endDate ?? addDays(new Date(), 7)
+    startDate,
+    endDate
   );
 
   return (
@@ -101,7 +71,6 @@ export async function Calendar({ searchParams }: { searchParams: SearchParams })
                 to: endDate,
               }}
               initialView={validView}
-              initialDate={date ? new Date(date) : undefined}
             />
           </div>
         </Suspense>

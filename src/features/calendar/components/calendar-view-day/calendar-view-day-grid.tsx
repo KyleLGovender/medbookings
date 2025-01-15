@@ -8,7 +8,7 @@ import { Schedule } from '../../lib/types';
 import { CalendarViewDayTimeGrid } from './calendar-view-day-time-grid';
 
 interface CalendarViewDayGridProps {
-  currentDate: string;
+  rangeStartDate: string;
   onDateChange: (dateStr: string) => void;
   onViewChange?: (view: 'day') => void;
   scheduleData: Schedule[];
@@ -17,7 +17,7 @@ interface CalendarViewDayGridProps {
 }
 
 export function CalendarViewDayGrid({
-  currentDate,
+  rangeStartDate,
   onDateChange,
   onViewChange = () => {},
   scheduleData,
@@ -28,10 +28,10 @@ export function CalendarViewDayGrid({
   const containerNav = useRef<HTMLDivElement>(null);
   const containerOffset = useRef<HTMLDivElement>(null);
 
-  const currentDateObj = new Date(currentDate);
+  const dateObj = new Date(rangeStartDate);
   const weekDates = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date(currentDateObj);
-    date.setDate(currentDateObj.getDate() - currentDateObj.getDay() + i);
+    const date = new Date(dateObj);
+    date.setDate(dateObj.getDate() - dateObj.getDay() + i);
     return date;
   });
 
@@ -57,7 +57,7 @@ export function CalendarViewDayGrid({
             className="sticky top-0 z-10 grid flex-none grid-cols-7 bg-white text-xs text-gray-500 shadow ring-1 ring-black/5 md:hidden"
           >
             {weekDates.map((date) => {
-              const isSelected = date.toDateString() === currentDateObj.toDateString();
+              const isSelected = date.toDateString() === dateObj.toDateString();
               const isToday = date.toDateString() === new Date().toDateString();
 
               return (
@@ -87,7 +87,7 @@ export function CalendarViewDayGrid({
             containerRef={container}
             navRef={containerNav}
             offsetRef={containerOffset}
-            currentDate={currentDate}
+            rangeStartDate={rangeStartDate}
             scheduleData={scheduleData}
             serviceProviderId={serviceProviderId}
             onRefresh={onRefresh}

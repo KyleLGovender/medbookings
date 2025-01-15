@@ -4,7 +4,7 @@ import { Schedule } from '../../lib/types';
 import { CalendarViewWeekGrid } from './calendar-view-week-grid';
 
 interface CalendarViewWeekProps {
-  currentDate: Date;
+  rangeStartDate: Date;
   scheduleData: Schedule[];
   onDateChange: (date: Date) => void;
   onViewChange?: (view: 'day') => void;
@@ -13,7 +13,7 @@ interface CalendarViewWeekProps {
 }
 
 export function CalendarViewWeek({
-  currentDate,
+  rangeStartDate,
   scheduleData = [],
   onDateChange,
   onViewChange = () => {},
@@ -26,7 +26,7 @@ export function CalendarViewWeek({
 
   return (
     <CalendarViewWeekGrid
-      currentDate={currentDate}
+      rangeStartDate={rangeStartDate}
       scheduleData={scheduleData}
       onDateChange={onDateChange}
       onViewChange={onViewChange}
