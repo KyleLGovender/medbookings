@@ -15,77 +15,6 @@ import { z } from 'zod';
 
 export type ViewType = 'day' | 'week' | 'schedule';
 
-// Form Schemas
-export const BookingFormSchema = z
-  .object({
-    // Booking type
-    bookingType: z.enum(['USER', 'GUEST']),
-
-    // User booking fields
-    clientId: z.string().optional(),
-
-    // Guest booking fields
-    clientName: z.string().optional(),
-    clientEmail: z.string().email().optional(),
-    clientPhone: z.string().optional(),
-    clientWhatsapp: z.string().optional(),
-
-    // Notification preferences
-    notifyViaEmail: z.boolean().default(false),
-    notifyViaSMS: z.boolean().default(false),
-    notifyViaWhatsapp: z.boolean().default(false),
-
-    // Booking details
-    startTime: z.coerce.date(),
-    endTime: z.coerce.date(),
-    duration: z.number().int(),
-    price: z.number().min(0),
-    isOnline: z.boolean(),
-    location: z.string().optional().nullable(),
-    notes: z.string().optional().nullable(),
-    serviceProviderId: z.string(),
-    status: z.lazy(() => BookingStatusSchema).default('PENDING'),
-    guestName: z.string().optional(),
-    guestEmail: z.string().email().optional(),
-    guestPhone: z.string().optional(),
-    guestWhatsapp: z.string().optional(),
-    notificationPreferences: z
-      .object({
-        email: z.boolean(),
-        sms: z.boolean(),
-        whatsapp: z.boolean(),
-      })
-      .optional(),
-  })
-  .refine(
-    (data) => {
-      // Validate user booking has clientId
-      if (data.bookingType === 'USER' && !data.clientId) {
-        return false;
-      }
-      // Validate guest booking has required fields
-      if (data.bookingType === 'GUEST' && !data.clientName) {
-        return false;
-      }
-      // Validate notification methods have corresponding contact info
-      if (data.notifyViaEmail && !data.clientEmail) {
-        return false;
-      }
-      if (data.notifyViaSMS && !data.clientPhone) {
-        return false;
-      }
-      if (data.notifyViaWhatsapp && !data.clientWhatsapp) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: 'Invalid booking data',
-    }
-  );
-
-export type BookingFormData = z.infer<typeof BookingFormSchema>;
-
 export const availabilityFormSchema = z
   .object({
     date: z.date(),
@@ -136,6 +65,11 @@ export interface Availability
   updatedAt: string;
 }
 
+export enum BookingType {
+  SELF = 'SELF',
+  GUEST = 'GUEST',
+}
+
 export interface Booking
   extends Omit<
     ZodBooking,
@@ -161,7 +95,75 @@ export interface Booking
   notifyViaEmail: boolean;
   notifyViaSMS: boolean;
   notifyViaWhatsapp: boolean;
+  bookingType: BookingType;
 }
+
+export const BookingFormSchema = z
+  .object({
+    bookingType: z.enum([BookingType.SELF, BookingType.GUEST]),
+    // User booking fields
+    clientId: z.string().optional(),
+
+    // Guest booking fields
+    clientName: z.string().optional(),
+    clientEmail: z.string().email().optional(),
+    clientPhone: z.string().optional(),
+    clientWhatsapp: z.string().optional(),
+
+    // Notification preferences
+    notifyViaEmail: z.boolean().default(false),
+    notifyViaSMS: z.boolean().default(false),
+    notifyViaWhatsapp: z.boolean().default(false),
+
+    // Booking details
+    startTime: z.coerce.date(),
+    endTime: z.coerce.date(),
+    duration: z.number().int(),
+    price: z.number().min(0),
+    isOnline: z.boolean(),
+    location: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
+    serviceProviderId: z.string(),
+    status: z.lazy(() => BookingStatusSchema).default('PENDING'),
+    guestName: z.string().optional(),
+    guestEmail: z.string().email().optional(),
+    guestPhone: z.string().optional(),
+    guestWhatsapp: z.string().optional(),
+    notificationPreferences: z
+      .object({
+        email: z.boolean(),
+        sms: z.boolean(),
+        whatsapp: z.boolean(),
+      })
+      .optional(),
+  })
+  .refine(
+    (data) => {
+      // Validate based on booking type only
+      if (data.bookingType === BookingType.SELF && !data.clientId) {
+        return false;
+      }
+      if (data.bookingType === BookingType.GUEST && !data.clientName) {
+        return false;
+      }
+      // Validate notification methods have corresponding contact info
+      if (data.notifyViaEmail && !data.clientEmail) {
+        return false;
+      }
+      if (data.notifyViaSMS && !data.clientPhone) {
+        return false;
+      }
+      if (data.notifyViaWhatsapp && !data.clientWhatsapp) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'Invalid booking data',
+    }
+  );
+
+export type BookingFormData = z.infer<typeof BookingFormSchema>;
 
 export interface NotificationPreference
   extends Omit<ZodNotificationPreference, 'createdAt' | 'updatedAt'> {
@@ -208,6 +210,7 @@ export function transformBooking(booking: any): Booking {
     endTime: new Date(booking.endTime).toISOString(),
     status: BookingStatusSchema.parse(booking.status),
     notifications: booking.notifications?.map(transformNotification) ?? [],
+    bookingType: BookingType.GUEST,
   };
 }
 

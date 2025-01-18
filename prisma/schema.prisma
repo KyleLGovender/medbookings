@@ -10,31 +10,32 @@ generator client {
 // Add this new generator configuration
 generator zod {
   provider = "zod-prisma-types"
-  output   = "./zod"  // This will create a /zod directory in your prisma folder
+  output   = "./zod" // This will create a /zod directory in your prisma folder
 }
 
 // Base User model and auth
 model User {
-  id                    String               @id @default(cuid())
-  name                  String?
-  email                 String?              @unique
-  emailVerified        DateTime?
-  phone                String?
-  phoneVerified        DateTime?
-  whatsapp             String?
-  whatsappVerified     DateTime?
-  password             String?
-  image                String?
-  role                 UserRole             @default(USER)
+  id                      String                   @id @default(cuid())
+  name                    String?
+  email                   String?                  @unique
+  emailVerified           DateTime?
+  phone                   String?
+  phoneVerified           DateTime?
+  whatsapp                String?
+  whatsappVerified        DateTime?
+  password                String?
+  image                   String?
+  role                    UserRole                 @default(USER)
   // Relations
-  accounts             Account[]
-  serviceProvider      ServiceProvider?
-  bookings             Booking[]            // Bookings made by this user
+  accounts                Account[]
+  serviceProvider         ServiceProvider?
+  bookingsCreated         Booking[]                @relation("BookedBy")
+  bookingsAsClient        Booking[]                @relation("BookingClient")
   notificationPreferences NotificationPreference[]
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
-  reviews               Review[]
-  validatedRequirements RequirementSubmission[] @relation("ValidatedBy")
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  reviews                 Review[]
+  validatedRequirements   RequirementSubmission[]  @relation("ValidatedBy")
 }
 
 enum UserRole {
@@ -63,61 +64,61 @@ model Account {
 
 // Provider Type and Requirements
 model ServiceProviderType {
-  id              String           @id @default(cuid())
-  name            String           @unique
-  description     String?
-  requirements    RequirementType[]  // Keep as array - one ServiceProviderType can have many RequirementTypes
-  services        Service[]
+  id               String            @id @default(cuid())
+  name             String            @unique
+  description      String?
+  requirements     RequirementType[] // Keep as array - one ServiceProviderType can have many RequirementTypes
+  services         Service[]
   serviceProviders ServiceProvider[]
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 }
 
 // Service Provider
 model ServiceProvider {
-  id              String        @id @default(cuid())
-  name            String        // Added name property
-  user            User          @relation(fields: [userId], references: [id])
-  userId          String        @unique
-  serviceProviderType    ServiceProviderType  @relation(fields: [serviceProviderTypeId], references: [id])
+  id                     String                  @id @default(cuid())
+  name                   String
+  user                   User                    @relation(fields: [userId], references: [id])
+  userId                 String                  @unique
+  serviceProviderType    ServiceProviderType     @relation(fields: [serviceProviderTypeId], references: [id])
   serviceProviderTypeId  String
-  bio             String?       @db.Text
-  services        Service[]
-  requirementSubmissions RequirementSubmission[]  // Changed from validations
-  availabilities  Availability[]
-  bookings        Booking[]     // Bookings for this provider
-  calendarIntegration CalendarIntegration?
-  status          ServiceProviderStatus @default(PENDING)
-  verifiedAt      DateTime?
-  timezone        String        @default("UTC")
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  trialStarted    DateTime?
-  trialEnded      DateTime?
-  subscription    Subscription?
-  googlePlaceId         String?   // Google Business Profile ID
-  googleBusinessAccount String?   // Google Business Account ID
-  averageRating         Float?    // Cached average rating
-  totalReviews          Int       @default(0)
-  reviews               Review[]
-  image            String       // URL to provider's image in Vercel Blob
-  languages        Languages[]    // Array of languages spoken
-  billingType      BillingType  @default(PRIVATE_ONLY)
-  website          String?      @db.Text  // Must be a valid URL
+  bio                    String?                 @db.Text
+  services               Service[]
+  requirementSubmissions RequirementSubmission[]
+  availabilities         Availability[]
+  bookings               Booking[]
+  calendarIntegration    CalendarIntegration?
+  status                 ServiceProviderStatus    @default(PENDING)
+  verifiedAt             DateTime?
+  timezone               String                  @default("UTC")
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  trialStarted           DateTime?
+  trialEnded             DateTime?
+  subscription           Subscription?
+  googlePlaceId          String? // Google Business Profile ID
+  googleBusinessAccount  String? // Google Business Account ID
+  averageRating          Float? // Cached average rating
+  totalReviews           Int                     @default(0)
+  reviews                Review[]
+  image                  String // URL to provider's image in Vercel Blob
+  languages              Languages[] // Array of languages spoken
+  billingType            BillingType             @default(PRIVATE_ONLY)
+  website                String?                 @db.Text // Must be a valid URL
 }
 
 enum ServiceProviderStatus {
-  PENDING            // Initial signup
-  TRIAL              // In free trial period
-  TRIAL_EXPIRED      // Trial ended, needs to subscribe
-  APPROVED           // Requirements validated & paid
-  ACTIVE             // Subscription active
-  SUSPENDED          // Payment failed
-  CANCELLED          // Subscription cancelled
-  REJECTED           // Application rejected
+  PENDING // Initial signup
+  TRIAL // In free trial period
+  TRIAL_EXPIRED // Trial ended, needs to subscribe
+  APPROVED // Requirements validated & paid
+  ACTIVE // Subscription active
+  SUSPENDED // Payment failed
+  CANCELLED // Subscription cancelled
+  REJECTED // Application rejected
 }
 
-enum Languages {  // Renamed from Language
+enum Languages {
   English
   IsiZulu
   IsiXhosa
@@ -137,56 +138,56 @@ enum Languages {  // Renamed from Language
 }
 
 enum BillingType {
-  MEDICAL_AID_ONLY           // Only accepts medical aid
-  PRIVATE_ONLY              // Only accepts private payments
-  MEDICAL_AID_AND_PRIVATE   // Accepts both medical aid and private payments
-  ALL                      // Accepts all payment types
+  MEDICAL_AID_ONLY // Only accepts medical aid
+  PRIVATE_ONLY // Only accepts private payments
+  MEDICAL_AID_AND_PRIVATE // Accepts both medical aid and private payments
+  ALL // Accepts all payment types
 }
 
 // New model for requirement types
 model RequirementType {
-  id                    String                  @id @default(cuid())
+  id                    String                    @id @default(cuid())
   name                  String
   description           String?
-  isRequired            Boolean                 @default(true)
+  isRequired            Boolean                   @default(true)
   validationType        RequirementValidationType
-  validationConfig     Json?                   // Store validation-specific configuration
-  displayPriority      Int                     @default(0)  // Added field
-  serviceProviderType   ServiceProviderType     @relation(fields: [serviceProviderTypeId], references: [id])
+  validationConfig      Json? // Store validation-specific configuration
+  displayPriority       Int                       @default(0) // Added field
+  serviceProviderType   ServiceProviderType       @relation(fields: [serviceProviderTypeId], references: [id])
   serviceProviderTypeId String
   submissions           RequirementSubmission[]
-  createdAt            DateTime                 @default(now())
-  updatedAt            DateTime                 @updatedAt
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
 }
 
 enum RequirementValidationType {
-  BOOLEAN           // Yes/No or True/False answers
-  DOCUMENT          // Document upload required
-  TEXT              // Free text input
-  DATE              // Regular date input
-  FUTURE_DATE       // Date that must be in the future (e.g., expiry dates)
-  PAST_DATE         // Date that must be in the past (e.g., graduation date)
-  NUMBER            // Numeric input
-  PREDEFINED_LIST   // Selection from a predefined list of options
+  BOOLEAN // Yes/No or True/False answers
+  DOCUMENT // Document upload required
+  TEXT // Free text input
+  DATE // Regular date input
+  FUTURE_DATE // Date that must be in the future (e.g., expiry dates)
+  PAST_DATE // Date that must be in the past (e.g., graduation date)
+  NUMBER // Numeric input
+  PREDEFINED_LIST // Selection from a predefined list of options
 }
 
 // Merged Requirement and RequirementValidation into RequirementSubmission
 model RequirementSubmission {
-  id                String        @id @default(cuid())
-  requirementType   RequirementType @relation(fields: [requirementTypeId], references: [id])
+  id                String                       @id @default(cuid())
+  requirementType   RequirementType              @relation(fields: [requirementTypeId], references: [id])
   requirementTypeId String
-  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
+  serviceProvider   ServiceProvider              @relation(fields: [serviceProviderId], references: [id])
   serviceProviderId String
-  status           RequirementsValidationStatus @default(PENDING)
-  documentUrl      String?         // URL to uploaded document in Vercel Blob
-  documentMetadata Json?           // Store actual metadata values
-  expiresAt        DateTime?       // Generic expiration date
-  notes            String?         // Admin notes about validation/rejection
-  validatedAt      DateTime?
-  validatedBy      User?           @relation("ValidatedBy", fields: [validatedById], references: [id])
-  validatedById    String?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  status            RequirementsValidationStatus @default(PENDING)
+  documentUrl       String? // URL to uploaded document in Vercel Blob
+  documentMetadata  Json? // Store actual metadata values
+  expiresAt         DateTime? // Generic expiration date
+  notes             String? // Admin notes about validation/rejection
+  validatedAt       DateTime?
+  validatedBy       User?                        @relation("ValidatedBy", fields: [validatedById], references: [id])
+  validatedById     String?
+  createdAt         DateTime                     @default(now())
+  updatedAt         DateTime                     @updatedAt
 
   @@unique([requirementTypeId, serviceProviderId])
 }
@@ -199,81 +200,98 @@ enum RequirementsValidationStatus {
 
 // Modified Service model
 model Service {
-  id              String           @id @default(cuid())
-  name            String
-  description     String?
-  serviceProviderType    ServiceProviderType    @relation(fields: [serviceProviderTypeId], references: [id])
-  serviceProviderTypeId  String
-  displayPriority Int             @default(0)
-  providers       ServiceProvider[] // Many-to-many relation with providers who offer this service
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id                    String              @id @default(cuid())
+  name                  String
+  description           String?
+  serviceProviderType   ServiceProviderType @relation(fields: [serviceProviderTypeId], references: [id])
+  serviceProviderTypeId String
+  displayPriority       Int                 @default(0)
+  providers             ServiceProvider[] // Many-to-many relation with providers who offer this service
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
 
   @@index([serviceProviderTypeId, displayPriority])
 }
 
 // Calendar and Booking Management
 model Availability {
-  id                  String           @id @default(cuid())
-  serviceProvider     ServiceProvider  @relation(fields: [serviceProviderId], references: [id])
-  serviceProviderId   String
-  startTime          DateTime
-  endTime            DateTime
-  isRecurring        Boolean          @default(false)
-  recurringDays      Int[]            // Array of days (0-6 for Sunday-Saturday)
-  recurrenceEndDate  DateTime?        // End date for recurring availability
-  
+  id                String          @id @default(cuid())
+  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
+  serviceProviderId String
+  startTime         DateTime
+  endTime           DateTime
+  isRecurring       Boolean         @default(false)
+  recurringDays     Int[] // Array of days (0-6 for Sunday-Saturday)
+  recurrenceEndDate DateTime? // End date for recurring availability
+
   // Consultation configuration
-  duration          Int               // Duration in minutes
-  price             Decimal          @db.Decimal(10,2)
-  isOnlineAvailable Boolean         @default(false)
-  isInPersonAvailable Boolean       @default(false)
-  location          String?          // For in-person consultations
-  
-  maxBookings        Int              @default(1)     // For group sessions
-  remainingSpots     Int
-  bookings           Booking[]
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  duration            Int // Duration in minutes
+  price               Decimal @db.Decimal(10, 2)
+  isOnlineAvailable   Boolean @default(false)
+  isInPersonAvailable Boolean @default(false)
+  location            String? // For in-person consultations
+
+  maxBookings    Int       @default(1) // For group sessions
+  remainingSpots Int
+  bookings       Booking[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([serviceProviderId, startTime, endTime])
 }
 
-model Booking {
-  id                  String           @id @default(cuid())
-  serviceProvider     ServiceProvider  @relation(fields: [serviceProviderId], references: [id])
-  serviceProviderId   String
-  client             User?            @relation(fields: [clientId], references: [id])
-  clientId           String?
-  clientName         String?          // Renamed from guestName
-  clientEmail        String?          // Renamed from guestEmail
-  clientPhone        String?          // Renamed from guestPhone
-  clientWhatsapp     String?          // Renamed from guestWhatsapp
-  notifyViaEmail     Boolean          @default(false)
-  notifyViaSMS       Boolean          @default(false)
-  notifyViaWhatsapp  Boolean          @default(false)
-  availability       Availability     @relation(fields: [availabilityId], references: [id])
-  availabilityId     String
-  
-  // Consultation details snapshot
-  duration          Int               // Duration in minutes
-  price             Decimal          @db.Decimal(10,2)
-  isOnline          Boolean          // Which type was chosen
-  location          String?          // If in-person
-  
-  startTime          DateTime
-  endTime            DateTime
-  status             BookingStatus    @default(PENDING)
-  notes              String?
-  cancellationReason String?
-  cancelledAt        DateTime?
-  notifications      NotificationLog[]
-  review             Review?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+enum BookingCreatorType {
+  GUEST
+  USER
+  SERVICE_PROVIDER
+  ADMIN
+}
 
-  @@index([serviceProviderId, startTime])
-  @@index([clientId, startTime])
+enum BookingRelationType {
+  SELF // Booking for self
+  DEPENDENT // e.g., Parent booking for child
+  GUEST // Booking for a guest/friend
+  PROFESSIONAL // Service provider or admin booking
+}
+
+model Booking {
+  id String @id @default(cuid())
+
+  // Add these fields
+  bookedBy   User?    @relation("BookedBy", fields: [bookedById], references: [id])
+  bookedById String?
+
+  // Client Information (either user or guest)
+  client         User?   @relation("BookingClient", fields: [clientId], references: [id])
+  clientId       String? // Null for guest bookings
+  guestName      String? // Required for guest bookings
+  guestEmail     String? // Optional contact for guests
+  guestPhone     String? // Optional contact for guests
+  guestWhatsapp  String? // Optional contact for guests
+
+  // Service Provider
+  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
+  serviceProviderId String
+
+  // Booking details
+  availability   Availability      @relation(fields: [availabilityId], references: [id])
+  availabilityId String
+  startTime      DateTime
+  endTime        DateTime
+  duration       Int // in minutes
+  price          Decimal          @db.Decimal(10, 2)
+  isOnline       Boolean
+  location       String?
+  status         BookingStatus    @default(PENDING)
+  notes          String?          @db.Text
+  notifications  NotificationLog[]
+  review         Review?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([serviceProviderId, status])
+  @@index([clientId, createdAt])
 }
 
 enum BookingStatus {
@@ -286,29 +304,29 @@ enum BookingStatus {
 
 // Notifications
 model NotificationPreference {
-  id              String              @id @default(cuid())
-  user            User                @relation(fields: [userId], references: [id])
-  userId          String
-  email           Boolean             @default(true)
-  sms             Boolean             @default(false)
-  whatsapp        Boolean             @default(false)
-  phoneNumber     String?
-  whatsappNumber  String?
-  reminderHours   Int                 @default(24)    // Hours before appointment
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  id             String   @id @default(cuid())
+  user           User     @relation(fields: [userId], references: [id])
+  userId         String
+  email          Boolean  @default(true)
+  sms            Boolean  @default(false)
+  whatsapp       Boolean  @default(false)
+  phoneNumber    String?
+  whatsappNumber String?
+  reminderHours  Int      @default(24) // Hours before appointment
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model NotificationLog {
-  id              String           @id @default(cuid())
-  booking         Booking          @relation(fields: [bookingId], references: [id])
-  bookingId       String
-  type            NotificationType
-  channel         NotificationChannel
-  content         String           @db.Text
-  status          String           // SENT, DELIVERED, FAILED
-  sentAt          DateTime         @default(now())
-  deliveredAt     DateTime?
+  id          String              @id @default(cuid())
+  booking     Booking             @relation(fields: [bookingId], references: [id])
+  bookingId   String
+  type        NotificationType
+  channel     NotificationChannel
+  content     String              @db.Text
+  status      String // SENT, DELIVERED, FAILED
+  sentAt      DateTime            @default(now())
+  deliveredAt DateTime?
 }
 
 enum NotificationType {
@@ -329,7 +347,7 @@ model CalendarIntegration {
   id                String          @id @default(cuid())
   serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
   serviceProviderId String          @unique
-  provider          String          // GOOGLE, OUTLOOK, etc.
+  provider          String // GOOGLE, OUTLOOK, etc.
   accessToken       String          @db.Text
   refreshToken      String          @db.Text
   expiresAt         DateTime
@@ -341,23 +359,23 @@ model CalendarIntegration {
 }
 
 model Subscription {
-  id                String          @id @default(cuid())
-  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
-  serviceProviderId String          @unique
-  status           SubscriptionStatus
-  plan             SubscriptionPlan @relation(fields: [planId], references: [id])
-  planId           String
-  trialStart       DateTime?
-  trialEnd         DateTime?
-  startDate        DateTime
-  endDate          DateTime?
-  cancelledAt      DateTime?
-  cancelReason     String?
-  stripeCustomerId String?
+  id                   String             @id @default(cuid())
+  serviceProvider      ServiceProvider    @relation(fields: [serviceProviderId], references: [id])
+  serviceProviderId    String             @unique
+  status               SubscriptionStatus
+  plan                 SubscriptionPlan   @relation(fields: [planId], references: [id])
+  planId               String
+  trialStart           DateTime?
+  trialEnd             DateTime?
+  startDate            DateTime
+  endDate              DateTime?
+  cancelledAt          DateTime?
+  cancelReason         String?
+  stripeCustomerId     String?
   stripeSubscriptionId String?
-  payments         Payment[]
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  payments             Payment[]
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 }
 
 enum SubscriptionStatus {
@@ -369,18 +387,18 @@ enum SubscriptionStatus {
 }
 
 model SubscriptionPlan {
-  id              String          @id @default(cuid())
-  name            String
-  description     String?
-  price           Decimal         @db.Decimal(10,2)
-  interval        BillingInterval
-  currency        String          @default("USD")
-  isActive        Boolean         @default(true)
-  stripePriceId   String?        // Stripe price ID
-  subscriptions   Subscription[]
-  features        Json?          // Store plan features as JSON
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id            String          @id @default(cuid())
+  name          String
+  description   String?
+  price         Decimal         @db.Decimal(10, 2)
+  interval      BillingInterval
+  currency      String          @default("USD")
+  isActive      Boolean         @default(true)
+  stripePriceId String? // Stripe price ID
+  subscriptions Subscription[]
+  features      Json? // Store plan features as JSON
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 }
 
 enum BillingInterval {
@@ -389,18 +407,18 @@ enum BillingInterval {
 }
 
 model Payment {
-  id              String          @id @default(cuid())
-  subscription    Subscription    @relation(fields: [subscriptionId], references: [id])
+  id              String        @id @default(cuid())
+  subscription    Subscription  @relation(fields: [subscriptionId], references: [id])
   subscriptionId  String
-  amount          Decimal         @db.Decimal(10,2)
+  amount          Decimal       @db.Decimal(10, 2)
   currency        String
   status          PaymentStatus
   stripePaymentId String?
   stripeInvoiceId String?
   paidAt          DateTime?
   failureReason   String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 enum PaymentStatus {
@@ -417,12 +435,12 @@ model Review {
   client            User            @relation(fields: [clientId], references: [id])
   clientId          String
   booking           Booking         @relation(fields: [bookingId], references: [id])
-  bookingId         String          @unique  // One review per booking
-  rating            Int             // 1-5 stars
+  bookingId         String          @unique // One review per booking
+  rating            Int // 1-5 stars
   comment           String?         @db.Text
-  response          String?         @db.Text  // Provider's response
+  response          String?         @db.Text // Provider's response
   isPublic          Boolean         @default(true)
-  googleReviewId    String?         // Reference to Google review if synced
+  googleReviewId    String? // Reference to Google review if synced
   status            ReviewStatus    @default(PENDING)
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
@@ -432,10 +450,9 @@ model Review {
 }
 
 enum ReviewStatus {
-  PENDING    // Awaiting moderation
-  PUBLISHED  // Visible to public
-  HIDDEN     // Hidden by admin
-  FLAGGED    // Flagged for review
-  SYNCED     // Synced with Google
+  PENDING // Awaiting moderation
+  PUBLISHED // Visible to public
+  HIDDEN // Hidden by admin
+  FLAGGED // Flagged for review
+  SYNCED // Synced with Google
 }
-

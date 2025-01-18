@@ -43,6 +43,7 @@ export function BookingDialog({
           serviceProviderId={serviceProviderId}
           onClose={() => onOpenChange(false)}
           onRefresh={onRefresh}
+          selectedDate={new Date()}
         />
       </DialogContent>
     </Dialog>

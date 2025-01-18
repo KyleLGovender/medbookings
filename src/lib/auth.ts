@@ -3,6 +3,14 @@ import { getServerSession } from 'next-auth';
 
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
+interface User {
+  id: string;
+  role: UserRole;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+}
+
 export async function getCurrentUser() {
   const session = await getServerSession(authOptions);
   return session?.user;

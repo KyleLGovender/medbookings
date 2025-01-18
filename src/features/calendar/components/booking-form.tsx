@@ -18,6 +18,13 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { TimePicker } from '@/components/ui/time-picker';
 import { useToast } from '@/hooks/use-toast';
@@ -29,10 +36,11 @@ import {
   type BookingFormData,
   BookingFormSchema,
   BookingFormValues,
+  BookingType,
 } from '../lib/types';
 
 const defaultValues: Partial<BookingFormData> = {
-  bookingType: 'GUEST',
+  bookingType: BookingType.GUEST,
   notificationPreferences: {
     email: false,
     sms: false,
@@ -58,6 +66,7 @@ interface BookingFormProps {
   onRefresh?: () => Promise<void>;
   selectedDate: Date;
   availability?: Availability;
+  userId?: string;
 }
 
 export function BookingForm({
@@ -68,16 +77,25 @@ export function BookingForm({
   onRefresh,
   selectedDate,
   availability,
+  userId,
 }: BookingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
   const form = useForm<BookingFormData>({
     resolver: zodResolver(BookingFormSchema),
     defaultValues: {
       ...defaultValues,
       serviceProviderId,
+      clientId: userId,
     },
   });
+
+  const bookingType = form.watch('bookingType');
+
+  useEffect(() => {
+    form.setValue('clientId', bookingType === BookingType.SELF ? userId : undefined);
+  }, [bookingType, userId, form]);
 
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
@@ -96,21 +114,11 @@ export function BookingForm({
 
   const onSubmit = async (values: BookingFormValues) => {
     setIsSubmitting(true);
-    console.log('onSubmit: Current form values:', values);
     try {
-      if (!values.startTime || !values.endTime) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Start time and end time are required',
-        });
-        return;
-      }
-
       const formData = new FormData();
 
       // Core booking details
-      formData.append('bookingType', 'GUEST');
+      formData.append('bookingType', values.bookingType);
       formData.append('serviceProviderId', serviceProviderId);
       formData.append('startTime', values.startTime.toISOString());
       formData.append('endTime', values.endTime.toISOString());
@@ -118,11 +126,17 @@ export function BookingForm({
       formData.append('status', 'PENDING');
       formData.append('isOnline', String(values.isOnline));
 
-      // Client details - use empty string for optional fields
-      formData.append('clientName', values.clientName?.trim() ?? '');
-      formData.append('clientEmail', values.clientEmail?.trim() ?? '');
-      formData.append('clientPhone', values.clientPhone?.trim() ?? '');
-      formData.append('clientWhatsapp', values.clientWhatsapp?.trim() ?? '');
+      // Client/Guest details based on booking type
+      if (values.bookingType === BookingType.SELF) {
+        formData.append('clientId', userId || '');
+      } else {
+        // Always include bookedById for guest bookings if userId exists
+        if (userId) formData.append('bookedById', userId);
+        formData.append('guestName', values.clientName?.trim() ?? '');
+        formData.append('guestEmail', values.clientEmail?.trim() ?? '');
+        formData.append('guestPhone', values.clientPhone?.trim() ?? '');
+        formData.append('guestWhatsapp', values.clientWhatsapp?.trim() ?? '');
+      }
 
       // Notification preferences as JSON string
       formData.append(
@@ -194,29 +208,65 @@ export function BookingForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-xl space-y-6">
-        <div className="space-y-4">
+        {!serviceProviderId ? (
           <FormField
             control={form.control}
-            name="clientName"
+            name="bookingType"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="Enter your name"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                      }
-                    }}
-                  />
-                </FormControl>
+                <FormLabel>Booking Type</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select booking type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={BookingType.SELF}>Book for myself</SelectItem>
+                    <SelectItem value={BookingType.GUEST}>Book for someone else</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
+        ) : null}
+
+        {bookingType === BookingType.GUEST && (
+          <>
+            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+              <div className="flex items-center gap-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-yellow-600"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <p className="text-sm text-yellow-800">
+                  {userId ? 'You are booking this appointment for someone else' : 'Guest Booking'}
+                </p>
+              </div>
+            </div>
+
+            <FormField
+              control={form.control}
+              name="clientName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Guest Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Enter guest name" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
 
         <div className="space-y-4">
           <FormField
@@ -266,7 +316,6 @@ export function BookingForm({
 
         <div className="space-y-4">
           <FormLabel>Notifications</FormLabel>
-          {/* Notification Preferences */}
           <div className="space-y-4">
             <FormField
               control={form.control}
