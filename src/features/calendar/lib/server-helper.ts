@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { calculateAvailableSpots } from '@/features/calendar/lib/helper';
 import { prisma } from '@/lib/prisma';
 
-import { type BookingFormData, BookingFormSchema, availabilityFormSchema } from './types';
+import { BookingFormSchema, BookingFormValues, Schedule, availabilityFormSchema } from './types';
 
 function hasTimeOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
   return start1 < end2 && start2 < end1;
@@ -233,7 +233,7 @@ export async function checkScheduleAccess(
 }
 
 export async function validateBookingFormData(formData: FormData): Promise<{
-  data?: BookingFormData;
+  data?: BookingFormValues;
   error?: string;
   fieldErrors?: Record<string, string[]>;
   formErrors?: string[];
@@ -275,35 +275,5 @@ export async function validateBookingFormData(formData: FormData): Promise<{
       return { fieldErrors };
     }
     return { error: 'Invalid form data' };
-  }
-}
-
-export async function checkBookingAccess(
-  bookingId: string,
-  serviceProviderId: string
-): Promise<{
-  booking?: any;
-  error?: string;
-}> {
-  try {
-    const booking = await prisma.booking.findFirst({
-      where: {
-        id: bookingId,
-        serviceProviderId: serviceProviderId,
-      },
-    });
-
-    if (!booking) {
-      return {
-        error: 'Booking not found or you do not have permission to access it',
-      };
-    }
-
-    return { booking };
-  } catch (error) {
-    console.error('Check booking access error:', error);
-    return {
-      error: 'Failed to verify booking access',
-    };
   }
 }

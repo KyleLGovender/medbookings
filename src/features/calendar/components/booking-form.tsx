@@ -33,13 +33,12 @@ import { createBooking, updateBooking } from '../lib/actions';
 import {
   Availability,
   Booking,
-  type BookingFormData,
   BookingFormSchema,
   BookingFormValues,
   BookingType,
 } from '../lib/types';
 
-const defaultValues: Partial<BookingFormData> = {
+const defaultValues: Partial<BookingFormValues> = {
   bookingType: BookingType.GUEST,
   notificationPreferences: {
     email: false,
@@ -82,7 +81,7 @@ export function BookingForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<BookingFormData>({
+  const form = useForm<BookingFormValues>({
     resolver: zodResolver(BookingFormSchema),
     defaultValues: {
       ...defaultValues,
