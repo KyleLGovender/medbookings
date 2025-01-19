@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { validateBookingConstraints } from '@/features/calendar/lib/helper';
 import { NotificationService } from '@/features/notifications/notification-service';
 import { TemplateService } from '@/features/notifications/template-service';
+import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getAuthenticatedServiceProvider } from '@/lib/server-helper';
 
@@ -401,6 +402,12 @@ export async function updateBooking(
   formErrors?: string[];
 }> {
   try {
+    // Get the authenticated user
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return { error: 'Not authenticated' };
+    }
+
     // 1. Parse and prepare booking data
     const notificationPreferences = JSON.parse(formData.get('notificationPreferences') as string);
     const bookingData = {
@@ -432,10 +439,10 @@ export async function updateBooking(
 
     const validated = validationResult.data;
 
-    // 3. Check access to the booking
+    // 3. Check access to the booking using the user's ID
     const { booking: existingBooking, error: accessError } = await checkBookingAccess(
       bookingId,
-      validated.serviceProviderId
+      currentUser.id
     );
     if (accessError) {
       return { error: accessError };
@@ -518,10 +525,32 @@ export async function updateBooking(
   }
 }
 
-// TODO: Implement deleteBooking function
 export async function deleteBooking(
   bookingId: string
 ): Promise<{ success?: boolean; error?: string }> {
-  // TODO: Add implementation
-  return { error: 'Not implemented' }; // Temporary return until implementation
+  try {
+    // Get the authenticated user
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return { error: 'Not authenticated' };
+    }
+
+    // Check access to the booking
+    const { booking, error: accessError } = await checkBookingAccess(bookingId, currentUser.id);
+    if (accessError) {
+      return { error: accessError };
+    }
+
+    // Delete the booking
+    await prisma.booking.delete({
+      where: { id: bookingId },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Delete booking error:', error);
+    return {
+      error: error instanceof Error ? error.message : 'Failed to delete booking',
+    };
+  }
 }

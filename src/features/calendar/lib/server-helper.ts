@@ -277,3 +277,31 @@ export async function validateBookingFormData(formData: FormData): Promise<{
     return { error: 'Invalid form data' };
   }
 }
+
+export async function checkBookingAccess(bookingId: string, userId: string) {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: {
+      serviceProvider: {
+        include: {
+          user: true,
+        },
+      },
+      client: true,
+    },
+  });
+
+  if (!booking) {
+    throw new Error('Booking not found');
+  }
+
+  // Check if user is the service provider or the client
+  const isServiceProvider = booking.serviceProvider.userId === userId;
+  const isClient = booking.clientId === userId;
+
+  if (!isServiceProvider && !isClient) {
+    throw new Error('Unauthorized access to booking');
+  }
+
+  return booking;
+}
