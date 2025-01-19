@@ -2,7 +2,6 @@
 
 import { z } from 'zod';
 
-import { validateBookingConstraints } from '@/features/calendar/lib/helper';
 import { NotificationService } from '@/features/notifications/notification-service';
 import { TemplateService } from '@/features/notifications/template-service';
 import { getCurrentUser } from '@/lib/auth';
@@ -14,6 +13,7 @@ import {
   checkBookingAccess,
   checkForOverlappingAvailability,
   validateAvailabilityFormData,
+  validateBookingWithAvailability,
 } from './server-helper';
 import { Availability, Booking, BookingFormSchema } from './types';
 
@@ -278,28 +278,8 @@ type BookingResponse = {
 
 export async function createBooking(formData: FormData): Promise<BookingResponse> {
   try {
-    // 1. Parse and prepare booking data
-    const notificationPreferences = JSON.parse(formData.get('notificationPreferences') as string);
-    const bookingData = {
-      bookingType: formData.get('bookingType'),
-      serviceProviderId: formData.get('serviceProviderId'),
-      startTime: new Date(formData.get('startTime') as string),
-      endTime: new Date(formData.get('endTime') as string),
-      duration: Number(formData.get('duration')),
-      status: formData.get('status'),
-      isOnline: formData.get('isOnline') === 'true',
-      clientName: formData.get('clientName'),
-      clientEmail: formData.get('clientEmail') || null,
-      clientPhone: formData.get('clientPhone') || null,
-      clientWhatsapp: formData.get('clientWhatsapp') || null,
-      notificationPreferences,
-      price: Number(formData.get('price')),
-      location: formData.get('location') || null,
-      notes: formData.get('notes') || null,
-    };
-
-    // 2. Validate form data
-    const validationResult = await BookingFormSchema.safeParseAsync(bookingData);
+    // 1. Parse and validate form data with Zod schema
+    const validationResult = await BookingFormSchema.safeParseAsync(formData);
     if (!validationResult.success) {
       return {
         fieldErrors: validationResult.error.flatten().fieldErrors,
@@ -309,30 +289,28 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
 
     const validated = validationResult.data;
 
-    // 3. Check availability
-    const availability = await prisma.availability.findFirst({
-      where: {
-        id: validated.availabilityId,
-        serviceProviderId: validated.serviceProviderId,
-        startTime: { lte: validated.startTime },
-        endTime: { gte: validated.endTime },
-      },
-      include: {
-        bookings: true,
-      },
+    // 2. Fetch and validate availability
+    const availability = await prisma.availability.findUnique({
+      where: { id: validated.availabilityId },
+      include: { bookings: true },
     });
 
     if (!availability) {
       return { error: 'No availability found for the requested time slot' };
     }
 
-    // 4. Validate booking constraints
-    const validationErrors = await validateBookingConstraints(validated, availability);
-    if (validationErrors.length > 0) {
-      return { formErrors: validationErrors };
+    // 3. Validate booking against availability
+    const validationResponse = await validateBookingWithAvailability(validated, availability);
+    if (!validationResponse.isValid) {
+      return {
+        error: validationResponse.error,
+        fieldErrors: validationResponse.path
+          ? { [validationResponse.path[0]]: [validationResponse.error!] }
+          : undefined,
+      };
     }
 
-    // 5. Create the booking
+    // 4. Create the booking
     const booking = await prisma.booking.create({
       data: {
         ...validated,
@@ -343,7 +321,7 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
       },
     });
 
-    // 6. Format and return the response
+    // 5. Format and return the response
     return {
       data: {
         ...booking,
@@ -395,12 +373,7 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
 export async function updateBooking(
   bookingId: string,
   formData: FormData
-): Promise<{
-  data?: Booking;
-  error?: string;
-  fieldErrors?: Record<string, string[]>;
-  formErrors?: string[];
-}> {
+): Promise<BookingResponse> {
   try {
     // Get the authenticated user
     const currentUser = await getCurrentUser();
@@ -408,28 +381,8 @@ export async function updateBooking(
       return { error: 'Not authenticated' };
     }
 
-    // 1. Parse and prepare booking data
-    const notificationPreferences = JSON.parse(formData.get('notificationPreferences') as string);
-    const bookingData = {
-      bookingType: formData.get('bookingType'),
-      serviceProviderId: formData.get('serviceProviderId'),
-      startTime: new Date(formData.get('startTime') as string),
-      endTime: new Date(formData.get('endTime') as string),
-      duration: Number(formData.get('duration')),
-      status: formData.get('status'),
-      isOnline: formData.get('isOnline') === 'true',
-      clientName: formData.get('clientName'),
-      clientEmail: formData.get('clientEmail') || null,
-      clientPhone: formData.get('clientPhone') || null,
-      clientWhatsapp: formData.get('clientWhatsapp') || null,
-      notificationPreferences,
-      price: Number(formData.get('price')),
-      location: formData.get('location') || null,
-      notes: formData.get('notes') || null,
-    };
-
-    // 2. Validate form data
-    const validationResult = await BookingFormSchema.safeParseAsync(bookingData);
+    // 1. Parse and validate form data with Zod schema
+    const validationResult = await BookingFormSchema.safeParseAsync(formData);
     if (!validationResult.success) {
       return {
         fieldErrors: validationResult.error.flatten().fieldErrors,
@@ -439,7 +392,28 @@ export async function updateBooking(
 
     const validated = validationResult.data;
 
-    // 3. Check access to the booking using the user's ID
+    // 2. Fetch and validate availability
+    const availability = await prisma.availability.findUnique({
+      where: { id: validated.availabilityId },
+      include: { bookings: true },
+    });
+
+    if (!availability) {
+      return { error: 'No availability found for the requested time slot' };
+    }
+
+    // 3. Validate booking against availability
+    const validationResponse = await validateBookingWithAvailability(validated, availability);
+    if (!validationResponse.isValid) {
+      return {
+        error: validationResponse.error,
+        fieldErrors: validationResponse.path
+          ? { [validationResponse.path[0]]: [validationResponse.error!] }
+          : undefined,
+      };
+    }
+
+    // 4. Check access to the booking using the user's ID
     const { booking: existingBooking, error: accessError } = await checkBookingAccess(
       bookingId,
       currentUser.id
@@ -448,30 +422,7 @@ export async function updateBooking(
       return { error: accessError };
     }
 
-    // 4. Check availability
-    const availability = await prisma.availability.findFirst({
-      where: {
-        id: validated.availabilityId,
-        serviceProviderId: validated.serviceProviderId,
-        startTime: { lte: validated.startTime },
-        endTime: { gte: validated.endTime },
-      },
-      include: {
-        bookings: true,
-      },
-    });
-
-    if (!availability) {
-      return { error: 'No availability found for the requested time slot' };
-    }
-
-    // 5. Validate booking constraints
-    const validationErrors = await validateBookingConstraints(validated, availability);
-    if (validationErrors.length > 0) {
-      return { formErrors: validationErrors };
-    }
-
-    // 6. Update the booking
+    // 5. Update the booking
     const updatedBooking = await prisma.booking.update({
       where: { id: bookingId },
       data: validated,
@@ -480,7 +431,7 @@ export async function updateBooking(
       },
     });
 
-    // 7. Format and return the response
+    // 6. Format and return the response
     return {
       data: {
         ...updatedBooking,

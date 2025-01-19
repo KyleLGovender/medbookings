@@ -278,18 +278,3 @@ export function getPreviousDate(rangeStartDate: Date, view: 'day' | 'week' | 'sc
 
   return newDate;
 }
-
-// Helper function for availability-specific validations
-export async function validateBookingConstraints(
-  booking: z.infer<typeof BookingFormSchema>,
-  availability: any // Type this properly based on your Prisma schema
-): Promise<string[]> {
-  const errors: string[] = [];
-
-  // Check max bookings
-  if (availability.maxBookings && availability.bookings.length >= availability.maxBookings) {
-    errors.push('Maximum number of bookings reached for this availability');
-  }
-
-  return errors;
-}

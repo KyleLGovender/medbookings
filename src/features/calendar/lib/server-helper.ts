@@ -232,6 +232,76 @@ export async function checkScheduleAccess(
   return { schedule };
 }
 
+export async function validateBookingWithAvailability(
+  data: z.infer<typeof BookingFormSchema>,
+  availability: z.infer<typeof AvailabilitySchema> & { bookings: any[] }
+): Promise<{
+  isValid: boolean;
+  error?: string;
+  path?: string[];
+}> {
+  // 1. Validate booking is within availability time range
+  const bookingStart = new Date(data.startTime);
+  const bookingEnd = new Date(data.endTime);
+  const availabilityStart = new Date(availability.startTime);
+  const availabilityEnd = new Date(availability.endTime);
+
+  if (bookingStart < availabilityStart || bookingEnd > availabilityEnd) {
+    return {
+      isValid: false,
+      error: 'Booking must be within availability time range',
+      path: ['startTime'],
+    };
+  }
+
+  // 2. Validate duration matches availability settings
+  if (data.duration !== availability.duration) {
+    return {
+      isValid: false,
+      error: 'Booking duration must match availability duration',
+      path: ['duration'],
+    };
+  }
+
+  // 3. Validate against maxBookings
+  if (availability.maxBookings) {
+    const existingBookingsCount = availability.bookings.length;
+    if (existingBookingsCount >= availability.maxBookings) {
+      return {
+        isValid: false,
+        error: 'Maximum number of bookings reached for this availability',
+        path: ['availabilityId'],
+      };
+    }
+  }
+
+  // 4. Validate price matches availability
+  if (data.price !== availability.price) {
+    return {
+      isValid: false,
+      error: 'Booking price must match availability price',
+      path: ['price'],
+    };
+  }
+
+  // 5. Check for overlapping bookings
+  const hasOverlap = availability.bookings.some((booking) => {
+    const existingStart = new Date(booking.startTime);
+    const existingEnd = new Date(booking.endTime);
+    return bookingStart < existingEnd && bookingEnd > existingStart;
+  });
+
+  if (hasOverlap) {
+    return {
+      isValid: false,
+      error: 'This time slot overlaps with an existing booking',
+      path: ['startTime'],
+    };
+  }
+
+  return { isValid: true };
+}
+
 export async function validateBookingFormData(formData: FormData): Promise<{
   data?: BookingFormValues;
   error?: string;

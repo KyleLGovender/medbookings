@@ -8,4 +8,7 @@ const globalForPrisma = globalThis as unknown as {
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 
-if (env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+// Only assign to global object during development and only on server
+if (env.NODE_ENV !== 'production' && typeof window === 'undefined') {
+  globalForPrisma.prisma = prisma;
+}
