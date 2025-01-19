@@ -82,7 +82,10 @@ export function BookingForm({
   const { toast } = useToast();
 
   const form = useForm<BookingFormValues>({
-    resolver: zodResolver(BookingFormSchema),
+    resolver: async (data, context, options) => {
+      // Use zodResolver but handle the async validation
+      return zodResolver(BookingFormSchema)(data, context, options);
+    },
     defaultValues: {
       ...defaultValues,
       serviceProviderId,

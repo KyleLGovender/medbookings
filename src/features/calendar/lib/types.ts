@@ -12,6 +12,8 @@ import {
 } from '@prisma/zod';
 import { z } from 'zod';
 
+import { prisma } from '@/lib/prisma';
+
 export type ViewType = 'day' | 'week' | 'schedule';
 
 export const availabilityFormSchema = z
@@ -134,17 +136,97 @@ export const BookingFormSchema = z
       ...guestInfoSchema.shape,
     }),
   ])
-  .superRefine((data, ctx) => {
-    // Validate booking time is within availability time range
-    const bookingStart = new Date(data.startTime);
-    const bookingEnd = new Date(data.endTime);
+  .superRefine(async (data, ctx) => {
+    // Get availability details
+    const availability = await prisma.availability.findUnique({
+      where: { id: data.availabilityId },
+      include: {
+        bookings: true, // Get existing bookings
+      },
+    });
 
-    // Ensure booking start is before end
-    if (bookingStart >= bookingEnd) {
+    if (!availability) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Booking start time must be before end time',
+        message: 'Availability slot not found',
+        path: ['availabilityId'],
+      });
+      return;
+    }
+
+    // Validate booking is within availability time range
+    const bookingStart = new Date(data.startTime);
+    const bookingEnd = new Date(data.endTime);
+    const availabilityStart = new Date(availability.startTime);
+    const availabilityEnd = new Date(availability.endTime);
+
+    if (bookingStart < availabilityStart || bookingEnd > availabilityEnd) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Booking must be within availability time range',
         path: ['startTime'],
+      });
+    }
+
+    // Validate duration matches availability settings
+    if (data.duration !== availability.duration) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Booking duration must match availability duration',
+        path: ['duration'],
+      });
+    }
+
+    // Validate buffer times
+    const hasBufferConflict = availability.bookings.some((existingBooking) => {
+      const existingStart = new Date(existingBooking.startTime);
+      const existingEnd = new Date(existingBooking.endTime);
+
+      const minBufferBefore = availability.bufferBefore * 60 * 1000; // Convert to milliseconds
+      const minBufferAfter = availability.bufferAfter * 60 * 1000;
+
+      // Check if new booking respects buffer times with existing bookings
+      return (
+        bookingEnd.getTime() + minBufferAfter > existingStart.getTime() ||
+        bookingStart.getTime() - minBufferBefore < existingEnd.getTime()
+      );
+    });
+
+    if (hasBufferConflict) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Booking conflicts with buffer time of another booking',
+        path: ['startTime'],
+      });
+    }
+
+    // Validate against maxBookings
+    if (availability.maxBookings) {
+      const existingBookingsCount = availability.bookings.length;
+      if (existingBookingsCount >= availability.maxBookings) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Maximum number of bookings reached for this availability',
+          path: ['availabilityId'],
+        });
+      }
+    }
+
+    // Validate price matches availability
+    if (data.price !== availability.price) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Booking price must match availability price',
+        path: ['price'],
+      });
+    }
+
+    // Validate location/online status matches availability
+    if (data.isOnline !== availability.isOnline) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Booking online status must match availability settings',
+        path: ['isOnline'],
       });
     }
 
