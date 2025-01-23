@@ -13,9 +13,10 @@ import {
   checkBookingAccess,
   checkForOverlappingAvailability,
   validateAvailabilityFormData,
+  validateBookingFormData,
   validateBookingWithAvailability,
 } from './server-helper';
-import { Availability, Booking, BookingFormSchema } from './types';
+import { Availability, Booking } from './types';
 
 export async function createAvailability(formData: FormData): Promise<{
   data?: Availability;
@@ -279,15 +280,10 @@ type BookingResponse = {
 export async function createBooking(formData: FormData): Promise<BookingResponse> {
   try {
     // 1. Parse and validate form data with Zod schema
-    const validationResult = await BookingFormSchema.safeParseAsync(formData);
-    if (!validationResult.success) {
-      return {
-        fieldErrors: validationResult.error.flatten().fieldErrors,
-        formErrors: validationResult.error.flatten().formErrors,
-      };
+    const { data: validated, fieldErrors, formErrors } = await validateBookingFormData(formData);
+    if (!validated) {
+      return { fieldErrors, formErrors };
     }
-
-    const validated = validationResult.data;
 
     // 2. Fetch and validate availability
     const availability = await prisma.availability.findUnique({
@@ -382,15 +378,10 @@ export async function updateBooking(
     }
 
     // 1. Parse and validate form data with Zod schema
-    const validationResult = await BookingFormSchema.safeParseAsync(formData);
-    if (!validationResult.success) {
-      return {
-        fieldErrors: validationResult.error.flatten().fieldErrors,
-        formErrors: validationResult.error.flatten().formErrors,
-      };
+    const { data: validated, fieldErrors, formErrors } = await validateBookingFormData(formData);
+    if (!validated) {
+      return { fieldErrors, formErrors };
     }
-
-    const validated = validationResult.data;
 
     // 2. Fetch and validate availability
     const availability = await prisma.availability.findUnique({

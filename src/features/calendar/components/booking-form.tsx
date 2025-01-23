@@ -46,6 +46,7 @@ const defaultValues: Partial<BookingFormValues> = {
     whatsapp: true,
   },
   isOnline: true,
+  isInPerson: false,
   duration: 15,
   notifyViaEmail: false,
   notifyViaSMS: false,
@@ -83,13 +84,15 @@ export function BookingForm({
 
   const form = useForm<BookingFormValues>({
     resolver: async (data, context, options) => {
-      // Use zodResolver but handle the async validation
       return zodResolver(BookingFormSchema)(data, context, options);
     },
     defaultValues: {
       ...defaultValues,
       serviceProviderId,
       clientId: userId,
+      isOnline: availability?.isOnlineAvailable ?? false,
+      isInPerson: availability?.isInPersonAvailable ?? false,
+      location: availability?.isInPersonAvailable ? availability.location : undefined,
     },
   });
 
@@ -126,7 +129,17 @@ export function BookingForm({
       formData.append('endTime', values.endTime.toISOString());
       formData.append('duration', String(values.duration));
       formData.append('status', 'PENDING');
+
+      // Update appointment type handling
       formData.append('isOnline', String(values.isOnline));
+      formData.append('isInPerson', String(values.isInPerson));
+
+      // Add location if it's an in-person appointment
+      if (values.isInPerson && values.location) {
+        formData.append('location', values.location.trim());
+      } else {
+        formData.append('location', ''); // Empty string for online appointments
+      }
 
       // Client/Guest details based on booking type
       if (values.bookingType === BookingType.SELF) {
@@ -151,7 +164,6 @@ export function BookingForm({
       );
 
       // Optional fields
-      if (values.location) formData.append('location', values.location.trim());
       if (values.notes) formData.append('notes', values.notes.trim());
       formData.append('price', String(values.price || 0));
 
@@ -314,6 +326,57 @@ export function BookingForm({
               </FormItem>
             )}
           />
+        </div>
+
+        <div className="space-y-2">
+          {availability?.isOnlineAvailable && (
+            <FormField
+              control={form.control}
+              name="isOnline"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Online Appointment</FormLabel>
+                    </div>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {availability?.isInPersonAvailable && (
+            <FormField
+              control={form.control}
+              name="isInPerson"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">In-Person Appointment</FormLabel>
+                      {availability.location && (
+                        <p className="text-sm text-muted-foreground">
+                          Location: {availability.location}
+                        </p>
+                      )}
+                    </div>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {!availability?.isOnlineAvailable && !availability?.isInPersonAvailable && (
+            <div className="rounded-lg border border-destructive p-4">
+              <p className="text-sm text-destructive">
+                No appointment types are available for this time slot
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">

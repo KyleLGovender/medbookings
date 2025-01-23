@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { calculateAvailableSpots } from '@/features/calendar/lib/helper';
 import { prisma } from '@/lib/prisma';
 
-import { BookingFormSchema, BookingFormValues, Schedule, availabilityFormSchema } from './types';
+import { BookingFormSchema, Schedule, availabilityFormSchema } from './types';
 
 function hasTimeOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
   return start1 < end2 && start2 < end1;
@@ -240,6 +240,32 @@ export async function validateBookingWithAvailability(
   error?: string;
   path?: string[];
 }> {
+  // Add online/in-person validation here while keeping existing validation
+  if (data.isOnline && !availability.isOnlineAvailable) {
+    return {
+      isValid: false,
+      error: 'Online bookings are not available for this time slot',
+      path: ['isOnline'],
+    };
+  }
+
+  if (data.isInPerson && !availability.isInPersonAvailable) {
+    return {
+      isValid: false,
+      error: 'In-person bookings are not available for this time slot',
+      path: ['isInPerson'],
+    };
+  }
+
+  // Validate location for in-person bookings
+  if (data.isInPerson && !data.location?.trim()) {
+    return {
+      isValid: false,
+      error: 'Location is required for in-person bookings',
+      path: ['location'],
+    };
+  }
+
   // 1. Validate booking is within availability time range
   const bookingStart = new Date(data.startTime);
   const bookingEnd = new Date(data.endTime);
@@ -303,49 +329,20 @@ export async function validateBookingWithAvailability(
 }
 
 export async function validateBookingFormData(formData: FormData): Promise<{
-  data?: BookingFormValues;
-  error?: string;
+  data?: z.infer<typeof BookingFormSchema>;
   fieldErrors?: Record<string, string[]>;
   formErrors?: string[];
 }> {
-  try {
-    const rawData = {
-      startTime: formData.get('startTime'),
-      endTime: formData.get('endTime'),
-      clientId: formData.get('clientId'),
-      serviceProviderId: formData.get('serviceProviderId'),
-      availabilityId: formData.get('availabilityId'),
-      notes: formData.get('notes'),
-      status: formData.get('status'),
-      clientName: formData.get('clientName'),
-      clientEmail: formData.get('clientEmail'),
-      clientPhone: formData.get('clientPhone'),
-      duration: parseInt(formData.get('duration') as string),
-      price: parseFloat(formData.get('price') as string),
-      isOnline: formData.get('isOnline') === 'true',
-      location: formData.get('location'),
-      notificationPreferences: {
-        email: formData.get('notificationPreferences.email') === 'true',
-        sms: formData.get('notificationPreferences.sms') === 'true',
-      },
-    };
+  const validationResult = await BookingFormSchema.safeParseAsync(formData);
 
-    const validatedData = BookingFormSchema.parse(rawData);
-    return { data: validatedData };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const fieldErrors: Record<string, string[]> = {};
-      error.errors.forEach((err) => {
-        const field = err.path[0] as string;
-        if (!fieldErrors[field]) {
-          fieldErrors[field] = [];
-        }
-        fieldErrors[field].push(err.message);
-      });
-      return { fieldErrors };
-    }
-    return { error: 'Invalid form data' };
+  if (!validationResult.success) {
+    return {
+      fieldErrors: validationResult.error.flatten().fieldErrors,
+      formErrors: validationResult.error.flatten().formErrors,
+    };
   }
+
+  return { data: validationResult.data };
 }
 
 export async function checkBookingAccess(bookingId: string, userId: string) {

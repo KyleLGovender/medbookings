@@ -178,10 +178,17 @@ export const BookingFormSchema = z
         });
       }
     }
+  })
+  .refine((data) => data.isOnline || data.isInPerson, {
+    message: 'At least one appointment type must be selected',
+    path: ['root'],
   });
 
 // Type for the form values
-export type BookingFormValues = z.infer<typeof BookingFormSchema>;
+export type BookingFormValues = z.infer<typeof BookingFormSchema> & {
+  isOnline: boolean;
+  isInPerson: boolean;
+};
 
 export interface NotificationPreference
   extends Omit<ZodNotificationPreference, 'createdAt' | 'updatedAt'> {
