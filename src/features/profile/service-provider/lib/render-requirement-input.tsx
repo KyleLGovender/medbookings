@@ -1,8 +1,12 @@
-import { getLocalTimeZone, now, parseDate } from '@internationalized/date';
-import { DatePicker, DateValue } from '@nextui-org/react';
-import { UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
+import { getLocalTimeZone, now, parseDate } from "@internationalized/date";
+import { DatePicker, DateValue } from "@nextui-org/react";
+import {
+  UseFormRegister,
+  UseFormSetValue,
+  UseFormWatch,
+} from "react-hook-form";
 
-import { ServiceProviderFormType } from '@/features/profile/service-provider/lib/service-provider-schema';
+import { ServiceProviderFormType } from "@/features/profile/service-provider/lib/service-provider-schema";
 
 type RequirementType = {
   id: string;
@@ -30,14 +34,14 @@ export const renderRequirementInput = (
     watch: UseFormWatch<ServiceProviderFormType>;
     setValue: UseFormSetValue<ServiceProviderFormType>;
     errors: any;
-  }
+  },
 ) => {
   const inputId = `requirement-${requirement.id}`;
   const hasError = form.errors?.value;
-  const errorClass = hasError ? 'border-red-500' : 'border-gray-300';
+  const errorClass = hasError ? "border-red-500" : "border-gray-300";
 
   switch (requirement.validationType) {
-    case 'BOOLEAN':
+    case "BOOLEAN":
       return (
         <div className="flex gap-4">
           <label className="flex items-center">
@@ -60,7 +64,7 @@ export const renderRequirementInput = (
           </label>
         </div>
       );
-    case 'DOCUMENT':
+    case "DOCUMENT":
       return (
         <input
           id={inputId}
@@ -69,7 +73,7 @@ export const renderRequirementInput = (
           {...form.register(`requirements.${requirement.index}.documentUrl`)}
         />
       );
-    case 'TEXT':
+    case "TEXT":
       return (
         <input
           id={inputId}
@@ -79,8 +83,9 @@ export const renderRequirementInput = (
           className={`mt-1 block w-full rounded-md border ${errorClass} px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500`}
         />
       );
-    case 'FUTURE_DATE':
-      const dateValue = form.watch(`requirements.${requirement.index}.value`) || null;
+    case "FUTURE_DATE":
+      const dateValue =
+        form.watch(`requirements.${requirement.index}.value`) || null;
       return (
         <DatePicker
           id={inputId}
@@ -90,14 +95,18 @@ export const renderRequirementInput = (
           minValue={now(getLocalTimeZone())}
           value={dateValue ? parseDate(dateValue) : null}
           onChange={(date: DateValue) => {
-            form.setValue(`requirements.${requirement.index}.value`, date.toString());
+            form.setValue(
+              `requirements.${requirement.index}.value`,
+              date.toString(),
+            );
           }}
           showMonthAndYearPickers
           label="Select Date"
         />
       );
-    case 'PAST_DATE':
-      const pastDateValue = form.watch(`requirements.${requirement.index}.value`) || null;
+    case "PAST_DATE":
+      const pastDateValue =
+        form.watch(`requirements.${requirement.index}.value`) || null;
       return (
         <DatePicker
           id={inputId}
@@ -107,14 +116,19 @@ export const renderRequirementInput = (
           maxValue={now(getLocalTimeZone())}
           value={pastDateValue ? parseDate(pastDateValue) : null}
           onChange={(date: DateValue) => {
-            form.setValue(`requirements.${requirement.index}.value`, date.toString());
+            form.setValue(
+              `requirements.${requirement.index}.value`,
+              date.toString(),
+            );
           }}
           showMonthAndYearPickers
           label="Select Date"
         />
       );
-    case 'PREDEFINED_LIST':
-      const selectedValue = form.watch(`requirements.${requirement.index}.value`);
+    case "PREDEFINED_LIST":
+      const selectedValue = form.watch(
+        `requirements.${requirement.index}.value`,
+      );
       return (
         <div>
           <select
@@ -130,21 +144,31 @@ export const renderRequirementInput = (
               </option>
             ))}
             {requirement.validationConfig?.allowOther && (
-              <option value="other">{requirement.validationConfig.otherLabel}</option>
+              <option value="other">
+                {requirement.validationConfig.otherLabel}
+              </option>
             )}
           </select>
-          {selectedValue === 'other' && requirement.validationConfig?.allowOther && (
-            <input
-              type="text"
-              {...form.register(`requirements.${requirement.index}.otherValue`, {
-                required: requirement.validationConfig?.otherValidation?.required ?? false,
-                minLength: requirement.validationConfig?.otherValidation?.minLength,
-                maxLength: requirement.validationConfig?.otherValidation?.maxLength,
-              })}
-              placeholder={requirement.validationConfig?.otherLabel}
-              className="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          )}
+          {selectedValue === "other" &&
+            requirement.validationConfig?.allowOther && (
+              <input
+                type="text"
+                {...form.register(
+                  `requirements.${requirement.index}.otherValue`,
+                  {
+                    required:
+                      requirement.validationConfig?.otherValidation?.required ??
+                      false,
+                    minLength:
+                      requirement.validationConfig?.otherValidation?.minLength,
+                    maxLength:
+                      requirement.validationConfig?.otherValidation?.maxLength,
+                  },
+                )}
+                placeholder={requirement.validationConfig?.otherLabel}
+                className="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            )}
         </div>
       );
     default:

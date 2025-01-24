@@ -1,15 +1,15 @@
-import { RefObject, useState } from 'react';
+import { RefObject, useState } from "react";
 
-import { CalendarViewEventItem } from '@/features/calendar/components/calendar-view-event-item';
+import { CalendarViewEventItem } from "@/features/calendar/components/calendar-view-event-item";
 import {
   expandRecurringSchedule,
   getEventGridPosition,
   isSameDay,
-} from '@/features/calendar/lib/helper';
-import { Schedule } from '@/features/calendar/lib/types';
+} from "@/features/calendar/lib/helper";
+import { Schedule } from "@/features/calendar/lib/types";
 
-import { AvailabilityDialog } from '../availability-dialog';
-import { CalendarViewTimeColumn } from '../calendar-view-time-column';
+import { AvailabilityDialog } from "../availability-dialog";
+import { CalendarViewTimeColumn } from "../calendar-view-time-column";
 
 // Server Component
 interface CalendarViewDayTimeGridProps {
@@ -32,7 +32,9 @@ export function CalendarViewDayTimeGrid({
   onRefresh,
 }: CalendarViewDayTimeGridProps) {
   const dateObj = new Date(rangeStartDate);
-  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(
+    null,
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleEventClick = (schedule: Schedule) => {
@@ -56,18 +58,18 @@ export function CalendarViewDayTimeGrid({
     schedule.bookings.map((booking) => ({
       ...booking,
       availabilityId: schedule.id,
-    }))
+    })),
   );
 
   return (
     <>
       <header className="flex items-center justify-center border-b border-gray-200 px-6 py-4">
         <h1 className="text-lg font-semibold text-gray-900">
-          {dateObj.toLocaleDateString('en-US', {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric',
-            year: 'numeric',
+          {dateObj.toLocaleDateString("en-US", {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+            year: "numeric",
           })}
         </h1>
       </header>
@@ -81,16 +83,21 @@ export function CalendarViewDayTimeGrid({
           {/* Availability blocks */}
           <ol
             className="z-10 col-start-1 col-end-2 row-start-1 grid grid-cols-1"
-            style={{ gridTemplateRows: '1.75rem repeat(288, minmax(0, 1fr)) auto' }}
+            style={{
+              gridTemplateRows: "1.75rem repeat(288, minmax(0, 1fr)) auto",
+            }}
           >
             {daySchedule.map((schedule) => (
               <li
                 key={schedule.id}
                 className={`relative cursor-pointer ${
-                  schedule.isRecurring ? 'bg-gray-200' : 'bg-blue-200'
+                  schedule.isRecurring ? "bg-gray-200" : "bg-blue-200"
                 } hover:bg-opacity-75`}
                 style={{
-                  gridRow: getEventGridPosition(schedule.startTime, schedule.endTime),
+                  gridRow: getEventGridPosition(
+                    schedule.startTime,
+                    schedule.endTime,
+                  ),
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -103,18 +110,23 @@ export function CalendarViewDayTimeGrid({
           {/* Booking events */}
           <ol
             className="col-start-1 col-end-2 row-start-1 grid grid-cols-1"
-            style={{ gridTemplateRows: '1.75rem repeat(288, minmax(0, 1fr)) auto' }}
+            style={{
+              gridTemplateRows: "1.75rem repeat(288, minmax(0, 1fr)) auto",
+            }}
           >
             {bookings.map((booking) => (
               <CalendarViewEventItem
                 key={booking.id}
                 schedule={{
                   ...booking,
-                  type: 'BOOKING',
+                  type: "BOOKING",
                   startTime: booking.startTime,
                   endTime: booking.endTime,
                 }}
-                gridPosition={getEventGridPosition(booking.startTime, booking.endTime)}
+                gridPosition={getEventGridPosition(
+                  booking.startTime,
+                  booking.endTime,
+                )}
                 gridColumn={1}
               />
             ))}

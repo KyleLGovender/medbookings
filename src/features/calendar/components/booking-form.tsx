@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from "react";
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { debounce } from 'lodash';
-import { useForm } from 'react-hook-form';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { debounce } from "lodash";
+import { useForm } from "react-hook-form";
 
-import { Button } from '@/components/ui/button';
-import { DatePicker } from '@/components/ui/date-picker';
+import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Form,
   FormControl,
@@ -15,28 +15,28 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { PhoneInput } from '@/components/ui/phone-input';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { TimePicker } from '@/components/ui/time-picker';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { TimePicker } from "@/components/ui/time-picker";
+import { useToast } from "@/hooks/use-toast";
 
-import { createBooking, updateBooking } from '../lib/actions';
+import { createBooking, updateBooking } from "../lib/actions";
 import {
   Availability,
   Booking,
   BookingFormSchema,
   BookingFormValues,
   BookingType,
-} from '../lib/types';
+} from "../lib/types";
 
 const defaultValues: Partial<BookingFormValues> = {
   bookingType: BookingType.GUEST,
@@ -51,17 +51,17 @@ const defaultValues: Partial<BookingFormValues> = {
   notifyViaEmail: false,
   notifyViaSMS: false,
   notifyViaWhatsapp: true,
-  status: 'PENDING',
-  clientWhatsapp: '',
-  clientPhone: '',
-  clientName: '',
+  status: "PENDING",
+  clientWhatsapp: "",
+  clientPhone: "",
+  clientName: "",
   price: 0,
 };
 
 interface BookingFormProps {
   serviceProviderId: string;
   booking?: Booking;
-  mode: 'create' | 'edit';
+  mode: "create" | "edit";
   onClose: () => void;
   onRefresh?: () => Promise<void>;
   selectedDate: Date;
@@ -92,24 +92,29 @@ export function BookingForm({
       clientId: userId,
       isOnline: availability?.isOnlineAvailable ?? false,
       isInPerson: availability?.isInPersonAvailable ?? false,
-      location: availability?.isInPersonAvailable ? availability.location : undefined,
+      location: availability?.isInPersonAvailable
+        ? availability.location
+        : undefined,
     },
   });
 
-  const bookingType = form.watch('bookingType');
+  const bookingType = form.watch("bookingType");
 
   useEffect(() => {
-    form.setValue('clientId', bookingType === BookingType.SELF ? userId : undefined);
+    form.setValue(
+      "clientId",
+      bookingType === BookingType.SELF ? userId : undefined,
+    );
   }, [bookingType, userId, form]);
 
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      if (name === 'startTime') {
+      if (name === "startTime") {
         const startTime = value.startTime;
         if (startTime) {
           const endTime = new Date(startTime);
           endTime.setMinutes(endTime.getMinutes() + 15);
-          form.setValue('endTime', endTime);
+          form.setValue("endTime", endTime);
         }
       }
     });
@@ -123,60 +128,60 @@ export function BookingForm({
       const formData = new FormData();
 
       // Core booking details
-      formData.append('bookingType', values.bookingType);
-      formData.append('serviceProviderId', serviceProviderId);
-      formData.append('startTime', values.startTime.toISOString());
-      formData.append('endTime', values.endTime.toISOString());
-      formData.append('duration', String(values.duration));
-      formData.append('status', 'PENDING');
+      formData.append("bookingType", values.bookingType);
+      formData.append("serviceProviderId", serviceProviderId);
+      formData.append("startTime", values.startTime.toISOString());
+      formData.append("endTime", values.endTime.toISOString());
+      formData.append("duration", String(values.duration));
+      formData.append("status", "PENDING");
 
       // Update appointment type handling
-      formData.append('isOnline', String(values.isOnline));
-      formData.append('isInPerson', String(values.isInPerson));
+      formData.append("isOnline", String(values.isOnline));
+      formData.append("isInPerson", String(values.isInPerson));
 
       // Add location if it's an in-person appointment
       if (values.isInPerson && values.location) {
-        formData.append('location', values.location.trim());
+        formData.append("location", values.location.trim());
       } else {
-        formData.append('location', ''); // Empty string for online appointments
+        formData.append("location", ""); // Empty string for online appointments
       }
 
       // Client/Guest details based on booking type
       if (values.bookingType === BookingType.SELF) {
-        formData.append('clientId', userId || '');
+        formData.append("clientId", userId || "");
       } else {
         // Always include bookedById for guest bookings if userId exists
-        if (userId) formData.append('bookedById', userId);
-        formData.append('guestName', values.clientName?.trim() ?? '');
-        formData.append('guestEmail', values.clientEmail?.trim() ?? '');
-        formData.append('guestPhone', values.clientPhone?.trim() ?? '');
-        formData.append('guestWhatsapp', values.clientWhatsapp?.trim() ?? '');
+        if (userId) formData.append("bookedById", userId);
+        formData.append("guestName", values.clientName?.trim() ?? "");
+        formData.append("guestEmail", values.clientEmail?.trim() ?? "");
+        formData.append("guestPhone", values.clientPhone?.trim() ?? "");
+        formData.append("guestWhatsapp", values.clientWhatsapp?.trim() ?? "");
       }
 
       // Notification preferences as JSON string
       formData.append(
-        'notificationPreferences',
+        "notificationPreferences",
         JSON.stringify({
           email: values.notifyViaEmail || false,
           sms: values.notifyViaSMS || false,
           whatsapp: values.notifyViaWhatsapp || false,
-        })
+        }),
       );
 
       // Optional fields
-      if (values.notes) formData.append('notes', values.notes.trim());
-      formData.append('price', String(values.price || 0));
+      if (values.notes) formData.append("notes", values.notes.trim());
+      formData.append("price", String(values.price || 0));
 
       const response =
-        mode === 'create'
+        mode === "create"
           ? await createBooking(formData)
-          : await updateBooking(booking?.id || '', formData);
+          : await updateBooking(booking?.id || "", formData);
 
       if (!response) {
         toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'No response from server',
+          variant: "destructive",
+          title: "Error",
+          description: "No response from server",
         });
         return;
       }
@@ -185,15 +190,15 @@ export function BookingForm({
         if (response.fieldErrors) {
           Object.entries(response.fieldErrors).forEach(([field, errors]) => {
             toast({
-              variant: 'destructive',
+              variant: "destructive",
               title: `Error in ${field}`,
-              description: errors.join(', '),
+              description: errors.join(", "),
             });
           });
         } else if (response.error) {
           toast({
-            variant: 'destructive',
-            title: 'Error',
+            variant: "destructive",
+            title: "Error",
             description: response.error,
           });
         }
@@ -201,18 +206,18 @@ export function BookingForm({
       }
 
       toast({
-        title: 'Success',
-        description: `Booking ${mode === 'create' ? 'created' : 'updated'} successfully`,
+        title: "Success",
+        description: `Booking ${mode === "create" ? "created" : "updated"} successfully`,
       });
 
       await onRefresh?.();
       onClose();
     } catch (error) {
-      console.error('Booking submission error:', error);
+      console.error("Booking submission error:", error);
       toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'An unexpected error occurred',
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred",
       });
     } finally {
       setIsSubmitting(false);
@@ -221,7 +226,10 @@ export function BookingForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-xl space-y-6">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="w-full max-w-xl space-y-6"
+      >
         {!serviceProviderId ? (
           <FormField
             control={form.control}
@@ -229,13 +237,20 @@ export function BookingForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Booking Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select booking type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={BookingType.SELF}>Book for myself</SelectItem>
-                    <SelectItem value={BookingType.GUEST}>Book for someone else</SelectItem>
+                    <SelectItem value={BookingType.SELF}>
+                      Book for myself
+                    </SelectItem>
+                    <SelectItem value={BookingType.GUEST}>
+                      Book for someone else
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -261,7 +276,9 @@ export function BookingForm({
                   />
                 </svg>
                 <p className="text-sm text-yellow-800">
-                  {userId ? 'You are booking this appointment for someone else' : 'Guest Booking'}
+                  {userId
+                    ? "You are booking this appointment for someone else"
+                    : "Guest Booking"}
                 </p>
               </div>
             </div>
@@ -293,7 +310,9 @@ export function BookingForm({
                   <div className="flex-1">
                     <FormControl>
                       <Suspense
-                        fallback={<div className="h-10 w-full animate-pulse rounded-md bg-muted" />}
+                        fallback={
+                          <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
+                        }
                       >
                         <DatePicker
                           date={field.value}
@@ -337,9 +356,14 @@ export function BookingForm({
                 <FormItem className="space-y-2">
                   <div className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
-                      <FormLabel className="text-base">Online Appointment</FormLabel>
+                      <FormLabel className="text-base">
+                        Online Appointment
+                      </FormLabel>
                     </div>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
                   </div>
                   <FormMessage />
                 </FormItem>
@@ -355,14 +379,19 @@ export function BookingForm({
                 <FormItem className="space-y-2">
                   <div className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
-                      <FormLabel className="text-base">In-Person Appointment</FormLabel>
+                      <FormLabel className="text-base">
+                        In-Person Appointment
+                      </FormLabel>
                       {availability.location && (
                         <p className="text-sm text-muted-foreground">
                           Location: {availability.location}
                         </p>
                       )}
                     </div>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
                   </div>
                   <FormMessage />
                 </FormItem>
@@ -370,13 +399,14 @@ export function BookingForm({
             />
           )}
 
-          {!availability?.isOnlineAvailable && !availability?.isInPersonAvailable && (
-            <div className="rounded-lg border border-destructive p-4">
-              <p className="text-sm text-destructive">
-                No appointment types are available for this time slot
-              </p>
-            </div>
-          )}
+          {!availability?.isOnlineAvailable &&
+            !availability?.isInPersonAvailable && (
+              <div className="rounded-lg border border-destructive p-4">
+                <p className="text-sm text-destructive">
+                  No appointment types are available for this time slot
+                </p>
+              </div>
+            )}
         </div>
 
         <div className="space-y-4">
@@ -388,8 +418,13 @@ export function BookingForm({
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center justify-between rounded-lg border p-4">
-                    <FormLabel className="text-base">WhatsApp Notifications</FormLabel>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <FormLabel className="text-base">
+                      WhatsApp Notifications
+                    </FormLabel>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
                   </div>
                   {field.value && (
                     <FormField
@@ -398,12 +433,12 @@ export function BookingForm({
                       render={({ field }) => (
                         <PhoneInput
                           defaultCountry="ZA"
-                          value={field.value ?? ''}
+                          value={field.value ?? ""}
                           onChange={(value) => {
                             field.onChange(value);
                           }}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
+                            if (e.key === "Enter") {
                               e.preventDefault();
                             }
                           }}
@@ -422,8 +457,13 @@ export function BookingForm({
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center justify-between rounded-lg border p-4">
-                    <FormLabel className="text-base">SMS Notifications</FormLabel>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <FormLabel className="text-base">
+                      SMS Notifications
+                    </FormLabel>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
                   </div>
                   {field.value && (
                     <FormField
@@ -432,10 +472,10 @@ export function BookingForm({
                       render={({ field }) => (
                         <PhoneInput
                           defaultCountry="ZA"
-                          value={field.value ?? ''}
+                          value={field.value ?? ""}
                           onChange={field.onChange}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
+                            if (e.key === "Enter") {
                               e.preventDefault();
                             }
                           }}
@@ -454,8 +494,13 @@ export function BookingForm({
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center justify-between rounded-lg border p-4">
-                    <FormLabel className="text-base">Email Notifications</FormLabel>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <FormLabel className="text-base">
+                      Email Notifications
+                    </FormLabel>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
                   </div>
                   {field.value && (
                     <FormField
@@ -464,7 +509,11 @@ export function BookingForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input {...field} type="email" placeholder="Enter your email" />
+                            <Input
+                              {...field}
+                              type="email"
+                              placeholder="Enter your email"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -480,7 +529,9 @@ export function BookingForm({
 
         {form.formState.errors.root && (
           <div className="rounded-md bg-red-50 p-4">
-            <div className="text-sm text-red-700">{form.formState.errors.root.message}</div>
+            <div className="text-sm text-red-700">
+              {form.formState.errors.root.message}
+            </div>
           </div>
         )}
 
@@ -490,7 +541,7 @@ export function BookingForm({
 
         <div className="space-y-4">
           <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? 'Submitting...' : 'Submit Booking'}
+            {isSubmitting ? "Submitting..." : "Submit Booking"}
           </Button>
         </div>
       </form>

@@ -24,7 +24,12 @@
     "*.css": "tailwindcss"
   },
   "typescript.tsdk": "node_modules/typescript/lib",
-  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
   "javascript.preferences.importModuleSpecifier": "non-relative",
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "javascript.suggest.autoImports": true,

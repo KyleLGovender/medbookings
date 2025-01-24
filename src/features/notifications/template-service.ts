@@ -1,21 +1,24 @@
-import { Booking } from '@prisma/client';
-import { format } from 'date-fns';
+import { Booking } from "@prisma/client";
+import { format } from "date-fns";
 
 export class TemplateService {
-  static getBookingConfirmationTemplate(booking: Booking, recipientName: string) {
-    const formattedStart = format(booking.startTime, 'PPpp');
-    const formattedEnd = format(booking.endTime, 'p');
+  static getBookingConfirmationTemplate(
+    booking: Booking,
+    recipientName: string,
+  ) {
+    const formattedStart = format(booking.startTime, "PPpp");
+    const formattedEnd = format(booking.endTime, "p");
 
     return {
-      subject: 'Booking Confirmation',
+      subject: "Booking Confirmation",
       body: `
 Hello ${recipientName},
 
 Your booking has been confirmed for ${formattedStart} to ${formattedEnd}.
 
-${booking.isOnline ? 'This is an online booking.' : `Location: ${booking.location}`}
+${booking.isOnline ? "This is an online booking." : `Location: ${booking.location}`}
 
-${booking.notes ? `Additional Notes: ${booking.notes}` : ''}
+${booking.notes ? `Additional Notes: ${booking.notes}` : ""}
 
 Thank you for booking with us!
       `.trim(),
@@ -27,7 +30,10 @@ Thank you for booking with us!
     // Similar to above but for updates
   }
 
-  static getBookingCancellationTemplate(booking: Booking, recipientName: string) {
+  static getBookingCancellationTemplate(
+    booking: Booking,
+    recipientName: string,
+  ) {
     // Template for cancellations
   }
 }

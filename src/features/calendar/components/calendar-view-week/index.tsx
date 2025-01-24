@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { Schedule } from '../../lib/types';
-import { CalendarViewWeekGrid } from './calendar-view-week-grid';
+import { Schedule } from "../../lib/types";
+import { CalendarViewWeekGrid } from "./calendar-view-week-grid";
 
 interface CalendarViewWeekProps {
   rangeStartDate: Date;
   scheduleData: Schedule[];
   onDateChange: (date: Date) => void;
-  onViewChange?: (view: 'day') => void;
+  onViewChange?: (view: "day") => void;
   serviceProviderId: string;
   onRefresh: () => void;
 }

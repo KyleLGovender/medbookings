@@ -1,14 +1,17 @@
-'use client';
+"use client";
 
-import { RefObject, useState } from 'react';
+import { RefObject, useState } from "react";
 
-import { addDays, startOfWeek } from 'date-fns';
+import { addDays, startOfWeek } from "date-fns";
 
-import { expandRecurringSchedule, getEventGridPosition } from '../../lib/helper';
-import { Schedule } from '../../lib/types';
-import { AvailabilityDialog } from '../availability-dialog';
-import { CalendarViewEventItem } from '../calendar-view-event-item';
-import { CalendarViewTimeColumn } from '../calendar-view-time-column';
+import {
+  expandRecurringSchedule,
+  getEventGridPosition,
+} from "../../lib/helper";
+import { Schedule } from "../../lib/types";
+import { AvailabilityDialog } from "../availability-dialog";
+import { CalendarViewEventItem } from "../calendar-view-event-item";
+import { CalendarViewTimeColumn } from "../calendar-view-time-column";
 
 interface CalendarViewWeekTimeGridProps {
   containerRef: RefObject<HTMLDivElement>;
@@ -29,7 +32,9 @@ export function CalendarViewWeekTimeGrid({
   serviceProviderId,
   onRefresh,
 }: CalendarViewWeekTimeGridProps) {
-  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(
+    null,
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleEventClick = (schedule: Schedule) => {
@@ -62,7 +67,7 @@ export function CalendarViewWeekTimeGrid({
     schedule.bookings.map((booking) => ({
       ...booking,
       availabilityId: schedule.id,
-    }))
+    })),
   );
 
   return (
@@ -83,17 +88,23 @@ export function CalendarViewWeekTimeGrid({
           {/* Availability blocks */}
           <ol
             className="z-10 col-start-1 col-end-2 row-start-1 grid grid-cols-7"
-            style={{ gridTemplateRows: '1.75rem repeat(288, minmax(0, 1fr)) auto' }}
+            style={{
+              gridTemplateRows: "1.75rem repeat(288, minmax(0, 1fr)) auto",
+            }}
           >
             {weekSchedule.map((schedule) => (
               <li
                 key={schedule.id}
                 className={`relative cursor-pointer ${
-                  schedule.isRecurring ? 'bg-gray-200' : 'bg-blue-200'
+                  schedule.isRecurring ? "bg-gray-200" : "bg-blue-200"
                 } hover:bg-opacity-75`}
                 style={{
-                  gridRow: getEventGridPosition(schedule.startTime, schedule.endTime),
-                  gridColumn: ((new Date(schedule.startTime).getDay() + 6) % 7) + 1,
+                  gridRow: getEventGridPosition(
+                    schedule.startTime,
+                    schedule.endTime,
+                  ),
+                  gridColumn:
+                    ((new Date(schedule.startTime).getDay() + 6) % 7) + 1,
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -106,19 +117,26 @@ export function CalendarViewWeekTimeGrid({
           {/* Booking events */}
           <ol
             className="col-start-1 col-end-2 row-start-1 grid grid-cols-7"
-            style={{ gridTemplateRows: '1.75rem repeat(288, minmax(0, 1fr)) auto' }}
+            style={{
+              gridTemplateRows: "1.75rem repeat(288, minmax(0, 1fr)) auto",
+            }}
           >
             {bookings.map((booking) => (
               <CalendarViewEventItem
                 key={booking.id}
                 schedule={{
                   ...booking,
-                  type: 'BOOKING',
+                  type: "BOOKING",
                   startTime: booking.startTime,
                   endTime: booking.endTime,
                 }}
-                gridPosition={getEventGridPosition(booking.startTime, booking.endTime)}
-                gridColumn={((new Date(booking.startTime).getDay() + 6) % 7) + 1}
+                gridPosition={getEventGridPosition(
+                  booking.startTime,
+                  booking.endTime,
+                )}
+                gridColumn={
+                  ((new Date(booking.startTime).getDay() + 6) % 7) + 1
+                }
                 onEventClick={() => {}} // Bookings are not editable
               />
             ))}

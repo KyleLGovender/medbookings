@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Dialog,
@@ -6,14 +6,14 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 
-import { Availability } from '../lib/types';
-import { AvailabilityForm } from './availability-form';
+import { Availability } from "../lib/types";
+import { AvailabilityForm } from "./availability-form";
 
 interface AvailabilityDialogProps {
   availability?: Availability;
-  mode: 'create' | 'edit';
+  mode: "create" | "edit";
   onOpenChange: (open: boolean) => void;
   open: boolean;
   serviceProviderId: string;
@@ -21,17 +21,26 @@ interface AvailabilityDialogProps {
 }
 
 export function AvailabilityDialog(props: AvailabilityDialogProps) {
-  const { availability, mode, onOpenChange, open, serviceProviderId, onRefresh } = props;
+  const {
+    availability,
+    mode,
+    onOpenChange,
+    open,
+    serviceProviderId,
+    onRefresh,
+  } = props;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{mode === 'create' ? 'Add Availability' : 'Edit Availability'}</DialogTitle>
+          <DialogTitle>
+            {mode === "create" ? "Add Availability" : "Edit Availability"}
+          </DialogTitle>
           <DialogDescription>
-            {mode === 'create'
-              ? 'Set your available time slots for consultations.'
-              : 'Modify your existing availability.'}
+            {mode === "create"
+              ? "Set your available time slots for consultations."
+              : "Modify your existing availability."}
           </DialogDescription>
         </DialogHeader>
         <AvailabilityForm

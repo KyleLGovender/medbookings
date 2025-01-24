@@ -1,4 +1,4 @@
-import { Booking, Prisma } from '@prisma/client';
+import { Booking, Prisma } from "@prisma/client";
 import {
   AvailabilitySchema,
   BookingSchema,
@@ -9,10 +9,10 @@ import {
   UserSchema,
   type Availability as ZodAvailability,
   type NotificationPreference as ZodNotificationPreference,
-} from '@prisma/zod';
-import { z } from 'zod';
+} from "@prisma/zod";
+import { z } from "zod";
 
-export type ViewType = 'day' | 'week' | 'schedule';
+export type ViewType = "day" | "week" | "schedule";
 
 export const availabilityFormSchema = z
   .object({
@@ -32,16 +32,20 @@ export const availabilityFormSchema = z
     if (!data.isOnlineAvailable && !data.isInPersonAvailable) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'At least one availability type (Online or In-Person) must be selected',
-        path: ['root'],
+        message:
+          "At least one availability type (Online or In-Person) must be selected",
+        path: ["root"],
       });
     }
 
-    if (data.isRecurring && (!data.recurringDays || data.recurringDays.length === 0)) {
+    if (
+      data.isRecurring &&
+      (!data.recurringDays || data.recurringDays.length === 0)
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Please select at least one day for recurring availability',
-        path: ['recurringDays'],
+        message: "Please select at least one day for recurring availability",
+        path: ["recurringDays"],
       });
     }
   });
@@ -52,7 +56,12 @@ export type AvailabilityFormValues = z.infer<typeof availabilityFormSchema>;
 export interface Availability
   extends Omit<
     ZodAvailability,
-    'price' | 'startTime' | 'endTime' | 'recurrenceEndDate' | 'createdAt' | 'updatedAt'
+    | "price"
+    | "startTime"
+    | "endTime"
+    | "recurrenceEndDate"
+    | "createdAt"
+    | "updatedAt"
   > {
   price: number;
   startTime: string;
@@ -64,10 +73,10 @@ export interface Availability
 
 // Define the booking types more explicitly
 export enum BookingType {
-  USER_SELF = 'USER_SELF', // User booking for themselves
-  USER_GUEST = 'USER_GUEST', // User booking for a guest
-  GUEST_SELF = 'GUEST_SELF', // Guest booking for themselves
-  PROVIDER_GUEST = 'PROVIDER_GUEST', // Service Provider booking for guest
+  USER_SELF = "USER_SELF", // User booking for themselves
+  USER_GUEST = "USER_GUEST", // User booking for a guest
+  GUEST_SELF = "GUEST_SELF", // Guest booking for themselves
+  PROVIDER_GUEST = "PROVIDER_GUEST", // Service Provider booking for guest
 }
 
 // Base schema with common fields
@@ -90,8 +99,8 @@ const baseBookingSchema = z.object({
 
 // Guest information schema
 const guestInfoSchema = z.object({
-  guestName: z.string().min(1, 'Guest name is required'),
-  guestEmail: z.string().email('Invalid email').optional(),
+  guestName: z.string().min(1, "Guest name is required"),
+  guestEmail: z.string().email("Invalid email").optional(),
   guestPhone: z.string().optional(),
   guestWhatsapp: z.string().optional(),
 });
@@ -104,7 +113,7 @@ const userInfoSchema = z.object({
 
 // Complete booking form schema
 export const BookingFormSchema = z
-  .discriminatedUnion('bookingType', [
+  .discriminatedUnion("bookingType", [
     // Case 1: Service Provider booking for guest
     z.object({
       bookingType: z.literal(BookingType.PROVIDER_GUEST),
@@ -146,8 +155,8 @@ export const BookingFormSchema = z
     if (!hasNotificationMethod) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'At least one notification method must be selected',
-        path: ['notificationPreferences'],
+        message: "At least one notification method must be selected",
+        path: ["notificationPreferences"],
       });
     }
 
@@ -159,29 +168,29 @@ export const BookingFormSchema = z
       if (data.notificationPreferences.email && !data.guestEmail) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Email is required for email notifications',
-          path: ['guestEmail'],
+          message: "Email is required for email notifications",
+          path: ["guestEmail"],
         });
       }
       if (data.notificationPreferences.sms && !data.guestPhone) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Phone number is required for SMS notifications',
-          path: ['guestPhone'],
+          message: "Phone number is required for SMS notifications",
+          path: ["guestPhone"],
         });
       }
       if (data.notificationPreferences.whatsapp && !data.guestWhatsapp) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'WhatsApp number is required for WhatsApp notifications',
-          path: ['guestWhatsapp'],
+          message: "WhatsApp number is required for WhatsApp notifications",
+          path: ["guestWhatsapp"],
         });
       }
     }
   })
   .refine((data) => data.isOnline || data.isInPerson, {
-    message: 'At least one appointment type must be selected',
-    path: ['root'],
+    message: "At least one appointment type must be selected",
+    path: ["root"],
   });
 
 // Type for the form values
@@ -191,16 +200,16 @@ export type BookingFormValues = z.infer<typeof BookingFormSchema> & {
 };
 
 export interface NotificationPreference
-  extends Omit<ZodNotificationPreference, 'createdAt' | 'updatedAt'> {
+  extends Omit<ZodNotificationPreference, "createdAt" | "updatedAt"> {
   createdAt: string;
   updatedAt: string;
 }
 
 // Schedule type for calendar views
 export interface Schedule extends Availability {
-  type: 'AVAILABILITY';
-  bookings: (Omit<Booking, 'client'> & {
-    type: 'BOOKING';
+  type: "AVAILABILITY";
+  bookings: (Omit<Booking, "client"> & {
+    type: "BOOKING";
     client: {
       name: string | null;
     };
@@ -212,7 +221,7 @@ export function transformAvailability(availability: any): Availability {
   return {
     ...availability,
     price:
-      typeof availability.price === 'object' && 'toNumber' in availability.price
+      typeof availability.price === "object" && "toNumber" in availability.price
         ? availability.price.toNumber()
         : Number(availability.price),
     recurrenceEndDate: availability.recurrenceEndDate
@@ -222,7 +231,7 @@ export function transformAvailability(availability: any): Availability {
     updatedAt: new Date(availability.updatedAt).toISOString(),
     recurringDays: Array.isArray(availability.recurringDays)
       ? availability.recurringDays
-      : JSON.parse(availability.recurringDays || '[]'),
+      : JSON.parse(availability.recurringDays || "[]"),
   };
 }
 
@@ -230,7 +239,9 @@ export function transformBooking(booking: any): Booking {
   return {
     ...booking,
     price:
-      booking.price instanceof Prisma.Decimal ? booking.price.toNumber() : Number(booking.price),
+      booking.price instanceof Prisma.Decimal
+        ? booking.price.toNumber()
+        : Number(booking.price),
     startTime: new Date(booking.startTime).toISOString(),
     endTime: new Date(booking.endTime).toISOString(),
     status: BookingStatusSchema.parse(booking.status),
@@ -261,7 +272,7 @@ export const BookingCreateSchema = z
   .object({
     serviceProviderId: BookingSchema.shape.serviceProviderId,
     availabilityId: BookingSchema.shape.availabilityId,
-    bookingType: z.enum(['USER', 'GUEST']),
+    bookingType: z.enum(["USER", "GUEST"]),
     userId: z.string().optional(),
     guestInfo: z
       .object({
@@ -287,49 +298,52 @@ export const BookingCreateSchema = z
     if (bookingStart >= bookingEnd) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Booking start time must be before end time',
-        path: ['startTime'],
+        message: "Booking start time must be before end time",
+        path: ["startTime"],
       });
     }
 
     // Ensure duration matches start/end time difference
-    const durationInMinutes = (bookingEnd.getTime() - bookingStart.getTime()) / (1000 * 60);
+    const durationInMinutes =
+      (bookingEnd.getTime() - bookingStart.getTime()) / (1000 * 60);
     if (durationInMinutes !== data.duration) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Booking duration must match the time difference between start and end times',
-        path: ['duration'],
+        message:
+          "Booking duration must match the time difference between start and end times",
+        path: ["duration"],
       });
     }
 
     // Validate notification channels have corresponding contact info
-    if (data.bookingType === 'GUEST' && data.guestInfo) {
+    if (data.bookingType === "GUEST" && data.guestInfo) {
       data.notificationChannels.forEach((channel) => {
         switch (channel) {
-          case 'EMAIL':
+          case "EMAIL":
             if (!data.guestInfo?.email) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: 'Email is required for email notifications',
-                path: ['guestInfo.email'],
+                message: "Email is required for email notifications",
+                path: ["guestInfo.email"],
               });
             }
             break;
-          case 'SMS':
+          case "SMS":
             if (!data.guestInfo?.phone) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: 'Phone number is required for SMS notifications',
-                path: ['guestInfo.phone'],
+                message: "Phone number is required for SMS notifications",
+                path: ["guestInfo.phone"],
               });
             }
             break;
-          case 'WHATSAPP':
+          case "WHATSAPP":
             if (!data.guestInfo?.whatsapp) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: 'WhatsApp number is required for WhatsApp notifications',
-                path: ['guestInfo.whatsapp'],
+                message:
+                  "WhatsApp number is required for WhatsApp notifications",
+                path: ["guestInfo.whatsapp"],
               });
             }
             break;

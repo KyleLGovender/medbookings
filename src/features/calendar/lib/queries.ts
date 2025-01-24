@@ -1,15 +1,15 @@
-'use server';
+"use server";
 
-import { eachDayOfInterval, isSameDay } from 'date-fns';
+import { eachDayOfInterval, isSameDay } from "date-fns";
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from "@/lib/prisma";
 
-import { Schedule } from './types';
+import { Schedule } from "./types";
 
 export async function getServiceProviderScheduleInRange(
   serviceProviderId: string,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): Promise<Schedule[]> {
   try {
     const schedule = await prisma.availability.findMany({
@@ -40,7 +40,7 @@ export async function getServiceProviderScheduleInRange(
         bookings: true,
       },
       orderBy: {
-        startTime: 'asc',
+        startTime: "asc",
       },
     });
 
@@ -57,8 +57,15 @@ export async function getServiceProviderScheduleInRange(
 
       // Generate instances for recurring availabilities
       const dates = eachDayOfInterval({
-        start: new Date(Math.max(availability.startTime.getTime(), startDate.getTime())),
-        end: new Date(Math.min(availability.recurrenceEndDate!.getTime(), endDate.getTime())),
+        start: new Date(
+          Math.max(availability.startTime.getTime(), startDate.getTime()),
+        ),
+        end: new Date(
+          Math.min(
+            availability.recurrenceEndDate!.getTime(),
+            endDate.getTime(),
+          ),
+        ),
       });
 
       return dates
@@ -71,22 +78,22 @@ export async function getServiceProviderScheduleInRange(
           const instanceStartTime = new Date(date);
           instanceStartTime.setHours(
             availability.startTime.getHours(),
-            availability.startTime.getMinutes()
+            availability.startTime.getMinutes(),
           );
 
           const instanceEndTime = new Date(date);
           instanceEndTime.setHours(
             availability.endTime.getHours(),
-            availability.endTime.getMinutes()
+            availability.endTime.getMinutes(),
           );
 
           const instanceBookings = availability.bookings.filter((booking) =>
-            isSameDay(booking.startTime, date)
+            isSameDay(booking.startTime, date),
           );
 
           return {
             ...availability,
-            id: `${availability.id}-${date.toISOString().split('T')[0]}`,
+            id: `${availability.id}-${date.toISOString().split("T")[0]}`,
             startTime: instanceStartTime,
             endTime: instanceEndTime,
             price: Number(availability.price),
@@ -95,7 +102,7 @@ export async function getServiceProviderScheduleInRange(
         });
     });
   } catch (error) {
-    console.error('Error fetching schedule:', error);
+    console.error("Error fetching schedule:", error);
     return [];
   }
 }

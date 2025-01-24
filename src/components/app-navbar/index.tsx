@@ -1,24 +1,28 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
-import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useSession } from 'next-auth/react';
+import {
+  Disclosure,
+  DisclosureButton,
+  DisclosurePanel,
+} from "@headlessui/react";
+import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useSession } from "next-auth/react";
 
-import AuthButton from '@/components/app-navbar/auth-button';
+import AuthButton from "@/components/app-navbar/auth-button";
 
 export default function AppNavbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
-  const menuItems = [{ label: 'Home', href: '/' }];
+  const menuItems = [{ label: "Home", href: "/" }];
   const profileMenuItems = [
-    { label: 'Profile', href: '/profile' },
-    { label: 'Service Provider', href: '/profile/service-provider' },
-    { label: 'Calendar', href: '/profile/service-provider/calendar' },
-    { label: 'Settings', href: '/settings' },
+    { label: "Profile", href: "/profile" },
+    { label: "Service Provider", href: "/profile/service-provider" },
+    { label: "Calendar", href: "/profile/service-provider/calendar" },
+    { label: "Settings", href: "/settings" },
   ];
 
   return (
@@ -28,7 +32,13 @@ export default function AppNavbar() {
           <div className="flex">
             <div className="flex shrink-0 items-center">
               <Link href="/" color="foreground">
-                <Image src="/logo.png" alt="Logo" width={32} height={32} className="h-8 w-auto" />
+                <Image
+                  src="/logo.png"
+                  alt="Logo"
+                  width={32}
+                  height={32}
+                  className="h-8 w-auto"
+                />
               </Link>
             </div>
             <div className="hidden md:ml-6 md:flex md:space-x-8">
@@ -37,7 +47,7 @@ export default function AppNavbar() {
                   key={item.href}
                   href={item.href}
                   className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 ${
-                    pathname === item.href ? 'border-b-2 border-blue-500' : ''
+                    pathname === item.href ? "border-b-2 border-blue-500" : ""
                   }`}
                 >
                   {item.label}
@@ -51,8 +61,14 @@ export default function AppNavbar() {
               <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
                 <span className="absolute -inset-0.5" />
                 <span className="sr-only">Open main menu</span>
-                <Bars3Icon aria-hidden="true" className="block size-6 group-data-[open]:hidden" />
-                <XMarkIcon aria-hidden="true" className="hidden size-6 group-data-[open]:block" />
+                <Bars3Icon
+                  aria-hidden="true"
+                  className="block size-6 group-data-[open]:hidden"
+                />
+                <XMarkIcon
+                  aria-hidden="true"
+                  className="hidden size-6 group-data-[open]:block"
+                />
               </DisclosureButton>
             </div>
             <div className="hidden md:ml-4 md:flex md:shrink-0 md:items-center">
@@ -95,10 +111,10 @@ export default function AppNavbar() {
             </div>
             <div className="ml-3">
               <div className="text-base font-medium text-gray-800">
-                {session?.user?.name || 'Guest'}
+                {session?.user?.name || "Guest"}
               </div>
               <div className="text-sm font-medium text-gray-500">
-                {session?.user?.email || 'Guest'}
+                {session?.user?.email || "Guest"}
               </div>
             </div>
             <button

@@ -1,8 +1,8 @@
-import { ServiceProviderWithRelations } from '@/features/profile/service-provider/lib/types';
-import { prisma } from '@/lib/prisma';
+import { ServiceProviderWithRelations } from "@/features/profile/service-provider/lib/types";
+import { prisma } from "@/lib/prisma";
 
 export async function getServiceProvider(
-  userId: string
+  userId: string,
 ): Promise<ServiceProviderWithRelations | null> {
   return prisma.serviceProvider.findUnique({
     where: {

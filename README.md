@@ -127,7 +127,7 @@ The booking system uses the following components:
 ```typescript
 // lib/validations/booking.ts
 export const bookingSchema = z.object({
-  bookingType: z.enum(['SELF', 'OTHER_USER', 'GUEST']),
+  bookingType: z.enum(["SELF", "OTHER_USER", "GUEST"]),
   userId: z.string().optional(),
   guestDetails: z
     .object({

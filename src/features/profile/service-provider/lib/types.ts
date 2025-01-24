@@ -1,4 +1,7 @@
-import { ServiceProvider as PrismaServiceProvider, Service } from '@prisma/client';
+import {
+  ServiceProvider as PrismaServiceProvider,
+  Service,
+} from "@prisma/client";
 
 export type ServiceProviderWithRelations = PrismaServiceProvider & {
   services: Service[];

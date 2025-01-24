@@ -1,25 +1,29 @@
-'use client';
+"use client";
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useState, useTransition } from 'react';
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useState, useTransition } from "react";
 
-import { startOfWeek } from 'date-fns';
-import { DateRange } from 'react-day-picker';
+import { startOfWeek } from "date-fns";
+import { DateRange } from "react-day-picker";
 
-import { CalendarHeader } from '@/features/calendar/components/calendar-header';
-import { CalendarSkeleton } from '@/features/calendar/components/calendar-skeleton';
-import { CalendarViewDay } from '@/features/calendar/components/calendar-view-day';
-import { CalendarViewSchedule } from '@/features/calendar/components/calendar-view-schedule';
-import { CalendarViewWeek } from '@/features/calendar/components/calendar-view-week';
-import { getDateRange, getNextDate, getPreviousDate } from '@/features/calendar/lib/helper';
-import { getServiceProviderScheduleInRange } from '@/features/calendar/lib/queries';
-import { Schedule } from '@/features/calendar/lib/types';
+import { CalendarHeader } from "@/features/calendar/components/calendar-header";
+import { CalendarSkeleton } from "@/features/calendar/components/calendar-skeleton";
+import { CalendarViewDay } from "@/features/calendar/components/calendar-view-day";
+import { CalendarViewSchedule } from "@/features/calendar/components/calendar-view-schedule";
+import { CalendarViewWeek } from "@/features/calendar/components/calendar-view-week";
+import {
+  getDateRange,
+  getNextDate,
+  getPreviousDate,
+} from "@/features/calendar/lib/helper";
+import { getServiceProviderScheduleInRange } from "@/features/calendar/lib/queries";
+import { Schedule } from "@/features/calendar/lib/types";
 
 interface CalendarWrapperProps {
   initialData: Schedule[];
   serviceProviderId: string;
   initialDateRange: DateRange;
-  initialView: 'day' | 'week' | 'schedule';
+  initialView: "day" | "week" | "schedule";
 }
 
 export function CalendarWrapper({
@@ -34,7 +38,7 @@ export function CalendarWrapper({
 
   const [dateRange, setDateRange] = useState<DateRange>(initialDateRange);
   const [scheduleData, setScheduleData] = useState<Schedule[]>(initialData);
-  const [view, setView] = useState<'day' | 'week' | 'schedule'>(initialView);
+  const [view, setView] = useState<"day" | "week" | "schedule">(initialView);
 
   const rangeStartDate = dateRange.from!;
 
@@ -43,26 +47,26 @@ export function CalendarWrapper({
 
     // Only clear dates if we're updating the range
     if (updates.range) {
-      params.delete('start');
-      params.delete('end');
+      params.delete("start");
+      params.delete("end");
 
       if (updates.range.from) {
-        params.set('start', updates.range.from.toISOString().split('T')[0]);
+        params.set("start", updates.range.from.toISOString().split("T")[0]);
       }
       if (updates.range.to) {
-        params.set('end', updates.range.to.toISOString().split('T')[0]);
+        params.set("end", updates.range.to.toISOString().split("T")[0]);
       }
     }
 
     // Set view parameter if provided
     if (updates.view) {
-      params.set('view', updates.view);
+      params.set("view", updates.view);
     }
 
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
-  const handleViewChange = (newView: 'day' | 'week' | 'schedule') => {
+  const handleViewChange = (newView: "day" | "week" | "schedule") => {
     setView(newView);
     updateUrlParams({ view: newView });
   };
@@ -92,7 +96,7 @@ export function CalendarWrapper({
         const data = await getServiceProviderScheduleInRange(
           serviceProviderId,
           range.from!,
-          range.to!
+          range.to!,
         );
         setScheduleData(data);
       });
@@ -139,7 +143,7 @@ export function CalendarWrapper({
       const data = await getServiceProviderScheduleInRange(
         serviceProviderId,
         dateRange.from!,
-        dateRange.to!
+        dateRange.to!,
       );
       setScheduleData(data);
     });
@@ -150,7 +154,7 @@ export function CalendarWrapper({
       const data = await getServiceProviderScheduleInRange(
         serviceProviderId,
         range.from!,
-        range.to!
+        range.to!,
       );
       setScheduleData(data);
     });
@@ -164,7 +168,7 @@ export function CalendarWrapper({
     };
 
     switch (view) {
-      case 'day':
+      case "day":
         return (
           <CalendarViewDay
             {...props}
@@ -173,7 +177,7 @@ export function CalendarWrapper({
             onViewChange={setView}
           />
         );
-      case 'week':
+      case "week":
         return (
           <CalendarViewWeek
             {...props}
@@ -182,7 +186,7 @@ export function CalendarWrapper({
             onViewChange={setView}
           />
         );
-      case 'schedule':
+      case "schedule":
         return (
           <CalendarViewSchedule
             scheduleData={scheduleData}

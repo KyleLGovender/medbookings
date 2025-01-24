@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
-import { ChevronDownIcon } from '@heroicons/react/20/solid';
-import { DateRange } from 'react-day-picker';
+import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
+import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { DateRange } from "react-day-picker";
 
-import { DatePicker } from '@/components/ui/date-picker';
-import { DateRangeSelector } from '@/components/ui/date-range-selector';
-import { CalendarNavigation } from '@/features/calendar/components/calendar-navigation';
+import { DatePicker } from "@/components/ui/date-picker";
+import { DateRangeSelector } from "@/components/ui/date-range-selector";
+import { CalendarNavigation } from "@/features/calendar/components/calendar-navigation";
 
-import { AvailabilityDialog } from './availability-dialog';
-import { BookingDialog } from './booking-dialog';
+import { AvailabilityDialog } from "./availability-dialog";
+import { BookingDialog } from "./booking-dialog";
 
 interface CalendarHeaderProps {
-  view: 'schedule' | 'day' | 'week';
+  view: "schedule" | "day" | "week";
   rangeStartDate: Date;
   dateRange?: DateRange;
   serviceProviderId: string;
@@ -23,7 +23,7 @@ interface CalendarHeaderProps {
   onPrevious: () => void;
   onNext: () => void;
   onToday: () => void;
-  onViewChange: (view: 'schedule' | 'day' | 'week') => void;
+  onViewChange: (view: "schedule" | "day" | "week") => void;
   onRefresh: () => Promise<void>;
   onThisWeek: () => void;
 }
@@ -42,7 +42,8 @@ export function CalendarHeader({
   onRefresh,
   onThisWeek,
 }: CalendarHeaderProps) {
-  const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
+  const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] =
+    useState(false);
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
 
   const handlePrevious = () => {
@@ -77,7 +78,10 @@ export function CalendarHeader({
               className="flex items-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
             >
               {view.charAt(0).toUpperCase() + view.slice(1)} view
-              <ChevronDownIcon className="-mr-1 size-5 text-gray-400" aria-hidden="true" />
+              <ChevronDownIcon
+                className="-mr-1 size-5 text-gray-400"
+                aria-hidden="true"
+              />
             </MenuButton>
 
             <MenuItems
@@ -85,14 +89,17 @@ export function CalendarHeader({
               className="absolute right-0 z-10 mt-3 w-36 origin-top-right overflow-hidden rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in"
             >
               <div className="py-1">
-                {['day', 'week', 'schedule'].map((viewOption) => (
+                {["day", "week", "schedule"].map((viewOption) => (
                   <MenuItem key={viewOption}>
                     <button
                       type="button"
-                      onClick={() => onViewChange(viewOption as 'day' | 'week' | 'schedule')}
+                      onClick={() =>
+                        onViewChange(viewOption as "day" | "week" | "schedule")
+                      }
                       className="block w-full px-4 py-2 text-left text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900 data-[focus]:outline-none"
                     >
-                      {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} view
+                      {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)}{" "}
+                      view
                     </button>
                   </MenuItem>
                 ))}
@@ -103,8 +110,11 @@ export function CalendarHeader({
       </div>
 
       <div className="mx-auto flex flex-col gap-2 md:flex-row md:items-center md:justify-center">
-        {view === 'schedule' ? (
-          <DateRangeSelector dateRange={dateRange} onSelect={handleDateRangeChange} />
+        {view === "schedule" ? (
+          <DateRangeSelector
+            dateRange={dateRange}
+            onSelect={handleDateRangeChange}
+          />
         ) : (
           <>
             <DatePicker date={rangeStartDate} onChange={handleDateSelect} />

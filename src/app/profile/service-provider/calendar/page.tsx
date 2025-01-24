@@ -1,4 +1,4 @@
-import { Calendar } from '@/features/calendar/components/calendar';
+import { Calendar } from "@/features/calendar/components/calendar";
 
 export default function CalendarPage({
   searchParams,
