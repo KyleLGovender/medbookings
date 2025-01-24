@@ -281,6 +281,7 @@ model Booking {
   duration       Int // in minutes
   price          Decimal          @db.Decimal(10, 2)
   isOnline       Boolean
+  isInPerson     Boolean          @default(false)
   location       String?
   status         BookingStatus    @default(PENDING)
   notes          String?          @db.Text
