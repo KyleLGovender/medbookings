@@ -1,7 +1,9 @@
+import { Prisma } from "@prisma/client";
+import { BookingStatusSchema } from "@prisma/zod";
 import { startOfWeek as dateFnsStartOfWeek, eachDayOfInterval } from "date-fns";
 import { DateRange } from "react-day-picker";
 
-import { Schedule } from "./types";
+import { Availability, Booking, Schedule } from "./types";
 
 interface CalendarDay {
   date: string;
@@ -323,4 +325,57 @@ export function getPreviousDate(
   }
 
   return newDate;
+}
+
+/**
+ * Transforms raw availability data from the database into the expected Availability type
+ * Handles conversion of decimal prices, dates, and recurring days array
+ */
+export function transformAvailability(availability: any): Availability {
+  return {
+    ...availability,
+    price:
+      typeof availability.price === "object" && "toNumber" in availability.price
+        ? availability.price.toNumber()
+        : Number(availability.price),
+    recurrenceEndDate: availability.recurrenceEndDate
+      ? new Date(availability.recurrenceEndDate).toISOString()
+      : null,
+    createdAt: new Date(availability.createdAt).toISOString(),
+    updatedAt: new Date(availability.updatedAt).toISOString(),
+    recurringDays: Array.isArray(availability.recurringDays)
+      ? availability.recurringDays
+      : JSON.parse(availability.recurringDays || "[]"),
+  };
+}
+
+/**
+ * Transforms raw booking data from the database into the expected Booking type
+ * Handles conversion of prices, dates, status validation, and notifications
+ */
+export function transformBooking(booking: any): Booking {
+  return {
+    ...booking,
+    price:
+      booking.price instanceof Prisma.Decimal
+        ? booking.price.toNumber()
+        : Number(booking.price),
+    startTime: new Date(booking.startTime).toISOString(),
+    endTime: new Date(booking.endTime).toISOString(),
+    status: BookingStatusSchema.parse(booking.status),
+    notifications: booking.notifications?.map(transformNotification) ?? [],
+    bookingType: BookingType.GUEST,
+  };
+}
+
+/**
+ * Transforms notification timestamps into ISO strings
+ * Used for nested notifications within bookings
+ */
+export function transformNotification(notification: any) {
+  return {
+    ...notification,
+    createdAt: new Date(notification.createdAt).toISOString(),
+    updatedAt: new Date(notification.updatedAt).toISOString(),
+  };
 }

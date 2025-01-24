@@ -113,6 +113,31 @@ The booking system supports the following scenarios:
 
 The booking system uses the following components:
 
+```mermaid
+graph TD
+A[@prisma/zod/index.ts] --> |Exports| B[AvailabilitySchema]
+A --> |Exports| C[BookingSchema]
+
+B --> |z.infer| D[Availability type]
+C --> |z.infer| E[Booking type]
+
+B --> |z.extend| F[availabilityFormSchema]
+C --> |z.extend| G[BookingFormSchema]
+
+F --> |z.infer| H[AvailabilityFormValues]
+G --> |z.infer| I[BookingFormValues]
+
+style A fill:#f9f,stroke:#333
+style B fill:#bbf,stroke:#333
+style C fill:#bbf,stroke:#333
+style D fill:#dfd,stroke:#333
+style E fill:#dfd,stroke:#333
+style F fill:#fdb,stroke:#333
+style G fill:#fdb,stroke:#333
+style H fill:#dfd,stroke:#333
+style I fill:#dfd,stroke:#333
+```
+
 ```typescript
 // components/booking/booking-form.tsx
 - BookingForm: Main form component with dynamic fields based on booking type

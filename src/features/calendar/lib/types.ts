@@ -1,261 +1,133 @@
-import { Booking, Prisma } from "@prisma/client";
 import {
   AvailabilitySchema,
   BookingSchema,
-  BookingStatusSchema,
   NotificationChannelSchema,
   NotificationLogSchema,
   ServiceProviderSchema,
   UserSchema,
-  type Availability as ZodAvailability,
-  type NotificationPreference as ZodNotificationPreference,
 } from "@prisma/zod";
 import { z } from "zod";
 
 export type ViewType = "day" | "week" | "schedule";
 
-export const availabilityFormSchema = z
-  .object({
-    date: z.date(),
-    startTime: z.date(),
-    endTime: z.date(),
-    duration: z.number().min(1),
-    price: z.number().min(10),
-    isOnlineAvailable: z.boolean(),
-    isInPersonAvailable: z.boolean(),
-    location: z.string(),
-    isRecurring: z.boolean(),
-    recurringDays: z.array(z.number()),
-    recurrenceEndDate: z.date().nullable(),
-  })
-  .superRefine((data, ctx) => {
-    if (!data.isOnlineAvailable && !data.isInPersonAvailable) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          "At least one availability type (Online or In-Person) must be selected",
-        path: ["root"],
-      });
-    }
+export const BookingTypeSchema = z.enum([
+  "USER_SELF",
+  "USER_GUEST",
+  "GUEST_SELF",
+  "PROVIDER_GUEST",
+]);
+export type BookingType = z.infer<typeof BookingTypeSchema>;
 
-    if (
-      data.isRecurring &&
-      (!data.recurringDays || data.recurringDays.length === 0)
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Please select at least one day for recurring availability",
-        path: ["recurringDays"],
-      });
-    }
-  });
+// Define base availability type from schema
+export type Availability = z.infer<typeof AvailabilitySchema> & {
+  price: number; // Ensure price is always number
+  startTime: string; // ISO string
+  endTime: string; // ISO string
+  recurrenceEndDate: string | null;
+  recurringDays: number[];
+};
+
+// Define the availability form schema using the base schema
+export const availabilityFormSchema = AvailabilitySchema.extend({
+  isOnlineAvailable: z.boolean(),
+  isInPersonAvailable: z.boolean(),
+  isRecurring: z.boolean(),
+  recurringDays: z.array(z.number()),
+  recurrenceEndDate: z.date().nullable(),
+}).superRefine((data, ctx) => {
+  if (!data.isOnlineAvailable && !data.isInPersonAvailable) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        "At least one availability type (Online or In-Person) must be selected",
+      path: ["root"],
+    });
+  }
+
+  if (
+    data.isRecurring &&
+    (!data.recurringDays || data.recurringDays.length === 0)
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Please select at least one day for recurring availability",
+      path: ["recurringDays"],
+    });
+  }
+});
 
 export type AvailabilityFormValues = z.infer<typeof availabilityFormSchema>;
 
-// Interface Definitions
-export interface Availability
-  extends Omit<
-    ZodAvailability,
-    | "price"
-    | "startTime"
-    | "endTime"
-    | "recurrenceEndDate"
-    | "createdAt"
-    | "updatedAt"
-  > {
-  price: number;
-  startTime: string;
-  endTime: string;
-  recurrenceEndDate: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Define the booking types more explicitly
-export enum BookingType {
-  USER_SELF = "USER_SELF", // User booking for themselves
-  USER_GUEST = "USER_GUEST", // User booking for a guest
-  GUEST_SELF = "GUEST_SELF", // Guest booking for themselves
-  PROVIDER_GUEST = "PROVIDER_GUEST", // Service Provider booking for guest
-}
-
-// Base schema with common fields
-const baseBookingSchema = z.object({
-  serviceProviderId: z.string(),
-  availabilityId: z.string(),
-  startTime: z.date(),
-  endTime: z.date(),
-  duration: z.number().min(1),
-  price: z.number().min(0),
-  isOnline: z.boolean(),
-  location: z.string().nullable(),
-  notes: z.string().nullable(),
+// Define booking schema extending the base schema
+export const ExtendedBookingSchema = BookingSchema.extend({
+  bookingType: BookingTypeSchema,
   notificationPreferences: z.object({
     email: z.boolean(),
     sms: z.boolean(),
     whatsapp: z.boolean(),
   }),
-});
+  guestInfo: z
+    .object({
+      name: z.string().min(1, "Guest name is required"),
+      email: z.string().email("Invalid email").optional(),
+      phone: z.string().optional(),
+      whatsapp: z.string().optional(),
+    })
+    .optional(),
+}).superRefine((data, ctx) => {
+  // Keep existing validation logic from BookingFormSchema
+  const hasNotificationMethod =
+    data.notificationPreferences.email ||
+    data.notificationPreferences.sms ||
+    data.notificationPreferences.whatsapp;
 
-// Guest information schema
-const guestInfoSchema = z.object({
-  guestName: z.string().min(1, "Guest name is required"),
-  guestEmail: z.string().email("Invalid email").optional(),
-  guestPhone: z.string().optional(),
-  guestWhatsapp: z.string().optional(),
-});
+  if (!hasNotificationMethod) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "At least one notification method must be selected",
+      path: ["notificationPreferences"],
+    });
+  }
 
-// User information schema
-const userInfoSchema = z.object({
-  userId: z.string(),
-  clientId: z.string(),
-});
-
-// Complete booking form schema
-export const BookingFormSchema = z
-  .discriminatedUnion("bookingType", [
-    // Case 1: Service Provider booking for guest
-    z.object({
-      bookingType: z.literal(BookingType.PROVIDER_GUEST),
-      ...baseBookingSchema.shape,
-      ...guestInfoSchema.shape,
-    }),
-
-    // Case 2: Guest booking for themselves
-    z.object({
-      bookingType: z.literal(BookingType.GUEST_SELF),
-      ...baseBookingSchema.shape,
-      ...guestInfoSchema.shape,
-    }),
-
-    // Case 3: User booking for themselves
-    z.object({
-      bookingType: z.literal(BookingType.USER_SELF),
-      ...baseBookingSchema.shape,
-      ...userInfoSchema.shape,
-    }),
-
-    // Case 4: User booking for a guest
-    z.object({
-      bookingType: z.literal(BookingType.USER_GUEST),
-      ...baseBookingSchema.shape,
-      ...userInfoSchema.shape,
-      ...guestInfoSchema.shape,
-    }),
-  ])
-  .superRefine((data, ctx) => {
-    // Keep only synchronous validations here
-
-    // Validate notification preferences
-    const hasNotificationMethod =
-      data.notificationPreferences.email ||
-      data.notificationPreferences.sms ||
-      data.notificationPreferences.whatsapp;
-
-    if (!hasNotificationMethod) {
+  // Add validation for guest contact info based on notification preferences
+  if (data.guestInfo) {
+    if (data.notificationPreferences.email && !data.guestInfo.email) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "At least one notification method must be selected",
-        path: ["notificationPreferences"],
+        message: "Email is required for email notifications",
+        path: ["guestInfo.email"],
       });
     }
-
-    // Validate contact information based on notification preferences
-    if (
-      data.bookingType === BookingType.GUEST_SELF ||
-      data.bookingType === BookingType.PROVIDER_GUEST
-    ) {
-      if (data.notificationPreferences.email && !data.guestEmail) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Email is required for email notifications",
-          path: ["guestEmail"],
-        });
-      }
-      if (data.notificationPreferences.sms && !data.guestPhone) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Phone number is required for SMS notifications",
-          path: ["guestPhone"],
-        });
-      }
-      if (data.notificationPreferences.whatsapp && !data.guestWhatsapp) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "WhatsApp number is required for WhatsApp notifications",
-          path: ["guestWhatsapp"],
-        });
-      }
+    if (data.notificationPreferences.sms && !data.guestInfo.phone) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Phone number is required for SMS notifications",
+        path: ["guestInfo.phone"],
+      });
     }
-  })
-  .refine((data) => data.isOnline || data.isInPerson, {
-    message: "At least one appointment type must be selected",
-    path: ["root"],
-  });
+    if (data.notificationPreferences.whatsapp && !data.guestInfo.whatsapp) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "WhatsApp number is required for WhatsApp notifications",
+        path: ["guestInfo.whatsapp"],
+      });
+    }
+  }
+});
 
-// Type for the form values
-export type BookingFormValues = z.infer<typeof BookingFormSchema> & {
-  isOnline: boolean;
-  isInPerson: boolean;
-};
+export type Booking = z.infer<typeof ExtendedBookingSchema>;
 
-export interface NotificationPreference
-  extends Omit<ZodNotificationPreference, "createdAt" | "updatedAt"> {
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Schedule type for calendar views
+// Schedule type using the new schemas
 export interface Schedule extends Availability {
   type: "AVAILABILITY";
-  bookings: (Omit<Booking, "client"> & {
-    type: "BOOKING";
-    client: {
-      name: string | null;
-    };
-  })[];
-}
-
-// Helper functions
-export function transformAvailability(availability: any): Availability {
-  return {
-    ...availability,
-    price:
-      typeof availability.price === "object" && "toNumber" in availability.price
-        ? availability.price.toNumber()
-        : Number(availability.price),
-    recurrenceEndDate: availability.recurrenceEndDate
-      ? new Date(availability.recurrenceEndDate).toISOString()
-      : null,
-    createdAt: new Date(availability.createdAt).toISOString(),
-    updatedAt: new Date(availability.updatedAt).toISOString(),
-    recurringDays: Array.isArray(availability.recurringDays)
-      ? availability.recurringDays
-      : JSON.parse(availability.recurringDays || "[]"),
-  };
-}
-
-export function transformBooking(booking: any): Booking {
-  return {
-    ...booking,
-    price:
-      booking.price instanceof Prisma.Decimal
-        ? booking.price.toNumber()
-        : Number(booking.price),
-    startTime: new Date(booking.startTime).toISOString(),
-    endTime: new Date(booking.endTime).toISOString(),
-    status: BookingStatusSchema.parse(booking.status),
-    notifications: booking.notifications?.map(transformNotification) ?? [],
-    bookingType: BookingType.GUEST,
-  };
-}
-
-export function transformNotification(notification: any) {
-  return {
-    ...notification,
-    createdAt: new Date(notification.createdAt).toISOString(),
-    updatedAt: new Date(notification.updatedAt).toISOString(),
-  };
+  bookings: Array<
+    Booking & {
+      type: "BOOKING";
+      client: {
+        name: string | null;
+      };
+    }
+  >;
 }
 
 export const NotificationPreferencesSchema = z.object({

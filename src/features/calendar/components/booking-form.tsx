@@ -35,7 +35,6 @@ import {
   Booking,
   BookingFormSchema,
   BookingFormValues,
-  BookingType,
 } from "../lib/types";
 
 const defaultValues: Partial<BookingFormValues> = {
