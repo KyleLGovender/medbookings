@@ -8,13 +8,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { Schedule } from "../lib/types";
+import { Booking, Schedule } from "../lib/types";
 import { BookingForm } from "./booking-form";
 
 interface BookingDialogProps {
-  serviceProviderId?: string;
-  userId?: string;
   availability?: Schedule;
+  booking?: Booking;
+  serviceProviderId: string;
   mode: "create" | "edit";
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -22,9 +22,8 @@ interface BookingDialogProps {
 }
 
 export function BookingDialog({
-  serviceProviderId,
-  userId,
   availability,
+  serviceProviderId,
   mode,
   open,
   onOpenChange,
