@@ -16,7 +16,6 @@ export const BookingTypeSchema = z.enum([
   "GUEST_SELF",
   "PROVIDER_GUEST",
 ]);
-export type BookingType = z.infer<typeof BookingTypeSchema>;
 
 // Define base availability type from schema
 export type Availability = z.infer<typeof AvailabilitySchema> & {
@@ -28,7 +27,7 @@ export type Availability = z.infer<typeof AvailabilitySchema> & {
 };
 
 // Define the availability form schema using the base schema
-export const availabilityFormSchema = AvailabilitySchema.extend({
+export const AvailabilityFormSchema = AvailabilitySchema.extend({
   isOnlineAvailable: z.boolean(),
   isInPersonAvailable: z.boolean(),
   isRecurring: z.boolean(),
@@ -56,10 +55,12 @@ export const availabilityFormSchema = AvailabilitySchema.extend({
   }
 });
 
-export type AvailabilityFormValues = z.infer<typeof availabilityFormSchema>;
+export type AvailabilityFormValues = z.infer<typeof AvailabilityFormSchema>;
+
+export type BookingType = z.infer<typeof BookingTypeSchema>;
 
 // Define booking schema extending the base schema
-export const ExtendedBookingSchema = BookingSchema.extend({
+export const BookingFormSchema = BookingSchema.extend({
   bookingType: BookingTypeSchema,
   notificationPreferences: z.object({
     email: z.boolean(),
@@ -115,7 +116,7 @@ export const ExtendedBookingSchema = BookingSchema.extend({
   }
 });
 
-export type Booking = z.infer<typeof ExtendedBookingSchema>;
+export type BookingFormValues = z.infer<typeof BookingFormSchema>;
 
 // Schedule type using the new schemas
 export interface Schedule extends Availability {

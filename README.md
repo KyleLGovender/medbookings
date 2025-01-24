@@ -115,45 +115,27 @@ The booking system uses the following components:
 
 ```mermaid
 graph TD
-    A[@prisma/zod/index.ts] --> |Exports| B[BookingSchema]
-    A --> |Exports| C[AvailabilitySchema]
+A[@prisma/zod/index.ts] --> |Exports| B[AvailabilitySchema]
+A --> |Exports| C[BookingSchema]
 
-    D[notificationValidationSchema] --> |Shared Validation| E[BookingFormSchema]
-    D --> |Shared Validation| F[BookingCreateSchema]
+B --> |z.infer| D[Availability type]
+C --> |z.infer| E[Booking type]
 
-    G[bookingTimeValidationSchema] --> |Shared Validation| E
-    G --> |Shared Validation| F
+B --> |z.extend| F[availabilityFormSchema]
+C --> |z.extend| G[BookingFormSchema]
 
-    B --> |extend| E
-    B --> |shape| F
+F --> |z.infer| H[AvailabilityFormValues]
+G --> |z.infer| I[BookingFormValues]
 
-    E --> |z.infer| H[BookingFormValues]
-    F --> |z.infer| I[BookingCreateInput]
-
-    subgraph "Shared Validation Logic"
-        D[notificationValidationSchema]
-        G[bookingTimeValidationSchema]
-    end
-
-    subgraph "Schema Definitions"
-        E[BookingFormSchema]
-        F[BookingCreateSchema]
-    end
-
-    subgraph "Types"
-        H[BookingFormValues]
-        I[BookingCreateInput]
-    end
-
-    style A fill:#f9f,stroke:#333
-    style B fill:#bbf,stroke:#333
-    style C fill:#bbf,stroke:#333
-    style D fill:#fdb,stroke:#333
-    style E fill:#dfd,stroke:#333
-    style F fill:#dfd,stroke:#333
-    style G fill:#fdb,stroke:#333
-    style H fill:#bef,stroke:#333
-    style I fill:#bef,stroke:#333
+style A fill:#f9f,stroke:#333
+style B fill:#bbf,stroke:#333
+style C fill:#bbf,stroke:#333
+style D fill:#dfd,stroke:#333
+style E fill:#dfd,stroke:#333
+style F fill:#fdb,stroke:#333
+style G fill:#fdb,stroke:#333
+style H fill:#dfd,stroke:#333
+style I fill:#dfd,stroke:#333
 ```
 
 ```typescript
