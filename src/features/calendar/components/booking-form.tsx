@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { debounce } from "lodash";
@@ -29,10 +29,8 @@ import { Switch } from "@/components/ui/switch";
 import { TimePicker } from "@/components/ui/time-picker";
 import { useToast } from "@/hooks/use-toast";
 
-import { createBooking, updateBooking } from "../lib/actions";
 import {
   Availability,
-  Booking,
   BookingFormSchema,
   BookingFormValues,
 } from "../lib/types";
@@ -58,177 +56,116 @@ const defaultValues: Partial<BookingFormValues> = {
 };
 
 interface BookingFormProps {
-  serviceProviderId: string;
-  booking?: Booking;
+  serviceProviderId?: string;
+  userId?: string;
+  availability?: Availability;
   mode: "create" | "edit";
   onClose: () => void;
   onRefresh?: () => Promise<void>;
-  selectedDate: Date;
-  availability?: Availability;
-  userId?: string;
 }
 
 export function BookingForm({
   serviceProviderId,
-  booking,
+  userId,
+  availability,
   mode,
   onClose,
   onRefresh,
-  selectedDate,
-  availability,
-  userId,
 }: BookingFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedAvailability, setSelectedAvailability] = useState<
+    Availability | undefined
+  >(availability);
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Step tracking for multi-step form
+  const [currentStep, setCurrentStep] = useState<"availability" | "details">(
+    availability ? "details" : "availability",
+  );
+
+  // Form initialization moved to after availability selection
   const form = useForm<BookingFormValues>({
-    resolver: async (data, context, options) => {
-      return zodResolver(BookingFormSchema)(data, context, options);
-    },
+    resolver: zodResolver(BookingFormSchema),
     defaultValues: {
       ...defaultValues,
       serviceProviderId,
       clientId: userId,
-      isOnline: availability?.isOnlineAvailable ?? false,
-      isInPerson: availability?.isInPersonAvailable ?? false,
-      location: availability?.isInPersonAvailable
-        ? availability.location
+      isOnline: selectedAvailability?.isOnlineAvailable ?? false,
+      isInPerson: selectedAvailability?.isInPersonAvailable ?? false,
+      location: selectedAvailability?.isInPersonAvailable
+        ? selectedAvailability.location
         : undefined,
     },
   });
 
-  const bookingType = form.watch("bookingType");
+  // Handle availability selection
+  const handleAvailabilitySelect = (selected: Availability) => {
+    setSelectedAvailability(selected);
+    setCurrentStep("details");
 
-  useEffect(() => {
-    form.setValue(
-      "clientId",
-      bookingType === BookingType.SELF ? userId : undefined,
-    );
-  }, [bookingType, userId, form]);
-
-  useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      if (name === "startTime") {
-        const startTime = value.startTime;
-        if (startTime) {
-          const endTime = new Date(startTime);
-          endTime.setMinutes(endTime.getMinutes() + 15);
-          form.setValue("endTime", endTime);
-        }
-      }
+    // Update form with new availability data
+    form.reset({
+      ...form.getValues(),
+      isOnline: selected.isOnlineAvailable,
+      isInPerson: selected.isInPersonAvailable,
+      location: selected.isInPersonAvailable ? selected.location : undefined,
     });
-
-    return () => subscription.unsubscribe();
-  }, [form]);
-
-  const onSubmit = async (values: BookingFormValues) => {
-    setIsSubmitting(true);
-    try {
-      const formData = new FormData();
-
-      // Core booking details
-      formData.append("bookingType", values.bookingType);
-      formData.append("serviceProviderId", serviceProviderId);
-      formData.append("startTime", values.startTime.toISOString());
-      formData.append("endTime", values.endTime.toISOString());
-      formData.append("duration", String(values.duration));
-      formData.append("status", "PENDING");
-
-      // Update appointment type handling
-      formData.append("isOnline", String(values.isOnline));
-      formData.append("isInPerson", String(values.isInPerson));
-
-      // Add location if it's an in-person appointment
-      if (values.isInPerson && values.location) {
-        formData.append("location", values.location.trim());
-      } else {
-        formData.append("location", ""); // Empty string for online appointments
-      }
-
-      // Client/Guest details based on booking type
-      if (values.bookingType === BookingType.SELF) {
-        formData.append("clientId", userId || "");
-      } else {
-        // Always include bookedById for guest bookings if userId exists
-        if (userId) formData.append("bookedById", userId);
-        formData.append("guestName", values.clientName?.trim() ?? "");
-        formData.append("guestEmail", values.clientEmail?.trim() ?? "");
-        formData.append("guestPhone", values.clientPhone?.trim() ?? "");
-        formData.append("guestWhatsapp", values.clientWhatsapp?.trim() ?? "");
-      }
-
-      // Notification preferences as JSON string
-      formData.append(
-        "notificationPreferences",
-        JSON.stringify({
-          email: values.notifyViaEmail || false,
-          sms: values.notifyViaSMS || false,
-          whatsapp: values.notifyViaWhatsapp || false,
-        }),
-      );
-
-      // Optional fields
-      if (values.notes) formData.append("notes", values.notes.trim());
-      formData.append("price", String(values.price || 0));
-
-      const response =
-        mode === "create"
-          ? await createBooking(formData)
-          : await updateBooking(booking?.id || "", formData);
-
-      if (!response) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "No response from server",
-        });
-        return;
-      }
-
-      if (response.error || response.fieldErrors || response.formErrors) {
-        if (response.fieldErrors) {
-          Object.entries(response.fieldErrors).forEach(([field, errors]) => {
-            toast({
-              variant: "destructive",
-              title: `Error in ${field}`,
-              description: errors.join(", "),
-            });
-          });
-        } else if (response.error) {
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: response.error,
-          });
-        }
-        return;
-      }
-
-      toast({
-        title: "Success",
-        description: `Booking ${mode === "create" ? "created" : "updated"} successfully`,
-      });
-
-      await onRefresh?.();
-      onClose();
-    } catch (error) {
-      console.error("Booking submission error:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "An unexpected error occurred",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
   };
+
+  if (currentStep === "availability") {
+    return (
+      <div className="space-y-4">
+        <div className="mb-4">
+          <h3 className="text-lg font-medium">Select Available Time</h3>
+          <p className="text-sm text-muted-foreground">
+            Choose from available time slots
+          </p>
+        </div>
+
+        <AvailabilitySelector
+          serviceProviderId={serviceProviderId}
+          onSelect={handleAvailabilitySelect}
+          selectedDate={new Date()} // Or pass this as a prop
+        />
+
+        <Button variant="outline" onClick={onClose} className="mt-4">
+          Cancel
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="w-full max-w-xl space-y-6"
-      >
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Show selected availability details */}
+        {selectedAvailability && (
+          <div className="rounded-lg border p-4 bg-muted/50">
+            <h4 className="font-medium mb-2">Selected Time Slot</h4>
+            <div className="text-sm text-muted-foreground">
+              <p>
+                Date: {format(new Date(selectedAvailability.startTime), "PPP")}
+              </p>
+              <p>
+                Time: {format(new Date(selectedAvailability.startTime), "p")} -{" "}
+                {format(new Date(selectedAvailability.endTime), "p")}
+              </p>
+              {selectedAvailability.location && (
+                <p>Location: {selectedAvailability.location}</p>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentStep("availability")}
+              className="mt-2"
+            >
+              Change Time
+            </Button>
+          </div>
+        )}
+
         {!serviceProviderId ? (
           <FormField
             control={form.control}
@@ -258,7 +195,7 @@ export function BookingForm({
           />
         ) : null}
 
-        {bookingType === BookingType.GUEST && (
+        {form.watch("bookingType") === BookingType.GUEST && (
           <>
             <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
               <div className="flex items-center gap-2">
@@ -347,7 +284,7 @@ export function BookingForm({
         </div>
 
         <div className="space-y-2">
-          {availability?.isOnlineAvailable && (
+          {selectedAvailability?.isOnlineAvailable && (
             <FormField
               control={form.control}
               name="isOnline"
@@ -370,7 +307,7 @@ export function BookingForm({
             />
           )}
 
-          {availability?.isInPersonAvailable && (
+          {selectedAvailability?.isInPersonAvailable && (
             <FormField
               control={form.control}
               name="isInPerson"
@@ -381,9 +318,9 @@ export function BookingForm({
                       <FormLabel className="text-base">
                         In-Person Appointment
                       </FormLabel>
-                      {availability.location && (
+                      {selectedAvailability.location && (
                         <p className="text-sm text-muted-foreground">
-                          Location: {availability.location}
+                          Location: {selectedAvailability.location}
                         </p>
                       )}
                     </div>
@@ -398,8 +335,8 @@ export function BookingForm({
             />
           )}
 
-          {!availability?.isOnlineAvailable &&
-            !availability?.isInPersonAvailable && (
+          {!selectedAvailability?.isOnlineAvailable &&
+            !selectedAvailability?.isInPersonAvailable && (
               <div className="rounded-lg border border-destructive p-4">
                 <p className="text-sm text-destructive">
                   No appointment types are available for this time slot
