@@ -1,9 +1,9 @@
-import { Prisma } from "@prisma/client";
-import { BookingStatusSchema } from "@prisma/zod";
-import { startOfWeek as dateFnsStartOfWeek, eachDayOfInterval } from "date-fns";
-import { DateRange } from "react-day-picker";
+import { Prisma } from '@prisma/client';
+import { BookingStatusSchema } from '@prisma/zod';
+import { startOfWeek as dateFnsStartOfWeek, eachDayOfInterval } from 'date-fns';
+import { DateRange } from 'react-day-picker';
 
-import { Availability, Booking, Schedule } from "./types";
+import { Availability, Booking, Schedule } from './types';
 
 interface CalendarDay {
   date: string;
@@ -34,10 +34,7 @@ export function calculateAvailableSpots({
   return Math.floor(totalMinutes / duration);
 }
 
-export function isSameDay(
-  date1: Date | null | undefined,
-  date2: Date | null | undefined,
-): boolean {
+export function isSameDay(date1: Date | null | undefined, date2: Date | null | undefined): boolean {
   if (!date1 || !date2) return false;
   const d1 = date1 instanceof Date ? date1 : new Date(date1);
   const d2 = date2 instanceof Date ? date2 : new Date(date2);
@@ -50,16 +47,8 @@ export function isSameDay(
 }
 
 export function generateDaysForDayCalendar(currentDate: Date) {
-  const firstDay = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth(),
-    1,
-  );
-  const lastDay = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth() + 1,
-    0,
-  );
+  const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
   const daysInMonth = lastDay.getDate();
 
   let startPadding = firstDay.getDay();
@@ -68,21 +57,13 @@ export function generateDaysForDayCalendar(currentDate: Date) {
 
   const days: CalendarDay[] = [];
 
-  const daysInPrevMonth = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth(),
-    0,
-  ).getDate();
+  const daysInPrevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0).getDate();
 
   for (let i = startPadding; i > 0; i -= 1) {
     const dayNumber = daysInPrevMonth - i + 1;
-    const date = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth() - 1,
-      dayNumber,
-    );
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, dayNumber);
     days.push({
-      date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
+      date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
       isCurrentMonth: false,
       isToday: isSameDay(date, new Date()),
       isSelected: isSameDay(date, currentDate),
@@ -92,7 +73,7 @@ export function generateDaysForDayCalendar(currentDate: Date) {
   for (let i = 1; i <= daysInMonth; i += 1) {
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
     days.push({
-      date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
+      date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
       isCurrentMonth: true,
       isToday: isSameDay(date, new Date()),
       isSelected: isSameDay(date, currentDate),
@@ -101,13 +82,9 @@ export function generateDaysForDayCalendar(currentDate: Date) {
 
   const remainingDays = 42 - days.length;
   for (let i = 1; i <= remainingDays; i += 1) {
-    const date = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth() + 1,
-      i,
-    );
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, i);
     days.push({
-      date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
+      date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
       isCurrentMonth: false,
       isToday: isSameDay(date, new Date()),
       isSelected: isSameDay(date, currentDate),
@@ -134,13 +111,10 @@ export function generateDaysForWeekCalendar(rangeStartDate: Date) {
 }
 
 export function formatDateTime(date: string) {
-  return new Date(date).toISOString().split(".")[0].slice(0, -3);
+  return new Date(date).toISOString().split('.')[0].slice(0, -3);
 }
 
-export function expandRecurringSchedule(
-  schedule: Schedule,
-  endDate: Date,
-): Schedule[] {
+export function expandRecurringSchedule(schedule: Schedule, endDate: Date): Schedule[] {
   if (!schedule.isRecurring || !schedule.recurringDays) {
     return [schedule];
   }
@@ -160,9 +134,7 @@ export function expandRecurringSchedule(
   });
 
   const recurringDays = new Set(schedule.recurringDays);
-  const filteredDates = dates.filter((date) =>
-    recurringDays.has(date.getDay()),
-  );
+  const filteredDates = dates.filter((date) => recurringDays.has(date.getDay()));
 
   return filteredDates.map((date) => {
     const startTime = new Date(date);
@@ -174,7 +146,7 @@ export function expandRecurringSchedule(
     endTime.setHours(scheduleEndTime.getHours(), scheduleEndTime.getMinutes());
 
     const relevantBookings = schedule.bookings.filter((booking) =>
-      isSameDay(booking.startTime, date),
+      isSameDay(booking.startTime, date)
     );
 
     return {
@@ -187,24 +159,21 @@ export function expandRecurringSchedule(
   });
 }
 
-export function getDateRange(
-  date: Date,
-  view: "day" | "week" | "schedule",
-): DateRange {
+export function getDateRange(date: Date, view: 'day' | 'week' | 'schedule'): DateRange {
   const startDate = new Date(date);
   const endDate = new Date(date);
 
   switch (view) {
-    case "week":
+    case 'week':
       let day = startDate.getDay();
       if (day === 0) day = 7;
       startDate.setDate(startDate.getDate() - (day - 1));
       endDate.setDate(startDate.getDate() + 6);
       break;
-    case "day":
+    case 'day':
       endDate.setDate(startDate.getDate() + 1);
       break;
-    case "schedule":
+    case 'schedule':
       startDate.setDate(1);
       endDate.setMonth(startDate.getMonth() + 1, 0);
       break;
@@ -215,10 +184,7 @@ export function getDateRange(
 
 // Add these new functions to the existing helper.ts file
 
-export function getEventGridPosition(
-  startTime: Date | string,
-  endTime: Date | string,
-) {
+export function getEventGridPosition(startTime: Date | string, endTime: Date | string) {
   const start = new Date(startTime);
   const end = new Date(endTime);
 
@@ -232,10 +198,7 @@ export function getEventGridPosition(
   return `${rowStart} / span ${rowSpan}`;
 }
 
-export function filterScheduleForWeek(
-  schedule: Schedule[],
-  currentDate: Date,
-): Schedule[] {
+export function filterScheduleForWeek(schedule: Schedule[], currentDate: Date): Schedule[] {
   const startOfWeek = startOfWeek(currentDate);
   const endOfWeek = endOfWeek(currentDate);
 
@@ -245,10 +208,7 @@ export function filterScheduleForWeek(
   });
 }
 
-export function filterScheduleForDay(
-  schedule: Schedule[],
-  currentDate: Date,
-): Schedule[] {
+export function filterScheduleForDay(schedule: Schedule[], currentDate: Date): Schedule[] {
   return schedule.filter((item) => {
     const itemDate = new Date(item.startTime);
     return isSameDay(itemDate, currentDate);
@@ -285,20 +245,17 @@ export function generateTimeSlots(availability: Availability): TimeSlot[] {
   return slots;
 }
 
-export function getNextDate(
-  rangeStartDate: Date,
-  view: "day" | "week" | "schedule",
-): Date {
+export function getNextDate(rangeStartDate: Date, view: 'day' | 'week' | 'schedule'): Date {
   const newDate = new Date(rangeStartDate);
 
   switch (view) {
-    case "week":
+    case 'week':
       newDate.setDate(newDate.getDate() + 7);
       break;
-    case "schedule":
+    case 'schedule':
       newDate.setMonth(newDate.getMonth() + 1);
       break;
-    case "day":
+    case 'day':
       newDate.setDate(newDate.getDate() + 1);
       break;
   }
@@ -306,20 +263,17 @@ export function getNextDate(
   return newDate;
 }
 
-export function getPreviousDate(
-  rangeStartDate: Date,
-  view: "day" | "week" | "schedule",
-): Date {
+export function getPreviousDate(rangeStartDate: Date, view: 'day' | 'week' | 'schedule'): Date {
   const newDate = new Date(rangeStartDate);
 
   switch (view) {
-    case "week":
+    case 'week':
       newDate.setDate(newDate.getDate() - 7);
       break;
-    case "schedule":
+    case 'schedule':
       newDate.setMonth(newDate.getMonth() - 1);
       break;
-    case "day":
+    case 'day':
       newDate.setDate(newDate.getDate() - 1);
       break;
   }
@@ -335,7 +289,7 @@ export function transformAvailability(availability: any): Availability {
   return {
     ...availability,
     price:
-      typeof availability.price === "object" && "toNumber" in availability.price
+      typeof availability.price === 'object' && 'toNumber' in availability.price
         ? availability.price.toNumber()
         : Number(availability.price),
     recurrenceEndDate: availability.recurrenceEndDate
@@ -345,7 +299,7 @@ export function transformAvailability(availability: any): Availability {
     updatedAt: new Date(availability.updatedAt).toISOString(),
     recurringDays: Array.isArray(availability.recurringDays)
       ? availability.recurringDays
-      : JSON.parse(availability.recurringDays || "[]"),
+      : JSON.parse(availability.recurringDays || '[]'),
   };
 }
 
@@ -357,9 +311,7 @@ export function transformBooking(booking: any): Booking {
   return {
     ...booking,
     price:
-      booking.price instanceof Prisma.Decimal
-        ? booking.price.toNumber()
-        : Number(booking.price),
+      booking.price instanceof Prisma.Decimal ? booking.price.toNumber() : Number(booking.price),
     startTime: new Date(booking.startTime).toISOString(),
     endTime: new Date(booking.endTime).toISOString(),
     status: BookingStatusSchema.parse(booking.status),

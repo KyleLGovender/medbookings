@@ -1,4 +1,4 @@
-import { getLocalTimeZone, now } from "@internationalized/date";
+import { getLocalTimeZone, now } from '@internationalized/date';
 
 export function parseAbsoluteToLocal(date: Date) {
   return now(getLocalTimeZone()).set({

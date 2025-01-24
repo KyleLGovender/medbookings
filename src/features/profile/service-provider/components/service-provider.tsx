@@ -1,11 +1,11 @@
-import Image from "next/image";
-import Link from "next/link";
+import Image from 'next/image';
+import Link from 'next/link';
 
-import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { buttonVariants } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-import { ServiceProviderWithRelations } from "../lib/types";
+import { ServiceProviderWithRelations } from '../lib/types';
 
 interface ServiceProviderProps {
   serviceProvider: ServiceProviderWithRelations;
@@ -18,10 +18,7 @@ export function ServiceProvider({ serviceProvider }: ServiceProviderProps) {
         <CardContent className="pt-6 text-center">
           <div className="space-y-6">
             {serviceProvider.image && (
-              <AspectRatio
-                ratio={16 / 9}
-                className="overflow-hidden rounded-md"
-              >
+              <AspectRatio ratio={16 / 9} className="overflow-hidden rounded-md">
                 <Image
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -34,7 +31,7 @@ export function ServiceProvider({ serviceProvider }: ServiceProviderProps) {
             )}
             <Link
               href="/profile/service-provider/calendar"
-              className={buttonVariants({ className: "w-full" })}
+              className={buttonVariants({ className: 'w-full' })}
             >
               Manage Availability
             </Link>
@@ -42,23 +39,18 @@ export function ServiceProvider({ serviceProvider }: ServiceProviderProps) {
             {/* Basic Info */}
             <Card>
               <CardHeader>
-                <CardTitle>
-                  {serviceProvider.serviceProviderType.name}
-                </CardTitle>
+                <CardTitle>{serviceProvider.serviceProviderType.name}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <p>
-                  <span className="font-semibold">Name:</span>{" "}
-                  {serviceProvider.name}
+                  <span className="font-semibold">Name:</span> {serviceProvider.name}
                 </p>
                 <p>
-                  <span className="font-semibold">Email:</span>{" "}
-                  {serviceProvider.user.email}
+                  <span className="font-semibold">Email:</span> {serviceProvider.user.email}
                 </p>
                 {serviceProvider.bio && (
                   <p>
-                    <span className="font-semibold">Bio:</span>{" "}
-                    {serviceProvider.bio}
+                    <span className="font-semibold">Bio:</span> {serviceProvider.bio}
                   </p>
                 )}
               </CardContent>
@@ -74,14 +66,10 @@ export function ServiceProvider({ serviceProvider }: ServiceProviderProps) {
                   {serviceProvider.services.map((service) => (
                     <Card key={service.id}>
                       <CardHeader>
-                        <CardTitle className="text-lg">
-                          {service.name}
-                        </CardTitle>
+                        <CardTitle className="text-lg">{service.name}</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm text-muted-foreground">
-                          {service.description}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{service.description}</p>
                       </CardContent>
                     </Card>
                   ))}

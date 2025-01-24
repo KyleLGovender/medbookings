@@ -1,6 +1,6 @@
-import { IconFileUnknown } from "@tabler/icons-react";
+import { IconFileUnknown } from '@tabler/icons-react';
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function NotFound() {
   return (

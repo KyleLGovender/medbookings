@@ -1,11 +1,11 @@
-import { Schedule } from "../../lib/types";
-import { CalendarViewDayGrid } from "./calendar-view-day-grid";
+import { Schedule } from '../../lib/types';
+import { CalendarViewDayGrid } from './calendar-view-day-grid';
 
 interface CalendarViewDayProps {
   rangeStartDate: Date;
   scheduleData: Schedule[];
   onDateChange: (date: Date) => void;
-  onViewChange?: (view: "day") => void;
+  onViewChange?: (view: 'day') => void;
   serviceProviderId: string;
   onRefresh: () => void;
 }

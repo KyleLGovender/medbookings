@@ -1,39 +1,33 @@
-import { redirect } from "next/navigation";
-import { Suspense } from "react";
+import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
-import { CalendarWrapper } from "@/features/calendar/components/calendar-wrapper";
-import { getDateRange } from "@/features/calendar/lib/helper";
-import { getServiceProviderScheduleInRange } from "@/features/calendar/lib/queries";
-import { getCurrentUser } from "@/lib/auth";
-import { getAuthenticatedServiceProvider } from "@/lib/server-helper";
+import { CalendarWrapper } from '@/features/calendar/components/calendar-wrapper';
+import { getDateRange } from '@/features/calendar/lib/helper';
+import { getServiceProviderScheduleInRange } from '@/features/calendar/lib/queries';
+import { getCurrentUser } from '@/lib/auth';
+import { getAuthenticatedServiceProvider } from '@/lib/server-helper';
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 
-export async function Calendar({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export async function Calendar({ searchParams }: { searchParams: SearchParams }) {
   const user = await getCurrentUser();
 
   if (!user?.id) {
-    redirect("/auth/login");
+    redirect('/auth/login');
   }
 
   const { serviceProviderId } = await getAuthenticatedServiceProvider();
 
   if (!serviceProviderId) {
-    redirect("/profile/service-provider");
+    redirect('/profile/service-provider');
   }
 
-  const isValidView = (
-    v: string | undefined,
-  ): v is "day" | "schedule" | "week" => {
-    return v === "day" || v === "schedule" || v === "week";
+  const isValidView = (v: string | undefined): v is 'day' | 'schedule' | 'week' => {
+    return v === 'day' || v === 'schedule' || v === 'week';
   };
 
   const view = searchParams.view as string;
-  const validView = isValidView(view) ? view : "schedule";
+  const validView = isValidView(view) ? view : 'schedule';
 
   const start = searchParams.start as string;
   const end = searchParams.end as string;
@@ -54,7 +48,7 @@ export async function Calendar({
   const initialScheduleData = await getServiceProviderScheduleInRange(
     serviceProviderId,
     startDate,
-    endDate,
+    endDate
   );
 
   return (
@@ -67,11 +61,7 @@ export async function Calendar({
           </p>
         </div>
 
-        <Suspense
-          fallback={
-            <div className="h-[600px] animate-pulse rounded-lg bg-gray-100" />
-          }
-        >
+        <Suspense fallback={<div className="h-[600px] animate-pulse rounded-lg bg-gray-100" />}>
           <div className="rounded-lg bg-white shadow">
             <CalendarWrapper
               initialData={initialScheduleData}

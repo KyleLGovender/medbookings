@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
-import classNames from "@/lib/classNames";
+import classNames from '@/lib/classNames';
 
-import { Schedule } from "../../lib/types";
-import { CalendarViewDayTimeGrid } from "./calendar-view-day-time-grid";
+import { Schedule } from '../../lib/types';
+import { CalendarViewDayTimeGrid } from './calendar-view-day-time-grid';
 
 interface CalendarViewDayGridProps {
   rangeStartDate: string;
   onDateChange: (dateStr: string) => void;
-  onViewChange?: (view: "day") => void;
+  onViewChange?: (view: 'day') => void;
   scheduleData: Schedule[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
@@ -37,8 +37,7 @@ export function CalendarViewDayGrid({
 
   // Keep scroll to current time effect
   useEffect(() => {
-    if (!container.current || !containerNav.current || !containerOffset.current)
-      return;
+    if (!container.current || !containerNav.current || !containerOffset.current) return;
     const currentMinute = new Date().getHours() * 60;
     container.current.scrollTop =
       ((container.current.scrollHeight -
@@ -68,15 +67,13 @@ export function CalendarViewDayGrid({
                   onClick={() => onDateChange(date.toISOString())}
                   className="flex flex-col items-center pb-1.5 pt-3"
                 >
-                  <span>
-                    {date.toLocaleDateString("en-US", { weekday: "short" })[0]}
-                  </span>
+                  <span>{date.toLocaleDateString('en-US', { weekday: 'short' })[0]}</span>
                   <span
                     className={classNames(
-                      "mt-3 flex size-8 items-center justify-center rounded-full text-base font-semibold",
-                      isSelected && "bg-gray-900 text-white",
-                      isToday && !isSelected && "text-indigo-600",
-                      !isSelected && !isToday && "text-gray-900",
+                      'mt-3 flex size-8 items-center justify-center rounded-full text-base font-semibold',
+                      isSelected && 'bg-gray-900 text-white',
+                      isToday && !isSelected && 'text-indigo-600',
+                      !isSelected && !isToday && 'text-gray-900'
                     )}
                   >
                     {date.getDate()}

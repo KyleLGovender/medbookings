@@ -1,20 +1,17 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import { useState } from "react";
+import Image from 'next/image';
+import { useState } from 'react';
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { BillingType, Languages } from "@prisma/client";
-import { useFormState } from "react-dom";
-import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { BillingType, Languages } from '@prisma/client';
+import { useFormState } from 'react-dom';
+import { useForm, useWatch } from 'react-hook-form';
 
-import { registerServiceProvider } from "../lib/actions";
-import {
-  type ServiceProviderFormType,
-  serviceProviderSchema,
-} from "../lib/schema";
+import { registerServiceProvider } from '../lib/actions';
+import { type ServiceProviderFormType, serviceProviderSchema } from '../lib/schema';
 
-const ACCEPTED_IMAGE_TYPES = [".jpg", ".jpeg", ".png", ".webp"];
+const ACCEPTED_IMAGE_TYPES = ['.jpg', '.jpeg', '.png', '.webp'];
 
 type Props = {
   serviceProviderTypes: Array<{ id: string; name: string }>;
@@ -60,13 +57,13 @@ function ServiceProviderForm({
   const form = useForm<ServiceProviderFormType>({
     resolver: zodResolver(serviceProviderSchema),
     defaultValues: {
-      serviceProviderTypeId: "",
-      name: "",
-      bio: "",
+      serviceProviderTypeId: '',
+      name: '',
+      bio: '',
       image: null,
       languages: [],
       billingType: undefined,
-      website: "",
+      website: '',
       services: [],
       requirements: [],
       termsAccepted: undefined,
@@ -89,19 +86,15 @@ function ServiceProviderForm({
 
   const selectedProviderType = useWatch({
     control: form.control,
-    name: "serviceProviderTypeId",
+    name: 'serviceProviderTypeId',
   });
 
   const filteredServices = services.filter((service) =>
-    selectedProviderType
-      ? service.serviceProviderTypeId === selectedProviderType
-      : false,
+    selectedProviderType ? service.serviceProviderTypeId === selectedProviderType : false
   );
 
   const filteredRequirements = requirementTypes.filter((requirement) =>
-    selectedProviderType
-      ? requirement.serviceProviderTypeId === selectedProviderType
-      : false,
+    selectedProviderType ? requirement.serviceProviderTypeId === selectedProviderType : false
   );
 
   const onSubmit = (data: ServiceProviderFormType) => {
@@ -111,10 +104,10 @@ function ServiceProviderForm({
         value.forEach((item) => formData.append(key, String(item)));
       } else if (value instanceof File) {
         formData.append(key, value);
-      } else if (typeof value === "object" && value !== null) {
+      } else if (typeof value === 'object' && value !== null) {
         formData.append(key, JSON.stringify(value));
       } else {
-        formData.append(key, String(value ?? ""));
+        formData.append(key, String(value ?? ''));
       }
     });
 
@@ -127,18 +120,15 @@ function ServiceProviderForm({
       <section className="mb-8 space-y-4 rounded-lg p-4">
         <h3 className="mb-8 text-xl font-semibold">Service Provider Details</h3>
 
-        <input type="hidden" {...form.register("userId")} value={userId} />
+        <input type="hidden" {...form.register('userId')} value={userId} />
 
         {/* Service Provider Type */}
         <div className="space-y-2">
-          <label
-            htmlFor="provider-type-label"
-            className="block text-sm font-medium"
-          >
+          <label htmlFor="provider-type-label" className="block text-sm font-medium">
             Provider Type
             <select
               id="provider-type-label"
-              {...form.register("serviceProviderTypeId")}
+              {...form.register('serviceProviderTypeId')}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="">Select a provider type...</option>
@@ -160,60 +150,47 @@ function ServiceProviderForm({
 
         {/* Name */}
         <div className="space-y-2">
-          <label
-            htmlFor="name"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
             Name
             <input
               type="text"
               id="name"
-              {...form.register("name")}
+              {...form.register('name')}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
             {form.formState.errors.name && (
-              <p className="mt-1 text-sm text-red-500">
-                {form.formState.errors.name.message}
-              </p>
+              <p className="mt-1 text-sm text-red-500">{form.formState.errors.name.message}</p>
             )}
           </label>
         </div>
 
         {/* Bio */}
         <div className="space-y-2">
-          <label
-            htmlFor="bio"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
             Bio
             <textarea
               id="bio"
-              {...form.register("bio")}
+              {...form.register('bio')}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               rows={4}
             />
             {form.formState.errors.bio && (
-              <p className="mt-1 text-sm text-red-500">
-                {form.formState.errors.bio.message}
-              </p>
+              <p className="mt-1 text-sm text-red-500">{form.formState.errors.bio.message}</p>
             )}
           </label>
         </div>
 
         {/* Image Upload with Preview */}
         <div className="space-y-4">
-          <label
-            htmlFor="image"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="image" className="block text-sm font-medium text-gray-700">
             Profile Image
             <input
               type="file"
               id="image"
-              accept={ACCEPTED_IMAGE_TYPES.join(",")}
-              {...form.register("image", {
+              accept={ACCEPTED_IMAGE_TYPES.join(',')}
+              {...form.register('image', {
                 onChange: (e) => {
-                  console.log("File selected:", e.target.files);
+                  console.log('File selected:', e.target.files);
                   handleImageChange(e);
                 },
               })}
@@ -227,12 +204,7 @@ function ServiceProviderForm({
           )}
           {imagePreview && (
             <div className="relative h-32 w-32 overflow-hidden rounded-lg">
-              <Image
-                src={imagePreview}
-                alt="Profile preview"
-                fill
-                className="object-cover"
-              />
+              <Image src={imagePreview} alt="Profile preview" fill className="object-cover" />
             </div>
           )}
           <p className="text-sm text-gray-500">
@@ -242,15 +214,12 @@ function ServiceProviderForm({
 
         {/* Languages */}
         <div className="space-y-2">
-          <label
-            htmlFor="languages"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="languages" className="block text-sm font-medium text-gray-700">
             Languages Spoken
             <select
               id="languages"
               multiple
-              {...form.register("languages")}
+              {...form.register('languages')}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               {languages.map((language) => (
@@ -260,26 +229,19 @@ function ServiceProviderForm({
               ))}
             </select>
             {form.formState.errors.languages && (
-              <p className="mt-1 text-sm text-red-500">
-                {form.formState.errors.languages.message}
-              </p>
+              <p className="mt-1 text-sm text-red-500">{form.formState.errors.languages.message}</p>
             )}
           </label>
-          <p className="text-sm text-gray-500">
-            Hold Ctrl/Cmd to select multiple languages
-          </p>
+          <p className="text-sm text-gray-500">Hold Ctrl/Cmd to select multiple languages</p>
         </div>
 
         {/* Billing Type */}
         <div className="space-y-2">
-          <label
-            htmlFor="billingType"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="billingType" className="block text-sm font-medium text-gray-700">
             Billing Type
             <select
               id="billingType"
-              {...form.register("billingType")}
+              {...form.register('billingType')}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="">Select billing type...</option>
@@ -299,22 +261,17 @@ function ServiceProviderForm({
 
         {/* Website */}
         <div className="space-y-2">
-          <label
-            htmlFor="website"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="website" className="block text-sm font-medium text-gray-700">
             Website
             <input
               type="url"
               id="website"
-              {...form.register("website")}
+              {...form.register('website')}
               placeholder="https://example.com"
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
             {form.formState.errors.website && (
-              <p className="mt-1 text-sm text-red-500">
-                {form.formState.errors.website.message}
-              </p>
+              <p className="mt-1 text-sm text-red-500">{form.formState.errors.website.message}</p>
             )}
           </label>
         </div>
@@ -339,14 +296,12 @@ function ServiceProviderForm({
                       type="checkbox"
                       id={`service-${service.id}`}
                       value={service.id}
-                      {...form.register("services")}
+                      {...form.register('services')}
                       className={`h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${
-                        form.formState.errors.services ? "border-red-500" : ""
+                        form.formState.errors.services ? 'border-red-500' : ''
                       }`}
                     />
-                    <span className="text-sm text-gray-700">
-                      {service.name}
-                    </span>
+                    <span className="text-sm text-gray-700">{service.name}</span>
                   </label>
                 ))}
               {form.formState.errors.services && (
@@ -395,14 +350,11 @@ function ServiceProviderForm({
       <section className="mb-8 space-y-4 rounded-lg p-4">
         <h3 className="mb-8 text-xl font-semibold">Terms and Conditions</h3>
         <div className="space-y-2">
-          <label
-            htmlFor="terms-accepted"
-            className="flex items-center space-x-3"
-          >
+          <label htmlFor="terms-accepted" className="flex items-center space-x-3">
             <input
               type="checkbox"
               id="terms-accepted"
-              {...form.register("termsAccepted")}
+              {...form.register('termsAccepted')}
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <span className="text-sm">I agree to the terms and conditions</span>
@@ -417,9 +369,7 @@ function ServiceProviderForm({
 
       {/* Form Status Messages */}
       {state?.error && (
-        <div className="mb-4 rounded-md bg-red-50 p-4 text-red-700">
-          {state.error}
-        </div>
+        <div className="mb-4 rounded-md bg-red-50 p-4 text-red-700">{state.error}</div>
       )}
 
       <button
@@ -435,7 +385,7 @@ function ServiceProviderForm({
             Registering...
           </span>
         ) : (
-          "Register as Provider"
+          'Register as Provider'
         )}
       </button>
     </form>

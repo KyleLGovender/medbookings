@@ -1,27 +1,27 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
-import { CalendarViewWeekTimeGrid } from "@/features/calendar/components/calendar-view-week/calendar-view-week-time-grid";
-import { generateDaysForWeekCalendar } from "@/features/calendar/lib/helper";
-import { Schedule } from "@/features/calendar/lib/types";
+import { CalendarViewWeekTimeGrid } from '@/features/calendar/components/calendar-view-week/calendar-view-week-time-grid';
+import { generateDaysForWeekCalendar } from '@/features/calendar/lib/helper';
+import { Schedule } from '@/features/calendar/lib/types';
 
 interface CalendarViewWeekGridProps {
   rangeStartDate: Date;
   onDateChange: (date: Date) => void;
-  onViewChange?: (view: "day") => void;
+  onViewChange?: (view: 'day') => void;
   scheduleData: Schedule[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
 }
 
 function formatDateRange(weekDays: { date: Date }[]): string {
-  if (!weekDays.length) return "";
+  if (!weekDays.length) return '';
 
   const startDate = weekDays[0].date;
   const endDate = weekDays[weekDays.length - 1].date;
 
-  return `${startDate.toLocaleDateString("en-US", { weekday: "short" })} ${startDate.getDate()} ${startDate.toLocaleDateString("en-US", { month: "short" })} - ${endDate.toLocaleDateString("en-US", { weekday: "short" })} ${endDate.getDate()} ${endDate.toLocaleDateString("en-US", { month: "short" })}`;
+  return `${startDate.toLocaleDateString('en-US', { weekday: 'short' })} ${startDate.getDate()} ${startDate.toLocaleDateString('en-US', { month: 'short' })} - ${endDate.toLocaleDateString('en-US', { weekday: 'short' })} ${endDate.getDate()} ${endDate.toLocaleDateString('en-US', { month: 'short' })}`;
 }
 
 export function CalendarViewWeekGrid({
@@ -36,26 +36,21 @@ export function CalendarViewWeekGrid({
   const containerNav = useRef<HTMLDivElement>(null);
   const containerOffset = useRef<HTMLDivElement>(null);
 
-  const weekDays = useMemo(
-    () => generateDaysForWeekCalendar(rangeStartDate),
-    [rangeStartDate],
-  );
+  const weekDays = useMemo(() => generateDaysForWeekCalendar(rangeStartDate), [rangeStartDate]);
 
   const handleDayClick = useCallback(
     (date: Date) => {
       onDateChange(date);
-      onViewChange("day");
+      onViewChange('day');
     },
-    [onDateChange, onViewChange],
+    [onDateChange, onViewChange]
   );
 
   useEffect(() => {
-    if (!container.current || !containerNav.current || !containerOffset.current)
-      return;
+    if (!container.current || !containerNav.current || !containerOffset.current) return;
 
     const updateScrollPosition = () => {
-      const currentMinute =
-        new Date().getHours() * 60 + new Date().getMinutes();
+      const currentMinute = new Date().getHours() * 60 + new Date().getMinutes();
       container.current!.scrollTop =
         ((container.current!.scrollHeight -
           containerNav.current!.offsetHeight -
@@ -77,10 +72,7 @@ export function CalendarViewWeekGrid({
         {formatDateRange(weekDays)}
       </h2>
 
-      <div
-        ref={container}
-        className="isolate flex flex-auto flex-col overflow-auto bg-white"
-      >
+      <div ref={container} className="isolate flex flex-auto flex-col overflow-auto bg-white">
         <div className="flex max-w-full flex-none flex-col">
           <div
             ref={containerNav}
@@ -90,19 +82,16 @@ export function CalendarViewWeekGrid({
               <div className="sticky left-0 z-10 w-14 flex-none bg-white" />
               <div className="grid flex-auto grid-cols-7 divide-x divide-gray-100">
                 {weekDays.map((day, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-center py-3"
-                  >
+                  <div key={index} className="flex items-center justify-center py-3">
                     <button
                       onClick={() => handleDayClick(day.date)}
                       className="cursor-pointer rounded-lg px-2 py-1 hover:bg-gray-100"
                     >
                       <span>
                         <span className="hidden sm:inline">
-                          {day.date.toLocaleDateString("en-US", {
-                            weekday: "short",
-                          })}{" "}
+                          {day.date.toLocaleDateString('en-US', {
+                            weekday: 'short',
+                          })}{' '}
                         </span>
                         <span className="items-center justify-center font-semibold text-gray-900">
                           {day.date.getDate()}

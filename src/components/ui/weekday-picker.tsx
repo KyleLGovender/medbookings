@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { forwardRef } from "react";
+import { forwardRef } from 'react';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 
 const WEEKDAYS = [
-  { value: 1, label: "Mon" },
-  { value: 2, label: "Tue" },
-  { value: 3, label: "Wed" },
-  { value: 4, label: "Thu" },
-  { value: 5, label: "Fri" },
-  { value: 6, label: "Sat" },
-  { value: 0, label: "Sun" },
+  { value: 1, label: 'Mon' },
+  { value: 2, label: 'Tue' },
+  { value: 3, label: 'Wed' },
+  { value: 4, label: 'Thu' },
+  { value: 5, label: 'Fri' },
+  { value: 6, label: 'Sat' },
+  { value: 0, label: 'Sun' },
 ];
 
 interface WeekdayPickerProps {
@@ -36,7 +36,7 @@ export const WeekdayPicker = forwardRef<HTMLDivElement, WeekdayPickerProps>(
           <Button
             key={label}
             type="button"
-            variant={value.includes(dayValue) ? "default" : "outline"}
+            variant={value.includes(dayValue) ? 'default' : 'outline'}
             size="sm"
             className="h-9 w-12"
             onClick={() => toggleDay(dayValue)}
@@ -46,7 +46,7 @@ export const WeekdayPicker = forwardRef<HTMLDivElement, WeekdayPickerProps>(
         ))}
       </div>
     );
-  },
+  }
 );
 
-WeekdayPicker.displayName = "WeekdayPicker";
+WeekdayPicker.displayName = 'WeekdayPicker';

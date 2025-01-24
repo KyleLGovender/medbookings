@@ -1,30 +1,19 @@
-"use server";
+'use server';
 
-import { z } from "zod";
+import { z } from 'zod';
 
-import { calculateAvailableSpots } from "@/features/calendar/lib/helper";
-import { prisma } from "@/lib/prisma";
+import { calculateAvailableSpots } from '@/features/calendar/lib/helper';
+import { prisma } from '@/lib/prisma';
 
-import { BookingFormSchema, Schedule, availabilityFormSchema } from "./types";
+import { BookingFormSchema, Schedule, availabilityFormSchema } from './types';
 
-function hasTimeOverlap(
-  start1: Date,
-  end1: Date,
-  start2: Date,
-  end2: Date,
-): boolean {
+function hasTimeOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
   return start1 < end2 && start2 < end1;
 }
 
-function hasTimeOfDayOverlap(
-  start1: Date,
-  end1: Date,
-  start2: Date,
-  end2: Date,
-): boolean {
+function hasTimeOfDayOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
   // Convert to minutes since midnight for comparison
-  const getMinutesSinceMidnight = (date: Date) =>
-    date.getHours() * 60 + date.getMinutes();
+  const getMinutesSinceMidnight = (date: Date) => date.getHours() * 60 + date.getMinutes();
 
   const start1Minutes = getMinutesSinceMidnight(start1);
   const end1Minutes = getMinutesSinceMidnight(end1);
@@ -41,7 +30,7 @@ export async function checkForOverlappingAvailability(
   isRecurring: boolean = false,
   recurringDays?: number[],
   recurrenceEndDate?: Date | null,
-  excludeAvailabilityId?: string,
+  excludeAvailabilityId?: string
 ) {
   const availabilities = await prisma.availability.findMany({
     where: {
@@ -60,12 +49,7 @@ export async function checkForOverlappingAvailability(
 
   for (const existing of availabilities) {
     if (!existing.isRecurring && !isRecurring) {
-      const hasOverlap = hasTimeOverlap(
-        startTime,
-        endTime,
-        existing.startTime,
-        existing.endTime,
-      );
+      const hasOverlap = hasTimeOverlap(startTime, endTime, existing.startTime, existing.endTime);
       if (hasOverlap) {
         return {
           hasOverlap: true,
@@ -81,39 +65,31 @@ export async function checkForOverlappingAvailability(
         new Date(
           existing.startTime.getFullYear() + 1,
           existing.startTime.getMonth(),
-          existing.startTime.getDate(),
+          existing.startTime.getDate()
         );
       const newEndDate =
         recurrenceEndDate ||
-        new Date(
-          startTime.getFullYear() + 1,
-          startTime.getMonth(),
-          startTime.getDate(),
-        );
+        new Date(startTime.getFullYear() + 1, startTime.getMonth(), startTime.getDate());
 
       const dateRangeOverlap = hasTimeOverlap(
         startTime,
         newEndDate,
         existing.startTime,
-        existingEndDate,
+        existingEndDate
       );
 
       if (dateRangeOverlap) {
         const existingDays = new Set(existing.recurringDays);
-        const newDays = new Set(
-          isRecurring ? recurringDays : [startTime.getDay()],
-        );
+        const newDays = new Set(isRecurring ? recurringDays : [startTime.getDay()]);
 
-        const hasOverlappingDay = [...existingDays].some((day) =>
-          newDays.has(day),
-        );
+        const hasOverlappingDay = [...existingDays].some((day) => newDays.has(day));
 
         if (hasOverlappingDay) {
           const timeOverlap = hasTimeOfDayOverlap(
             startTime,
             endTime,
             existing.startTime,
-            existing.endTime,
+            existing.endTime
           );
 
           if (timeOverlap) {
@@ -135,7 +111,7 @@ export async function checkForOverlappingAvailability(
 
 export async function checkAvailabilityAccess(
   availabilityId: string,
-  serviceProviderId: string,
+  serviceProviderId: string
 ): Promise<{
   availability?: Schedule;
   error?: string;
@@ -151,29 +127,27 @@ export async function checkAvailabilityAccess(
   });
 
   if (!availability) {
-    return { error: "Availability not found" };
+    return { error: 'Availability not found' };
   }
 
-  if (availability.bookings.some((booking) => booking.status === "CONFIRMED")) {
-    return { error: "Cannot modify availability with confirmed bookings" };
+  if (availability.bookings.some((booking) => booking.status === 'CONFIRMED')) {
+    return { error: 'Cannot modify availability with confirmed bookings' };
   }
 
   return { availability };
 }
 
 export async function validateAvailabilityFormData(formData: FormData) {
-  const recurringDaysString = formData.get("recurringDays") as string;
-  const recurringDays = recurringDaysString
-    ? JSON.parse(recurringDaysString)
-    : [];
-  const recurrenceEndDateString = formData.get("recurrenceEndDate");
+  const recurringDaysString = formData.get('recurringDays') as string;
+  const recurringDays = recurringDaysString ? JSON.parse(recurringDaysString) : [];
+  const recurrenceEndDateString = formData.get('recurrenceEndDate');
 
-  const serviceProviderId = formData.get("serviceProviderId") as string;
-  if (!serviceProviderId) return { error: "Service provider ID is required" };
+  const serviceProviderId = formData.get('serviceProviderId') as string;
+  if (!serviceProviderId) return { error: 'Service provider ID is required' };
 
-  const startTime = new Date(formData.get("startTime") as string);
-  const endTime = new Date(formData.get("endTime") as string);
-  const duration = parseInt(formData.get("duration") as string);
+  const startTime = new Date(formData.get('startTime') as string);
+  const endTime = new Date(formData.get('endTime') as string);
+  const duration = parseInt(formData.get('duration') as string);
 
   const remainingSpots = calculateAvailableSpots({
     startTime,
@@ -184,27 +158,25 @@ export async function validateAvailabilityFormData(formData: FormData) {
   // Validate that we have at least one slot
   if (remainingSpots < 1) {
     return {
-      error: "Time slot is too short for the specified duration",
+      error: 'Time slot is too short for the specified duration',
     };
   }
 
-  const priceValue = parseFloat(formData.get("price") as string);
+  const priceValue = parseFloat(formData.get('price') as string);
 
   const data = {
-    date: new Date(formData.get("date") as string),
+    date: new Date(formData.get('date') as string),
     startTime,
     endTime,
     duration,
     price: priceValue,
-    isOnlineAvailable: formData.get("isOnlineAvailable") === "true",
-    isInPersonAvailable: formData.get("isInPersonAvailable") === "true",
-    location: formData.get("location") as string,
-    isRecurring: formData.get("isRecurring") === "true",
-    recurringDays: JSON.parse(
-      (formData.get("recurringDays") as string) || "[]",
-    ),
-    recurrenceEndDate: formData.get("recurrenceEndDate")
-      ? new Date(formData.get("recurrenceEndDate") as string)
+    isOnlineAvailable: formData.get('isOnlineAvailable') === 'true',
+    isInPersonAvailable: formData.get('isInPersonAvailable') === 'true',
+    location: formData.get('location') as string,
+    isRecurring: formData.get('isRecurring') === 'true',
+    recurringDays: JSON.parse((formData.get('recurringDays') as string) || '[]'),
+    recurrenceEndDate: formData.get('recurrenceEndDate')
+      ? new Date(formData.get('recurrenceEndDate') as string)
       : null,
     remainingSpots: remainingSpots,
     serviceProviderId: serviceProviderId,
@@ -214,10 +186,10 @@ export async function validateAvailabilityFormData(formData: FormData) {
 
   if (!validatedFields.success) {
     const formattedErrors = validatedFields.error.flatten();
-    console.log("Validation errors:", formattedErrors);
+    console.log('Validation errors:', formattedErrors);
 
     return {
-      error: "Validation failed",
+      error: 'Validation failed',
       fieldErrors: formattedErrors.fieldErrors,
       formErrors: formattedErrors.formErrors,
     };
@@ -234,7 +206,7 @@ export async function validateAvailabilityFormData(formData: FormData) {
 
 export async function checkScheduleAccess(
   scheduleId: string,
-  serviceProviderId: string,
+  serviceProviderId: string
 ): Promise<{
   schedule?: Schedule;
   error?: string;
@@ -250,11 +222,11 @@ export async function checkScheduleAccess(
   });
 
   if (!schedule) {
-    return { error: "Schedule not found" };
+    return { error: 'Schedule not found' };
   }
 
-  if (schedule.bookings.some((booking) => booking.status === "CONFIRMED")) {
-    return { error: "Cannot modify schedule with confirmed bookings" };
+  if (schedule.bookings.some((booking) => booking.status === 'CONFIRMED')) {
+    return { error: 'Cannot modify schedule with confirmed bookings' };
   }
 
   return { schedule };
@@ -262,7 +234,7 @@ export async function checkScheduleAccess(
 
 export async function validateBookingWithAvailability(
   data: z.infer<typeof BookingFormSchema>,
-  availability: z.infer<typeof AvailabilitySchema> & { bookings: any[] },
+  availability: z.infer<typeof AvailabilitySchema> & { bookings: any[] }
 ): Promise<{
   isValid: boolean;
   error?: string;
@@ -272,16 +244,16 @@ export async function validateBookingWithAvailability(
   if (data.isOnline && !availability.isOnlineAvailable) {
     return {
       isValid: false,
-      error: "Online bookings are not available for this time slot",
-      path: ["isOnline"],
+      error: 'Online bookings are not available for this time slot',
+      path: ['isOnline'],
     };
   }
 
   if (data.isInPerson && !availability.isInPersonAvailable) {
     return {
       isValid: false,
-      error: "In-person bookings are not available for this time slot",
-      path: ["isInPerson"],
+      error: 'In-person bookings are not available for this time slot',
+      path: ['isInPerson'],
     };
   }
 
@@ -289,8 +261,8 @@ export async function validateBookingWithAvailability(
   if (data.isInPerson && !data.location?.trim()) {
     return {
       isValid: false,
-      error: "Location is required for in-person bookings",
-      path: ["location"],
+      error: 'Location is required for in-person bookings',
+      path: ['location'],
     };
   }
 
@@ -303,8 +275,8 @@ export async function validateBookingWithAvailability(
   if (bookingStart < availabilityStart || bookingEnd > availabilityEnd) {
     return {
       isValid: false,
-      error: "Booking must be within availability time range",
-      path: ["startTime"],
+      error: 'Booking must be within availability time range',
+      path: ['startTime'],
     };
   }
 
@@ -312,8 +284,8 @@ export async function validateBookingWithAvailability(
   if (data.duration !== availability.duration) {
     return {
       isValid: false,
-      error: "Booking duration must match availability duration",
-      path: ["duration"],
+      error: 'Booking duration must match availability duration',
+      path: ['duration'],
     };
   }
 
@@ -323,8 +295,8 @@ export async function validateBookingWithAvailability(
     if (existingBookingsCount >= availability.maxBookings) {
       return {
         isValid: false,
-        error: "Maximum number of bookings reached for this availability",
-        path: ["availabilityId"],
+        error: 'Maximum number of bookings reached for this availability',
+        path: ['availabilityId'],
       };
     }
   }
@@ -333,8 +305,8 @@ export async function validateBookingWithAvailability(
   if (data.price !== availability.price) {
     return {
       isValid: false,
-      error: "Booking price must match availability price",
-      path: ["price"],
+      error: 'Booking price must match availability price',
+      path: ['price'],
     };
   }
 
@@ -348,8 +320,8 @@ export async function validateBookingWithAvailability(
   if (hasOverlap) {
     return {
       isValid: false,
-      error: "This time slot overlaps with an existing booking",
-      path: ["startTime"],
+      error: 'This time slot overlaps with an existing booking',
+      path: ['startTime'],
     };
   }
 
@@ -387,7 +359,7 @@ export async function checkBookingAccess(bookingId: string, userId: string) {
   });
 
   if (!booking) {
-    throw new Error("Booking not found");
+    throw new Error('Booking not found');
   }
 
   // Check if user is the service provider or the client
@@ -395,7 +367,7 @@ export async function checkBookingAccess(bookingId: string, userId: string) {
   const isClient = booking.clientId === userId;
 
   if (!isServiceProvider && !isClient) {
-    throw new Error("Unauthorized access to booking");
+    throw new Error('Unauthorized access to booking');
   }
 
   return booking;

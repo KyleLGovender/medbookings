@@ -1,7 +1,7 @@
-import { UserRole } from "@prisma/client";
-import { getServerSession } from "next-auth";
+import { UserRole } from '@prisma/client';
+import { getServerSession } from 'next-auth';
 
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 interface User {
   id: string;
@@ -19,7 +19,7 @@ export async function getCurrentUser() {
 export async function checkRole(allowedRoles: UserRole[]) {
   const user = await getCurrentUser();
   if (!user || !allowedRoles.includes(user.role)) {
-    throw new Error("Not authorized");
+    throw new Error('Not authorized');
   }
   return user;
 }

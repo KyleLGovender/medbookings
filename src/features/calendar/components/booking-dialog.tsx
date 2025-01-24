@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   Dialog,
@@ -6,24 +6,25 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 
-import { Booking, Schedule } from "../lib/types";
-import { BookingForm } from "./booking-form";
+import { Availability } from '../lib/types';
+import { BookingForm } from './booking-form';
 
 interface BookingDialogProps {
-  availability?: Schedule;
-  booking?: Booking;
-  serviceProviderId: string;
-  mode: "create" | "edit";
+  serviceProviderId?: string;
+  userId?: string;
+  availability?: Availability;
+  mode: 'create' | 'edit';
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onRefresh: () => Promise<void>;
 }
 
 export function BookingDialog({
-  availability,
   serviceProviderId,
+  userId,
+  availability,
   mode,
   open,
   onOpenChange,
@@ -39,11 +40,12 @@ export function BookingDialog({
           </DialogDescription>
         </DialogHeader>
         <BookingForm
-          mode={mode}
           serviceProviderId={serviceProviderId}
+          userId={userId}
+          availability={availability}
+          mode={mode}
           onClose={() => onOpenChange(false)}
           onRefresh={onRefresh}
-          selectedDate={new Date()}
         />
       </DialogContent>
     </Dialog>

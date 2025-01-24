@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
-import { signIn, signOut, useSession } from "next-auth/react";
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
+import { signIn, signOut, useSession } from 'next-auth/react';
 
-import { Spinner } from "@/components/ui/spinner";
+import { Spinner } from '@/components/ui/spinner';
 
 interface MenuItemType {
   label: string;
@@ -17,7 +17,7 @@ interface AuthButtonProps {
 export default function AuthButton({ profileMenuItems = [] }: AuthButtonProps) {
   const { data, status } = useSession();
 
-  if (status === "loading") {
+  if (status === 'loading') {
     return (
       <div className="ml-3 flex h-9 w-9 items-center justify-center">
         <Spinner className="text-blue-600" />
@@ -25,18 +25,14 @@ export default function AuthButton({ profileMenuItems = [] }: AuthButtonProps) {
     );
   }
 
-  if (status === "authenticated") {
+  if (status === 'authenticated') {
     return (
       <Menu as="div" className="relative ml-3">
         <div>
           <MenuButton className="relative flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
             <span className="absolute -inset-1.5" />
             <span className="sr-only">Open user menu</span>
-            <img
-              alt=""
-              src={data?.user?.image ?? undefined}
-              className="size-8 rounded-full"
-            />
+            <img alt="" src={data?.user?.image ?? undefined} className="size-8 rounded-full" />
           </MenuButton>
         </div>
         <MenuItems
@@ -56,7 +52,7 @@ export default function AuthButton({ profileMenuItems = [] }: AuthButtonProps) {
           <MenuItem>
             <a
               href="#"
-              onClick={() => signOut({ callbackUrl: "/" })}
+              onClick={() => signOut({ callbackUrl: '/' })}
               className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none"
             >
               Sign out
@@ -69,16 +65,11 @@ export default function AuthButton({ profileMenuItems = [] }: AuthButtonProps) {
 
   return (
     <button
-      onClick={() => signIn("google", { callbackUrl: "/profile" })}
+      onClick={() => signIn('google', { callbackUrl: '/profile' })}
       className="ml-3 inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
       aria-label="Sign in with Google"
     >
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-      >
+      <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path
           fill="#4285F4"
           d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/20/solid";
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid';
 
-type ViewType = "day" | "week" | "schedule";
+type ViewType = 'day' | 'week' | 'schedule';
 
 interface CalendarNavigationProps {
   viewType: ViewType;
@@ -20,22 +20,22 @@ export function CalendarNavigation({
   onThisWeek,
 }: CalendarNavigationProps) {
   const handleMiddleButtonClick = () => {
-    if (viewType === "day") {
+    if (viewType === 'day') {
       onToday();
-    } else if (viewType === "week" || viewType === "schedule") {
+    } else if (viewType === 'week' || viewType === 'schedule') {
       onThisWeek();
     }
   };
 
   const getMiddleButtonText = () => {
     switch (viewType) {
-      case "day":
-        return "Today";
-      case "week":
-      case "schedule":
-        return "This Week";
+      case 'day':
+        return 'Today';
+      case 'week':
+      case 'schedule':
+        return 'This Week';
       default:
-        return "Today";
+        return 'Today';
     }
   };
 

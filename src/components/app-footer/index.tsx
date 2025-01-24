@@ -1,4 +1,4 @@
-import ThemeSwitcher from "@/components/app-footer/theme-switcher";
+import ThemeSwitcher from '@/components/app-footer/theme-switcher';
 
 export default function AppFooter() {
   return (

@@ -5,16 +5,16 @@ import {
   NotificationLogSchema,
   ServiceProviderSchema,
   UserSchema,
-} from "@prisma/zod";
-import { z } from "zod";
+} from '@prisma/zod';
+import { z } from 'zod';
 
-export type ViewType = "day" | "week" | "schedule";
+export type ViewType = 'day' | 'week' | 'schedule';
 
 export const BookingTypeSchema = z.enum([
-  "USER_SELF",
-  "USER_GUEST",
-  "GUEST_SELF",
-  "PROVIDER_GUEST",
+  'USER_SELF',
+  'USER_GUEST',
+  'GUEST_SELF',
+  'PROVIDER_GUEST',
 ]);
 
 // Define base availability type from schema
@@ -37,27 +37,23 @@ export const AvailabilityFormSchema = AvailabilitySchema.extend({
   if (!data.isOnlineAvailable && !data.isInPersonAvailable) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message:
-        "At least one availability type (Online or In-Person) must be selected",
-      path: ["root"],
+      message: 'At least one availability type (Online or In-Person) must be selected',
+      path: ['root'],
     });
   }
 
-  if (
-    data.isRecurring &&
-    (!data.recurringDays || data.recurringDays.length === 0)
-  ) {
+  if (data.isRecurring && (!data.recurringDays || data.recurringDays.length === 0)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Please select at least one day for recurring availability",
-      path: ["recurringDays"],
+      message: 'Please select at least one day for recurring availability',
+      path: ['recurringDays'],
     });
   }
 });
 
 export type AvailabilityFormValues = z.infer<typeof AvailabilityFormSchema>;
 
-export type BookingType = z.infer<typeof BookingTypeSchema>;
+export type Booking = z.infer<typeof BookingTypeSchema>;
 
 // Define booking schema extending the base schema
 export const BookingFormSchema = BookingSchema.extend({
@@ -69,8 +65,8 @@ export const BookingFormSchema = BookingSchema.extend({
   }),
   guestInfo: z
     .object({
-      name: z.string().min(1, "Guest name is required"),
-      email: z.string().email("Invalid email").optional(),
+      name: z.string().min(1, 'Guest name is required'),
+      email: z.string().email('Invalid email').optional(),
       phone: z.string().optional(),
       whatsapp: z.string().optional(),
     })
@@ -85,8 +81,8 @@ export const BookingFormSchema = BookingSchema.extend({
   if (!hasNotificationMethod) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "At least one notification method must be selected",
-      path: ["notificationPreferences"],
+      message: 'At least one notification method must be selected',
+      path: ['notificationPreferences'],
     });
   }
 
@@ -95,22 +91,22 @@ export const BookingFormSchema = BookingSchema.extend({
     if (data.notificationPreferences.email && !data.guestInfo.email) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Email is required for email notifications",
-        path: ["guestInfo.email"],
+        message: 'Email is required for email notifications',
+        path: ['guestInfo.email'],
       });
     }
     if (data.notificationPreferences.sms && !data.guestInfo.phone) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Phone number is required for SMS notifications",
-        path: ["guestInfo.phone"],
+        message: 'Phone number is required for SMS notifications',
+        path: ['guestInfo.phone'],
       });
     }
     if (data.notificationPreferences.whatsapp && !data.guestInfo.whatsapp) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "WhatsApp number is required for WhatsApp notifications",
-        path: ["guestInfo.whatsapp"],
+        message: 'WhatsApp number is required for WhatsApp notifications',
+        path: ['guestInfo.whatsapp'],
       });
     }
   }
@@ -120,10 +116,10 @@ export type BookingFormValues = z.infer<typeof BookingFormSchema>;
 
 // Schedule type using the new schemas
 export interface Schedule extends Availability {
-  type: "AVAILABILITY";
+  type: 'AVAILABILITY';
   bookings: Array<
     Booking & {
-      type: "BOOKING";
+      type: 'BOOKING';
       client: {
         name: string | null;
       };
@@ -145,7 +141,7 @@ export const BookingCreateSchema = z
   .object({
     serviceProviderId: BookingSchema.shape.serviceProviderId,
     availabilityId: BookingSchema.shape.availabilityId,
-    bookingType: z.enum(["USER", "GUEST"]),
+    bookingType: z.enum(['USER', 'GUEST']),
     userId: z.string().optional(),
     guestInfo: z
       .object({
@@ -171,52 +167,49 @@ export const BookingCreateSchema = z
     if (bookingStart >= bookingEnd) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Booking start time must be before end time",
-        path: ["startTime"],
+        message: 'Booking start time must be before end time',
+        path: ['startTime'],
       });
     }
 
     // Ensure duration matches start/end time difference
-    const durationInMinutes =
-      (bookingEnd.getTime() - bookingStart.getTime()) / (1000 * 60);
+    const durationInMinutes = (bookingEnd.getTime() - bookingStart.getTime()) / (1000 * 60);
     if (durationInMinutes !== data.duration) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message:
-          "Booking duration must match the time difference between start and end times",
-        path: ["duration"],
+        message: 'Booking duration must match the time difference between start and end times',
+        path: ['duration'],
       });
     }
 
     // Validate notification channels have corresponding contact info
-    if (data.bookingType === "GUEST" && data.guestInfo) {
+    if (data.bookingType === 'GUEST' && data.guestInfo) {
       data.notificationChannels.forEach((channel) => {
         switch (channel) {
-          case "EMAIL":
+          case 'EMAIL':
             if (!data.guestInfo?.email) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: "Email is required for email notifications",
-                path: ["guestInfo.email"],
+                message: 'Email is required for email notifications',
+                path: ['guestInfo.email'],
               });
             }
             break;
-          case "SMS":
+          case 'SMS':
             if (!data.guestInfo?.phone) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: "Phone number is required for SMS notifications",
-                path: ["guestInfo.phone"],
+                message: 'Phone number is required for SMS notifications',
+                path: ['guestInfo.phone'],
               });
             }
             break;
-          case "WHATSAPP":
+          case 'WHATSAPP':
             if (!data.guestInfo?.whatsapp) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message:
-                  "WhatsApp number is required for WhatsApp notifications",
-                path: ["guestInfo.whatsapp"],
+                message: 'WhatsApp number is required for WhatsApp notifications',
+                path: ['guestInfo.whatsapp'],
               });
             }
             break;

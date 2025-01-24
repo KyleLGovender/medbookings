@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 
-import { formatTime } from "@/lib/helper";
-import { cn } from "@/lib/utils";
+import { formatTime } from '@/lib/helper';
+import { cn } from '@/lib/utils';
 
 interface CalendarViewEventItemProps {
   schedule: {
     id: string;
-    type: "BOOKING";
+    type: 'BOOKING';
     startTime: string;
     endTime: string;
     client: {
@@ -30,7 +30,7 @@ interface CalendarViewEventItemProps {
   };
   gridPosition: string;
   gridColumn: number;
-  onEventClick?: (schedule: CalendarViewEventItemProps["schedule"]) => void;
+  onEventClick?: (schedule: CalendarViewEventItemProps['schedule']) => void;
 }
 
 export function CalendarViewEventItem({
@@ -39,7 +39,7 @@ export function CalendarViewEventItem({
   gridColumn,
   onEventClick,
 }: CalendarViewEventItemProps) {
-  console.log("CalendarViewEventItem - Rendering:", {
+  console.log('CalendarViewEventItem - Rendering:', {
     id: schedule.id,
     startTime: schedule.startTime,
     endTime: schedule.endTime,
@@ -53,17 +53,17 @@ export function CalendarViewEventItem({
 
   function getStatusIndicator() {
     if ((schedule.bookings ?? []).length >= (schedule.maxBookings ?? 0)) {
-      return "bg-red-500"; // Fully booked
+      return 'bg-red-500'; // Fully booked
     }
     if ((schedule.bookings ?? []).length > 0) {
-      return "bg-yellow-500"; // Partially booked
+      return 'bg-yellow-500'; // Partially booked
     }
-    return "bg-green-500"; // Available
+    return 'bg-green-500'; // Available
   }
 
   return (
     <li
-      className={cn("relative mt-px flex", `sm:col-start-${gridColumn}`)}
+      className={cn('relative mt-px flex', `sm:col-start-${gridColumn}`)}
       style={{ gridRow: gridPosition }}
     >
       <button
@@ -71,42 +71,30 @@ export function CalendarViewEventItem({
         onMouseEnter={() => setIsTooltipVisible(true)}
         onMouseLeave={() => setIsTooltipVisible(false)}
         className={cn(
-          "group absolute inset-1 flex w-full flex-col overflow-y-auto rounded-lg p-2 text-xs/5",
-          "transition-colors duration-200",
-          hasBookings
-            ? "bg-green-50 hover:bg-green-100"
-            : "bg-blue-50 hover:bg-blue-100",
+          'group absolute inset-1 flex w-full flex-col overflow-y-auto rounded-lg p-2 text-xs/5',
+          'transition-colors duration-200',
+          hasBookings ? 'bg-green-50 hover:bg-green-100' : 'bg-blue-50 hover:bg-blue-100'
         )}
       >
         {/* Status Indicator */}
-        <span
-          className={cn(
-            "absolute right-1 top-1 size-2 rounded-full",
-            getStatusIndicator(),
-          )}
-        />
+        <span className={cn('absolute right-1 top-1 size-2 rounded-full', getStatusIndicator())} />
 
         {/* Main Content */}
         <div className="flex flex-col gap-0.5">
           <p
             className={cn(
-              "order-1 font-semibold",
-              hasBookings ? "text-green-700" : "text-blue-700",
+              'order-1 font-semibold',
+              hasBookings ? 'text-green-700' : 'text-blue-700'
             )}
           >
             {hasBookings
               ? `Booked (${schedule.bookings?.length}/${schedule.maxBookings})`
-              : "Available"}
+              : 'Available'}
           </p>
 
-          <p
-            className={cn(
-              "text-xs",
-              hasBookings ? "text-green-500" : "text-blue-500",
-            )}
-          >
+          <p className={cn('text-xs', hasBookings ? 'text-green-500' : 'text-blue-500')}>
             {formatTime(new Date(schedule.startTime))}
-            {" - "}
+            {' - '}
             {formatTime(new Date(schedule.endTime))}
           </p>
 
@@ -115,12 +103,9 @@ export function CalendarViewEventItem({
             <p>Duration: {schedule.duration}min</p>
             <p>Price: R{schedule.price}</p>
             <p>
-              {[
-                schedule.isOnlineAvailable && "Online",
-                schedule.isInPersonAvailable && "In-Person",
-              ]
+              {[schedule.isOnlineAvailable && 'Online', schedule.isInPersonAvailable && 'In-Person']
                 .filter(Boolean)
-                .join(" | ")}
+                .join(' | ')}
             </p>
             {schedule.isRecurring && <p>Recurring</p>}
           </div>
@@ -133,17 +118,17 @@ export function CalendarViewEventItem({
               <p className="font-semibold">
                 {hasBookings
                   ? `Booked (${schedule.bookings?.length}/${schedule.maxBookings})`
-                  : "Available"}
+                  : 'Available'}
               </p>
               <p>Duration: {schedule.duration}min</p>
               <p>Price: R{schedule.price}</p>
               <p>
                 {[
-                  schedule.isOnlineAvailable && "Online",
-                  schedule.isInPersonAvailable && "In-Person",
+                  schedule.isOnlineAvailable && 'Online',
+                  schedule.isInPersonAvailable && 'In-Person',
                 ]
                   .filter(Boolean)
-                  .join(" | ")}
+                  .join(' | ')}
               </p>
               {schedule.isRecurring && <p>Recurring</p>}
               {hasBookings && (
@@ -151,8 +136,7 @@ export function CalendarViewEventItem({
                   <p className="font-semibold">Bookings:</p>
                   {schedule.bookings?.map((booking) => (
                     <p key={booking.id} className="text-gray-600">
-                      {booking.client.name} (
-                      {booking.isOnline ? "Online" : "In-Person"})
+                      {booking.client.name} ({booking.isOnline ? 'Online' : 'In-Person'})
                     </p>
                   ))}
                 </div>
