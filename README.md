@@ -73,6 +73,12 @@ Generate the prisma client
 npx prisma generate
 ```
 
+Seed the database
+
+```bash
+npx prisma db seed
+```
+
 To see the database run the following command
 
 ```bash
@@ -152,7 +158,7 @@ style I fill:#dfd,stroke:#333
 ```typescript
 // lib/validations/booking.ts
 export const bookingSchema = z.object({
-  bookingType: z.enum(["SELF", "OTHER_USER", "GUEST"]),
+  bookingType: z.enum(['SELF', 'OTHER_USER', 'GUEST']),
   userId: z.string().optional(),
   guestDetails: z
     .object({

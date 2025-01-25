@@ -76,35 +76,36 @@ model ServiceProviderType {
 
 // Service Provider
 model ServiceProvider {
-  id                     String                  @id @default(cuid())
+  id                     String                      @id @default(cuid())
   name                   String
-  user                   User                    @relation(fields: [userId], references: [id])
-  userId                 String                  @unique
-  serviceProviderType    ServiceProviderType     @relation(fields: [serviceProviderTypeId], references: [id])
+  user                   User                        @relation(fields: [userId], references: [id])
+  userId                 String                      @unique
+  serviceProviderType    ServiceProviderType         @relation(fields: [serviceProviderTypeId], references: [id])
   serviceProviderTypeId  String
-  bio                    String?                 @db.Text
+  bio                    String?                     @db.Text
   services               Service[]
   requirementSubmissions RequirementSubmission[]
   availabilities         Availability[]
   bookings               Booking[]
   calendarIntegration    CalendarIntegration?
-  status                 ServiceProviderStatus    @default(PENDING)
+  status                 ServiceProviderStatus       @default(PENDING)
   verifiedAt             DateTime?
-  timezone               String                  @default("UTC")
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
+  timezone               String                      @default("UTC")
+  createdAt              DateTime                    @default(now())
+  updatedAt              DateTime                    @updatedAt
   trialStarted           DateTime?
   trialEnded             DateTime?
   subscription           Subscription?
   googlePlaceId          String? // Google Business Profile ID
   googleBusinessAccount  String? // Google Business Account ID
   averageRating          Float? // Cached average rating
-  totalReviews           Int                     @default(0)
+  totalReviews           Int                         @default(0)
   reviews                Review[]
   image                  String // URL to provider's image in Vercel Blob
   languages              Languages[] // Array of languages spoken
-  billingType            BillingType             @default(PRIVATE_ONLY)
-  website                String?                 @db.Text // Must be a valid URL
+  billingType            BillingType                 @default(PRIVATE_ONLY)
+  website                String?                     @db.Text // Must be a valid URL
+  availabilityConfigs    ServiceAvailabilityConfig[]
 }
 
 enum ServiceProviderStatus {
@@ -198,95 +199,124 @@ enum RequirementsValidationStatus {
   REJECTED
 }
 
-// Modified Service model
+// Modified Service model to include duration and price defaults
 model Service {
-  id                    String              @id @default(cuid())
+  id                    String                       @id @default(cuid())
   name                  String
   description           String?
-  serviceProviderType   ServiceProviderType @relation(fields: [serviceProviderTypeId], references: [id])
+  serviceProviderType   ServiceProviderType          @relation(fields: [serviceProviderTypeId], references: [id])
   serviceProviderTypeId String
-  displayPriority       Int                 @default(0)
-  providers             ServiceProvider[] // Many-to-many relation with providers who offer this service
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  displayPriority       Int                          @default(0)
+  defaultDuration       Int // Default duration in minutes
+  defaultPrice          Decimal                      @db.Decimal(10, 2)
+  providers             ServiceProvider[]
+  availabilityConfigs   ServiceAvailabilityConfig[]
+  calculatedSlots       CalculatedAvailabilitySlot[]
+  bookings              Booking[]
+  createdAt             DateTime                     @default(now())
+  updatedAt             DateTime                     @updatedAt
 
   @@index([serviceProviderTypeId, displayPriority])
 }
 
-// Calendar and Booking Management
-model Availability {
+// New model for service-specific availability configurations
+model ServiceAvailabilityConfig {
   id                String          @id @default(cuid())
+  service           Service         @relation(fields: [serviceId], references: [id])
+  serviceId         String
   serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
+  serviceProviderId String
+  duration          Int // Duration in minutes
+  price             Decimal         @db.Decimal(10, 2)
+  isOnlineAvailable Boolean         @default(false)
+  isInPerson        Boolean         @default(false)
+  location          String?
+  availabilities    Availability[]
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([serviceId, serviceProviderId])
+  @@index([serviceProviderId])
+}
+
+// Modified Availability model
+model Availability {
+  id                String                       @id @default(cuid())
+  serviceProvider   ServiceProvider              @relation(fields: [serviceProviderId], references: [id])
   serviceProviderId String
   startTime         DateTime
   endTime           DateTime
-  isRecurring       Boolean         @default(false)
+  isRecurring       Boolean                      @default(false)
   recurringDays     Int[] // Array of days (0-6 for Sunday-Saturday)
-  recurrenceEndDate DateTime? // End date for recurring availability
-
-  // Consultation configuration
-  duration            Int // Duration in minutes
-  price               Decimal @db.Decimal(10, 2)
-  isOnlineAvailable   Boolean @default(false)
-  isInPersonAvailable Boolean @default(false)
-  location            String? // For in-person consultations
-
-  maxBookings    Int       @default(1) // For group sessions
-  remainingSpots Int
-  bookings       Booking[]
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  recurrenceEndDate DateTime?
+  availableServices ServiceAvailabilityConfig[]
+  calculatedSlots   CalculatedAvailabilitySlot[]
+  createdAt         DateTime                     @default(now())
+  updatedAt         DateTime                     @updatedAt
 
   @@index([serviceProviderId, startTime, endTime])
 }
 
-enum BookingCreatorType {
-  GUEST
-  USER
-  SERVICE_PROVIDER
-  ADMIN
-}
-
-enum BookingRelationType {
-  SELF // Booking for self
-  DEPENDENT // e.g., Parent booking for child
-  GUEST // Booking for a guest/friend
-  PROFESSIONAL // Service provider or admin booking
-}
-
-model Booking {
-  id String @id @default(cuid())
-
-  // Add these fields
-  bookedBy   User?    @relation("BookedBy", fields: [bookedById], references: [id])
-  bookedById String?
-
-  // Client Information (either user or guest)
-  client         User?   @relation("BookingClient", fields: [clientId], references: [id])
-  clientId       String? // Null for guest bookings
-  guestName      String? // Required for guest bookings
-  guestEmail     String? // Optional contact for guests
-  guestPhone     String? // Optional contact for guests
-  guestWhatsapp  String? // Optional contact for guests
-
-  // Service Provider
-  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
-  serviceProviderId String
-
-  // Booking details
-  availability   Availability      @relation(fields: [availabilityId], references: [id])
+// New model for pre-calculated availability slots
+model CalculatedAvailabilitySlot {
+  id             String       @id @default(cuid())
+  availability   Availability @relation(fields: [availabilityId], references: [id])
   availabilityId String
+  service        Service      @relation(fields: [serviceId], references: [id])
+  serviceId      String
   startTime      DateTime
   endTime        DateTime
-  duration       Int // in minutes
-  price          Decimal          @db.Decimal(10, 2)
-  isOnline       Boolean
-  isInPerson     Boolean          @default(false)
-  location       String?
-  status         BookingStatus    @default(PENDING)
-  notes          String?          @db.Text
-  notifications  NotificationLog[]
-  review         Review?
+  status         SlotStatus   @default(AVAILABLE)
+  booking        Booking? // One-to-one relation with booking
+  lastCalculated DateTime // When this slot was last recalculated
+
+  @@index([availabilityId, serviceId, startTime, status])
+  @@index([startTime, status, serviceId]) // For quick lookup of available slots
+}
+
+enum SlotStatus {
+  AVAILABLE
+  BOOKED
+  BLOCKED // For breaks or administrative purposes
+  INVALID // Used when a slot becomes invalid due to other bookings
+}
+
+// Modified Booking model
+model Booking {
+  id     String                      @id @default(cuid())
+  slot   CalculatedAvailabilitySlot? @relation(fields: [slotId], references: [id])
+  slotId String?                     @unique // One booking per slot
+
+  // Who created the booking
+  bookedBy   User?   @relation("BookedBy", fields: [bookedById], references: [id])
+  bookedById String?
+
+  // Client Information
+  client        User?   @relation("BookingClient", fields: [clientId], references: [id])
+  clientId      String? // Null for guest bookings
+  guestName     String? // Required for guest bookings
+  guestEmail    String? // Optional contact for guests
+  guestPhone    String? // Optional contact for guests
+  guestWhatsapp String? // Optional contact for guests
+
+  // Service Provider and Service details
+  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
+  serviceProviderId String
+  service           Service         @relation(fields: [serviceId], references: [id])
+  serviceId         String
+
+  // Booking details
+  startTime     DateTime
+  endTime       DateTime
+  duration      Int // in minutes
+  price         Decimal           @db.Decimal(10, 2)
+  isOnline      Boolean
+  isInPerson    Boolean           @default(false)
+  location      String?
+  status        BookingStatus     @default(PENDING)
+  notes         String?           @db.Text
+  notifications NotificationLog[]
+  review        Review?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

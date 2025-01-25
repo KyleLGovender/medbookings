@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -12,219 +12,222 @@ async function main() {
   const providerTypes = await Promise.all([
     prisma.serviceProviderType.create({
       data: {
-        name: "General Practitioner",
+        name: 'General Practitioner',
         description:
-          "A doctor who practices primary health care. They must be licensed by the HPCSA and have medical insurance.",
+          'A doctor who practices primary health care. They must be licensed by the HPCSA and have medical insurance.',
       },
     }),
     prisma.serviceProviderType.create({
       data: {
-        name: "Psychologist",
+        name: 'Psychologist',
         description:
-          "A professional who practices psychology and studies mental states, perceptual, cognitive, emotional, and social processes and behavior",
+          'A professional who practices psychology and studies mental states, perceptual, cognitive, emotional, and social processes and behavior',
       },
     }),
   ]);
 
   // eslint-disable-next-line no-console
-  console.log("providerTypes", providerTypes);
+  console.log('providerTypes', providerTypes);
 
   // Create services
   const services = await Promise.all([
     prisma.service.create({
       data: {
-        name: "General Consultation",
-        description:
-          "Standard medical consultation for general health concerns",
-        serviceProviderType: { connect: { name: "General Practitioner" } },
+        name: 'General Consultation',
+        description: 'Standard medical consultation for general health concerns',
+        serviceProviderType: { connect: { name: 'General Practitioner' } },
         displayPriority: 1,
+        defaultDuration: 15, // in minutes
+        defaultPrice: 650.0, // in ZAR
       },
     }),
     prisma.service.create({
       data: {
-        name: "Chronic Disease Management",
+        name: 'Chronic Disease Management',
         description:
-          "Ongoing care and management of chronic conditions like diabetes, hypertension, and asthma",
-        serviceProviderType: { connect: { name: "General Practitioner" } },
+          'Ongoing care and management of chronic conditions like diabetes, hypertension, and asthma',
+        serviceProviderType: { connect: { name: 'General Practitioner' } },
         displayPriority: 2,
+        defaultDuration: 30,
+        defaultPrice: 950.0,
       },
     }),
     prisma.service.create({
       data: {
-        name: "Preventive Health Screening",
-        description: "Regular health check-ups and preventive screenings",
-        serviceProviderType: { connect: { name: "General Practitioner" } },
+        name: 'Preventive Health Screening',
+        description: 'Regular health check-ups and preventive screenings',
+        serviceProviderType: { connect: { name: 'General Practitioner' } },
         displayPriority: 3,
+        defaultDuration: 30,
+        defaultPrice: 950.0,
       },
     }),
     prisma.service.create({
       data: {
-        name: "Prescription Refill",
-        description: "Refill of prescription medications",
-        serviceProviderType: { connect: { name: "General Practitioner" } },
+        name: 'Prescription Refill',
+        description: 'Refill of prescription medications',
+        serviceProviderType: { connect: { name: 'General Practitioner' } },
         displayPriority: 4,
+        defaultDuration: 5,
+        defaultPrice: 300.0,
       },
     }),
   ]);
 
   // eslint-disable-next-line no-console
-  console.log("services", services);
+  console.log('services', services);
 
   // Create requirements types
   const requirements = await Promise.all([
     prisma.requirementType.create({
       data: {
-        name: "HPCSA Membership",
+        name: 'HPCSA Membership',
         description:
-          "Are you currently registered as a member of the Health Professions Council of South Africa (HPCSA)?",
+          'Are you currently registered as a member of the Health Professions Council of South Africa (HPCSA)?',
         isRequired: true,
-        validationType: "BOOLEAN",
+        validationType: 'BOOLEAN',
         validationConfig: {
-          trueLabel: "Yes, I am registered",
-          falseLabel: "No, I am not registered",
+          trueLabel: 'Yes, I am registered',
+          falseLabel: 'No, I am not registered',
           defaultValue: null, // Force user to make explicit choice
-          helpText:
-            "You must be a registered HPCSA member to practice in South Africa",
+          helpText: 'You must be a registered HPCSA member to practice in South Africa',
           validationError:
-            "Please confirm your HPCSA registration status. This is a mandatory requirement.",
-          placeholder: "Select your HPCSA registration status",
+            'Please confirm your HPCSA registration status. This is a mandatory requirement.',
+          placeholder: 'Select your HPCSA registration status',
         },
         displayPriority: 1,
-        serviceProviderType: { connect: { name: "General Practitioner" } },
+        serviceProviderType: { connect: { name: 'General Practitioner' } },
       },
     }),
     prisma.requirementType.create({
       data: {
-        name: "HPCSA Registration Number",
-        description:
-          "Please provide your HPCSA registration number (e.g., MP123456)",
+        name: 'HPCSA Registration Number',
+        description: 'Please provide your HPCSA registration number (e.g., MP123456)',
         isRequired: true,
-        validationType: "TEXT",
+        validationType: 'TEXT',
         validationConfig: {
           minLength: 8,
           maxLength: 10,
-          pattern: "^MP\\d{6}$", // Regex pattern for "MP" followed by 6 digits
-          patternError: "HPCSA number must start with MP followed by 6 digits",
+          pattern: '^MP\\d{6}$', // Regex pattern for "MP" followed by 6 digits
+          patternError: 'HPCSA number must start with MP followed by 6 digits',
           caseSensitive: false, // Whether to enforce case sensitivity
           trimWhitespace: true, // Whether to remove leading/trailing whitespace
           helpText:
             'Your HPCSA number can be found on your registration certificate. It starts with "MP" followed by 6 digits. For General Practitioners, the number format is MP123456.',
           validationError:
-            "Please enter a valid HPCSA number. It should start with MP followed by exactly 6 digits.",
-          placeholder: "Enter your HPCSA number (e.g., MP123456)",
+            'Please enter a valid HPCSA number. It should start with MP followed by exactly 6 digits.',
+          placeholder: 'Enter your HPCSA number (e.g., MP123456)',
         },
         displayPriority: 2,
-        serviceProviderType: { connect: { name: "General Practitioner" } },
+        serviceProviderType: { connect: { name: 'General Practitioner' } },
       },
     }),
     prisma.requirementType.create({
       data: {
-        name: "HPCSA Registration",
+        name: 'HPCSA Registration',
         description:
-          "Valid HPCSA registration for practicing as a General Practitioner in South Africa",
+          'Valid HPCSA registration for practicing as a General Practitioner in South Africa',
         isRequired: true,
-        validationType: "DOCUMENT",
+        validationType: 'DOCUMENT',
         validationConfig: {
-          expectedFormat: "PDF",
+          expectedFormat: 'PDF',
           maxSizeMB: 5,
           helpText:
-            "Please upload your valid HPCSA registration for practicing as a General Practitioner in South Africa.",
-          validationError:
-            "Please upload a PDF document that is less than 5MB in size.",
-          placeholder: "Upload your valid HPCSA registration",
+            'Please upload your valid HPCSA registration for practicing as a General Practitioner in South Africa.',
+          validationError: 'Please upload a PDF document that is less than 5MB in size.',
+          placeholder: 'Upload your valid HPCSA registration',
         },
         displayPriority: 3,
         serviceProviderType: {
-          connect: { name: "General Practitioner" },
+          connect: { name: 'General Practitioner' },
         },
       },
     }),
     prisma.requirementType.create({
       data: {
-        name: "Medical Practice Insurance",
+        name: 'Medical Practice Insurance',
         description:
-          "Do you have current Medical Practice Insurance (Professional Indemnity) that covers you to practice as a General Practitioner?",
+          'Do you have current Medical Practice Insurance (Professional Indemnity) that covers you to practice as a General Practitioner?',
         isRequired: true,
-        validationType: "BOOLEAN",
+        validationType: 'BOOLEAN',
         validationConfig: {
-          trueLabel: "Yes, I have Medical Practice Insurance",
-          falseLabel: "No, I do not have Medical Practice Insurance",
+          trueLabel: 'Yes, I have Medical Practice Insurance',
+          falseLabel: 'No, I do not have Medical Practice Insurance',
           defaultValue: null,
           helpText:
-            "Medical Practice Insurance (also known as Professional Indemnity) is mandatory for practicing as a GP in South Africa. Common providers include Medical Protection Society (MPS) and Medical Defence Union (MDU).",
+            'Medical Practice Insurance (also known as Professional Indemnity) is mandatory for practicing as a GP in South Africa. Common providers include Medical Protection Society (MPS) and Medical Defence Union (MDU).',
           validationError:
-            "Please confirm your Medical Practice Insurance status. This is a mandatory requirement for practicing as a GP.",
-          placeholder: "Select your Medical Practice Insurance status",
+            'Please confirm your Medical Practice Insurance status. This is a mandatory requirement for practicing as a GP.',
+          placeholder: 'Select your Medical Practice Insurance status',
         },
         displayPriority: 4,
-        serviceProviderType: { connect: { name: "General Practitioner" } },
+        serviceProviderType: { connect: { name: 'General Practitioner' } },
       },
     }),
     prisma.requirementType.create({
       data: {
-        name: "GP Medical Practice Insurance",
-        description: "When does your professional indemnity insurance expire?",
+        name: 'GP Medical Practice Insurance',
+        description: 'When does your professional indemnity insurance expire?',
         isRequired: true,
-        validationType: "FUTURE_DATE",
+        validationType: 'FUTURE_DATE',
         validationConfig: {
           minDaysInFuture: 30,
           helpText:
-            "Your Medical Practice Insurance must be valid for at least 30 days from today. Please check your insurance certificate for the expiry date. We will notify you 60 days before expiry to ensure continuous coverage.",
+            'Your Medical Practice Insurance must be valid for at least 30 days from today. Please check your insurance certificate for the expiry date. We will notify you 60 days before expiry to ensure continuous coverage.',
           validationError:
-            "The expiry date must be at least 30 days in the future. If your insurance expires sooner, please renew it before continuing.",
-          placeholder: "Select insurance expiry date",
-          dateFormat: "YYYY-MM-DD",
-          displayFormat: "DD/MM/YYYY",
+            'The expiry date must be at least 30 days in the future. If your insurance expires sooner, please renew it before continuing.',
+          placeholder: 'Select insurance expiry date',
+          dateFormat: 'YYYY-MM-DD',
+          displayFormat: 'DD/MM/YYYY',
           warningThreshold: 60, // Days before expiry to start showing warnings
           warningText:
-            "Your insurance will expire soon. Please arrange renewal to ensure continuous coverage.",
+            'Your insurance will expire soon. Please arrange renewal to ensure continuous coverage.',
         },
         displayPriority: 5,
-        serviceProviderType: { connect: { name: "General Practitioner" } },
+        serviceProviderType: { connect: { name: 'General Practitioner' } },
       },
     }),
     prisma.requirementType.create({
       data: {
-        name: "Medical Practice Insurance Certificate",
+        name: 'Medical Practice Insurance Certificate',
         description:
-          "Please upload your current Medical Practice Insurance (Professional Indemnity) certificate. This should clearly show your name, policy number, and coverage period.",
+          'Please upload your current Medical Practice Insurance (Professional Indemnity) certificate. This should clearly show your name, policy number, and coverage period.',
         isRequired: true,
-        validationType: "DOCUMENT",
+        validationType: 'DOCUMENT',
         validationConfig: {
-          expectedFormat: "PDF",
+          expectedFormat: 'PDF',
           maxSizeMB: 5,
-          helpText: "Please upload your current Medical Practice Insurance.",
-          validationError:
-            "Please upload a PDF document that is less than 5MB in size.",
-          placeholder: "Upload your Medical Practice Insurance",
+          helpText: 'Please upload your current Medical Practice Insurance.',
+          validationError: 'Please upload a PDF document that is less than 5MB in size.',
+          placeholder: 'Upload your Medical Practice Insurance',
         },
         displayPriority: 6,
-        serviceProviderType: { connect: { name: "General Practitioner" } },
+        serviceProviderType: { connect: { name: 'General Practitioner' } },
       },
     }),
     prisma.requirementType.create({
       data: {
-        name: "Medical School",
-        description: "Which medical school did you graduate from?",
+        name: 'Medical School',
+        description: 'Which medical school did you graduate from?',
         isRequired: true,
-        validationType: "PREDEFINED_LIST",
+        validationType: 'PREDEFINED_LIST',
         validationConfig: {
           options: [
-            { value: "UCT", label: "University of Cape Town" },
-            { value: "WITS", label: "University of the Witwatersrand" },
-            { value: "UP", label: "University of Pretoria" },
-            { value: "SU", label: "Stellenbosch University" },
-            { value: "UKZN", label: "University of KwaZulu-Natal" },
-            { value: "UFS", label: "University of the Free State" },
-            { value: "WSU", label: "Walter Sisulu University" },
+            { value: 'UCT', label: 'University of Cape Town' },
+            { value: 'WITS', label: 'University of the Witwatersrand' },
+            { value: 'UP', label: 'University of Pretoria' },
+            { value: 'SU', label: 'Stellenbosch University' },
+            { value: 'UKZN', label: 'University of KwaZulu-Natal' },
+            { value: 'UFS', label: 'University of the Free State' },
+            { value: 'WSU', label: 'Walter Sisulu University' },
             {
-              value: "SMU",
-              label: "Sefako Makgatho Health Sciences University",
+              value: 'SMU',
+              label: 'Sefako Makgatho Health Sciences University',
             },
           ],
           allowMultiple: false,
           allowOther: true,
-          otherLabel: "Other medical school (please specify)",
+          otherLabel: 'Other medical school (please specify)',
           otherValidation: {
             minLength: 3,
             maxLength: 100,
@@ -233,123 +236,116 @@ async function main() {
           helpText:
             'Select your medical school from the list. If you graduated from an institution outside South Africa or one not listed, please select "Other" and provide the full name of your medical school.',
           validationError:
-            "Please select a medical school or enter the name of your institution if not listed. The name must be between 3 and 100 characters.",
-          placeholder: "Select your medical school",
+            'Please select a medical school or enter the name of your institution if not listed. The name must be between 3 and 100 characters.',
+          placeholder: 'Select your medical school',
         },
         displayPriority: 7,
-        serviceProviderType: { connect: { name: "General Practitioner" } },
+        serviceProviderType: { connect: { name: 'General Practitioner' } },
       },
     }),
     prisma.requirementType.create({
       data: {
-        name: "Medical School Graduation Year",
-        description: "In which year did you graduate from medical school?",
+        name: 'Medical School Graduation Year',
+        description: 'In which year did you graduate from medical school?',
         isRequired: true,
-        validationType: "PAST_DATE",
+        validationType: 'PAST_DATE',
         validationConfig: {
-          dateFormat: "YYYY", // Only capture the year
+          dateFormat: 'YYYY', // Only capture the year
           minYear: 1960, // Reasonable lower bound
           maxYear: new Date().getFullYear(), // Cannot be in the future
-          displayFormat: "Year only",
-          placeholder: "2015",
-          helpText:
-            "Please enter the year you completed your medical degree (MBChB/MBBS)",
-          validationError:
-            "Please enter a valid graduation year. It cannot be in the future.",
+          displayFormat: 'Year only',
+          placeholder: '2015',
+          helpText: 'Please enter the year you completed your medical degree (MBChB/MBBS)',
+          validationError: 'Please enter a valid graduation year. It cannot be in the future.',
         },
         displayPriority: 8,
-        serviceProviderType: { connect: { name: "General Practitioner" } },
+        serviceProviderType: { connect: { name: 'General Practitioner' } },
       },
     }),
     prisma.requirementType.create({
       data: {
-        name: "Medical Degree Certificate",
+        name: 'Medical Degree Certificate',
         description:
-          "Please upload a copy of your medical degree certificate (MBChB/MBBCh/MBBS/MD)",
+          'Please upload a copy of your medical degree certificate (MBChB/MBBCh/MBBS/MD)',
         isRequired: true,
-        validationType: "DOCUMENT",
+        validationType: 'DOCUMENT',
         validationConfig: {
-          expectedFormat: ["PDF"],
+          expectedFormat: ['PDF'],
           maxSizeMB: 5,
           helpText:
-            "Please upload a clear, complete scan of your original medical degree certificate.",
-          validationError:
-            "Please upload a PDF document that is less than 5MB in size.",
-          placeholder: "Upload your medical degree certificate",
+            'Please upload a clear, complete scan of your original medical degree certificate.',
+          validationError: 'Please upload a PDF document that is less than 5MB in size.',
+          placeholder: 'Upload your medical degree certificate',
         },
         displayPriority: 9,
-        serviceProviderType: { connect: { name: "General Practitioner" } },
+        serviceProviderType: { connect: { name: 'General Practitioner' } },
       },
     }),
     prisma.requirementType.create({
       data: {
-        name: "HPCSA Membership",
+        name: 'HPCSA Membership',
         description:
-          "Are you currently registered as a member of the Health Professions Council of South Africa (HPCSA)?",
+          'Are you currently registered as a member of the Health Professions Council of South Africa (HPCSA)?',
         isRequired: true,
-        validationType: "BOOLEAN",
+        validationType: 'BOOLEAN',
         validationConfig: {
-          trueLabel: "Yes, I am registered",
-          falseLabel: "No, I am not registered",
+          trueLabel: 'Yes, I am registered',
+          falseLabel: 'No, I am not registered',
           defaultValue: null, // Force user to make explicit choice
-          helpText:
-            "You must be a registered HPCSA member to practice in South Africa",
+          helpText: 'You must be a registered HPCSA member to practice in South Africa',
           validationError:
-            "Please confirm your HPCSA registration status. This is a mandatory requirement.",
-          placeholder: "Select your HPCSA registration status",
+            'Please confirm your HPCSA registration status. This is a mandatory requirement.',
+          placeholder: 'Select your HPCSA registration status',
         },
         displayPriority: 1,
-        serviceProviderType: { connect: { name: "Psychologist" } },
+        serviceProviderType: { connect: { name: 'Psychologist' } },
       },
     }),
     prisma.requirementType.create({
       data: {
-        name: "HPCSA Registration Number",
-        description:
-          "Please provide your HPCSA registration number (e.g., MP123456)",
+        name: 'HPCSA Registration Number',
+        description: 'Please provide your HPCSA registration number (e.g., MP123456)',
         isRequired: true,
-        validationType: "TEXT",
+        validationType: 'TEXT',
         validationConfig: {
           minLength: 8,
           maxLength: 10,
-          pattern: "^MP\\d{6}$", // Regex pattern for "MP" followed by 6 digits
-          patternError: "HPCSA number must start with MP followed by 6 digits",
+          pattern: '^MP\\d{6}$', // Regex pattern for "MP" followed by 6 digits
+          patternError: 'HPCSA number must start with MP followed by 6 digits',
           caseSensitive: false, // Whether to enforce case sensitivity
           trimWhitespace: true, // Whether to remove leading/trailing whitespace
           helpText:
             'Your HPCSA number can be found on your registration certificate. It starts with "MP" followed by 6 digits. For General Practitioners, the number format is MP123456.',
           validationError:
-            "Please enter a valid HPCSA number. It should start with MP followed by exactly 6 digits.",
-          placeholder: "Enter your HPCSA number (e.g., MP123456)",
+            'Please enter a valid HPCSA number. It should start with MP followed by exactly 6 digits.',
+          placeholder: 'Enter your HPCSA number (e.g., MP123456)',
         },
         displayPriority: 2,
-        serviceProviderType: { connect: { name: "Psychologist" } },
+        serviceProviderType: { connect: { name: 'Psychologist' } },
       },
     }),
     prisma.requirementType.create({
       data: {
-        name: "HPCSA Registration",
-        description:
-          "Valid HPCSA registration for practicing as a Psychologist in South Africa",
+        name: 'HPCSA Registration',
+        description: 'Valid HPCSA registration for practicing as a Psychologist in South Africa',
         isRequired: true,
-        validationType: "DOCUMENT",
+        validationType: 'DOCUMENT',
         validationConfig: {
-          expectedFormat: "PDF",
+          expectedFormat: 'PDF',
           maxSizeMB: 5,
           helpText:
-            "Please upload your valid HPCSA registration for practicing as a Psychologist in South Africa.",
-          validationError:
-            "Please upload a PDF document that is less than 5MB in size.",
-          placeholder: "Upload your valid HPCSA registration",
+            'Please upload your valid HPCSA registration for practicing as a Psychologist in South Africa.',
+          validationError: 'Please upload a PDF document that is less than 5MB in size.',
+          placeholder: 'Upload your valid HPCSA registration',
         },
         displayPriority: 3,
-        serviceProviderType: { connect: { name: "Psychologist" } },
+        serviceProviderType: { connect: { name: 'Psychologist' } },
       },
     }),
   ]);
 
   // eslint-disable-next-line no-console
-  console.log("requirements", requirements);
+  console.log('requirements', requirements);
 }
 
 main()
