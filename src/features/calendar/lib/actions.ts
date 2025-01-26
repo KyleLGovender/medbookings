@@ -119,7 +119,12 @@ export async function deleteAvailability(
 export async function updateAvailability(
   availabilityId: string,
   formData: FormData
-): Promise<{ data?: Availability; error?: string }> {
+): Promise<{
+  data?: Availability;
+  error?: string;
+  fieldErrors?: Record<string, string[]>;
+  formErrors?: string[];
+}> {
   const serviceProviderId = formData.get('serviceProviderId') as string;
   if (!serviceProviderId) return { error: 'Service provider ID is required' };
 

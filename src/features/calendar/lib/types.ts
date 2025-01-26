@@ -1,9 +1,12 @@
 import {
   AvailabilitySchema,
   BookingSchema,
+  CalculatedAvailabilitySlotSchema,
   NotificationChannelSchema,
   NotificationLogSchema,
+  ServiceAvailabilityConfigSchema,
   ServiceProviderSchema,
+  ServiceSchema,
   UserSchema,
 } from '@prisma/zod';
 import { z } from 'zod';
@@ -17,30 +20,55 @@ export const BookingTypeSchema = z.enum([
   'PROVIDER_GUEST',
 ]);
 
-// Define base availability type from schema
+// Update base availability type to match schema
 export type Availability = z.infer<typeof AvailabilitySchema> & {
-  price: number; // Ensure price is always number
-  startTime: string; // ISO string
-  endTime: string; // ISO string
-  recurrenceEndDate: string | null;
-  recurringDays: number[];
+  serviceProvider: z.infer<typeof ServiceProviderSchema>;
+  availableServices: z.infer<typeof ServiceAvailabilityConfigSchema>[];
+  calculatedSlots: z.infer<typeof CalculatedAvailabilitySlotSchema>[];
 };
 
-// Define the availability form schema using the base schema
+// Update availability form schema
 export const AvailabilityFormSchema = AvailabilitySchema.extend({
-  isOnlineAvailable: z.boolean(),
-  isInPersonAvailable: z.boolean(),
+  date: z
+    .date({
+      required_error: 'Date is required',
+      invalid_type_error: 'Invalid date format',
+    })
+    .min(new Date(new Date().setHours(0, 0, 0, 0)), 'Date cannot be in the past'),
+  startTime: z.date(),
+  endTime: z.date(),
+  serviceIds: z.array(z.string()),
   isRecurring: z.boolean(),
   recurringDays: z.array(z.number()),
   recurrenceEndDate: z.date().nullable(),
+  availableServices: z.array(
+    z.object({
+      serviceId: z.string(),
+      duration: z.number(),
+      price: z.number(),
+      isOnlineAvailable: z.boolean(),
+      isInPerson: z.boolean(),
+      location: z.string().optional(),
+    })
+  ),
 }).superRefine((data, ctx) => {
-  if (!data.isOnlineAvailable && !data.isInPersonAvailable) {
+  if (data.availableServices.length === 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'At least one availability type (Online or In-Person) must be selected',
-      path: ['root'],
+      message: 'At least one service configuration must be specified',
+      path: ['availableServices'],
     });
   }
+
+  data.availableServices.forEach((service, index) => {
+    if (!service.isOnlineAvailable && !service.isInPerson) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'At least one availability type must be selected',
+        path: [`availableServices.${index}`],
+      });
+    }
+  });
 
   if (data.isRecurring && (!data.recurringDays || data.recurringDays.length === 0)) {
     ctx.addIssue({
@@ -49,14 +77,55 @@ export const AvailabilityFormSchema = AvailabilitySchema.extend({
       path: ['recurringDays'],
     });
   }
+
+  // Validate start time is before end time
+  if (data.startTime >= data.endTime) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Start time must be before end time',
+      path: ['startTime'],
+    });
+  }
+
+  // Validate time is within same day
+  const startHours = data.startTime.getHours();
+  const endHours = data.endTime.getHours();
+  if (endHours < startHours) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'End time cannot be on the next day',
+      path: ['endTime'],
+    });
+  }
+
+  // Validate recurring end date if recurring is enabled
+  if (data.isRecurring && data.recurrenceEndDate) {
+    if (data.recurrenceEndDate <= data.date) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Recurrence end date must be after start date',
+        path: ['recurrenceEndDate'],
+      });
+    }
+  }
 });
 
 export type AvailabilityFormValues = z.infer<typeof AvailabilityFormSchema>;
 
-export type Booking = z.infer<typeof BookingTypeSchema>;
+// Update booking type to match schema
+export type Booking = z.infer<typeof BookingSchema> & {
+  slot: z.infer<typeof CalculatedAvailabilitySlotSchema>;
+  client?: z.infer<typeof UserSchema>;
+  bookedBy?: z.infer<typeof UserSchema>;
+  serviceProvider: z.infer<typeof ServiceProviderSchema>;
+  service: z.infer<typeof ServiceSchema>;
+  notifications: z.infer<typeof NotificationLogSchema>[];
+  bookingType: z.infer<typeof BookingTypeSchema>;
+};
 
-// Define booking schema extending the base schema
+// Update booking form schema
 export const BookingFormSchema = BookingSchema.extend({
+  slotId: z.string(),
   bookingType: BookingTypeSchema,
   notificationPreferences: z.object({
     email: z.boolean(),
@@ -114,17 +183,18 @@ export const BookingFormSchema = BookingSchema.extend({
 
 export type BookingFormValues = z.infer<typeof BookingFormSchema>;
 
-// Schedule type using the new schemas
-export interface Schedule extends Availability {
+// Add new type for calculated availability slots
+export type CalculatedAvailabilitySlot = z.infer<typeof CalculatedAvailabilitySlotSchema> & {
+  availability: Availability;
+  service: z.infer<typeof ServiceSchema>;
+  booking?: Booking;
+};
+
+// Update Schedule type to use calculated slots
+export interface Schedule {
   type: 'AVAILABILITY';
-  bookings: Array<
-    Booking & {
-      type: 'BOOKING';
-      client: {
-        name: string | null;
-      };
-    }
-  >;
+  availability: Availability;
+  calculatedSlots: CalculatedAvailabilitySlot[];
 }
 
 export const NotificationPreferencesSchema = z.object({
@@ -140,7 +210,7 @@ export const NotificationPreferencesSchema = z.object({
 export const BookingCreateSchema = z
   .object({
     serviceProviderId: BookingSchema.shape.serviceProviderId,
-    availabilityId: BookingSchema.shape.availabilityId,
+    slotId: BookingSchema.shape.slotId,
     bookingType: z.enum(['USER', 'GUEST']),
     userId: z.string().optional(),
     guestInfo: z
@@ -232,11 +302,7 @@ export interface BookingWithRelations extends z.infer<typeof BookingSchema> {
   availability: z.infer<typeof AvailabilitySchema>;
   notifications: z.infer<typeof NotificationLogSchema>[];
   // Add bookingType to track the type of booking
-  bookingType: BookingType;
+  bookingType: z.infer<typeof BookingTypeSchema>;
 }
 
-export interface TimeSlot {
-  startTime: Date;
-  endTime: Date;
-  isAvailable: boolean;
-}
+export type Service = z.infer<typeof ServiceSchema>;

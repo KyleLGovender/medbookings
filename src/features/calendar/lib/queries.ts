@@ -37,7 +37,17 @@ export async function getServiceProviderScheduleInRange(
         ],
       },
       include: {
-        bookings: true,
+        calculatedSlots: {
+          include: {
+            booking: true,
+            service: true,
+          },
+        },
+        availableServices: {
+          include: {
+            service: true,
+          },
+        },
       },
       orderBy: {
         startTime: 'asc',
@@ -48,9 +58,13 @@ export async function getServiceProviderScheduleInRange(
       if (!availability.isRecurring) {
         return [
           {
-            ...availability,
-            price: Number(availability.price),
-            bookings: availability.bookings || [],
+            type: 'single',
+            availability: {
+              ...availability,
+              bookings: availability.calculatedSlots
+                .filter((slot) => slot.booking)
+                .map((slot) => slot.booking!),
+            },
           },
         ];
       }
@@ -80,17 +94,19 @@ export async function getServiceProviderScheduleInRange(
             availability.endTime.getMinutes()
           );
 
-          const instanceBookings = availability.bookings.filter((booking) =>
-            isSameDay(booking.startTime, date)
-          );
+          const instanceBookings = availability.calculatedSlots
+            .filter((slot) => slot.booking && isSameDay(slot.booking.startTime, date))
+            .map((slot) => slot.booking!);
 
           return {
-            ...availability,
-            id: `${availability.id}-${date.toISOString().split('T')[0]}`,
-            startTime: instanceStartTime,
-            endTime: instanceEndTime,
-            price: Number(availability.price),
-            bookings: instanceBookings,
+            type: 'recurring',
+            availability: {
+              ...availability,
+              id: `${availability.id}-${date.toISOString().split('T')[0]}`,
+              startTime: instanceStartTime,
+              endTime: instanceEndTime,
+              bookings: instanceBookings,
+            },
           };
         });
     });

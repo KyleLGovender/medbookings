@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { calculateAvailableSpots } from '@/features/calendar/lib/helper';
 import { prisma } from '@/lib/prisma';
 
-import { BookingFormSchema, Schedule, availabilityFormSchema } from './types';
+import { AvailabilityFormSchema, BookingFormSchema, Schedule } from './types';
 
 function hasTimeOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
   return start1 < end2 && start2 < end1;
@@ -182,7 +182,7 @@ export async function validateAvailabilityFormData(formData: FormData) {
     serviceProviderId: serviceProviderId,
   };
 
-  const validatedFields = availabilityFormSchema.safeParse(data);
+  const validatedFields = AvailabilityFormSchema.safeParse(data);
 
   if (!validatedFields.success) {
     const formattedErrors = validatedFields.error.flatten();
@@ -217,7 +217,11 @@ export async function checkScheduleAccess(
       serviceProviderId,
     },
     include: {
-      bookings: true,
+      calculatedSlots: {
+        include: {
+          booking: true,
+        },
+      },
     },
   });
 
@@ -225,7 +229,7 @@ export async function checkScheduleAccess(
     return { error: 'Schedule not found' };
   }
 
-  if (schedule.bookings.some((booking) => booking.status === 'CONFIRMED')) {
+  if (schedule.calculatedSlots.some((slot) => slot.booking?.status === 'CONFIRMED')) {
     return { error: 'Cannot modify schedule with confirmed bookings' };
   }
 
