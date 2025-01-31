@@ -94,9 +94,9 @@ export const ServiceScalarFieldEnumSchema = z.enum(['id','name','description','s
 
 export const ServiceAvailabilityConfigScalarFieldEnumSchema = z.enum(['id','serviceId','serviceProviderId','duration','price','isOnlineAvailable','isInPerson','location','createdAt','updatedAt']);
 
-export const AvailabilityScalarFieldEnumSchema = z.enum(['id','serviceProviderId','startTime','endTime','isRecurring','recurringDays','recurrenceEndDate','createdAt','updatedAt']);
+export const AvailabilityScalarFieldEnumSchema = z.enum(['id','serviceProviderId','startTime','endTime','createdAt','updatedAt']);
 
-export const CalculatedAvailabilitySlotScalarFieldEnumSchema = z.enum(['id','availabilityId','serviceId','startTime','endTime','status','lastCalculated']);
+export const CalculatedAvailabilitySlotScalarFieldEnumSchema = z.enum(['id','availabilityId','serviceId','serviceConfigId','startTime','endTime','status','lastCalculated']);
 
 export const BookingScalarFieldEnumSchema = z.enum(['id','slotId','bookedById','clientId','guestName','guestEmail','guestPhone','guestWhatsapp','serviceProviderId','serviceId','startTime','endTime','duration','price','isOnline','isInPerson','location','status','notes','createdAt','updatedAt']);
 
@@ -356,9 +356,6 @@ export const AvailabilitySchema = z.object({
   serviceProviderId: z.string(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
-  isRecurring: z.boolean(),
-  recurringDays: z.number().int().array(),
-  recurrenceEndDate: z.coerce.date().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })
@@ -374,6 +371,7 @@ export const CalculatedAvailabilitySlotSchema = z.object({
   id: z.string().cuid(),
   availabilityId: z.string(),
   serviceId: z.string(),
+  serviceConfigId: z.string(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
   lastCalculated: z.coerce.date(),
@@ -868,6 +866,7 @@ export const ServiceAvailabilityConfigIncludeSchema: z.ZodType<Prisma.ServiceAva
   service: z.union([z.boolean(),z.lazy(() => ServiceArgsSchema)]).optional(),
   serviceProvider: z.union([z.boolean(),z.lazy(() => ServiceProviderArgsSchema)]).optional(),
   availabilities: z.union([z.boolean(),z.lazy(() => AvailabilityFindManyArgsSchema)]).optional(),
+  calculatedSlots: z.union([z.boolean(),z.lazy(() => CalculatedAvailabilitySlotFindManyArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => ServiceAvailabilityConfigCountOutputTypeArgsSchema)]).optional(),
 }).strict()
 
@@ -882,6 +881,7 @@ export const ServiceAvailabilityConfigCountOutputTypeArgsSchema: z.ZodType<Prism
 
 export const ServiceAvailabilityConfigCountOutputTypeSelectSchema: z.ZodType<Prisma.ServiceAvailabilityConfigCountOutputTypeSelect> = z.object({
   availabilities: z.boolean().optional(),
+  calculatedSlots: z.boolean().optional(),
 }).strict();
 
 export const ServiceAvailabilityConfigSelectSchema: z.ZodType<Prisma.ServiceAvailabilityConfigSelect> = z.object({
@@ -898,6 +898,7 @@ export const ServiceAvailabilityConfigSelectSchema: z.ZodType<Prisma.ServiceAvai
   service: z.union([z.boolean(),z.lazy(() => ServiceArgsSchema)]).optional(),
   serviceProvider: z.union([z.boolean(),z.lazy(() => ServiceProviderArgsSchema)]).optional(),
   availabilities: z.union([z.boolean(),z.lazy(() => AvailabilityFindManyArgsSchema)]).optional(),
+  calculatedSlots: z.union([z.boolean(),z.lazy(() => CalculatedAvailabilitySlotFindManyArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => ServiceAvailabilityConfigCountOutputTypeArgsSchema)]).optional(),
 }).strict()
 
@@ -930,9 +931,6 @@ export const AvailabilitySelectSchema: z.ZodType<Prisma.AvailabilitySelect> = z.
   serviceProviderId: z.boolean().optional(),
   startTime: z.boolean().optional(),
   endTime: z.boolean().optional(),
-  isRecurring: z.boolean().optional(),
-  recurringDays: z.boolean().optional(),
-  recurrenceEndDate: z.boolean().optional(),
   createdAt: z.boolean().optional(),
   updatedAt: z.boolean().optional(),
   serviceProvider: z.union([z.boolean(),z.lazy(() => ServiceProviderArgsSchema)]).optional(),
@@ -947,6 +945,7 @@ export const AvailabilitySelectSchema: z.ZodType<Prisma.AvailabilitySelect> = z.
 export const CalculatedAvailabilitySlotIncludeSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotInclude> = z.object({
   availability: z.union([z.boolean(),z.lazy(() => AvailabilityArgsSchema)]).optional(),
   service: z.union([z.boolean(),z.lazy(() => ServiceArgsSchema)]).optional(),
+  serviceConfig: z.union([z.boolean(),z.lazy(() => ServiceAvailabilityConfigArgsSchema)]).optional(),
   booking: z.union([z.boolean(),z.lazy(() => BookingArgsSchema)]).optional(),
 }).strict()
 
@@ -959,12 +958,14 @@ export const CalculatedAvailabilitySlotSelectSchema: z.ZodType<Prisma.Calculated
   id: z.boolean().optional(),
   availabilityId: z.boolean().optional(),
   serviceId: z.boolean().optional(),
+  serviceConfigId: z.boolean().optional(),
   startTime: z.boolean().optional(),
   endTime: z.boolean().optional(),
   status: z.boolean().optional(),
   lastCalculated: z.boolean().optional(),
   availability: z.union([z.boolean(),z.lazy(() => AvailabilityArgsSchema)]).optional(),
   service: z.union([z.boolean(),z.lazy(() => ServiceArgsSchema)]).optional(),
+  serviceConfig: z.union([z.boolean(),z.lazy(() => ServiceAvailabilityConfigArgsSchema)]).optional(),
   booking: z.union([z.boolean(),z.lazy(() => BookingArgsSchema)]).optional(),
 }).strict()
 
@@ -2028,7 +2029,8 @@ export const ServiceAvailabilityConfigWhereInputSchema: z.ZodType<Prisma.Service
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   service: z.union([ z.lazy(() => ServiceRelationFilterSchema),z.lazy(() => ServiceWhereInputSchema) ]).optional(),
   serviceProvider: z.union([ z.lazy(() => ServiceProviderRelationFilterSchema),z.lazy(() => ServiceProviderWhereInputSchema) ]).optional(),
-  availabilities: z.lazy(() => AvailabilityListRelationFilterSchema).optional()
+  availabilities: z.lazy(() => AvailabilityListRelationFilterSchema).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotListRelationFilterSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigOrderByWithRelationInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigOrderByWithRelationInput> = z.object({
@@ -2044,7 +2046,8 @@ export const ServiceAvailabilityConfigOrderByWithRelationInputSchema: z.ZodType<
   updatedAt: z.lazy(() => SortOrderSchema).optional(),
   service: z.lazy(() => ServiceOrderByWithRelationInputSchema).optional(),
   serviceProvider: z.lazy(() => ServiceProviderOrderByWithRelationInputSchema).optional(),
-  availabilities: z.lazy(() => AvailabilityOrderByRelationAggregateInputSchema).optional()
+  availabilities: z.lazy(() => AvailabilityOrderByRelationAggregateInputSchema).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotOrderByRelationAggregateInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigWhereUniqueInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigWhereUniqueInput> = z.union([
@@ -2076,7 +2079,8 @@ export const ServiceAvailabilityConfigWhereUniqueInputSchema: z.ZodType<Prisma.S
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   service: z.union([ z.lazy(() => ServiceRelationFilterSchema),z.lazy(() => ServiceWhereInputSchema) ]).optional(),
   serviceProvider: z.union([ z.lazy(() => ServiceProviderRelationFilterSchema),z.lazy(() => ServiceProviderWhereInputSchema) ]).optional(),
-  availabilities: z.lazy(() => AvailabilityListRelationFilterSchema).optional()
+  availabilities: z.lazy(() => AvailabilityListRelationFilterSchema).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotListRelationFilterSchema).optional()
 }).strict());
 
 export const ServiceAvailabilityConfigOrderByWithAggregationInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigOrderByWithAggregationInput> = z.object({
@@ -2121,9 +2125,6 @@ export const AvailabilityWhereInputSchema: z.ZodType<Prisma.AvailabilityWhereInp
   serviceProviderId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
   startTime: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   endTime: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
-  isRecurring: z.union([ z.lazy(() => BoolFilterSchema),z.boolean() ]).optional(),
-  recurringDays: z.lazy(() => IntNullableListFilterSchema).optional(),
-  recurrenceEndDate: z.union([ z.lazy(() => DateTimeNullableFilterSchema),z.coerce.date() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   serviceProvider: z.union([ z.lazy(() => ServiceProviderRelationFilterSchema),z.lazy(() => ServiceProviderWhereInputSchema) ]).optional(),
@@ -2136,9 +2137,6 @@ export const AvailabilityOrderByWithRelationInputSchema: z.ZodType<Prisma.Availa
   serviceProviderId: z.lazy(() => SortOrderSchema).optional(),
   startTime: z.lazy(() => SortOrderSchema).optional(),
   endTime: z.lazy(() => SortOrderSchema).optional(),
-  isRecurring: z.lazy(() => SortOrderSchema).optional(),
-  recurringDays: z.lazy(() => SortOrderSchema).optional(),
-  recurrenceEndDate: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional(),
   serviceProvider: z.lazy(() => ServiceProviderOrderByWithRelationInputSchema).optional(),
@@ -2157,9 +2155,6 @@ export const AvailabilityWhereUniqueInputSchema: z.ZodType<Prisma.AvailabilityWh
   serviceProviderId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
   startTime: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   endTime: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
-  isRecurring: z.union([ z.lazy(() => BoolFilterSchema),z.boolean() ]).optional(),
-  recurringDays: z.lazy(() => IntNullableListFilterSchema).optional(),
-  recurrenceEndDate: z.union([ z.lazy(() => DateTimeNullableFilterSchema),z.coerce.date() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   serviceProvider: z.union([ z.lazy(() => ServiceProviderRelationFilterSchema),z.lazy(() => ServiceProviderWhereInputSchema) ]).optional(),
@@ -2172,16 +2167,11 @@ export const AvailabilityOrderByWithAggregationInputSchema: z.ZodType<Prisma.Ava
   serviceProviderId: z.lazy(() => SortOrderSchema).optional(),
   startTime: z.lazy(() => SortOrderSchema).optional(),
   endTime: z.lazy(() => SortOrderSchema).optional(),
-  isRecurring: z.lazy(() => SortOrderSchema).optional(),
-  recurringDays: z.lazy(() => SortOrderSchema).optional(),
-  recurrenceEndDate: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional(),
   _count: z.lazy(() => AvailabilityCountOrderByAggregateInputSchema).optional(),
-  _avg: z.lazy(() => AvailabilityAvgOrderByAggregateInputSchema).optional(),
   _max: z.lazy(() => AvailabilityMaxOrderByAggregateInputSchema).optional(),
-  _min: z.lazy(() => AvailabilityMinOrderByAggregateInputSchema).optional(),
-  _sum: z.lazy(() => AvailabilitySumOrderByAggregateInputSchema).optional()
+  _min: z.lazy(() => AvailabilityMinOrderByAggregateInputSchema).optional()
 }).strict();
 
 export const AvailabilityScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.AvailabilityScalarWhereWithAggregatesInput> = z.object({
@@ -2192,9 +2182,6 @@ export const AvailabilityScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.
   serviceProviderId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
   startTime: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema),z.coerce.date() ]).optional(),
   endTime: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema),z.coerce.date() ]).optional(),
-  isRecurring: z.union([ z.lazy(() => BoolWithAggregatesFilterSchema),z.boolean() ]).optional(),
-  recurringDays: z.lazy(() => IntNullableListFilterSchema).optional(),
-  recurrenceEndDate: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema),z.coerce.date() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema),z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema),z.coerce.date() ]).optional(),
 }).strict();
@@ -2206,12 +2193,14 @@ export const CalculatedAvailabilitySlotWhereInputSchema: z.ZodType<Prisma.Calcul
   id: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
   availabilityId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
   serviceId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  serviceConfigId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
   startTime: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   endTime: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   status: z.union([ z.lazy(() => EnumSlotStatusFilterSchema),z.lazy(() => SlotStatusSchema) ]).optional(),
   lastCalculated: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   availability: z.union([ z.lazy(() => AvailabilityRelationFilterSchema),z.lazy(() => AvailabilityWhereInputSchema) ]).optional(),
   service: z.union([ z.lazy(() => ServiceRelationFilterSchema),z.lazy(() => ServiceWhereInputSchema) ]).optional(),
+  serviceConfig: z.union([ z.lazy(() => ServiceAvailabilityConfigRelationFilterSchema),z.lazy(() => ServiceAvailabilityConfigWhereInputSchema) ]).optional(),
   booking: z.union([ z.lazy(() => BookingNullableRelationFilterSchema),z.lazy(() => BookingWhereInputSchema) ]).optional().nullable(),
 }).strict();
 
@@ -2219,12 +2208,14 @@ export const CalculatedAvailabilitySlotOrderByWithRelationInputSchema: z.ZodType
   id: z.lazy(() => SortOrderSchema).optional(),
   availabilityId: z.lazy(() => SortOrderSchema).optional(),
   serviceId: z.lazy(() => SortOrderSchema).optional(),
+  serviceConfigId: z.lazy(() => SortOrderSchema).optional(),
   startTime: z.lazy(() => SortOrderSchema).optional(),
   endTime: z.lazy(() => SortOrderSchema).optional(),
   status: z.lazy(() => SortOrderSchema).optional(),
   lastCalculated: z.lazy(() => SortOrderSchema).optional(),
   availability: z.lazy(() => AvailabilityOrderByWithRelationInputSchema).optional(),
   service: z.lazy(() => ServiceOrderByWithRelationInputSchema).optional(),
+  serviceConfig: z.lazy(() => ServiceAvailabilityConfigOrderByWithRelationInputSchema).optional(),
   booking: z.lazy(() => BookingOrderByWithRelationInputSchema).optional()
 }).strict();
 
@@ -2238,12 +2229,14 @@ export const CalculatedAvailabilitySlotWhereUniqueInputSchema: z.ZodType<Prisma.
   NOT: z.union([ z.lazy(() => CalculatedAvailabilitySlotWhereInputSchema),z.lazy(() => CalculatedAvailabilitySlotWhereInputSchema).array() ]).optional(),
   availabilityId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
   serviceId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  serviceConfigId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
   startTime: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   endTime: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   status: z.union([ z.lazy(() => EnumSlotStatusFilterSchema),z.lazy(() => SlotStatusSchema) ]).optional(),
   lastCalculated: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   availability: z.union([ z.lazy(() => AvailabilityRelationFilterSchema),z.lazy(() => AvailabilityWhereInputSchema) ]).optional(),
   service: z.union([ z.lazy(() => ServiceRelationFilterSchema),z.lazy(() => ServiceWhereInputSchema) ]).optional(),
+  serviceConfig: z.union([ z.lazy(() => ServiceAvailabilityConfigRelationFilterSchema),z.lazy(() => ServiceAvailabilityConfigWhereInputSchema) ]).optional(),
   booking: z.union([ z.lazy(() => BookingNullableRelationFilterSchema),z.lazy(() => BookingWhereInputSchema) ]).optional().nullable(),
 }).strict());
 
@@ -2251,6 +2244,7 @@ export const CalculatedAvailabilitySlotOrderByWithAggregationInputSchema: z.ZodT
   id: z.lazy(() => SortOrderSchema).optional(),
   availabilityId: z.lazy(() => SortOrderSchema).optional(),
   serviceId: z.lazy(() => SortOrderSchema).optional(),
+  serviceConfigId: z.lazy(() => SortOrderSchema).optional(),
   startTime: z.lazy(() => SortOrderSchema).optional(),
   endTime: z.lazy(() => SortOrderSchema).optional(),
   status: z.lazy(() => SortOrderSchema).optional(),
@@ -2267,6 +2261,7 @@ export const CalculatedAvailabilitySlotScalarWhereWithAggregatesInputSchema: z.Z
   id: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
   availabilityId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
   serviceId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
+  serviceConfigId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
   startTime: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema),z.coerce.date() ]).optional(),
   endTime: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema),z.coerce.date() ]).optional(),
   status: z.union([ z.lazy(() => EnumSlotStatusWithAggregatesFilterSchema),z.lazy(() => SlotStatusSchema) ]).optional(),
@@ -3912,7 +3907,8 @@ export const ServiceAvailabilityConfigCreateInputSchema: z.ZodType<Prisma.Servic
   updatedAt: z.coerce.date().optional(),
   service: z.lazy(() => ServiceCreateNestedOneWithoutAvailabilityConfigsInputSchema),
   serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutAvailabilityConfigsInputSchema),
-  availabilities: z.lazy(() => AvailabilityCreateNestedManyWithoutAvailableServicesInputSchema).optional()
+  availabilities: z.lazy(() => AvailabilityCreateNestedManyWithoutAvailableServicesInputSchema).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotCreateNestedManyWithoutServiceConfigInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigUncheckedCreateInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUncheckedCreateInput> = z.object({
@@ -3926,7 +3922,8 @@ export const ServiceAvailabilityConfigUncheckedCreateInputSchema: z.ZodType<Pris
   location: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
-  availabilities: z.lazy(() => AvailabilityUncheckedCreateNestedManyWithoutAvailableServicesInputSchema).optional()
+  availabilities: z.lazy(() => AvailabilityUncheckedCreateNestedManyWithoutAvailableServicesInputSchema).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotUncheckedCreateNestedManyWithoutServiceConfigInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigUpdateInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUpdateInput> = z.object({
@@ -3940,7 +3937,8 @@ export const ServiceAvailabilityConfigUpdateInputSchema: z.ZodType<Prisma.Servic
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   service: z.lazy(() => ServiceUpdateOneRequiredWithoutAvailabilityConfigsNestedInputSchema).optional(),
   serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutAvailabilityConfigsNestedInputSchema).optional(),
-  availabilities: z.lazy(() => AvailabilityUpdateManyWithoutAvailableServicesNestedInputSchema).optional()
+  availabilities: z.lazy(() => AvailabilityUpdateManyWithoutAvailableServicesNestedInputSchema).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotUpdateManyWithoutServiceConfigNestedInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigUncheckedUpdateInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUncheckedUpdateInput> = z.object({
@@ -3954,7 +3952,8 @@ export const ServiceAvailabilityConfigUncheckedUpdateInputSchema: z.ZodType<Pris
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  availabilities: z.lazy(() => AvailabilityUncheckedUpdateManyWithoutAvailableServicesNestedInputSchema).optional()
+  availabilities: z.lazy(() => AvailabilityUncheckedUpdateManyWithoutAvailableServicesNestedInputSchema).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotUncheckedUpdateManyWithoutServiceConfigNestedInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigCreateManyInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigCreateManyInput> = z.object({
@@ -3998,9 +3997,6 @@ export const AvailabilityCreateInputSchema: z.ZodType<Prisma.AvailabilityCreateI
   id: z.string().cuid().optional(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
-  isRecurring: z.boolean().optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityCreaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutAvailabilitiesInputSchema),
@@ -4013,9 +4009,6 @@ export const AvailabilityUncheckedCreateInputSchema: z.ZodType<Prisma.Availabili
   serviceProviderId: z.string(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
-  isRecurring: z.boolean().optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityCreaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   availableServices: z.lazy(() => ServiceAvailabilityConfigUncheckedCreateNestedManyWithoutAvailabilitiesInputSchema).optional(),
@@ -4026,9 +4019,6 @@ export const AvailabilityUpdateInputSchema: z.ZodType<Prisma.AvailabilityUpdateI
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  isRecurring: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityUpdaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutAvailabilitiesNestedInputSchema).optional(),
@@ -4041,9 +4031,6 @@ export const AvailabilityUncheckedUpdateInputSchema: z.ZodType<Prisma.Availabili
   serviceProviderId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  isRecurring: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityUpdaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   availableServices: z.lazy(() => ServiceAvailabilityConfigUncheckedUpdateManyWithoutAvailabilitiesNestedInputSchema).optional(),
@@ -4055,9 +4042,6 @@ export const AvailabilityCreateManyInputSchema: z.ZodType<Prisma.AvailabilityCre
   serviceProviderId: z.string(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
-  isRecurring: z.boolean().optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityCreaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional()
 }).strict();
@@ -4066,9 +4050,6 @@ export const AvailabilityUpdateManyMutationInputSchema: z.ZodType<Prisma.Availab
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  isRecurring: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityUpdaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
@@ -4078,9 +4059,6 @@ export const AvailabilityUncheckedUpdateManyInputSchema: z.ZodType<Prisma.Availa
   serviceProviderId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  isRecurring: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityUpdaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
@@ -4093,6 +4071,7 @@ export const CalculatedAvailabilitySlotCreateInputSchema: z.ZodType<Prisma.Calcu
   lastCalculated: z.coerce.date(),
   availability: z.lazy(() => AvailabilityCreateNestedOneWithoutCalculatedSlotsInputSchema),
   service: z.lazy(() => ServiceCreateNestedOneWithoutCalculatedSlotsInputSchema),
+  serviceConfig: z.lazy(() => ServiceAvailabilityConfigCreateNestedOneWithoutCalculatedSlotsInputSchema),
   booking: z.lazy(() => BookingCreateNestedOneWithoutSlotInputSchema).optional()
 }).strict();
 
@@ -4100,6 +4079,7 @@ export const CalculatedAvailabilitySlotUncheckedCreateInputSchema: z.ZodType<Pri
   id: z.string().cuid().optional(),
   availabilityId: z.string(),
   serviceId: z.string(),
+  serviceConfigId: z.string(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
   status: z.lazy(() => SlotStatusSchema).optional(),
@@ -4115,6 +4095,7 @@ export const CalculatedAvailabilitySlotUpdateInputSchema: z.ZodType<Prisma.Calcu
   lastCalculated: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   availability: z.lazy(() => AvailabilityUpdateOneRequiredWithoutCalculatedSlotsNestedInputSchema).optional(),
   service: z.lazy(() => ServiceUpdateOneRequiredWithoutCalculatedSlotsNestedInputSchema).optional(),
+  serviceConfig: z.lazy(() => ServiceAvailabilityConfigUpdateOneRequiredWithoutCalculatedSlotsNestedInputSchema).optional(),
   booking: z.lazy(() => BookingUpdateOneWithoutSlotNestedInputSchema).optional()
 }).strict();
 
@@ -4122,6 +4103,7 @@ export const CalculatedAvailabilitySlotUncheckedUpdateInputSchema: z.ZodType<Pri
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   availabilityId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   serviceId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  serviceConfigId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   status: z.union([ z.lazy(() => SlotStatusSchema),z.lazy(() => EnumSlotStatusFieldUpdateOperationsInputSchema) ]).optional(),
@@ -4133,6 +4115,7 @@ export const CalculatedAvailabilitySlotCreateManyInputSchema: z.ZodType<Prisma.C
   id: z.string().cuid().optional(),
   availabilityId: z.string(),
   serviceId: z.string(),
+  serviceConfigId: z.string(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
   status: z.lazy(() => SlotStatusSchema).optional(),
@@ -4151,6 +4134,7 @@ export const CalculatedAvailabilitySlotUncheckedUpdateManyInputSchema: z.ZodType
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   availabilityId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   serviceId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  serviceConfigId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   status: z.union([ z.lazy(() => SlotStatusSchema),z.lazy(() => EnumSlotStatusFieldUpdateOperationsInputSchema) ]).optional(),
@@ -5940,28 +5924,13 @@ export const ServiceAvailabilityConfigSumOrderByAggregateInputSchema: z.ZodType<
   price: z.lazy(() => SortOrderSchema).optional()
 }).strict();
 
-export const IntNullableListFilterSchema: z.ZodType<Prisma.IntNullableListFilter> = z.object({
-  equals: z.number().array().optional().nullable(),
-  has: z.number().optional().nullable(),
-  hasEvery: z.number().array().optional(),
-  hasSome: z.number().array().optional(),
-  isEmpty: z.boolean().optional()
-}).strict();
-
 export const AvailabilityCountOrderByAggregateInputSchema: z.ZodType<Prisma.AvailabilityCountOrderByAggregateInput> = z.object({
   id: z.lazy(() => SortOrderSchema).optional(),
   serviceProviderId: z.lazy(() => SortOrderSchema).optional(),
   startTime: z.lazy(() => SortOrderSchema).optional(),
   endTime: z.lazy(() => SortOrderSchema).optional(),
-  isRecurring: z.lazy(() => SortOrderSchema).optional(),
-  recurringDays: z.lazy(() => SortOrderSchema).optional(),
-  recurrenceEndDate: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional()
-}).strict();
-
-export const AvailabilityAvgOrderByAggregateInputSchema: z.ZodType<Prisma.AvailabilityAvgOrderByAggregateInput> = z.object({
-  recurringDays: z.lazy(() => SortOrderSchema).optional()
 }).strict();
 
 export const AvailabilityMaxOrderByAggregateInputSchema: z.ZodType<Prisma.AvailabilityMaxOrderByAggregateInput> = z.object({
@@ -5969,8 +5938,6 @@ export const AvailabilityMaxOrderByAggregateInputSchema: z.ZodType<Prisma.Availa
   serviceProviderId: z.lazy(() => SortOrderSchema).optional(),
   startTime: z.lazy(() => SortOrderSchema).optional(),
   endTime: z.lazy(() => SortOrderSchema).optional(),
-  isRecurring: z.lazy(() => SortOrderSchema).optional(),
-  recurrenceEndDate: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional()
 }).strict();
@@ -5980,14 +5947,8 @@ export const AvailabilityMinOrderByAggregateInputSchema: z.ZodType<Prisma.Availa
   serviceProviderId: z.lazy(() => SortOrderSchema).optional(),
   startTime: z.lazy(() => SortOrderSchema).optional(),
   endTime: z.lazy(() => SortOrderSchema).optional(),
-  isRecurring: z.lazy(() => SortOrderSchema).optional(),
-  recurrenceEndDate: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional()
-}).strict();
-
-export const AvailabilitySumOrderByAggregateInputSchema: z.ZodType<Prisma.AvailabilitySumOrderByAggregateInput> = z.object({
-  recurringDays: z.lazy(() => SortOrderSchema).optional()
 }).strict();
 
 export const EnumSlotStatusFilterSchema: z.ZodType<Prisma.EnumSlotStatusFilter> = z.object({
@@ -6002,6 +5963,11 @@ export const AvailabilityRelationFilterSchema: z.ZodType<Prisma.AvailabilityRela
   isNot: z.lazy(() => AvailabilityWhereInputSchema).optional()
 }).strict();
 
+export const ServiceAvailabilityConfigRelationFilterSchema: z.ZodType<Prisma.ServiceAvailabilityConfigRelationFilter> = z.object({
+  is: z.lazy(() => ServiceAvailabilityConfigWhereInputSchema).optional(),
+  isNot: z.lazy(() => ServiceAvailabilityConfigWhereInputSchema).optional()
+}).strict();
+
 export const BookingNullableRelationFilterSchema: z.ZodType<Prisma.BookingNullableRelationFilter> = z.object({
   is: z.lazy(() => BookingWhereInputSchema).optional().nullable(),
   isNot: z.lazy(() => BookingWhereInputSchema).optional().nullable()
@@ -6011,6 +5977,7 @@ export const CalculatedAvailabilitySlotCountOrderByAggregateInputSchema: z.ZodTy
   id: z.lazy(() => SortOrderSchema).optional(),
   availabilityId: z.lazy(() => SortOrderSchema).optional(),
   serviceId: z.lazy(() => SortOrderSchema).optional(),
+  serviceConfigId: z.lazy(() => SortOrderSchema).optional(),
   startTime: z.lazy(() => SortOrderSchema).optional(),
   endTime: z.lazy(() => SortOrderSchema).optional(),
   status: z.lazy(() => SortOrderSchema).optional(),
@@ -6021,6 +5988,7 @@ export const CalculatedAvailabilitySlotMaxOrderByAggregateInputSchema: z.ZodType
   id: z.lazy(() => SortOrderSchema).optional(),
   availabilityId: z.lazy(() => SortOrderSchema).optional(),
   serviceId: z.lazy(() => SortOrderSchema).optional(),
+  serviceConfigId: z.lazy(() => SortOrderSchema).optional(),
   startTime: z.lazy(() => SortOrderSchema).optional(),
   endTime: z.lazy(() => SortOrderSchema).optional(),
   status: z.lazy(() => SortOrderSchema).optional(),
@@ -6031,6 +5999,7 @@ export const CalculatedAvailabilitySlotMinOrderByAggregateInputSchema: z.ZodType
   id: z.lazy(() => SortOrderSchema).optional(),
   availabilityId: z.lazy(() => SortOrderSchema).optional(),
   serviceId: z.lazy(() => SortOrderSchema).optional(),
+  serviceConfigId: z.lazy(() => SortOrderSchema).optional(),
   startTime: z.lazy(() => SortOrderSchema).optional(),
   endTime: z.lazy(() => SortOrderSchema).optional(),
   status: z.lazy(() => SortOrderSchema).optional(),
@@ -7768,10 +7737,24 @@ export const AvailabilityCreateNestedManyWithoutAvailableServicesInputSchema: z.
   connect: z.union([ z.lazy(() => AvailabilityWhereUniqueInputSchema),z.lazy(() => AvailabilityWhereUniqueInputSchema).array() ]).optional(),
 }).strict();
 
+export const CalculatedAvailabilitySlotCreateNestedManyWithoutServiceConfigInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotCreateNestedManyWithoutServiceConfigInput> = z.object({
+  create: z.union([ z.lazy(() => CalculatedAvailabilitySlotCreateWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotCreateWithoutServiceConfigInputSchema).array(),z.lazy(() => CalculatedAvailabilitySlotUncheckedCreateWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotUncheckedCreateWithoutServiceConfigInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => CalculatedAvailabilitySlotCreateOrConnectWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotCreateOrConnectWithoutServiceConfigInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => CalculatedAvailabilitySlotCreateManyServiceConfigInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema),z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema).array() ]).optional(),
+}).strict();
+
 export const AvailabilityUncheckedCreateNestedManyWithoutAvailableServicesInputSchema: z.ZodType<Prisma.AvailabilityUncheckedCreateNestedManyWithoutAvailableServicesInput> = z.object({
   create: z.union([ z.lazy(() => AvailabilityCreateWithoutAvailableServicesInputSchema),z.lazy(() => AvailabilityCreateWithoutAvailableServicesInputSchema).array(),z.lazy(() => AvailabilityUncheckedCreateWithoutAvailableServicesInputSchema),z.lazy(() => AvailabilityUncheckedCreateWithoutAvailableServicesInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => AvailabilityCreateOrConnectWithoutAvailableServicesInputSchema),z.lazy(() => AvailabilityCreateOrConnectWithoutAvailableServicesInputSchema).array() ]).optional(),
   connect: z.union([ z.lazy(() => AvailabilityWhereUniqueInputSchema),z.lazy(() => AvailabilityWhereUniqueInputSchema).array() ]).optional(),
+}).strict();
+
+export const CalculatedAvailabilitySlotUncheckedCreateNestedManyWithoutServiceConfigInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUncheckedCreateNestedManyWithoutServiceConfigInput> = z.object({
+  create: z.union([ z.lazy(() => CalculatedAvailabilitySlotCreateWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotCreateWithoutServiceConfigInputSchema).array(),z.lazy(() => CalculatedAvailabilitySlotUncheckedCreateWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotUncheckedCreateWithoutServiceConfigInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => CalculatedAvailabilitySlotCreateOrConnectWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotCreateOrConnectWithoutServiceConfigInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => CalculatedAvailabilitySlotCreateManyServiceConfigInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema),z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema).array() ]).optional(),
 }).strict();
 
 export const ServiceUpdateOneRequiredWithoutAvailabilityConfigsNestedInputSchema: z.ZodType<Prisma.ServiceUpdateOneRequiredWithoutAvailabilityConfigsNestedInput> = z.object({
@@ -7803,6 +7786,20 @@ export const AvailabilityUpdateManyWithoutAvailableServicesNestedInputSchema: z.
   deleteMany: z.union([ z.lazy(() => AvailabilityScalarWhereInputSchema),z.lazy(() => AvailabilityScalarWhereInputSchema).array() ]).optional(),
 }).strict();
 
+export const CalculatedAvailabilitySlotUpdateManyWithoutServiceConfigNestedInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUpdateManyWithoutServiceConfigNestedInput> = z.object({
+  create: z.union([ z.lazy(() => CalculatedAvailabilitySlotCreateWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotCreateWithoutServiceConfigInputSchema).array(),z.lazy(() => CalculatedAvailabilitySlotUncheckedCreateWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotUncheckedCreateWithoutServiceConfigInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => CalculatedAvailabilitySlotCreateOrConnectWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotCreateOrConnectWithoutServiceConfigInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => CalculatedAvailabilitySlotUpsertWithWhereUniqueWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotUpsertWithWhereUniqueWithoutServiceConfigInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => CalculatedAvailabilitySlotCreateManyServiceConfigInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema),z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema),z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema),z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema),z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => CalculatedAvailabilitySlotUpdateWithWhereUniqueWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotUpdateWithWhereUniqueWithoutServiceConfigInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => CalculatedAvailabilitySlotUpdateManyWithWhereWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotUpdateManyWithWhereWithoutServiceConfigInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => CalculatedAvailabilitySlotScalarWhereInputSchema),z.lazy(() => CalculatedAvailabilitySlotScalarWhereInputSchema).array() ]).optional(),
+}).strict();
+
 export const AvailabilityUncheckedUpdateManyWithoutAvailableServicesNestedInputSchema: z.ZodType<Prisma.AvailabilityUncheckedUpdateManyWithoutAvailableServicesNestedInput> = z.object({
   create: z.union([ z.lazy(() => AvailabilityCreateWithoutAvailableServicesInputSchema),z.lazy(() => AvailabilityCreateWithoutAvailableServicesInputSchema).array(),z.lazy(() => AvailabilityUncheckedCreateWithoutAvailableServicesInputSchema),z.lazy(() => AvailabilityUncheckedCreateWithoutAvailableServicesInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => AvailabilityCreateOrConnectWithoutAvailableServicesInputSchema),z.lazy(() => AvailabilityCreateOrConnectWithoutAvailableServicesInputSchema).array() ]).optional(),
@@ -7816,8 +7813,18 @@ export const AvailabilityUncheckedUpdateManyWithoutAvailableServicesNestedInputS
   deleteMany: z.union([ z.lazy(() => AvailabilityScalarWhereInputSchema),z.lazy(() => AvailabilityScalarWhereInputSchema).array() ]).optional(),
 }).strict();
 
-export const AvailabilityCreaterecurringDaysInputSchema: z.ZodType<Prisma.AvailabilityCreaterecurringDaysInput> = z.object({
-  set: z.number().array()
+export const CalculatedAvailabilitySlotUncheckedUpdateManyWithoutServiceConfigNestedInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUncheckedUpdateManyWithoutServiceConfigNestedInput> = z.object({
+  create: z.union([ z.lazy(() => CalculatedAvailabilitySlotCreateWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotCreateWithoutServiceConfigInputSchema).array(),z.lazy(() => CalculatedAvailabilitySlotUncheckedCreateWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotUncheckedCreateWithoutServiceConfigInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => CalculatedAvailabilitySlotCreateOrConnectWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotCreateOrConnectWithoutServiceConfigInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => CalculatedAvailabilitySlotUpsertWithWhereUniqueWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotUpsertWithWhereUniqueWithoutServiceConfigInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => CalculatedAvailabilitySlotCreateManyServiceConfigInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema),z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema),z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema),z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema),z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => CalculatedAvailabilitySlotUpdateWithWhereUniqueWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotUpdateWithWhereUniqueWithoutServiceConfigInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => CalculatedAvailabilitySlotUpdateManyWithWhereWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotUpdateManyWithWhereWithoutServiceConfigInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => CalculatedAvailabilitySlotScalarWhereInputSchema),z.lazy(() => CalculatedAvailabilitySlotScalarWhereInputSchema).array() ]).optional(),
 }).strict();
 
 export const ServiceProviderCreateNestedOneWithoutAvailabilitiesInputSchema: z.ZodType<Prisma.ServiceProviderCreateNestedOneWithoutAvailabilitiesInput> = z.object({
@@ -7850,11 +7857,6 @@ export const CalculatedAvailabilitySlotUncheckedCreateNestedManyWithoutAvailabil
   connectOrCreate: z.union([ z.lazy(() => CalculatedAvailabilitySlotCreateOrConnectWithoutAvailabilityInputSchema),z.lazy(() => CalculatedAvailabilitySlotCreateOrConnectWithoutAvailabilityInputSchema).array() ]).optional(),
   createMany: z.lazy(() => CalculatedAvailabilitySlotCreateManyAvailabilityInputEnvelopeSchema).optional(),
   connect: z.union([ z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema),z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema).array() ]).optional(),
-}).strict();
-
-export const AvailabilityUpdaterecurringDaysInputSchema: z.ZodType<Prisma.AvailabilityUpdaterecurringDaysInput> = z.object({
-  set: z.number().array().optional(),
-  push: z.union([ z.number(),z.number().array() ]).optional(),
 }).strict();
 
 export const ServiceProviderUpdateOneRequiredWithoutAvailabilitiesNestedInputSchema: z.ZodType<Prisma.ServiceProviderUpdateOneRequiredWithoutAvailabilitiesNestedInput> = z.object({
@@ -7931,6 +7933,12 @@ export const ServiceCreateNestedOneWithoutCalculatedSlotsInputSchema: z.ZodType<
   connect: z.lazy(() => ServiceWhereUniqueInputSchema).optional()
 }).strict();
 
+export const ServiceAvailabilityConfigCreateNestedOneWithoutCalculatedSlotsInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigCreateNestedOneWithoutCalculatedSlotsInput> = z.object({
+  create: z.union([ z.lazy(() => ServiceAvailabilityConfigCreateWithoutCalculatedSlotsInputSchema),z.lazy(() => ServiceAvailabilityConfigUncheckedCreateWithoutCalculatedSlotsInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => ServiceAvailabilityConfigCreateOrConnectWithoutCalculatedSlotsInputSchema).optional(),
+  connect: z.lazy(() => ServiceAvailabilityConfigWhereUniqueInputSchema).optional()
+}).strict();
+
 export const BookingCreateNestedOneWithoutSlotInputSchema: z.ZodType<Prisma.BookingCreateNestedOneWithoutSlotInput> = z.object({
   create: z.union([ z.lazy(() => BookingCreateWithoutSlotInputSchema),z.lazy(() => BookingUncheckedCreateWithoutSlotInputSchema) ]).optional(),
   connectOrCreate: z.lazy(() => BookingCreateOrConnectWithoutSlotInputSchema).optional(),
@@ -7961,6 +7969,14 @@ export const ServiceUpdateOneRequiredWithoutCalculatedSlotsNestedInputSchema: z.
   upsert: z.lazy(() => ServiceUpsertWithoutCalculatedSlotsInputSchema).optional(),
   connect: z.lazy(() => ServiceWhereUniqueInputSchema).optional(),
   update: z.union([ z.lazy(() => ServiceUpdateToOneWithWhereWithoutCalculatedSlotsInputSchema),z.lazy(() => ServiceUpdateWithoutCalculatedSlotsInputSchema),z.lazy(() => ServiceUncheckedUpdateWithoutCalculatedSlotsInputSchema) ]).optional(),
+}).strict();
+
+export const ServiceAvailabilityConfigUpdateOneRequiredWithoutCalculatedSlotsNestedInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUpdateOneRequiredWithoutCalculatedSlotsNestedInput> = z.object({
+  create: z.union([ z.lazy(() => ServiceAvailabilityConfigCreateWithoutCalculatedSlotsInputSchema),z.lazy(() => ServiceAvailabilityConfigUncheckedCreateWithoutCalculatedSlotsInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => ServiceAvailabilityConfigCreateOrConnectWithoutCalculatedSlotsInputSchema).optional(),
+  upsert: z.lazy(() => ServiceAvailabilityConfigUpsertWithoutCalculatedSlotsInputSchema).optional(),
+  connect: z.lazy(() => ServiceAvailabilityConfigWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => ServiceAvailabilityConfigUpdateToOneWithWhereWithoutCalculatedSlotsInputSchema),z.lazy(() => ServiceAvailabilityConfigUpdateWithoutCalculatedSlotsInputSchema),z.lazy(() => ServiceAvailabilityConfigUncheckedUpdateWithoutCalculatedSlotsInputSchema) ]).optional(),
 }).strict();
 
 export const BookingUpdateOneWithoutSlotNestedInputSchema: z.ZodType<Prisma.BookingUpdateOneWithoutSlotNestedInput> = z.object({
@@ -9955,9 +9971,6 @@ export const AvailabilityCreateWithoutServiceProviderInputSchema: z.ZodType<Pris
   id: z.string().cuid().optional(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
-  isRecurring: z.boolean().optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityCreaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   availableServices: z.lazy(() => ServiceAvailabilityConfigCreateNestedManyWithoutAvailabilitiesInputSchema).optional(),
@@ -9968,9 +9981,6 @@ export const AvailabilityUncheckedCreateWithoutServiceProviderInputSchema: z.Zod
   id: z.string().cuid().optional(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
-  isRecurring: z.boolean().optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityCreaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   availableServices: z.lazy(() => ServiceAvailabilityConfigUncheckedCreateNestedManyWithoutAvailabilitiesInputSchema).optional(),
@@ -10165,7 +10175,8 @@ export const ServiceAvailabilityConfigCreateWithoutServiceProviderInputSchema: z
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   service: z.lazy(() => ServiceCreateNestedOneWithoutAvailabilityConfigsInputSchema),
-  availabilities: z.lazy(() => AvailabilityCreateNestedManyWithoutAvailableServicesInputSchema).optional()
+  availabilities: z.lazy(() => AvailabilityCreateNestedManyWithoutAvailableServicesInputSchema).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotCreateNestedManyWithoutServiceConfigInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigUncheckedCreateWithoutServiceProviderInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUncheckedCreateWithoutServiceProviderInput> = z.object({
@@ -10178,7 +10189,8 @@ export const ServiceAvailabilityConfigUncheckedCreateWithoutServiceProviderInput
   location: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
-  availabilities: z.lazy(() => AvailabilityUncheckedCreateNestedManyWithoutAvailableServicesInputSchema).optional()
+  availabilities: z.lazy(() => AvailabilityUncheckedCreateNestedManyWithoutAvailableServicesInputSchema).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotUncheckedCreateNestedManyWithoutServiceConfigInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigCreateOrConnectWithoutServiceProviderInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigCreateOrConnectWithoutServiceProviderInput> = z.object({
@@ -10333,9 +10345,6 @@ export const AvailabilityScalarWhereInputSchema: z.ZodType<Prisma.AvailabilitySc
   serviceProviderId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
   startTime: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   endTime: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
-  isRecurring: z.union([ z.lazy(() => BoolFilterSchema),z.boolean() ]).optional(),
-  recurringDays: z.lazy(() => IntNullableListFilterSchema).optional(),
-  recurrenceEndDate: z.union([ z.lazy(() => DateTimeNullableFilterSchema),z.coerce.date() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
 }).strict();
@@ -11004,7 +11013,8 @@ export const ServiceAvailabilityConfigCreateWithoutServiceInputSchema: z.ZodType
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutAvailabilityConfigsInputSchema),
-  availabilities: z.lazy(() => AvailabilityCreateNestedManyWithoutAvailableServicesInputSchema).optional()
+  availabilities: z.lazy(() => AvailabilityCreateNestedManyWithoutAvailableServicesInputSchema).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotCreateNestedManyWithoutServiceConfigInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigUncheckedCreateWithoutServiceInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUncheckedCreateWithoutServiceInput> = z.object({
@@ -11017,7 +11027,8 @@ export const ServiceAvailabilityConfigUncheckedCreateWithoutServiceInputSchema: 
   location: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
-  availabilities: z.lazy(() => AvailabilityUncheckedCreateNestedManyWithoutAvailableServicesInputSchema).optional()
+  availabilities: z.lazy(() => AvailabilityUncheckedCreateNestedManyWithoutAvailableServicesInputSchema).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotUncheckedCreateNestedManyWithoutServiceConfigInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigCreateOrConnectWithoutServiceInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigCreateOrConnectWithoutServiceInput> = z.object({
@@ -11037,12 +11048,14 @@ export const CalculatedAvailabilitySlotCreateWithoutServiceInputSchema: z.ZodTyp
   status: z.lazy(() => SlotStatusSchema).optional(),
   lastCalculated: z.coerce.date(),
   availability: z.lazy(() => AvailabilityCreateNestedOneWithoutCalculatedSlotsInputSchema),
+  serviceConfig: z.lazy(() => ServiceAvailabilityConfigCreateNestedOneWithoutCalculatedSlotsInputSchema),
   booking: z.lazy(() => BookingCreateNestedOneWithoutSlotInputSchema).optional()
 }).strict();
 
 export const CalculatedAvailabilitySlotUncheckedCreateWithoutServiceInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUncheckedCreateWithoutServiceInput> = z.object({
   id: z.string().cuid().optional(),
   availabilityId: z.string(),
+  serviceConfigId: z.string(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
   status: z.lazy(() => SlotStatusSchema).optional(),
@@ -11206,6 +11219,7 @@ export const CalculatedAvailabilitySlotScalarWhereInputSchema: z.ZodType<Prisma.
   id: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
   availabilityId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
   serviceId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  serviceConfigId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
   startTime: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   endTime: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   status: z.union([ z.lazy(() => EnumSlotStatusFilterSchema),z.lazy(() => SlotStatusSchema) ]).optional(),
@@ -11332,9 +11346,6 @@ export const AvailabilityCreateWithoutAvailableServicesInputSchema: z.ZodType<Pr
   id: z.string().cuid().optional(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
-  isRecurring: z.boolean().optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityCreaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutAvailabilitiesInputSchema),
@@ -11346,9 +11357,6 @@ export const AvailabilityUncheckedCreateWithoutAvailableServicesInputSchema: z.Z
   serviceProviderId: z.string(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
-  isRecurring: z.boolean().optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityCreaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotUncheckedCreateNestedManyWithoutAvailabilityInputSchema).optional()
@@ -11357,6 +11365,38 @@ export const AvailabilityUncheckedCreateWithoutAvailableServicesInputSchema: z.Z
 export const AvailabilityCreateOrConnectWithoutAvailableServicesInputSchema: z.ZodType<Prisma.AvailabilityCreateOrConnectWithoutAvailableServicesInput> = z.object({
   where: z.lazy(() => AvailabilityWhereUniqueInputSchema),
   create: z.union([ z.lazy(() => AvailabilityCreateWithoutAvailableServicesInputSchema),z.lazy(() => AvailabilityUncheckedCreateWithoutAvailableServicesInputSchema) ]),
+}).strict();
+
+export const CalculatedAvailabilitySlotCreateWithoutServiceConfigInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotCreateWithoutServiceConfigInput> = z.object({
+  id: z.string().cuid().optional(),
+  startTime: z.coerce.date(),
+  endTime: z.coerce.date(),
+  status: z.lazy(() => SlotStatusSchema).optional(),
+  lastCalculated: z.coerce.date(),
+  availability: z.lazy(() => AvailabilityCreateNestedOneWithoutCalculatedSlotsInputSchema),
+  service: z.lazy(() => ServiceCreateNestedOneWithoutCalculatedSlotsInputSchema),
+  booking: z.lazy(() => BookingCreateNestedOneWithoutSlotInputSchema).optional()
+}).strict();
+
+export const CalculatedAvailabilitySlotUncheckedCreateWithoutServiceConfigInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUncheckedCreateWithoutServiceConfigInput> = z.object({
+  id: z.string().cuid().optional(),
+  availabilityId: z.string(),
+  serviceId: z.string(),
+  startTime: z.coerce.date(),
+  endTime: z.coerce.date(),
+  status: z.lazy(() => SlotStatusSchema).optional(),
+  lastCalculated: z.coerce.date(),
+  booking: z.lazy(() => BookingUncheckedCreateNestedOneWithoutSlotInputSchema).optional()
+}).strict();
+
+export const CalculatedAvailabilitySlotCreateOrConnectWithoutServiceConfigInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotCreateOrConnectWithoutServiceConfigInput> = z.object({
+  where: z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => CalculatedAvailabilitySlotCreateWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotUncheckedCreateWithoutServiceConfigInputSchema) ]),
+}).strict();
+
+export const CalculatedAvailabilitySlotCreateManyServiceConfigInputEnvelopeSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotCreateManyServiceConfigInputEnvelope> = z.object({
+  data: z.union([ z.lazy(() => CalculatedAvailabilitySlotCreateManyServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotCreateManyServiceConfigInputSchema).array() ]),
+  skipDuplicates: z.boolean().optional()
 }).strict();
 
 export const ServiceUpsertWithoutAvailabilityConfigsInputSchema: z.ZodType<Prisma.ServiceUpsertWithoutAvailabilityConfigsInput> = z.object({
@@ -11487,6 +11527,22 @@ export const AvailabilityUpdateManyWithWhereWithoutAvailableServicesInputSchema:
   data: z.union([ z.lazy(() => AvailabilityUpdateManyMutationInputSchema),z.lazy(() => AvailabilityUncheckedUpdateManyWithoutAvailableServicesInputSchema) ]),
 }).strict();
 
+export const CalculatedAvailabilitySlotUpsertWithWhereUniqueWithoutServiceConfigInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUpsertWithWhereUniqueWithoutServiceConfigInput> = z.object({
+  where: z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema),
+  update: z.union([ z.lazy(() => CalculatedAvailabilitySlotUpdateWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotUncheckedUpdateWithoutServiceConfigInputSchema) ]),
+  create: z.union([ z.lazy(() => CalculatedAvailabilitySlotCreateWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotUncheckedCreateWithoutServiceConfigInputSchema) ]),
+}).strict();
+
+export const CalculatedAvailabilitySlotUpdateWithWhereUniqueWithoutServiceConfigInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUpdateWithWhereUniqueWithoutServiceConfigInput> = z.object({
+  where: z.lazy(() => CalculatedAvailabilitySlotWhereUniqueInputSchema),
+  data: z.union([ z.lazy(() => CalculatedAvailabilitySlotUpdateWithoutServiceConfigInputSchema),z.lazy(() => CalculatedAvailabilitySlotUncheckedUpdateWithoutServiceConfigInputSchema) ]),
+}).strict();
+
+export const CalculatedAvailabilitySlotUpdateManyWithWhereWithoutServiceConfigInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUpdateManyWithWhereWithoutServiceConfigInput> = z.object({
+  where: z.lazy(() => CalculatedAvailabilitySlotScalarWhereInputSchema),
+  data: z.union([ z.lazy(() => CalculatedAvailabilitySlotUpdateManyMutationInputSchema),z.lazy(() => CalculatedAvailabilitySlotUncheckedUpdateManyWithoutServiceConfigInputSchema) ]),
+}).strict();
+
 export const ServiceProviderCreateWithoutAvailabilitiesInputSchema: z.ZodType<Prisma.ServiceProviderCreateWithoutAvailabilitiesInput> = z.object({
   id: z.string().cuid().optional(),
   name: z.string(),
@@ -11562,7 +11618,8 @@ export const ServiceAvailabilityConfigCreateWithoutAvailabilitiesInputSchema: z.
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   service: z.lazy(() => ServiceCreateNestedOneWithoutAvailabilityConfigsInputSchema),
-  serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutAvailabilityConfigsInputSchema)
+  serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutAvailabilityConfigsInputSchema),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotCreateNestedManyWithoutServiceConfigInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigUncheckedCreateWithoutAvailabilitiesInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUncheckedCreateWithoutAvailabilitiesInput> = z.object({
@@ -11575,7 +11632,8 @@ export const ServiceAvailabilityConfigUncheckedCreateWithoutAvailabilitiesInputS
   isInPerson: z.boolean().optional(),
   location: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
-  updatedAt: z.coerce.date().optional()
+  updatedAt: z.coerce.date().optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotUncheckedCreateNestedManyWithoutServiceConfigInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigCreateOrConnectWithoutAvailabilitiesInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigCreateOrConnectWithoutAvailabilitiesInput> = z.object({
@@ -11590,12 +11648,14 @@ export const CalculatedAvailabilitySlotCreateWithoutAvailabilityInputSchema: z.Z
   status: z.lazy(() => SlotStatusSchema).optional(),
   lastCalculated: z.coerce.date(),
   service: z.lazy(() => ServiceCreateNestedOneWithoutCalculatedSlotsInputSchema),
+  serviceConfig: z.lazy(() => ServiceAvailabilityConfigCreateNestedOneWithoutCalculatedSlotsInputSchema),
   booking: z.lazy(() => BookingCreateNestedOneWithoutSlotInputSchema).optional()
 }).strict();
 
 export const CalculatedAvailabilitySlotUncheckedCreateWithoutAvailabilityInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUncheckedCreateWithoutAvailabilityInput> = z.object({
   id: z.string().cuid().optional(),
   serviceId: z.string(),
+  serviceConfigId: z.string(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
   status: z.lazy(() => SlotStatusSchema).optional(),
@@ -11720,9 +11780,6 @@ export const AvailabilityCreateWithoutCalculatedSlotsInputSchema: z.ZodType<Pris
   id: z.string().cuid().optional(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
-  isRecurring: z.boolean().optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityCreaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutAvailabilitiesInputSchema),
@@ -11734,9 +11791,6 @@ export const AvailabilityUncheckedCreateWithoutCalculatedSlotsInputSchema: z.Zod
   serviceProviderId: z.string(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
-  isRecurring: z.boolean().optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityCreaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   availableServices: z.lazy(() => ServiceAvailabilityConfigUncheckedCreateNestedManyWithoutAvailabilitiesInputSchema).optional()
@@ -11780,6 +11834,39 @@ export const ServiceUncheckedCreateWithoutCalculatedSlotsInputSchema: z.ZodType<
 export const ServiceCreateOrConnectWithoutCalculatedSlotsInputSchema: z.ZodType<Prisma.ServiceCreateOrConnectWithoutCalculatedSlotsInput> = z.object({
   where: z.lazy(() => ServiceWhereUniqueInputSchema),
   create: z.union([ z.lazy(() => ServiceCreateWithoutCalculatedSlotsInputSchema),z.lazy(() => ServiceUncheckedCreateWithoutCalculatedSlotsInputSchema) ]),
+}).strict();
+
+export const ServiceAvailabilityConfigCreateWithoutCalculatedSlotsInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigCreateWithoutCalculatedSlotsInput> = z.object({
+  id: z.string().cuid().optional(),
+  duration: z.number().int(),
+  price: z.union([z.number(),z.string(),z.instanceof(Decimal),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),
+  isOnlineAvailable: z.boolean().optional(),
+  isInPerson: z.boolean().optional(),
+  location: z.string().optional().nullable(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+  service: z.lazy(() => ServiceCreateNestedOneWithoutAvailabilityConfigsInputSchema),
+  serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutAvailabilityConfigsInputSchema),
+  availabilities: z.lazy(() => AvailabilityCreateNestedManyWithoutAvailableServicesInputSchema).optional()
+}).strict();
+
+export const ServiceAvailabilityConfigUncheckedCreateWithoutCalculatedSlotsInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUncheckedCreateWithoutCalculatedSlotsInput> = z.object({
+  id: z.string().cuid().optional(),
+  serviceId: z.string(),
+  serviceProviderId: z.string(),
+  duration: z.number().int(),
+  price: z.union([z.number(),z.string(),z.instanceof(Decimal),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),
+  isOnlineAvailable: z.boolean().optional(),
+  isInPerson: z.boolean().optional(),
+  location: z.string().optional().nullable(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+  availabilities: z.lazy(() => AvailabilityUncheckedCreateNestedManyWithoutAvailableServicesInputSchema).optional()
+}).strict();
+
+export const ServiceAvailabilityConfigCreateOrConnectWithoutCalculatedSlotsInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigCreateOrConnectWithoutCalculatedSlotsInput> = z.object({
+  where: z.lazy(() => ServiceAvailabilityConfigWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => ServiceAvailabilityConfigCreateWithoutCalculatedSlotsInputSchema),z.lazy(() => ServiceAvailabilityConfigUncheckedCreateWithoutCalculatedSlotsInputSchema) ]),
 }).strict();
 
 export const BookingCreateWithoutSlotInputSchema: z.ZodType<Prisma.BookingCreateWithoutSlotInput> = z.object({
@@ -11852,9 +11939,6 @@ export const AvailabilityUpdateWithoutCalculatedSlotsInputSchema: z.ZodType<Pris
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  isRecurring: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityUpdaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutAvailabilitiesNestedInputSchema).optional(),
@@ -11866,9 +11950,6 @@ export const AvailabilityUncheckedUpdateWithoutCalculatedSlotsInputSchema: z.Zod
   serviceProviderId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  isRecurring: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityUpdaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   availableServices: z.lazy(() => ServiceAvailabilityConfigUncheckedUpdateManyWithoutAvailabilitiesNestedInputSchema).optional()
@@ -11913,6 +11994,45 @@ export const ServiceUncheckedUpdateWithoutCalculatedSlotsInputSchema: z.ZodType<
   providers: z.lazy(() => ServiceProviderUncheckedUpdateManyWithoutServicesNestedInputSchema).optional(),
   availabilityConfigs: z.lazy(() => ServiceAvailabilityConfigUncheckedUpdateManyWithoutServiceNestedInputSchema).optional(),
   bookings: z.lazy(() => BookingUncheckedUpdateManyWithoutServiceNestedInputSchema).optional()
+}).strict();
+
+export const ServiceAvailabilityConfigUpsertWithoutCalculatedSlotsInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUpsertWithoutCalculatedSlotsInput> = z.object({
+  update: z.union([ z.lazy(() => ServiceAvailabilityConfigUpdateWithoutCalculatedSlotsInputSchema),z.lazy(() => ServiceAvailabilityConfigUncheckedUpdateWithoutCalculatedSlotsInputSchema) ]),
+  create: z.union([ z.lazy(() => ServiceAvailabilityConfigCreateWithoutCalculatedSlotsInputSchema),z.lazy(() => ServiceAvailabilityConfigUncheckedCreateWithoutCalculatedSlotsInputSchema) ]),
+  where: z.lazy(() => ServiceAvailabilityConfigWhereInputSchema).optional()
+}).strict();
+
+export const ServiceAvailabilityConfigUpdateToOneWithWhereWithoutCalculatedSlotsInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUpdateToOneWithWhereWithoutCalculatedSlotsInput> = z.object({
+  where: z.lazy(() => ServiceAvailabilityConfigWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => ServiceAvailabilityConfigUpdateWithoutCalculatedSlotsInputSchema),z.lazy(() => ServiceAvailabilityConfigUncheckedUpdateWithoutCalculatedSlotsInputSchema) ]),
+}).strict();
+
+export const ServiceAvailabilityConfigUpdateWithoutCalculatedSlotsInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUpdateWithoutCalculatedSlotsInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  duration: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  price: z.union([ z.union([z.number(),z.string(),z.instanceof(Decimal),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => DecimalFieldUpdateOperationsInputSchema) ]).optional(),
+  isOnlineAvailable: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
+  isInPerson: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
+  location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  service: z.lazy(() => ServiceUpdateOneRequiredWithoutAvailabilityConfigsNestedInputSchema).optional(),
+  serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutAvailabilityConfigsNestedInputSchema).optional(),
+  availabilities: z.lazy(() => AvailabilityUpdateManyWithoutAvailableServicesNestedInputSchema).optional()
+}).strict();
+
+export const ServiceAvailabilityConfigUncheckedUpdateWithoutCalculatedSlotsInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUncheckedUpdateWithoutCalculatedSlotsInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  serviceId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  serviceProviderId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  duration: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  price: z.union([ z.union([z.number(),z.string(),z.instanceof(Decimal),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => DecimalFieldUpdateOperationsInputSchema) ]).optional(),
+  isOnlineAvailable: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
+  isInPerson: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
+  location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  availabilities: z.lazy(() => AvailabilityUncheckedUpdateManyWithoutAvailableServicesNestedInputSchema).optional()
 }).strict();
 
 export const BookingUpsertWithoutSlotInputSchema: z.ZodType<Prisma.BookingUpsertWithoutSlotInput> = z.object({
@@ -11983,13 +12103,15 @@ export const CalculatedAvailabilitySlotCreateWithoutBookingInputSchema: z.ZodTyp
   status: z.lazy(() => SlotStatusSchema).optional(),
   lastCalculated: z.coerce.date(),
   availability: z.lazy(() => AvailabilityCreateNestedOneWithoutCalculatedSlotsInputSchema),
-  service: z.lazy(() => ServiceCreateNestedOneWithoutCalculatedSlotsInputSchema)
+  service: z.lazy(() => ServiceCreateNestedOneWithoutCalculatedSlotsInputSchema),
+  serviceConfig: z.lazy(() => ServiceAvailabilityConfigCreateNestedOneWithoutCalculatedSlotsInputSchema)
 }).strict();
 
 export const CalculatedAvailabilitySlotUncheckedCreateWithoutBookingInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUncheckedCreateWithoutBookingInput> = z.object({
   id: z.string().cuid().optional(),
   availabilityId: z.string(),
   serviceId: z.string(),
+  serviceConfigId: z.string(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
   status: z.lazy(() => SlotStatusSchema).optional(),
@@ -12280,13 +12402,15 @@ export const CalculatedAvailabilitySlotUpdateWithoutBookingInputSchema: z.ZodTyp
   status: z.union([ z.lazy(() => SlotStatusSchema),z.lazy(() => EnumSlotStatusFieldUpdateOperationsInputSchema) ]).optional(),
   lastCalculated: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   availability: z.lazy(() => AvailabilityUpdateOneRequiredWithoutCalculatedSlotsNestedInputSchema).optional(),
-  service: z.lazy(() => ServiceUpdateOneRequiredWithoutCalculatedSlotsNestedInputSchema).optional()
+  service: z.lazy(() => ServiceUpdateOneRequiredWithoutCalculatedSlotsNestedInputSchema).optional(),
+  serviceConfig: z.lazy(() => ServiceAvailabilityConfigUpdateOneRequiredWithoutCalculatedSlotsNestedInputSchema).optional()
 }).strict();
 
 export const CalculatedAvailabilitySlotUncheckedUpdateWithoutBookingInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUncheckedUpdateWithoutBookingInput> = z.object({
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   availabilityId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   serviceId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  serviceConfigId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   status: z.union([ z.lazy(() => SlotStatusSchema),z.lazy(() => EnumSlotStatusFieldUpdateOperationsInputSchema) ]).optional(),
@@ -14369,9 +14493,6 @@ export const AvailabilityCreateManyServiceProviderInputSchema: z.ZodType<Prisma.
   id: z.string().cuid().optional(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
-  isRecurring: z.boolean().optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityCreaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.coerce.date().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional()
 }).strict();
@@ -14513,9 +14634,6 @@ export const AvailabilityUpdateWithoutServiceProviderInputSchema: z.ZodType<Pris
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  isRecurring: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityUpdaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   availableServices: z.lazy(() => ServiceAvailabilityConfigUpdateManyWithoutAvailabilitiesNestedInputSchema).optional(),
@@ -14526,9 +14644,6 @@ export const AvailabilityUncheckedUpdateWithoutServiceProviderInputSchema: z.Zod
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  isRecurring: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityUpdaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   availableServices: z.lazy(() => ServiceAvailabilityConfigUncheckedUpdateManyWithoutAvailabilitiesNestedInputSchema).optional(),
@@ -14539,9 +14654,6 @@ export const AvailabilityUncheckedUpdateManyWithoutServiceProviderInputSchema: z
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  isRecurring: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityUpdaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
@@ -14671,7 +14783,8 @@ export const ServiceAvailabilityConfigUpdateWithoutServiceProviderInputSchema: z
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   service: z.lazy(() => ServiceUpdateOneRequiredWithoutAvailabilityConfigsNestedInputSchema).optional(),
-  availabilities: z.lazy(() => AvailabilityUpdateManyWithoutAvailableServicesNestedInputSchema).optional()
+  availabilities: z.lazy(() => AvailabilityUpdateManyWithoutAvailableServicesNestedInputSchema).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotUpdateManyWithoutServiceConfigNestedInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigUncheckedUpdateWithoutServiceProviderInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUncheckedUpdateWithoutServiceProviderInput> = z.object({
@@ -14684,7 +14797,8 @@ export const ServiceAvailabilityConfigUncheckedUpdateWithoutServiceProviderInput
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  availabilities: z.lazy(() => AvailabilityUncheckedUpdateManyWithoutAvailableServicesNestedInputSchema).optional()
+  availabilities: z.lazy(() => AvailabilityUncheckedUpdateManyWithoutAvailableServicesNestedInputSchema).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotUncheckedUpdateManyWithoutServiceConfigNestedInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigUncheckedUpdateManyWithoutServiceProviderInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUncheckedUpdateManyWithoutServiceProviderInput> = z.object({
@@ -14770,6 +14884,7 @@ export const ServiceAvailabilityConfigCreateManyServiceInputSchema: z.ZodType<Pr
 export const CalculatedAvailabilitySlotCreateManyServiceInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotCreateManyServiceInput> = z.object({
   id: z.string().cuid().optional(),
   availabilityId: z.string(),
+  serviceConfigId: z.string(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
   status: z.lazy(() => SlotStatusSchema).optional(),
@@ -14892,7 +15007,8 @@ export const ServiceAvailabilityConfigUpdateWithoutServiceInputSchema: z.ZodType
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutAvailabilityConfigsNestedInputSchema).optional(),
-  availabilities: z.lazy(() => AvailabilityUpdateManyWithoutAvailableServicesNestedInputSchema).optional()
+  availabilities: z.lazy(() => AvailabilityUpdateManyWithoutAvailableServicesNestedInputSchema).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotUpdateManyWithoutServiceConfigNestedInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigUncheckedUpdateWithoutServiceInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUncheckedUpdateWithoutServiceInput> = z.object({
@@ -14905,7 +15021,8 @@ export const ServiceAvailabilityConfigUncheckedUpdateWithoutServiceInputSchema: 
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  availabilities: z.lazy(() => AvailabilityUncheckedUpdateManyWithoutAvailableServicesNestedInputSchema).optional()
+  availabilities: z.lazy(() => AvailabilityUncheckedUpdateManyWithoutAvailableServicesNestedInputSchema).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotUncheckedUpdateManyWithoutServiceConfigNestedInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigUncheckedUpdateManyWithoutServiceInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUncheckedUpdateManyWithoutServiceInput> = z.object({
@@ -14927,12 +15044,14 @@ export const CalculatedAvailabilitySlotUpdateWithoutServiceInputSchema: z.ZodTyp
   status: z.union([ z.lazy(() => SlotStatusSchema),z.lazy(() => EnumSlotStatusFieldUpdateOperationsInputSchema) ]).optional(),
   lastCalculated: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   availability: z.lazy(() => AvailabilityUpdateOneRequiredWithoutCalculatedSlotsNestedInputSchema).optional(),
+  serviceConfig: z.lazy(() => ServiceAvailabilityConfigUpdateOneRequiredWithoutCalculatedSlotsNestedInputSchema).optional(),
   booking: z.lazy(() => BookingUpdateOneWithoutSlotNestedInputSchema).optional()
 }).strict();
 
 export const CalculatedAvailabilitySlotUncheckedUpdateWithoutServiceInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUncheckedUpdateWithoutServiceInput> = z.object({
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   availabilityId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  serviceConfigId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   status: z.union([ z.lazy(() => SlotStatusSchema),z.lazy(() => EnumSlotStatusFieldUpdateOperationsInputSchema) ]).optional(),
@@ -14943,6 +15062,7 @@ export const CalculatedAvailabilitySlotUncheckedUpdateWithoutServiceInputSchema:
 export const CalculatedAvailabilitySlotUncheckedUpdateManyWithoutServiceInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUncheckedUpdateManyWithoutServiceInput> = z.object({
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   availabilityId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  serviceConfigId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   status: z.union([ z.lazy(() => SlotStatusSchema),z.lazy(() => EnumSlotStatusFieldUpdateOperationsInputSchema) ]).optional(),
@@ -15022,13 +15142,20 @@ export const BookingUncheckedUpdateManyWithoutServiceInputSchema: z.ZodType<Pris
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
 
+export const CalculatedAvailabilitySlotCreateManyServiceConfigInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotCreateManyServiceConfigInput> = z.object({
+  id: z.string().cuid().optional(),
+  availabilityId: z.string(),
+  serviceId: z.string(),
+  startTime: z.coerce.date(),
+  endTime: z.coerce.date(),
+  status: z.lazy(() => SlotStatusSchema).optional(),
+  lastCalculated: z.coerce.date()
+}).strict();
+
 export const AvailabilityUpdateWithoutAvailableServicesInputSchema: z.ZodType<Prisma.AvailabilityUpdateWithoutAvailableServicesInput> = z.object({
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  isRecurring: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityUpdaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutAvailabilitiesNestedInputSchema).optional(),
@@ -15040,9 +15167,6 @@ export const AvailabilityUncheckedUpdateWithoutAvailableServicesInputSchema: z.Z
   serviceProviderId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  isRecurring: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityUpdaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotUncheckedUpdateManyWithoutAvailabilityNestedInputSchema).optional()
@@ -15053,16 +15177,46 @@ export const AvailabilityUncheckedUpdateManyWithoutAvailableServicesInputSchema:
   serviceProviderId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  isRecurring: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
-  recurringDays: z.union([ z.lazy(() => AvailabilityUpdaterecurringDaysInputSchema),z.number().int().array() ]).optional(),
-  recurrenceEndDate: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+}).strict();
+
+export const CalculatedAvailabilitySlotUpdateWithoutServiceConfigInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUpdateWithoutServiceConfigInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => SlotStatusSchema),z.lazy(() => EnumSlotStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  lastCalculated: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  availability: z.lazy(() => AvailabilityUpdateOneRequiredWithoutCalculatedSlotsNestedInputSchema).optional(),
+  service: z.lazy(() => ServiceUpdateOneRequiredWithoutCalculatedSlotsNestedInputSchema).optional(),
+  booking: z.lazy(() => BookingUpdateOneWithoutSlotNestedInputSchema).optional()
+}).strict();
+
+export const CalculatedAvailabilitySlotUncheckedUpdateWithoutServiceConfigInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUncheckedUpdateWithoutServiceConfigInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  availabilityId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  serviceId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => SlotStatusSchema),z.lazy(() => EnumSlotStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  lastCalculated: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  booking: z.lazy(() => BookingUncheckedUpdateOneWithoutSlotNestedInputSchema).optional()
+}).strict();
+
+export const CalculatedAvailabilitySlotUncheckedUpdateManyWithoutServiceConfigInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUncheckedUpdateManyWithoutServiceConfigInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  availabilityId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  serviceId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => SlotStatusSchema),z.lazy(() => EnumSlotStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  lastCalculated: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
 
 export const CalculatedAvailabilitySlotCreateManyAvailabilityInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotCreateManyAvailabilityInput> = z.object({
   id: z.string().cuid().optional(),
   serviceId: z.string(),
+  serviceConfigId: z.string(),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
   status: z.lazy(() => SlotStatusSchema).optional(),
@@ -15079,7 +15233,8 @@ export const ServiceAvailabilityConfigUpdateWithoutAvailabilitiesInputSchema: z.
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   service: z.lazy(() => ServiceUpdateOneRequiredWithoutAvailabilityConfigsNestedInputSchema).optional(),
-  serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutAvailabilityConfigsNestedInputSchema).optional()
+  serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutAvailabilityConfigsNestedInputSchema).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotUpdateManyWithoutServiceConfigNestedInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigUncheckedUpdateWithoutAvailabilitiesInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUncheckedUpdateWithoutAvailabilitiesInput> = z.object({
@@ -15093,6 +15248,7 @@ export const ServiceAvailabilityConfigUncheckedUpdateWithoutAvailabilitiesInputS
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  calculatedSlots: z.lazy(() => CalculatedAvailabilitySlotUncheckedUpdateManyWithoutServiceConfigNestedInputSchema).optional()
 }).strict();
 
 export const ServiceAvailabilityConfigUncheckedUpdateManyWithoutAvailabilitiesInputSchema: z.ZodType<Prisma.ServiceAvailabilityConfigUncheckedUpdateManyWithoutAvailabilitiesInput> = z.object({
@@ -15115,12 +15271,14 @@ export const CalculatedAvailabilitySlotUpdateWithoutAvailabilityInputSchema: z.Z
   status: z.union([ z.lazy(() => SlotStatusSchema),z.lazy(() => EnumSlotStatusFieldUpdateOperationsInputSchema) ]).optional(),
   lastCalculated: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   service: z.lazy(() => ServiceUpdateOneRequiredWithoutCalculatedSlotsNestedInputSchema).optional(),
+  serviceConfig: z.lazy(() => ServiceAvailabilityConfigUpdateOneRequiredWithoutCalculatedSlotsNestedInputSchema).optional(),
   booking: z.lazy(() => BookingUpdateOneWithoutSlotNestedInputSchema).optional()
 }).strict();
 
 export const CalculatedAvailabilitySlotUncheckedUpdateWithoutAvailabilityInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUncheckedUpdateWithoutAvailabilityInput> = z.object({
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   serviceId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  serviceConfigId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   status: z.union([ z.lazy(() => SlotStatusSchema),z.lazy(() => EnumSlotStatusFieldUpdateOperationsInputSchema) ]).optional(),
@@ -15131,6 +15289,7 @@ export const CalculatedAvailabilitySlotUncheckedUpdateWithoutAvailabilityInputSc
 export const CalculatedAvailabilitySlotUncheckedUpdateManyWithoutAvailabilityInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUncheckedUpdateManyWithoutAvailabilityInput> = z.object({
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   serviceId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  serviceConfigId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   status: z.union([ z.lazy(() => SlotStatusSchema),z.lazy(() => EnumSlotStatusFieldUpdateOperationsInputSchema) ]).optional(),

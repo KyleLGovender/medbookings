@@ -1,7 +1,5 @@
 'use server';
 
-import { redirect } from 'next/navigation';
-
 import { BillingType, Languages } from '@prisma/client';
 import { put } from '@vercel/blob';
 
@@ -55,12 +53,16 @@ export async function registerServiceProvider(prevState: any, formData: FormData
       },
     });
 
-    if (provider) {
-      redirect('/profile/service-provider');
-    }
-
-    return { success: true };
+    // Return success with redirect path instead of directly redirecting
+    return { success: true, redirect: '/profile/service-provider' };
   } catch (error) {
+    // Log any errors
+    console.error('Service Provider Registration Error:', {
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
     return { success: false, error: 'Failed to register service provider' };
   }
 }

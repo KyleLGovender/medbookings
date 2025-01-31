@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { BillingType, Languages } from '@prisma/client';
@@ -51,6 +52,7 @@ function ServiceProviderForm({
   billingTypes,
   userId,
 }: Props): JSX.Element {
+  const router = useRouter();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [state, formAction] = useFormState(registerServiceProvider, null);
@@ -69,6 +71,13 @@ function ServiceProviderForm({
       termsAccepted: undefined,
     },
   });
+
+  // Watch for successful registration and redirect
+  useEffect(() => {
+    if (state?.success && state.redirect) {
+      router.push(state.redirect);
+    }
+  }, [state, router]);
 
   // Handle image preview
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {

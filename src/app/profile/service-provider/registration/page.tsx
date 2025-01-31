@@ -17,9 +17,12 @@ export default async function RegisterProviderPage() {
     await Promise.all([
       prisma.serviceProviderType.findMany(),
       prisma.service.findMany().then((services) =>
-        services.map(({ createdAt, updatedAt, description, ...rest }) => ({
+        services.map(({ defaultPrice, createdAt, updatedAt, description, ...rest }) => ({
           ...rest,
+          defaultPrice: defaultPrice ? Number(defaultPrice) : null,
           description: description ?? undefined,
+          createdAt: createdAt.toISOString(),
+          updatedAt: updatedAt.toISOString(),
         }))
       ),
       prisma.requirementType.findMany(),

@@ -4,13 +4,13 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { CalendarViewWeekTimeGrid } from '@/features/calendar/components/calendar-view-week/calendar-view-week-time-grid';
 import { generateDaysForWeekCalendar } from '@/features/calendar/lib/helper';
-import { Schedule } from '@/features/calendar/lib/types';
+import { Availability } from '@/features/calendar/lib/types';
 
 interface CalendarViewWeekGridProps {
   rangeStartDate: Date;
   onDateChange: (date: Date) => void;
   onViewChange?: (view: 'day') => void;
-  scheduleData: Schedule[];
+  availabilityData: Availability[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
 }
@@ -28,7 +28,7 @@ export function CalendarViewWeekGrid({
   rangeStartDate,
   onDateChange,
   onViewChange = () => {},
-  scheduleData = [],
+  availabilityData = [],
   serviceProviderId,
   onRefresh,
 }: CalendarViewWeekGridProps) {
@@ -109,7 +109,7 @@ export function CalendarViewWeekGrid({
             navRef={containerNav}
             offsetRef={containerOffset}
             rangeStartDate={rangeStartDate.toISOString()}
-            scheduleData={scheduleData}
+            availabilityData={availabilityData}
             serviceProviderId={serviceProviderId}
             onRefresh={onRefresh}
           />

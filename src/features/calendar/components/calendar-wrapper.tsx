@@ -12,18 +12,18 @@ import { CalendarViewDay } from '@/features/calendar/components/calendar-view-da
 import { CalendarViewSchedule } from '@/features/calendar/components/calendar-view-schedule';
 import { CalendarViewWeek } from '@/features/calendar/components/calendar-view-week';
 import { getDateRange, getNextDate, getPreviousDate } from '@/features/calendar/lib/helper';
-import { getServiceProviderScheduleInRange } from '@/features/calendar/lib/queries';
-import { Schedule } from '@/features/calendar/lib/types';
+import { getServiceProviderAvailabilityInRange } from '@/features/calendar/lib/queries';
+import { Availability } from '@/features/calendar/lib/types';
 
 interface CalendarWrapperProps {
-  initialData: Schedule[];
+  initialAvailability: Availability[];
   serviceProviderId: string;
   initialDateRange: DateRange;
   initialView: 'day' | 'week' | 'schedule';
 }
 
 export function CalendarWrapper({
-  initialData,
+  initialAvailability,
   serviceProviderId,
   initialDateRange,
   initialView,
@@ -33,7 +33,7 @@ export function CalendarWrapper({
   const router = useRouter();
 
   const [dateRange, setDateRange] = useState<DateRange>(initialDateRange);
-  const [scheduleData, setScheduleData] = useState<Schedule[]>(initialData);
+  const [availabilityData, setAvailabilityData] = useState<Availability[]>(initialAvailability);
   const [view, setView] = useState<'day' | 'week' | 'schedule'>(initialView);
 
   const rangeStartDate = dateRange.from!;
@@ -78,7 +78,7 @@ export function CalendarWrapper({
     // Update all three: state, URL, and data
     setDateRange(range);
     updateUrlParams({ range });
-    updateScheduleData(range);
+    updateAvailabilityData(range);
   };
 
   const handleDateRangeSelect = (range: DateRange | undefined) => {
@@ -89,12 +89,12 @@ export function CalendarWrapper({
     if (range?.from && range?.to) {
       updateUrlParams({ range });
       startTransition(async () => {
-        const data = await getServiceProviderScheduleInRange(
+        const data = await getServiceProviderAvailabilityInRange(
           serviceProviderId,
           range.from!,
           range.to!
         );
-        setScheduleData(data);
+        setAvailabilityData(data);
       });
     }
   };
@@ -104,7 +104,7 @@ export function CalendarWrapper({
     const range = getDateRange(newDate, view);
     setDateRange(range);
     updateUrlParams({ range });
-    updateScheduleData(range);
+    updateAvailabilityData(range);
   };
 
   const handleNext = () => {
@@ -112,7 +112,7 @@ export function CalendarWrapper({
     const range = getDateRange(newDate, view);
     setDateRange(range);
     updateUrlParams({ range });
-    updateScheduleData(range);
+    updateAvailabilityData(range);
   };
 
   const handleToday = () => {
@@ -121,7 +121,7 @@ export function CalendarWrapper({
 
     setDateRange(newRange);
     updateUrlParams({ range: newRange });
-    updateScheduleData(newRange);
+    updateAvailabilityData(newRange);
   };
 
   const handleThisWeek = () => {
@@ -131,35 +131,35 @@ export function CalendarWrapper({
 
     setDateRange(newRange);
     updateUrlParams({ range: newRange });
-    updateScheduleData(newRange);
+    updateAvailabilityData(newRange);
   };
 
   const refreshData = useCallback(async () => {
     startTransition(async () => {
-      const data = await getServiceProviderScheduleInRange(
+      const data = await getServiceProviderAvailabilityInRange(
         serviceProviderId,
         dateRange.from!,
         dateRange.to!
       );
-      setScheduleData(data);
+      setAvailabilityData(data);
     });
   }, [serviceProviderId, dateRange]);
 
-  const updateScheduleData = (range: DateRange) => {
+  const updateAvailabilityData = (range: DateRange) => {
     startTransition(async () => {
-      const data = await getServiceProviderScheduleInRange(
+      const data = await getServiceProviderAvailabilityInRange(
         serviceProviderId,
         range.from!,
         range.to!
       );
-      setScheduleData(data);
+      setAvailabilityData(data);
     });
   };
 
   const renderCalendar = () => {
     const props = {
       rangeStartDate,
-      scheduleData,
+      availabilityData,
       onDateChange: handleDateSelect,
     };
 
@@ -185,7 +185,7 @@ export function CalendarWrapper({
       case 'schedule':
         return (
           <CalendarViewSchedule
-            scheduleData={scheduleData}
+            availabilityData={availabilityData}
             serviceProviderId={serviceProviderId}
             onRefresh={refreshData}
           />
@@ -193,7 +193,7 @@ export function CalendarWrapper({
       default:
         return (
           <CalendarViewSchedule
-            scheduleData={scheduleData}
+            availabilityData={availabilityData}
             serviceProviderId={serviceProviderId}
             onRefresh={refreshData}
           />

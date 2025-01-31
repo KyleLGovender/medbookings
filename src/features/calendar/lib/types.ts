@@ -1,3 +1,4 @@
+import { Review } from '@prisma/client';
 import {
   AvailabilitySchema,
   BookingSchema,
@@ -24,10 +25,22 @@ export const BookingTypeSchema = z.enum([
 export type Availability = z.infer<typeof AvailabilitySchema> & {
   serviceProvider: z.infer<typeof ServiceProviderSchema>;
   availableServices: z.infer<typeof ServiceAvailabilityConfigSchema>[];
-  calculatedSlots: z.infer<typeof CalculatedAvailabilitySlotSchema>[];
+  calculatedSlots: (z.infer<typeof CalculatedAvailabilitySlotSchema> & {
+    booking:
+      | (z.infer<typeof BookingSchema> & {
+          client?: z.infer<typeof UserSchema>;
+          bookedBy?: z.infer<typeof UserSchema>;
+          serviceProvider: z.infer<typeof ServiceProviderSchema>;
+          service: z.infer<typeof ServiceSchema>;
+          notifications: z.infer<typeof NotificationLogSchema>[];
+          review?: Review;
+        })
+      | null;
+    service: z.infer<typeof ServiceSchema>;
+  })[];
 };
 
-// Update availability form schema
+// Update availability form schema - removed recurring fields
 export const AvailabilityFormSchema = AvailabilitySchema.extend({
   date: z
     .date({
@@ -38,9 +51,6 @@ export const AvailabilityFormSchema = AvailabilitySchema.extend({
   startTime: z.date(),
   endTime: z.date(),
   serviceIds: z.array(z.string()),
-  isRecurring: z.boolean(),
-  recurringDays: z.array(z.number()),
-  recurrenceEndDate: z.date().nullable(),
   availableServices: z.array(
     z.object({
       serviceId: z.string(),
@@ -70,14 +80,6 @@ export const AvailabilityFormSchema = AvailabilitySchema.extend({
     }
   });
 
-  if (data.isRecurring && (!data.recurringDays || data.recurringDays.length === 0)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Please select at least one day for recurring availability',
-      path: ['recurringDays'],
-    });
-  }
-
   // Validate start time is before end time
   if (data.startTime >= data.endTime) {
     ctx.addIssue({
@@ -96,17 +98,6 @@ export const AvailabilityFormSchema = AvailabilitySchema.extend({
       message: 'End time cannot be on the next day',
       path: ['endTime'],
     });
-  }
-
-  // Validate recurring end date if recurring is enabled
-  if (data.isRecurring && data.recurrenceEndDate) {
-    if (data.recurrenceEndDate <= data.date) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Recurrence end date must be after start date',
-        path: ['recurrenceEndDate'],
-      });
-    }
   }
 });
 
@@ -185,8 +176,17 @@ export type BookingFormValues = z.infer<typeof BookingFormSchema>;
 
 // Add new type for calculated availability slots
 export type CalculatedAvailabilitySlot = z.infer<typeof CalculatedAvailabilitySlotSchema> & {
+  id: string;
+  startTime: Date;
+  endTime: Date;
+  status: 'AVAILABLE' | 'BOOKED' | 'BLOCKED' | 'INVALID';
+  availabilityId: string;
+  serviceId: string;
+  serviceConfigId: string;
+  lastCalculated: Date;
   availability: Availability;
   service: z.infer<typeof ServiceSchema>;
+  serviceConfig: z.infer<typeof ServiceAvailabilityConfigSchema>;
   booking?: Booking;
 };
 

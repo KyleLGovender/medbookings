@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 
 import { CalendarWrapper } from '@/features/calendar/components/calendar-wrapper';
 import { getDateRange } from '@/features/calendar/lib/helper';
-import { getServiceProviderScheduleInRange } from '@/features/calendar/lib/queries';
+import { getServiceProviderAvailabilityInRange } from '@/features/calendar/lib/queries';
 import { getCurrentUser } from '@/lib/auth';
 import { getAuthenticatedServiceProvider } from '@/lib/server-helper';
 
@@ -45,7 +45,7 @@ export async function Calendar({ searchParams }: { searchParams: SearchParams })
   startDate = dateRange.from!;
   endDate = dateRange.to!;
 
-  const initialScheduleData = await getServiceProviderScheduleInRange(
+  const availability = await getServiceProviderAvailabilityInRange(
     serviceProviderId,
     startDate,
     endDate
@@ -64,7 +64,7 @@ export async function Calendar({ searchParams }: { searchParams: SearchParams })
         <Suspense fallback={<div className="h-[600px] animate-pulse rounded-lg bg-gray-100" />}>
           <div className="rounded-lg bg-white shadow">
             <CalendarWrapper
-              initialData={initialScheduleData}
+              initialAvailability={availability}
               serviceProviderId={serviceProviderId}
               initialDateRange={{
                 from: startDate,

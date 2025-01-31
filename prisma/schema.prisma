@@ -221,7 +221,7 @@ model Service {
 
 // New model for service-specific availability configurations
 model ServiceAvailabilityConfig {
-  id                String          @id @default(cuid())
+  id                String                       @id @default(cuid())
   service           Service         @relation(fields: [serviceId], references: [id])
   serviceId         String
   serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
@@ -232,8 +232,9 @@ model ServiceAvailabilityConfig {
   isInPerson        Boolean         @default(false)
   location          String?
   availabilities    Availability[]
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  calculatedSlots   CalculatedAvailabilitySlot[]
+  createdAt         DateTime                     @default(now())
+  updatedAt         DateTime                     @updatedAt
 
   @@unique([serviceId, serviceProviderId])
   @@index([serviceProviderId])
@@ -246,9 +247,6 @@ model Availability {
   serviceProviderId String
   startTime         DateTime
   endTime           DateTime
-  isRecurring       Boolean                      @default(false)
-  recurringDays     Int[] // Array of days (0-6 for Sunday-Saturday)
-  recurrenceEndDate DateTime?
   availableServices ServiceAvailabilityConfig[]
   calculatedSlots   CalculatedAvailabilitySlot[]
   createdAt         DateTime                     @default(now())
@@ -257,21 +255,23 @@ model Availability {
   @@index([serviceProviderId, startTime, endTime])
 }
 
-// New model for pre-calculated availability slots
+// Modified CalculatedAvailabilitySlot model
 model CalculatedAvailabilitySlot {
-  id             String       @id @default(cuid())
-  availability   Availability @relation(fields: [availabilityId], references: [id])
-  availabilityId String
-  service        Service      @relation(fields: [serviceId], references: [id])
-  serviceId      String
-  startTime      DateTime
-  endTime        DateTime
-  status         SlotStatus   @default(AVAILABLE)
-  booking        Booking? // One-to-one relation with booking
-  lastCalculated DateTime // When this slot was last recalculated
+  id                String                   @id @default(cuid())
+  availability      Availability             @relation(fields: [availabilityId], references: [id])
+  availabilityId    String
+  service           Service                  @relation(fields: [serviceId], references: [id])
+  serviceId         String
+  serviceConfig     ServiceAvailabilityConfig @relation(fields: [serviceConfigId], references: [id])
+  serviceConfigId   String
+  startTime         DateTime
+  endTime           DateTime
+  status            SlotStatus               @default(AVAILABLE)
+  booking           Booking?                 // One-to-one relation with booking
+  lastCalculated    DateTime                 // When this slot was last recalculated
 
   @@index([availabilityId, serviceId, startTime, status])
-  @@index([startTime, status, serviceId]) // For quick lookup of available slots
+  @@index([startTime, status, serviceId])
 }
 
 enum SlotStatus {

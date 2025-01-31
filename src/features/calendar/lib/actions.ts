@@ -6,10 +6,10 @@ import { NotificationService } from '@/features/notifications/notification-servi
 import { TemplateService } from '@/features/notifications/template-service';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getAuthenticatedServiceProvider } from '@/lib/server-helper';
 
 import {
-  checkAvailabilityAccess,
+  calculateAvailabilitySlots,
+  checkAvailabilityModificationAllowed,
   checkBookingAccess,
   checkForOverlappingAvailability,
   validateAvailabilityFormData,
@@ -59,6 +59,11 @@ export async function createAvailability(formData: FormData): Promise<{
             id: formData.get('serviceProviderId') as string,
           },
         },
+        calculatedSlots: {
+          createMany: {
+            data: calculateAvailabilitySlots(data, data.startTime, data.endTime),
+          },
+        },
       },
     });
 
@@ -86,32 +91,32 @@ export async function createAvailability(formData: FormData): Promise<{
 }
 
 export async function deleteAvailability(
-  availabilityId: string
+  availabilityId: string,
+  serviceProviderId: string
 ): Promise<{ success?: boolean; error?: string }> {
-  const { serviceProviderId, error: authError } = await getAuthenticatedServiceProvider();
-  if (authError) return { error: authError };
-
   try {
-    const { availability, error: accessError } = await checkAvailabilityAccess(
-      availabilityId,
-      serviceProviderId!
-    );
-
-    if (accessError) {
-      return { error: accessError };
+    const { error } = await checkAvailabilityModificationAllowed(availabilityId, serviceProviderId);
+    if (error) {
+      return { error };
     }
 
-    await prisma.availability.delete({
-      where: { id: availabilityId },
-    });
+    // If no access issues or confirmed bookings, proceed with deletion
+    await prisma.$transaction([
+      // First delete all calculated slots
+      prisma.calculatedAvailabilitySlot.deleteMany({
+        where: { availabilityId },
+      }),
+      // Then delete the availability itself
+      prisma.availability.delete({
+        where: { id: availabilityId },
+      }),
+    ]);
 
     return { success: true };
   } catch (error) {
+    console.error('Delete availability error:', error);
     return {
-      error:
-        error instanceof Error
-          ? `Failed to delete availability: ${error.message}`
-          : 'Failed to delete availability',
+      error: error instanceof Error ? error.message : 'Failed to delete availability',
     };
   }
 }
@@ -129,7 +134,7 @@ export async function updateAvailability(
   if (!serviceProviderId) return { error: 'Service provider ID is required' };
 
   try {
-    const { availability, error: accessError } = await checkAvailabilityAccess(
+    const { availability, error: accessError } = await checkAvailabilityModificationAllowed(
       availabilityId,
       serviceProviderId
     );
@@ -174,9 +179,26 @@ export async function updateAvailability(
       };
     }
 
+    // First delete existing slots
+    await prisma.calculatedAvailabilitySlot.deleteMany({
+      where: { availabilityId },
+    });
+
+    // Then update availability with new data and create new slots
     const updated = await prisma.availability.update({
       where: { id: availabilityId },
-      data,
+      data: {
+        ...data,
+        calculatedSlots: {
+          createMany: {
+            data: calculateAvailabilitySlots(
+              { ...data, id: availabilityId },
+              data.startTime,
+              data.endTime
+            ),
+          },
+        },
+      },
     });
 
     return {

@@ -1,11 +1,11 @@
 'use client';
 
-import { Schedule } from '../../lib/types';
+import { Availability } from '../../lib/types';
 import { CalendarViewWeekGrid } from './calendar-view-week-grid';
 
 interface CalendarViewWeekProps {
   rangeStartDate: Date;
-  scheduleData: Schedule[];
+  availabilityData: Availability[];
   onDateChange: (date: Date) => void;
   onViewChange?: (view: 'day') => void;
   serviceProviderId: string;
@@ -14,7 +14,7 @@ interface CalendarViewWeekProps {
 
 export function CalendarViewWeek({
   rangeStartDate,
-  scheduleData = [],
+  availabilityData = [],
   onDateChange,
   onViewChange = () => {},
   serviceProviderId,
@@ -27,7 +27,7 @@ export function CalendarViewWeek({
   return (
     <CalendarViewWeekGrid
       rangeStartDate={rangeStartDate}
-      scheduleData={scheduleData}
+      availabilityData={availabilityData}
       onDateChange={onDateChange}
       onViewChange={onViewChange}
       serviceProviderId={serviceProviderId}

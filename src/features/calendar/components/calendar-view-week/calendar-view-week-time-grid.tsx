@@ -1,11 +1,11 @@
 'use client';
 
-import { RefObject, useState } from 'react';
+import { Fragment, RefObject, useState } from 'react';
 
 import { addDays, startOfWeek } from 'date-fns';
 
-import { expandRecurringSchedule, getEventGridPosition } from '../../lib/helper';
-import { Schedule } from '../../lib/types';
+import { getEventGridPosition } from '../../lib/helper';
+import { Availability, CalculatedAvailabilitySlot } from '../../lib/types';
 import { AvailabilityDialog } from '../availability-dialog';
 import { CalendarViewEventItem } from '../calendar-view-event-item';
 import { CalendarViewTimeColumn } from '../calendar-view-time-column';
@@ -15,9 +15,10 @@ interface CalendarViewWeekTimeGridProps {
   navRef: RefObject<HTMLDivElement>;
   offsetRef: RefObject<HTMLDivElement>;
   rangeStartDate: string;
-  scheduleData?: Schedule[];
+  availabilityData: Availability[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
+  onEventClick?: (slot: CalculatedAvailabilitySlot) => void;
 }
 
 export function CalendarViewWeekTimeGrid({
@@ -25,15 +26,16 @@ export function CalendarViewWeekTimeGrid({
   navRef,
   offsetRef,
   rangeStartDate,
-  scheduleData = [],
+  availabilityData,
   serviceProviderId,
   onRefresh,
+  onEventClick,
 }: CalendarViewWeekTimeGridProps) {
-  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const [selectedAvailability, setSelectedAvailability] = useState<Availability | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleEventClick = (schedule: Schedule) => {
-    setSelectedSchedule(schedule);
+  const handleEventClick = (availability: Availability) => {
+    setSelectedAvailability(availability);
     setIsDialogOpen(true);
   };
 
@@ -42,27 +44,24 @@ export function CalendarViewWeekTimeGrid({
   const weekStart = startOfWeek(dateObj);
   const weekEnd = addDays(weekStart, 6);
 
-  // Expand all schedules for the week
-  const weekSchedule = scheduleData
-    .flatMap((schedule) => {
-      if (schedule.isRecurring) {
-        const endDate = schedule.recurrenceEndDate
-          ? new Date(schedule.recurrenceEndDate)
-          : addDays(new Date(), 30);
-        return expandRecurringSchedule(schedule, endDate);
-      }
-      return [schedule];
-    })
-    .filter((schedule) => {
-      const scheduleDate = new Date(schedule.startTime);
-      return scheduleDate >= weekStart && scheduleDate <= weekEnd;
-    });
+  // Filter availabilities for the week
+  const weekAvailabilities = availabilityData.filter((availability) => {
+    const availabilityDate = new Date(availability.startTime);
+    return availabilityDate >= weekStart && availabilityDate <= weekEnd;
+  });
 
-  const bookings = weekSchedule.flatMap((schedule) =>
-    schedule.bookings.map((booking) => ({
-      ...booking,
-      availabilityId: schedule.id,
-    }))
+  const bookings = weekAvailabilities.flatMap((availability) =>
+    availability.calculatedSlots
+      .filter((slot) => slot.booking)
+      .map((slot) => ({
+        ...slot.booking!,
+        availabilityId: availability.id,
+      }))
+  );
+
+  console.log(
+    'Availability data structure:',
+    JSON.stringify(availabilityData[0]?.calculatedSlots[0], null, 2)
   );
 
   return (
@@ -87,21 +86,33 @@ export function CalendarViewWeekTimeGrid({
               gridTemplateRows: '1.75rem repeat(288, minmax(0, 1fr)) auto',
             }}
           >
-            {weekSchedule.map((schedule) => (
+            {weekAvailabilities.map((availability) => (
               <li
-                key={schedule.id}
-                className={`relative cursor-pointer ${
-                  schedule.isRecurring ? 'bg-gray-200' : 'bg-blue-200'
-                } hover:bg-opacity-75`}
+                key={availability.id}
+                className="relative cursor-pointer bg-blue-200 hover:bg-opacity-75"
                 style={{
-                  gridRow: getEventGridPosition(schedule.startTime, schedule.endTime),
-                  gridColumn: ((new Date(schedule.startTime).getDay() + 6) % 7) + 1,
+                  gridRow: getEventGridPosition(availability.startTime, availability.endTime),
+                  gridColumn: ((new Date(availability.startTime).getDay() + 6) % 7) + 1,
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleEventClick(schedule);
+                  handleEventClick(availability);
                 }}
-              />
+              >
+                {availability.calculatedSlots.map((slot) => (
+                  <Fragment key={slot.id}>
+                    <CalendarViewEventItem
+                      slot={slot}
+                      gridPosition={getEventGridPosition(
+                        new Date(slot.startTime),
+                        new Date(slot.endTime)
+                      )}
+                      gridColumn={(new Date(slot.startTime).getDay() % 7) + 1}
+                      onEventClick={onEventClick}
+                    />
+                  </Fragment>
+                ))}
+              </li>
             ))}
           </ol>
 
@@ -118,12 +129,12 @@ export function CalendarViewWeekTimeGrid({
                 schedule={{
                   ...booking,
                   type: 'BOOKING',
-                  startTime: booking.startTime,
-                  endTime: booking.endTime,
+                  startTime: booking.startTime.toISOString(),
+                  endTime: booking.endTime.toISOString(),
                 }}
                 gridPosition={getEventGridPosition(booking.startTime, booking.endTime)}
                 gridColumn={((new Date(booking.startTime).getDay() + 6) % 7) + 1}
-                onEventClick={() => {}} // Bookings are not editable
+                onEventClick={onEventClick}
               />
             ))}
           </ol>
@@ -132,7 +143,7 @@ export function CalendarViewWeekTimeGrid({
 
       {/* Dialog for editing availability */}
       <AvailabilityDialog
-        availability={selectedSchedule || undefined}
+        availability={selectedAvailability || undefined}
         serviceProviderId={serviceProviderId}
         mode="edit"
         open={isDialogOpen}

@@ -1,11 +1,12 @@
 'use server';
 
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import { calculateAvailableSpots } from '@/features/calendar/lib/helper';
 import { prisma } from '@/lib/prisma';
 
-import { AvailabilityFormSchema, BookingFormSchema, Schedule } from './types';
+import { Availability, AvailabilityFormSchema, BookingFormSchema, Schedule } from './types';
 
 function hasTimeOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
   return start1 < end2 && start2 < end1;
@@ -109,11 +110,11 @@ export async function checkForOverlappingAvailability(
   return { hasOverlap: false };
 }
 
-export async function checkAvailabilityAccess(
+export async function checkAvailabilityModificationAllowed(
   availabilityId: string,
   serviceProviderId: string
 ): Promise<{
-  availability?: Schedule;
+  availability?: Availability;
   error?: string;
 }> {
   const availability = await prisma.availability.findFirst({
@@ -122,7 +123,13 @@ export async function checkAvailabilityAccess(
       serviceProviderId,
     },
     include: {
-      bookings: true,
+      serviceProvider: true,
+      availableServices: true,
+      calculatedSlots: {
+        include: {
+          booking: true,
+        },
+      },
     },
   });
 
@@ -130,7 +137,7 @@ export async function checkAvailabilityAccess(
     return { error: 'Availability not found' };
   }
 
-  if (availability.bookings.some((booking) => booking.status === 'CONFIRMED')) {
+  if (availability.calculatedSlots.some((slot) => slot.booking?.status === 'CONFIRMED')) {
     return { error: 'Cannot modify availability with confirmed bookings' };
   }
 
@@ -375,4 +382,37 @@ export async function checkBookingAccess(bookingId: string, userId: string) {
   }
 
   return booking;
+}
+
+export async function calculateAvailabilitySlots(
+  availability: Availability,
+  startDate: Date,
+  endDate: Date
+) {
+  const slots: Prisma.CalculatedAvailabilitySlotCreateManyInput[] = [];
+
+  // Generate slots for each service configuration
+  availability.availableServices.forEach((serviceConfig) => {
+    let currentTime = new Date(startDate);
+
+    while (currentTime < endDate) {
+      const slotEnd = new Date(currentTime.getTime() + serviceConfig.duration * 60000);
+
+      if (slotEnd <= endDate) {
+        slots.push({
+          availabilityId: availability.id,
+          serviceId: serviceConfig.serviceId,
+          startTime: currentTime,
+          endTime: slotEnd,
+          duration: serviceConfig.duration,
+          lastCalculated: new Date(),
+          status: 'AVAILABLE',
+        });
+      }
+
+      currentTime = new Date(slotEnd.getTime());
+    }
+  });
+
+  return slots;
 }
