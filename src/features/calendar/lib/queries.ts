@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 
-import { Availability } from './types';
+import { Availability, Service } from './types';
 
 export async function getServiceProviderAvailabilityInRange(
   serviceProviderId: string,
@@ -59,6 +59,32 @@ export async function getServiceProviderAvailabilityInRange(
     });
   } catch (error) {
     console.error('Error fetching availabilities:', error);
+    return [];
+  }
+}
+
+export async function getServiceProviderServices(serviceProviderId: string): Promise<Service[]> {
+  try {
+    const services = await prisma.service.findMany({
+      where: {
+        providers: {
+          some: {
+            id: serviceProviderId,
+          },
+        },
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    // Convert Decimal to number before sending to client
+    return services.map((service) => ({
+      ...service,
+      defaultPrice: service.defaultPrice ? Number(service.defaultPrice) : null,
+    }));
+  } catch (error) {
+    console.error('Error fetching services:', error);
     return [];
   }
 }

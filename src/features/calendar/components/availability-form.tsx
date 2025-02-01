@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -11,17 +11,21 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Spinner } from '@/components/ui/spinner';
 import { TimePicker } from '@/components/ui/time-picker';
+import { getServiceProviderServices } from '@/features/calendar/lib/queries';
 import { useToast } from '@/hooks/use-toast';
 
 import { createAvailability, updateAvailability } from '../lib/actions';
-import { AvailabilityFormSchema, AvailabilityFormValues, Service } from '../lib/types';
-import { RecurringSettingsFields } from './availability-form/recurring-settings-fields';
+import {
+  Availability,
+  AvailabilityFormSchema,
+  AvailabilityFormValues,
+  Service,
+} from '../lib/types';
 import { ServiceConfigurationFields } from './availability-form/service-configuration-fields';
 
 interface AvailabilityFormProps {
   serviceProviderId: string;
-  services: Service[];
-  availability?: AvailabilityFormValues;
+  availability?: Availability;
   mode: 'create' | 'edit';
   onClose: () => void;
   onRefresh: () => Promise<void>;
@@ -29,28 +33,61 @@ interface AvailabilityFormProps {
 
 export function AvailabilityForm({
   serviceProviderId,
-  services,
   availability,
   mode,
   onClose,
   onRefresh,
 }: AvailabilityFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [services, setServices] = useState<Service[]>([]);
+  const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
 
+  // Fetch services on mount
+  useEffect(() => {
+    startTransition(async () => {
+      try {
+        const data = await getServiceProviderServices(serviceProviderId);
+        setServices(data);
+      } catch (error) {
+        console.error('Error fetching services:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to load services',
+        });
+      }
+    });
+  }, [serviceProviderId, toast]);
+
+  // Transform availability data to match form values
+  const defaultValues = availability
+    ? {
+        date: availability.startTime,
+        startTime: availability.startTime,
+        endTime: availability.endTime,
+        serviceIds: availability.availableServices.map((s) => s.serviceId),
+        availableServices: availability.availableServices.map((s) => ({
+          serviceId: s.serviceId,
+          duration: s.duration,
+          price: Number(s.price),
+          isOnlineAvailable: s.isOnlineAvailable,
+          isInPerson: s.isInPerson,
+          location: s.location || undefined,
+        })),
+      }
+    : {
+        date: new Date(),
+        startTime: new Date(),
+        endTime: new Date(),
+        serviceIds: [],
+        availableServices: [],
+      };
+
   const form = useForm<AvailabilityFormValues>({
     resolver: zodResolver(AvailabilityFormSchema),
-    defaultValues: availability || {
-      date: new Date(),
-      startTime: new Date(),
-      endTime: new Date(),
-      serviceIds: [],
-      isRecurring: false,
-      recurringDays: [],
-      recurrenceEndDate: null,
-      availableServices: [],
-    },
+    defaultValues,
   });
 
   const {
@@ -66,33 +103,20 @@ export function AvailabilityForm({
       formData.append('date', values.date.toISOString());
       formData.append('startTime', values.startTime.toISOString());
       formData.append('endTime', values.endTime.toISOString());
-      formData.append('duration', String(Math.max(1, Math.round(values.duration))));
-      formData.append('price', String(Math.max(0, values.price)));
-      formData.append('isOnlineAvailable', String(values.isOnlineAvailable));
-      formData.append('isInPersonAvailable', String(values.isInPersonAvailable));
-      formData.append('location', values.location?.trim() || '');
-      formData.append('isRecurring', String(values.isRecurring));
 
-      if (values.isRecurring) {
-        if (!values.recurringDays?.length) {
-          toast({
-            variant: 'destructive',
-            title: 'Invalid Recurring Days',
-            description: 'Please select at least one recurring day',
-          });
-          return;
+      values.availableServices.forEach((service, index) => {
+        formData.append(`availableServices[${index}][serviceId]`, service.serviceId);
+        formData.append(`availableServices[${index}][duration]`, String(service.duration));
+        formData.append(`availableServices[${index}][price]`, String(service.price));
+        formData.append(
+          `availableServices[${index}][isOnlineAvailable]`,
+          String(service.isOnlineAvailable)
+        );
+        formData.append(`availableServices[${index}][isInPerson]`, String(service.isInPerson));
+        if (service.location) {
+          formData.append(`availableServices[${index}][location]`, service.location);
         }
-        if (!values.recurrenceEndDate) {
-          toast({
-            variant: 'destructive',
-            title: 'Invalid End Date',
-            description: 'Please select a recurrence end date',
-          });
-          return;
-        }
-        formData.append('recurringDays', JSON.stringify(values.recurringDays));
-        formData.append('recurrenceEndDate', values.recurrenceEndDate.toISOString());
-      }
+      });
 
       const response =
         mode === 'create'
@@ -162,7 +186,7 @@ export function AvailabilityForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel className="mb-2">Date</FormLabel>
-              <DatePicker {...field} />
+              <DatePicker date={field.value} onChange={field.onChange} />
               <FormMessage />
             </FormItem>
           )}
@@ -175,7 +199,7 @@ export function AvailabilityForm({
             render={({ field }) => (
               <FormItem className="flex-1">
                 <FormLabel className="mb-2">Start Time</FormLabel>
-                <TimePicker {...field} />
+                <TimePicker date={field.value} onChange={field.onChange} />
                 <FormMessage />
               </FormItem>
             )}
@@ -187,16 +211,24 @@ export function AvailabilityForm({
             render={({ field }) => (
               <FormItem className="flex-1">
                 <FormLabel className="mb-2">End Time</FormLabel>
-                <TimePicker {...field} />
+                <TimePicker date={field.value} onChange={field.onChange} />
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
 
-        <ServiceConfigurationFields services={services} control={form.control} />
-
-        <RecurringSettingsFields control={form.control} form={form} />
+        <FormField
+          control={form.control}
+          name="availableServices"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="mb-2">Available Services</FormLabel>
+              <ServiceConfigurationFields services={services} control={form.control} />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         {Object.keys(form.formState.errors).length > 0 && (
           <div className="rounded-lg border border-destructive p-4 text-sm text-destructive">

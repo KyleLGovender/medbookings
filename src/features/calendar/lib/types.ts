@@ -305,4 +305,6 @@ export interface BookingWithRelations extends z.infer<typeof BookingSchema> {
   bookingType: z.infer<typeof BookingTypeSchema>;
 }
 
-export type Service = z.infer<typeof ServiceSchema>;
+export type Service = Omit<z.infer<typeof ServiceSchema>, 'defaultPrice'> & {
+  defaultPrice: number | null;
+};

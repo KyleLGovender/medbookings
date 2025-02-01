@@ -59,11 +59,6 @@ export function CalendarViewWeekTimeGrid({
       }))
   );
 
-  console.log(
-    'Availability data structure:',
-    JSON.stringify(availabilityData[0]?.calculatedSlots[0], null, 2)
-  );
-
   return (
     <>
       <div className="flex flex-auto">
