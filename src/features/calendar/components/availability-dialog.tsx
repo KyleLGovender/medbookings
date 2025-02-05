@@ -25,7 +25,7 @@ export function AvailabilityDialog(props: AvailabilityDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>{mode === 'create' ? 'Add Availability' : 'Edit Availability'}</DialogTitle>
           <DialogDescription>
@@ -34,13 +34,15 @@ export function AvailabilityDialog(props: AvailabilityDialogProps) {
               : 'Modify your existing availability.'}
           </DialogDescription>
         </DialogHeader>
-        <AvailabilityForm
-          serviceProviderId={serviceProviderId}
-          availability={availability}
-          mode={mode}
-          onClose={() => onOpenChange(false)}
-          onRefresh={onRefresh}
-        />
+        <div className="-mr-6 flex-1 overflow-y-auto pr-6">
+          <AvailabilityForm
+            serviceProviderId={serviceProviderId}
+            availability={availability}
+            mode={mode}
+            onClose={() => onOpenChange(false)}
+            onRefresh={onRefresh}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );

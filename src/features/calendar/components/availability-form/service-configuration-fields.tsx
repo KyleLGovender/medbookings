@@ -25,15 +25,26 @@ export function ServiceConfigurationFields({
 
   return (
     <div className="space-y-6">
-      {/* Service Selection */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+      {/* Service Selection - Using flex with dynamic widths */}
+      <div className="flex flex-wrap gap-4">
         {services.map((service) => {
           const isSelected = fields.some((field) => field.serviceId === service.id);
+          const totalServices = services.length;
+
+          // Calculate dynamic width based on number of services
+          const widthClass =
+            totalServices === 1
+              ? 'w-full'
+              : totalServices === 2
+                ? 'w-[calc(50%-0.5rem)]'
+                : totalServices === 3
+                  ? 'w-[calc(33.333%-0.75rem)]'
+                  : 'w-[calc(25%-0.75rem)]';
 
           return (
             <Card
               key={service.id}
-              className={`cursor-pointer p-4 transition-all hover:border-primary ${
+              className={`cursor-pointer p-4 transition-all hover:border-primary ${widthClass} ${
                 isSelected ? 'border-2 border-primary bg-primary/5' : ''
               }`}
               onClick={() => {
@@ -52,11 +63,7 @@ export function ServiceConfigurationFields({
               }}
             >
               <div className="flex flex-col items-center space-y-2 text-center">
-                {/* You can add an icon here */}
                 <h3 className="font-medium">{service.name}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {service.defaultDuration} min • ${service.defaultPrice}
-                </p>
               </div>
             </Card>
           );
