@@ -2,7 +2,7 @@
 
 import { Control, useFieldArray } from 'react-hook-form';
 
-import { Checkbox } from '@/components/ui/checkbox';
+import { Card } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -26,29 +26,42 @@ export function ServiceConfigurationFields({
   return (
     <div className="space-y-6">
       {/* Service Selection */}
-      {services.map((service) => (
-        <div key={service.id} className="flex items-center space-x-4">
-          <Checkbox
-            id={service.id}
-            checked={fields.some((field) => field.serviceId === service.id)}
-            onCheckedChange={(checked) => {
-              if (checked) {
-                append({
-                  serviceId: service.id,
-                  duration: service.defaultDuration ?? 60,
-                  price: service.defaultPrice ?? 0,
-                  isOnlineAvailable: true,
-                  isInPerson: true,
-                });
-              } else {
-                const index = fields.findIndex((field) => field.serviceId === service.id);
-                if (index > -1) remove(index);
-              }
-            }}
-          />
-          <label className="text-sm font-medium leading-none">{service.name}</label>
-        </div>
-      ))}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+        {services.map((service) => {
+          const isSelected = fields.some((field) => field.serviceId === service.id);
+
+          return (
+            <Card
+              key={service.id}
+              className={`cursor-pointer p-4 transition-all hover:border-primary ${
+                isSelected ? 'border-2 border-primary bg-primary/5' : ''
+              }`}
+              onClick={() => {
+                if (!isSelected) {
+                  append({
+                    serviceId: service.id,
+                    duration: service.defaultDuration ?? 60,
+                    price: service.defaultPrice ?? 0,
+                    isOnlineAvailable: true,
+                    isInPerson: true,
+                  });
+                } else {
+                  const index = fields.findIndex((field) => field.serviceId === service.id);
+                  if (index > -1) remove(index);
+                }
+              }}
+            >
+              <div className="flex flex-col items-center space-y-2 text-center">
+                {/* You can add an icon here */}
+                <h3 className="font-medium">{service.name}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {service.defaultDuration} min • ${service.defaultPrice}
+                </p>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
 
       {/* Configuration for Selected Services */}
       {fields.map((serviceConfig, index) => {
@@ -56,7 +69,7 @@ export function ServiceConfigurationFields({
         if (!service) return null;
 
         return (
-          <div key={serviceConfig.id} className="mt-4 rounded-lg border p-4">
+          <Card key={serviceConfig.id} className="p-4">
             <h4 className="mb-4 font-medium">{service.name} Configuration</h4>
 
             <div className="grid gap-4">
@@ -124,7 +137,7 @@ export function ServiceConfigurationFields({
                 />
               )}
             </div>
-          </div>
+          </Card>
         );
       })}
     </div>
