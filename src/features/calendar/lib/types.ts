@@ -308,3 +308,22 @@ export interface BookingWithRelations extends z.infer<typeof BookingSchema> {
 export type Service = Omit<z.infer<typeof ServiceSchema>, 'defaultPrice'> & {
   defaultPrice: number | null;
 };
+
+// Add this new schema for form validation
+export const ServiceConfigFormSchema = ServiceAvailabilityConfigSchema.pick({
+  serviceId: true,
+  duration: true,
+  price: true,
+  isOnlineAvailable: true,
+  isInPerson: true,
+  location: true,
+}).extend({
+  duration: z.number().min(15, 'Duration must be at least 15 minutes'),
+  price: z.number().min(0, 'Price cannot be negative'),
+  isOnlineAvailable: z.boolean(),
+  isInPerson: z.boolean(),
+  location: z.string().optional(),
+});
+
+// Add this type for form values
+export type ServiceConfig = z.infer<typeof ServiceConfigFormSchema>;

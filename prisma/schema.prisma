@@ -10,7 +10,12 @@ generator client {
 // Add this new generator configuration
 generator zod {
   provider = "zod-prisma-types"
-  output   = "./zod" // This will create a /zod directory in your prisma folder
+  output   = "./zod"
+  relationModel = true
+  modelCase = "camelCase"
+  modelSuffix = "Schema"
+  useDecimalJs = true
+  prismaJsonNullability = true
 }
 
 // Base User model and auth
