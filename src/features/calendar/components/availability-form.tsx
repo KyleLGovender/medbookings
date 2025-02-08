@@ -94,6 +94,8 @@ export function AvailabilityForm({
     formState: { errors },
   } = form;
 
+  console.log('Form errors:', form.formState.errors);
+
   async function onSubmit(values: AvailabilityFormValues) {
     setIsSubmitting(true);
 
@@ -183,11 +185,13 @@ export function AvailabilityForm({
         <FormField
           control={form.control}
           name="date"
-          render={({ field }) => (
+          render={({ field, fieldState }) => (
             <FormItem>
               <FormLabel className="mb-2">Date</FormLabel>
               <DatePicker date={field.value} onChange={field.onChange} />
-              <FormMessage />
+              <FormMessage>
+                {fieldState.error?.message || (fieldState.invalid && 'Please select a valid date')}
+              </FormMessage>
             </FormItem>
           )}
         />
@@ -196,11 +200,14 @@ export function AvailabilityForm({
           <FormField
             control={form.control}
             name="startTime"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <FormItem className="flex-1">
                 <FormLabel className="mb-2">Start Time</FormLabel>
                 <TimePicker date={field.value} onChange={field.onChange} />
-                <FormMessage />
+                <FormMessage>
+                  {fieldState.error?.message ||
+                    (fieldState.invalid && 'Please select a valid start time')}
+                </FormMessage>
               </FormItem>
             )}
           />
@@ -208,11 +215,14 @@ export function AvailabilityForm({
           <FormField
             control={form.control}
             name="endTime"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <FormItem className="flex-1">
                 <FormLabel className="mb-2">End Time</FormLabel>
                 <TimePicker date={field.value} onChange={field.onChange} />
-                <FormMessage />
+                <FormMessage>
+                  {fieldState.error?.message ||
+                    (fieldState.invalid && 'Please select a valid end time')}
+                </FormMessage>
               </FormItem>
             )}
           />
@@ -221,27 +231,22 @@ export function AvailabilityForm({
         <FormField
           control={form.control}
           name="availableServices"
-          render={({ field }) => (
+          render={({ field, fieldState }) => (
             <FormItem>
               <FormLabel className="mb-2">Available Services</FormLabel>
-              <ServiceConfigurationFields services={services} control={form.control} />
-              <FormMessage />
+              <ServiceConfigurationFields
+                services={services}
+                control={form.control}
+                form={form}
+                toast={toast}
+              />
+              <FormMessage>
+                {fieldState.error?.message ||
+                  (fieldState.invalid && 'Please configure at least one service')}
+              </FormMessage>
             </FormItem>
           )}
         />
-
-        {Object.keys(form.formState.errors).length > 0 && (
-          <div className="rounded-lg border border-destructive p-4 text-sm text-destructive">
-            <p className="mb-1 font-semibold">Please fix the following errors:</p>
-            <ul className="list-disc pl-4">
-              {Object.entries(form.formState.errors).map(([key, error]) => (
-                <li key={key}>
-                  {error?.message || `Invalid ${key.replace(/([A-Z])/g, ' $1').toLowerCase()}`}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? (

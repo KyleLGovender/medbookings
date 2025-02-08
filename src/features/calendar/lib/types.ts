@@ -21,6 +21,32 @@ export const BookingTypeSchema = z.enum([
   'PROVIDER_GUEST',
 ]);
 
+// Add this new schema for form validation
+export const ServiceConfigFormSchema = z
+  .object({
+    serviceId: z.string(),
+    duration: z.number().min(5, 'Duration must be at least 5 minutes'),
+    price: z.number().min(100, 'Minimum Price is R100'),
+    isOnlineAvailable: z.boolean(),
+    isInPerson: z.boolean(),
+    location: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.isInPerson) {
+        return !!data.location;
+      }
+      return true;
+    },
+    {
+      message: 'Location is required for in-person services',
+      path: ['location'],
+    }
+  );
+
+// Add this type for form values
+export type ServiceConfig = z.infer<typeof ServiceConfigFormSchema>;
+
 // Update base availability type to match schema
 export type Availability = z.infer<typeof AvailabilitySchema> & {
   serviceProvider: z.infer<typeof ServiceProviderSchema>;
@@ -40,66 +66,65 @@ export type Availability = z.infer<typeof AvailabilitySchema> & {
   })[];
 };
 
-// Update availability form schema - removed recurring fields
-export const AvailabilityFormSchema = AvailabilitySchema.extend({
-  date: z
-    .date({
-      required_error: 'Date is required',
-      invalid_type_error: 'Invalid date format',
-    })
-    .min(new Date(new Date().setHours(0, 0, 0, 0)), 'Date cannot be in the past'),
-  startTime: z.date(),
-  endTime: z.date(),
-  serviceIds: z.array(z.string()),
-  availableServices: z.array(
-    z.object({
-      serviceId: z.string(),
-      duration: z.number(),
-      price: z.number(),
-      isOnlineAvailable: z.boolean(),
-      isInPerson: z.boolean(),
-      location: z.string().optional(),
-    })
-  ),
-}).superRefine((data, ctx) => {
-  if (data.availableServices.length === 0) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'At least one service configuration must be specified',
-      path: ['availableServices'],
-    });
-  }
-
-  data.availableServices.forEach((service, index) => {
-    if (!service.isOnlineAvailable && !service.isInPerson) {
+// Update availability form schema - exclude database fields and add form-specific validation
+export const AvailabilityFormSchema = AvailabilitySchema.omit({
+  id: true,
+  serviceProviderId: true,
+  createdAt: true,
+  updatedAt: true,
+})
+  .extend({
+    date: z
+      .date({
+        required_error: 'Date is required',
+        invalid_type_error: 'Invalid date format',
+      })
+      .min(new Date(new Date().setHours(0, 0, 0, 0)), 'Date cannot be in the past'),
+    startTime: z.date(),
+    endTime: z.date(),
+    availableServices: z
+      .array(ServiceConfigFormSchema)
+      .min(1, 'At least one service configuration must be specified'),
+  })
+  .superRefine((data, ctx) => {
+    if (data.availableServices.length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'At least one availability type must be selected',
-        path: [`availableServices.${index}`],
+        message: 'At least one service configuration must be specified',
+        path: ['availableServices'],
+      });
+    }
+
+    data.availableServices.forEach((service, index) => {
+      if (!service.isOnlineAvailable && !service.isInPerson) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'At least one availability type must be selected',
+          path: [`availableServices.${index}`],
+        });
+      }
+    });
+
+    // Validate start time is before end time
+    if (data.startTime >= data.endTime) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Start time must be before end time',
+        path: ['startTime'],
+      });
+    }
+
+    // Validate time is within same day
+    const startHours = data.startTime.getHours();
+    const endHours = data.endTime.getHours();
+    if (endHours < startHours) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'End time cannot be on the next day',
+        path: ['endTime'],
       });
     }
   });
-
-  // Validate start time is before end time
-  if (data.startTime >= data.endTime) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Start time must be before end time',
-      path: ['startTime'],
-    });
-  }
-
-  // Validate time is within same day
-  const startHours = data.startTime.getHours();
-  const endHours = data.endTime.getHours();
-  if (endHours < startHours) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'End time cannot be on the next day',
-      path: ['endTime'],
-    });
-  }
-});
 
 export type AvailabilityFormValues = z.infer<typeof AvailabilityFormSchema>;
 
@@ -308,22 +333,3 @@ export interface BookingWithRelations extends z.infer<typeof BookingSchema> {
 export type Service = Omit<z.infer<typeof ServiceSchema>, 'defaultPrice'> & {
   defaultPrice: number | null;
 };
-
-// Add this new schema for form validation
-export const ServiceConfigFormSchema = ServiceAvailabilityConfigSchema.pick({
-  serviceId: true,
-  duration: true,
-  price: true,
-  isOnlineAvailable: true,
-  isInPerson: true,
-  location: true,
-}).extend({
-  duration: z.number().min(15, 'Duration must be at least 15 minutes'),
-  price: z.number().min(0, 'Price cannot be negative'),
-  isOnlineAvailable: z.boolean(),
-  isInPerson: z.boolean(),
-  location: z.string().optional(),
-});
-
-// Add this type for form values
-export type ServiceConfig = z.infer<typeof ServiceConfigFormSchema>;
