@@ -155,12 +155,18 @@ export async function updateAvailability(
   formData: FormData
 ): Promise<AvailabilityActionResponse> {
   try {
+    console.log('Starting updateAvailability with ID:', availabilityId);
+
     const validationResult = await validateAvailabilityFormData(formData);
+    console.log('Validation result:', validationResult);
+
     if ('error' in validationResult || !validationResult.data) {
+      console.log('Validation failed:', validationResult);
       return validationResult;
     }
 
     const { data } = validationResult;
+    console.log('Validated data:', data);
 
     // Check which configurations already exist
     const existingConfigs = await prisma.serviceAvailabilityConfig.findMany({
@@ -171,8 +177,12 @@ export async function updateAvailability(
         },
       },
     });
+    console.log('Existing configs:', existingConfigs);
 
     const existingServiceIds = new Set(existingConfigs.map((c) => c.serviceId));
+    const newServiceIds = new Set(data.availableServices.map((s) => s.serviceId));
+    console.log('Existing service IDs:', Array.from(existingServiceIds));
+    console.log('New service IDs:', Array.from(newServiceIds));
 
     const availability = await prisma.availability.update({
       where: { id: availabilityId },
@@ -180,12 +190,34 @@ export async function updateAvailability(
         startTime: data.startTime,
         endTime: data.endTime,
         availableServices: {
+          // Disconnect services that are no longer in the form data
+          disconnect: (
+            await prisma.serviceAvailabilityConfig.findMany({
+              where: {
+                serviceProviderId: formData.get('serviceProviderId') as string,
+                serviceId: {
+                  notIn: Array.from(newServiceIds),
+                },
+              },
+              select: {
+                serviceId: true,
+                serviceProviderId: true,
+              },
+            })
+          ).map((config) => ({
+            serviceId_serviceProviderId: {
+              serviceId: config.serviceId,
+              serviceProviderId: config.serviceProviderId,
+            },
+          })),
+          // Connect existing services
           connect: existingConfigs.map((config) => ({
             serviceId_serviceProviderId: {
               serviceId: config.serviceId,
               serviceProviderId: config.serviceProviderId,
             },
           })),
+          // Create new services
           create: data.availableServices
             .filter((service) => !existingServiceIds.has(service.serviceId))
             .map((service) => ({
@@ -203,14 +235,18 @@ export async function updateAvailability(
         availableServices: true,
       },
     });
+    console.log('Updated availability:', availability);
 
     // Create calculated slots with the service config IDs
+    const calculatedSlots = await calculateInitialAvailabilitySlots(
+      data,
+      availability.id,
+      availability.availableServices
+    );
+    // console.log('Calculated slots:', calculatedSlots);
+
     await prisma.calculatedAvailabilitySlot.createMany({
-      data: await calculateInitialAvailabilitySlots(
-        data,
-        availability.id,
-        availability.availableServices
-      ),
+      data: calculatedSlots,
     });
 
     return {
@@ -229,6 +265,7 @@ export async function updateAvailability(
     };
   } catch (error) {
     console.error('Update availability error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack available');
     return {
       error: error instanceof Error ? error.message : 'Failed to update availability',
     };

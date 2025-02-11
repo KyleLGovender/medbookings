@@ -64,9 +64,9 @@ export function AvailabilityForm({
   // Transform availability data to match form values
   const defaultValues = availability
     ? {
-        date: availability.startTime,
-        startTime: availability.startTime,
-        endTime: availability.endTime,
+        date: new Date(availability.startTime),
+        startTime: new Date(availability.startTime),
+        endTime: new Date(availability.endTime),
         serviceIds: availability.availableServices.map((s) => s.serviceId),
         availableServices: availability.availableServices.map((s) => ({
           serviceId: s.serviceId,
