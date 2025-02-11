@@ -92,20 +92,20 @@ export function CalendarViewSchedule({
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>Period</TableHead>
-                <TableHead>% Booked</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="text-center">Period</TableHead>
+                <TableHead className="text-center">% Booked</TableHead>
+                <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {availabilityData.map((availability) => (
                 <TableRow key={availability.id}>
                   <TableCell>{format(new Date(availability.startTime), 'EEE, MMM dd')}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-center">
                     {format(new Date(availability.startTime), 'HH:mm')} -{' '}
                     {format(new Date(availability.endTime), 'HH:mm')}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-center">
                     {Math.round(
                       (availability.calculatedSlots.filter((slot) => slot.status === 'BOOKED')
                         .length /
@@ -114,8 +114,8 @@ export function CalendarViewSchedule({
                     )}
                     %
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
