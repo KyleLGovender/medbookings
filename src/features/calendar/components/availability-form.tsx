@@ -16,16 +16,16 @@ import { useToast } from '@/hooks/use-toast';
 
 import { createAvailability, updateAvailability } from '../lib/actions';
 import {
-  Availability,
   AvailabilityFormSchema,
   AvailabilityFormValues,
+  QueriedAvailability,
   Service,
 } from '../lib/types';
 import { ServiceConfigurationFields } from './availability-form/service-configuration-fields';
 
 interface AvailabilityFormProps {
   serviceProviderId: string;
-  availability?: Availability;
+  availability?: QueriedAvailability;
   mode: 'create' | 'edit';
   onClose: () => void;
   onRefresh: () => Promise<void>;

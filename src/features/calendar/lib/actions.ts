@@ -155,10 +155,7 @@ export async function updateAvailability(
   formData: FormData
 ): Promise<AvailabilityActionResponse> {
   try {
-    console.log('Starting updateAvailability with ID:', availabilityId);
-
     const validationResult = await validateAvailabilityFormData(formData);
-    console.log('Validation result:', validationResult);
 
     if ('error' in validationResult || !validationResult.data) {
       console.log('Validation failed:', validationResult);
@@ -177,12 +174,9 @@ export async function updateAvailability(
         },
       },
     });
-    console.log('Existing configs:', existingConfigs);
 
     const existingServiceIds = new Set(existingConfigs.map((c) => c.serviceId));
     const newServiceIds = new Set(data.availableServices.map((s) => s.serviceId));
-    console.log('Existing service IDs:', Array.from(existingServiceIds));
-    console.log('New service IDs:', Array.from(newServiceIds));
 
     const availability = await prisma.availability.update({
       where: { id: availabilityId },
@@ -235,7 +229,6 @@ export async function updateAvailability(
         availableServices: true,
       },
     });
-    console.log('Updated availability:', availability);
 
     // Create calculated slots with the service config IDs
     const calculatedSlots = await calculateInitialAvailabilitySlots(

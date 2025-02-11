@@ -13,8 +13,8 @@ export async function getServiceProviderAvailabilityInRange(
     const availabilities = await prisma.availability.findMany({
       where: {
         serviceProviderId,
-        startTime: { lte: endDate },
-        endTime: { gte: startDate },
+        startTime: { lte: endDate }, // Availability starts before range end
+        endTime: { gte: startDate }, // Availability ends after range start
       },
       include: {
         serviceProvider: true,
@@ -46,29 +46,6 @@ export async function getServiceProviderAvailabilityInRange(
         },
       },
     });
-
-    console.log(
-      'Availabilities data structure:',
-      JSON.stringify(
-        {
-          count: availabilities.length,
-          sample: {
-            ...availabilities[0],
-            startTime: availabilities[0]?.startTime,
-            endTime: availabilities[0]?.endTime,
-            createdAt: availabilities[0]?.createdAt,
-            updatedAt: availabilities[0]?.updatedAt,
-          },
-          fields: Object.keys(availabilities[0] || {}),
-          serviceProvider: availabilities[0]?.serviceProvider,
-          serviceProviderFields: Object.keys(availabilities[0]?.serviceProvider || {}),
-          availableServices: availabilities[0]?.availableServices,
-          availableServicesFields: Object.keys(availabilities[0]?.availableServices?.[0] || {}),
-        },
-        null,
-        2
-      )
-    );
 
     // Transform and return the data
     return availabilities.map((availability) => ({

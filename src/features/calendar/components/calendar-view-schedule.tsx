@@ -1,8 +1,9 @@
 import { useRouter } from 'next/navigation';
-import * as React from 'react';
 import { useState } from 'react';
 
+import { SlotStatusSchema } from '@prisma/zod';
 import { format } from 'date-fns';
+import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -15,34 +16,37 @@ import {
 } from '@/components/ui/table';
 import { AvailabilityDialog } from '@/features/calendar/components/availability-dialog';
 import { deleteAvailability, deleteBooking } from '@/features/calendar/lib/actions';
-import { Availability, Booking } from '@/features/calendar/lib/types';
+import { Booking, QueriedAvailability } from '@/features/calendar/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface CalendarViewScheduleProps {
-  availabilityData: Availability[];
+  availabilityData: QueriedAvailability[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
 }
+
+type SlotStatus = z.infer<typeof SlotStatusSchema>;
 
 export function CalendarViewSchedule({
   availabilityData,
   serviceProviderId,
   onRefresh,
 }: CalendarViewScheduleProps) {
-  const [selectedAvailability, setSelectedAvailability] = useState<Availability | undefined>();
+  const [selectedAvailability, setSelectedAvailability] = useState<
+    QueriedAvailability | undefined
+  >();
   const [selectedBooking, setSelectedBooking] = useState<Booking | undefined>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
-  const handleEdit = (availability: Availability | Booking, type: 'availability' | 'booking') => {
+  const handleEdit = (data: QueriedAvailability | Booking, type: 'availability' | 'booking') => {
     if (type === 'availability') {
-      setSelectedAvailability(availability as Availability);
+      setSelectedAvailability(data as QueriedAvailability);
     }
     if (type === 'booking') {
-      setSelectedBooking(availability as Booking);
+      setSelectedBooking(data as Booking);
     }
-
     setIsDialogOpen(true);
   };
 
@@ -87,65 +91,49 @@ export function CalendarViewSchedule({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Schedule</TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead>Time</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead className="hidden md:table-cell">Client</TableHead>
-                <TableHead className="hidden md:table-cell">Type</TableHead>
-                <TableHead className="hidden md:table-cell">Status</TableHead>
-                <TableHead className="hidden text-right md:table-cell">Price</TableHead>
-                <TableHead className="hidden md:table-cell">Actions</TableHead>
+                <TableHead>Period</TableHead>
+                <TableHead>% Booked</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {availabilityData
-                .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-                .map((availability) => (
-                  <React.Fragment key={availability.id}>
-                    {/* Availability Row */}
-                    <TableRow className="bg-slate-50">
-                      <TableCell>
-                        {format(new Date(availability.startTime), 'EEE, MMM dd')}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(availability.startTime), 'HH:mm')} -{' '}
-                        {format(new Date(availability.endTime), 'HH:mm')}
-                      </TableCell>
-                      <TableCell>
-                        {availability.availableServices[0]?.duration ?? '-'} mins
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">-</TableCell>
-                      <TableCell className="hidden md:table-cell">-</TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
-                          Available
-                        </span>
-                      </TableCell>
-                      <TableCell className="hidden text-right md:table-cell">
-                        R{Number(availability.availableServices[0]?.price).toFixed(2)}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(availability, 'availability')}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(availability.id, 'availability')}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  </React.Fragment>
-                ))}
+              {availabilityData.map((availability) => (
+                <TableRow key={availability.id}>
+                  <TableCell>{format(new Date(availability.startTime), 'EEE, MMM dd')}</TableCell>
+                  <TableCell>
+                    {format(new Date(availability.startTime), 'HH:mm')} -{' '}
+                    {format(new Date(availability.endTime), 'HH:mm')}
+                  </TableCell>
+                  <TableCell>
+                    {Math.round(
+                      (availability.calculatedSlots.filter((slot) => slot.status === 'BOOKED')
+                        .length /
+                        availability.calculatedSlots.length) *
+                        100
+                    )}
+                    %
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(availability, 'availability')}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(availability.id, 'availability')}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>
