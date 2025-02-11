@@ -351,3 +351,41 @@ export interface BookingWithRelations extends z.infer<typeof BookingSchema> {
   // Add bookingType to track the type of booking
   bookingType: z.infer<typeof BookingTypeSchema>;
 }
+
+// Rename TransformedAvailability to QueriedAvailability
+export type QueriedAvailability = Omit<Availability, 'availableServices' | 'calculatedSlots'> & {
+  availableServices: {
+    id: string;
+    serviceProviderId: string;
+    serviceId: string;
+    duration: number;
+    price: number;
+    isOnlineAvailable: boolean;
+    isInPerson: boolean;
+    location: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    service: Service;
+  }[];
+  calculatedSlots: {
+    id: string;
+    startTime: Date;
+    endTime: Date;
+    status: 'AVAILABLE' | 'BOOKED' | 'BLOCKED' | 'INVALID';
+    serviceId: string;
+    availabilityId: string;
+    serviceConfigId: string;
+    lastCalculated: Date;
+    booking: null | {
+      id: string;
+      price: number;
+      clientId: string | null;
+      bookedById: string | null;
+      client?: z.infer<typeof UserSchema>;
+      bookedBy?: z.infer<typeof UserSchema>;
+      serviceProvider: z.infer<typeof ServiceProviderSchema>;
+      service: Service;
+    };
+    service: Service;
+  }[];
+};

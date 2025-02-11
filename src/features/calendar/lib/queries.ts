@@ -2,13 +2,13 @@
 
 import { prisma } from '@/lib/prisma';
 
-import { Availability, Service } from './types';
+import { QueriedAvailability, Service } from './types';
 
 export async function getServiceProviderAvailabilityInRange(
   serviceProviderId: string,
   startDate: Date,
   endDate: Date
-): Promise<Availability[]> {
+): Promise<QueriedAvailability[]> {
   try {
     const availabilities = await prisma.availability.findMany({
       where: {
@@ -70,7 +70,39 @@ export async function getServiceProviderAvailabilityInRange(
       )
     );
 
-    return availabilities;
+    // Transform and return the data
+    return availabilities.map((availability) => ({
+      ...availability,
+      availableServices: availability.availableServices.map((as) => ({
+        ...as,
+        price: Number(as.price),
+        service: {
+          ...as.service,
+          defaultPrice: as.service.defaultPrice ? Number(as.service.defaultPrice) : null,
+        },
+      })),
+      calculatedSlots: availability.calculatedSlots.map((slot) => ({
+        ...slot,
+        booking: slot.booking && {
+          ...slot.booking,
+          price: Number(slot.booking.price),
+          client: slot.booking.client || undefined,
+          bookedBy: slot.booking.bookedBy || undefined,
+          serviceProvider: {
+            ...slot.booking.serviceProvider,
+            averageRating: slot.booking.serviceProvider.averageRating || null,
+          },
+          service: {
+            ...slot.booking.service,
+            defaultPrice: Number(slot.booking.service.defaultPrice),
+          },
+        },
+        service: {
+          ...slot.service,
+          defaultPrice: slot.service.defaultPrice ? Number(slot.service.defaultPrice) : null,
+        },
+      })),
+    }));
   } catch (error) {
     console.error('Error fetching availability:', error);
     console.error('Error details:', error instanceof Error ? error.stack : error);
