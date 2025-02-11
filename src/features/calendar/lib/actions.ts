@@ -8,84 +8,113 @@ import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 import {
-  calculateAvailabilitySlots,
+  calculateInitialAvailabilitySlots,
   checkAvailabilityModificationAllowed,
   checkBookingAccess,
-  checkForOverlappingAvailability,
   validateAvailabilityFormData,
   validateBookingFormData,
   validateBookingWithAvailability,
 } from './server-helper';
-import { Availability, Booking } from './types';
+import { AvailabilityActionResponse, Booking } from './types';
 
-export async function createAvailability(formData: FormData): Promise<{
-  data?: Availability;
-  error?: string;
-  fieldErrors?: Record<string, string[]>;
-  formErrors?: string[];
-}> {
+export async function createAvailability(formData: FormData): Promise<AvailabilityActionResponse> {
   try {
-    // 1. Validate form data
     const validationResult = await validateAvailabilityFormData(formData);
-    if (!validationResult.data || validationResult.error) {
-      return {
-        error: validationResult.error,
-        fieldErrors: validationResult.fieldErrors,
-        formErrors: validationResult.formErrors,
-      };
-    }
-    const data = validationResult.data;
-
-    // 2. Check for overlapping availability
-    const overlap = await checkForOverlappingAvailability(
-      formData.get('serviceProviderId') as string,
-      data.startTime,
-      data.endTime,
-      data.isRecurring,
-      data.recurringDays,
-      data.recurrenceEndDate
-    );
-
-    if (overlap.hasOverlap) {
-      return { error: 'This time slot overlaps with existing availability' };
+    if ('error' in validationResult || !validationResult.data) {
+      return validationResult;
     }
 
-    // Create the availability
+    const { data } = validationResult;
+
+    // Check which configurations already exist
+    const existingConfigs = await prisma.serviceAvailabilityConfig.findMany({
+      where: {
+        serviceProviderId: formData.get('serviceProviderId') as string,
+        serviceId: {
+          in: data.availableServices.map((s) => s.serviceId),
+        },
+      },
+    });
+
+    const existingServiceIds = new Set(existingConfigs.map((c) => c.serviceId));
+
     const availability = await prisma.availability.create({
       data: {
-        ...data,
+        startTime: data.startTime,
+        endTime: data.endTime,
         serviceProvider: {
           connect: {
             id: formData.get('serviceProviderId') as string,
           },
         },
+        availableServices: {
+          connect: existingConfigs.map((config) => ({
+            serviceId_serviceProviderId: {
+              serviceId: config.serviceId,
+              serviceProviderId: config.serviceProviderId,
+            },
+          })),
+          create: data.availableServices
+            .filter((service) => !existingServiceIds.has(service.serviceId))
+            .map((service) => ({
+              service: { connect: { id: service.serviceId } },
+              serviceProvider: { connect: { id: formData.get('serviceProviderId') as string } },
+              duration: service.duration,
+              price: service.price,
+              isOnlineAvailable: service.isOnlineAvailable,
+              isInPerson: service.isInPerson,
+              location: service.location,
+            })),
+        },
+      },
+      include: {
+        serviceProvider: true,
+        availableServices: true,
         calculatedSlots: {
-          createMany: {
-            data: calculateAvailabilitySlots(data, data.startTime, data.endTime),
+          include: {
+            booking: {
+              include: {
+                client: true,
+                bookedBy: true,
+                serviceProvider: true,
+                service: true,
+                notifications: true,
+                review: true,
+              },
+            },
+            service: true,
           },
         },
       },
     });
 
+    // Create calculated slots with the service config IDs
+    await prisma.calculatedAvailabilitySlot.createMany({
+      data: await calculateInitialAvailabilitySlots(
+        data,
+        availability.id,
+        availability.availableServices
+      ),
+    });
+
     return {
       data: {
-        ...availability,
-        startTime: availability.startTime.toISOString(),
-        endTime: availability.endTime.toISOString(),
-        recurrenceEndDate: availability.recurrenceEndDate?.toISOString() || null,
-        price: Number(availability.price),
-        location: availability.location || '',
-        createdAt: availability.createdAt.toISOString(),
-        updatedAt: availability.updatedAt.toISOString(),
+        startTime: availability.startTime,
+        endTime: availability.endTime,
+        availableServices: availability.availableServices.map((service) => ({
+          serviceId: service.serviceId,
+          duration: service.duration,
+          price: Number(service.price),
+          isOnlineAvailable: service.isOnlineAvailable,
+          isInPerson: service.isInPerson,
+          location: service.location || undefined,
+        })),
       },
     };
   } catch (error) {
     console.error('Create availability error:', error);
     return {
-      error:
-        error instanceof Error
-          ? `Server error: ${error.message}`
-          : 'Unexpected server error occurred',
+      error: error instanceof Error ? error.message : 'Failed to create availability',
     };
   }
 }
@@ -124,93 +153,84 @@ export async function deleteAvailability(
 export async function updateAvailability(
   availabilityId: string,
   formData: FormData
-): Promise<{
-  data?: Availability;
-  error?: string;
-  fieldErrors?: Record<string, string[]>;
-  formErrors?: string[];
-}> {
-  const serviceProviderId = formData.get('serviceProviderId') as string;
-  if (!serviceProviderId) return { error: 'Service provider ID is required' };
-
+): Promise<AvailabilityActionResponse> {
   try {
-    const { availability, error: accessError } = await checkAvailabilityModificationAllowed(
-      availabilityId,
-      serviceProviderId
-    );
-    if (accessError) {
-      return { error: accessError };
+    const validationResult = await validateAvailabilityFormData(formData);
+    if ('error' in validationResult || !validationResult.data) {
+      return validationResult;
     }
 
-    const { data, error: validationError } = await validateAvailabilityFormData(formData);
+    const { data } = validationResult;
 
-    if (validationError) {
-      return { error: validationError };
-    }
-
-    // Check for overlapping availability
-    const { hasOverlap, overlappingPeriod } = await checkForOverlappingAvailability(
-      serviceProviderId!,
-      new Date(data.startTime),
-      new Date(data.endTime),
-      data.isRecurring,
-      data.recurringDays,
-      data.recurrenceEndDate,
-      availabilityId // Exclude current availability
-    );
-
-    if (hasOverlap) {
-      return {
-        error: `Cannot update availability: Overlaps with existing period (${new Date(
-          overlappingPeriod!.startTime
-        ).toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: 'short',
-          year: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-        })} - ${new Date(overlappingPeriod!.endTime).toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: 'short',
-          year: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-        })})`,
-      };
-    }
-
-    // First delete existing slots
-    await prisma.calculatedAvailabilitySlot.deleteMany({
-      where: { availabilityId },
-    });
-
-    // Then update availability with new data and create new slots
-    const updated = await prisma.availability.update({
-      where: { id: availabilityId },
-      data: {
-        ...data,
-        calculatedSlots: {
-          createMany: {
-            data: calculateAvailabilitySlots(
-              { ...data, id: availabilityId },
-              data.startTime,
-              data.endTime
-            ),
-          },
+    // Check which configurations already exist
+    const existingConfigs = await prisma.serviceAvailabilityConfig.findMany({
+      where: {
+        serviceProviderId: formData.get('serviceProviderId') as string,
+        serviceId: {
+          in: data.availableServices.map((s) => s.serviceId),
         },
       },
     });
 
+    const existingServiceIds = new Set(existingConfigs.map((c) => c.serviceId));
+
+    const availability = await prisma.availability.update({
+      where: { id: availabilityId },
+      data: {
+        startTime: data.startTime,
+        endTime: data.endTime,
+        availableServices: {
+          connect: existingConfigs.map((config) => ({
+            serviceId_serviceProviderId: {
+              serviceId: config.serviceId,
+              serviceProviderId: config.serviceProviderId,
+            },
+          })),
+          create: data.availableServices
+            .filter((service) => !existingServiceIds.has(service.serviceId))
+            .map((service) => ({
+              service: { connect: { id: service.serviceId } },
+              serviceProvider: { connect: { id: formData.get('serviceProviderId') as string } },
+              duration: service.duration,
+              price: service.price,
+              isOnlineAvailable: service.isOnlineAvailable,
+              isInPerson: service.isInPerson,
+              location: service.location,
+            })),
+        },
+      },
+      include: {
+        availableServices: true,
+      },
+    });
+
+    // Create calculated slots with the service config IDs
+    await prisma.calculatedAvailabilitySlot.createMany({
+      data: await calculateInitialAvailabilitySlots(
+        data,
+        availability.id,
+        availability.availableServices
+      ),
+    });
+
     return {
       data: {
-        ...updated,
-        price: Number(updated.price),
+        startTime: availability.startTime,
+        endTime: availability.endTime,
+        availableServices: availability.availableServices.map((service) => ({
+          serviceId: service.serviceId,
+          duration: service.duration,
+          price: Number(service.price),
+          isOnlineAvailable: service.isOnlineAvailable,
+          isInPerson: service.isInPerson,
+          location: service.location || undefined,
+        })),
       },
     };
   } catch (error) {
+    console.error('Update availability error:', error);
     return {
-      error: 'Failed to update availability',
-      details: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : 'Failed to update availability',
     };
   }
 }

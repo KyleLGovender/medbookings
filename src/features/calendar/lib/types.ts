@@ -47,6 +47,10 @@ export const ServiceConfigFormSchema = z
 // Add this type for form values
 export type ServiceConfig = z.infer<typeof ServiceConfigFormSchema>;
 
+export type Service = Omit<z.infer<typeof ServiceSchema>, 'defaultPrice'> & {
+  defaultPrice: number | null;
+};
+
 // Update base availability type to match schema
 export type Availability = z.infer<typeof AvailabilitySchema> & {
   serviceProvider: z.infer<typeof ServiceProviderSchema>;
@@ -127,6 +131,24 @@ export const AvailabilityFormSchema = AvailabilitySchema.omit({
   });
 
 export type AvailabilityFormValues = z.infer<typeof AvailabilityFormSchema>;
+
+export type AvailabilityActionResponse = {
+  data?: {
+    startTime: Date;
+    endTime: Date;
+    availableServices: {
+      serviceId: string;
+      duration: number;
+      price: number;
+      isOnlineAvailable: boolean;
+      isInPerson: boolean;
+      location?: string;
+    }[];
+  };
+  error?: string;
+  fieldErrors?: Record<string, string[]>;
+  formErrors?: string[];
+};
 
 // Update booking type to match schema
 export type Booking = z.infer<typeof BookingSchema> & {
@@ -330,6 +352,40 @@ export interface BookingWithRelations extends z.infer<typeof BookingSchema> {
   bookingType: z.infer<typeof BookingTypeSchema>;
 }
 
-export type Service = Omit<z.infer<typeof ServiceSchema>, 'defaultPrice'> & {
-  defaultPrice: number | null;
+// Rename TransformedAvailability to QueriedAvailability
+export type QueriedAvailability = Omit<Availability, 'availableServices' | 'calculatedSlots'> & {
+  availableServices: {
+    id: string;
+    serviceProviderId: string;
+    serviceId: string;
+    duration: number;
+    price: number;
+    isOnlineAvailable: boolean;
+    isInPerson: boolean;
+    location: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    service: Service;
+  }[];
+  calculatedSlots: {
+    id: string;
+    startTime: Date;
+    endTime: Date;
+    status: 'AVAILABLE' | 'BOOKED' | 'BLOCKED' | 'INVALID';
+    serviceId: string;
+    availabilityId: string;
+    serviceConfigId: string;
+    lastCalculated: Date;
+    booking: null | {
+      id: string;
+      price: number;
+      clientId: string | null;
+      bookedById: string | null;
+      client?: z.infer<typeof UserSchema>;
+      bookedBy?: z.infer<typeof UserSchema>;
+      serviceProvider: z.infer<typeof ServiceProviderSchema>;
+      service: Service;
+    };
+    service: Service;
+  }[];
 };

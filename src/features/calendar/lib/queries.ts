@@ -2,15 +2,15 @@
 
 import { prisma } from '@/lib/prisma';
 
-import { Availability, Service } from './types';
+import { QueriedAvailability, Service } from './types';
 
 export async function getServiceProviderAvailabilityInRange(
   serviceProviderId: string,
   startDate: Date,
   endDate: Date
-): Promise<Availability[]> {
+): Promise<QueriedAvailability[]> {
   try {
-    return await prisma.availability.findMany({
+    const availabilities = await prisma.availability.findMany({
       where: {
         serviceProviderId,
         calculatedSlots: {
@@ -37,9 +37,7 @@ export async function getServiceProviderAvailabilityInRange(
             },
           },
           include: {
-            availability: true,
             service: true,
-            serviceConfig: true,
             booking: {
               include: {
                 client: true,
@@ -51,14 +49,45 @@ export async function getServiceProviderAvailabilityInRange(
               },
             },
           },
-          orderBy: {
-            startTime: 'asc',
-          },
         },
       },
     });
+
+    // Transform and return the data
+    return availabilities.map((availability) => ({
+      ...availability,
+      availableServices: availability.availableServices.map((as) => ({
+        ...as,
+        price: Number(as.price),
+        service: {
+          ...as.service,
+          defaultPrice: as.service.defaultPrice ? Number(as.service.defaultPrice) : null,
+        },
+      })),
+      calculatedSlots: availability.calculatedSlots.map((slot) => ({
+        ...slot,
+        booking: slot.booking && {
+          ...slot.booking,
+          price: Number(slot.booking.price),
+          client: slot.booking.client || undefined,
+          bookedBy: slot.booking.bookedBy || undefined,
+          serviceProvider: {
+            ...slot.booking.serviceProvider,
+            averageRating: slot.booking.serviceProvider.averageRating || null,
+          },
+          service: {
+            ...slot.booking.service,
+            defaultPrice: Number(slot.booking.service.defaultPrice),
+          },
+        },
+        service: {
+          ...slot.service,
+          defaultPrice: slot.service.defaultPrice ? Number(slot.service.defaultPrice) : null,
+        },
+      })),
+    }));
   } catch (error) {
-    console.error('Error fetching availabilities:', error);
+    console.error('Error fetching availability:', error);
     return [];
   }
 }

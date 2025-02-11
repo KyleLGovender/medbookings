@@ -3,7 +3,6 @@
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
-import { calculateAvailableSpots } from '@/features/calendar/lib/helper';
 import { prisma } from '@/lib/prisma';
 
 import { Availability, AvailabilityFormSchema, BookingFormSchema, Schedule } from './types';
@@ -27,84 +26,33 @@ function hasTimeOfDayOverlap(start1: Date, end1: Date, start2: Date, end2: Date)
 export async function checkForOverlappingAvailability(
   serviceProviderId: string,
   startTime: Date,
-  endTime: Date,
-  isRecurring: boolean = false,
-  recurringDays?: number[],
-  recurrenceEndDate?: Date | null,
-  excludeAvailabilityId?: string
+  endTime: Date
 ) {
   const availabilities = await prisma.availability.findMany({
     where: {
       serviceProviderId,
-      ...(excludeAvailabilityId ? { NOT: { id: excludeAvailabilityId } } : {}),
+      startTime: {
+        lte: endTime,
+      },
+      endTime: {
+        gte: startTime,
+      },
     },
     select: {
       id: true,
       startTime: true,
       endTime: true,
-      isRecurring: true,
-      recurringDays: true,
-      recurrenceEndDate: true,
     },
   });
 
-  for (const existing of availabilities) {
-    if (!existing.isRecurring && !isRecurring) {
-      const hasOverlap = hasTimeOverlap(startTime, endTime, existing.startTime, existing.endTime);
-      if (hasOverlap) {
-        return {
-          hasOverlap: true,
-          overlappingPeriod: {
-            startTime: existing.startTime,
-            endTime: existing.endTime,
-          },
-        };
-      }
-    } else if (existing.isRecurring || isRecurring) {
-      const existingEndDate =
-        existing.recurrenceEndDate ||
-        new Date(
-          existing.startTime.getFullYear() + 1,
-          existing.startTime.getMonth(),
-          existing.startTime.getDate()
-        );
-      const newEndDate =
-        recurrenceEndDate ||
-        new Date(startTime.getFullYear() + 1, startTime.getMonth(), startTime.getDate());
-
-      const dateRangeOverlap = hasTimeOverlap(
-        startTime,
-        newEndDate,
-        existing.startTime,
-        existingEndDate
-      );
-
-      if (dateRangeOverlap) {
-        const existingDays = new Set(existing.recurringDays);
-        const newDays = new Set(isRecurring ? recurringDays : [startTime.getDay()]);
-
-        const hasOverlappingDay = [...existingDays].some((day) => newDays.has(day));
-
-        if (hasOverlappingDay) {
-          const timeOverlap = hasTimeOfDayOverlap(
-            startTime,
-            endTime,
-            existing.startTime,
-            existing.endTime
-          );
-
-          if (timeOverlap) {
-            return {
-              hasOverlap: true,
-              overlappingPeriod: {
-                startTime: existing.startTime,
-                endTime: existing.endTime,
-              },
-            };
-          }
-        }
-      }
-    }
+  if (availabilities.length > 0) {
+    return {
+      hasOverlap: true,
+      overlappingPeriod: {
+        startTime: availabilities[0].startTime,
+        endTime: availabilities[0].endTime,
+      },
+    };
   }
 
   return { hasOverlap: false };
@@ -127,7 +75,17 @@ export async function checkAvailabilityModificationAllowed(
       availableServices: true,
       calculatedSlots: {
         include: {
-          booking: true,
+          booking: {
+            include: {
+              client: true,
+              bookedBy: true,
+              serviceProvider: true,
+              service: true,
+              notifications: true,
+              review: true,
+            },
+          },
+          service: true,
         },
       },
     },
@@ -141,74 +99,84 @@ export async function checkAvailabilityModificationAllowed(
     return { error: 'Cannot modify availability with confirmed bookings' };
   }
 
-  return { availability };
+  return { availability: availability as Availability };
 }
 
-export async function validateAvailabilityFormData(formData: FormData) {
-  const recurringDaysString = formData.get('recurringDays') as string;
-  const recurringDays = recurringDaysString ? JSON.parse(recurringDaysString) : [];
-  const recurrenceEndDateString = formData.get('recurrenceEndDate');
+export async function validateAvailabilityFormData(formData: FormData): Promise<{
+  data?: z.infer<typeof AvailabilityFormSchema>;
+  error?: string;
+  fieldErrors?: Record<string, string[]>;
+  formErrors?: string[];
+}> {
+  console.log('1. Starting validation with FormData:', Object.fromEntries(formData.entries()));
 
-  const serviceProviderId = formData.get('serviceProviderId') as string;
-  if (!serviceProviderId) return { error: 'Service provider ID is required' };
+  try {
+    // Parse the basic date/time fields
+    const date = new Date(formData.get('date') as string);
+    const startTime = new Date(formData.get('startTime') as string);
+    const endTime = new Date(formData.get('endTime') as string);
 
-  const startTime = new Date(formData.get('startTime') as string);
-  const endTime = new Date(formData.get('endTime') as string);
-  const duration = parseInt(formData.get('duration') as string);
+    // Parse available services from form data
+    const availableServices = [];
+    const formEntries = Array.from(formData.entries());
+    const serviceIndices = Array.from(
+      new Set(
+        formEntries
+          .filter(([key]) => key.startsWith('availableServices'))
+          .map(([key]) => key.match(/availableServices\[(\d+)\]/)?.[1])
+          .filter(Boolean)
+      )
+    );
 
-  const remainingSpots = calculateAvailableSpots({
-    startTime,
-    endTime,
-    duration,
-  });
+    console.log('2. Found service indices:', Array.from(serviceIndices));
 
-  // Validate that we have at least one slot
-  if (remainingSpots < 1) {
+    for (const index of serviceIndices) {
+      const service = {
+        serviceId: formData.get(`availableServices[${index}][serviceId]`) as string,
+        duration: Number(formData.get(`availableServices[${index}][duration]`)),
+        price: Number(formData.get(`availableServices[${index}][price]`)),
+        isOnlineAvailable:
+          formData.get(`availableServices[${index}][isOnlineAvailable]`) === 'true',
+        isInPerson: formData.get(`availableServices[${index}][isInPerson]`) === 'true',
+        location: (formData.get(`availableServices[${index}][location]`) as string) || undefined,
+      };
+      availableServices.push(service);
+    }
+
+    console.log('3. Parsed available services:', availableServices);
+
+    // Construct the data object that matches AvailabilityFormSchema
+    const validationData = {
+      date,
+      startTime,
+      endTime,
+      availableServices,
+    };
+
+    console.log('4. Validation data:', validationData);
+
+    // Validate against the schema
+    const result = await AvailabilityFormSchema.safeParseAsync(validationData);
+
+    console.log('5. Validation result:', {
+      success: result.success,
+      ...(result.success ? {} : { error: result.error.format() }),
+    });
+
+    if (!result.success) {
+      return {
+        fieldErrors: result.error.flatten().fieldErrors,
+        formErrors: result.error.flatten().formErrors,
+      };
+    }
+
+    return { data: result.data };
+  } catch (error) {
+    console.error('6. Validation error:', error);
     return {
-      error: 'Time slot is too short for the specified duration',
+      error: error instanceof Error ? error.message : 'Failed to validate form data',
     };
   }
-
-  const priceValue = parseFloat(formData.get('price') as string);
-
-  const data = {
-    date: new Date(formData.get('date') as string),
-    startTime,
-    endTime,
-    duration,
-    price: priceValue,
-    isOnlineAvailable: formData.get('isOnlineAvailable') === 'true',
-    isInPersonAvailable: formData.get('isInPersonAvailable') === 'true',
-    location: formData.get('location') as string,
-    isRecurring: formData.get('isRecurring') === 'true',
-    recurringDays: JSON.parse((formData.get('recurringDays') as string) || '[]'),
-    recurrenceEndDate: formData.get('recurrenceEndDate')
-      ? new Date(formData.get('recurrenceEndDate') as string)
-      : null,
-    remainingSpots: remainingSpots,
-    serviceProviderId: serviceProviderId,
-  };
-
-  const validatedFields = AvailabilityFormSchema.safeParse(data);
-
-  if (!validatedFields.success) {
-    const formattedErrors = validatedFields.error.flatten();
-    console.log('Validation errors:', formattedErrors);
-
-    return {
-      error: 'Validation failed',
-      fieldErrors: formattedErrors.fieldErrors,
-      formErrors: formattedErrors.formErrors,
-    };
-  }
-
-  const { date, ...dataWithoutDate } = validatedFields.data;
-  const finalData = {
-    ...dataWithoutDate,
-    remainingSpots,
-  };
-
-  return { data: finalData };
 }
 
 export async function checkScheduleAccess(
@@ -384,32 +352,58 @@ export async function checkBookingAccess(bookingId: string, userId: string) {
   return booking;
 }
 
-export async function calculateAvailabilitySlots(
-  availability: Availability,
-  startDate: Date,
-  endDate: Date
-) {
+export async function calculateAvailabilitySlots(availability: Availability) {
   const slots: Prisma.CalculatedAvailabilitySlotCreateManyInput[] = [];
 
-  // Generate slots for each service configuration
   availability.availableServices.forEach((serviceConfig) => {
-    let currentTime = new Date(startDate);
-
-    while (currentTime < endDate) {
+    let currentTime = new Date(availability.startTime);
+    while (currentTime < availability.endTime) {
       const slotEnd = new Date(currentTime.getTime() + serviceConfig.duration * 60000);
-
-      if (slotEnd <= endDate) {
+      if (slotEnd <= availability.endTime) {
         slots.push({
           availabilityId: availability.id,
           serviceId: serviceConfig.serviceId,
+          serviceConfigId: serviceConfig.id,
           startTime: currentTime,
           endTime: slotEnd,
-          duration: serviceConfig.duration,
           lastCalculated: new Date(),
           status: 'AVAILABLE',
         });
       }
+      currentTime = new Date(slotEnd.getTime());
+    }
+  });
 
+  return slots;
+}
+
+export async function calculateInitialAvailabilitySlots(
+  formData: z.infer<typeof AvailabilityFormSchema>,
+  availabilityId: string,
+  availableServices: { id: string; serviceId: string; duration: number }[]
+) {
+  const slots: Prisma.CalculatedAvailabilitySlotCreateManyInput[] = [];
+
+  formData.availableServices.forEach((serviceConfig) => {
+    const availableService = availableServices.find(
+      (as) => as.serviceId === serviceConfig.serviceId
+    );
+    if (!availableService) return;
+
+    let currentTime = new Date(formData.startTime);
+    while (currentTime < formData.endTime) {
+      const slotEnd = new Date(currentTime.getTime() + serviceConfig.duration * 60000);
+      if (slotEnd <= formData.endTime) {
+        slots.push({
+          availabilityId,
+          serviceId: serviceConfig.serviceId,
+          serviceConfigId: availableService.id,
+          startTime: currentTime,
+          endTime: slotEnd,
+          lastCalculated: new Date(),
+          status: 'AVAILABLE',
+        });
+      }
       currentTime = new Date(slotEnd.getTime());
     }
   });
