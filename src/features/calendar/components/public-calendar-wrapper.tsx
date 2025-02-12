@@ -6,28 +6,28 @@ import { Suspense, useCallback, useState, useTransition } from 'react';
 import { startOfWeek } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
-import { CalendarHeader } from '@/features/calendar/components/calendar-header';
 import { CalendarSkeleton } from '@/features/calendar/components/calendar-skeleton';
 import { CalendarViewDay } from '@/features/calendar/components/calendar-view-day';
 import { CalendarViewSchedule } from '@/features/calendar/components/calendar-view-schedule';
 import { CalendarViewWeek } from '@/features/calendar/components/calendar-view-week';
+import { PublicCalendarHeader } from '@/features/calendar/components/public-calendar-header';
 import { getDateRange, getNextDate, getPreviousDate } from '@/features/calendar/lib/helper';
 import { getServiceProviderAvailabilityInRange } from '@/features/calendar/lib/queries';
 import { QueriedAvailability } from '@/features/calendar/lib/types';
 
-interface CalendarWrapperProps {
+interface PublicCalendarWrapperProps {
   initialAvailability: QueriedAvailability[];
   serviceProviderId: string;
   initialDateRange: DateRange;
   initialView: 'day' | 'week' | 'schedule';
 }
 
-export function CalendarWrapper({
+export function PublicCalendarWrapper({
   initialAvailability,
   serviceProviderId,
   initialDateRange,
   initialView,
-}: CalendarWrapperProps) {
+}: PublicCalendarWrapperProps) {
   const [isPending, startTransition] = useTransition();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -205,7 +205,7 @@ export function CalendarWrapper({
   return (
     <div className="max-w-[100vw] overflow-x-hidden p-4">
       <div className="rounded-lg bg-white shadow">
-        <CalendarHeader
+        <PublicCalendarHeader
           view={view}
           rangeStartDate={rangeStartDate}
           dateRange={dateRange}

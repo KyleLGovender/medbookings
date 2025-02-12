@@ -6,7 +6,7 @@ import { getAuthenticatedServiceProvider } from '@/lib/server-helper';
 
 import { getDateRange } from '../lib/helper';
 import { getServiceProviderAvailabilityInRange } from '../lib/queries';
-import { CalendarWrapper } from './calendar-wrapper';
+import { ServiceProviderCalendarWrapper } from './service-provider-calendar-wrapper';
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 
@@ -47,7 +47,7 @@ export async function ServiceProviderCalendar({ searchParams }: { searchParams: 
   return (
     <Suspense fallback={<div className="h-[600px] animate-pulse rounded-lg bg-gray-100" />}>
       <div className="rounded-lg bg-white shadow">
-        <CalendarWrapper
+        <ServiceProviderCalendarWrapper
           initialAvailability={availability}
           serviceProviderId={serviceProviderId}
           initialDateRange={{

@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 
 import { getDateRange } from '../lib/helper';
 import { getServiceProviderAvailabilityInRange } from '../lib/queries';
-import { CalendarWrapper } from './calendar-wrapper';
+import { PublicCalendarWrapper } from './public-calendar-wrapper';
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 
@@ -46,7 +46,7 @@ export async function PublicCalendar({
   return (
     <Suspense fallback={<div className="h-[600px] animate-pulse rounded-lg bg-gray-100" />}>
       <div className="rounded-lg bg-white shadow">
-        <CalendarWrapper
+        <PublicCalendarWrapper
           initialAvailability={availability}
           serviceProviderId={serviceProviderId}
           initialDateRange={{

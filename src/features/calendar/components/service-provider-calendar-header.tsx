@@ -12,7 +12,7 @@ import { CalendarNavigation } from '@/features/calendar/components/calendar-navi
 
 import { AvailabilityDialog } from './availability-dialog';
 
-interface CalendarHeaderProps {
+interface ServiceProviderCalendarHeaderProps {
   view: 'schedule' | 'day' | 'week';
   rangeStartDate: Date;
   dateRange?: DateRange;
@@ -27,7 +27,7 @@ interface CalendarHeaderProps {
   onThisWeek: () => void;
 }
 
-export function CalendarHeader({
+export function ServiceProviderCalendarHeader({
   view,
   rangeStartDate,
   dateRange = undefined,
@@ -40,7 +40,7 @@ export function CalendarHeader({
   onViewChange,
   onRefresh,
   onThisWeek,
-}: CalendarHeaderProps) {
+}: ServiceProviderCalendarHeaderProps) {
   const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
 
   const handlePrevious = () => {
