@@ -32,10 +32,10 @@ import { useToast } from '@/hooks/use-toast';
 
 import { createBooking, updateBooking } from '../lib/actions';
 import {
-  Availability,
   BookingFormSchema,
   BookingFormValues,
   BookingTypeSchema,
+  QueriedAvailability,
 } from '../lib/types';
 
 const defaultValues: Partial<BookingFormValues> = {
@@ -59,21 +59,23 @@ const defaultValues: Partial<BookingFormValues> = {
 };
 
 interface BookingFormProps {
-  serviceProviderId?: string;
-  userId?: string;
-  availability?: Availability;
-  mode: 'create' | 'edit';
-  onClose: () => void;
+  serviceProviderId: string;
+  userId: string;
+  availability: QueriedAvailability[];
+  selectedDate: Date;
+  onDateChange: (date: Date) => void;
   onRefresh: () => Promise<void>;
+  isPending: boolean;
 }
 
 export function BookingForm({
   serviceProviderId,
   userId,
   availability,
-  mode,
-  onClose,
+  selectedDate,
+  onDateChange,
   onRefresh,
+  isPending,
 }: BookingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();

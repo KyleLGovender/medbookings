@@ -94,8 +94,6 @@ export function AvailabilityForm({
     formState: { errors },
   } = form;
 
-  console.log('Form errors:', form.formState.errors);
-
   async function onSubmit(values: AvailabilityFormValues) {
     setIsSubmitting(true);
 

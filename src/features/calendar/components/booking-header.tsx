@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { DateRange } from 'react-day-picker';
@@ -12,8 +10,7 @@ import { CalendarNavigation } from '@/features/calendar/components/calendar-navi
 
 import { AvailabilityDialog } from './availability-dialog';
 
-interface CalendarHeaderProps {
-  view: 'schedule' | 'day' | 'week';
+interface BookingHeaderProps {
   rangeStartDate: Date;
   dateRange?: DateRange;
   serviceProviderId: string;
@@ -27,7 +24,7 @@ interface CalendarHeaderProps {
   onThisWeek: () => void;
 }
 
-export function CalendarHeader({
+export function BookingHeader({
   view,
   rangeStartDate,
   dateRange = undefined,
@@ -40,9 +37,7 @@ export function CalendarHeader({
   onViewChange,
   onRefresh,
   onThisWeek,
-}: CalendarHeaderProps) {
-  const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
-
+}: BookingHeaderProps) {
   const handlePrevious = () => {
     onPrevious();
   };
