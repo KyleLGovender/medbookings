@@ -5,7 +5,7 @@ import { Fragment, RefObject, useState } from 'react';
 import { addDays, startOfWeek } from 'date-fns';
 
 import { getEventGridPosition } from '../../lib/helper';
-import { Availability, CalculatedAvailabilitySlot } from '../../lib/types';
+import { type Availability, type CalculatedAvailabilitySlot } from '../../lib/types';
 import { AvailabilityDialog } from '../availability-dialog';
 import { CalendarViewEventItem } from '../calendar-view-event-item';
 import { CalendarViewTimeColumn } from '../calendar-view-time-column';
@@ -31,33 +31,48 @@ export function CalendarViewWeekTimeGrid({
   onRefresh,
   onEventClick,
 }: CalendarViewWeekTimeGridProps) {
-  const [selectedAvailability, setSelectedAvailability] = useState<Availability | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<CalculatedAvailabilitySlot | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleEventClick = (availability: Availability) => {
-    setSelectedAvailability(availability);
-    setIsDialogOpen(true);
+  const handleEventClick = (slot: CalculatedAvailabilitySlot) => {
+    // Only open dialog if the service provider owns this availability
+    const availability = availabilityData.find((a) =>
+      a.calculatedSlots.some((s) => s.id === slot.id)
+    );
+
+    if (availability?.serviceProviderId === serviceProviderId) {
+      setSelectedSlot(slot);
+      setIsDialogOpen(true);
+    } else {
+      // Call the regular event click handler if provided
+      onEventClick?.(slot);
+    }
   };
+
+  // Find the parent availability for the selected slot
+  const selectedAvailability = selectedSlot
+    ? availabilityData.find((a) => a.calculatedSlots.some((s) => s.id === selectedSlot.id))
+    : undefined;
 
   // Convert string to Date for calculations
   const dateObj = new Date(rangeStartDate);
   const weekStart = startOfWeek(dateObj);
   const weekEnd = addDays(weekStart, 6);
 
-  // Filter availabilities for the week
-  const weekAvailabilities = availabilityData.filter((availability) => {
-    const availabilityDate = new Date(availability.startTime);
-    return availabilityDate >= weekStart && availabilityDate <= weekEnd;
-  });
+  // Get all slots for the week from availabilities
+  const weekSlots = availabilityData
+    .flatMap((availability) => availability.calculatedSlots)
+    .filter((slot) => {
+      const slotDate = new Date(slot.startTime);
+      return slotDate >= weekStart && slotDate <= weekEnd;
+    });
 
-  const bookings = weekAvailabilities.flatMap((availability) =>
-    availability.calculatedSlots
-      .filter((slot) => slot.booking)
-      .map((slot) => ({
-        ...slot.booking!,
-        availabilityId: availability.id,
-      }))
-  );
+  const bookings = weekSlots
+    .filter((slot) => slot.booking)
+    .map((slot) => ({
+      ...slot.booking!,
+      slotId: slot.id,
+    }));
 
   return (
     <>
@@ -74,77 +89,41 @@ export function CalendarViewWeekTimeGrid({
             ))}
           </div>
 
-          {/* Availability blocks */}
+          {/* Availability slots */}
           <ol
             className="z-10 col-start-1 col-end-2 row-start-1 grid grid-cols-7"
             style={{
               gridTemplateRows: '1.75rem repeat(288, minmax(0, 1fr)) auto',
             }}
           >
-            {weekAvailabilities.map((availability) => (
-              <li
-                key={availability.id}
-                className="relative cursor-pointer bg-blue-200 hover:bg-opacity-75"
-                style={{
-                  gridRow: getEventGridPosition(availability.startTime, availability.endTime),
-                  gridColumn: ((new Date(availability.startTime).getDay() + 6) % 7) + 1,
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEventClick(availability);
-                }}
-              >
-                {availability.calculatedSlots.map((slot) => (
-                  <Fragment key={slot.id}>
-                    <CalendarViewEventItem
-                      slot={slot}
-                      gridPosition={getEventGridPosition(
-                        new Date(slot.startTime),
-                        new Date(slot.endTime)
-                      )}
-                      gridColumn={(new Date(slot.startTime).getDay() % 7) + 1}
-                      onEventClick={onEventClick}
-                    />
-                  </Fragment>
-                ))}
-              </li>
-            ))}
-          </ol>
-
-          {/* Booking events */}
-          <ol
-            className="col-start-1 col-end-2 row-start-1 grid grid-cols-7"
-            style={{
-              gridTemplateRows: '1.75rem repeat(288, minmax(0, 1fr)) auto',
-            }}
-          >
-            {bookings.map((booking) => (
-              <CalendarViewEventItem
-                key={booking.id}
-                schedule={{
-                  ...booking,
-                  type: 'BOOKING',
-                  startTime: booking.startTime.toISOString(),
-                  endTime: booking.endTime.toISOString(),
-                }}
-                gridPosition={getEventGridPosition(booking.startTime, booking.endTime)}
-                gridColumn={((new Date(booking.startTime).getDay() + 6) % 7) + 1}
-                onEventClick={onEventClick}
-              />
+            {weekSlots.map((slot) => (
+              <Fragment key={slot.id}>
+                <CalendarViewEventItem
+                  slot={slot}
+                  gridPosition={getEventGridPosition(
+                    new Date(slot.startTime),
+                    new Date(slot.endTime)
+                  )}
+                  gridColumn={(new Date(slot.startTime).getDay() % 7) + 1}
+                  onEventClick={onEventClick}
+                />
+              </Fragment>
             ))}
           </ol>
         </div>
       </div>
 
-      {/* Dialog for editing availability */}
-      <AvailabilityDialog
-        availability={selectedAvailability || undefined}
-        serviceProviderId={serviceProviderId}
-        mode="edit"
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        onRefresh={onRefresh}
-      />
+      {/* Only render dialog if the selected slot belongs to this service provider */}
+      {selectedSlot && selectedAvailability?.serviceProviderId === serviceProviderId && (
+        <AvailabilityDialog
+          availability={selectedAvailability}
+          serviceProviderId={serviceProviderId}
+          mode="edit"
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          onRefresh={onRefresh}
+        />
+      )}
     </>
   );
 }

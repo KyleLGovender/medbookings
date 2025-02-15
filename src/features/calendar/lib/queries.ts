@@ -1,14 +1,35 @@
 'use server';
 
+import {
+  AvailabilitySchema,
+  BookingSchema,
+  CalculatedAvailabilitySlotSchema,
+  ServiceAvailabilityConfigSchema,
+  ServiceProviderSchema,
+  ServiceSchema,
+} from '@prisma/zod';
+
 import { prisma } from '@/lib/prisma';
 
-import { QueriedAvailability, Service } from './types';
+import { Availability, Service } from './types';
+
+const CalculatedSlotWithRelationsSchema = CalculatedAvailabilitySlotSchema.extend({
+  booking: BookingSchema.nullable(),
+  service: ServiceSchema,
+  serviceConfig: ServiceAvailabilityConfigSchema,
+});
+
+const AvailabilityWithRelationsSchema = AvailabilitySchema.extend({
+  serviceProvider: ServiceProviderSchema,
+  availableServices: ServiceAvailabilityConfigSchema.array(),
+  calculatedSlots: CalculatedSlotWithRelationsSchema.array(),
+});
 
 export async function getServiceProviderAvailabilityInRange(
   serviceProviderId: string,
   startDate: Date,
   endDate: Date
-): Promise<QueriedAvailability[]> {
+): Promise<Availability[]> {
   try {
     const availabilities = await prisma.availability.findMany({
       where: {
@@ -34,6 +55,7 @@ export async function getServiceProviderAvailabilityInRange(
             service: true,
             booking: {
               include: {
+                slot: true,
                 client: true,
                 bookedBy: true,
                 serviceProvider: true,
@@ -47,39 +69,8 @@ export async function getServiceProviderAvailabilityInRange(
       },
     });
 
-    // Transform and return the data
-    return availabilities.map((availability) => ({
-      ...availability,
-      availableServices: availability.availableServices.map((as) => ({
-        ...as,
-        price: Number(as.price),
-        service: {
-          ...as.service,
-          defaultPrice: as.service.defaultPrice ? Number(as.service.defaultPrice) : null,
-        },
-      })),
-      calculatedSlots: availability.calculatedSlots.map((slot) => ({
-        ...slot,
-        booking: slot.booking && {
-          ...slot.booking,
-          price: Number(slot.booking.price),
-          client: slot.booking.client || undefined,
-          bookedBy: slot.booking.bookedBy || undefined,
-          serviceProvider: {
-            ...slot.booking.serviceProvider,
-            averageRating: slot.booking.serviceProvider.averageRating || null,
-          },
-          service: {
-            ...slot.booking.service,
-            defaultPrice: Number(slot.booking.service.defaultPrice),
-          },
-        },
-        service: {
-          ...slot.service,
-          defaultPrice: slot.service.defaultPrice ? Number(slot.service.defaultPrice) : null,
-        },
-      })),
-    }));
+    // Let Zod handle all the transformations
+    return AvailabilityWithRelationsSchema.array().parse(availabilities);
   } catch (error) {
     console.error('Error fetching availability:', error);
     console.error('Error details:', error instanceof Error ? error.stack : error);
@@ -102,11 +93,7 @@ export async function getServiceProviderServices(serviceProviderId: string): Pro
       },
     });
 
-    // Convert Decimal to number before sending to client
-    return services.map((service) => ({
-      ...service,
-      defaultPrice: service.defaultPrice ? Number(service.defaultPrice) : null,
-    }));
+    return ServiceSchema.array().parse(services);
   } catch (error) {
     console.error('Error fetching services:', error);
     return [];

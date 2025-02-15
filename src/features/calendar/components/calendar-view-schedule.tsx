@@ -16,11 +16,11 @@ import {
 } from '@/components/ui/table';
 import { AvailabilityDialog } from '@/features/calendar/components/availability-dialog';
 import { deleteAvailability, deleteBooking } from '@/features/calendar/lib/actions';
-import { Booking, QueriedAvailability } from '@/features/calendar/lib/types';
+import { Availability, Booking } from '@/features/calendar/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface CalendarViewScheduleProps {
-  availabilityData: QueriedAvailability[];
+  availabilityData: Availability[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
 }
@@ -32,17 +32,15 @@ export function CalendarViewSchedule({
   serviceProviderId,
   onRefresh,
 }: CalendarViewScheduleProps) {
-  const [selectedAvailability, setSelectedAvailability] = useState<
-    QueriedAvailability | undefined
-  >();
+  const [selectedAvailability, setSelectedAvailability] = useState<Availability | undefined>();
   const [selectedBooking, setSelectedBooking] = useState<Booking | undefined>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
-  const handleEdit = (data: QueriedAvailability | Booking, type: 'availability' | 'booking') => {
+  const handleEdit = (data: Availability | Booking, type: 'availability' | 'booking') => {
     if (type === 'availability') {
-      setSelectedAvailability(data as QueriedAvailability);
+      setSelectedAvailability(data as Availability);
     }
     if (type === 'booking') {
       setSelectedBooking(data as Booking);

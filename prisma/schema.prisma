@@ -9,13 +9,16 @@ generator client {
 
 // Add this new generator configuration
 generator zod {
-  provider = "zod-prisma-types"
-  output   = "./zod"
-  relationModel = true
-  modelCase = "camelCase"
-  modelSuffix = "Schema"
-  useDecimalJs = true
+  provider              = "zod-prisma-types"
+  output               = "./zod"
+  relationModel        = true
+  modelCase            = "camelCase"
+  modelSuffix          = "Schema"
   prismaJsonNullability = true
+  // Add these options
+  useDecimalJs         = false  // This will make Decimals serialize as numbers
+  dateTimeAsDate      = false  // This will make Dates serialize as strings
+  addInputTypeValidation = true
 }
 
 // Base User model and auth

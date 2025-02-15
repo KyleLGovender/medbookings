@@ -13,10 +13,10 @@ import { CalendarViewWeek } from '@/features/calendar/components/calendar-view-w
 import { ServiceProviderCalendarHeader } from '@/features/calendar/components/service-provider-calendar-header';
 import { getDateRange, getNextDate, getPreviousDate } from '@/features/calendar/lib/helper';
 import { getServiceProviderAvailabilityInRange } from '@/features/calendar/lib/queries';
-import { QueriedAvailability } from '@/features/calendar/lib/types';
+import { Availability } from '@/features/calendar/lib/types';
 
 interface ServiceProviderCalendarWrapperProps {
-  initialAvailability: QueriedAvailability[];
+  initialAvailability: Availability[];
   serviceProviderId: string;
   initialDateRange: DateRange;
   initialView: 'day' | 'week' | 'schedule';
@@ -33,8 +33,7 @@ export function ServiceProviderCalendarWrapper({
   const router = useRouter();
 
   const [dateRange, setDateRange] = useState<DateRange>(initialDateRange);
-  const [availabilityData, setAvailabilityData] =
-    useState<QueriedAvailability[]>(initialAvailability);
+  const [availabilityData, setAvailabilityData] = useState<Availability[]>(initialAvailability);
   const [view, setView] = useState<'day' | 'week' | 'schedule'>(initialView);
 
   const rangeStartDate = dateRange.from!;

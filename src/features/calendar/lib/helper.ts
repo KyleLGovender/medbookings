@@ -2,8 +2,9 @@ import { Prisma } from '@prisma/client';
 import { BookingStatusSchema } from '@prisma/zod';
 import { startOfWeek as dateFnsStartOfWeek, eachDayOfInterval } from 'date-fns';
 import { DateRange } from 'react-day-picker';
+import { z } from 'zod';
 
-import { Availability, Booking, Schedule } from './types';
+import { Availability, Booking, BookingTypeSchema, Schedule } from './types';
 
 interface CalendarDay {
   date: string;
@@ -330,4 +331,11 @@ export function transformNotification(notification: any) {
     createdAt: new Date(notification.createdAt).toISOString(),
     updatedAt: new Date(notification.updatedAt).toISOString(),
   };
+}
+
+export function determineBookingType(booking: any): z.infer<typeof BookingTypeSchema> {
+  if (booking.bookedBy?.id === booking.client?.id) return 'USER_SELF';
+  if (booking.bookedBy && !booking.client) return 'USER_GUEST';
+  if (!booking.bookedBy && !booking.client) return 'GUEST_SELF';
+  return 'PROVIDER_GUEST';
 }

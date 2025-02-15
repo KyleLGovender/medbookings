@@ -8,11 +8,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-import { QueriedAvailability } from '../lib/types';
+import { Availability } from '../lib/types';
 import { AvailabilityForm } from './availability-form';
 
 interface AvailabilityDialogProps {
-  availability?: QueriedAvailability;
+  availability?: Availability;
   mode: 'create' | 'edit';
   onOpenChange: (open: boolean) => void;
   open: boolean;
