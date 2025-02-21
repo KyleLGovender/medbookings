@@ -3,35 +3,82 @@ import {
   BookingSchema,
   CalculatedAvailabilitySlotSchema,
   NotificationChannelSchema,
-  NotificationLogSchema,
   ServiceAvailabilityConfigSchema,
+  ServiceSchema,
 } from '@prisma/zod';
 import { z } from 'zod';
 
-import { User } from '@/features/profile/lib/types';
-import { Service, ServiceProvider } from '@/features/service-provider/lib/types';
+import { ApiResponse } from '@/lib/types';
 
 export type ViewType = 'day' | 'week' | 'schedule';
 
-export type ServiceAvailabilityConfig = z.infer<typeof ServiceAvailabilityConfigSchema>;
-export type Availability = z.infer<typeof AvailabilitySchema> & {
-  serviceProvider: ServiceProvider;
-  availableServices: ServiceAvailabilityConfig[];
-  calculatedSlots: CalculatedAvailabilitySlot[];
+// Base types from Zod schemas
+type BaseSlot = z.infer<typeof CalculatedAvailabilitySlotSchema>;
+type BaseService = z.infer<typeof ServiceSchema>;
+type BaseServiceConfig = z.infer<typeof ServiceAvailabilityConfigSchema>;
+type BaseBooking = z.infer<typeof BookingSchema>;
+
+// Simplified types that break circular references
+export type BookingView = Pick<BaseBooking, 'id' | 'status'> & {
+  price: number;
+  client?: {
+    id: string;
+    name: string | null;
+    email: string | null;
+  };
+  guestName: string | null;
+  guestEmail: string | null;
+  guestPhone: string | null;
+  guestWhatsapp: string | null;
 };
-export type CalculatedAvailabilitySlot = z.infer<typeof CalculatedAvailabilitySlotSchema> & {
-  booking: Booking | null;
-  service: Service;
-  serviceConfig: ServiceAvailabilityConfig;
+
+export type AvailabilitySlot = Pick<BaseSlot, 'id' | 'startTime' | 'endTime' | 'status'> & {
+  service: Pick<BaseService, 'id' | 'name' | 'description' | 'displayPriority'>;
+  serviceConfig: Pick<
+    BaseServiceConfig,
+    'id' | 'price' | 'duration' | 'isOnlineAvailable' | 'isInPerson' | 'location'
+  >;
+  booking: BookingView | null;
 };
-export type Booking = z.infer<typeof BookingSchema> & {
-  slot: CalculatedAvailabilitySlot;
-  client?: User;
-  bookedBy?: User;
-  serviceProvider: ServiceProvider;
-  service: Service;
-  notifications: z.infer<typeof NotificationLogSchema>[];
+
+export type AvailabilityView = Pick<
+  z.infer<typeof AvailabilitySchema>,
+  'id' | 'startTime' | 'endTime'
+> & {
+  serviceProvider: {
+    id: string;
+    name: string;
+  };
+  slots: AvailabilitySlot[];
+  availableServices: Pick<
+    BaseServiceConfig,
+    'serviceId' | 'duration' | 'price' | 'isOnlineAvailable' | 'isInPerson' | 'location'
+  >[];
 };
+
+// export type ServiceAvailabilityConfig = z.infer<typeof ServiceAvailabilityConfigSchema>;
+// export type Availability = z.infer<typeof AvailabilitySchema> & {
+//   serviceProvider: ServiceProvider;
+//   availableServices: ServiceAvailabilityConfig[];
+//   calculatedSlots: CalculatedAvailabilitySlot[];
+// };
+// export type CalculatedAvailabilitySlot = z.infer<typeof CalculatedAvailabilitySlotSchema> & {
+//   booking: Booking | null;
+//   service: Service;
+//   serviceConfig: ServiceAvailabilityConfig;
+// };
+// export type Booking = z.infer<typeof BookingSchema> & {
+//   slot: CalculatedAvailabilitySlot;
+//   client?: User;
+//   bookedBy?: User;
+//   serviceProvider: ServiceProvider;
+//   service: Service;
+//   notifications: z.infer<typeof NotificationLogSchema>[];
+//   guestName: string | null;
+//   guestEmail: string | null;
+//   guestPhone: string | null;
+//   guestWhatsapp: string | null;
+// };
 
 export const ServiceConfigFormSchema = ServiceAvailabilityConfigSchema.omit({
   id: true,
@@ -51,7 +98,7 @@ export const ServiceConfigFormSchema = ServiceAvailabilityConfigSchema.omit({
       path: ['location'],
     }
   )
-  .refine((data) => data.price.gte(100), {
+  .refine((data) => data.price >= 100, {
     message: 'Minimum Price is R100',
     path: ['price'],
   });
@@ -115,6 +162,19 @@ export const AvailabilityFormSchema = AvailabilitySchema.omit({
   });
 
 export type AvailabilityFormValues = z.infer<typeof AvailabilityFormSchema>;
+
+export type AvailabilityFormResponse = ApiResponse<{
+  startTime: Date;
+  endTime: Date;
+  availableServices: {
+    serviceId: string;
+    duration: number;
+    price: number;
+    isOnlineAvailable: boolean;
+    isInPerson: boolean;
+    location?: string | null;
+  }[];
+}>;
 
 export const BookingTypeSchema = z.enum([
   'USER_SELF',

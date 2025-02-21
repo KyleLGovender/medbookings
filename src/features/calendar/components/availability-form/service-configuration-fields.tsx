@@ -6,9 +6,10 @@ import { Card } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Service } from '@/features/service-provider/lib/types';
 import { toast } from '@/hooks/use-toast';
 
-import { AvailabilityFormValues, Service, ServiceConfigFormSchema } from '../../lib/types';
+import { AvailabilityFormValues, ServiceConfigFormSchema } from '../../lib/types';
 
 interface ServiceConfigurationFieldsProps {
   services: Service[];
@@ -29,20 +30,18 @@ export function ServiceConfigurationFields({
   });
 
   const handleServiceSelect = (service: Service) => {
-    // Create a new service config
     const newServiceConfig = {
       serviceId: service.id,
       duration: service.defaultDuration ?? 60,
       price: service.defaultPrice ?? 100,
       isOnlineAvailable: true,
       isInPerson: false,
-      location: undefined,
+      location: null,
     };
 
-    // Validate before adding to form
     const result = ServiceConfigFormSchema.safeParse(newServiceConfig);
+
     if (!result.success) {
-      // Show validation errors
       toast({
         variant: 'destructive',
         title: 'Invalid Service Configuration',
@@ -52,8 +51,6 @@ export function ServiceConfigurationFields({
     }
 
     append(result.data);
-    // Add console log after appending
-    console.log('ServiceConfigurationFields - after append:', form.getValues());
   };
 
   return (
@@ -164,6 +161,9 @@ export function ServiceConfigurationFields({
                         checked={inPersonField.value}
                         onCheckedChange={(checked) => {
                           inPersonField.onChange(checked);
+                          if (!checked) {
+                            form.setValue(`availableServices.${index}.location`, null);
+                          }
                           const isOnline = form.getValues(
                             `availableServices.${index}.isOnlineAvailable`
                           );
@@ -188,7 +188,7 @@ export function ServiceConfigurationFields({
                   render={({ field: locationField, fieldState }) => (
                     <FormItem>
                       <FormLabel>Location</FormLabel>
-                      <Input {...locationField} />
+                      <Input {...locationField} value={locationField.value || ''} />
                       <FormMessage>{fieldState.error?.message}</FormMessage>
                     </FormItem>
                   )}

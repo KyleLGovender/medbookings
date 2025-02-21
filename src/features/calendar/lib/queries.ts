@@ -1,79 +1,144 @@
 'use server';
 
-import {
-  AvailabilitySchema,
-  BookingSchema,
-  CalculatedAvailabilitySlotSchema,
-  ServiceAvailabilityConfigSchema,
-  ServiceProviderSchema,
-  ServiceSchema,
-} from '@prisma/zod';
-
+import { Service } from '@/features/service-provider/lib/types';
 import { prisma } from '@/lib/prisma';
 
-import { Availability, Service } from './types';
-
-const CalculatedSlotWithRelationsSchema = CalculatedAvailabilitySlotSchema.extend({
-  booking: BookingSchema.nullable(),
-  service: ServiceSchema,
-  serviceConfig: ServiceAvailabilityConfigSchema,
-});
-
-const AvailabilityWithRelationsSchema = AvailabilitySchema.extend({
-  serviceProvider: ServiceProviderSchema,
-  availableServices: ServiceAvailabilityConfigSchema.array(),
-  calculatedSlots: CalculatedSlotWithRelationsSchema.array(),
-});
+import { AvailabilityView } from './types';
 
 export async function getServiceProviderAvailabilityInRange(
   serviceProviderId: string,
   startDate: Date,
   endDate: Date
-): Promise<Availability[]> {
+): Promise<AvailabilityView[]> {
   try {
     const availabilities = await prisma.availability.findMany({
       where: {
         serviceProviderId,
-        startTime: { lte: endDate }, // Availability starts before range end
-        endTime: { gte: startDate }, // Availability ends after range start
+        startTime: { lte: endDate },
+        endTime: { gte: startDate },
       },
-      include: {
-        serviceProvider: true,
-        availableServices: {
-          include: {
-            service: true,
+      select: {
+        id: true,
+        serviceProviderId: true,
+        serviceProvider: {
+          select: {
+            name: true,
           },
         },
+        startTime: true,
+        endTime: true,
         calculatedSlots: {
           where: {
-            startTime: {
-              gte: startDate,
-              lte: endDate,
-            },
+            startTime: { gte: startDate, lte: endDate },
           },
-          include: {
-            service: true,
-            booking: {
-              include: {
-                slot: true,
-                client: true,
-                bookedBy: true,
-                serviceProvider: true,
-                service: true,
-                notifications: true,
-                review: true,
+          select: {
+            id: true,
+            startTime: true,
+            endTime: true,
+            status: true,
+            service: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                displayPriority: true,
               },
             },
+            serviceConfig: {
+              select: {
+                id: true,
+                price: true,
+                duration: true,
+                isOnlineAvailable: true,
+                isInPerson: true,
+                location: true,
+              },
+            },
+            booking: {
+              select: {
+                id: true,
+                status: true,
+                price: true,
+                guestName: true,
+                guestEmail: true,
+                guestPhone: true,
+                guestWhatsapp: true,
+                client: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        availableServices: {
+          select: {
+            serviceId: true,
+            duration: true,
+            price: true,
+            isOnlineAvailable: true,
+            isInPerson: true,
+            location: true,
           },
         },
       },
     });
 
-    // Let Zod handle all the transformations
-    return AvailabilityWithRelationsSchema.array().parse(availabilities);
+    // Convert price fields to numbers
+    return availabilities.map((availability) => ({
+      id: availability.id,
+      startTime: availability.startTime,
+      endTime: availability.endTime,
+      serviceProvider: {
+        id: availability.serviceProviderId,
+        name: availability.serviceProvider.name,
+      },
+      availableServices: availability.availableServices.map((service) => ({
+        serviceId: service.serviceId,
+        duration: service.duration,
+        price: Number(service.price),
+        isOnlineAvailable: service.isOnlineAvailable,
+        isInPerson: service.isInPerson,
+        location: service.location,
+      })),
+      slots: availability.calculatedSlots.map((slot) => ({
+        id: slot.id,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        status: slot.status,
+        service: {
+          id: slot.service.id,
+          name: slot.service.name,
+          description: slot.service.description,
+          displayPriority: slot.service.displayPriority,
+        },
+        serviceConfig: {
+          id: slot.serviceConfig.id,
+          price: Number(slot.serviceConfig.price),
+          duration: slot.serviceConfig.duration,
+          isOnlineAvailable: slot.serviceConfig.isOnlineAvailable,
+          isInPerson: slot.serviceConfig.isInPerson,
+          location: slot.serviceConfig.location,
+        },
+        booking: slot.booking
+          ? {
+              id: slot.booking.id,
+              status: slot.booking.status,
+              price: Number(slot.booking.price),
+              client: slot.booking.client || undefined,
+              guestName: slot.booking.guestName,
+              guestEmail: slot.booking.guestEmail,
+              guestPhone: slot.booking.guestPhone,
+              guestWhatsapp: slot.booking.guestWhatsapp,
+            }
+          : null,
+      })),
+    }));
   } catch (error) {
     console.error('Error fetching availability:', error);
-    console.error('Error details:', error instanceof Error ? error.stack : error);
     return [];
   }
 }
@@ -88,12 +153,18 @@ export async function getServiceProviderServices(serviceProviderId: string): Pro
           },
         },
       },
-      orderBy: {
-        name: 'asc',
+      include: {
+        availabilityConfigs: {
+          where: {
+            serviceProviderId,
+          },
+        },
       },
     });
-
-    return ServiceSchema.array().parse(services);
+    return services.map((service) => ({
+      ...service,
+      defaultPrice: service.defaultPrice.toNumber(),
+    }));
   } catch (error) {
     console.error('Error fetching services:', error);
     return [];

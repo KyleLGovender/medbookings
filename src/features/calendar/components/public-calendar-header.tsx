@@ -54,9 +54,7 @@ export function PublicCalendarHeader({
   };
 
   const handleDateRangeChange = (newRange: DateRange | undefined) => {
-    if (newRange?.from && newRange?.to) {
-      onDateRangeSelect(newRange);
-    }
+    onDateRangeSelect(newRange);
   };
 
   return (

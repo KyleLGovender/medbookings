@@ -15,16 +15,19 @@ import {
   validateBookingFormData,
   validateBookingWithAvailability,
 } from './server-helper';
-import { AvailabilityActionResponse, Booking } from './types';
+import { AvailabilityFormResponse, Booking } from './types';
 
-export async function createAvailability(formData: FormData): Promise<AvailabilityActionResponse> {
+export async function createAvailability(formData: FormData): Promise<AvailabilityFormResponse> {
   try {
     const validationResult = await validateAvailabilityFormData(formData);
+    console.log('Validation result:', validationResult);
+
     if ('error' in validationResult || !validationResult.data) {
       return validationResult;
     }
 
     const { data } = validationResult;
+    console.log('Validated data:', data);
 
     // Check which configurations already exist
     const existingConfigs = await prisma.serviceAvailabilityConfig.findMany({
@@ -35,8 +38,10 @@ export async function createAvailability(formData: FormData): Promise<Availabili
         },
       },
     });
+    console.log('Existing configs:', existingConfigs);
 
     const existingServiceIds = new Set(existingConfigs.map((c) => c.serviceId));
+    console.log('Existing service IDs:', Array.from(existingServiceIds));
 
     const availability = await prisma.availability.create({
       data: {
@@ -87,15 +92,21 @@ export async function createAvailability(formData: FormData): Promise<Availabili
         },
       },
     });
+    console.log('Created availability:', availability);
 
-    // Create calculated slots with the service config IDs
-    await prisma.calculatedAvailabilitySlot.createMany({
-      data: await calculateInitialAvailabilitySlots(
-        data,
-        availability.id,
-        availability.availableServices
-      ),
+    // Calculate initial slots
+    const slotsToCreate = await calculateInitialAvailabilitySlots(
+      data,
+      availability.id,
+      availability.availableServices
+    );
+    console.log('Slots to create:', slotsToCreate);
+
+    // Create calculated slots
+    const createdSlots = await prisma.calculatedAvailabilitySlot.createMany({
+      data: slotsToCreate,
     });
+    console.log('Created slots:', createdSlots);
 
     return {
       data: {
@@ -153,9 +164,11 @@ export async function deleteAvailability(
 export async function updateAvailability(
   availabilityId: string,
   formData: FormData
-): Promise<AvailabilityActionResponse> {
+): Promise<AvailabilityFormResponse> {
   try {
+    console.log('Starting update for availability:', availabilityId);
     const validationResult = await validateAvailabilityFormData(formData);
+    console.log('Validation result:', validationResult);
 
     if ('error' in validationResult || !validationResult.data) {
       console.log('Validation failed:', validationResult);
@@ -174,9 +187,27 @@ export async function updateAvailability(
         },
       },
     });
+    console.log('Existing configs:', existingConfigs);
 
     const existingServiceIds = new Set(existingConfigs.map((c) => c.serviceId));
     const newServiceIds = new Set(data.availableServices.map((s) => s.serviceId));
+    console.log('Existing service IDs:', Array.from(existingServiceIds));
+    console.log('New service IDs:', Array.from(newServiceIds));
+
+    // Find services to disconnect
+    const servicesToDisconnect = await prisma.serviceAvailabilityConfig.findMany({
+      where: {
+        serviceProviderId: formData.get('serviceProviderId') as string,
+        serviceId: {
+          notIn: Array.from(newServiceIds),
+        },
+      },
+      select: {
+        serviceId: true,
+        serviceProviderId: true,
+      },
+    });
+    console.log('Services to disconnect:', servicesToDisconnect);
 
     const availability = await prisma.availability.update({
       where: { id: availabilityId },
@@ -184,34 +215,18 @@ export async function updateAvailability(
         startTime: data.startTime,
         endTime: data.endTime,
         availableServices: {
-          // Disconnect services that are no longer in the form data
-          disconnect: (
-            await prisma.serviceAvailabilityConfig.findMany({
-              where: {
-                serviceProviderId: formData.get('serviceProviderId') as string,
-                serviceId: {
-                  notIn: Array.from(newServiceIds),
-                },
-              },
-              select: {
-                serviceId: true,
-                serviceProviderId: true,
-              },
-            })
-          ).map((config) => ({
+          disconnect: servicesToDisconnect.map((config) => ({
             serviceId_serviceProviderId: {
               serviceId: config.serviceId,
               serviceProviderId: config.serviceProviderId,
             },
           })),
-          // Connect existing services
           connect: existingConfigs.map((config) => ({
             serviceId_serviceProviderId: {
               serviceId: config.serviceId,
               serviceProviderId: config.serviceProviderId,
             },
           })),
-          // Create new services
           create: data.availableServices
             .filter((service) => !existingServiceIds.has(service.serviceId))
             .map((service) => ({
@@ -229,18 +244,26 @@ export async function updateAvailability(
         availableServices: true,
       },
     });
+    console.log('Updated availability:', availability);
 
-    // Create calculated slots with the service config IDs
+    // Delete existing slots first
+    const deletedSlots = await prisma.calculatedAvailabilitySlot.deleteMany({
+      where: { availabilityId },
+    });
+    console.log('Deleted existing slots:', deletedSlots);
+
+    // Create new calculated slots
     const calculatedSlots = await calculateInitialAvailabilitySlots(
       data,
       availability.id,
       availability.availableServices
     );
-    // console.log('Calculated slots:', calculatedSlots);
+    console.log('New calculated slots:', calculatedSlots);
 
-    await prisma.calculatedAvailabilitySlot.createMany({
+    const createdSlots = await prisma.calculatedAvailabilitySlot.createMany({
       data: calculatedSlots,
     });
+    console.log('Created new slots:', createdSlots);
 
     return {
       data: {

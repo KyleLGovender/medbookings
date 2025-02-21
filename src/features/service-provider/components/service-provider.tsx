@@ -5,13 +5,13 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-import { ServiceProviderWithRelations } from '../lib/types';
+import { ServiceProvider } from '../lib/types';
 
 interface ServiceProviderProps {
-  serviceProvider: ServiceProviderWithRelations;
+  serviceProvider: ServiceProvider;
 }
 
-export function ServiceProvider({ serviceProvider }: ServiceProviderProps) {
+export function ServiceProviderProfile({ serviceProvider }: ServiceProviderProps) {
   return (
     <>
       <Card className="mx-auto mt-4 max-w-md">

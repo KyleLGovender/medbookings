@@ -16,11 +16,11 @@ import {
 } from '@/components/ui/table';
 import { AvailabilityDialog } from '@/features/calendar/components/availability-dialog';
 import { deleteAvailability, deleteBooking } from '@/features/calendar/lib/actions';
-import { Availability, Booking } from '@/features/calendar/lib/types';
+import { AvailabilityView, BookingView } from '@/features/calendar/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface CalendarViewScheduleProps {
-  availabilityData: Availability[];
+  availabilityData: AvailabilityView[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
 }
@@ -32,18 +32,18 @@ export function CalendarViewSchedule({
   serviceProviderId,
   onRefresh,
 }: CalendarViewScheduleProps) {
-  const [selectedAvailability, setSelectedAvailability] = useState<Availability | undefined>();
-  const [selectedBooking, setSelectedBooking] = useState<Booking | undefined>();
+  const [selectedAvailability, setSelectedAvailability] = useState<AvailabilityView | undefined>();
+  const [selectedBooking, setSelectedBooking] = useState<BookingView | undefined>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
-  const handleEdit = (data: Availability | Booking, type: 'availability' | 'booking') => {
+  const handleEdit = (data: AvailabilityView | BookingView, type: 'availability' | 'booking') => {
     if (type === 'availability') {
-      setSelectedAvailability(data as Availability);
+      setSelectedAvailability(data as AvailabilityView);
     }
     if (type === 'booking') {
-      setSelectedBooking(data as Booking);
+      setSelectedBooking(data as BookingView);
     }
     setIsDialogOpen(true);
   };
@@ -105,9 +105,8 @@ export function CalendarViewSchedule({
                   </TableCell>
                   <TableCell className="text-center">
                     {Math.round(
-                      (availability.calculatedSlots.filter((slot) => slot.status === 'BOOKED')
-                        .length /
-                        availability.calculatedSlots.length) *
+                      (availability.slots.filter((slot) => slot.status === 'BOOKED').length /
+                        availability.slots.length) *
                         100
                     )}
                     %

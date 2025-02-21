@@ -12,20 +12,16 @@ import { Form, FormField, FormItem, FormLabel, FormMessage } from '@/components/
 import { Spinner } from '@/components/ui/spinner';
 import { TimePicker } from '@/components/ui/time-picker';
 import { getServiceProviderServices } from '@/features/calendar/lib/queries';
+import { Service } from '@/features/service-provider/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 import { createAvailability, updateAvailability } from '../lib/actions';
-import {
-  AvailabilityFormSchema,
-  AvailabilityFormValues,
-  QueriedAvailability,
-  Service,
-} from '../lib/types';
+import { AvailabilityFormSchema, AvailabilityFormValues, AvailabilityView } from '../lib/types';
 import { ServiceConfigurationFields } from './availability-form/service-configuration-fields';
 
 interface AvailabilityFormProps {
   serviceProviderId: string;
-  availability?: QueriedAvailability;
+  availability?: AvailabilityView;
   mode: 'create' | 'edit';
   onClose: () => void;
   onRefresh: () => Promise<void>;
@@ -43,6 +39,9 @@ export function AvailabilityForm({
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
+
+  console.log('Received availability:', availability);
+  console.log('Available services:', availability?.availableServices);
 
   // Fetch services on mount
   useEffect(() => {
@@ -67,7 +66,6 @@ export function AvailabilityForm({
         date: new Date(availability.startTime),
         startTime: new Date(availability.startTime),
         endTime: new Date(availability.endTime),
-        serviceIds: availability.availableServices.map((s) => s.serviceId),
         availableServices: availability.availableServices.map((s) => ({
           serviceId: s.serviceId,
           duration: s.duration,
@@ -81,9 +79,10 @@ export function AvailabilityForm({
         date: new Date(),
         startTime: new Date(),
         endTime: new Date(),
-        serviceIds: [],
         availableServices: [],
       };
+
+  console.log('Initializing form with values:', defaultValues);
 
   const form = useForm<AvailabilityFormValues>({
     resolver: zodResolver(AvailabilityFormSchema),
@@ -124,17 +123,15 @@ export function AvailabilityForm({
           : await updateAvailability(availability?.id || '', formData);
 
       if (response.error) {
-        // Set field errors if they exist
         if (response.fieldErrors) {
           Object.entries(response.fieldErrors).forEach(([field, errors]) => {
             form.setError(field as any, {
               type: 'server',
-              message: errors[0],
+              message: Array.isArray(errors) ? errors[0] : 'Unknown error',
             });
           });
         }
 
-        // Show toast for form-level errors
         if (response.formErrors?.length) {
           toast({
             variant: 'destructive',

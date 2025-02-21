@@ -5,7 +5,7 @@ import { Fragment, RefObject, useState } from 'react';
 import { addDays, startOfWeek } from 'date-fns';
 
 import { getEventGridPosition } from '../../lib/helper';
-import { type Availability, type CalculatedAvailabilitySlot } from '../../lib/types';
+import { AvailabilitySlot, type AvailabilityView } from '../../lib/types';
 import { AvailabilityDialog } from '../availability-dialog';
 import { CalendarViewEventItem } from '../calendar-view-event-item';
 import { CalendarViewTimeColumn } from '../calendar-view-time-column';
@@ -15,10 +15,10 @@ interface CalendarViewWeekTimeGridProps {
   navRef: RefObject<HTMLDivElement>;
   offsetRef: RefObject<HTMLDivElement>;
   rangeStartDate: string;
-  availabilityData: Availability[];
+  availabilityData: AvailabilityView[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
-  onEventClick?: (slot: CalculatedAvailabilitySlot) => void;
+  onEventClick?: (slot: AvailabilitySlot) => void;
 }
 
 export function CalendarViewWeekTimeGrid({
@@ -31,16 +31,14 @@ export function CalendarViewWeekTimeGrid({
   onRefresh,
   onEventClick,
 }: CalendarViewWeekTimeGridProps) {
-  const [selectedSlot, setSelectedSlot] = useState<CalculatedAvailabilitySlot | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleEventClick = (slot: CalculatedAvailabilitySlot) => {
+  const handleEventClick = (slot: AvailabilitySlot) => {
     // Only open dialog if the service provider owns this availability
-    const availability = availabilityData.find((a) =>
-      a.calculatedSlots.some((s) => s.id === slot.id)
-    );
+    const availability = availabilityData.find((a) => a.slots.some((s) => s.id === slot.id));
 
-    if (availability?.serviceProviderId === serviceProviderId) {
+    if (availability?.serviceProvider.id === serviceProviderId) {
       setSelectedSlot(slot);
       setIsDialogOpen(true);
     } else {
@@ -51,7 +49,7 @@ export function CalendarViewWeekTimeGrid({
 
   // Find the parent availability for the selected slot
   const selectedAvailability = selectedSlot
-    ? availabilityData.find((a) => a.calculatedSlots.some((s) => s.id === selectedSlot.id))
+    ? availabilityData.find((a) => a.slots.some((s) => s.id === selectedSlot.id))
     : undefined;
 
   // Convert string to Date for calculations
@@ -61,7 +59,7 @@ export function CalendarViewWeekTimeGrid({
 
   // Get all slots for the week from availabilities
   const weekSlots = availabilityData
-    .flatMap((availability) => availability.calculatedSlots)
+    .flatMap((availability) => availability.slots)
     .filter((slot) => {
       const slotDate = new Date(slot.startTime);
       return slotDate >= weekStart && slotDate <= weekEnd;
@@ -114,7 +112,7 @@ export function CalendarViewWeekTimeGrid({
       </div>
 
       {/* Only render dialog if the selected slot belongs to this service provider */}
-      {selectedSlot && selectedAvailability?.serviceProviderId === serviceProviderId && (
+      {selectedSlot && selectedAvailability?.serviceProvider.id === serviceProviderId && (
         <AvailabilityDialog
           availability={selectedAvailability}
           serviceProviderId={serviceProviderId}

@@ -19,6 +19,8 @@ generator zod {
   useDecimalJs         = false  // This will make Decimals serialize as numbers
   dateTimeAsDate      = false  // This will make Dates serialize as strings
   addInputTypeValidation = true
+  // Add custom transformer configuration
+  decimalType         = "number"  // This will make Decimals use number type
 }
 
 // Base User model and auth
@@ -216,7 +218,7 @@ model Service {
   serviceProviderTypeId String
   displayPriority       Int                          @default(0)
   defaultDuration       Int // Default duration in minutes
-  defaultPrice          Decimal                      @db.Decimal(10, 2)
+  defaultPrice          Decimal                      @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
   providers             ServiceProvider[]
   availabilityConfigs   ServiceAvailabilityConfig[]
   calculatedSlots       CalculatedAvailabilitySlot[]
@@ -235,7 +237,7 @@ model ServiceAvailabilityConfig {
   serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
   serviceProviderId String
   duration          Int // Duration in minutes
-  price             Decimal         @db.Decimal(10, 2)
+  price             Decimal         @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
   isOnlineAvailable Boolean         @default(false)
   isInPerson        Boolean         @default(false)
   location          String?
@@ -317,7 +319,7 @@ model Booking {
   startTime     DateTime
   endTime       DateTime
   duration      Int // in minutes
-  price         Decimal           @db.Decimal(10, 2)
+  price         Decimal           @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
   isOnline      Boolean
   isInPerson    Boolean           @default(false)
   location      String?
@@ -429,7 +431,7 @@ model SubscriptionPlan {
   id            String          @id @default(cuid())
   name          String
   description   String?
-  price         Decimal         @db.Decimal(10, 2)
+  price         Decimal         @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
   interval      BillingInterval
   currency      String          @default("USD")
   isActive      Boolean         @default(true)
@@ -449,7 +451,7 @@ model Payment {
   id              String        @id @default(cuid())
   subscription    Subscription  @relation(fields: [subscriptionId], references: [id])
   subscriptionId  String
-  amount          Decimal       @db.Decimal(10, 2)
+  amount          Decimal       @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
   currency        String
   status          PaymentStatus
   stripePaymentId String?

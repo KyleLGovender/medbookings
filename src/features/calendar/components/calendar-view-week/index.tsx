@@ -1,11 +1,11 @@
 'use client';
 
-import { Availability } from '../../lib/types';
+import { AvailabilityView } from '../../lib/types';
 import { CalendarViewWeekGrid } from './calendar-view-week-grid';
 
 interface CalendarViewWeekProps {
   rangeStartDate: Date;
-  availabilityData: Availability[];
+  availabilityData: AvailabilityView[];
   onDateChange: (date: Date) => void;
   onViewChange?: (view: 'day') => void;
   serviceProviderId: string;

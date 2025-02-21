@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 import { prisma } from '@/lib/prisma';
 
-import { Availability, AvailabilityFormSchema, BookingFormSchema, Schedule } from './types';
+import { Availability, AvailabilityFormSchema, BookingFormSchema } from './types';
 
 function hasTimeOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
   return start1 < end2 && start2 < end1;
@@ -138,7 +138,7 @@ export async function validateAvailabilityFormData(formData: FormData): Promise<
         isOnlineAvailable:
           formData.get(`availableServices[${index}][isOnlineAvailable]`) === 'true',
         isInPerson: formData.get(`availableServices[${index}][isInPerson]`) === 'true',
-        location: (formData.get(`availableServices[${index}][location]`) as string) || undefined,
+        location: (formData.get(`availableServices[${index}][location]`) as string) || null,
       };
       availableServices.push(service);
     }
