@@ -162,7 +162,7 @@ export function ServiceConfigurationFields({
                         onCheckedChange={(checked) => {
                           inPersonField.onChange(checked);
                           if (!checked) {
-                            form.setValue(`availableServices.${index}.location`, null);
+                            form.setValue(`availableServices.${index}.location`, '');
                           }
                           const isOnline = form.getValues(
                             `availableServices.${index}.isOnlineAvailable`
@@ -188,7 +188,14 @@ export function ServiceConfigurationFields({
                   render={({ field: locationField, fieldState }) => (
                     <FormItem>
                       <FormLabel>Location</FormLabel>
-                      <Input {...locationField} value={locationField.value || ''} />
+                      <Input
+                        {...locationField}
+                        value={locationField.value || ''}
+                        onChange={(e) => {
+                          locationField.onChange(e.target.value || ''); // Ensure empty string instead of null
+                        }}
+                        required={isInPerson} // Add required attribute
+                      />
                       <FormMessage>{fieldState.error?.message}</FormMessage>
                     </FormItem>
                   )}

@@ -163,7 +163,11 @@ export async function getServiceProviderServices(serviceProviderId: string): Pro
     });
     return services.map((service) => ({
       ...service,
-      defaultPrice: service.defaultPrice.toNumber(),
+      defaultPrice: Number(service.defaultPrice),
+      availabilityConfigs: service.availabilityConfigs.map((config) => ({
+        ...config,
+        price: Number(config.price),
+      })),
     }));
   } catch (error) {
     console.error('Error fetching services:', error);

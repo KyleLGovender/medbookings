@@ -40,9 +40,6 @@ export function AvailabilityForm({
   const { toast } = useToast();
   const router = useRouter();
 
-  console.log('Received availability:', availability);
-  console.log('Available services:', availability?.availableServices);
-
   // Fetch services on mount
   useEffect(() => {
     startTransition(async () => {
@@ -72,7 +69,7 @@ export function AvailabilityForm({
           price: Number(s.price),
           isOnlineAvailable: s.isOnlineAvailable,
           isInPerson: s.isInPerson,
-          location: s.location || undefined,
+          location: s.location || '',
         })),
       }
     : {
@@ -81,8 +78,6 @@ export function AvailabilityForm({
         endTime: new Date(),
         availableServices: [],
       };
-
-  console.log('Initializing form with values:', defaultValues);
 
   const form = useForm<AvailabilityFormValues>({
     resolver: zodResolver(AvailabilityFormSchema),
@@ -93,7 +88,11 @@ export function AvailabilityForm({
     formState: { errors },
   } = form;
 
+  // Add this to display validation errors
+  console.log('Form Errors:', errors);
+
   async function onSubmit(values: AvailabilityFormValues) {
+    console.log('onSubmit called with values:', values);
     setIsSubmitting(true);
 
     try {
@@ -176,7 +175,20 @@ export function AvailabilityForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-xl space-y-6">
+      <form
+        onSubmit={(e) => {
+          console.log('Form submission attempted');
+          form.handleSubmit(onSubmit)(e);
+        }}
+        className="w-full max-w-xl space-y-6"
+      >
+        {/* Temporary error display */}
+        {Object.keys(errors).length > 0 && (
+          <div className="text-sm text-red-500">
+            <pre>{JSON.stringify(errors, null, 2)}</pre>
+          </div>
+        )}
+
         <FormField
           control={form.control}
           name="date"
