@@ -115,9 +115,10 @@ export const AvailabilityFormSchema = AvailabilitySchema.omit({
         required_error: 'Date is required',
         invalid_type_error: 'Invalid date format',
       })
-      .min(new Date(new Date().setHours(0, 0, 0, 0)), 'Date cannot be in the past'),
-    startTime: z.date(),
-    endTime: z.date(),
+      .min(new Date(new Date().setHours(0, 0, 0, 0)), 'Date cannot be in the past')
+      .transform((date) => new Date(Math.floor(date.getTime() / 60000) * 60000)),
+    startTime: z.date().transform((date) => new Date(Math.floor(date.getTime() / 60000) * 60000)),
+    endTime: z.date().transform((date) => new Date(Math.floor(date.getTime() / 60000) * 60000)),
     availableServices: z
       .array(ServiceConfigFormSchema)
       .min(1, 'At least one service configuration must be specified'),

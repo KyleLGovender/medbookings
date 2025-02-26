@@ -11,6 +11,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Spinner } from '@/components/ui/spinner';
 import { TimePicker } from '@/components/ui/time-picker';
+import { roundToNearestMinute } from '@/features/calendar/lib/helper';
 import { getServiceProviderServices } from '@/features/calendar/lib/queries';
 import { Service } from '@/features/service-provider/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -57,12 +58,12 @@ export function AvailabilityForm({
     });
   }, [serviceProviderId, toast]);
 
-  // Transform availability data to match form values
+  // Modify the defaultValues transformation
   const defaultValues = availability
     ? {
         date: new Date(availability.startTime),
-        startTime: new Date(availability.startTime),
-        endTime: new Date(availability.endTime),
+        startTime: roundToNearestMinute(new Date(availability.startTime)),
+        endTime: roundToNearestMinute(new Date(availability.endTime)),
         availableServices: availability.availableServices.map((s) => ({
           serviceId: s.serviceId,
           duration: s.duration,
@@ -74,8 +75,8 @@ export function AvailabilityForm({
       }
     : {
         date: new Date(),
-        startTime: new Date(),
-        endTime: new Date(),
+        startTime: roundToNearestMinute(new Date()),
+        endTime: roundToNearestMinute(new Date()),
         availableServices: [],
       };
 
@@ -89,18 +90,19 @@ export function AvailabilityForm({
   } = form;
 
   // Add this to display validation errors
-  console.log('Form Errors:', errors);
+  // console.log('Form Errors:', errors);
 
+  // Modify the onSubmit function
   async function onSubmit(values: AvailabilityFormValues) {
-    console.log('onSubmit called with values:', values);
+    // console.log('onSubmit called with values:', values);
     setIsSubmitting(true);
 
     try {
       const formData = new FormData();
       formData.append('serviceProviderId', serviceProviderId);
       formData.append('date', values.date.toISOString());
-      formData.append('startTime', values.startTime.toISOString());
-      formData.append('endTime', values.endTime.toISOString());
+      formData.append('startTime', roundToNearestMinute(values.startTime).toISOString());
+      formData.append('endTime', roundToNearestMinute(values.endTime).toISOString());
 
       values.availableServices.forEach((service, index) => {
         formData.append(`availableServices[${index}][serviceId]`, service.serviceId);

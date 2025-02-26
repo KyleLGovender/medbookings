@@ -339,3 +339,7 @@ export function determineBookingType(booking: any): z.infer<typeof BookingTypeSc
   if (!booking.bookedBy && !booking.client) return 'GUEST_SELF';
   return 'PROVIDER_GUEST';
 }
+
+export function roundToNearestMinute(date: Date): Date {
+  return new Date(Math.floor(date.getTime() / 60000) * 60000);
+}
