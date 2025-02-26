@@ -57,6 +57,15 @@ export function CalendarViewWeekTimeGrid({
   const weekStart = startOfWeek(dateObj);
   const weekEnd = addDays(weekStart, 6);
 
+  // Log the date range we're working with
+  console.log('Week Range:', {
+    weekStart: weekStart.toISOString(),
+    weekEnd: weekEnd.toISOString(),
+  });
+
+  // Log raw availability data
+  console.log('Raw Availability Data:', availabilityData);
+
   // Get all slots for the week from availabilities
   const weekSlots = availabilityData
     .flatMap((availability) => availability.slots)
@@ -65,12 +74,38 @@ export function CalendarViewWeekTimeGrid({
       return slotDate >= weekStart && slotDate <= weekEnd;
     });
 
+  // Log filtered week slots
+  console.log('Filtered Week Slots:', weekSlots);
+
+  // Example slot grid position calculation
+  if (weekSlots.length > 0) {
+    const exampleSlot = weekSlots[0];
+    const gridPos = getEventGridPosition(
+      new Date(exampleSlot.startTime),
+      new Date(exampleSlot.endTime)
+    );
+    console.log('Example Slot Grid Position:', {
+      slot: exampleSlot,
+      startTime: new Date(exampleSlot.startTime).toLocaleTimeString(),
+      endTime: new Date(exampleSlot.endTime).toLocaleTimeString(),
+      gridPosition: gridPos,
+      dayColumn: (new Date(exampleSlot.startTime).getDay() % 7) + 1,
+    });
+  }
+
   const bookings = weekSlots
     .filter((slot) => slot.booking)
     .map((slot) => ({
       ...slot.booking!,
       slotId: slot.id,
     }));
+
+  // In the render, before mapping over weekSlots
+  console.log('Grid Template:', {
+    columns: 'grid-cols-7',
+    rows: '1.75rem repeat(288, minmax(0, 1fr)) auto',
+    totalRows: 290, // 1 header + 288 5-minute intervals + 1 auto
+  });
 
   return (
     <>

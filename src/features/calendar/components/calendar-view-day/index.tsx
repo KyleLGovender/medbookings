@@ -1,9 +1,9 @@
-import { Schedule } from '../../lib/types';
+import { AvailabilityView } from '../../lib/types';
 import { CalendarViewDayGrid } from './calendar-view-day-grid';
 
 interface CalendarViewDayProps {
   rangeStartDate: Date;
-  scheduleData: Schedule[];
+  availabilityData: AvailabilityView[];
   onDateChange: (date: Date) => void;
   onViewChange?: (view: 'day') => void;
   serviceProviderId: string;
@@ -12,7 +12,7 @@ interface CalendarViewDayProps {
 
 export function CalendarViewDay({
   rangeStartDate,
-  scheduleData,
+  availabilityData = [],
   onDateChange,
   onViewChange = () => {},
   serviceProviderId,
@@ -21,11 +21,12 @@ export function CalendarViewDay({
   const handleRefresh = async () => {
     await onRefresh();
   };
+
   return (
     <CalendarViewDayGrid
       rangeStartDate={rangeStartDate.toISOString()}
       onDateChange={(dateStr: string) => onDateChange(new Date(dateStr))}
-      scheduleData={scheduleData}
+      availabilityData={availabilityData}
       onViewChange={onViewChange}
       serviceProviderId={serviceProviderId}
       onRefresh={handleRefresh}

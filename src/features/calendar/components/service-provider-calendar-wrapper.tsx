@@ -163,15 +163,15 @@ export function ServiceProviderCalendarWrapper({
       onDateChange: handleDateSelect,
     };
 
-    console.log('Calendar View Props:', {
-      view,
-      rangeStartDate: rangeStartDate.toISOString(),
-      availabilityData: availabilityData.map((av) => ({
-        id: av.id,
-        startTime: av.startTime.toISOString(),
-        endTime: av.endTime.toISOString(),
-      })),
-    });
+    // console.log('Calendar View Props:', {
+    //   view,
+    //   rangeStartDate: rangeStartDate.toISOString(),
+    //   availabilityData: availabilityData.map((av) => ({
+    //     id: av.id,
+    //     startTime: av.startTime.toISOString(),
+    //     endTime: av.endTime.toISOString(),
+    //   })),
+    // });
 
     switch (view) {
       case 'day':

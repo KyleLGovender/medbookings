@@ -4,14 +4,14 @@ import { useEffect, useRef } from 'react';
 
 import classNames from '@/lib/classNames';
 
-import { Schedule } from '../../lib/types';
+import { AvailabilityView } from '../../lib/types';
 import { CalendarViewDayTimeGrid } from './calendar-view-day-time-grid';
 
 interface CalendarViewDayGridProps {
   rangeStartDate: string;
   onDateChange: (dateStr: string) => void;
   onViewChange?: (view: 'day') => void;
-  scheduleData: Schedule[];
+  availabilityData: AvailabilityView[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
 }
@@ -20,7 +20,7 @@ export function CalendarViewDayGrid({
   rangeStartDate,
   onDateChange,
   onViewChange = () => {},
-  scheduleData,
+  availabilityData,
   serviceProviderId,
   onRefresh,
 }: CalendarViewDayGridProps) {
@@ -88,7 +88,7 @@ export function CalendarViewDayGrid({
             navRef={containerNav}
             offsetRef={containerOffset}
             rangeStartDate={rangeStartDate}
-            scheduleData={scheduleData}
+            availabilityData={availabilityData}
             serviceProviderId={serviceProviderId}
             onRefresh={onRefresh}
           />

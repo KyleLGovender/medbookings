@@ -1,12 +1,7 @@
 import { RefObject, useState } from 'react';
 
-import { CalendarViewEventItem } from '@/features/calendar/components/calendar-view-event-item';
-import {
-  expandRecurringSchedule,
-  getEventGridPosition,
-  isSameDay,
-} from '@/features/calendar/lib/helper';
-import { Schedule } from '@/features/calendar/lib/types';
+import { getEventGridPosition, isSameDay } from '@/features/calendar/lib/helper';
+import { AvailabilityView } from '@/features/calendar/lib/types';
 
 import { AvailabilityDialog } from '../availability-dialog';
 import { CalendarViewTimeColumn } from '../calendar-view-time-column';
@@ -17,7 +12,7 @@ interface CalendarViewDayTimeGridProps {
   navRef: RefObject<HTMLDivElement>;
   offsetRef: RefObject<HTMLDivElement>;
   rangeStartDate: string;
-  scheduleData: Schedule[];
+  availabilityData: AvailabilityView[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
 }
@@ -27,37 +22,35 @@ export function CalendarViewDayTimeGrid({
   navRef,
   offsetRef,
   rangeStartDate,
-  scheduleData,
+  availabilityData,
   serviceProviderId,
   onRefresh,
 }: CalendarViewDayTimeGridProps) {
   const dateObj = new Date(rangeStartDate);
-  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const [selectedAvailability, setSelectedAvailability] = useState<AvailabilityView | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleEventClick = (schedule: Schedule) => {
-    setSelectedSchedule(schedule);
+  const handleEventClick = (availability: AvailabilityView) => {
+    setSelectedAvailability(availability);
     setIsDialogOpen(true);
   };
 
-  // Expand recurring schedules and filter for current day
-  const daySchedule = scheduleData
-    .flatMap((schedule) => {
-      // Handle both recurring and single instances
-      if (schedule.isRecurring) {
-        return expandRecurringSchedule(schedule, dateObj);
-      }
-      return [schedule];
-    })
-    .filter((schedule) => isSameDay(new Date(schedule.startTime), dateObj));
-
-  // Get bookings from the schedule
-  const bookings = daySchedule.flatMap((schedule) =>
-    schedule.bookings.map((booking) => ({
-      ...booking,
-      availabilityId: schedule.id,
-    }))
+  // Filter availabilities for current day
+  const dayAvailabilities = availabilityData.filter((availability) =>
+    isSameDay(new Date(availability.startTime), dateObj)
   );
+
+  // Get bookings from the availability slots
+  const bookings = dayAvailabilities
+    .flatMap((availability) => availability.slots)
+    .filter((slot) => slot.status === 'BOOKED' && slot.booking)
+    .map((slot) => ({
+      id: slot.id,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      status: slot.status,
+      booking: slot.booking,
+    }));
 
   return (
     <>
@@ -85,49 +78,29 @@ export function CalendarViewDayTimeGrid({
               gridTemplateRows: '1.75rem repeat(288, minmax(0, 1fr)) auto',
             }}
           >
-            {daySchedule.map((schedule) => (
-              <li
-                key={schedule.id}
-                className={`relative cursor-pointer ${
-                  schedule.isRecurring ? 'bg-gray-200' : 'bg-blue-200'
-                } hover:bg-opacity-75`}
-                style={{
-                  gridRow: getEventGridPosition(schedule.startTime, schedule.endTime),
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEventClick(schedule);
-                }}
-              />
-            ))}
-          </ol>
-
-          {/* Booking events */}
-          <ol
-            className="col-start-1 col-end-2 row-start-1 grid grid-cols-1"
-            style={{
-              gridTemplateRows: '1.75rem repeat(288, minmax(0, 1fr)) auto',
-            }}
-          >
-            {bookings.map((booking) => (
-              <CalendarViewEventItem
-                key={booking.id}
-                schedule={{
-                  ...booking,
-                  type: 'BOOKING',
-                  startTime: booking.startTime,
-                  endTime: booking.endTime,
-                }}
-                gridPosition={getEventGridPosition(booking.startTime, booking.endTime)}
-                gridColumn={1}
-              />
-            ))}
+            {dayAvailabilities.flatMap((availability) =>
+              availability.slots.map((slot) => (
+                <li
+                  key={slot.id}
+                  className={`relative cursor-pointer ${
+                    slot.status === 'AVAILABLE' ? 'bg-blue-200' : 'bg-gray-200'
+                  } hover:bg-opacity-75`}
+                  style={{
+                    gridRow: getEventGridPosition(slot.startTime, slot.endTime),
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEventClick(availability);
+                  }}
+                />
+              ))
+            )}
           </ol>
         </div>
       </div>
 
       <AvailabilityDialog
-        availability={selectedSchedule || undefined}
+        availability={selectedAvailability || undefined}
         serviceProviderId={serviceProviderId}
         mode="edit"
         open={isDialogOpen}
