@@ -187,12 +187,12 @@ export async function updateAvailability(
         },
       },
     });
-    console.log('Existing configs:', existingConfigs);
+    // console.log('Existing configs:', existingConfigs);
 
     const existingServiceIds = new Set(existingConfigs.map((c) => c.serviceId));
     const newServiceIds = new Set(data.availableServices.map((s) => s.serviceId));
-    console.log('Existing service IDs:', Array.from(existingServiceIds));
-    console.log('New service IDs:', Array.from(newServiceIds));
+    // console.log('Existing service IDs:', Array.from(existingServiceIds));
+    // console.log('New service IDs:', Array.from(newServiceIds));
 
     // Find services to disconnect
     const servicesToDisconnect = await prisma.serviceAvailabilityConfig.findMany({
@@ -207,7 +207,7 @@ export async function updateAvailability(
         serviceProviderId: true,
       },
     });
-    console.log('Services to disconnect:', servicesToDisconnect);
+    // console.log('Services to disconnect:', servicesToDisconnect);
 
     const availability = await prisma.availability.update({
       where: { id: availabilityId },
@@ -250,7 +250,7 @@ export async function updateAvailability(
     const deletedSlots = await prisma.calculatedAvailabilitySlot.deleteMany({
       where: { availabilityId },
     });
-    console.log('Deleted existing slots:', deletedSlots);
+    // console.log('Deleted existing slots:', deletedSlots);
 
     // Create new calculated slots
     const calculatedSlots = await calculateInitialAvailabilitySlots(
@@ -258,12 +258,12 @@ export async function updateAvailability(
       availability.id,
       availability.availableServices
     );
-    console.log('New calculated slots:', calculatedSlots);
+    // console.log('New calculated slots:', calculatedSlots);
 
     const createdSlots = await prisma.calculatedAvailabilitySlot.createMany({
       data: calculatedSlots,
     });
-    console.log('Created new slots:', createdSlots);
+    // console.log('Created new slots:', createdSlots);
 
     return {
       data: {

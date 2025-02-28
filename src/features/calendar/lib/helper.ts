@@ -1,10 +1,7 @@
-import { Prisma } from '@prisma/client';
-import { BookingStatusSchema } from '@prisma/zod';
-import { startOfWeek as dateFnsStartOfWeek, eachDayOfInterval } from 'date-fns';
+import { endOfWeek, startOfWeek } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { z } from 'zod';
 
-import { Availability, Booking, BookingTypeSchema, Schedule } from './types';
+import { convertLocalToUTC, convertUTCToLocal, formatLocalDate } from '@/lib/timezone-helper';
 
 interface CalendarDay {
   date: string;
@@ -26,20 +23,16 @@ interface CalculateSpotsParams {
  * @param duration - Duration of each appointment in minutes
  * @returns number of available slots
  */
-export function calculateAvailableSpots({
-  startTime,
-  endTime,
-  duration,
-}: CalculateSpotsParams): number {
-  const totalMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-  return Math.floor(totalMinutes / duration);
-}
 
 export function isSameDay(date1: Date | null | undefined, date2: Date | null | undefined): boolean {
   if (!date1 || !date2) return false;
-  const d1 = date1 instanceof Date ? date1 : new Date(date1);
-  const d2 = date2 instanceof Date ? date2 : new Date(date2);
+
+  // Convert both dates to local timezone for comparison
+  const d1 = convertUTCToLocal(date1 instanceof Date ? date1 : new Date(date1));
+  const d2 = convertUTCToLocal(date2 instanceof Date ? date2 : new Date(date2));
+
   if (Number.isNaN(d1.getTime()) || Number.isNaN(d2.getTime())) return false;
+
   return (
     d1.getDate() === d2.getDate() &&
     d1.getMonth() === d2.getMonth() &&
@@ -48,8 +41,11 @@ export function isSameDay(date1: Date | null | undefined, date2: Date | null | u
 }
 
 export function generateDaysForDayCalendar(currentDate: Date) {
-  const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  // Convert to local timezone first
+  const localCurrentDate = convertUTCToLocal(currentDate);
+
+  const firstDay = new Date(localCurrentDate.getFullYear(), localCurrentDate.getMonth(), 1);
+  const lastDay = new Date(localCurrentDate.getFullYear(), localCurrentDate.getMonth() + 1, 0);
   const daysInMonth = lastDay.getDate();
 
   let startPadding = firstDay.getDay();
@@ -57,38 +53,48 @@ export function generateDaysForDayCalendar(currentDate: Date) {
   startPadding -= 1;
 
   const days: CalendarDay[] = [];
+  const daysInPrevMonth = new Date(
+    localCurrentDate.getFullYear(),
+    localCurrentDate.getMonth(),
+    0
+  ).getDate();
 
-  const daysInPrevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0).getDate();
-
+  // Previous month days
   for (let i = startPadding; i > 0; i -= 1) {
     const dayNumber = daysInPrevMonth - i + 1;
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, dayNumber);
+    const date = new Date(
+      localCurrentDate.getFullYear(),
+      localCurrentDate.getMonth() - 1,
+      dayNumber
+    );
     days.push({
-      date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+      date: formatLocalDate(date),
       isCurrentMonth: false,
       isToday: isSameDay(date, new Date()),
-      isSelected: isSameDay(date, currentDate),
+      isSelected: isSameDay(date, localCurrentDate),
     });
   }
 
+  // Current month days
   for (let i = 1; i <= daysInMonth; i += 1) {
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
+    const date = new Date(localCurrentDate.getFullYear(), localCurrentDate.getMonth(), i);
     days.push({
-      date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+      date: formatLocalDate(date),
       isCurrentMonth: true,
       isToday: isSameDay(date, new Date()),
-      isSelected: isSameDay(date, currentDate),
+      isSelected: isSameDay(date, localCurrentDate),
     });
   }
 
+  // Next month days
   const remainingDays = 42 - days.length;
   for (let i = 1; i <= remainingDays; i += 1) {
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, i);
+    const date = new Date(localCurrentDate.getFullYear(), localCurrentDate.getMonth() + 1, i);
     days.push({
-      date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+      date: formatLocalDate(date),
       isCurrentMonth: false,
       isToday: isSameDay(date, new Date()),
-      isSelected: isSameDay(date, currentDate),
+      isSelected: isSameDay(date, localCurrentDate),
     });
   }
 
@@ -96,101 +102,63 @@ export function generateDaysForDayCalendar(currentDate: Date) {
 }
 
 export function generateDaysForWeekCalendar(rangeStartDate: Date) {
-  const startOfWeek = dateFnsStartOfWeek(rangeStartDate, { weekStartsOn: 1 });
+  // Convert to local timezone first
+  const localDate = convertUTCToLocal(rangeStartDate);
+  const weekStart = startOfWeek(localDate, { weekStartsOn: 1 });
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date(startOfWeek);
-    date.setDate(startOfWeek.getDate() + i);
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + i);
     return {
-      date,
+      date: convertLocalToUTC(date), // Convert back to UTC for storage/comparison
       isToday: isSameDay(date, new Date()),
-      isSelected: isSameDay(date, rangeStartDate),
+      isSelected: isSameDay(date, localDate),
     };
   });
 
   return weekDays;
 }
 
-export function formatDateTime(date: string) {
-  return new Date(date).toISOString().split('.')[0].slice(0, -3);
-}
-
-export function expandRecurringSchedule(schedule: Schedule, endDate: Date): Schedule[] {
-  if (!schedule.isRecurring || !schedule.recurringDays) {
-    return [schedule];
-  }
-
-  const calendarEndDate = new Date(endDate);
-  const recurrenceEndDate = schedule.recurrenceEndDate
-    ? new Date(schedule.recurrenceEndDate)
-    : null;
-
-  const effectiveEndDate = recurrenceEndDate
-    ? new Date(Math.min(calendarEndDate.getTime(), recurrenceEndDate.getTime()))
-    : calendarEndDate;
-
-  const dates = eachDayOfInterval({
-    start: new Date(schedule.startTime),
-    end: effectiveEndDate,
-  });
-
-  const recurringDays = new Set(schedule.recurringDays);
-  const filteredDates = dates.filter((date) => recurringDays.has(date.getDay()));
-
-  return filteredDates.map((date) => {
-    const startTime = new Date(date);
-    const scheduleStart = new Date(schedule.startTime);
-    startTime.setHours(scheduleStart.getHours(), scheduleStart.getMinutes());
-
-    const endTime = new Date(date);
-    const scheduleEndTime = new Date(schedule.endTime);
-    endTime.setHours(scheduleEndTime.getHours(), scheduleEndTime.getMinutes());
-
-    const relevantBookings = schedule.bookings.filter((booking) =>
-      isSameDay(booking.startTime, date)
-    );
-
-    return {
-      ...schedule,
-      id: `${schedule.id}-${date.toISOString()}`,
-      startTime: startTime.toISOString(),
-      endTime: endTime.toISOString(),
-      bookings: relevantBookings,
-    };
-  });
-}
-
 export function getDateRange(date: Date, view: 'day' | 'week' | 'schedule'): DateRange {
-  const startDate = new Date(date);
-  const endDate = new Date(date);
+  // Convert to local time first
+  const localDate = convertUTCToLocal(date);
+  let startDate: Date;
+  let endDate: Date;
 
   switch (view) {
     case 'week':
-      let day = startDate.getDay();
-      if (day === 0) day = 7;
-      startDate.setDate(startDate.getDate() - (day - 1));
-      endDate.setDate(startDate.getDate() + 6);
+      startDate = startOfWeek(localDate, { weekStartsOn: 1 });
+      endDate = endOfWeek(localDate, { weekStartsOn: 1 });
       break;
     case 'day':
+      startDate = new Date(localDate);
+      endDate = new Date(localDate);
       endDate.setDate(startDate.getDate() + 1);
       break;
     case 'schedule':
+      startDate = new Date(localDate);
       startDate.setDate(1);
+      endDate = new Date(localDate);
       endDate.setMonth(startDate.getMonth() + 1, 0);
       break;
   }
 
-  return { from: startDate, to: endDate };
+  // Convert back to UTC before returning
+  return {
+    from: convertLocalToUTC(startDate),
+    to: convertLocalToUTC(endDate),
+  };
 }
 
 // Add these new functions to the existing helper.ts file
 
 export function getEventGridPosition(startTime: Date | string, endTime: Date | string) {
-  const start = new Date(startTime);
-  const end = new Date(endTime);
+  // Convert to local timezone for grid calculation
+  const localStart = convertUTCToLocal(startTime);
+  const localEnd = convertUTCToLocal(endTime);
 
-  const startMinutes = start.getHours() * 60 + start.getMinutes();
-  const endMinutes = end.getHours() * 60 + end.getMinutes();
+  const startMinutes = localStart.getHours() * 60 + localStart.getMinutes();
+  const endMinutes = localEnd.getHours() * 60 + localEnd.getMinutes();
 
   // Calculate grid positions (each row represents 5 minutes)
   const rowStart = Math.floor(startMinutes / 5) + 2; // +2 for header offset
@@ -199,55 +167,10 @@ export function getEventGridPosition(startTime: Date | string, endTime: Date | s
   return `${rowStart} / span ${rowSpan}`;
 }
 
-export function filterScheduleForWeek(schedule: Schedule[], currentDate: Date): Schedule[] {
-  const startOfWeek = startOfWeek(currentDate);
-  const endOfWeek = endOfWeek(currentDate);
-
-  return schedule.filter((item) => {
-    const itemDate = new Date(item.startTime);
-    return itemDate >= startOfWeek && itemDate <= endOfWeek;
-  });
-}
-
-export function filterScheduleForDay(schedule: Schedule[], currentDate: Date): Schedule[] {
-  return schedule.filter((item) => {
-    const itemDate = new Date(item.startTime);
-    return isSameDay(itemDate, currentDate);
-  });
-}
-
-export function generateTimeSlots(availability: Availability): TimeSlot[] {
-  const slots: TimeSlot[] = [];
-  const startTime = new Date(availability.startTime);
-  const endTime = new Date(availability.endTime);
-
-  // Generate 15-minute slots
-  let currentSlot = new Date(startTime);
-  while (currentSlot < endTime) {
-    const slotEnd = new Date(currentSlot);
-    slotEnd.setMinutes(slotEnd.getMinutes() + 15);
-
-    // Check if this slot overlaps with any bookings
-    const isAvailable = !availability.bookings.some((booking) => {
-      const bookingStart = new Date(booking.startTime);
-      const bookingEnd = new Date(booking.endTime);
-      return currentSlot < bookingEnd && slotEnd > bookingStart;
-    });
-
-    slots.push({
-      startTime: new Date(currentSlot),
-      endTime: new Date(slotEnd),
-      isAvailable,
-    });
-
-    currentSlot = slotEnd;
-  }
-
-  return slots;
-}
-
 export function getNextDate(rangeStartDate: Date, view: 'day' | 'week' | 'schedule'): Date {
-  const newDate = new Date(rangeStartDate);
+  // Convert to local timezone for date calculations
+  const localDate = convertUTCToLocal(rangeStartDate);
+  const newDate = new Date(localDate);
 
   switch (view) {
     case 'week':
@@ -261,11 +184,14 @@ export function getNextDate(rangeStartDate: Date, view: 'day' | 'week' | 'schedu
       break;
   }
 
-  return newDate;
+  // Convert back to UTC before returning
+  return convertLocalToUTC(newDate);
 }
 
 export function getPreviousDate(rangeStartDate: Date, view: 'day' | 'week' | 'schedule'): Date {
-  const newDate = new Date(rangeStartDate);
+  // Convert to local timezone for date calculations
+  const localDate = convertUTCToLocal(rangeStartDate);
+  const newDate = new Date(localDate);
 
   switch (view) {
     case 'week':
@@ -279,65 +205,8 @@ export function getPreviousDate(rangeStartDate: Date, view: 'day' | 'week' | 'sc
       break;
   }
 
-  return newDate;
-}
-
-/**
- * Transforms raw availability data from the database into the expected Availability type
- * Handles conversion of decimal prices, dates, and recurring days array
- */
-export function transformAvailability(availability: any): Availability {
-  return {
-    ...availability,
-    price:
-      typeof availability.price === 'object' && 'toNumber' in availability.price
-        ? availability.price.toNumber()
-        : Number(availability.price),
-    recurrenceEndDate: availability.recurrenceEndDate
-      ? new Date(availability.recurrenceEndDate).toISOString()
-      : null,
-    createdAt: new Date(availability.createdAt).toISOString(),
-    updatedAt: new Date(availability.updatedAt).toISOString(),
-    recurringDays: Array.isArray(availability.recurringDays)
-      ? availability.recurringDays
-      : JSON.parse(availability.recurringDays || '[]'),
-  };
-}
-
-/**
- * Transforms raw booking data from the database into the expected Booking type
- * Handles conversion of prices, dates, status validation, and notifications
- */
-export function transformBooking(booking: any): Booking {
-  return {
-    ...booking,
-    price:
-      booking.price instanceof Prisma.Decimal ? booking.price.toNumber() : Number(booking.price),
-    startTime: new Date(booking.startTime).toISOString(),
-    endTime: new Date(booking.endTime).toISOString(),
-    status: BookingStatusSchema.parse(booking.status),
-    notifications: booking.notifications?.map(transformNotification) ?? [],
-    bookingType: BookingType.GUEST,
-  };
-}
-
-/**
- * Transforms notification timestamps into ISO strings
- * Used for nested notifications within bookings
- */
-export function transformNotification(notification: any) {
-  return {
-    ...notification,
-    createdAt: new Date(notification.createdAt).toISOString(),
-    updatedAt: new Date(notification.updatedAt).toISOString(),
-  };
-}
-
-export function determineBookingType(booking: any): z.infer<typeof BookingTypeSchema> {
-  if (booking.bookedBy?.id === booking.client?.id) return 'USER_SELF';
-  if (booking.bookedBy && !booking.client) return 'USER_GUEST';
-  if (!booking.bookedBy && !booking.client) return 'GUEST_SELF';
-  return 'PROVIDER_GUEST';
+  // Convert back to UTC before returning
+  return convertLocalToUTC(newDate);
 }
 
 export function roundToNearestMinute(date: Date): Date {

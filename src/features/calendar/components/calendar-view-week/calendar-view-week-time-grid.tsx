@@ -1,13 +1,15 @@
 'use client';
 
-import { Fragment, RefObject, useState } from 'react';
+import { RefObject, useState } from 'react';
 
 import { addDays, startOfWeek } from 'date-fns';
+
+import { convertUTCToLocal } from '@/lib/timezone-helper';
 
 import { getEventGridPosition } from '../../lib/helper';
 import { AvailabilitySlot, type AvailabilityView } from '../../lib/types';
 import { AvailabilityDialog } from '../availability-dialog';
-import { CalendarViewEventItem } from '../calendar-view-event-item';
+import { CalendarViewAvailability } from '../calendar-view-availability';
 import { CalendarViewTimeColumn } from '../calendar-view-time-column';
 
 interface CalendarViewWeekTimeGridProps {
@@ -31,51 +33,40 @@ export function CalendarViewWeekTimeGrid({
   onRefresh,
   onEventClick,
 }: CalendarViewWeekTimeGridProps) {
-  const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | null>(null);
+  const [selectedAvailability, setSelectedAvailability] = useState<AvailabilityView | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
 
-  const handleEventClick = (slot: AvailabilitySlot) => {
-    // Only open dialog if the service provider owns this availability
-    const availability = availabilityData.find((a) => a.slots.some((s) => s.id === slot.id));
+  const handleAvailabilityClick = (availability: AvailabilityView) => {
+    if (availability.serviceProvider.id === serviceProviderId) {
+      setIsTooltipVisible(true);
+    }
+  };
 
-    if (availability?.serviceProvider.id === serviceProviderId) {
-      setSelectedSlot(slot);
+  const handleAvailabilityEdit = (availability: AvailabilityView) => {
+    if (availability.serviceProvider.id === serviceProviderId) {
+      setSelectedAvailability(availability);
       setIsDialogOpen(true);
-    } else {
-      // Call the regular event click handler if provided
-      onEventClick?.(slot);
     }
   };
 
   // Find the parent availability for the selected slot
-  const selectedAvailability = selectedSlot
-    ? availabilityData.find((a) => a.slots.some((s) => s.id === selectedSlot.id))
+  const selectedAvailabilityParent = selectedAvailability
+    ? availabilityData.find((a) => a.slots.some((s) => s.id === selectedAvailability.slots[0].id))
     : undefined;
 
-  // Convert string to Date for calculations
-  const dateObj = new Date(rangeStartDate);
-  const weekStart = startOfWeek(dateObj);
+  // Convert UTC dates to local timezone for display
+  const localDate = convertUTCToLocal(rangeStartDate);
+  const weekStart = startOfWeek(localDate);
   const weekEnd = addDays(weekStart, 6);
 
-  // Log the date range we're working with
-  console.log('Week Range:', {
-    weekStart: weekStart.toISOString(),
-    weekEnd: weekEnd.toISOString(),
-  });
-
-  // Log raw availability data
-  console.log('Raw Availability Data:', availabilityData);
-
-  // Get all slots for the week from availabilities
+  // Filter slots based on local timezone bounds
   const weekSlots = availabilityData
     .flatMap((availability) => availability.slots)
     .filter((slot) => {
-      const slotDate = new Date(slot.startTime);
-      return slotDate >= weekStart && slotDate <= weekEnd;
+      const localSlotTime = convertUTCToLocal(slot.startTime);
+      return localSlotTime >= weekStart && localSlotTime <= weekEnd;
     });
-
-  // Log filtered week slots
-  console.log('Filtered Week Slots:', weekSlots);
 
   // Example slot grid position calculation
   if (weekSlots.length > 0) {
@@ -84,13 +75,6 @@ export function CalendarViewWeekTimeGrid({
       new Date(exampleSlot.startTime),
       new Date(exampleSlot.endTime)
     );
-    console.log('Example Slot Grid Position:', {
-      slot: exampleSlot,
-      startTime: new Date(exampleSlot.startTime).toLocaleTimeString(),
-      endTime: new Date(exampleSlot.endTime).toLocaleTimeString(),
-      gridPosition: gridPos,
-      dayColumn: (new Date(exampleSlot.startTime).getDay() % 7) + 1,
-    });
   }
 
   const bookings = weekSlots
@@ -99,13 +83,6 @@ export function CalendarViewWeekTimeGrid({
       ...slot.booking!,
       slotId: slot.id,
     }));
-
-  // In the render, before mapping over weekSlots
-  console.log('Grid Template:', {
-    columns: 'grid-cols-7',
-    rows: '1.75rem repeat(288, minmax(0, 1fr)) auto',
-    totalRows: 290, // 1 header + 288 5-minute intervals + 1 auto
-  });
 
   return (
     <>
@@ -123,31 +100,26 @@ export function CalendarViewWeekTimeGrid({
           </div>
 
           {/* Availability slots */}
-          <ol
-            className="z-10 col-start-1 col-end-2 row-start-1 grid grid-cols-7"
-            style={{
-              gridTemplateRows: '1.75rem repeat(288, minmax(0, 1fr)) auto',
-            }}
-          >
-            {weekSlots.map((slot) => (
-              <Fragment key={slot.id}>
-                <CalendarViewEventItem
-                  slot={slot}
-                  gridPosition={getEventGridPosition(
-                    new Date(slot.startTime),
-                    new Date(slot.endTime)
-                  )}
-                  gridColumn={(new Date(slot.startTime).getDay() % 7) + 1}
-                  onEventClick={onEventClick}
-                />
-              </Fragment>
+          <ol className="z-10 col-start-1 col-end-2 row-start-1 grid grid-cols-7">
+            {availabilityData.map((availability) => (
+              <CalendarViewAvailability
+                key={availability.id}
+                availability={availability}
+                gridPosition={getEventGridPosition(
+                  new Date(availability.startTime),
+                  new Date(availability.endTime)
+                )}
+                gridColumn={(new Date(availability.startTime).getDay() % 7) + 1}
+                onAvailabilityClick={handleAvailabilityClick}
+                onAvailabilityEdit={handleAvailabilityEdit}
+              />
             ))}
           </ol>
         </div>
       </div>
 
-      {/* Only render dialog if the selected slot belongs to this service provider */}
-      {selectedSlot && selectedAvailability?.serviceProvider.id === serviceProviderId && (
+      {/* Dialog for editing */}
+      {selectedAvailability && (
         <AvailabilityDialog
           availability={selectedAvailability}
           serviceProviderId={serviceProviderId}
