@@ -1,9 +1,17 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import { deleteAvailability } from '@/features/calendar/lib/actions';
+import { useToast } from '@/hooks/use-toast';
 import { formatTime } from '@/lib/helper';
-import { cn } from '@/lib/utils';
 
 import { AvailabilityView } from '../lib/types';
 
@@ -21,7 +29,14 @@ export function CalendarViewAvailability({
   gridColumn,
   onAvailabilityClick,
   onAvailabilityEdit,
-}: CalendarViewAvailabilityProps) {
+  serviceProviderId,
+  onRefresh,
+}: CalendarViewAvailabilityProps & {
+  serviceProviderId: string;
+  onRefresh: () => Promise<void>;
+}) {
+  const { toast } = useToast();
+  const router = useRouter();
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -29,45 +44,58 @@ export function CalendarViewAvailability({
     onAvailabilityEdit?.(availability);
   };
 
+  const handleDelete = async () => {
+    const baseId = availability.id.split('-')[0];
+    const response = await deleteAvailability(baseId, serviceProviderId);
+
+    if (response.error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: response.error,
+      });
+      return;
+    }
+
+    toast({
+      title: 'Success',
+      description: 'Availability deleted successfully',
+    });
+
+    router.refresh();
+    await onRefresh();
+  };
+
   return (
     <li
-      className={cn('relative mt-px flex', `sm:col-start-${gridColumn}`)}
-      style={{ gridRow: gridPosition }}
+      style={{
+        gridRow: gridPosition,
+        gridColumn: `${gridColumn} / span 1`,
+      }}
+      className="relative mt-px flex"
     >
-      <button
-        onClick={() => onAvailabilityClick?.(availability)}
-        onContextMenu={handleContextMenu}
-        onMouseEnter={() => setIsTooltipVisible(true)}
-        onMouseLeave={() => setIsTooltipVisible(false)}
-        className="group absolute inset-1 flex w-full flex-col overflow-y-auto rounded-lg bg-blue-50 p-2 text-xs/5 hover:bg-blue-100"
-      >
-        {/* Simple Time Display */}
-        <p className="font-semibold text-blue-700">
-          {formatTime(availability.startTime)} - {formatTime(availability.endTime)}
-        </p>
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <button
+            onClick={() => onAvailabilityClick?.(availability)}
+            className="group absolute inset-1 flex items-center rounded-lg bg-blue-50 p-1 text-xs leading-5 hover:bg-blue-100"
+          >
+            <p className="text-left font-semibold text-blue-700">
+              {formatTime(availability.startTime)} - {formatTime(availability.endTime)}
+            </p>
+          </button>
+        </ContextMenuTrigger>
 
-        {/* Tooltip with detailed info */}
-        {isTooltipVisible && (
-          <div className="absolute left-full top-0 z-50 ml-2 w-48 rounded-lg bg-white p-2 text-xs shadow-lg ring-1 ring-gray-200">
-            <div className="flex flex-col gap-1">
-              <p className="font-semibold">Available Services:</p>
-              {availability.availableServices.map((service) => (
-                <div key={service.serviceId} className="border-t pt-1 first:border-t-0 first:pt-0">
-                  <p>Duration: {service.duration}min</p>
-                  <p>Price: R{service.price}</p>
-                  <p>
-                    {[service.isOnlineAvailable && 'Online', service.isInPerson && 'In-Person']
-                      .filter(Boolean)
-                      .join(' | ')}
-                  </p>
-                  {service.location && <p>Location: {service.location}</p>}
-                </div>
-              ))}
-              <p className="mt-2 text-xs text-gray-500">Right-click to edit availability</p>
-            </div>
-          </div>
-        )}
-      </button>
+        <ContextMenuContent>
+          <ContextMenuItem onClick={() => onAvailabilityClick?.(availability)}>
+            View Details
+          </ContextMenuItem>
+          <ContextMenuItem onClick={() => onAvailabilityEdit?.(availability)}>Edit</ContextMenuItem>
+          <ContextMenuItem onClick={handleDelete} className="text-red-600">
+            Delete
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
     </li>
   );
 }

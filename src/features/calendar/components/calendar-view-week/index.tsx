@@ -20,19 +20,6 @@ export function CalendarViewWeek({
   serviceProviderId,
   onRefresh,
 }: CalendarViewWeekProps) {
-  console.log('CalendarViewWeek Component:', {
-    rangeStartDate: rangeStartDate.toISOString(),
-    availabilityCount: availabilityData.length,
-    availabilityData: availabilityData.map((a) => ({
-      id: a.id,
-      startTime: a.startTime,
-      endTime: a.endTime,
-      serviceProvider: a.serviceProvider,
-      slotsCount: a.slots.length,
-      servicesCount: a.availableServices.length,
-    })),
-  });
-
   const handleRefresh = async () => {
     await onRefresh();
   };

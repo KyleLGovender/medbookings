@@ -36,11 +36,26 @@ export function CalendarViewWeekGrid({
   const containerNav = useRef<HTMLDivElement>(null);
   const containerOffset = useRef<HTMLDivElement>(null);
 
-  const weekDays = useMemo(() => generateDaysForWeekCalendar(rangeStartDate), [rangeStartDate]);
+  const weekDays = useMemo(() => {
+    return generateDaysForWeekCalendar(rangeStartDate);
+  }, [rangeStartDate]);
 
   const handleDayClick = useCallback(
     (date: Date) => {
-      onDateChange(date);
+      // Create a new date to avoid mutations and ensure it's in local time
+      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+
+      // Format date for URL in YYYY-MM-DD format
+      const formattedDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+
+      // Update URL parameters
+      const params = new URLSearchParams(window.location.search);
+      params.set('start', formattedDate);
+      params.set('view', 'day');
+      window.history.pushState({}, '', `?${params.toString()}`);
+
+      // Call parent handlers with the local date
+      onDateChange(localDate);
       onViewChange('day');
     },
     [onDateChange, onViewChange]

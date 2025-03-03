@@ -94,85 +94,87 @@ export function AvailabilityForm({
 
   // Modify the onSubmit function
   async function onSubmit(values: AvailabilityFormValues) {
-    // console.log('onSubmit called with values:', values);
-    setIsSubmitting(true);
+    // Combine date and times
+    const baseDate = values.date;
+    const startDateTime = new Date(
+      baseDate.getFullYear(),
+      baseDate.getMonth(),
+      baseDate.getDate(),
+      values.startTime.getHours(),
+      values.startTime.getMinutes()
+    );
+    const endDateTime = new Date(
+      baseDate.getFullYear(),
+      baseDate.getMonth(),
+      baseDate.getDate(),
+      values.endTime.getHours(),
+      values.endTime.getMinutes()
+    );
 
-    try {
-      const formData = new FormData();
-      formData.append('serviceProviderId', serviceProviderId);
-      formData.append('date', values.date.toISOString());
-      formData.append('startTime', roundToNearestMinute(values.startTime).toISOString());
-      formData.append('endTime', roundToNearestMinute(values.endTime).toISOString());
+    const formData = new FormData();
+    formData.append('serviceProviderId', serviceProviderId);
+    formData.append('date', values.date.toISOString());
+    formData.append('startTime', roundToNearestMinute(startDateTime).toISOString());
+    formData.append('endTime', roundToNearestMinute(endDateTime).toISOString());
 
-      values.availableServices.forEach((service, index) => {
-        formData.append(`availableServices[${index}][serviceId]`, service.serviceId);
-        formData.append(`availableServices[${index}][duration]`, String(service.duration));
-        formData.append(`availableServices[${index}][price]`, String(service.price));
-        formData.append(
-          `availableServices[${index}][isOnlineAvailable]`,
-          String(service.isOnlineAvailable)
-        );
-        formData.append(`availableServices[${index}][isInPerson]`, String(service.isInPerson));
-        if (service.location) {
-          formData.append(`availableServices[${index}][location]`, service.location);
-        }
-      });
+    values.availableServices.forEach((service, index) => {
+      formData.append(`availableServices[${index}][serviceId]`, service.serviceId);
+      formData.append(`availableServices[${index}][duration]`, String(service.duration));
+      formData.append(`availableServices[${index}][price]`, String(service.price));
+      formData.append(
+        `availableServices[${index}][isOnlineAvailable]`,
+        String(service.isOnlineAvailable)
+      );
+      formData.append(`availableServices[${index}][isInPerson]`, String(service.isInPerson));
+      if (service.location) {
+        formData.append(`availableServices[${index}][location]`, service.location);
+      }
+    });
 
-      const response =
-        mode === 'create'
-          ? await createAvailability(formData)
-          : await updateAvailability(availability?.id || '', formData);
+    const response =
+      mode === 'create'
+        ? await createAvailability(formData)
+        : await updateAvailability(availability?.id || '', formData);
 
-      if (response.error) {
-        if (response.fieldErrors) {
-          Object.entries(response.fieldErrors).forEach(([field, errors]) => {
-            form.setError(field as any, {
-              type: 'server',
-              message: Array.isArray(errors) ? errors[0] : 'Unknown error',
-            });
+    if (response.error) {
+      if (response.fieldErrors) {
+        Object.entries(response.fieldErrors).forEach(([field, errors]) => {
+          form.setError(field as any, {
+            type: 'server',
+            message: Array.isArray(errors) ? errors[0] : 'Unknown error',
           });
-        }
-
-        if (response.formErrors?.length) {
-          toast({
-            variant: 'destructive',
-            title: 'Validation Error',
-            description: response.formErrors[0],
-          });
-        } else {
-          toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: response.error,
-          });
-        }
-
-        setIsSubmitting(false);
-        return;
+        });
       }
 
-      toast({
-        title: 'Success',
-        description:
-          mode === 'create'
-            ? 'Availability created successfully'
-            : 'Availability updated successfully',
-      });
+      if (response.formErrors?.length) {
+        toast({
+          variant: 'destructive',
+          title: 'Validation Error',
+          description: response.formErrors[0],
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: response.error,
+        });
+      }
 
-      router.refresh();
-      await onRefresh();
-      onClose();
-    } catch (error) {
-      console.error('Availability form error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description:
-          error instanceof Error ? error.message : 'Something went wrong. Please try again.',
-      });
-    } finally {
       setIsSubmitting(false);
+      return;
     }
+
+    toast({
+      title: 'Success',
+      description:
+        mode === 'create'
+          ? 'Availability created successfully'
+          : 'Availability updated successfully',
+    });
+
+    router.refresh();
+    await onRefresh();
+    onClose();
   }
 
   return (

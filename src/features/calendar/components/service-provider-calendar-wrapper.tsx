@@ -41,43 +41,79 @@ export function ServiceProviderCalendarWrapper({
   const updateUrlParams = (updates: { range?: DateRange; view?: string }) => {
     const params = new URLSearchParams(searchParams);
 
-    // Only clear dates if we're updating the range
     if (updates.range) {
       params.delete('start');
       params.delete('end');
 
       if (updates.range.from) {
-        params.set('start', updates.range.from.toISOString().split('T')[0]);
+        // Use local date components for URL
+        const localDate = new Date(updates.range.from);
+        const startDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+        params.set('start', startDate);
       }
       if (updates.range.to) {
-        params.set('end', updates.range.to.toISOString().split('T')[0]);
+        // Use local date components for URL
+        const localDate = new Date(updates.range.to);
+        const endDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+        params.set('end', endDate);
       }
     }
 
-    // Set view parameter if provided
     if (updates.view) {
       params.set('view', updates.view);
+
+      // Only set to today if there's no range provided and we're switching to week/day view
+      if ((updates.view === 'week' || updates.view === 'day') && !updates.range) {
+        const localToday = new Date();
+        const startDate = `${localToday.getFullYear()}-${String(localToday.getMonth() + 1).padStart(2, '0')}-${String(localToday.getDate()).padStart(2, '0')}`;
+        params.set('start', startDate);
+        params.delete('end');
+      }
     }
 
-    router.push(`?${params.toString()}`, { scroll: false });
+    const newUrl = `?${params.toString()}`;
+    router.push(newUrl, { scroll: false });
   };
 
   const handleViewChange = (newView: 'day' | 'week' | 'schedule') => {
     setView(newView);
-    updateUrlParams({ view: newView });
-  };
 
-  const handleDateSelect = (newDate: Date | undefined) => {
-    if (!newDate) {
+    // Keep existing range for schedule view, but update URL
+    if (newView === 'schedule') {
+      updateUrlParams({ view: newView });
       return;
     }
 
-    // Get new range and update data
-    const range = getDateRange(newDate, view);
+    // For week view, show current week
+    if (newView === 'week') {
+      const today = new Date();
+      const newRange = getDateRange(today, 'week');
+      setDateRange(newRange);
+      updateUrlParams({ range: newRange, view: newView });
+      updateAvailabilityData(newRange);
+      return;
+    }
 
-    // Update all three: state, URL, and data
+    // For day view, show today
+    if (newView === 'day') {
+      const today = new Date();
+      const newRange = getDateRange(today, 'day');
+      setDateRange(newRange);
+      updateUrlParams({ range: newRange, view: newView });
+      updateAvailabilityData(newRange);
+    }
+  };
+
+  const handleDateSelect = (newDate: Date | undefined) => {
+    if (!newDate) return;
+
+    // First set the view to day
+    setView('day');
+
+    // Then update the range for day view
+    const range = getDateRange(newDate, 'day');
     setDateRange(range);
-    updateUrlParams({ range });
+    updateUrlParams({ range, view: 'day' });
     updateAvailabilityData(range);
   };
 
@@ -162,16 +198,6 @@ export function ServiceProviderCalendarWrapper({
       availabilityData,
       onDateChange: handleDateSelect,
     };
-
-    // console.log('Calendar View Props:', {
-    //   view,
-    //   rangeStartDate: rangeStartDate.toISOString(),
-    //   availabilityData: availabilityData.map((av) => ({
-    //     id: av.id,
-    //     startTime: av.startTime.toISOString(),
-    //     endTime: av.endTime.toISOString(),
-    //   })),
-    // });
 
     switch (view) {
       case 'day':

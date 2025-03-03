@@ -104,13 +104,16 @@ export function generateDaysForDayCalendar(currentDate: Date) {
 export function generateDaysForWeekCalendar(rangeStartDate: Date) {
   // Convert to local timezone first
   const localDate = convertUTCToLocal(rangeStartDate);
+
+  // Get Monday of the week (weekStartsOn: 1)
   const weekStart = startOfWeek(localDate, { weekStartsOn: 1 });
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const date = new Date(weekStart);
     date.setDate(weekStart.getDate() + i);
+
     return {
-      date: convertLocalToUTC(date), // Convert back to UTC for storage/comparison
+      date: date,
       isToday: isSameDay(date, new Date()),
       isSelected: isSameDay(date, localDate),
     };
@@ -150,21 +153,13 @@ export function getDateRange(date: Date, view: 'day' | 'week' | 'schedule'): Dat
   };
 }
 
-// Add these new functions to the existing helper.ts file
+export function getEventGridPosition(start: Date, end: Date): string {
+  // Convert to minutes since start of day
+  const startMinutes = start.getHours() * 60 + start.getMinutes();
+  const endMinutes = end.getHours() * 60 + end.getMinutes();
+  const duration = endMinutes - startMinutes;
 
-export function getEventGridPosition(startTime: Date | string, endTime: Date | string) {
-  // Convert to local timezone for grid calculation
-  const localStart = convertUTCToLocal(startTime);
-  const localEnd = convertUTCToLocal(endTime);
-
-  const startMinutes = localStart.getHours() * 60 + localStart.getMinutes();
-  const endMinutes = localEnd.getHours() * 60 + localEnd.getMinutes();
-
-  // Calculate grid positions (each row represents 5 minutes)
-  const rowStart = Math.floor(startMinutes / 5) + 2; // +2 for header offset
-  const rowSpan = Math.ceil((endMinutes - startMinutes) / 5);
-
-  return `${rowStart} / span ${rowSpan}`;
+  return `${startMinutes} / span ${duration}`;
 }
 
 export function getNextDate(rangeStartDate: Date, view: 'day' | 'week' | 'schedule'): Date {
