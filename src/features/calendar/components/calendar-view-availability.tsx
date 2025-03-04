@@ -1,7 +1,6 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 
 import {
   ContextMenu,
@@ -13,36 +12,29 @@ import { deleteAvailability } from '@/features/calendar/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { formatTime } from '@/lib/helper';
 
-import { AvailabilityView } from '../lib/types';
+import { type AvailabilityView } from '../lib/types';
 
 interface CalendarViewAvailabilityProps {
   availability: AvailabilityView;
   gridPosition: string;
   gridColumn: number;
-  onAvailabilityClick?: (availability: AvailabilityView) => void;
-  onAvailabilityEdit?: (availability: AvailabilityView) => void;
+  serviceProviderId: string;
+  onRefresh: () => Promise<void>;
+  onView: (availability: AvailabilityView) => void;
+  onEdit: (availability: AvailabilityView) => void;
 }
 
 export function CalendarViewAvailability({
   availability,
   gridPosition,
   gridColumn,
-  onAvailabilityClick,
-  onAvailabilityEdit,
   serviceProviderId,
   onRefresh,
-}: CalendarViewAvailabilityProps & {
-  serviceProviderId: string;
-  onRefresh: () => Promise<void>;
-}) {
+  onView,
+  onEdit,
+}: CalendarViewAvailabilityProps) {
   const { toast } = useToast();
   const router = useRouter();
-  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
-
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    onAvailabilityEdit?.(availability);
-  };
 
   const handleDelete = async () => {
     const baseId = availability.id.split('-')[0];
@@ -76,22 +68,17 @@ export function CalendarViewAvailability({
     >
       <ContextMenu>
         <ContextMenuTrigger>
-          <button
-            onClick={() => onAvailabilityClick?.(availability)}
-            className="group absolute inset-1 flex items-center rounded-lg bg-blue-50 p-1 text-xs leading-5 hover:bg-blue-100"
-          >
+          <div className="group absolute inset-1 flex items-center rounded-lg bg-blue-50 p-1 text-xs leading-5 hover:bg-blue-100">
             <p className="text-left font-semibold text-blue-700">
-              {formatTime(availability.startTime)} - {formatTime(availability.endTime)}
+              {formatTime(availability.startTime)}-{formatTime(availability.endTime)}
             </p>
-          </button>
+          </div>
         </ContextMenuTrigger>
 
         <ContextMenuContent>
-          <ContextMenuItem onClick={() => onAvailabilityClick?.(availability)}>
-            View Details
-          </ContextMenuItem>
-          <ContextMenuItem onClick={() => onAvailabilityEdit?.(availability)}>Edit</ContextMenuItem>
-          <ContextMenuItem onClick={handleDelete} className="text-red-600">
+          <ContextMenuItem onSelect={() => onView(availability)}>View</ContextMenuItem>
+          <ContextMenuItem onSelect={() => onEdit(availability)}>Edit</ContextMenuItem>
+          <ContextMenuItem className="text-red-600" onSelect={handleDelete}>
             Delete
           </ContextMenuItem>
         </ContextMenuContent>

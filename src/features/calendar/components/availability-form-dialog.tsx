@@ -11,7 +11,7 @@ import {
 import { AvailabilityView } from '../lib/types';
 import { AvailabilityForm } from './availability-form';
 
-interface AvailabilityDialogProps {
+interface AvailabilityFormDialogProps {
   availability?: AvailabilityView;
   mode: 'create' | 'edit';
   onOpenChange: (open: boolean) => void;
@@ -20,7 +20,7 @@ interface AvailabilityDialogProps {
   onRefresh: () => Promise<void>;
 }
 
-export function AvailabilityDialog(props: AvailabilityDialogProps) {
+export function AvailabilityFormDialog(props: AvailabilityFormDialogProps) {
   const { availability, mode, onOpenChange, open, serviceProviderId, onRefresh } = props;
 
   return (

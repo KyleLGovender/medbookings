@@ -10,6 +10,8 @@ interface CalendarViewWeekProps {
   onViewChange?: (view: 'day') => void;
   serviceProviderId: string;
   onRefresh: () => void;
+  onView: (availability: AvailabilityView) => void;
+  onEdit: (availability: AvailabilityView) => void;
 }
 
 export function CalendarViewWeek({
@@ -19,6 +21,8 @@ export function CalendarViewWeek({
   onViewChange = () => {},
   serviceProviderId,
   onRefresh,
+  onView,
+  onEdit,
 }: CalendarViewWeekProps) {
   const handleRefresh = async () => {
     await onRefresh();
@@ -32,6 +36,8 @@ export function CalendarViewWeek({
       onViewChange={onViewChange}
       serviceProviderId={serviceProviderId}
       onRefresh={handleRefresh}
+      onView={onView}
+      onEdit={onEdit}
     />
   );
 }

@@ -1,12 +1,11 @@
 'use client';
 
-import { RefObject, useState } from 'react';
+import { RefObject } from 'react';
 
 import { convertUTCToLocal } from '@/lib/timezone-helper';
 
 import { generateDaysForWeekCalendar, getEventGridPosition } from '../../lib/helper';
 import { type AvailabilityView } from '../../lib/types';
-import { AvailabilityDialog } from '../availability-dialog';
 import { CalendarViewAvailability } from '../calendar-view-availability';
 import { CalendarViewTimeColumn } from '../calendar-view-time-column';
 
@@ -18,6 +17,8 @@ interface CalendarViewWeekTimeGridProps {
   availabilityData: AvailabilityView[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
+  onView: (availability: AvailabilityView) => void;
+  onEdit: (availability: AvailabilityView) => void;
 }
 
 export function CalendarViewWeekTimeGrid({
@@ -28,10 +29,9 @@ export function CalendarViewWeekTimeGrid({
   availabilityData,
   serviceProviderId,
   onRefresh,
+  onView,
+  onEdit,
 }: CalendarViewWeekTimeGridProps) {
-  const [selectedAvailability, setSelectedAvailability] = useState<AvailabilityView | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
   // Get the week's dates from the parent component
   const weekDays = generateDaysForWeekCalendar(new Date(rangeStartDate));
   const weekStart = weekDays[0].date;
@@ -91,29 +91,14 @@ export function CalendarViewWeekTimeGrid({
                   gridColumn={dayColumn}
                   serviceProviderId={serviceProviderId}
                   onRefresh={onRefresh}
-                  onAvailabilityClick={() => setSelectedAvailability(availability)}
-                  onAvailabilityEdit={() => {
-                    setSelectedAvailability(availability);
-                    setIsDialogOpen(true);
-                  }}
+                  onView={onView}
+                  onEdit={onEdit}
                 />
               );
             })}
           </ol>
         </div>
       </div>
-
-      {/* Dialog for editing */}
-      {selectedAvailability && (
-        <AvailabilityDialog
-          availability={selectedAvailability}
-          serviceProviderId={serviceProviderId}
-          mode="edit"
-          open={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
-          onRefresh={onRefresh}
-        />
-      )}
     </>
   );
 }

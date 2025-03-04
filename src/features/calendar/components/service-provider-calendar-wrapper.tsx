@@ -6,6 +6,8 @@ import { Suspense, useCallback, useState, useTransition } from 'react';
 import { startOfWeek } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
+import { AvailabilityFormDialog } from '@/features/calendar/components/availability-form-dialog';
+import { AvailabilityViewDialog } from '@/features/calendar/components/availability-view-dialog';
 import { CalendarSkeleton } from '@/features/calendar/components/calendar-skeleton';
 import { CalendarViewDay } from '@/features/calendar/components/calendar-view-day';
 import { CalendarViewSchedule } from '@/features/calendar/components/calendar-view-schedule';
@@ -35,6 +37,9 @@ export function ServiceProviderCalendarWrapper({
   const [dateRange, setDateRange] = useState<DateRange>(initialDateRange);
   const [availabilityData, setAvailabilityData] = useState<AvailabilityView[]>(initialAvailability);
   const [view, setView] = useState<'day' | 'week' | 'schedule'>(initialView);
+  const [selectedAvailability, setSelectedAvailability] = useState<AvailabilityView | undefined>();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
   const rangeStartDate = dateRange.from!;
 
@@ -192,48 +197,50 @@ export function ServiceProviderCalendarWrapper({
     });
   };
 
+  const handleView = (availability: AvailabilityView) => {
+    setSelectedAvailability(availability);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEdit = (availability: AvailabilityView) => {
+    setSelectedAvailability(availability);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDialogChange = (open: boolean) => {
+    setIsEditDialogOpen(open);
+    if (!open) {
+      setSelectedAvailability(undefined);
+    }
+  };
+
+  const handleViewDialogChange = (open: boolean) => {
+    setIsViewDialogOpen(open);
+    if (!open) {
+      setSelectedAvailability(undefined);
+    }
+  };
+
   const renderCalendar = () => {
     const props = {
       rangeStartDate,
       availabilityData,
       onDateChange: handleDateSelect,
+      serviceProviderId,
+      onRefresh: refreshData,
+      onView: handleView,
+      onEdit: handleEdit,
     };
 
     switch (view) {
       case 'day':
-        return (
-          <CalendarViewDay
-            {...props}
-            serviceProviderId={serviceProviderId}
-            onRefresh={refreshData}
-            onViewChange={setView}
-          />
-        );
+        return <CalendarViewDay {...props} onViewChange={setView} />;
       case 'week':
-        return (
-          <CalendarViewWeek
-            {...props}
-            serviceProviderId={serviceProviderId}
-            onRefresh={refreshData}
-            onViewChange={setView}
-          />
-        );
+        return <CalendarViewWeek {...props} onViewChange={setView} />;
       case 'schedule':
-        return (
-          <CalendarViewSchedule
-            availabilityData={availabilityData}
-            serviceProviderId={serviceProviderId}
-            onRefresh={refreshData}
-          />
-        );
+        return <CalendarViewSchedule {...props} />;
       default:
-        return (
-          <CalendarViewSchedule
-            availabilityData={availabilityData}
-            serviceProviderId={serviceProviderId}
-            onRefresh={refreshData}
-          />
-        );
+        return <CalendarViewSchedule {...props} />;
     }
   };
 
@@ -256,6 +263,20 @@ export function ServiceProviderCalendarWrapper({
         />
         <Suspense fallback={<CalendarSkeleton />}>{renderCalendar()}</Suspense>
       </div>
+
+      <AvailabilityFormDialog
+        availability={selectedAvailability}
+        serviceProviderId={serviceProviderId}
+        mode="edit"
+        open={isEditDialogOpen}
+        onOpenChange={handleDialogChange}
+        onRefresh={refreshData}
+      />
+      <AvailabilityViewDialog
+        availability={selectedAvailability}
+        open={isViewDialogOpen}
+        onOpenChange={handleViewDialogChange}
+      />
     </div>
   );
 }

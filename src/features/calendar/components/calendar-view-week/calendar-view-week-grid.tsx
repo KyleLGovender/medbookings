@@ -13,6 +13,8 @@ interface CalendarViewWeekGridProps {
   availabilityData: AvailabilityView[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
+  onView: (availability: AvailabilityView) => void; // Add these props
+  onEdit: (availability: AvailabilityView) => void;
 }
 
 function formatDateRange(weekDays: { date: Date }[]): string {
@@ -31,6 +33,8 @@ export function CalendarViewWeekGrid({
   availabilityData = [],
   serviceProviderId,
   onRefresh,
+  onView,
+  onEdit,
 }: CalendarViewWeekGridProps) {
   const container = useRef<HTMLDivElement>(null);
   const containerNav = useRef<HTMLDivElement>(null);
@@ -127,6 +131,8 @@ export function CalendarViewWeekGrid({
             availabilityData={availabilityData}
             serviceProviderId={serviceProviderId}
             onRefresh={onRefresh}
+            onView={onView}
+            onEdit={onEdit}
           />
         </div>
       </div>

@@ -10,7 +10,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { DateRangeSelector } from '@/components/ui/date-range-selector';
 import { CalendarNavigation } from '@/features/calendar/components/calendar-navigation';
 
-import { AvailabilityDialog } from './availability-dialog';
+import { AvailabilityFormDialog } from './availability-form-dialog';
 
 interface ServiceProviderCalendarHeaderProps {
   view: 'schedule' | 'day' | 'week';
@@ -117,7 +117,7 @@ export function ServiceProviderCalendarHeader({
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
         <>
-          <AvailabilityDialog
+          <AvailabilityFormDialog
             mode="create"
             open={isAvailabilityDialogOpen}
             onOpenChange={setIsAvailabilityDialogOpen}

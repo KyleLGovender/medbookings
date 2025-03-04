@@ -3,7 +3,7 @@ import { RefObject, useState } from 'react';
 import { getEventGridPosition, isSameDay } from '@/features/calendar/lib/helper';
 import { AvailabilityView } from '@/features/calendar/lib/types';
 
-import { AvailabilityDialog } from '../availability-dialog';
+import { AvailabilityFormDialog } from '../availability-form-dialog';
 import { CalendarViewTimeColumn } from '../calendar-view-time-column';
 
 // Server Component
@@ -99,7 +99,7 @@ export function CalendarViewDayTimeGrid({
         </div>
       </div>
 
-      <AvailabilityDialog
+      <AvailabilityFormDialog
         availability={selectedAvailability || undefined}
         serviceProviderId={serviceProviderId}
         mode="edit"
