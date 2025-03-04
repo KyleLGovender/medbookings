@@ -50,7 +50,12 @@ export function CalendarViewWeekTimeGrid({
   return (
     <>
       <div className="flex flex-auto">
-        <div className="sticky left-0 z-30 w-14 flex-none bg-white ring-1 ring-gray-100" />
+        {/* Time column */}
+        <div className="sticky left-0 z-30 w-14 flex-none bg-white ring-1 ring-gray-100">
+          <CalendarViewTimeColumn offsetRef={offsetRef} />
+        </div>
+
+        {/* Rest of the grid */}
         <div className="grid flex-auto grid-cols-1 grid-rows-1">
           {/* Time column with horizontal lines */}
           <div className="-z-10 col-start-1 col-end-2 row-start-1">
@@ -68,7 +73,7 @@ export function CalendarViewWeekTimeGrid({
           <ol
             className="z-10 col-start-1 col-end-2 row-start-1 grid grid-cols-7"
             style={{
-              gridTemplateRows: 'repeat(1440, minmax(0, 1fr))', // 24 hours * 60 minutes
+              gridTemplateRows: 'repeat(1440, minmax(0, 1fr))',
               height: '100%',
             }}
           >

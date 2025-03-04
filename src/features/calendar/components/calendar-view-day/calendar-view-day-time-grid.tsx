@@ -1,9 +1,10 @@
-import { RefObject, useState } from 'react';
+import { RefObject } from 'react';
 
 import { getEventGridPosition, isSameDay } from '@/features/calendar/lib/helper';
 import { AvailabilityView } from '@/features/calendar/lib/types';
+import { convertUTCToLocal } from '@/lib/timezone-helper';
 
-import { AvailabilityFormDialog } from '../availability-form-dialog';
+import { CalendarViewAvailability } from '../calendar-view-availability';
 import { CalendarViewTimeColumn } from '../calendar-view-time-column';
 
 // Server Component
@@ -15,6 +16,8 @@ interface CalendarViewDayTimeGridProps {
   availabilityData: AvailabilityView[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
+  onView: (availability: AvailabilityView) => void;
+  onEdit: (availability: AvailabilityView) => void;
 }
 
 export function CalendarViewDayTimeGrid({
@@ -25,15 +28,10 @@ export function CalendarViewDayTimeGrid({
   availabilityData,
   serviceProviderId,
   onRefresh,
+  onView,
+  onEdit,
 }: CalendarViewDayTimeGridProps) {
   const dateObj = new Date(rangeStartDate);
-  const [selectedAvailability, setSelectedAvailability] = useState<AvailabilityView | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const handleEventClick = (availability: AvailabilityView) => {
-    setSelectedAvailability(availability);
-    setIsDialogOpen(true);
-  };
 
   // Filter availabilities for current day
   const dayAvailabilities = availabilityData.filter((availability) =>
@@ -66,47 +64,49 @@ export function CalendarViewDayTimeGrid({
       </header>
 
       <div className="flex w-full flex-auto">
-        <div className="w-14 flex-none bg-white ring-1 ring-gray-100" />
+        <div className="sticky left-0 z-30 w-14 flex-none bg-white ring-1 ring-gray-100">
+          <CalendarViewTimeColumn offsetRef={offsetRef} />
+        </div>
+
         <div className="grid flex-auto grid-cols-1 grid-rows-1">
           {/* Time grid */}
-          <CalendarViewTimeColumn offsetRef={offsetRef} />
+          <div className="-z-10 col-start-1 col-end-2 row-start-1">
+            <CalendarViewTimeColumn offsetRef={offsetRef} />
+          </div>
 
           {/* Availability blocks */}
           <ol
             className="z-10 col-start-1 col-end-2 row-start-1 grid grid-cols-1"
             style={{
-              gridTemplateRows: '1.75rem repeat(288, minmax(0, 1fr)) auto',
+              gridTemplateRows: 'repeat(1440, minmax(0, 1fr))',
+              height: '100%',
             }}
           >
-            {dayAvailabilities.flatMap((availability) =>
-              availability.slots.map((slot) => (
-                <li
-                  key={slot.id}
-                  className={`relative cursor-pointer ${
-                    slot.status === 'AVAILABLE' ? 'bg-blue-200' : 'bg-gray-200'
-                  } hover:bg-opacity-75`}
-                  style={{
-                    gridRow: getEventGridPosition(slot.startTime, slot.endTime),
+            {dayAvailabilities.map((availability) => {
+              const localStartTime = convertUTCToLocal(availability.startTime);
+              const localEndTime = convertUTCToLocal(availability.endTime);
+              const gridPosition = getEventGridPosition(localStartTime, localEndTime);
+
+              return (
+                <CalendarViewAvailability
+                  key={availability.id}
+                  availability={{
+                    ...availability,
+                    startTime: localStartTime,
+                    endTime: localEndTime,
                   }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEventClick(availability);
-                  }}
+                  gridPosition={gridPosition}
+                  gridColumn={1}
+                  serviceProviderId={serviceProviderId}
+                  onRefresh={onRefresh}
+                  onView={onView}
+                  onEdit={onEdit}
                 />
-              ))
-            )}
+              );
+            })}
           </ol>
         </div>
       </div>
-
-      <AvailabilityFormDialog
-        availability={selectedAvailability || undefined}
-        serviceProviderId={serviceProviderId}
-        mode="edit"
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        onRefresh={onRefresh}
-      />
     </>
   );
 }

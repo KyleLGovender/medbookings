@@ -14,6 +14,8 @@ interface CalendarViewDayGridProps {
   availabilityData: AvailabilityView[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
+  onView: (availability: AvailabilityView) => void;
+  onEdit: (availability: AvailabilityView) => void;
 }
 
 export function CalendarViewDayGrid({
@@ -23,6 +25,8 @@ export function CalendarViewDayGrid({
   availabilityData,
   serviceProviderId,
   onRefresh,
+  onView,
+  onEdit,
 }: CalendarViewDayGridProps) {
   const container = useRef<HTMLDivElement>(null);
   const containerNav = useRef<HTMLDivElement>(null);
@@ -91,6 +95,8 @@ export function CalendarViewDayGrid({
             availabilityData={availabilityData}
             serviceProviderId={serviceProviderId}
             onRefresh={onRefresh}
+            onView={onView}
+            onEdit={onEdit}
           />
         </div>
       </div>

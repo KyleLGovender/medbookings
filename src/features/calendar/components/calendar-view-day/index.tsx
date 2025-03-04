@@ -8,6 +8,8 @@ interface CalendarViewDayProps {
   onViewChange?: (view: 'day') => void;
   serviceProviderId: string;
   onRefresh: () => void;
+  onView: (availability: AvailabilityView) => void;
+  onEdit: (availability: AvailabilityView) => void;
 }
 
 export function CalendarViewDay({
@@ -17,6 +19,8 @@ export function CalendarViewDay({
   onViewChange = () => {},
   serviceProviderId,
   onRefresh,
+  onView,
+  onEdit,
 }: CalendarViewDayProps) {
   const handleRefresh = async () => {
     await onRefresh();
@@ -30,6 +34,8 @@ export function CalendarViewDay({
       onViewChange={onViewChange}
       serviceProviderId={serviceProviderId}
       onRefresh={handleRefresh}
+      onView={onView}
+      onEdit={onEdit}
     />
   );
 }
