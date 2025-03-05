@@ -10,7 +10,14 @@ import { z } from 'zod';
 
 import { ApiResponse } from '@/lib/types';
 
-export type ViewType = 'day' | 'week' | 'schedule';
+export const ViewType = {
+  day: 'day',
+  week: 'week',
+  schedule: 'schedule',
+  slots: 'slots',
+} as const;
+
+export type ViewType = (typeof ViewType)[keyof typeof ViewType];
 
 // Base types from Zod schemas
 type BaseSlot = z.infer<typeof CalculatedAvailabilitySlotSchema>;

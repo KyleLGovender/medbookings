@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-import type { AvailabilityView as AvailabilityViewType } from '../lib/types';
+import type { AvailabilityView as AvailabilityViewType } from '../../lib/types';
 
 interface AvailabilityViewProps {
   availability: AvailabilityViewType;

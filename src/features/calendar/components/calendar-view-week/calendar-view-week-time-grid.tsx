@@ -2,12 +2,12 @@
 
 import { RefObject } from 'react';
 
+import { CalendarItemAvailability } from '@/features/calendar/components/calendar-utils';
 import { convertUTCToLocal } from '@/lib/timezone-helper';
 
 import { generateDaysForWeekCalendar, getEventGridPosition } from '../../lib/helper';
 import { type AvailabilityView } from '../../lib/types';
-import { CalendarViewAvailability } from '../calendar-view-availability';
-import { CalendarViewTimeColumn } from '../calendar-view-time-column';
+import { CalendarViewTimeColumn } from '../calendar-utils/calendar-view-time-column';
 
 interface CalendarViewWeekTimeGridProps {
   containerRef: RefObject<HTMLDivElement>;
@@ -85,7 +85,7 @@ export function CalendarViewWeekTimeGrid({
               const dayColumn = localStartTime.getDay() === 0 ? 7 : localStartTime.getDay();
 
               return (
-                <CalendarViewAvailability
+                <CalendarItemAvailability
                   key={availability.id}
                   availability={{
                     ...availability,

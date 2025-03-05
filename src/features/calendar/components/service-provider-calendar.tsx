@@ -6,6 +6,7 @@ import { getAuthenticatedServiceProvider } from '@/lib/server-helper';
 
 import { getDateRange } from '../lib/helper';
 import { getServiceProviderAvailabilityInRange } from '../lib/queries';
+import { ViewType } from '../lib/types';
 import { ServiceProviderCalendarWrapper } from './service-provider-calendar-wrapper';
 
 type SearchParams = { [key: string]: string | string[] | undefined };
@@ -17,8 +18,8 @@ export async function ServiceProviderCalendar({ searchParams }: { searchParams: 
   const { serviceProviderId } = await getAuthenticatedServiceProvider();
   if (!serviceProviderId) redirect('/profile/service-provider');
 
-  const isValidView = (v: string | undefined): v is 'day' | 'schedule' | 'week' => {
-    return v === 'day' || v === 'schedule' || v === 'week';
+  const isValidView = (v: string | undefined): v is ViewType => {
+    return v !== undefined && Object.values(ViewType).includes(v as ViewType);
   };
 
   const view = searchParams.view as string;

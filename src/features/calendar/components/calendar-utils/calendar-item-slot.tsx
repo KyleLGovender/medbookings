@@ -2,24 +2,23 @@
 
 import { useState } from 'react';
 
+import { AvailabilitySlot } from '@/features/calendar/lib/types';
 import { formatTime } from '@/lib/helper';
 import { cn } from '@/lib/utils';
 
-import { AvailabilitySlot } from '../lib/types';
-
-interface CalendarViewSlotProps {
+interface CalendarItemSlotProps {
   slot: AvailabilitySlot;
   gridPosition: string;
   gridColumn: number;
   onSlotClick?: (slot: AvailabilitySlot) => void;
 }
 
-export function CalendarViewSlot({
+export function CalendarItemSlot({
   slot,
   gridPosition,
   gridColumn,
   onSlotClick,
-}: CalendarViewSlotProps) {
+}: CalendarItemSlotProps) {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
   const isBooked = slot.status === 'BOOKED';
 

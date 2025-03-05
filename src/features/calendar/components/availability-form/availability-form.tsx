@@ -16,9 +16,9 @@ import { getServiceProviderServices } from '@/features/calendar/lib/queries';
 import { Service } from '@/features/service-provider/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
-import { createAvailability, updateAvailability } from '../lib/actions';
-import { AvailabilityFormSchema, AvailabilityFormValues, AvailabilityView } from '../lib/types';
-import { ServiceConfigurationFields } from './availability-form/service-configuration-fields';
+import { createAvailability, updateAvailability } from '../../lib/actions';
+import { AvailabilityFormSchema, AvailabilityFormValues, AvailabilityView } from '../../lib/types';
+import { ServiceConfigurationFields } from './service-configuration-fields';
 
 interface AvailabilityFormProps {
   serviceProviderId: string;

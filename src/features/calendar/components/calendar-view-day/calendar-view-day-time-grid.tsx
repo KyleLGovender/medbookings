@@ -1,11 +1,11 @@
 import { RefObject } from 'react';
 
-import { getEventGridPosition, isSameDay } from '@/features/calendar/lib/helper';
-import { AvailabilityView } from '@/features/calendar/lib/types';
+import { CalendarItemAvailability } from '@/features/calendar/components/calendar-utils';
 import { convertUTCToLocal } from '@/lib/timezone-helper';
 
-import { CalendarViewAvailability } from '../calendar-view-availability';
-import { CalendarViewTimeColumn } from '../calendar-view-time-column';
+import { getEventGridPosition, isSameDay } from '../../lib/helper';
+import { AvailabilityView } from '../../lib/types';
+import { CalendarViewTimeColumn } from '../calendar-utils/calendar-view-time-column';
 
 // Server Component
 interface CalendarViewDayTimeGridProps {
@@ -37,18 +37,6 @@ export function CalendarViewDayTimeGrid({
   const dayAvailabilities = availabilityData.filter((availability) =>
     isSameDay(new Date(availability.startTime), dateObj)
   );
-
-  // Get bookings from the availability slots
-  const bookings = dayAvailabilities
-    .flatMap((availability) => availability.slots)
-    .filter((slot) => slot.status === 'BOOKED' && slot.booking)
-    .map((slot) => ({
-      id: slot.id,
-      startTime: slot.startTime,
-      endTime: slot.endTime,
-      status: slot.status,
-      booking: slot.booking,
-    }));
 
   return (
     <>
@@ -88,7 +76,7 @@ export function CalendarViewDayTimeGrid({
               const gridPosition = getEventGridPosition(localStartTime, localEndTime);
 
               return (
-                <CalendarViewAvailability
+                <CalendarItemAvailability
                   key={availability.id}
                   availability={{
                     ...availability,

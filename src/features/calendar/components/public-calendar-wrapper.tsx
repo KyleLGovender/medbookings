@@ -6,7 +6,7 @@ import { Suspense, useCallback, useState, useTransition } from 'react';
 import { startOfWeek } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
-import { CalendarSkeleton } from '@/features/calendar/components/calendar-skeleton';
+import { CalendarSkeleton } from '@/features/calendar/components/calendar-utils/calendar-skeleton';
 import { CalendarViewDay } from '@/features/calendar/components/calendar-view-day';
 import { CalendarViewSchedule } from '@/features/calendar/components/calendar-view-schedule';
 import { CalendarViewWeek } from '@/features/calendar/components/calendar-view-week';

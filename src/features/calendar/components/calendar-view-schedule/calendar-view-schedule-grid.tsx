@@ -19,7 +19,7 @@ import { deleteAvailability, deleteBooking } from '@/features/calendar/lib/actio
 import { AvailabilityView } from '@/features/calendar/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
-interface CalendarViewScheduleProps {
+interface CalendarViewScheduleGridProps {
   availabilityData: AvailabilityView[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
@@ -29,13 +29,13 @@ interface CalendarViewScheduleProps {
 
 type SlotStatus = z.infer<typeof SlotStatusSchema>;
 
-export function CalendarViewSchedule({
+export function CalendarViewScheduleGrid({
   availabilityData,
   serviceProviderId,
   onRefresh,
   onView,
   onEdit,
-}: CalendarViewScheduleProps) {
+}: CalendarViewScheduleGridProps) {
   const { toast } = useToast();
   const router = useRouter();
 
@@ -71,10 +71,18 @@ export function CalendarViewSchedule({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead className="text-center">Period</TableHead>
-              <TableHead className="text-center">% Booked</TableHead>
-              <TableHead className="text-center">Actions</TableHead>
+              <TableHead className="text-center text-lg font-semibold text-gray-900">
+                Date
+              </TableHead>
+              <TableHead className="text-center text-lg font-semibold text-gray-900">
+                Period
+              </TableHead>
+              <TableHead className="text-center text-lg font-semibold text-gray-900">
+                % Booked
+              </TableHead>
+              <TableHead className="text-center text-lg font-semibold text-gray-900">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

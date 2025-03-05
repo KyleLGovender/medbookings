@@ -6,7 +6,7 @@ import { DateRange } from 'react-day-picker';
 
 import { DatePicker } from '@/components/ui/date-picker';
 import { DateRangeSelector } from '@/components/ui/date-range-selector';
-import { CalendarNavigation } from '@/features/calendar/components/calendar-navigation';
+import { CalendarNavigation } from '@/features/calendar/components/calendar-utils/calendar-navigation';
 
 interface PublicCalendarHeaderProps {
   view: 'schedule' | 'day' | 'week';

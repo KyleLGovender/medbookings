@@ -8,12 +8,13 @@ import { DateRange } from 'react-day-picker';
 
 import { DatePicker } from '@/components/ui/date-picker';
 import { DateRangeSelector } from '@/components/ui/date-range-selector';
-import { CalendarNavigation } from '@/features/calendar/components/calendar-navigation';
+import { CalendarNavigation } from '@/features/calendar/components/calendar-utils/calendar-navigation';
 
-import { AvailabilityFormDialog } from './availability-form-dialog';
+import { ViewType } from '../lib/types';
+import { AvailabilityFormDialog } from './availability-form/availability-form-dialog';
 
 interface ServiceProviderCalendarHeaderProps {
-  view: 'schedule' | 'day' | 'week';
+  view: ViewType;
   rangeStartDate: Date;
   dateRange?: DateRange;
   serviceProviderId: string;
@@ -22,9 +23,11 @@ interface ServiceProviderCalendarHeaderProps {
   onPrevious: () => void;
   onNext: () => void;
   onToday: () => void;
-  onViewChange: (view: 'schedule' | 'day' | 'week') => void;
+  onViewChange: (view: ViewType) => void;
   onRefresh: () => Promise<void>;
   onThisWeek: () => void;
+  onTimeRangeChange?: (range: { start: number; end: number }) => void;
+  timeRange?: { start: number; end: number };
 }
 
 export function ServiceProviderCalendarHeader({
@@ -40,6 +43,8 @@ export function ServiceProviderCalendarHeader({
   onViewChange,
   onRefresh,
   onThisWeek,
+  onTimeRangeChange,
+  timeRange = { start: 0, end: 24 },
 }: ServiceProviderCalendarHeaderProps) {
   const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
 
@@ -63,6 +68,16 @@ export function ServiceProviderCalendarHeader({
     onDateRangeSelect(newRange);
   };
 
+  const handleTimeRangeChange = (values: number[]) => {
+    onTimeRangeChange?.({
+      start: values[0],
+      end: values[1],
+    });
+  };
+
+  // Get array of view options from ViewType
+  const viewOptions = Object.values(ViewType) as ViewType[];
+
   return (
     <header className="flex flex-col gap-4 border-b border-gray-200 px-6 py-4 md:flex-row md:items-center md:justify-between">
       <div className="mx-auto flex flex-col gap-2 md:mx-0 md:flex-row md:items-center">
@@ -81,11 +96,11 @@ export function ServiceProviderCalendarHeader({
               className="absolute right-0 z-10 mt-3 w-36 origin-top-right overflow-hidden rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in"
             >
               <div className="py-1">
-                {['day', 'week', 'schedule'].map((viewOption) => (
+                {viewOptions.map((viewOption) => (
                   <MenuItem key={viewOption}>
                     <button
                       type="button"
-                      onClick={() => onViewChange(viewOption as 'day' | 'week' | 'schedule')}
+                      onClick={() => onViewChange(viewOption)}
                       className="block w-full px-4 py-2 text-left text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900 data-[focus]:outline-none"
                     >
                       {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} view

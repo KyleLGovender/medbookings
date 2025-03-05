@@ -2,7 +2,7 @@
 
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid';
 
-type ViewType = 'day' | 'week' | 'schedule';
+import { ViewType } from '../../lib/types';
 
 interface CalendarNavigationProps {
   viewType: ViewType;
@@ -20,7 +20,7 @@ export function CalendarNavigation({
   onThisWeek,
 }: CalendarNavigationProps) {
   const handleMiddleButtonClick = () => {
-    if (viewType === 'day') {
+    if (viewType === 'day' || viewType === 'slots') {
       onToday();
     } else if (viewType === 'week' || viewType === 'schedule') {
       onThisWeek();
@@ -30,6 +30,7 @@ export function CalendarNavigation({
   const getMiddleButtonText = () => {
     switch (viewType) {
       case 'day':
+      case 'slots':
         return 'Today';
       case 'week':
       case 'schedule':

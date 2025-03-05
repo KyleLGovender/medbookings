@@ -9,12 +9,11 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { deleteAvailability } from '@/features/calendar/lib/actions';
+import { AvailabilityView } from '@/features/calendar/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { formatTime } from '@/lib/helper';
 
-import { type AvailabilityView } from '../lib/types';
-
-interface CalendarViewAvailabilityProps {
+interface CalendarItemAvailabilityProps {
   availability: AvailabilityView;
   gridPosition: string;
   gridColumn: number;
@@ -24,7 +23,7 @@ interface CalendarViewAvailabilityProps {
   onEdit: (availability: AvailabilityView) => void;
 }
 
-export function CalendarViewAvailability({
+export function CalendarItemAvailability({
   availability,
   gridPosition,
   gridColumn,
@@ -32,7 +31,7 @@ export function CalendarViewAvailability({
   onRefresh,
   onView,
   onEdit,
-}: CalendarViewAvailabilityProps) {
+}: CalendarItemAvailabilityProps) {
   const { toast } = useToast();
   const router = useRouter();
 

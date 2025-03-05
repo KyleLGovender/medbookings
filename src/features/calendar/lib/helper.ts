@@ -3,6 +3,8 @@ import { DateRange } from 'react-day-picker';
 
 import { convertLocalToUTC, convertUTCToLocal, formatLocalDate } from '@/lib/timezone-helper';
 
+import { ViewType } from './types';
+
 interface CalendarDay {
   date: string;
   isCurrentMonth: boolean;
@@ -122,11 +124,10 @@ export function generateDaysForWeekCalendar(rangeStartDate: Date) {
   return weekDays;
 }
 
-export function getDateRange(date: Date, view: 'day' | 'week' | 'schedule'): DateRange {
-  // Convert to local time first
+export function getDateRange(date: Date, view: ViewType): DateRange {
   const localDate = convertUTCToLocal(date);
-  let startDate: Date;
-  let endDate: Date;
+  let startDate = new Date(localDate);
+  let endDate = new Date(localDate);
 
   switch (view) {
     case 'week':
@@ -134,19 +135,15 @@ export function getDateRange(date: Date, view: 'day' | 'week' | 'schedule'): Dat
       endDate = endOfWeek(localDate, { weekStartsOn: 1 });
       break;
     case 'day':
-      startDate = new Date(localDate);
-      endDate = new Date(localDate);
+    case 'slots':
       endDate.setDate(startDate.getDate() + 1);
       break;
     case 'schedule':
-      startDate = new Date(localDate);
       startDate.setDate(1);
-      endDate = new Date(localDate);
       endDate.setMonth(startDate.getMonth() + 1, 0);
       break;
   }
 
-  // Convert back to UTC before returning
   return {
     from: convertLocalToUTC(startDate),
     to: convertLocalToUTC(endDate),
@@ -162,46 +159,42 @@ export function getEventGridPosition(start: Date, end: Date): string {
   return `${startMinutes} / span ${duration}`;
 }
 
-export function getNextDate(rangeStartDate: Date, view: 'day' | 'week' | 'schedule'): Date {
-  // Convert to local timezone for date calculations
-  const localDate = convertUTCToLocal(rangeStartDate);
-  const newDate = new Date(localDate);
+export function getNextDate(rangeStartDate: Date, view: ViewType): Date {
+  const date = new Date(rangeStartDate);
 
   switch (view) {
     case 'week':
-      newDate.setDate(newDate.getDate() + 7);
-      break;
-    case 'schedule':
-      newDate.setMonth(newDate.getMonth() + 1);
+      date.setDate(date.getDate() + 7);
       break;
     case 'day':
-      newDate.setDate(newDate.getDate() + 1);
+    case 'slots': // Handle slots same as day view
+      date.setDate(date.getDate() + 1);
+      break;
+    case 'schedule':
+      date.setMonth(date.getMonth() + 1);
       break;
   }
 
-  // Convert back to UTC before returning
-  return convertLocalToUTC(newDate);
+  return date;
 }
 
-export function getPreviousDate(rangeStartDate: Date, view: 'day' | 'week' | 'schedule'): Date {
-  // Convert to local timezone for date calculations
-  const localDate = convertUTCToLocal(rangeStartDate);
-  const newDate = new Date(localDate);
+export function getPreviousDate(rangeStartDate: Date, view: ViewType): Date {
+  const date = new Date(rangeStartDate);
 
   switch (view) {
     case 'week':
-      newDate.setDate(newDate.getDate() - 7);
-      break;
-    case 'schedule':
-      newDate.setMonth(newDate.getMonth() - 1);
+      date.setDate(date.getDate() - 7);
       break;
     case 'day':
-      newDate.setDate(newDate.getDate() - 1);
+    case 'slots': // Handle slots same as day view
+      date.setDate(date.getDate() - 1);
+      break;
+    case 'schedule':
+      date.setMonth(date.getMonth() - 1);
       break;
   }
 
-  // Convert back to UTC before returning
-  return convertLocalToUTC(newDate);
+  return date;
 }
 
 export function roundToNearestMinute(date: Date): Date {

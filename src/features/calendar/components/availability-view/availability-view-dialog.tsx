@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-import { AvailabilityView as AvailabilityViewType } from '../lib/types';
+import { AvailabilityView as AvailabilityViewType } from '../../lib/types';
 import { AvailabilityView } from './availability-view';
 
 interface AvailabilityViewDialogProps {
