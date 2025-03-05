@@ -131,11 +131,11 @@ export function getDateRange(date: Date, view: ViewType): DateRange {
 
   switch (view) {
     case 'week':
+    case 'slots':
       startDate = startOfWeek(localDate, { weekStartsOn: 1 });
       endDate = endOfWeek(localDate, { weekStartsOn: 1 });
       break;
     case 'day':
-    case 'slots':
       endDate.setDate(startDate.getDate() + 1);
       break;
     case 'schedule':

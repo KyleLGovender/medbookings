@@ -10,6 +10,7 @@ interface CalendarViewSlotsProps {
   onRefresh: () => Promise<void>;
   onView: (availability: AvailabilityView) => void;
   onEdit: (availability: AvailabilityView) => void;
+  selectedServiceId?: string;
 }
 
 export function CalendarViewSlots({
@@ -21,6 +22,7 @@ export function CalendarViewSlots({
   onRefresh,
   onView,
   onEdit,
+  selectedServiceId,
 }: CalendarViewSlotsProps) {
   const handleRefresh = async () => {
     await onRefresh();
@@ -28,12 +30,13 @@ export function CalendarViewSlots({
 
   return (
     <CalendarViewSlotsGrid
-      rangeStartDate={rangeStartDate.toISOString()}
+      rangeStartDate={rangeStartDate}
       availabilityData={availabilityData}
       serviceProviderId={serviceProviderId}
       onRefresh={handleRefresh}
       onView={onView}
       onEdit={onEdit}
+      selectedServiceId={selectedServiceId}
     />
   );
 }

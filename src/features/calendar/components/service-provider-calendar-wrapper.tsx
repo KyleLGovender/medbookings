@@ -41,6 +41,7 @@ export function ServiceProviderCalendarWrapper({
   const [selectedAvailability, setSelectedAvailability] = useState<AvailabilityView | undefined>();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>();
 
   const rangeStartDate = dateRange.from!;
 
@@ -93,8 +94,8 @@ export function ServiceProviderCalendarWrapper({
       return;
     }
 
-    // For week view, show current week
-    if (newView === 'week') {
+    // For week and slots views, show current week
+    if (newView === 'week' || newView === 'slots') {
       const today = new Date();
       const newRange = getDateRange(today, 'week');
       setDateRange(newRange);
@@ -103,8 +104,8 @@ export function ServiceProviderCalendarWrapper({
       return;
     }
 
-    // For day and slots views, show today
-    if (newView === 'day' || newView === 'slots') {
+    // For day view, show today
+    if (newView === 'day') {
       const today = new Date();
       const newRange = getDateRange(today, newView);
       setDateRange(newRange);
@@ -246,7 +247,7 @@ export function ServiceProviderCalendarWrapper({
       case 'schedule':
         return <CalendarViewSchedule {...props} />;
       case 'slots':
-        return <CalendarViewSlots {...props} />;
+        return <CalendarViewSlots {...props} selectedServiceId={selectedServiceId} />;
       default:
         return <CalendarViewSchedule {...props} />;
     }
@@ -268,6 +269,9 @@ export function ServiceProviderCalendarWrapper({
           onThisWeek={handleThisWeek}
           onViewChange={handleViewChange}
           onRefresh={refreshData}
+          availabilityData={availabilityData}
+          selectedServiceId={selectedServiceId}
+          onServiceSelect={setSelectedServiceId}
         />
         <Suspense fallback={<CalendarSkeleton />}>{renderCalendar()}</Suspense>
       </div>
