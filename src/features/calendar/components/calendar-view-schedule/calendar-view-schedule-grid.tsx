@@ -86,40 +86,44 @@ export function CalendarViewScheduleGrid({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {availabilityData.map((availability) => (
-              <TableRow key={availability.id}>
-                <TableCell>{format(new Date(availability.startTime), 'EEE, MMM dd')}</TableCell>
-                <TableCell className="text-center">
-                  {format(new Date(availability.startTime), 'HH:mm')} -{' '}
-                  {format(new Date(availability.endTime), 'HH:mm')}
-                </TableCell>
-                <TableCell className="text-center">
-                  {Math.round(
-                    (availability.slots.filter((slot) => slot.status === 'BOOKED').length /
-                      availability.slots.length) *
-                      100
-                  )}
-                  %
-                </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => onView(availability)}>
-                      View
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => onEdit(availability)}>
-                      Edit
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(availability.id, 'availability')}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+            {availabilityData
+              .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+              .map((availability) => (
+                <TableRow key={availability.id}>
+                  <TableCell className="text-center">
+                    {format(new Date(availability.startTime), 'EEE, MMM dd')}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {format(new Date(availability.startTime), 'HH:mm')} -{' '}
+                    {format(new Date(availability.endTime), 'HH:mm')}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {Math.round(
+                      (availability.slots.filter((slot) => slot.status === 'BOOKED').length /
+                        availability.slots.length) *
+                        100
+                    )}
+                    %
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => onView(availability)}>
+                        View
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => onEdit(availability)}>
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(availability.id, 'availability')}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </div>

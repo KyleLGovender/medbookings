@@ -14,7 +14,12 @@ import { CalendarViewSchedule } from '@/features/calendar/components/calendar-vi
 import { CalendarViewSlots } from '@/features/calendar/components/calendar-view-slots/index';
 import { CalendarViewWeek } from '@/features/calendar/components/calendar-view-week';
 import { ServiceProviderCalendarHeader } from '@/features/calendar/components/service-provider-calendar-header';
-import { getDateRange, getNextDate, getPreviousDate } from '@/features/calendar/lib/helper';
+import {
+  getDateRange,
+  getDistinctServices,
+  getNextDate,
+  getPreviousDate,
+} from '@/features/calendar/lib/helper';
 import { getServiceProviderAvailabilityInRange } from '@/features/calendar/lib/queries';
 import { AvailabilityView, ViewType } from '@/features/calendar/lib/types';
 
@@ -41,12 +46,41 @@ export function ServiceProviderCalendarWrapper({
   const [selectedAvailability, setSelectedAvailability] = useState<AvailabilityView | undefined>();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>();
+  const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(() => {
+    if (availabilityData?.length) {
+      const distinctServices = getDistinctServices(availabilityData);
+
+      // Try to find service by name from URL params
+      const serviceFromUrl = searchParams.get('service');
+      if (serviceFromUrl) {
+        const decodedName = decodeURIComponent(serviceFromUrl);
+        const service = distinctServices.find((s) => s.name === decodedName);
+        if (service) return service.id;
+      }
+
+      // Fall back to auto-selecting if only one service
+      if (distinctServices.length === 1) {
+        return distinctServices[0].id;
+      }
+    }
+    return undefined;
+  });
 
   const rangeStartDate = dateRange.from!;
 
-  const updateUrlParams = (updates: { range?: DateRange; view?: string }) => {
+  const updateUrlParams = (updates: {
+    range?: DateRange;
+    view?: string;
+    serviceName?: string | null;
+  }) => {
     const params = new URLSearchParams(searchParams);
+
+    // Handle service name
+    if (updates.serviceName) {
+      params.set('service', encodeURIComponent(updates.serviceName));
+    } else if (updates.serviceName === null) {
+      params.delete('service');
+    }
 
     if (updates.range) {
       params.delete('start');
@@ -227,6 +261,21 @@ export function ServiceProviderCalendarWrapper({
     }
   };
 
+  const handleServiceSelect = (serviceId: string | undefined) => {
+    setSelectedServiceId(serviceId);
+
+    if (serviceId && availabilityData?.[0]) {
+      const services = getDistinctServices(availabilityData);
+      const service = services.find((s) => s.id === serviceId);
+      if (service) {
+        updateUrlParams({ serviceName: service.name });
+        return;
+      }
+    }
+
+    updateUrlParams({ serviceName: null });
+  };
+
   const renderCalendar = () => {
     const props = {
       rangeStartDate,
@@ -271,7 +320,7 @@ export function ServiceProviderCalendarWrapper({
           onRefresh={refreshData}
           availabilityData={availabilityData}
           selectedServiceId={selectedServiceId}
-          onServiceSelect={setSelectedServiceId}
+          onServiceSelect={handleServiceSelect}
         />
         <Suspense fallback={<CalendarSkeleton />}>{renderCalendar()}</Suspense>
       </div>

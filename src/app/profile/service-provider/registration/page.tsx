@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { BillingType, Languages } from '@prisma/client';
 
-import ServiceProviderForm from '@/features/profile/service-provider/components/service-provider-form';
+import ServiceProviderForm from '@/features/service-provider/components/service-provider-form';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 

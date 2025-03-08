@@ -3,7 +3,7 @@ import { DateRange } from 'react-day-picker';
 
 import { convertLocalToUTC, convertUTCToLocal, formatLocalDate } from '@/lib/timezone-helper';
 
-import { ViewType } from './types';
+import { AvailabilityView, ViewType } from './types';
 
 interface CalendarDay {
   date: string;
@@ -16,6 +16,11 @@ interface CalculateSpotsParams {
   startTime: Date;
   endTime: Date;
   duration: number;
+}
+
+interface TimeRange {
+  earliestTime: Date;
+  latestTime: Date;
 }
 
 /**
@@ -164,10 +169,10 @@ export function getNextDate(rangeStartDate: Date, view: ViewType): Date {
 
   switch (view) {
     case 'week':
+    case 'slots':
       date.setDate(date.getDate() + 7);
       break;
     case 'day':
-    case 'slots': // Handle slots same as day view
       date.setDate(date.getDate() + 1);
       break;
     case 'schedule':
@@ -183,10 +188,10 @@ export function getPreviousDate(rangeStartDate: Date, view: ViewType): Date {
 
   switch (view) {
     case 'week':
+    case 'slots':
       date.setDate(date.getDate() - 7);
       break;
     case 'day':
-    case 'slots': // Handle slots same as day view
       date.setDate(date.getDate() - 1);
       break;
     case 'schedule':
@@ -199,4 +204,45 @@ export function getPreviousDate(rangeStartDate: Date, view: ViewType): Date {
 
 export function roundToNearestMinute(date: Date): Date {
   return new Date(Math.floor(date.getTime() / 60000) * 60000);
+}
+
+export function getDistinctServices(availabilityData: AvailabilityView[]) {
+  const servicesMap = new Map<
+    string,
+    { id: string; name: string; description: string | null; displayPriority: number }
+  >();
+
+  availabilityData.forEach((availability) => {
+    availability.slots.forEach((slot) => {
+      const service = slot.service;
+      if (!servicesMap.has(service.id)) {
+        servicesMap.set(service.id, {
+          id: service.id,
+          name: service.name,
+          description: service.description,
+          displayPriority: service.displayPriority,
+        });
+      }
+    });
+  });
+
+  return Array.from(servicesMap.values()).sort((a, b) => a.displayPriority - b.displayPriority);
+}
+
+export function getAvailabilityViewsTimeRange(availabilityViews: AvailabilityView[]): TimeRange {
+  if (!availabilityViews.length) {
+    return {
+      earliestTime: new Date(),
+      latestTime: new Date(),
+    };
+  }
+
+  const allTimes = availabilityViews.flatMap((av) =>
+    av.slots.map((slot) => new Date(slot.startTime).getTime())
+  );
+
+  return {
+    earliestTime: new Date(Math.min(...allTimes)),
+    latestTime: new Date(Math.max(...allTimes)),
+  };
 }

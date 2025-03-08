@@ -2,6 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { generateDaysForWeekCalendar } from '@/features/calendar/lib/helper';
 import { AvailabilitySlot, AvailabilityView } from '@/features/calendar/lib/types';
 
@@ -15,6 +25,17 @@ interface CalendarViewSlotsGridProps {
   onView: (slot: AvailabilitySlot) => void;
   onEdit: (availability: AvailabilityView) => void;
   selectedServiceId?: string;
+}
+
+interface TimeSlotRow {
+  time: Date;
+  monday: AvailabilitySlot[];
+  tuesday: AvailabilitySlot[];
+  wednesday: AvailabilitySlot[];
+  thursday: AvailabilitySlot[];
+  friday: AvailabilitySlot[];
+  saturday: AvailabilitySlot[];
+  sunday: AvailabilitySlot[];
 }
 
 function formatDateRange(weekDays: { date: Date }[]): string {
@@ -54,51 +75,47 @@ export function CalendarViewSlotsGrid({
     return slots;
   }, []);
 
-  // Organize slots by day and hour
-  const organizedSlots = useMemo(() => {
-    // 1. Create the full week structure first
-    const weekStructure = new Map<string, Map<number, AvailabilitySlot[]>>();
+  // Create table data structure
+  const tableData = useMemo(() => {
+    const rows: TimeSlotRow[] = timeSlots.map((timeSlot) => ({
+      time: timeSlot,
+      monday: [],
+      tuesday: [],
+      wednesday: [],
+      thursday: [],
+      friday: [],
+      saturday: [],
+      sunday: [],
+    }));
 
-    // Build empty week structure
-    weekDays.forEach(({ date }) => {
-      const dayKey = date.toISOString().split('T')[0];
-      const dayHours = new Map<number, AvailabilitySlot[]>();
-
-      // Initialize every hour slot for this day (9:00-17:00)
-      for (let hour = 9; hour <= 17; hour++) {
-        dayHours.set(hour, []);
-      }
-
-      weekStructure.set(dayKey, dayHours);
-    });
-
-    console.log('Empty Week Structure:', weekStructure);
-
-    // 2. Only populate with availability data if a service is selected
     if (selectedServiceId) {
       const allSlots = availabilityData.flatMap((availability) => availability.slots);
-      console.log('Available Slots:', allSlots);
 
-      // Populate the week structure with matching slots
       allSlots.forEach((slot) => {
         if (slot.service.id === selectedServiceId) {
           const slotDate = new Date(slot.startTime);
-          const dayKey = slotDate.toISOString().split('T')[0];
           const hour = slotDate.getHours();
+          const dayIndex = slotDate.getDay();
+          const dayKey = [
+            'sunday',
+            'monday',
+            'tuesday',
+            'wednesday',
+            'thursday',
+            'friday',
+            'saturday',
+          ][dayIndex] as keyof Omit<TimeSlotRow, 'time'>;
 
-          // Only add if the slot falls within our 9-17 range
-          if (hour >= 9 && hour <= 17) {
-            const daySlots = weekStructure.get(dayKey);
-            const hourSlots = daySlots?.get(hour) || [];
-            daySlots?.set(hour, [...hourSlots, slot]);
+          const rowIndex = hour - 9; // Adjust for our 9-17 range
+          if (rowIndex >= 0 && rowIndex < rows.length) {
+            rows[rowIndex][dayKey].push(slot);
           }
         }
       });
     }
 
-    console.log('Populated Week Structure:', weekStructure);
-    return weekStructure;
-  }, [availabilityData, selectedServiceId, weekDays]);
+    return rows;
+  }, [timeSlots, availabilityData, selectedServiceId]);
 
   useEffect(() => {
     if (!container.current || !containerNav.current || !containerOffset.current) return;
@@ -121,120 +138,115 @@ export function CalendarViewSlotsGrid({
   }, []);
 
   console.log('Selected Service ID:', selectedServiceId);
-  console.log('organizedSlots:', organizedSlots);
+  console.log('organizedSlots:', tableData);
 
-  // Update color logic to use outline styles
   const getSlotColor = useCallback((slot: AvailabilitySlot) => {
     const now = new Date();
     const startTime = new Date(slot.startTime);
 
     if (startTime < now) {
-      return 'border-gray-200 text-gray-400 hover:border-gray-300 cursor-not-allowed';
+      return 'bg-gray-200 text-gray-600 hover:bg-gray-300 cursor-not-allowed';
     }
     if (slot.booking) {
-      return 'border-blue-500 text-blue-500 hover:border-blue-600';
+      return 'bg-blue-500 text-white hover:bg-blue-600';
     }
-    return 'border-green-500 text-green-500 hover:border-green-600';
+    return 'bg-green-500 text-white hover:bg-green-600';
   }, []);
 
   return (
-    <div className="flex h-full flex-col">
-      <h2 className="flex items-center justify-center border-b px-4 py-2 text-lg font-semibold text-gray-900">
-        {formatDateRange(weekDays)}
-      </h2>
-
-      <div ref={container} className="isolate flex flex-auto flex-col overflow-auto bg-white">
-        <div className="flex max-w-full flex-none flex-col">
-          <div
-            ref={containerNav}
-            className="sticky top-0 z-30 flex-none bg-white shadow ring-1 ring-black/5"
-          >
-            <div className="flex">
-              <div className="sticky left-0 z-10 w-14 flex-none bg-white" />
-              <div className="grid flex-auto grid-cols-7 divide-x divide-gray-100">
-                {weekDays.map((day, index) => (
-                  <div key={index} className="flex items-center justify-center py-3">
-                    <button
-                      onClick={() => handleDayClick(day.date)}
-                      className="cursor-pointer rounded-lg px-2 py-1 hover:bg-gray-100"
-                    >
-                      <span>
-                        <span className="hidden sm:inline">
-                          {day.date.toLocaleDateString('en-US', {
-                            weekday: 'short',
-                          })}{' '}
-                        </span>
-                        <span className="items-center justify-center font-semibold text-gray-900">
-                          {day.date.getDate()}
-                        </span>
-                      </span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-auto">
-            {/* Time column */}
-            <div className="sticky left-0 z-20 w-14 flex-none bg-white">
-              <div className="grid grid-cols-1">
-                {timeSlots.map((timeSlot) => (
-                  <div
-                    key={timeSlot.getTime()}
-                    className="flex h-20 items-center justify-end border-b border-gray-100 pr-2 text-xs text-gray-500"
-                  >
-                    {timeSlot.toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: false,
-                    })}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Days grid */}
-            <div className="grid flex-auto grid-cols-7 divide-x divide-gray-100">
-              {weekDays.map((day) => {
-                const dayKey = day.date.toISOString().split('T')[0];
-                const daySlots = organizedSlots.get(dayKey);
-
-                return (
-                  <div key={dayKey} className="relative">
-                    <div className="grid grid-cols-1">
-                      {timeSlots.map((timeSlot) => {
-                        const hourSlots = daySlots?.get(timeSlot.getHours()) || [];
-
-                        return (
-                          <div
-                            key={timeSlot.getTime()}
-                            className="h-20 border-b border-gray-100 p-1"
-                          >
-                            {hourSlots.map((slot) => (
-                              <button
-                                key={slot.id}
-                                onClick={() => onView(slot)}
-                                className={`w-full rounded-md border px-2 py-1 text-xs ${getSlotColor(slot)}`}
-                              >
-                                {new Date(slot.startTime).toLocaleTimeString('en-US', {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  hour12: false,
-                                })}
-                              </button>
-                            ))}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="w-full">
+      <Table className="table-fixed border-x border-gray-100">
+        <TableHeader>
+          <TableRow className="divide-x divide-gray-100">
+            <TableHead className="w-24 text-center">Time</TableHead>
+            {weekDays.map((day, index) => (
+              <TableHead key={index} className="w-[14.28%] text-center">
+                {day.date.toLocaleDateString('en-US', { weekday: 'short' })} {day.date.getDate()}
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {!selectedServiceId ? (
+            <TableRow>
+              <TableCell colSpan={8} className="py-8 text-center text-gray-500">
+                <div className="mb-2 text-xl font-semibold">Please select a service</div>
+                In order to see the available time slots you need to select a service.
+              </TableCell>
+            </TableRow>
+          ) : !availabilityData?.length ? (
+            <TableRow>
+              <TableCell colSpan={8} className="py-8 text-center text-gray-500">
+                <div className="mb-2 text-xl font-semibold">No availability found</div>
+                There is no availability data for this week. Please select a different week.
+              </TableCell>
+            </TableRow>
+          ) : (
+            tableData.map((row, index) => (
+              <TableRow key={index} className="divide-x divide-gray-100">
+                <TableCell className="w-24 text-center font-medium">
+                  {row.time.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                  })}
+                </TableCell>
+                {weekDays.map((day, dayIndex) => {
+                  const dayKey = day.date
+                    .toLocaleDateString('en-US', { weekday: 'long' })
+                    .toLowerCase() as keyof Omit<TimeSlotRow, 'time'>;
+                  return (
+                    <TableCell key={dayIndex} className="w-[14.28%] p-2">
+                      <div className="flex flex-col items-stretch gap-2">
+                        {row[dayKey].map((slot) => (
+                          <TooltipProvider key={slot.id}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  onClick={() => onView(slot)}
+                                  variant="default"
+                                  className={`w-full ${getSlotColor(slot)}`}
+                                >
+                                  {new Date(slot.startTime).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: false,
+                                  })}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>
+                                  {slot.booking
+                                    ? `Booked: ${slot.booking.client.name}`
+                                    : 'Available'}
+                                </p>
+                                <p>
+                                  {new Date(slot.startTime).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: false,
+                                  })}{' '}
+                                  -{' '}
+                                  {new Date(slot.endTime).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: false,
+                                  })}
+                                </p>
+                                <p>{slot.service.name}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ))}
+                      </div>
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 }
