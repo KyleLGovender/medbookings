@@ -12,11 +12,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { generateDaysForWeekCalendar } from '@/features/calendar/lib/helper';
-import { AvailabilitySlot, AvailabilityView, TimeRange } from '@/features/calendar/lib/types';
+import {
+  AvailabilitySlot,
+  AvailabilityView,
+  TimeRange,
+  ViewType,
+} from '@/features/calendar/lib/types';
 
 interface CalendarViewSlotsGridProps {
   rangeStartDate: Date;
-  onDateChange: (date: Date) => void;
+  onDateChange: (date: Date, fromView: ViewType) => void;
   onViewChange?: (view: 'day') => void;
   availabilityData: AvailabilityView[];
   serviceProviderId: string;

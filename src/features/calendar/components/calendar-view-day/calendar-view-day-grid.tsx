@@ -4,12 +4,12 @@ import { useEffect, useRef } from 'react';
 
 import classNames from '@/lib/classNames';
 
-import { AvailabilityView, TimeRange } from '../../lib/types';
+import { AvailabilityView, TimeRange, ViewType } from '../../lib/types';
 import { CalendarViewDayTimeGrid } from './calendar-view-day-time-grid';
 
 interface CalendarViewDayGridProps {
   rangeStartDate: string;
-  onDateChange: (dateStr: string) => void;
+  onDateChange: (dateStr: string, fromView: ViewType) => void;
   onViewChange?: (view: 'day') => void;
   availabilityData: AvailabilityView[];
   serviceProviderId: string;
@@ -70,7 +70,7 @@ export function CalendarViewDayGrid({
                 <button
                   key={date.toISOString()}
                   type="button"
-                  onClick={() => onDateChange(date.toISOString())}
+                  onClick={() => onDateChange(date.toISOString(), 'day')}
                   className="flex flex-col items-center pb-1.5 pt-3"
                 >
                   <span>{date.toLocaleDateString('en-US', { weekday: 'short' })[0]}</span>

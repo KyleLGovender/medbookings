@@ -236,8 +236,8 @@ export function getTimeRangeOfMultipleAvailabilityView(
   const endHours = availabilities.map((a) => new Date(a.endTime).getHours());
 
   const timeRange = {
-    earliestTime: Math.max(0, Math.min(...startHours) - 1),
-    latestTime: Math.min(24, Math.max(...endHours) + 1),
+    earliestTime: Math.max(0, Math.min(...startHours)),
+    latestTime: Math.min(24, Math.max(...endHours)),
   };
 
   return timeRange;

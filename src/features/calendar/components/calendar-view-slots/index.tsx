@@ -1,10 +1,10 @@
-import { AvailabilityView, TimeRange } from '../../lib/types';
+import { AvailabilityView, TimeRange, ViewType } from '../../lib/types';
 import { CalendarViewSlotsGrid } from './calendar-view-slots-grid';
 
 interface CalendarViewSlotsProps {
   rangeStartDate: Date;
   availabilityData: AvailabilityView[];
-  onDateChange: (date: Date) => void;
+  onDateChange: (date: Date, fromView: ViewType) => void;
   onViewChange?: (view: 'slots') => void;
   serviceProviderId: string;
   onRefresh: () => Promise<void>;

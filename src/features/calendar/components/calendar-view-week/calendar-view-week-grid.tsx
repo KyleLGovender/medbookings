@@ -2,18 +2,24 @@
 
 import { useEffect, useRef } from 'react';
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import classNames from '@/lib/classNames';
 import { convertUTCToLocal } from '@/lib/timezone-helper';
 
 import { getEventGridPosition, isSameDay } from '../../lib/helper';
-import { AvailabilityView, TimeRange } from '../../lib/types';
+import { AvailabilityView, TimeRange, ViewType } from '../../lib/types';
 import { CalendarItemAvailability } from '../calendar-utils';
 import { CalendarViewTimeColumn } from '../calendar-utils/calendar-view-time-column';
 
 interface CalendarViewWeekGridProps {
   rangeStartDate: Date;
   availabilityData: AvailabilityView[];
-  onDateChange: (date: Date) => void;
+  onDateChange: (date: Date, fromView: ViewType) => void;
   onViewChange?: (view: 'day') => void;
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
@@ -63,33 +69,64 @@ export function CalendarViewWeekGrid({
     <div className="flex h-full flex-col">
       <div className="isolate flex flex-auto overflow-hidden bg-white">
         <div ref={container} className="flex flex-auto flex-col overflow-auto">
-          {/* Mobile week nav */}
+          {/* Responsive week nav */}
           <div
             ref={containerNav}
-            className="sticky top-0 z-10 grid flex-none grid-cols-7 bg-white text-xs text-gray-500 shadow ring-1 ring-black/5 md:hidden"
+            className="sticky top-0 z-30 flex bg-white text-gray-500 shadow ring-1 ring-black/5"
           >
-            {weekDates.map((date) => (
-              <button
-                key={date.toISOString()}
-                type="button"
-                onClick={() => onDateChange(date)}
-                className={classNames(
-                  'flex flex-col items-center pb-1.5 pt-3',
-                  isSameDay(date, rangeStartDate) && 'font-semibold text-gray-900'
-                )}
-              >
-                <span>{date.toLocaleDateString('en-US', { weekday: 'short' })[0]}</span>
-                <span
-                  className={classNames(
-                    'mt-3 flex size-8 items-center justify-center rounded-full',
-                    isSameDay(date, new Date()) && 'bg-gray-900 font-semibold text-white',
-                    !isSameDay(date, new Date()) && 'text-gray-900'
-                  )}
-                >
-                  {date.getDate()}
-                </span>
-              </button>
-            ))}
+            {/* Time column spacer */}
+            <div className="w-14 flex-none" />
+
+            {/* Week days */}
+            <div className="grid flex-auto grid-cols-7">
+              {weekDates.map((date) => (
+                <DropdownMenu key={date.toISOString()}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className={classNames(
+                        'flex w-full flex-col items-center py-3',
+                        isSameDay(date, rangeStartDate) && 'font-semibold text-gray-900'
+                      )}
+                    >
+                      <span className="text-xs md:text-sm">
+                        <span className="md:hidden">
+                          {date.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 1)}
+                        </span>
+                        <span className="hidden md:inline">
+                          {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                        </span>
+                      </span>
+                      <span
+                        className={classNames(
+                          'mt-1 flex size-8 items-center justify-center rounded-full md:mt-3',
+                          isSameDay(date, new Date()) && 'bg-gray-900 font-semibold text-white',
+                          !isSameDay(date, new Date()) && 'text-gray-900'
+                        )}
+                      >
+                        {date.getDate()}
+                      </span>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        onDateChange(date, 'day');
+                        onViewChange('day');
+                      }}
+                    >
+                      View Day
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        onDateChange(date, 'slots');
+                      }}
+                    >
+                      View Slots
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ))}
+            </div>
           </div>
 
           <div className="flex w-full">

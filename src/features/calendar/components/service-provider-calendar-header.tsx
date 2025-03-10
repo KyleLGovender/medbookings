@@ -18,7 +18,7 @@ interface ServiceProviderCalendarHeaderProps {
   rangeStartDate: Date;
   dateRange?: DateRange;
   serviceProviderId: string;
-  onDateSelect: (date: Date | undefined) => void;
+  onDateSelect: (date: Date | undefined, fromView: ViewType) => void;
   onDateRangeSelect: (range: DateRange | undefined) => void;
   onPrevious: () => void;
   onNext: () => void;
@@ -64,8 +64,8 @@ export function ServiceProviderCalendarHeader({
     onToday();
   };
 
-  const handleDateSelect = (date: Date | undefined) => {
-    onDateSelect(date);
+  const handleDateSelect = (date: Date | undefined, fromView: ViewType) => {
+    onDateSelect(date, view);
   };
 
   const handleDateRangeChange = (newRange: DateRange | undefined) => {
@@ -170,7 +170,7 @@ export function ServiceProviderCalendarHeader({
         {view === 'schedule' ? (
           <DateRangeSelector dateRange={dateRange} onSelect={handleDateRangeChange} />
         ) : (
-          <DatePicker date={rangeStartDate} onChange={handleDateSelect} />
+          <DatePicker date={rangeStartDate} onChange={(date) => handleDateSelect(date, view)} />
         )}
         <CalendarNavigation
           viewType={view}

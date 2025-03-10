@@ -136,12 +136,15 @@ export function ServiceProviderCalendarWrapper({
     }
   };
 
-  const handleDateSelect = (newDate: Date | undefined) => {
+  const handleDateSelect = (newDate: Date | undefined, fromView: ViewType) => {
     if (!newDate) return;
 
-    // Prioritize slots view over day view
-    const newView = view === 'day' ? 'day' : 'slots';
+    // Set view based on context - if coming from week view, go to day view
+    const newView = fromView === 'week' ? 'day' : view === 'day' ? 'day' : 'slots';
     setView(newView);
+
+    console.log('fromView', fromView);
+    console.log('newView', newView);
 
     // Update the range for the selected view
     const range = getDateRange(newDate, newView);
