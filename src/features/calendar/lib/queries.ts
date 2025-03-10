@@ -22,7 +22,9 @@ export async function getServiceProviderAvailabilityInRange(
         serviceProviderId: true,
         serviceProvider: {
           select: {
+            id: true,
             name: true,
+            image: true,
           },
         },
         startTime: true,
@@ -93,8 +95,9 @@ export async function getServiceProviderAvailabilityInRange(
       startTime: availability.startTime,
       endTime: availability.endTime,
       serviceProvider: {
-        id: availability.serviceProviderId,
+        id: availability.serviceProvider.id,
         name: availability.serviceProvider.name,
+        image: availability.serviceProvider.image,
       },
       availableServices: availability.availableServices.map((service) => ({
         serviceId: service.serviceId,

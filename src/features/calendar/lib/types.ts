@@ -60,6 +60,7 @@ export type AvailabilityView = Pick<
   serviceProvider: {
     id: string;
     name: string;
+    image?: string | null;
   };
   slots: AvailabilitySlot[];
   availableServices: Pick<

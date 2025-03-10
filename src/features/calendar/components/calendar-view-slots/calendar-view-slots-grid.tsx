@@ -1,8 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -18,6 +24,8 @@ import {
   TimeRange,
   ViewType,
 } from '@/features/calendar/lib/types';
+
+import { BookingFormDialog } from '../booking-form/booking-form-dialog';
 
 interface CalendarViewSlotsGridProps {
   rangeStartDate: Date;
@@ -55,6 +63,9 @@ export function CalendarViewSlotsGrid({
   selectedServiceId,
   timeRange,
 }: CalendarViewSlotsGridProps) {
+  const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | null>(null);
+  const [selectedAvailability, setSelectedAvailability] = useState<AvailabilityView | null>(null);
+  const [isBookingFormOpen, setIsBookingFormOpen] = useState(false);
   const container = useRef<HTMLDivElement>(null);
   const containerNav = useRef<HTMLDivElement>(null);
   const containerOffset = useRef<HTMLDivElement>(null);
@@ -152,6 +163,19 @@ export function CalendarViewSlotsGrid({
     return 'bg-green-500 text-white hover:bg-green-600';
   }, []);
 
+  const handleBookSlot = (slot: AvailabilitySlot) => {
+    const availability = availabilityData.find((a) => a.slots.some((s) => s.id === slot.id));
+    setSelectedSlot(slot);
+    setSelectedAvailability(availability || null);
+    setIsBookingFormOpen(true);
+  };
+
+  const handleCloseBookingForm = () => {
+    setIsBookingFormOpen(false);
+    setSelectedSlot(null);
+    setSelectedAvailability(null);
+  };
+
   return (
     <div className="w-full">
       <Table className="table-fixed border-x border-gray-100">
@@ -198,18 +222,28 @@ export function CalendarViewSlotsGrid({
                     <TableCell key={dayIndex} className="w-[14.28%] p-2">
                       <div className="flex flex-col items-stretch gap-2">
                         {row[dayKey].map((slot) => (
-                          <Button
-                            key={slot.id}
-                            onClick={() => onView(slot)}
-                            variant="default"
-                            className={`w-full text-xs sm:text-sm ${getSlotColor(slot)}`}
-                          >
-                            {new Date(slot.startTime).toLocaleTimeString('en-US', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              hour12: false,
-                            })}
-                          </Button>
+                          <DropdownMenu key={slot.id}>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="default"
+                                className={`w-full text-xs sm:text-sm ${getSlotColor(slot)}`}
+                              >
+                                {new Date(slot.startTime).toLocaleTimeString('en-US', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: false,
+                                })}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem onSelect={() => handleBookSlot(slot)}>
+                                Book
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => onView(slot)}>
+                                View
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         ))}
                       </div>
                     </TableCell>
@@ -220,6 +254,16 @@ export function CalendarViewSlotsGrid({
           )}
         </TableBody>
       </Table>
+
+      {selectedSlot && selectedAvailability && (
+        <BookingFormDialog
+          slot={selectedSlot}
+          serviceProvider={selectedAvailability.serviceProvider}
+          isOpen={isBookingFormOpen}
+          onClose={handleCloseBookingForm}
+          onRefresh={onRefresh}
+        />
+      )}
     </div>
   );
 }
