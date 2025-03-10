@@ -71,16 +71,16 @@ export function CalendarViewScheduleGrid({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-center text-lg font-semibold text-gray-900">
+              <TableHead className="text-center text-xs font-semibold text-gray-900 sm:text-lg">
                 Date
               </TableHead>
-              <TableHead className="text-center text-lg font-semibold text-gray-900">
+              <TableHead className="text-center text-xs font-semibold text-gray-900 sm:text-lg">
                 Period
               </TableHead>
-              <TableHead className="text-center text-lg font-semibold text-gray-900">
+              <TableHead className="text-center text-xs font-semibold text-gray-900 sm:text-lg">
                 % Booked
               </TableHead>
-              <TableHead className="text-center text-lg font-semibold text-gray-900">
+              <TableHead className="text-center text-xs font-semibold text-gray-900 sm:text-lg">
                 Actions
               </TableHead>
             </TableRow>
@@ -90,14 +90,14 @@ export function CalendarViewScheduleGrid({
               .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
               .map((availability) => (
                 <TableRow key={availability.id}>
-                  <TableCell className="text-center">
+                  <TableCell className="text-center text-xs sm:text-base">
                     {format(new Date(availability.startTime), 'EEE, MMM dd')}
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="text-center text-xs sm:text-base">
                     {format(new Date(availability.startTime), 'HH:mm')} -{' '}
                     {format(new Date(availability.endTime), 'HH:mm')}
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="text-center text-xs sm:text-base">
                     {Math.round(
                       (availability.slots.filter((slot) => slot.status === 'BOOKED').length /
                         availability.slots.length) *
@@ -106,16 +106,27 @@ export function CalendarViewScheduleGrid({
                     %
                   </TableCell>
                   <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => onView(availability)}>
+                    <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm"
+                        onClick={() => onView(availability)}
+                      >
                         View
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => onEdit(availability)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm"
+                        onClick={() => onEdit(availability)}
+                      >
                         Edit
                       </Button>
                       <Button
                         variant="destructive"
                         size="sm"
+                        className="text-xs sm:text-sm"
                         onClick={() => handleDelete(availability.id, 'availability')}
                       >
                         Delete

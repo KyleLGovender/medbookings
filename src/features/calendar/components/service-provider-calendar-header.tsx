@@ -98,23 +98,6 @@ export function ServiceProviderCalendarHeader({
   return (
     <header className="flex flex-col gap-4 border-b border-gray-200 px-6 py-4 md:flex-row md:items-center md:justify-between">
       <div className="mx-auto flex flex-col gap-2 md:mx-0 md:flex-row md:items-center">
-        {view === 'schedule' ? (
-          <DateRangeSelector dateRange={dateRange} onSelect={handleDateRangeChange} />
-        ) : (
-          <>
-            <DatePicker date={rangeStartDate} onChange={handleDateSelect} />
-            <CalendarNavigation
-              viewType={view}
-              onPrevious={handlePrevious}
-              onNext={handleNext}
-              onToday={handleToday}
-              onThisWeek={onThisWeek}
-            />
-          </>
-        )}
-      </div>
-
-      <div className="mx-auto flex flex-col gap-2 md:flex-row md:items-center md:justify-center">
         <div className="mx-auto gap-2 md:flex md:items-center">
           <Menu as="div" className="relative">
             <MenuButton
@@ -147,9 +130,9 @@ export function ServiceProviderCalendarHeader({
         </div>
       </div>
 
-      <div className="mx-auto flex flex-col gap-2 md:mx-0 md:flex-row md:items-center">
-        {/* Add service filter for slots view */}
-        {view === 'slots' && (
+      {/* Add service filter for slots view */}
+      {view === 'slots' && (
+        <div className="mx-auto flex flex-col gap-2 md:mx-0 md:flex-row md:items-center">
           <Menu as="div" className="relative">
             <MenuButton
               type="button"
@@ -180,7 +163,22 @@ export function ServiceProviderCalendarHeader({
               </div>
             </MenuItems>
           </Menu>
+        </div>
+      )}
+
+      <div className="mx-auto flex flex-col gap-2 md:flex-row md:items-center md:justify-center">
+        {view === 'schedule' ? (
+          <DateRangeSelector dateRange={dateRange} onSelect={handleDateRangeChange} />
+        ) : (
+          <DatePicker date={rangeStartDate} onChange={handleDateSelect} />
         )}
+        <CalendarNavigation
+          viewType={view}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
+          onToday={handleToday}
+          onThisWeek={onThisWeek}
+        />
       </div>
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center">

@@ -15,7 +15,10 @@ import { formatTime } from '@/lib/helper';
 
 interface CalendarItemAvailabilityProps {
   availability: AvailabilityView;
-  gridPosition: string;
+  gridPosition: {
+    gridRowStart: number;
+    gridRowSpan: number;
+  };
   gridColumn: number;
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
@@ -60,8 +63,8 @@ export function CalendarItemAvailability({
   return (
     <li
       style={{
-        gridRow: gridPosition,
-        gridColumn: `${gridColumn} / span 1`,
+        gridRow: `${gridPosition.gridRowStart} / span ${gridPosition.gridRowSpan}`,
+        gridColumn: `${gridColumn}`,
       }}
       className="relative mt-px flex"
     >

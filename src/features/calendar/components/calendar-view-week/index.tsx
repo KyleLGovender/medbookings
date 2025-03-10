@@ -1,6 +1,6 @@
 'use client';
 
-import { AvailabilityView } from '../../lib/types';
+import { AvailabilityView, TimeRange } from '../../lib/types';
 import { CalendarViewWeekGrid } from './calendar-view-week-grid';
 
 interface CalendarViewWeekProps {
@@ -12,6 +12,7 @@ interface CalendarViewWeekProps {
   onRefresh: () => void;
   onView: (availability: AvailabilityView) => void;
   onEdit: (availability: AvailabilityView) => void;
+  timeRange: TimeRange;
 }
 
 export function CalendarViewWeek({
@@ -23,6 +24,7 @@ export function CalendarViewWeek({
   onRefresh,
   onView,
   onEdit,
+  timeRange,
 }: CalendarViewWeekProps) {
   const handleRefresh = async () => {
     await onRefresh();
@@ -38,6 +40,7 @@ export function CalendarViewWeek({
       onRefresh={handleRefresh}
       onView={onView}
       onEdit={onEdit}
+      timeRange={timeRange}
     />
   );
 }

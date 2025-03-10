@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useState, useTransition } from 'react';
+import { Suspense, useCallback, useEffect, useState, useTransition } from 'react';
 
 import { startOfWeek } from 'date-fns';
 import { DateRange } from 'react-day-picker';
@@ -11,7 +11,12 @@ import { CalendarViewDay } from '@/features/calendar/components/calendar-view-da
 import { CalendarViewSchedule } from '@/features/calendar/components/calendar-view-schedule';
 import { CalendarViewWeek } from '@/features/calendar/components/calendar-view-week';
 import { PublicCalendarHeader } from '@/features/calendar/components/public-calendar-header';
-import { getDateRange, getNextDate, getPreviousDate } from '@/features/calendar/lib/helper';
+import {
+  getDateRange,
+  getNextDate,
+  getPreviousDate,
+  getTimeRangeOfMultipleAvailabilityView,
+} from '@/features/calendar/lib/helper';
 import { getServiceProviderAvailabilityInRange } from '@/features/calendar/lib/queries';
 import { QueriedAvailability } from '@/features/calendar/lib/types';
 
@@ -36,8 +41,16 @@ export function PublicCalendarWrapper({
   const [availabilityData, setAvailabilityData] =
     useState<QueriedAvailability[]>(initialAvailability);
   const [view, setView] = useState<'day' | 'week' | 'schedule'>(initialView);
+  const [timeRange, setTimeRange] = useState(() =>
+    getTimeRangeOfMultipleAvailabilityView(initialAvailability)
+  );
 
   const rangeStartDate = dateRange.from!;
+
+  // Update time range whenever availability data changes
+  useEffect(() => {
+    setTimeRange(getTimeRangeOfMultipleAvailabilityView(availabilityData));
+  }, [availabilityData]);
 
   const updateUrlParams = (updates: { range?: DateRange; view?: string }) => {
     const params = new URLSearchParams(searchParams);
@@ -162,6 +175,8 @@ export function PublicCalendarWrapper({
       rangeStartDate,
       availabilityData,
       onDateChange: handleDateSelect,
+      startTime: timeRange.startTime,
+      endTime: timeRange.endTime,
     };
 
     switch (view) {

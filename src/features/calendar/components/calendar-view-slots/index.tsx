@@ -1,4 +1,4 @@
-import { AvailabilityView } from '../../lib/types';
+import { AvailabilityView, TimeRange } from '../../lib/types';
 import { CalendarViewSlotsGrid } from './calendar-view-slots-grid';
 
 interface CalendarViewSlotsProps {
@@ -11,6 +11,7 @@ interface CalendarViewSlotsProps {
   onView: (availability: AvailabilityView) => void;
   onEdit: (availability: AvailabilityView) => void;
   selectedServiceId?: string;
+  timeRange: TimeRange;
 }
 
 export function CalendarViewSlots({
@@ -23,6 +24,7 @@ export function CalendarViewSlots({
   onView,
   onEdit,
   selectedServiceId,
+  timeRange,
 }: CalendarViewSlotsProps) {
   const handleRefresh = async () => {
     await onRefresh();
@@ -37,6 +39,7 @@ export function CalendarViewSlots({
       onView={onView}
       onEdit={onEdit}
       selectedServiceId={selectedServiceId}
+      timeRange={timeRange}
     />
   );
 }

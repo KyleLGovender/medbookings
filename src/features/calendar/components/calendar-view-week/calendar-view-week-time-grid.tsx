@@ -6,7 +6,7 @@ import { CalendarItemAvailability } from '@/features/calendar/components/calenda
 import { convertUTCToLocal } from '@/lib/timezone-helper';
 
 import { generateDaysForWeekCalendar, getEventGridPosition } from '../../lib/helper';
-import { type AvailabilityView } from '../../lib/types';
+import { type AvailabilityView, TimeRange } from '../../lib/types';
 import { CalendarViewTimeColumn } from '../calendar-utils/calendar-view-time-column';
 
 interface CalendarViewWeekTimeGridProps {
@@ -19,6 +19,7 @@ interface CalendarViewWeekTimeGridProps {
   onRefresh: () => Promise<void>;
   onView: (availability: AvailabilityView) => void;
   onEdit: (availability: AvailabilityView) => void;
+  timeRange: TimeRange;
 }
 
 export function CalendarViewWeekTimeGrid({
@@ -31,6 +32,7 @@ export function CalendarViewWeekTimeGrid({
   onRefresh,
   onView,
   onEdit,
+  timeRange,
 }: CalendarViewWeekTimeGridProps) {
   // Get the week's dates from the parent component
   const weekDays = generateDaysForWeekCalendar(new Date(rangeStartDate));
@@ -52,14 +54,14 @@ export function CalendarViewWeekTimeGrid({
       <div className="flex flex-auto">
         {/* Time column */}
         <div className="sticky left-0 z-30 w-14 flex-none bg-white ring-1 ring-gray-100">
-          <CalendarViewTimeColumn offsetRef={offsetRef} />
+          <CalendarViewTimeColumn offsetRef={offsetRef} timeRange={timeRange} />
         </div>
 
         {/* Rest of the grid */}
         <div className="grid flex-auto grid-cols-1 grid-rows-1">
           {/* Time column with horizontal lines */}
           <div className="-z-10 col-start-1 col-end-2 row-start-1">
-            <CalendarViewTimeColumn offsetRef={offsetRef} />
+            <CalendarViewTimeColumn offsetRef={offsetRef} timeRange={timeRange} />
           </div>
 
           {/* Vertical lines for days */}
@@ -81,7 +83,7 @@ export function CalendarViewWeekTimeGrid({
               const localStartTime = convertUTCToLocal(availability.startTime);
               const localEndTime = convertUTCToLocal(availability.endTime);
 
-              const gridPosition = getEventGridPosition(localStartTime, localEndTime);
+              const gridPosition = getEventGridPosition(localStartTime, localEndTime, timeRange);
               const dayColumn = localStartTime.getDay() === 0 ? 7 : localStartTime.getDay();
 
               return (

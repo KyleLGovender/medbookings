@@ -1,4 +1,4 @@
-import { AvailabilityView } from '../../lib/types';
+import { AvailabilityView, TimeRange } from '../../lib/types';
 import { CalendarViewDayGrid } from './calendar-view-day-grid';
 
 interface CalendarViewDayProps {
@@ -10,6 +10,7 @@ interface CalendarViewDayProps {
   onRefresh: () => void;
   onView: (availability: AvailabilityView) => void;
   onEdit: (availability: AvailabilityView) => void;
+  timeRange: TimeRange;
 }
 
 export function CalendarViewDay({
@@ -21,6 +22,7 @@ export function CalendarViewDay({
   onRefresh,
   onView,
   onEdit,
+  timeRange,
 }: CalendarViewDayProps) {
   const handleRefresh = async () => {
     await onRefresh();
@@ -36,6 +38,7 @@ export function CalendarViewDay({
       onRefresh={handleRefresh}
       onView={onView}
       onEdit={onEdit}
+      timeRange={timeRange}
     />
   );
 }

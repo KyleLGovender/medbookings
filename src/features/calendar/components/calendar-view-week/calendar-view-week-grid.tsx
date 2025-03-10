@@ -1,139 +1,160 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
-import { CalendarViewWeekTimeGrid } from '@/features/calendar/components/calendar-view-week/calendar-view-week-time-grid';
-import { generateDaysForWeekCalendar } from '@/features/calendar/lib/helper';
-import { AvailabilityView } from '@/features/calendar/lib/types';
+import classNames from '@/lib/classNames';
+import { convertUTCToLocal } from '@/lib/timezone-helper';
+
+import { getEventGridPosition, isSameDay } from '../../lib/helper';
+import { AvailabilityView, TimeRange } from '../../lib/types';
+import { CalendarItemAvailability } from '../calendar-utils';
+import { CalendarViewTimeColumn } from '../calendar-utils/calendar-view-time-column';
 
 interface CalendarViewWeekGridProps {
   rangeStartDate: Date;
+  availabilityData: AvailabilityView[];
   onDateChange: (date: Date) => void;
   onViewChange?: (view: 'day') => void;
-  availabilityData: AvailabilityView[];
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
-  onView: (availability: AvailabilityView) => void; // Add these props
+  onView: (availability: AvailabilityView) => void;
   onEdit: (availability: AvailabilityView) => void;
-}
-
-function formatDateRange(weekDays: { date: Date }[]): string {
-  if (!weekDays.length) return '';
-
-  const startDate = weekDays[0].date;
-  const endDate = weekDays[weekDays.length - 1].date;
-
-  return `${startDate.toLocaleDateString('en-US', { weekday: 'short' })} ${startDate.getDate()} ${startDate.toLocaleDateString('en-US', { month: 'short' })} - ${endDate.toLocaleDateString('en-US', { weekday: 'short' })} ${endDate.getDate()} ${endDate.toLocaleDateString('en-US', { month: 'short' })}`;
+  timeRange: TimeRange;
 }
 
 export function CalendarViewWeekGrid({
   rangeStartDate,
+  availabilityData,
   onDateChange,
   onViewChange = () => {},
-  availabilityData = [],
   serviceProviderId,
   onRefresh,
   onView,
   onEdit,
+  timeRange,
 }: CalendarViewWeekGridProps) {
   const container = useRef<HTMLDivElement>(null);
   const containerNav = useRef<HTMLDivElement>(null);
   const containerOffset = useRef<HTMLDivElement>(null);
 
-  const weekDays = useMemo(() => {
-    return generateDaysForWeekCalendar(rangeStartDate);
-  }, [rangeStartDate]);
+  const weekDates = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(rangeStartDate);
+    date.setDate(rangeStartDate.getDate() + i);
+    return date;
+  });
 
-  const handleDayClick = useCallback(
-    (date: Date) => {
-      // Create a new date to avoid mutations and ensure it's in local time
-      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
-
-      // Format date for URL in YYYY-MM-DD format
-      const formattedDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
-
-      // Update URL parameters
-      const params = new URLSearchParams(window.location.search);
-      params.set('start', formattedDate);
-      params.set('view', 'day');
-      window.history.pushState({}, '', `?${params.toString()}`);
-
-      // Call parent handlers with the local date
-      onDateChange(localDate);
-      onViewChange('day');
-    },
-    [onDateChange, onViewChange]
-  );
-
+  // Keep scroll to current time effect
   useEffect(() => {
     if (!container.current || !containerNav.current || !containerOffset.current) return;
-
-    const updateScrollPosition = () => {
-      const currentMinute = new Date().getHours() * 60 + new Date().getMinutes();
-      container.current!.scrollTop =
-        ((container.current!.scrollHeight -
-          containerNav.current!.offsetHeight -
-          containerOffset.current!.offsetHeight) *
-          currentMinute) /
-        1440;
-    };
-
-    updateScrollPosition();
-
-    const intervalId = setInterval(updateScrollPosition, 60000);
-
-    return () => clearInterval(intervalId);
+    const currentMinute = new Date().getHours() * 60;
+    container.current.scrollTop =
+      ((container.current.scrollHeight -
+        containerNav.current.offsetHeight -
+        containerOffset.current.offsetHeight) *
+        currentMinute) /
+      1440;
   }, []);
+
+  const startHour = Math.floor(timeRange.earliestTime);
+  const endHour = Math.ceil(timeRange.latestTime);
+  const hoursToDisplay = endHour - startHour;
 
   return (
     <div className="flex h-full flex-col">
-      <h2 className="flex items-center justify-center border-b px-4 py-2 text-lg font-semibold text-gray-900">
-        {formatDateRange(weekDays)}
-      </h2>
-
-      <div ref={container} className="isolate flex flex-auto flex-col overflow-auto bg-white">
-        <div className="flex max-w-full flex-none flex-col">
+      <div className="isolate flex flex-auto overflow-hidden bg-white">
+        <div ref={container} className="flex flex-auto flex-col overflow-auto">
+          {/* Mobile week nav */}
           <div
             ref={containerNav}
-            className="sticky top-0 z-30 flex-none bg-white shadow ring-1 ring-black/5"
+            className="sticky top-0 z-10 grid flex-none grid-cols-7 bg-white text-xs text-gray-500 shadow ring-1 ring-black/5 md:hidden"
           >
-            <div className="flex">
-              <div className="sticky left-0 z-10 w-14 flex-none bg-white" />
-              <div className="grid flex-auto grid-cols-7 divide-x divide-gray-100">
-                {weekDays.map((day, index) => (
-                  <div key={index} className="flex items-center justify-center py-3">
-                    <button
-                      onClick={() => handleDayClick(day.date)}
-                      className="cursor-pointer rounded-lg px-2 py-1 hover:bg-gray-100"
-                    >
-                      <span>
-                        <span className="hidden sm:inline">
-                          {day.date.toLocaleDateString('en-US', {
-                            weekday: 'short',
-                          })}{' '}
-                        </span>
-                        <span className="items-center justify-center font-semibold text-gray-900">
-                          {day.date.getDate()}
-                        </span>
-                      </span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {weekDates.map((date) => (
+              <button
+                key={date.toISOString()}
+                type="button"
+                onClick={() => onDateChange(date)}
+                className={classNames(
+                  'flex flex-col items-center pb-1.5 pt-3',
+                  isSameDay(date, rangeStartDate) && 'font-semibold text-gray-900'
+                )}
+              >
+                <span>{date.toLocaleDateString('en-US', { weekday: 'short' })[0]}</span>
+                <span
+                  className={classNames(
+                    'mt-3 flex size-8 items-center justify-center rounded-full',
+                    isSameDay(date, new Date()) && 'bg-gray-900 font-semibold text-white',
+                    !isSameDay(date, new Date()) && 'text-gray-900'
+                  )}
+                >
+                  {date.getDate()}
+                </span>
+              </button>
+            ))}
           </div>
 
-          <CalendarViewWeekTimeGrid
-            containerRef={container}
-            navRef={containerNav}
-            offsetRef={containerOffset}
-            rangeStartDate={rangeStartDate.toISOString()}
-            availabilityData={availabilityData}
-            serviceProviderId={serviceProviderId}
-            onRefresh={onRefresh}
-            onView={onView}
-            onEdit={onEdit}
-          />
+          <div className="flex w-full">
+            <div className="sticky left-0 z-30 w-14 flex-none bg-white ring-1 ring-gray-100">
+              <CalendarViewTimeColumn offsetRef={containerOffset} timeRange={timeRange} />
+            </div>
+
+            <div className="grid flex-auto grid-cols-7">
+              {/* Horizontal lines for time slots */}
+              <div className="col-start-1 col-end-8 row-start-1 grid">
+                <div className="grid divide-y divide-gray-100">
+                  {Array.from({ length: hoursToDisplay * 2 }).map((_, i) => (
+                    <div key={i} className="h-[1.5rem]" />
+                  ))}
+                </div>
+              </div>
+
+              {/* Vertical lines for days */}
+              <div className="col-start-1 col-end-8 row-start-1 grid grid-cols-7 divide-x divide-gray-100">
+                {weekDates.map((date) => (
+                  <div key={date.toISOString()} className="row-end-1" />
+                ))}
+              </div>
+
+              {/* Events */}
+              <ol
+                className="col-start-1 col-end-8 row-start-1 grid grid-cols-7"
+                style={{
+                  gridTemplateRows: `repeat(${hoursToDisplay * 2}, minmax(1.5rem, 1fr))`,
+                }}
+              >
+                {availabilityData.map((availability) => {
+                  const localStartTime = convertUTCToLocal(availability.startTime);
+                  const localEndTime = convertUTCToLocal(availability.endTime);
+                  const startDate = new Date(localStartTime);
+                  const dayIndex = weekDates.findIndex((date) => isSameDay(date, startDate));
+
+                  if (dayIndex === -1) return null;
+
+                  const gridPosition = getEventGridPosition(
+                    localStartTime,
+                    localEndTime,
+                    timeRange
+                  );
+
+                  return (
+                    <CalendarItemAvailability
+                      key={availability.id}
+                      availability={{
+                        ...availability,
+                        startTime: localStartTime,
+                        endTime: localEndTime,
+                      }}
+                      gridPosition={gridPosition}
+                      gridColumn={dayIndex + 1}
+                      serviceProviderId={serviceProviderId}
+                      onRefresh={onRefresh}
+                      onView={onView}
+                      onEdit={onEdit}
+                    />
+                  );
+                })}
+              </ol>
+            </div>
+          </div>
         </div>
       </div>
     </div>

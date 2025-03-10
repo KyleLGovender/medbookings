@@ -3,7 +3,7 @@ import { DateRange } from 'react-day-picker';
 
 import { convertLocalToUTC, convertUTCToLocal, formatLocalDate } from '@/lib/timezone-helper';
 
-import { AvailabilityView, ViewType } from './types';
+import { AvailabilityView, TimeRange, ViewType } from './types';
 
 interface CalendarDay {
   date: string;
@@ -16,11 +16,6 @@ interface CalculateSpotsParams {
   startTime: Date;
   endTime: Date;
   duration: number;
-}
-
-interface TimeRange {
-  earliestTime: Date;
-  latestTime: Date;
 }
 
 /**
@@ -136,16 +131,13 @@ export function getDateRange(date: Date, view: ViewType): DateRange {
 
   switch (view) {
     case 'week':
+    case 'schedule':
     case 'slots':
       startDate = startOfWeek(localDate, { weekStartsOn: 1 });
       endDate = endOfWeek(localDate, { weekStartsOn: 1 });
       break;
     case 'day':
       endDate.setDate(startDate.getDate() + 1);
-      break;
-    case 'schedule':
-      startDate.setDate(1);
-      endDate.setMonth(startDate.getMonth() + 1, 0);
       break;
   }
 
@@ -155,13 +147,20 @@ export function getDateRange(date: Date, view: ViewType): DateRange {
   };
 }
 
-export function getEventGridPosition(start: Date, end: Date): string {
-  // Convert to minutes since start of day
-  const startMinutes = start.getHours() * 60 + start.getMinutes();
-  const endMinutes = end.getHours() * 60 + end.getMinutes();
-  const duration = endMinutes - startMinutes;
+export function getEventGridPosition(startTime: Date, endTime: Date, timeRange: TimeRange) {
+  const startHour = timeRange.earliestTime;
+  const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
+  const endMinutes = endTime.getHours() * 60 + endTime.getMinutes();
 
-  return `${startMinutes} / span ${duration}`;
+  const adjustedStart = (startMinutes - startHour * 60) / 30 + 1;
+  const duration = (endMinutes - startMinutes) / 30;
+
+  const position = {
+    gridRowStart: Math.round(adjustedStart),
+    gridRowSpan: Math.max(1, Math.round(duration)),
+  };
+
+  return position;
 }
 
 export function getNextDate(rangeStartDate: Date, view: ViewType): Date {
@@ -169,14 +168,12 @@ export function getNextDate(rangeStartDate: Date, view: ViewType): Date {
 
   switch (view) {
     case 'week':
+    case 'schedule':
     case 'slots':
       date.setDate(date.getDate() + 7);
       break;
     case 'day':
       date.setDate(date.getDate() + 1);
-      break;
-    case 'schedule':
-      date.setMonth(date.getMonth() + 1);
       break;
   }
 
@@ -188,14 +185,12 @@ export function getPreviousDate(rangeStartDate: Date, view: ViewType): Date {
 
   switch (view) {
     case 'week':
+    case 'schedule':
     case 'slots':
       date.setDate(date.getDate() - 7);
       break;
     case 'day':
       date.setDate(date.getDate() - 1);
-      break;
-    case 'schedule':
-      date.setMonth(date.getMonth() - 1);
       break;
   }
 
@@ -229,20 +224,21 @@ export function getDistinctServices(availabilityData: AvailabilityView[]) {
   return Array.from(servicesMap.values()).sort((a, b) => a.displayPriority - b.displayPriority);
 }
 
-export function getAvailabilityViewsTimeRange(availabilityViews: AvailabilityView[]): TimeRange {
-  if (!availabilityViews.length) {
-    return {
-      earliestTime: new Date(),
-      latestTime: new Date(),
-    };
+export function getTimeRangeOfMultipleAvailabilityView(
+  availabilities: AvailabilityView[]
+): TimeRange {
+  if (!availabilities.length) {
+    console.log('No availabilities, using default range 8:00-18:00');
+    return { earliestTime: 8, latestTime: 18 };
   }
 
-  const allTimes = availabilityViews.flatMap((av) =>
-    av.slots.map((slot) => new Date(slot.startTime).getTime())
-  );
+  const startHours = availabilities.map((a) => new Date(a.startTime).getHours());
+  const endHours = availabilities.map((a) => new Date(a.endTime).getHours());
 
-  return {
-    earliestTime: new Date(Math.min(...allTimes)),
-    latestTime: new Date(Math.max(...allTimes)),
+  const timeRange = {
+    earliestTime: Math.max(0, Math.min(...startHours) - 1),
+    latestTime: Math.min(24, Math.max(...endHours) + 1),
   };
+
+  return timeRange;
 }

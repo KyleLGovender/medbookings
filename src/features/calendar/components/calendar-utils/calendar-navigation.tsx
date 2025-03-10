@@ -20,9 +20,9 @@ export function CalendarNavigation({
   onThisWeek,
 }: CalendarNavigationProps) {
   const handleMiddleButtonClick = () => {
-    if (viewType === 'day' || viewType === 'slots') {
+    if (viewType === 'day') {
       onToday();
-    } else if (viewType === 'week' || viewType === 'schedule') {
+    } else if (viewType === 'week' || viewType === 'schedule' || viewType === 'slots') {
       onThisWeek();
     }
   };
@@ -30,13 +30,13 @@ export function CalendarNavigation({
   const getMiddleButtonText = () => {
     switch (viewType) {
       case 'day':
-      case 'slots':
         return 'Today';
       case 'week':
       case 'schedule':
+      case 'slots':
         return 'This Week';
       default:
-        return 'Today';
+        return 'This Week';
     }
   };
 

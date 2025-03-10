@@ -11,9 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { generateDaysForWeekCalendar } from '@/features/calendar/lib/helper';
-import { AvailabilitySlot, AvailabilityView } from '@/features/calendar/lib/types';
+import { AvailabilitySlot, AvailabilityView, TimeRange } from '@/features/calendar/lib/types';
 
 interface CalendarViewSlotsGridProps {
   rangeStartDate: Date;
@@ -25,6 +24,7 @@ interface CalendarViewSlotsGridProps {
   onView: (slot: AvailabilitySlot) => void;
   onEdit: (availability: AvailabilityView) => void;
   selectedServiceId?: string;
+  timeRange: TimeRange;
 }
 
 interface TimeSlotRow {
@@ -38,15 +38,6 @@ interface TimeSlotRow {
   sunday: AvailabilitySlot[];
 }
 
-function formatDateRange(weekDays: { date: Date }[]): string {
-  if (!weekDays.length) return '';
-
-  const startDate = weekDays[0].date;
-  const endDate = weekDays[weekDays.length - 1].date;
-
-  return `${startDate.toLocaleDateString('en-US', { weekday: 'short' })} ${startDate.getDate()} ${startDate.toLocaleDateString('en-US', { month: 'short' })} - ${endDate.toLocaleDateString('en-US', { weekday: 'short' })} ${endDate.getDate()} ${endDate.toLocaleDateString('en-US', { month: 'short' })}`;
-}
-
 export function CalendarViewSlotsGrid({
   rangeStartDate,
   onDateChange,
@@ -57,6 +48,7 @@ export function CalendarViewSlotsGrid({
   onView,
   onEdit,
   selectedServiceId,
+  timeRange,
 }: CalendarViewSlotsGridProps) {
   const container = useRef<HTMLDivElement>(null);
   const containerNav = useRef<HTMLDivElement>(null);
@@ -66,14 +58,14 @@ export function CalendarViewSlotsGrid({
     return generateDaysForWeekCalendar(rangeStartDate);
   }, [rangeStartDate]);
 
-  // Generate time slots (9:00 to 17:00)
+  // Generate time slots based on timeRange
   const timeSlots = useMemo(() => {
     const slots = [];
-    for (let hour = 9; hour <= 17; hour++) {
+    for (let hour = timeRange.earliestTime; hour <= timeRange.latestTime; hour++) {
       slots.push(new Date(new Date().setHours(hour, 0, 0, 0)));
     }
     return slots;
-  }, []);
+  }, [timeRange]);
 
   // Create table data structure
   const tableData = useMemo(() => {
@@ -106,7 +98,8 @@ export function CalendarViewSlotsGrid({
             'saturday',
           ][dayIndex] as keyof Omit<TimeSlotRow, 'time'>;
 
-          const rowIndex = hour - 9; // Adjust for our 9-17 range
+          // Adjust row index based on timeRange
+          const rowIndex = hour - timeRange.earliestTime;
           if (rowIndex >= 0 && rowIndex < rows.length) {
             rows[rowIndex][dayKey].push(slot);
           }
@@ -115,27 +108,28 @@ export function CalendarViewSlotsGrid({
     }
 
     return rows;
-  }, [timeSlots, availabilityData, selectedServiceId]);
+  }, [timeSlots, availabilityData, selectedServiceId, timeRange]);
 
   useEffect(() => {
     if (!container.current || !containerNav.current || !containerOffset.current) return;
 
     const updateScrollPosition = () => {
-      const currentMinute = new Date().getHours() * 60 + new Date().getMinutes();
+      const currentHour = new Date().getHours();
+      const totalHours = timeRange.latestTime - timeRange.earliestTime;
+      const hourProgress = (currentHour - timeRange.earliestTime) / totalHours;
+
       container.current!.scrollTop =
-        ((container.current!.scrollHeight -
+        (container.current!.scrollHeight -
           containerNav.current!.offsetHeight -
           containerOffset.current!.offsetHeight) *
-          currentMinute) /
-        1440;
+        hourProgress;
     };
 
     updateScrollPosition();
-
     const intervalId = setInterval(updateScrollPosition, 60000);
 
     return () => clearInterval(intervalId);
-  }, []);
+  }, [timeRange]);
 
   console.log('Selected Service ID:', selectedServiceId);
   console.log('organizedSlots:', tableData);
@@ -158,9 +152,9 @@ export function CalendarViewSlotsGrid({
       <Table className="table-fixed border-x border-gray-100">
         <TableHeader>
           <TableRow className="divide-x divide-gray-100">
-            <TableHead className="w-24 text-center">Time</TableHead>
+            <TableHead className="w-12 text-center text-xs sm:w-24 sm:text-sm">Time</TableHead>
             {weekDays.map((day, index) => (
-              <TableHead key={index} className="w-[14.28%] text-center">
+              <TableHead key={index} className="w-[14.28%] text-center text-xs sm:text-sm">
                 {day.date.toLocaleDateString('en-US', { weekday: 'short' })} {day.date.getDate()}
               </TableHead>
             ))}
@@ -184,7 +178,7 @@ export function CalendarViewSlotsGrid({
           ) : (
             tableData.map((row, index) => (
               <TableRow key={index} className="divide-x divide-gray-100">
-                <TableCell className="w-24 text-center font-medium">
+                <TableCell className="w-12 text-center text-xs font-medium sm:w-24 sm:text-sm">
                   {row.time.toLocaleTimeString('en-US', {
                     hour: '2-digit',
                     minute: '2-digit',
@@ -199,44 +193,18 @@ export function CalendarViewSlotsGrid({
                     <TableCell key={dayIndex} className="w-[14.28%] p-2">
                       <div className="flex flex-col items-stretch gap-2">
                         {row[dayKey].map((slot) => (
-                          <TooltipProvider key={slot.id}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  onClick={() => onView(slot)}
-                                  variant="default"
-                                  className={`w-full ${getSlotColor(slot)}`}
-                                >
-                                  {new Date(slot.startTime).toLocaleTimeString('en-US', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: false,
-                                  })}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>
-                                  {slot.booking
-                                    ? `Booked: ${slot.booking.client.name}`
-                                    : 'Available'}
-                                </p>
-                                <p>
-                                  {new Date(slot.startTime).toLocaleTimeString('en-US', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: false,
-                                  })}{' '}
-                                  -{' '}
-                                  {new Date(slot.endTime).toLocaleTimeString('en-US', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: false,
-                                  })}
-                                </p>
-                                <p>{slot.service.name}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          <Button
+                            key={slot.id}
+                            onClick={() => onView(slot)}
+                            variant="default"
+                            className={`w-full text-xs sm:text-sm ${getSlotColor(slot)}`}
+                          >
+                            {new Date(slot.startTime).toLocaleTimeString('en-US', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: false,
+                            })}
+                          </Button>
                         ))}
                       </div>
                     </TableCell>

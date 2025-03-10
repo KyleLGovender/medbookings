@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 
 import classNames from '@/lib/classNames';
 
-import { AvailabilityView } from '../../lib/types';
+import { AvailabilityView, TimeRange } from '../../lib/types';
 import { CalendarViewDayTimeGrid } from './calendar-view-day-time-grid';
 
 interface CalendarViewDayGridProps {
@@ -16,6 +16,7 @@ interface CalendarViewDayGridProps {
   onRefresh: () => Promise<void>;
   onView: (availability: AvailabilityView) => void;
   onEdit: (availability: AvailabilityView) => void;
+  timeRange: TimeRange;
 }
 
 export function CalendarViewDayGrid({
@@ -27,6 +28,7 @@ export function CalendarViewDayGrid({
   onRefresh,
   onView,
   onEdit,
+  timeRange,
 }: CalendarViewDayGridProps) {
   const container = useRef<HTMLDivElement>(null);
   const containerNav = useRef<HTMLDivElement>(null);
@@ -97,6 +99,7 @@ export function CalendarViewDayGrid({
             onRefresh={onRefresh}
             onView={onView}
             onEdit={onEdit}
+            timeRange={timeRange}
           />
         </div>
       </div>

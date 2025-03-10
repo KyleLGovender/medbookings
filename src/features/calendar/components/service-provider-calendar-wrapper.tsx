@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useState, useTransition } from 'react';
+import { Suspense, useCallback, useEffect, useState, useTransition } from 'react';
 
 import { startOfWeek } from 'date-fns';
 import { DateRange } from 'react-day-picker';
@@ -19,6 +19,7 @@ import {
   getDistinctServices,
   getNextDate,
   getPreviousDate,
+  getTimeRangeOfMultipleAvailabilityView,
 } from '@/features/calendar/lib/helper';
 import { getServiceProviderAvailabilityInRange } from '@/features/calendar/lib/queries';
 import { AvailabilityView, ViewType } from '@/features/calendar/lib/types';
@@ -43,6 +44,9 @@ export function ServiceProviderCalendarWrapper({
   const [dateRange, setDateRange] = useState<DateRange>(initialDateRange);
   const [availabilityData, setAvailabilityData] = useState<AvailabilityView[]>(initialAvailability);
   const [view, setView] = useState<ViewType>(initialView);
+  const [timeRange, setTimeRange] = useState(() =>
+    getTimeRangeOfMultipleAvailabilityView(initialAvailability)
+  );
   const [selectedAvailability, setSelectedAvailability] = useState<AvailabilityView | undefined>();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -50,15 +54,7 @@ export function ServiceProviderCalendarWrapper({
     if (availabilityData?.length) {
       const distinctServices = getDistinctServices(availabilityData);
 
-      // Try to find service by name from URL params
-      const serviceFromUrl = searchParams.get('service');
-      if (serviceFromUrl) {
-        const decodedName = decodeURIComponent(serviceFromUrl);
-        const service = distinctServices.find((s) => s.name === decodedName);
-        if (service) return service.id;
-      }
-
-      // Fall back to auto-selecting if only one service
+      // Auto-select if only one service
       if (distinctServices.length === 1) {
         return distinctServices[0].id;
       }
@@ -68,32 +64,24 @@ export function ServiceProviderCalendarWrapper({
 
   const rangeStartDate = dateRange.from!;
 
-  const updateUrlParams = (updates: {
-    range?: DateRange;
-    view?: string;
-    serviceName?: string | null;
-  }) => {
-    const params = new URLSearchParams(searchParams);
+  // Update time range whenever availability data changes
+  useEffect(() => {
+    setTimeRange(getTimeRangeOfMultipleAvailabilityView(availabilityData));
+  }, [availabilityData]);
 
-    // Handle service name
-    if (updates.serviceName) {
-      params.set('service', encodeURIComponent(updates.serviceName));
-    } else if (updates.serviceName === null) {
-      params.delete('service');
-    }
+  const updateUrlParams = (updates: { range?: DateRange; view?: string }) => {
+    const params = new URLSearchParams(searchParams);
 
     if (updates.range) {
       params.delete('start');
       params.delete('end');
 
       if (updates.range.from) {
-        // Use local date components for URL
         const localDate = new Date(updates.range.from);
         const startDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
         params.set('start', startDate);
       }
       if (updates.range.to) {
-        // Use local date components for URL
         const localDate = new Date(updates.range.to);
         const endDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
         params.set('end', endDate);
@@ -263,17 +251,6 @@ export function ServiceProviderCalendarWrapper({
 
   const handleServiceSelect = (serviceId: string | undefined) => {
     setSelectedServiceId(serviceId);
-
-    if (serviceId && availabilityData?.[0]) {
-      const services = getDistinctServices(availabilityData);
-      const service = services.find((s) => s.id === serviceId);
-      if (service) {
-        updateUrlParams({ serviceName: service.name });
-        return;
-      }
-    }
-
-    updateUrlParams({ serviceName: null });
   };
 
   const renderCalendar = () => {
@@ -290,13 +267,19 @@ export function ServiceProviderCalendarWrapper({
 
     switch (view) {
       case 'day':
-        return <CalendarViewDay {...props} />;
+        return <CalendarViewDay {...props} timeRange={timeRange} />;
       case 'week':
-        return <CalendarViewWeek {...props} />;
+        return <CalendarViewWeek {...props} timeRange={timeRange} />;
       case 'schedule':
         return <CalendarViewSchedule {...props} />;
       case 'slots':
-        return <CalendarViewSlots {...props} selectedServiceId={selectedServiceId} />;
+        return (
+          <CalendarViewSlots
+            {...props}
+            selectedServiceId={selectedServiceId}
+            timeRange={timeRange}
+          />
+        );
       default:
         return <CalendarViewSchedule {...props} />;
     }

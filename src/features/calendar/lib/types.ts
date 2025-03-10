@@ -17,6 +17,11 @@ export const ViewType = {
   slots: 'slots',
 } as const;
 
+export interface TimeRange {
+  earliestTime: number; // 24-hour format (e.g., 9 for 9:00, 13 for 13:00)
+  latestTime: number; // 24-hour format (e.g., 17 for 17:00)
+}
+
 export type ViewType = (typeof ViewType)[keyof typeof ViewType];
 
 // Base types from Zod schemas
