@@ -10,11 +10,14 @@ import { z } from 'zod';
 
 import { ApiResponse } from '@/lib/types';
 
-export const ViewType = {
+export const CalendarViewType = {
+  slots: 'slots',
+} as const;
+
+export const ServiceProviderCalendarViewType = {
   day: 'day',
   week: 'week',
   schedule: 'schedule',
-  slots: 'slots',
 } as const;
 
 export interface TimeRange {
@@ -22,7 +25,9 @@ export interface TimeRange {
   latestTime: number; // 24-hour format (e.g., 17 for 17:00)
 }
 
-export type ViewType = (typeof ViewType)[keyof typeof ViewType];
+export type CalendarViewType = (typeof CalendarViewType)[keyof typeof CalendarViewType];
+export type ServiceProviderCalendarViewType =
+  (typeof ServiceProviderCalendarViewType)[keyof typeof ServiceProviderCalendarViewType];
 
 // Base types from Zod schemas
 type BaseSlot = z.infer<typeof CalculatedAvailabilitySlotSchema>;

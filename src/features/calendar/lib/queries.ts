@@ -3,7 +3,7 @@
 import { Service } from '@/features/service-provider/lib/types';
 import { prisma } from '@/lib/prisma';
 
-import { AvailabilityView } from './types';
+import { AvailabilitySlot, AvailabilityView } from './types';
 
 export async function getServiceProviderAvailabilityInRange(
   serviceProviderId: string,
@@ -176,4 +176,83 @@ export async function getServiceProviderServices(serviceProviderId: string): Pro
     console.error('Error fetching services:', error);
     return [];
   }
+}
+
+export async function getBookingDetails(slotId: string): Promise<{
+  slot: AvailabilitySlot;
+  serviceProvider: {
+    id: string;
+    name: string;
+    image?: string | null;
+  };
+}> {
+  const slot = await prisma.calculatedAvailabilitySlot.findUnique({
+    where: { id: slotId },
+    include: {
+      service: true,
+      serviceConfig: true,
+      booking: {
+        include: {
+          client: true,
+        },
+      },
+      availability: {
+        include: {
+          serviceProvider: true,
+        },
+      },
+    },
+  });
+
+  if (!slot) {
+    throw new Error('Slot not found');
+  }
+
+  const serviceProvider = slot.availability.serviceProvider;
+
+  return {
+    slot: {
+      id: slot.id,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      status: slot.status,
+      service: {
+        id: slot.service.id,
+        name: slot.service.name,
+        description: slot.service.description,
+        displayPriority: slot.service.displayPriority,
+      },
+      serviceConfig: {
+        id: slot.serviceConfig.id,
+        price: Number(slot.serviceConfig.price),
+        duration: slot.serviceConfig.duration,
+        isOnlineAvailable: slot.serviceConfig.isOnlineAvailable,
+        isInPerson: slot.serviceConfig.isInPerson,
+        location: slot.serviceConfig.location,
+      },
+      booking: slot.booking
+        ? {
+            id: slot.booking.id,
+            status: slot.booking.status,
+            price: Number(slot.booking.price),
+            client: slot.booking.client
+              ? {
+                  id: slot.booking.client.id,
+                  name: slot.booking.client.name,
+                  email: slot.booking.client.email,
+                }
+              : undefined,
+            guestName: slot.booking.guestName,
+            guestEmail: slot.booking.guestEmail,
+            guestPhone: slot.booking.guestPhone,
+            guestWhatsapp: slot.booking.guestWhatsapp,
+          }
+        : null,
+    },
+    serviceProvider: {
+      id: serviceProvider.id,
+      name: serviceProvider.name,
+      image: serviceProvider.image,
+    },
+  };
 }

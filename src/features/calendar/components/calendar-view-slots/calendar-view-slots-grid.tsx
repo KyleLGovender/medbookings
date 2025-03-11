@@ -1,14 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -24,8 +19,6 @@ import {
   TimeRange,
   ViewType,
 } from '@/features/calendar/lib/types';
-
-import { BookingFormDialog } from '../booking-form/booking-form-dialog';
 
 interface CalendarViewSlotsGridProps {
   rangeStartDate: Date;
@@ -63,9 +56,7 @@ export function CalendarViewSlotsGrid({
   selectedServiceId,
   timeRange,
 }: CalendarViewSlotsGridProps) {
-  const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | null>(null);
-  const [selectedAvailability, setSelectedAvailability] = useState<AvailabilityView | null>(null);
-  const [isBookingFormOpen, setIsBookingFormOpen] = useState(false);
+  const router = useRouter();
   const container = useRef<HTMLDivElement>(null);
   const containerNav = useRef<HTMLDivElement>(null);
   const containerOffset = useRef<HTMLDivElement>(null);
@@ -158,22 +149,20 @@ export function CalendarViewSlotsGrid({
       return 'bg-gray-200 text-gray-600 hover:bg-gray-300 cursor-not-allowed';
     }
     if (slot.booking) {
-      return 'bg-blue-500 text-white hover:bg-blue-600';
+      return 'bg-blue-500 text-white hover:bg-blue-800';
     }
-    return 'bg-green-500 text-white hover:bg-green-600';
+    return 'bg-green-500 text-white hover:bg-green-800';
   }, []);
 
-  const handleBookSlot = (slot: AvailabilitySlot) => {
-    const availability = availabilityData.find((a) => a.slots.some((s) => s.id === slot.id));
-    setSelectedSlot(slot);
-    setSelectedAvailability(availability || null);
-    setIsBookingFormOpen(true);
-  };
+  // Handle slot click to navigate to booking page
+  const handleSlotClick = (slot: AvailabilitySlot) => {
+    const now = new Date();
+    const startTime = new Date(slot.startTime);
 
-  const handleCloseBookingForm = () => {
-    setIsBookingFormOpen(false);
-    setSelectedSlot(null);
-    setSelectedAvailability(null);
+    // Only navigate if the slot is in the future and not already booked
+    if (startTime > now && !slot.booking) {
+      router.push(`/calendar/booking/${slot.id}`);
+    }
   };
 
   return (
@@ -222,28 +211,18 @@ export function CalendarViewSlotsGrid({
                     <TableCell key={dayIndex} className="w-[14.28%] p-2">
                       <div className="flex flex-col items-stretch gap-2">
                         {row[dayKey].map((slot) => (
-                          <DropdownMenu key={slot.id}>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="default"
-                                className={`w-full text-xs sm:text-sm ${getSlotColor(slot)}`}
-                              >
-                                {new Date(slot.startTime).toLocaleTimeString('en-US', {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  hour12: false,
-                                })}
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem onSelect={() => handleBookSlot(slot)}>
-                                Book
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => onView(slot)}>
-                                View
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <Button
+                            key={slot.id}
+                            variant="default"
+                            className={`w-full text-xs sm:text-sm ${getSlotColor(slot)}`}
+                            onClick={() => handleSlotClick(slot)}
+                          >
+                            {new Date(slot.startTime).toLocaleTimeString('en-US', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: false,
+                            })}
+                          </Button>
                         ))}
                       </div>
                     </TableCell>
@@ -254,16 +233,6 @@ export function CalendarViewSlotsGrid({
           )}
         </TableBody>
       </Table>
-
-      {selectedSlot && selectedAvailability && (
-        <BookingFormDialog
-          slot={selectedSlot}
-          serviceProvider={selectedAvailability.serviceProvider}
-          isOpen={isBookingFormOpen}
-          onClose={handleCloseBookingForm}
-          onRefresh={onRefresh}
-        />
-      )}
     </div>
   );
 }

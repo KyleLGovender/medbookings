@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 
-import { PublicCalendar } from '@/features/calendar/components/public-calendar';
+import { Calendar } from '@/features/calendar/components/calendar';
 import { getServiceProviderName } from '@/lib/queries';
 
 export default async function CalendarPage({
@@ -24,7 +24,7 @@ export default async function CalendarPage({
           </p>
         </div>
 
-        <PublicCalendar searchParams={searchParams} serviceProviderId={params.serviceProviderId} />
+        <Calendar searchParams={searchParams} serviceProviderId={params.serviceProviderId} />
       </div>
     </main>
   );

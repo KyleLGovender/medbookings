@@ -1,32 +1,25 @@
-import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
-import { getCurrentUser } from '@/lib/auth';
-import { getAuthenticatedServiceProvider } from '@/lib/server-helper';
+import { CalendarWrapper } from '@/features/calendar/components/calendar-wrapper';
 
 import { getDateRange } from '../lib/helper';
 import { getServiceProviderAvailabilityInRange } from '../lib/queries';
-import { ServiceProviderCalendarViewType } from '../lib/types';
-import { ServiceProviderCalendarWrapper } from './service-provider-calendar-wrapper';
+import { CalendarViewType } from '../lib/types';
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 
-export async function ServiceProviderCalendar({ searchParams }: { searchParams: SearchParams }) {
-  const user = await getCurrentUser();
-  if (!user?.id) redirect('/auth/login');
+interface CalendarProps {
+  searchParams: SearchParams;
+  serviceProviderId: string;
+}
 
-  const { serviceProviderId } = await getAuthenticatedServiceProvider();
-  if (!serviceProviderId) redirect('/profile/service-provider');
-
-  const isValidView = (v: string | undefined): v is ServiceProviderCalendarViewType => {
-    return (
-      v !== undefined &&
-      Object.values(ServiceProviderCalendarViewType).includes(v as ServiceProviderCalendarViewType)
-    );
+export async function Calendar({ searchParams, serviceProviderId }: CalendarProps) {
+  const isValidView = (v: string | undefined): v is CalendarViewType => {
+    return v !== undefined && Object.values(CalendarViewType).includes(v as CalendarViewType);
   };
 
   const view = searchParams.view as string;
-  const validView = isValidView(view) ? view : 'schedule';
+  const validView = isValidView(view) ? view : 'slots';
 
   const start = searchParams.start as string;
   let startDate: Date;
@@ -51,7 +44,7 @@ export async function ServiceProviderCalendar({ searchParams }: { searchParams: 
   return (
     <Suspense fallback={<div className="h-[600px] animate-pulse rounded-lg bg-gray-100" />}>
       <div className="rounded-lg bg-white shadow">
-        <ServiceProviderCalendarWrapper
+        <CalendarWrapper
           initialAvailability={availability}
           serviceProviderId={serviceProviderId}
           initialDateRange={{

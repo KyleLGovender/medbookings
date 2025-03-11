@@ -1,7 +1,6 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -38,14 +37,22 @@ interface BookingFormProps {
     name: string;
     image?: string | null;
   };
-  onClose: () => void;
-  onRefresh: () => Promise<void>;
+  onCancel: () => void;
+  onSuccess: () => void;
+  isSubmitting: boolean;
+  setIsSubmitting: (value: boolean) => void;
 }
 
-export function BookingForm({ slot, serviceProvider, onClose, onRefresh }: BookingFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
+export function BookingForm({
+  slot,
+  serviceProvider,
+  onCancel,
+  onSuccess,
+  isSubmitting,
+  setIsSubmitting,
+}: BookingFormProps) {
   const router = useRouter();
+  const { toast } = useToast();
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(BookingFormSchema),
@@ -96,9 +103,7 @@ export function BookingForm({ slot, serviceProvider, onClose, onRefresh }: Booki
         description: 'Booking created successfully',
       });
 
-      router.refresh();
-      await onRefresh();
-      onClose();
+      onSuccess();
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -119,7 +124,7 @@ export function BookingForm({ slot, serviceProvider, onClose, onRefresh }: Booki
         >
           {/* Service Provider Info */}
           <div className="flex items-start space-x-4">
-            <Avatar className="h-16 w-16">
+            <Avatar className="h-32 w-32">
               <AvatarImage src={serviceProvider.image || undefined} />
               <AvatarFallback>{serviceProvider.name[0]}</AvatarFallback>
             </Avatar>
@@ -130,7 +135,8 @@ export function BookingForm({ slot, serviceProvider, onClose, onRefresh }: Booki
           </div>
 
           {/* Appointment Details */}
-          <div className="rounded-lg border border-gray-200 p-4">
+          <div className="space-y-3">
+            <h3 className="text-lg font-medium">Appointment Details</h3>
             <div className="grid gap-2">
               <div className="flex flex-col">
                 <span className="text-sm font-medium">Date</span>
@@ -165,56 +171,59 @@ export function BookingForm({ slot, serviceProvider, onClose, onRefresh }: Booki
                 <span className="text-sm font-medium">Price</span>
                 <span className="text-sm text-gray-600">${slot.serviceConfig.price}</span>
               </div>
-            </div>
-          </div>
 
-          {/* Appointment Type */}
-          <FormField
-            control={form.control}
-            name="appointmentType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Appointment Type</FormLabel>
+              <div className="flex flex-col pt-2">
+                <span className="text-sm font-medium">Appointment Type</span>
                 <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="grid grid-cols-2 gap-4"
+                  onValueChange={(value) =>
+                    form.setValue('appointmentType', value as 'online' | 'inperson')
+                  }
+                  defaultValue={form.getValues('appointmentType')}
+                  className="mt-1 flex space-x-4"
                 >
                   {slot.serviceConfig.isOnlineAvailable && (
-                    <div>
-                      <RadioGroupItem value="online" id="online" className="peer sr-only" />
-                      <label
-                        htmlFor="online"
-                        className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                      >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="online" id="online-option" />
+                      <label htmlFor="online-option" className="text-sm text-gray-600">
                         Online
                       </label>
                     </div>
                   )}
                   {slot.serviceConfig.isInPerson && (
-                    <div>
-                      <RadioGroupItem value="inperson" id="inperson" className="peer sr-only" />
-                      <label
-                        htmlFor="inperson"
-                        className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                      >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="inperson" id="inperson-option" />
+                      <label htmlFor="inperson-option" className="text-sm text-gray-600">
                         In Person
                       </label>
                     </div>
                   )}
                 </RadioGroup>
-                {field.value === 'inperson' && slot.serviceConfig.location && (
-                  <p className="mt-2 text-sm text-gray-500">
+                {form.watch('appointmentType') === 'inperson' && slot.serviceConfig.location && (
+                  <p className="mt-2 text-sm text-gray-600">
                     Location: {slot.serviceConfig.location}
                   </p>
                 )}
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              </div>
+              <div className="flex flex-col items-start py-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-auto"
+                  onClick={() => {
+                    router.push(
+                      `/calendar/service-provider/${serviceProvider.id}?start=${new Date(slot.startTime).toISOString().split('T')[0]}`
+                    );
+                  }}
+                >
+                  Select a different booking slot
+                </Button>
+              </div>
+            </div>
+          </div>
 
           {/* Guest Information */}
           <div className="space-y-4">
+            <h3 className="text-lg font-medium">Guest Information</h3>
             <div className="flex flex-col space-y-4">
               <FormField
                 control={form.control}
@@ -292,10 +301,10 @@ export function BookingForm({ slot, serviceProvider, onClose, onRefresh }: Booki
         </form>
 
         <div className="flex justify-end space-x-4 border-t border-gray-200 p-4">
-          <Button type="button" variant="outline" onClick={onClose}>
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting} onClick={form.handleSubmit(onSubmit)}>
             {isSubmitting && <Spinner className="mr-2 h-4 w-4" />}
             Request Booking
           </Button>

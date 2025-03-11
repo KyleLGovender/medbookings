@@ -6,13 +6,9 @@ import { Suspense, useCallback, useEffect, useState, useTransition } from 'react
 import { startOfWeek } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
-import { AvailabilityFormDialog } from '@/features/calendar/components/availability-form/availability-form-dialog';
-import { AvailabilityViewDialog } from '@/features/calendar/components/availability-view/availability-view-dialog';
+import { CalendarHeader } from '@/features/calendar/components/calendar-header';
 import { CalendarSkeleton } from '@/features/calendar/components/calendar-utils/calendar-skeleton';
-import { CalendarViewDay } from '@/features/calendar/components/calendar-view-day';
-import { CalendarViewSchedule } from '@/features/calendar/components/calendar-view-schedule';
-import { CalendarViewWeek } from '@/features/calendar/components/calendar-view-week';
-import { ServiceProviderCalendarHeader } from '@/features/calendar/components/service-provider-calendar-header';
+import { CalendarViewSlots } from '@/features/calendar/components/calendar-view-slots/index';
 import {
   getDateRange,
   getDistinctServices,
@@ -21,28 +17,28 @@ import {
   getTimeRangeOfMultipleAvailabilityView,
 } from '@/features/calendar/lib/helper';
 import { getServiceProviderAvailabilityInRange } from '@/features/calendar/lib/queries';
-import { AvailabilityView, ServiceProviderCalendarViewType } from '@/features/calendar/lib/types';
+import { AvailabilityView, CalendarViewType } from '@/features/calendar/lib/types';
 
-interface ServiceProviderCalendarWrapperProps {
+interface CalendarWrapperProps {
   initialAvailability: AvailabilityView[];
   serviceProviderId: string;
   initialDateRange: DateRange;
-  initialView: ServiceProviderCalendarViewType;
+  initialView: CalendarViewType;
 }
 
-export function ServiceProviderCalendarWrapper({
+export function CalendarWrapper({
   initialAvailability,
   serviceProviderId,
   initialDateRange,
   initialView,
-}: ServiceProviderCalendarWrapperProps) {
+}: CalendarWrapperProps) {
   const [isPending, startTransition] = useTransition();
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const [dateRange, setDateRange] = useState<DateRange>(initialDateRange);
   const [availabilityData, setAvailabilityData] = useState<AvailabilityView[]>(initialAvailability);
-  const [view, setView] = useState<ServiceProviderCalendarViewType>(initialView);
+  const [view, setView] = useState<CalendarViewType>(initialView);
   const [timeRange, setTimeRange] = useState(() =>
     getTimeRangeOfMultipleAvailabilityView(initialAvailability)
   );
@@ -106,17 +102,10 @@ export function ServiceProviderCalendarWrapper({
     router.push(newUrl, { scroll: false });
   };
 
-  const handleViewChange = (newView: ServiceProviderCalendarViewType) => {
+  const handleViewChange = (newView: CalendarViewType) => {
     setView(newView);
 
-    // Keep existing range for schedule view, but update URL
-    if (newView === 'schedule') {
-      updateUrlParams({ view: newView });
-      return;
-    }
-
-    // For week and slots views, show current week
-    if (newView === 'week') {
+    if (newView === 'slots') {
       const today = new Date();
       const newRange = getDateRange(today, 'week');
       setDateRange(newRange);
@@ -124,25 +113,12 @@ export function ServiceProviderCalendarWrapper({
       updateAvailabilityData(newRange);
       return;
     }
-
-    // For day view, show today
-    if (newView === 'day') {
-      const today = new Date();
-      const newRange = getDateRange(today, newView);
-      setDateRange(newRange);
-      updateUrlParams({ range: newRange, view: newView });
-      updateAvailabilityData(newRange);
-    }
   };
 
-  const handleDateSelect = (
-    newDate: Date | undefined,
-    fromView: ServiceProviderCalendarViewType
-  ) => {
+  const handleDateSelect = (newDate: Date | undefined, fromView: CalendarViewType) => {
     if (!newDate) return;
 
-    // Set view based on context - if coming from week view, go to day view
-    const newView = fromView === 'week' ? 'day' : view === 'day' ? 'day' : 'day';
+    const newView = 'slots';
     setView(newView);
 
     console.log('fromView', fromView);
@@ -271,21 +247,29 @@ export function ServiceProviderCalendarWrapper({
     };
 
     switch (view) {
-      case 'day':
-        return <CalendarViewDay {...props} timeRange={timeRange} />;
-      case 'week':
-        return <CalendarViewWeek {...props} timeRange={timeRange} />;
-      case 'schedule':
-        return <CalendarViewSchedule {...props} />;
+      case 'slots':
+        return (
+          <CalendarViewSlots
+            {...props}
+            selectedServiceId={selectedServiceId}
+            timeRange={timeRange}
+          />
+        );
       default:
-        return <CalendarViewSchedule {...props} />;
+        return (
+          <CalendarViewSlots
+            {...props}
+            selectedServiceId={selectedServiceId}
+            timeRange={timeRange}
+          />
+        );
     }
   };
 
   return (
     <div className="max-w-[100vw] overflow-x-hidden p-4">
       <div className="rounded-lg bg-white shadow">
-        <ServiceProviderCalendarHeader
+        <CalendarHeader
           view={view}
           rangeStartDate={rangeStartDate}
           dateRange={dateRange}
@@ -304,20 +288,6 @@ export function ServiceProviderCalendarWrapper({
         />
         <Suspense fallback={<CalendarSkeleton />}>{renderCalendar()}</Suspense>
       </div>
-
-      <AvailabilityFormDialog
-        availability={selectedAvailability}
-        serviceProviderId={serviceProviderId}
-        mode="edit"
-        open={isEditDialogOpen}
-        onOpenChange={handleDialogChange}
-        onRefresh={refreshData}
-      />
-      <AvailabilityViewDialog
-        availability={selectedAvailability}
-        open={isViewDialogOpen}
-        onOpenChange={handleViewDialogChange}
-      />
     </div>
   );
 }
