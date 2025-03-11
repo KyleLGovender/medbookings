@@ -3,9 +3,9 @@
 import { revalidatePath } from 'next/cache';
 
 import { BookingStatus, NotificationChannel, SlotStatus } from '@prisma/client';
+import { randomUUID } from 'crypto';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
-import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
 import { NotificationService } from '@/features/notifications/notification-service';
@@ -553,13 +553,13 @@ async function logBookingNotification(
     // Create logs directory if it doesn't exist
     const logsDir = join(process.cwd(), 'logs');
     await writeFile(
-      join(logsDir, `booking-notifications-${uuidv4()}.json`),
+      join(logsDir, `booking-notifications-${randomUUID()}.json`),
       JSON.stringify(logEntry, null, 2),
       { flag: 'a' }
     ).catch(() => {
       // If the directory doesn't exist, create it and try again
       return writeFile(
-        join(process.cwd(), `booking-notification-${uuidv4()}.json`),
+        join(process.cwd(), `booking-notification-${randomUUID()}.json`),
         JSON.stringify(logEntry, null, 2)
       );
     });
