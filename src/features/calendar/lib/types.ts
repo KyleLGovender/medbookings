@@ -38,15 +38,31 @@ type BaseBooking = z.infer<typeof BookingSchema>;
 // Simplified types that break circular references
 export type BookingView = Pick<BaseBooking, 'id' | 'status'> & {
   price: number;
+  startTime: Date | string;
+  endTime: Date | string;
+  service: {
+    id: string;
+    name: string;
+  };
   client?: {
     id: string;
     name: string | null;
     email: string | null;
+    phone: string | null;
+    whatsapp: string | null;
+    notificationPreferences?: {
+      email: boolean;
+      sms: boolean;
+      whatsapp: boolean;
+    };
   };
   guestName: string | null;
   guestEmail: string | null;
   guestPhone: string | null;
   guestWhatsapp: string | null;
+  notifyViaEmail?: boolean;
+  notifyViaSMS?: boolean;
+  notifyViaWhatsapp?: boolean;
 };
 
 export type AvailabilitySlot = Pick<BaseSlot, 'id' | 'startTime' | 'endTime' | 'status'> & {
@@ -73,30 +89,6 @@ export type AvailabilityView = Pick<
     'serviceId' | 'duration' | 'price' | 'isOnlineAvailable' | 'isInPerson' | 'location'
   >[];
 };
-
-// export type ServiceAvailabilityConfig = z.infer<typeof ServiceAvailabilityConfigSchema>;
-// export type Availability = z.infer<typeof AvailabilitySchema> & {
-//   serviceProvider: ServiceProvider;
-//   availableServices: ServiceAvailabilityConfig[];
-//   calculatedSlots: CalculatedAvailabilitySlot[];
-// };
-// export type CalculatedAvailabilitySlot = z.infer<typeof CalculatedAvailabilitySlotSchema> & {
-//   booking: Booking | null;
-//   service: Service;
-//   serviceConfig: ServiceAvailabilityConfig;
-// };
-// export type Booking = z.infer<typeof BookingSchema> & {
-//   slot: CalculatedAvailabilitySlot;
-//   client?: User;
-//   bookedBy?: User;
-//   serviceProvider: ServiceProvider;
-//   service: Service;
-//   notifications: z.infer<typeof NotificationLogSchema>[];
-//   guestName: string | null;
-//   guestEmail: string | null;
-//   guestPhone: string | null;
-//   guestWhatsapp: string | null;
-// };
 
 export const ServiceConfigFormSchema = ServiceAvailabilityConfigSchema.omit({
   id: true,
@@ -195,6 +187,10 @@ export type AvailabilityFormResponse = ApiResponse<{
   }[];
 }>;
 
+export type BookingResponse = ApiResponse<{
+  bookingId?: string;
+}>;
+
 export const BookingTypeSchema = z.enum([
   'USER_SELF',
   'USER_GUEST',
@@ -219,6 +215,9 @@ export const BookingFormSchema = z
         whatsapp: z.string().optional(),
       })
       .optional(),
+    agreeToTerms: z.boolean().refine((val) => val === true, {
+      message: 'You must agree to the terms and conditions',
+    }),
   })
   .superRefine((data, ctx) => {
     const hasNotificationMethod =

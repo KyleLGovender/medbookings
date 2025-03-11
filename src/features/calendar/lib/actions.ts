@@ -1,5 +1,11 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
+
+import { BookingStatus, NotificationChannel, SlotStatus } from '@prisma/client';
+import { writeFile } from 'fs/promises';
+import { join } from 'path';
+import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
 import { NotificationService } from '@/features/notifications/notification-service';
@@ -15,7 +21,7 @@ import {
   validateBookingFormData,
   validateBookingWithAvailability,
 } from './server-helper';
-import { AvailabilityFormResponse, Booking } from './types';
+import { AvailabilityFormResponse, BookingFormSchema, BookingResponse, BookingView } from './types';
 
 export async function createAvailability(formData: FormData): Promise<AvailabilityFormResponse> {
   try {
@@ -314,20 +320,25 @@ export async function lookupUser(email: string) {
   }
 }
 
-async function sendBookingNotifications(booking: Booking) {
+async function sendBookingNotifications(booking: BookingView) {
   const notificationPromises = [];
-  const template = TemplateService.getBookingConfirmationTemplate(
+  const templateText = TemplateService.getBookingConfirmationTemplate(
     booking,
     booking.client?.name || booking.guestName
   );
 
+  const template = {
+    subject: 'Booking Confirmation',
+    body: templateText,
+  };
+
   if (booking.client) {
     // Handle registered user notifications
     const recipient = {
-      name: booking.client.name,
-      email: booking.client.email,
-      phone: booking.client.phone,
-      whatsapp: booking.client.whatsapp,
+      name: booking.client.name || 'Client',
+      email: booking.client.email || undefined,
+      phone: booking.client.phone || undefined,
+      whatsapp: booking.client.whatsapp || undefined,
     };
 
     if (booking.client.notificationPreferences?.email && recipient.email) {
@@ -342,10 +353,10 @@ async function sendBookingNotifications(booking: Booking) {
   } else {
     // Handle guest notifications
     const recipient = {
-      name: booking.guestName,
-      email: booking.guestEmail,
-      phone: booking.guestPhone,
-      whatsapp: booking.guestWhatsapp,
+      name: booking.guestName || 'Guest',
+      email: booking.guestEmail || undefined,
+      phone: booking.guestPhone || undefined,
+      whatsapp: booking.guestWhatsapp || undefined,
     };
 
     if (booking.notifyViaEmail && recipient.email) {
@@ -370,33 +381,201 @@ async function sendBookingNotifications(booking: Booking) {
   });
 }
 
-type BookingResponse = {
-  data?: Booking;
-  error?: string;
-  fieldErrors?: Record<string, string[]>;
-  formErrors?: string[];
-};
-
 export async function createBooking(formData: FormData): Promise<BookingResponse> {
   try {
-    const slotId = formData.get('slotId') as string;
-    const appointmentType = formData.get('appointmentType') as string;
-    const guestFirstName = formData.get('guestFirstName') as string;
-    const guestLastName = formData.get('guestLastName') as string;
-    const guestEmail = formData.get('guestEmail') as string;
-    const guestPhone = formData.get('guestPhone') as string;
+    // Extract form data
+    const data = {
+      slotId: formData.get('slotId') as string,
+      bookingType: formData.get('bookingType') as any,
+      notificationPreferences: {
+        email: formData.get('notifyViaEmail') === 'true',
+        sms: formData.get('notifyViaSMS') === 'true',
+        whatsapp: formData.get('notifyViaWhatsapp') === 'true',
+      },
+      guestInfo: {
+        name: formData.get('guestName') as string,
+        email: (formData.get('guestEmail') as string) || undefined,
+        phone: (formData.get('guestPhone') as string) || undefined,
+        whatsapp: (formData.get('guestWhatsapp') as string) || undefined,
+      },
+    };
 
-    // TODO: Add validation and error handling
-    // TODO: Add actual booking creation logic with Prisma
-    // This is a placeholder that simulates a successful booking creation
+    // Validate using the existing schema
+    const validationResult = BookingFormSchema.safeParse(data);
+
+    if (!validationResult.success) {
+      return {
+        error: 'Validation failed',
+        fieldErrors: validationResult.error.flatten().fieldErrors,
+      };
+    }
+
+    const validatedData = validationResult.data;
+    const appointmentType = formData.get('appointmentType') as string;
+
+    // Fetch the slot to get related data
+    const slot = await prisma.calculatedAvailabilitySlot.findUnique({
+      where: { id: validatedData.slotId },
+      include: {
+        service: true,
+        serviceConfig: {
+          include: {
+            serviceProvider: true,
+          },
+        },
+      },
+    });
+
+    if (!slot) {
+      return { error: 'Slot not found' };
+    }
+
+    if (slot.status !== SlotStatus.AVAILABLE) {
+      return { error: 'This slot is no longer available' };
+    }
+
+    // Create the booking in a transaction to ensure data consistency
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Update the slot status to BOOKED
+      const updatedSlot = await tx.calculatedAvailabilitySlot.update({
+        where: { id: validatedData.slotId },
+        data: { status: SlotStatus.BOOKED },
+      });
+
+      // 2. Create the booking
+      const booking = await tx.booking.create({
+        data: {
+          slotId: slot.id,
+          serviceProviderId: slot.serviceConfig.serviceProviderId,
+          serviceId: slot.serviceId,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          duration: slot.serviceConfig.duration,
+          price: slot.serviceConfig.price,
+          isOnline: appointmentType === 'online',
+          isInPerson: appointmentType === 'inperson',
+          location: appointmentType === 'inperson' ? slot.serviceConfig.location : null,
+          status: BookingStatus.PENDING,
+          guestName: validatedData.guestInfo?.name,
+          guestEmail: validatedData.guestInfo?.email,
+          guestPhone: validatedData.guestInfo?.phone,
+          guestWhatsapp: validatedData.guestInfo?.whatsapp,
+        },
+      });
+
+      // 3. Create notification preferences if needed
+      if (validatedData.notificationPreferences) {
+        // Log notifications based on preferences
+        if (validatedData.notificationPreferences.email && validatedData.guestInfo?.email) {
+          await logBookingNotification(
+            booking.id,
+            slot.serviceConfig.serviceProviderId,
+            'BOOKING_CONFIRMATION',
+            'EMAIL'
+          );
+        }
+
+        if (validatedData.notificationPreferences.sms && validatedData.guestInfo?.phone) {
+          await logBookingNotification(
+            booking.id,
+            slot.serviceConfig.serviceProviderId,
+            'BOOKING_CONFIRMATION',
+            'SMS'
+          );
+        }
+
+        if (validatedData.notificationPreferences.whatsapp && validatedData.guestInfo?.whatsapp) {
+          await logBookingNotification(
+            booking.id,
+            slot.serviceConfig.serviceProviderId,
+            'BOOKING_CONFIRMATION',
+            'WHATSAPP'
+          );
+        }
+      }
+
+      return booking;
+    });
+
+    // Revalidate relevant paths to update UI
+    revalidatePath(`/calendar/service-provider/${slot.serviceConfig.serviceProviderId}`);
+    revalidatePath('/dashboard/bookings');
+
     return {
-      success: true,
+      data: {
+        bookingId: result.id,
+      },
     };
   } catch (error) {
     console.error('Error creating booking:', error);
     return {
-      error: 'Failed to create booking',
+      error: error instanceof Error ? error.message : 'Failed to create booking',
     };
+  }
+}
+
+// Helper function to log notifications instead of sending them
+async function logBookingNotification(
+  bookingId: string,
+  serviceProviderId: string,
+  type:
+    | 'BOOKING_CONFIRMATION'
+    | 'BOOKING_REMINDER'
+    | 'BOOKING_CANCELLATION'
+    | 'BOOKING_MODIFICATION',
+  channel: 'EMAIL' | 'SMS' | 'WHATSAPP'
+) {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        serviceProvider: true,
+        service: true,
+      },
+    });
+
+    if (!booking) return;
+
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      type,
+      channel,
+      bookingId,
+      serviceProviderId,
+      guestName: booking.guestName || 'Unknown Guest',
+      serviceName: booking.service.name,
+      startTime: booking.startTime.toISOString(),
+      endTime: booking.endTime.toISOString(),
+      confirmationLink: `/dashboard/bookings/confirm/${bookingId}`,
+      declineLink: `/dashboard/bookings/decline/${bookingId}`,
+    };
+
+    // Create logs directory if it doesn't exist
+    const logsDir = join(process.cwd(), 'logs');
+    await writeFile(
+      join(logsDir, `booking-notifications-${uuidv4()}.json`),
+      JSON.stringify(logEntry, null, 2),
+      { flag: 'a' }
+    ).catch(() => {
+      // If the directory doesn't exist, create it and try again
+      return writeFile(
+        join(process.cwd(), `booking-notification-${uuidv4()}.json`),
+        JSON.stringify(logEntry, null, 2)
+      );
+    });
+
+    // Also create a DB entry for the notification
+    await prisma.notificationLog.create({
+      data: {
+        bookingId,
+        type: type,
+        channel: channel as NotificationChannel,
+        content: JSON.stringify(logEntry),
+        status: 'SENT',
+      },
+    });
+  } catch (error) {
+    console.error('Error logging notification:', error);
   }
 }
 
@@ -411,23 +590,49 @@ export async function updateBooking(
       return { error: 'Not authenticated' };
     }
 
-    // 1. Parse and validate form data with Zod schema
-    const { data: validated, fieldErrors, formErrors } = await validateBookingFormData(formData);
-    if (!validated) {
-      return { fieldErrors, formErrors };
+    // First, get the booking to find its slot
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { slot: true },
+    });
+
+    if (!booking || !booking.slotId) {
+      return { error: 'Booking not found or has no associated slot' };
     }
 
-    // 2. Fetch and validate availability
+    // Then get the availability from the slot
+    const slot = await prisma.calculatedAvailabilitySlot.findUnique({
+      where: { id: booking.slotId },
+      select: { availabilityId: true },
+    });
+
+    if (!slot) {
+      return { error: 'Slot not found' };
+    }
+
+    // Now you can use slot.availabilityId
     const availability = await prisma.availability.findUnique({
-      where: { id: validated.availabilityId },
-      include: { bookings: true },
+      where: { id: slot.availabilityId },
+      include: {
+        calculatedSlots: {
+          include: {
+            booking: true,
+          },
+        },
+      },
     });
 
     if (!availability) {
       return { error: 'No availability found for the requested time slot' };
     }
 
-    // 3. Validate booking against availability
+    // 1. Parse and validate form data with Zod schema
+    const { data: validated, fieldErrors, formErrors } = await validateBookingFormData(formData);
+    if (!validated) {
+      return { fieldErrors, formErrors };
+    }
+
+    // 2. Validate booking against availability
     const validationResponse = await validateBookingWithAvailability(validated, availability);
     if (!validationResponse.isValid) {
       return {
@@ -438,16 +643,14 @@ export async function updateBooking(
       };
     }
 
-    // 4. Check access to the booking using the user's ID
-    const { booking: existingBooking, error: accessError } = await checkBookingAccess(
-      bookingId,
-      currentUser.id
-    );
-    if (accessError) {
-      return { error: accessError };
+    // 3. Check access to the booking using the user's ID
+    try {
+      await checkBookingAccess(bookingId, currentUser.id);
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Access denied' };
     }
 
-    // 5. Update the booking
+    // 4. Update the booking
     const updatedBooking = await prisma.booking.update({
       where: { id: bookingId },
       data: validated,
@@ -456,25 +659,10 @@ export async function updateBooking(
       },
     });
 
-    // 6. Format and return the response
+    // 5. Format and return the response
     return {
       data: {
-        ...updatedBooking,
-        startTime: updatedBooking.startTime.toISOString(),
-        endTime: updatedBooking.endTime.toISOString(),
-        createdAt: updatedBooking.createdAt.toISOString(),
-        updatedAt: updatedBooking.updatedAt.toISOString(),
-        cancelledAt: updatedBooking.cancelledAt?.toISOString() || null,
-        price: Number(updatedBooking.price),
-        client: updatedBooking.client
-          ? {
-              id: updatedBooking.client.id,
-              name: updatedBooking.client.name,
-              email: updatedBooking.client.email,
-              phone: updatedBooking.client.phone,
-              whatsapp: updatedBooking.client.whatsapp,
-            }
-          : undefined,
+        bookingId: updatedBooking.id,
       },
     };
   } catch (error) {
@@ -512,9 +700,10 @@ export async function deleteBooking(
     }
 
     // Check access to the booking
-    const { booking, error: accessError } = await checkBookingAccess(bookingId, currentUser.id);
-    if (accessError) {
-      return { error: accessError };
+    try {
+      await checkBookingAccess(bookingId, currentUser.id);
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Access denied' };
     }
 
     // Delete the booking
@@ -527,6 +716,120 @@ export async function deleteBooking(
     console.error('Delete booking error:', error);
     return {
       error: error instanceof Error ? error.message : 'Failed to delete booking',
+    };
+  }
+}
+
+export async function confirmBooking(bookingId: string): Promise<BookingResponse> {
+  try {
+    // Find the booking
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        slot: true,
+      },
+    });
+
+    if (!booking) {
+      return { error: 'Booking not found' };
+    }
+
+    if (booking.status !== BookingStatus.PENDING) {
+      return { error: 'This booking cannot be confirmed' };
+    }
+
+    // Update the booking status
+    const updatedBooking = await prisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        status: BookingStatus.CONFIRMED,
+      },
+    });
+
+    // Log the confirmation notification
+    await logBookingNotification(
+      bookingId,
+      booking.serviceProviderId,
+      'BOOKING_CONFIRMATION',
+      'EMAIL'
+    );
+
+    // Revalidate relevant paths
+    revalidatePath(`/calendar/service-provider/${booking.serviceProviderId}`);
+    revalidatePath('/dashboard/bookings');
+
+    return {
+      data: {
+        bookingId: updatedBooking.id,
+      },
+    };
+  } catch (error) {
+    console.error('Error confirming booking:', error);
+    return {
+      error: error instanceof Error ? error.message : 'Failed to confirm booking',
+    };
+  }
+}
+
+export async function declineBooking(bookingId: string, reason?: string): Promise<BookingResponse> {
+  try {
+    // Find the booking
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        slot: true,
+      },
+    });
+
+    if (!booking) {
+      return { error: 'Booking not found' };
+    }
+
+    if (booking.status !== BookingStatus.PENDING) {
+      return { error: 'This booking cannot be declined' };
+    }
+
+    // Update in a transaction to ensure data consistency
+    await prisma.$transaction(async (tx) => {
+      // 1. Update the booking status
+      await tx.booking.update({
+        where: { id: bookingId },
+        data: {
+          status: BookingStatus.CANCELLED,
+          notes: reason ? `Declined: ${reason}` : 'Declined by service provider',
+        },
+      });
+
+      // 2. Update the slot status back to AVAILABLE
+      if (booking.slotId) {
+        await tx.calculatedAvailabilitySlot.update({
+          where: { id: booking.slotId },
+          data: { status: SlotStatus.AVAILABLE },
+        });
+      }
+    });
+
+    // Log the cancellation notification
+    await logBookingNotification(
+      bookingId,
+      booking.serviceProviderId,
+      'BOOKING_CANCELLATION',
+      'EMAIL'
+    );
+
+    // Revalidate relevant paths
+    revalidatePath(`/calendar/service-provider/${booking.serviceProviderId}`);
+    revalidatePath('/dashboard/bookings');
+
+    return {
+      data: {
+        bookingId,
+      },
+    };
+  } catch (error) {
+    console.error('Error declining booking:', error);
+    return {
+      error: error instanceof Error ? error.message : 'Failed to decline booking',
     };
   }
 }

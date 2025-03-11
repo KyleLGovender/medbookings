@@ -4,31 +4,25 @@ import { useRouter } from 'next/navigation';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import * as z from 'zod';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Form, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/hooks/use-toast';
 
 import { createBooking } from '../../lib/actions';
-import { AvailabilitySlot } from '../../lib/types';
-
-const BookingFormSchema = z.object({
-  appointmentType: z.enum(['online', 'inperson']),
-  guestFirstName: z.string().min(2, 'First name must be at least 2 characters'),
-  guestLastName: z.string().min(2, 'Last name must be at least 2 characters'),
-  guestEmail: z.string().email('Invalid email address'),
-  guestPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number'),
-  agreeToTerms: z.boolean().refine((val) => val === true, {
-    message: 'You must agree to the terms and conditions',
-  }),
-});
-
-type BookingFormValues = z.infer<typeof BookingFormSchema>;
+import { AvailabilitySlot, BookingFormSchema } from '../../lib/types';
 
 interface BookingFormProps {
   slot: AvailabilitySlot;
@@ -54,28 +48,47 @@ export function BookingForm({
   const router = useRouter();
   const { toast } = useToast();
 
-  const form = useForm<BookingFormValues>({
+  const form = useForm({
     resolver: zodResolver(BookingFormSchema),
     defaultValues: {
-      appointmentType: slot.serviceConfig.isOnlineAvailable ? 'online' : 'inperson',
-      guestFirstName: '',
-      guestLastName: '',
-      guestEmail: '',
-      guestPhone: '',
+      slotId: slot.id,
+      bookingType: 'GUEST_SELF' as const,
+      notificationPreferences: {
+        email: true,
+        sms: false,
+        whatsapp: false,
+      },
+      guestInfo: {
+        name: '',
+        email: '',
+        phone: '',
+        whatsapp: '',
+      },
       agreeToTerms: false,
     },
   });
 
-  async function onSubmit(values: BookingFormValues) {
+  async function onSubmit(values: any) {
     setIsSubmitting(true);
 
     const formData = new FormData();
-    formData.append('slotId', slot.id);
-    formData.append('appointmentType', values.appointmentType);
-    formData.append('guestFirstName', values.guestFirstName);
-    formData.append('guestLastName', values.guestLastName);
-    formData.append('guestEmail', values.guestEmail);
-    formData.append('guestPhone', values.guestPhone);
+    formData.append('slotId', values.slotId);
+    formData.append('bookingType', values.bookingType);
+
+    // Add notification preferences
+    formData.append('notifyViaEmail', values.notificationPreferences.email.toString());
+    formData.append('notifyViaSMS', values.notificationPreferences.sms.toString());
+    formData.append('notifyViaWhatsapp', values.notificationPreferences.whatsapp.toString());
+
+    // Add guest info
+    formData.append('guestName', values.guestInfo.name);
+    formData.append('guestEmail', values.guestInfo.email || '');
+    formData.append('guestPhone', values.guestInfo.phone || '');
+    formData.append('guestWhatsapp', values.guestInfo.whatsapp || '');
+
+    // Add appointment type (derived from slot configuration)
+    const appointmentType = slot.serviceConfig.isOnlineAvailable ? 'online' : 'inperson';
+    formData.append('appointmentType', appointmentType);
 
     try {
       const response = await createBooking(formData);
@@ -83,10 +96,19 @@ export function BookingForm({
       if (response.error) {
         if (response.fieldErrors) {
           Object.entries(response.fieldErrors).forEach(([field, errors]) => {
-            form.setError(field as any, {
-              type: 'server',
-              message: Array.isArray(errors) ? errors[0] : 'Unknown error',
-            });
+            // Handle nested fields
+            if (field.includes('.')) {
+              const [parent, child] = field.split('.');
+              form.setError(`${parent}.${child}` as any, {
+                type: 'server',
+                message: Array.isArray(errors) ? errors[0] : 'Unknown error',
+              });
+            } else {
+              form.setError(field as any, {
+                type: 'server',
+                message: Array.isArray(errors) ? errors[0] : 'Unknown error',
+              });
+            }
           });
         }
 
@@ -175,11 +197,9 @@ export function BookingForm({
               <div className="flex flex-col pt-2">
                 <span className="text-sm font-medium">Appointment Type</span>
                 <RadioGroup
-                  onValueChange={(value) =>
-                    form.setValue('appointmentType', value as 'online' | 'inperson')
-                  }
-                  defaultValue={form.getValues('appointmentType')}
+                  defaultValue={slot.serviceConfig.isOnlineAvailable ? 'online' : 'inperson'}
                   className="mt-1 flex space-x-4"
+                  disabled
                 >
                   {slot.serviceConfig.isOnlineAvailable && (
                     <div className="flex items-center space-x-2">
@@ -198,7 +218,7 @@ export function BookingForm({
                     </div>
                   )}
                 </RadioGroup>
-                {form.watch('appointmentType') === 'inperson' && slot.serviceConfig.location && (
+                {slot.serviceConfig.isInPerson && slot.serviceConfig.location && (
                   <p className="mt-2 text-sm text-gray-600">
                     Location: {slot.serviceConfig.location}
                   </p>
@@ -224,54 +244,124 @@ export function BookingForm({
           {/* Guest Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Guest Information</h3>
-            <div className="flex flex-col space-y-4">
+            <FormField
+              control={form.control}
+              name="guestInfo.name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="guestInfo.email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input type="email" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="guestInfo.phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number</FormLabel>
+                  <FormControl>
+                    <Input type="tel" placeholder="+1234567890" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="guestInfo.whatsapp"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>WhatsApp Number (if different)</FormLabel>
+                  <FormControl>
+                    <Input type="tel" placeholder="+1234567890" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Notification Preferences */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Notification Preferences</h3>
+            <div className="space-y-2">
               <FormField
                 control={form.control}
-                name="guestFirstName"
+                name="notificationPreferences.email"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First Name</FormLabel>
-                    <Input {...field} />
-                    <FormMessage />
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={Boolean(field.value)}
+                        onCheckedChange={field.onChange}
+                        required
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Email notifications</FormLabel>
+                    </div>
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
-                name="guestLastName"
+                name="notificationPreferences.sms"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <Input {...field} />
-                    <FormMessage />
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={Boolean(field.value)}
+                        onCheckedChange={field.onChange}
+                        required
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>SMS notifications</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="notificationPreferences.whatsapp"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={Boolean(field.value)}
+                        onCheckedChange={field.onChange}
+                        required
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>WhatsApp notifications</FormLabel>
+                    </div>
                   </FormItem>
                 )}
               />
             </div>
-
-            <FormField
-              control={form.control}
-              name="guestEmail"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <Input type="email" {...field} />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="guestPhone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>WhatsApp Phone Number</FormLabel>
-                  <Input type="tel" placeholder="+1234567890" {...field} />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
           </div>
 
           {/* Terms and Conditions */}
@@ -280,12 +370,13 @@ export function BookingForm({
             name="agreeToTerms"
             render={({ field }) => (
               <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                <input
-                  type="checkbox"
-                  checked={field.value}
-                  onChange={field.onChange}
-                  className="mt-1 h-4 w-4 rounded border-gray-300"
-                />
+                <FormControl>
+                  <Checkbox
+                    checked={Boolean(field.value)}
+                    onCheckedChange={field.onChange}
+                    required
+                  />
+                </FormControl>
                 <div className="space-y-1 leading-none">
                   <FormLabel>
                     I agree to the{' '}
