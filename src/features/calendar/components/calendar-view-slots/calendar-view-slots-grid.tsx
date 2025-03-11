@@ -16,13 +16,13 @@ import { generateDaysForWeekCalendar } from '@/features/calendar/lib/helper';
 import {
   AvailabilitySlot,
   AvailabilityView,
+  CalendarViewType,
   TimeRange,
-  ViewType,
 } from '@/features/calendar/lib/types';
 
 interface CalendarViewSlotsGridProps {
   rangeStartDate: Date;
-  onDateChange: (date: Date, fromView: ViewType) => void;
+  onDateChange: (date: Date, fromView: CalendarViewType) => void;
   onViewChange?: (view: 'day') => void;
   availabilityData: AvailabilityView[];
   serviceProviderId: string;
@@ -137,9 +137,6 @@ export function CalendarViewSlotsGrid({
 
     return () => clearInterval(intervalId);
   }, [timeRange]);
-
-  console.log('Selected Service ID:', selectedServiceId);
-  console.log('organizedSlots:', tableData);
 
   const getSlotColor = useCallback((slot: AvailabilitySlot) => {
     const now = new Date();
