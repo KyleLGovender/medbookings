@@ -398,12 +398,19 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
         phone: (formData.get('guestPhone') as string) || undefined,
         whatsapp: (formData.get('guestWhatsapp') as string) || undefined,
       },
+      // Explicitly handle the terms and conditions field
+      agreeToTerms: formData.get('agreeToTerms') === 'true',
     };
+
+    // Log the data for debugging
+    console.log('Server received data:', data);
+    console.log('Terms and conditions value:', formData.get('agreeToTerms'));
 
     // Validate using the existing schema
     const validationResult = BookingFormSchema.safeParse(data);
 
     if (!validationResult.success) {
+      console.error('Validation errors:', validationResult.error.format());
       return {
         error: 'Validation failed',
         fieldErrors: validationResult.error.flatten().fieldErrors,

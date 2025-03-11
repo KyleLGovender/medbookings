@@ -207,20 +207,25 @@ export function CalendarViewSlotsGrid({
                   return (
                     <TableCell key={dayIndex} className="w-[14.28%] p-2">
                       <div className="flex flex-col items-stretch gap-2">
-                        {row[dayKey].map((slot) => (
-                          <Button
-                            key={slot.id}
-                            variant="default"
-                            className={`w-full text-xs sm:text-sm ${getSlotColor(slot)}`}
-                            onClick={() => handleSlotClick(slot)}
-                          >
-                            {new Date(slot.startTime).toLocaleTimeString('en-US', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              hour12: false,
-                            })}
-                          </Button>
-                        ))}
+                        {row[dayKey]
+                          .sort(
+                            (a, b) =>
+                              new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+                          )
+                          .map((slot) => (
+                            <Button
+                              key={slot.id}
+                              variant="default"
+                              className={`w-full text-xs sm:text-sm ${getSlotColor(slot)}`}
+                              onClick={() => handleSlotClick(slot)}
+                            >
+                              {new Date(slot.startTime).toLocaleTimeString('en-US', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: false,
+                              })}
+                            </Button>
+                          ))}
                       </div>
                     </TableCell>
                   );

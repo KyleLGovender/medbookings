@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -48,6 +49,9 @@ export function BookingForm({
   const router = useRouter();
   const { toast } = useToast();
 
+  // Add this to track form submission attempts
+  const [formSubmitted, setFormSubmitted] = useState(false);
+
   const form = useForm({
     resolver: zodResolver(BookingFormSchema),
     defaultValues: {
@@ -66,9 +70,17 @@ export function BookingForm({
       },
       agreeToTerms: false,
     },
+    // Show errors after first submission attempt
+    mode: 'onSubmit',
   });
 
   async function onSubmit(values: any) {
+    // Mark form as submitted to show validation errors
+    setFormSubmitted(true);
+
+    // Log form values for debugging
+    console.log('Form values:', values);
+
     setIsSubmitting(true);
 
     const formData = new FormData();
@@ -90,11 +102,25 @@ export function BookingForm({
     const appointmentType = slot.serviceConfig.isOnlineAvailable ? 'online' : 'inperson';
     formData.append('appointmentType', appointmentType);
 
+    // IMPORTANT: Explicitly add the terms and conditions agreement
+    formData.append('agreeToTerms', values.agreeToTerms.toString());
+
+    // Log what's being sent to the server
+    const formDataObj: Record<string, string> = {};
+    formData.forEach((value, key) => {
+      formDataObj[key] = value.toString();
+      console.log(`${key}: ${value}`);
+    });
+    console.log('FormData as object:', formDataObj);
+
     try {
       const response = await createBooking(formData);
 
       if (response.error) {
+        console.error('Server response error:', response);
+
         if (response.fieldErrors) {
+          // Enhanced error handling for field errors
           Object.entries(response.fieldErrors).forEach(([field, errors]) => {
             // Handle nested fields
             if (field.includes('.')) {
@@ -114,7 +140,7 @@ export function BookingForm({
 
         toast({
           variant: 'destructive',
-          title: 'Error',
+          title: 'Booking Error',
           description: response.error,
         });
         return;
@@ -127,6 +153,7 @@ export function BookingForm({
 
       onSuccess();
     } catch (error) {
+      console.error('Booking creation error:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -249,9 +276,16 @@ export function BookingForm({
               name="guestInfo.name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel
+                    className={form.formState.errors.guestInfo?.name ? 'text-destructive' : ''}
+                  >
+                    Full Name <span className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input
+                      {...field}
+                      className={form.formState.errors.guestInfo?.name ? 'border-destructive' : ''}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -263,9 +297,20 @@ export function BookingForm({
               name="guestInfo.email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel
+                    className={form.formState.errors.guestInfo?.email ? 'text-destructive' : ''}
+                  >
+                    Email{' '}
+                    {form.watch('notificationPreferences.email') && (
+                      <span className="text-destructive">*</span>
+                    )}
+                  </FormLabel>
                   <FormControl>
-                    <Input type="email" {...field} />
+                    <Input
+                      type="email"
+                      {...field}
+                      className={form.formState.errors.guestInfo?.email ? 'border-destructive' : ''}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -277,9 +322,21 @@ export function BookingForm({
               name="guestInfo.phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
+                  <FormLabel
+                    className={form.formState.errors.guestInfo?.phone ? 'text-destructive' : ''}
+                  >
+                    Phone Number{' '}
+                    {form.watch('notificationPreferences.sms') && (
+                      <span className="text-destructive">*</span>
+                    )}
+                  </FormLabel>
                   <FormControl>
-                    <Input type="tel" placeholder="+1234567890" {...field} />
+                    <Input
+                      type="tel"
+                      placeholder="+1234567890"
+                      {...field}
+                      className={form.formState.errors.guestInfo?.phone ? 'border-destructive' : ''}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -291,9 +348,23 @@ export function BookingForm({
               name="guestInfo.whatsapp"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>WhatsApp Number (if different)</FormLabel>
+                  <FormLabel
+                    className={form.formState.errors.guestInfo?.whatsapp ? 'text-destructive' : ''}
+                  >
+                    WhatsApp Number{' '}
+                    {form.watch('notificationPreferences.whatsapp') && (
+                      <span className="text-destructive">*</span>
+                    )}
+                  </FormLabel>
                   <FormControl>
-                    <Input type="tel" placeholder="+1234567890" {...field} />
+                    <Input
+                      type="tel"
+                      placeholder="+1234567890"
+                      {...field}
+                      className={
+                        form.formState.errors.guestInfo?.whatsapp ? 'border-destructive' : ''
+                      }
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -304,6 +375,13 @@ export function BookingForm({
           {/* Notification Preferences */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Notification Preferences</h3>
+            {form.formState.errors.notificationPreferences && (
+              <p className="text-sm text-destructive">
+                {typeof form.formState.errors.notificationPreferences.message === 'string'
+                  ? form.formState.errors.notificationPreferences.message
+                  : 'At least one notification method must be selected'}
+              </p>
+            )}
             <div className="space-y-2">
               <FormField
                 control={form.control}
@@ -311,11 +389,7 @@ export function BookingForm({
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                     <FormControl>
-                      <Checkbox
-                        checked={Boolean(field.value)}
-                        onCheckedChange={field.onChange}
-                        required
-                      />
+                      <Checkbox checked={Boolean(field.value)} onCheckedChange={field.onChange} />
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>Email notifications</FormLabel>
@@ -330,11 +404,7 @@ export function BookingForm({
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                     <FormControl>
-                      <Checkbox
-                        checked={Boolean(field.value)}
-                        onCheckedChange={field.onChange}
-                        required
-                      />
+                      <Checkbox checked={Boolean(field.value)} onCheckedChange={field.onChange} />
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>SMS notifications</FormLabel>
@@ -349,11 +419,7 @@ export function BookingForm({
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                     <FormControl>
-                      <Checkbox
-                        checked={Boolean(field.value)}
-                        onCheckedChange={field.onChange}
-                        required
-                      />
+                      <Checkbox checked={Boolean(field.value)} onCheckedChange={field.onChange} />
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>WhatsApp notifications</FormLabel>
@@ -364,7 +430,7 @@ export function BookingForm({
             </div>
           </div>
 
-          {/* Terms and Conditions */}
+          {/* Terms and Conditions - Enhanced with better error display */}
           <FormField
             control={form.control}
             name="agreeToTerms"
@@ -374,30 +440,95 @@ export function BookingForm({
                   <Checkbox
                     checked={Boolean(field.value)}
                     onCheckedChange={field.onChange}
-                    required
+                    id="agreeToTerms"
+                    aria-describedby="terms-error"
+                    className={form.formState.errors.agreeToTerms ? 'border-destructive' : ''}
                   />
                 </FormControl>
                 <div className="space-y-1 leading-none">
-                  <FormLabel>
-                    I agree to the{' '}
-                    <a href="/terms" className="text-primary hover:underline">
-                      terms and conditions
+                  <FormLabel
+                    className={form.formState.errors.agreeToTerms ? 'text-destructive' : ''}
+                  >
+                    <a
+                      href="/terms"
+                      className="text-primary hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      I agree to the terms and conditions
                     </a>
+                    <span className="text-destructive"> *</span>
                   </FormLabel>
-                  <FormMessage />
+                  <FormMessage id="terms-error" className="font-medium text-destructive" />
                 </div>
               </FormItem>
             )}
           />
+
+          {/* Add a general form error message section */}
+          {Object.keys(form.formState.errors).length > 0 && formSubmitted && (
+            <div className="mt-4 rounded-md bg-destructive/10 p-3">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-destructive" viewBox="0 0 20 20" fill="currentColor">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-destructive">
+                    Please fix the following errors:
+                  </h3>
+                  <div className="mt-2 text-sm text-destructive">
+                    <ul className="list-disc space-y-1 pl-5">
+                      {Object.entries(form.formState.errors).map(([key, error]) => {
+                        // Handle nested errors
+                        if (key === 'guestInfo' && typeof error === 'object') {
+                          return Object.entries(error).map(([nestedKey, nestedError]) => (
+                            <li key={`${key}.${nestedKey}`}>
+                              {nestedError?.message || `Error in ${nestedKey}`}
+                            </li>
+                          ));
+                        }
+
+                        // Handle regular errors
+                        return (
+                          <li key={key}>
+                            {key === 'agreeToTerms'
+                              ? 'You must agree to the terms and conditions'
+                              : error?.message || `Error in ${key}`}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </form>
 
         <div className="flex justify-end space-x-4 border-t border-gray-200 p-4">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting} onClick={form.handleSubmit(onSubmit)}>
-            {isSubmitting && <Spinner className="mr-2 h-4 w-4" />}
-            Request Booking
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            onClick={form.handleSubmit(onSubmit)}
+            className="min-w-[120px]"
+          >
+            {isSubmitting ? (
+              <>
+                <Spinner className="mr-2 h-4 w-4" />
+                Submitting...
+              </>
+            ) : (
+              'Request Booking'
+            )}
           </Button>
         </div>
       </div>
