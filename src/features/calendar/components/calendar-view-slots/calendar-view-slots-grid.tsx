@@ -117,6 +117,25 @@ export function CalendarViewSlotsGrid({
     return rows;
   }, [timeSlots, availabilityData, selectedServiceId, timeRange]);
 
+  // After creating the tableData, trim the trailing empty rows
+  const trimmedTableData = useMemo(() => {
+    // Start from the end and find the last row with data
+    for (let i = tableData.length - 1; i >= 0; i--) {
+      const row = tableData[i];
+      const hasSlots = Object.keys(row)
+        .filter((key) => key !== 'time')
+        .some((day) => row[day as keyof Omit<TimeSlotRow, 'time'>].length > 0);
+
+      if (hasSlots) {
+        // Return all rows up to and including this one
+        return tableData.slice(0, i + 1);
+      }
+    }
+
+    // If no rows have data, return an empty array
+    return [];
+  }, [tableData]);
+
   useEffect(() => {
     if (!container.current || !containerNav.current || !containerOffset.current) return;
 
@@ -191,7 +210,7 @@ export function CalendarViewSlotsGrid({
               </TableCell>
             </TableRow>
           ) : (
-            tableData.map((row, index) => (
+            trimmedTableData.map((row, index) => (
               <TableRow key={index} className="divide-x divide-gray-100">
                 <TableCell className="w-12 text-center text-xs font-medium sm:w-24 sm:text-sm">
                   {row.time.toLocaleTimeString('en-US', {
