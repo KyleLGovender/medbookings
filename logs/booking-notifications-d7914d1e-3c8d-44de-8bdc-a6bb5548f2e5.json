@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-03-12T13:53:22.156Z",
+  "type": "BOOKING_CANCELLATION",
+  "channel": "EMAIL",
+  "bookingId": "cm84m71fp0002hwkhet7garcz",
+  "serviceProviderId": "cm6kttqh40003cqir96jnlgiz",
+  "guestName": "Ariel",
+  "serviceName": "General Consultation",
+  "startTime": "2025-03-13T07:00:00.000Z",
+  "endTime": "2025-03-13T07:15:00.000Z",
+  "confirmationLink": "/dashboard/bookings/confirm/cm84m71fp0002hwkhet7garcz",
+  "declineLink": "/dashboard/bookings/decline/cm84m71fp0002hwkhet7garcz"
+}

@@ -161,12 +161,29 @@ export function CalendarViewSlotsGrid({
     const now = new Date();
     const startTime = new Date(slot.startTime);
 
+    // Past slots
     if (startTime < now) {
       return 'bg-gray-200 text-gray-600 hover:bg-gray-300 cursor-not-allowed';
     }
+
+    // Slots with bookings
     if (slot.booking) {
-      return 'bg-blue-500 text-white hover:bg-blue-800';
+      // Different colors based on booking status
+      switch (slot.booking.status) {
+        case 'CONFIRMED':
+          return 'bg-blue-600 text-white hover:bg-blue-800';
+        case 'PENDING':
+          return 'bg-amber-500 text-white hover:bg-amber-600';
+        case 'CANCELLED':
+          return 'bg-red-500 text-white hover:bg-red-600';
+        case 'COMPLETED':
+          return 'bg-purple-500 text-white hover:bg-purple-600';
+        default:
+          return 'bg-blue-500 text-white hover:bg-blue-800';
+      }
     }
+
+    // Available slots
     return 'bg-green-500 text-white hover:bg-green-800';
   }, []);
 

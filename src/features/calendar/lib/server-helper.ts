@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 import { prisma } from '@/lib/prisma';
 
-import { Availability, AvailabilityFormSchema, BookingFormSchema } from './types';
+import { AvailabilityFormSchema, AvailabilityView, BookingFormSchema } from './types';
 
 function hasTimeOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
   return start1 < end2 && start2 < end1;
@@ -62,7 +62,7 @@ export async function checkAvailabilityModificationAllowed(
   availabilityId: string,
   serviceProviderId: string
 ): Promise<{
-  availability?: Availability;
+  availability?: AvailabilityView;
   error?: string;
 }> {
   const availability = await prisma.availability.findFirst({
@@ -99,7 +99,7 @@ export async function checkAvailabilityModificationAllowed(
     return { error: 'Cannot modify availability with confirmed bookings' };
   }
 
-  return { availability: availability as Availability };
+  return { availability: availability as AvailabilityView };
 }
 
 export async function validateAvailabilityFormData(formData: FormData): Promise<{
@@ -352,29 +352,73 @@ export async function checkBookingAccess(bookingId: string, userId: string) {
   return booking;
 }
 
-export async function calculateAvailabilitySlots(availability: Availability) {
+export async function calculateAvailabilitySlots(
+  formData: z.infer<typeof AvailabilityFormSchema>,
+  availabilityId: string,
+  availableServices: { id: string; serviceId: string; duration: number }[],
+  existingSlots: {
+    id: string;
+    startTime: Date;
+    endTime: Date;
+    serviceId: string;
+    serviceConfigId: string;
+    status: string;
+    booking?: { id: string } | null;
+  }[] = []
+) {
+  // Slots to create
   const slots: Prisma.CalculatedAvailabilitySlotCreateManyInput[] = [];
 
-  availability.availableServices.forEach((serviceConfig) => {
-    let currentTime = new Date(availability.startTime);
-    while (currentTime < availability.endTime) {
+  // Keep track of existing slots with bookings that we'll preserve
+  const preservedSlotIds = new Set<string>();
+
+  // First, identify slots with bookings to preserve
+  const slotsWithBookings = existingSlots.filter((slot) => slot.booking);
+
+  // Process each service configuration
+  formData.availableServices.forEach((serviceConfig) => {
+    const availableService = availableServices.find(
+      (as) => as.serviceId === serviceConfig.serviceId
+    );
+    if (!availableService) return;
+
+    let currentTime = new Date(formData.startTime);
+    while (currentTime < formData.endTime) {
       const slotEnd = new Date(currentTime.getTime() + serviceConfig.duration * 60000);
-      if (slotEnd <= availability.endTime) {
-        slots.push({
-          availabilityId: availability.id,
-          serviceId: serviceConfig.serviceId,
-          serviceConfigId: serviceConfig.id,
-          startTime: currentTime,
-          endTime: slotEnd,
-          lastCalculated: new Date(),
-          status: 'AVAILABLE',
-        });
+      if (slotEnd <= formData.endTime) {
+        // Check if this time slot overlaps with any existing booked slot
+        const overlappingBookedSlot = slotsWithBookings.find(
+          (slot) =>
+            slot.serviceId === serviceConfig.serviceId &&
+            ((currentTime >= slot.startTime && currentTime < slot.endTime) ||
+              (slotEnd > slot.startTime && slotEnd <= slot.endTime) ||
+              (currentTime <= slot.startTime && slotEnd >= slot.endTime))
+        );
+
+        // If there's an overlapping booked slot, preserve it and don't create a new one
+        if (overlappingBookedSlot) {
+          preservedSlotIds.add(overlappingBookedSlot.id);
+        } else {
+          // Otherwise, create a new slot
+          slots.push({
+            availabilityId,
+            serviceId: serviceConfig.serviceId,
+            serviceConfigId: availableService.id,
+            startTime: currentTime,
+            endTime: slotEnd,
+            lastCalculated: new Date(),
+            status: 'AVAILABLE',
+          });
+        }
       }
       currentTime = new Date(slotEnd.getTime());
     }
   });
 
-  return slots;
+  return {
+    slotsToCreate: slots,
+    slotIdsToPreserve: Array.from(preservedSlotIds),
+  };
 }
 
 export async function calculateInitialAvailabilitySlots(
@@ -403,6 +447,54 @@ export async function calculateInitialAvailabilitySlots(
           lastCalculated: new Date(),
           status: 'AVAILABLE',
         });
+      }
+      currentTime = new Date(slotEnd.getTime());
+    }
+  });
+
+  return slots;
+}
+
+export async function calculateNonOverlappingSlots(
+  formData: z.infer<typeof AvailabilityFormSchema>,
+  availabilityId: string,
+  availableServices: { id: string; serviceId: string; duration: number }[],
+  bookedTimeRanges: { serviceId: string; startTime: Date; endTime: Date }[]
+) {
+  const slots: Prisma.CalculatedAvailabilitySlotCreateManyInput[] = [];
+
+  formData.availableServices.forEach((serviceConfig) => {
+    const availableService = availableServices.find(
+      (as) => as.serviceId === serviceConfig.serviceId
+    );
+    if (!availableService) return;
+
+    // Get booked ranges for this service
+    const serviceBookedRanges = bookedTimeRanges.filter(
+      (range) => range.serviceId === serviceConfig.serviceId
+    );
+
+    let currentTime = new Date(formData.startTime);
+    while (currentTime < formData.endTime) {
+      const slotEnd = new Date(currentTime.getTime() + serviceConfig.duration * 60000);
+      if (slotEnd <= formData.endTime) {
+        // Check if this slot overlaps with any booked slot
+        const overlapsWithBooking = serviceBookedRanges.some(
+          (range) => currentTime < range.endTime && slotEnd > range.startTime
+        );
+
+        // Only create the slot if it doesn't overlap with a booking
+        if (!overlapsWithBooking) {
+          slots.push({
+            availabilityId,
+            serviceId: serviceConfig.serviceId,
+            serviceConfigId: availableService.id,
+            startTime: currentTime,
+            endTime: slotEnd,
+            lastCalculated: new Date(),
+            status: 'AVAILABLE',
+          });
+        }
       }
       currentTime = new Date(slotEnd.getTime());
     }

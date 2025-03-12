@@ -15,7 +15,7 @@ import { prisma } from '@/lib/prisma';
 
 import {
   calculateInitialAvailabilitySlots,
-  checkAvailabilityModificationAllowed,
+  calculateNonOverlappingSlots,
   checkBookingAccess,
   validateAvailabilityFormData,
   validateBookingFormData,
@@ -141,12 +141,41 @@ export async function deleteAvailability(
   serviceProviderId: string
 ): Promise<{ success?: boolean; error?: string }> {
   try {
-    const { error } = await checkAvailabilityModificationAllowed(availabilityId, serviceProviderId);
-    if (error) {
-      return { error };
+    // First, check if the availability exists and belongs to the service provider
+    const availability = await prisma.availability.findFirst({
+      where: {
+        id: availabilityId,
+        serviceProviderId,
+      },
+      include: {
+        calculatedSlots: {
+          include: {
+            booking: {
+              select: { id: true, status: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!availability) {
+      return { error: 'Availability not found' };
     }
 
-    // If no access issues or confirmed bookings, proceed with deletion
+    // Check if any slots have associated bookings (of any status)
+    const slotsWithBookings = availability.calculatedSlots.filter((slot) => slot.booking);
+
+    if (slotsWithBookings.length > 0) {
+      // Get the statuses of the bookings for a more informative error message
+      const bookingStatuses = slotsWithBookings.map((slot) => slot.booking?.status);
+      const uniqueStatuses = Array.from(new Set(bookingStatuses)).join(', ');
+
+      return {
+        error: `Cannot delete availability with existing bookings (${uniqueStatuses}). Cancel the bookings first.`,
+      };
+    }
+
+    // If no bookings, proceed with deletion
     await prisma.$transaction([
       // First delete all calculated slots
       prisma.calculatedAvailabilitySlot.deleteMany({
@@ -182,9 +211,69 @@ export async function updateAvailability(
     }
 
     const { data } = validationResult;
-    console.log('Validated data:', data);
 
-    // Check which configurations already exist
+    // 1. First, check if there are any bookings associated with this availability
+    const existingSlots = await prisma.calculatedAvailabilitySlot.findMany({
+      where: { availabilityId },
+      include: {
+        booking: {
+          select: {
+            id: true,
+            status: true,
+            serviceId: true,
+            startTime: true,
+            endTime: true,
+          },
+        },
+      },
+    });
+
+    const bookedSlots = existingSlots.filter((slot) => slot.booking);
+
+    // 2. If there are bookings, perform safety checks
+    if (bookedSlots.length > 0) {
+      // Check if the new time range would exclude any booked slots
+      const newStartTime = data.startTime;
+      const newEndTime = data.endTime;
+
+      // Get the original availability to compare
+      const originalAvailability = await prisma.availability.findUnique({
+        where: { id: availabilityId },
+      });
+
+      if (!originalAvailability) {
+        return { error: 'Availability not found' };
+      }
+
+      // Ensure new time range doesn't exclude any booked slots
+      for (const slot of bookedSlots) {
+        if (slot.startTime < newStartTime || slot.endTime > newEndTime) {
+          return {
+            error: 'Cannot modify availability: new time range would exclude existing bookings',
+          };
+        }
+      }
+
+      // Get all service IDs that have bookings
+      const bookedServiceIds = new Set(
+        bookedSlots
+          .map((slot) => slot.booking?.serviceId)
+          .filter((id): id is string => id !== undefined)
+      );
+
+      // Ensure all services with bookings are still included in the update
+      const updatedServiceIds = new Set(data.availableServices.map((s) => s.serviceId));
+
+      for (const serviceId of Array.from(bookedServiceIds)) {
+        if (!updatedServiceIds.has(serviceId)) {
+          return {
+            error: `Cannot remove service with ID ${serviceId} as it has existing bookings`,
+          };
+        }
+      }
+    }
+
+    // 3. Check which configurations already exist
     const existingConfigs = await prisma.serviceAvailabilityConfig.findMany({
       where: {
         serviceProviderId: formData.get('serviceProviderId') as string,
@@ -193,46 +282,24 @@ export async function updateAvailability(
         },
       },
     });
-    // console.log('Existing configs:', existingConfigs);
 
     const existingServiceIds = new Set(existingConfigs.map((c) => c.serviceId));
-    const newServiceIds = new Set(data.availableServices.map((s) => s.serviceId));
-    // console.log('Existing service IDs:', Array.from(existingServiceIds));
-    // console.log('New service IDs:', Array.from(newServiceIds));
 
-    // Find services to disconnect
-    const servicesToDisconnect = await prisma.serviceAvailabilityConfig.findMany({
-      where: {
-        serviceProviderId: formData.get('serviceProviderId') as string,
-        serviceId: {
-          notIn: Array.from(newServiceIds),
-        },
-      },
-      select: {
-        serviceId: true,
-        serviceProviderId: true,
-      },
-    });
-    // console.log('Services to disconnect:', servicesToDisconnect);
-
+    // 4. Update the availability
     const availability = await prisma.availability.update({
       where: { id: availabilityId },
       data: {
         startTime: data.startTime,
         endTime: data.endTime,
         availableServices: {
-          disconnect: servicesToDisconnect.map((config) => ({
-            serviceId_serviceProviderId: {
-              serviceId: config.serviceId,
-              serviceProviderId: config.serviceProviderId,
-            },
-          })),
+          // Connect existing configs
           connect: existingConfigs.map((config) => ({
             serviceId_serviceProviderId: {
               serviceId: config.serviceId,
               serviceProviderId: config.serviceProviderId,
             },
           })),
+          // Create new configs for services that don't exist yet
           create: data.availableServices
             .filter((service) => !existingServiceIds.has(service.serviceId))
             .map((service) => ({
@@ -250,26 +317,59 @@ export async function updateAvailability(
         availableServices: true,
       },
     });
-    console.log('Updated availability:', availability);
 
-    // Delete existing slots first
-    const deletedSlots = await prisma.calculatedAvailabilitySlot.deleteMany({
-      where: { availabilityId },
-    });
-    // console.log('Deleted existing slots:', deletedSlots);
+    // 5. Handle slot updates carefully
+    if (bookedSlots.length > 0) {
+      // For availabilities with bookings, we need to be careful
 
-    // Create new calculated slots
-    const calculatedSlots = await calculateInitialAvailabilitySlots(
-      data,
-      availability.id,
-      availability.availableServices
-    );
-    // console.log('New calculated slots:', calculatedSlots);
+      // Get all slots that don't have bookings
+      const nonBookedSlotIds = existingSlots.filter((slot) => !slot.booking).map((slot) => slot.id);
 
-    const createdSlots = await prisma.calculatedAvailabilitySlot.createMany({
-      data: calculatedSlots,
-    });
-    // console.log('Created new slots:', createdSlots);
+      // Only delete slots that don't have bookings
+      if (nonBookedSlotIds.length > 0) {
+        await prisma.calculatedAvailabilitySlot.deleteMany({
+          where: {
+            id: { in: nonBookedSlotIds },
+          },
+        });
+      }
+
+      // Calculate new slots, but exclude time ranges that already have bookings
+      const bookedTimeRanges = bookedSlots.map((slot) => ({
+        serviceId: slot.serviceId,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+      }));
+
+      // Create new slots that don't overlap with existing bookings
+      const newSlots = await calculateNonOverlappingSlots(
+        data,
+        availability.id,
+        availability.availableServices,
+        bookedTimeRanges
+      );
+
+      if (newSlots.length > 0) {
+        await prisma.calculatedAvailabilitySlot.createMany({
+          data: newSlots,
+        });
+      }
+    } else {
+      // If no bookings, we can safely delete all slots and recreate them
+      await prisma.calculatedAvailabilitySlot.deleteMany({
+        where: { availabilityId },
+      });
+
+      const calculatedSlots = await calculateInitialAvailabilitySlots(
+        data,
+        availability.id,
+        availability.availableServices
+      );
+
+      await prisma.calculatedAvailabilitySlot.createMany({
+        data: calculatedSlots,
+      });
+    }
 
     return {
       data: {
