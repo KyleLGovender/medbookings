@@ -29,9 +29,9 @@ export function BookingFormWrapper({
     router.back();
   };
 
-  const handleSuccess = () => {
-    // Navigate to success page or back to calendar
-    router.push('/calendar/booking/success');
+  const handleSuccess = (bookingId: string) => {
+    // Navigate to success page with the booking ID
+    router.push(`/calendar/booking/success?bookingId=${bookingId}`);
     router.refresh();
   };
 

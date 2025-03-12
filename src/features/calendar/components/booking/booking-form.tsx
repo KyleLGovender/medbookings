@@ -33,7 +33,7 @@ interface BookingFormProps {
     image?: string | null;
   };
   onCancel: () => void;
-  onSuccess: () => void;
+  onSuccess: (bookingId: string) => void;
   isSubmitting: boolean;
   setIsSubmitting: (value: boolean) => void;
 }
@@ -151,7 +151,7 @@ export function BookingForm({
         description: 'Booking created successfully',
       });
 
-      onSuccess();
+      onSuccess(response.data?.bookingId || '');
     } catch (error) {
       console.error('Booking creation error:', error);
       toast({
