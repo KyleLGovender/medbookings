@@ -27,7 +27,7 @@ export default function RootLayout({
       <body className="flex h-full flex-col">
         <Providers>
           <AppNavbar className="flex-shrink-0" />
-          <main className="flex-1">
+          <main className="flex-1 bg-gray-50">
             <Suspense>{children}</Suspense>
           </main>
           <AppFooter className="mt-auto" />

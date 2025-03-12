@@ -13,7 +13,10 @@ import AuthButton from '@/components/app-navbar/auth-button';
 export default function AppNavbar({ className = '' }: { className?: string }) {
   const { data: session } = useSession();
   const pathname = usePathname();
-  const menuItems = [{ label: 'Home', href: '/' }];
+  const menuItems = [
+    { label: 'Home', href: '/' },
+    { label: 'Book with Shei', href: '/calendar/service-provider/cm6kttqh40003cqir96jnlgiz' },
+  ];
   const profileMenuItems = [
     { label: 'Profile', href: '/profile' },
     { label: 'Service Provider', href: '/profile/service-provider' },
