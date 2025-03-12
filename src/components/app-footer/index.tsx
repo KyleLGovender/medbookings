@@ -1,8 +1,10 @@
 import ThemeSwitcher from '@/components/app-footer/theme-switcher';
 
-export default function AppFooter() {
+export default function AppFooter({ className = '' }: { className?: string }) {
   return (
-    <footer className="flex w-full items-center justify-between px-6 py-3">
+    <footer
+      className={`flex w-full items-center justify-between bg-white px-6 py-3 shadow-sm ${className}`}
+    >
       {/* Empty div to help with spacing */}
       <div className="w-[100px]" />
 

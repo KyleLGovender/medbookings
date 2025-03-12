@@ -167,10 +167,7 @@ export function BookingForm({
   return (
     <Form {...form}>
       <div className="flex h-full flex-col">
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex-1 space-y-6 overflow-y-auto p-4"
-        >
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 space-y-6 p-4">
           {/* Service Provider Info */}
           <div className="flex items-start space-x-4">
             <Avatar className="h-32 w-32">

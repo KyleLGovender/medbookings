@@ -9,8 +9,8 @@ export default async function BookingPage({ params }: { params: { slotId: string
     const { slot, serviceProvider } = await getBookingDetails(params.slotId);
 
     return (
-      <main className="min-h-screen bg-gray-50">
-        <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="bg-gray-50 py-8">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Book with {serviceProvider.name}</h1>
             <p className="mt-2 text-sm text-gray-600">
@@ -23,7 +23,7 @@ export default async function BookingPage({ params }: { params: { slotId: string
             </div>
           </Suspense>
         </div>
-      </main>
+      </div>
     );
   } catch (error) {
     notFound();

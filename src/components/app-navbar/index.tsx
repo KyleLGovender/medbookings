@@ -10,7 +10,7 @@ import { useSession } from 'next-auth/react';
 
 import AuthButton from '@/components/app-navbar/auth-button';
 
-export default function AppNavbar() {
+export default function AppNavbar({ className = '' }: { className?: string }) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const menuItems = [{ label: 'Home', href: '/' }];
@@ -22,7 +22,7 @@ export default function AppNavbar() {
   ];
 
   return (
-    <Disclosure as="nav" className="bg-white shadow">
+    <Disclosure as="nav" className={`bg-white shadow ${className}`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 justify-between">
           <div className="flex">
