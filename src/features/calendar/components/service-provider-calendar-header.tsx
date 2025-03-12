@@ -157,7 +157,7 @@ export function ServiceProviderCalendarHeader({
           className="w-auto"
           onClick={() => {
             router.push(
-              `/calendar/service-provider/${serviceProviderId}?start=${rangeStartDate.toISOString().split('T')[0]}`
+              `/calendar/service-provider/${serviceProviderId}?start=${rangeStartDate.getFullYear()}-${String(rangeStartDate.getMonth() + 1).padStart(2, '0')}-${String(rangeStartDate.getDate()).padStart(2, '0')}`
             );
           }}
         >
