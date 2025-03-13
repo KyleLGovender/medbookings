@@ -38,7 +38,7 @@ export async function registerServiceProvider(prevState: any, formData: FormData
     const provider = await prisma.serviceProvider.create({
       data: {
         userId,
-        image: imageUrl,
+        image: imageUrl || '',
         name: formData.get('name') as string,
         bio: formData.get('bio') as string,
         website: formData.get('website') as string,

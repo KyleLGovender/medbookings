@@ -6,9 +6,9 @@ import { Suspense, useCallback, useEffect, useState, useTransition } from 'react
 import { startOfWeek } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
-import { CalendarHeader } from '@/features/calendar/components/calendar-header';
 import { CalendarSkeleton } from '@/features/calendar/components/calendar-utils/calendar-skeleton';
 import { CalendarViewSlots } from '@/features/calendar/components/calendar-view-slots/index';
+import { CalendarHeader } from '@/features/calendar/components/calendar/calendar-header';
 import {
   getDateRange,
   getDistinctServices,

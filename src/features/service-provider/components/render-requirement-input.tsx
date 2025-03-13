@@ -1,8 +1,7 @@
-import { getLocalTimeZone, now, parseDate } from '@internationalized/date';
-import { DatePicker, DateValue } from '@nextui-org/react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
 
-import { ServiceProviderFormType } from '@/features/profile/service-provider/lib/service-provider-schema';
+import { DatePicker } from '@/components/ui/date-picker';
+import { ServiceProviderFormType } from '@/features/service-provider/lib/types';
 
 type RequirementType = {
   id: string;
@@ -83,34 +82,30 @@ export const renderRequirementInput = (
       const dateValue = form.watch(`requirements.${requirement.index}.value`) || null;
       return (
         <DatePicker
-          id={inputId}
-          isRequired={requirement.isRequired}
-          className="mt-1 block w-full"
-          variant="bordered"
-          minValue={now(getLocalTimeZone())}
-          value={dateValue ? parseDate(dateValue) : null}
-          onChange={(date: DateValue) => {
-            form.setValue(`requirements.${requirement.index}.value`, date.toString());
+          date={dateValue ? new Date(dateValue) : undefined}
+          onChange={(date?: Date) => {
+            if (date) {
+              form.setValue(
+                `requirements.${requirement.index}.value`,
+                date.toISOString().split('T')[0]
+              );
+            }
           }}
-          showMonthAndYearPickers
-          label="Select Date"
         />
       );
     case 'PAST_DATE':
       const pastDateValue = form.watch(`requirements.${requirement.index}.value`) || null;
       return (
         <DatePicker
-          id={inputId}
-          isRequired={requirement.isRequired}
-          className="mt-1 block w-full"
-          variant="bordered"
-          maxValue={now(getLocalTimeZone())}
-          value={pastDateValue ? parseDate(pastDateValue) : null}
-          onChange={(date: DateValue) => {
-            form.setValue(`requirements.${requirement.index}.value`, date.toString());
+          date={pastDateValue ? new Date(pastDateValue) : undefined}
+          onChange={(date?: Date) => {
+            if (date) {
+              form.setValue(
+                `requirements.${requirement.index}.value`,
+                date.toISOString().split('T')[0]
+              );
+            }
           }}
-          showMonthAndYearPickers
-          label="Select Date"
         />
       );
     case 'PREDEFINED_LIST':

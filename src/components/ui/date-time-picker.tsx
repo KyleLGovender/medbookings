@@ -30,7 +30,12 @@ export function DateTimePicker({ date, setDate }: DateTimePickerProps) {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
-        <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={(selectedDate) => selectedDate && setDate(selectedDate)}
+          initialFocus
+        />
         <div className="border-t p-3">
           <Input
             type="time"

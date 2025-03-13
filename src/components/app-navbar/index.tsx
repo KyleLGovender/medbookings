@@ -90,11 +90,17 @@ export default function AppNavbar({ className = '' }: { className?: string }) {
         <div className="border-t border-gray-200 pb-3 pt-4">
           <div className="flex items-center px-4 sm:px-6">
             <div className="shrink-0">
-              <img
-                alt=""
-                src={session?.user?.image ?? undefined}
-                className="size-10 rounded-full"
-              />
+              {session?.user?.image ? (
+                <Image
+                  alt=""
+                  src={session.user.image}
+                  width={40}
+                  height={40}
+                  className="size-10 rounded-full"
+                />
+              ) : (
+                <div className="size-10 rounded-full bg-gray-200" />
+              )}
             </div>
             <div className="ml-3">
               <div className="text-base font-medium text-gray-800">

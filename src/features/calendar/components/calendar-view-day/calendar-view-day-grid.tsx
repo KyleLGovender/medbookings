@@ -2,14 +2,14 @@
 
 import { useEffect, useRef } from 'react';
 
-import classNames from '@/lib/classNames';
+import classNames from '@/lib/class-names';
 
-import { AvailabilityView, TimeRange, ViewType } from '../../lib/types';
+import { AvailabilityView, ServiceProviderCalendarViewType, TimeRange } from '../../lib/types';
 import { CalendarViewDayTimeGrid } from './calendar-view-day-time-grid';
 
 interface CalendarViewDayGridProps {
   rangeStartDate: string;
-  onDateChange: (dateStr: string, fromView: ViewType) => void;
+  onDateChange: (dateStr: string, fromView: ServiceProviderCalendarViewType) => void;
   onViewChange?: (view: 'day') => void;
   availabilityData: AvailabilityView[];
   serviceProviderId: string;

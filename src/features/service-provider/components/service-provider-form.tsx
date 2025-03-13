@@ -10,7 +10,7 @@ import { useFormState } from 'react-dom';
 import { useForm, useWatch } from 'react-hook-form';
 
 import { registerServiceProvider } from '../lib/actions';
-import { type ServiceProviderFormType, serviceProviderSchema } from '../lib/schema';
+import { type ServiceProviderFormType, serviceProviderSchema } from '../lib/types';
 
 const ACCEPTED_IMAGE_TYPES = ['.jpg', '.jpeg', '.png', '.webp'];
 

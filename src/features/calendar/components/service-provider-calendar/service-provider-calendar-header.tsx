@@ -12,8 +12,12 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { DateRangeSelector } from '@/components/ui/date-range-selector';
 import { CalendarNavigation } from '@/features/calendar/components/calendar-utils/calendar-navigation';
 
-import { AvailabilitySlot, AvailabilityView, ServiceProviderCalendarViewType } from '../lib/types';
-import { AvailabilityFormDialog } from './availability-form/availability-form-dialog';
+import {
+  AvailabilitySlot,
+  AvailabilityView,
+  ServiceProviderCalendarViewType,
+} from '../../lib/types';
+import { AvailabilityFormDialog } from '../availability-form/availability-form-dialog';
 
 interface ServiceProviderCalendarHeaderProps {
   view: ServiceProviderCalendarViewType;

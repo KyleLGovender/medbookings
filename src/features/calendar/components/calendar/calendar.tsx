@@ -1,10 +1,10 @@
 import { Suspense } from 'react';
 
-import { CalendarWrapper } from '@/features/calendar/components/calendar-wrapper';
+import { CalendarWrapper } from '@/features/calendar/components/calendar/calendar-wrapper';
 
-import { getDateRange } from '../lib/helper';
-import { getServiceProviderAvailabilityInRange } from '../lib/queries';
-import { CalendarViewType } from '../lib/types';
+import { getDateRange } from '../../lib/helper';
+import { getServiceProviderAvailabilityInRange } from '../../lib/queries';
+import { CalendarViewType } from '../../lib/types';
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 

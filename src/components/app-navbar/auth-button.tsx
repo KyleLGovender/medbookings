@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 
@@ -32,7 +34,17 @@ export default function AuthButton({ profileMenuItems = [] }: AuthButtonProps) {
           <MenuButton className="relative flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
             <span className="absolute -inset-1.5" />
             <span className="sr-only">Open user menu</span>
-            <img alt="" src={data?.user?.image ?? undefined} className="size-8 rounded-full" />
+            {data?.user?.image ? (
+              <Image
+                alt=""
+                src={data.user.image}
+                width={32}
+                height={32}
+                className="size-8 rounded-full"
+              />
+            ) : (
+              <div className="size-8 rounded-full bg-gray-200" />
+            )}
           </MenuButton>
         </div>
         <MenuItems

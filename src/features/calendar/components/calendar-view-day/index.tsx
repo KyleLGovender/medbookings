@@ -1,10 +1,10 @@
-import { AvailabilityView, TimeRange, ViewType } from '../../lib/types';
+import { AvailabilityView, ServiceProviderCalendarViewType, TimeRange } from '../../lib/types';
 import { CalendarViewDayGrid } from './calendar-view-day-grid';
 
 interface CalendarViewDayProps {
   rangeStartDate: Date;
   availabilityData: AvailabilityView[];
-  onDateChange: (date: Date, fromView: ViewType) => void;
+  onDateChange: (date: Date, fromView: ServiceProviderCalendarViewType) => void;
   onViewChange?: (view: 'day') => void;
   serviceProviderId: string;
   onRefresh: () => void;

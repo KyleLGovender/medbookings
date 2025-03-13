@@ -131,7 +131,21 @@ export async function getServiceProviderAvailabilityInRange(
               id: slot.booking.id,
               status: slot.booking.status,
               price: Number(slot.booking.price),
-              client: slot.booking.client || undefined,
+              startTime: slot.startTime,
+              endTime: slot.endTime,
+              service: {
+                id: slot.service.id,
+                name: slot.service.name,
+              },
+              client: slot.booking.client
+                ? {
+                    id: slot.booking.client.id,
+                    name: slot.booking.client.name,
+                    email: slot.booking.client.email,
+                    phone: null,
+                    whatsapp: null,
+                  }
+                : undefined,
               guestName: slot.booking.guestName,
               guestEmail: slot.booking.guestEmail,
               guestPhone: slot.booking.guestPhone,
@@ -235,11 +249,19 @@ export async function getBookingDetails(slotId: string): Promise<{
             id: slot.booking.id,
             status: slot.booking.status,
             price: Number(slot.booking.price),
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            service: {
+              id: slot.service.id,
+              name: slot.service.name,
+            },
             client: slot.booking.client
               ? {
                   id: slot.booking.client.id,
                   name: slot.booking.client.name,
                   email: slot.booking.client.email,
+                  phone: null,
+                  whatsapp: null,
                 }
               : undefined,
             guestName: slot.booking.guestName,

@@ -1,12 +1,12 @@
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { getDateRange } from '@/features/calendar/lib/helper';
+import { getServiceProviderAvailabilityInRange } from '@/features/calendar/lib/queries';
+import { ServiceProviderCalendarViewType } from '@/features/calendar/lib/types';
 import { getCurrentUser } from '@/lib/auth';
 import { getAuthenticatedServiceProvider } from '@/lib/server-helper';
 
-import { getDateRange } from '../lib/helper';
-import { getServiceProviderAvailabilityInRange } from '../lib/queries';
-import { ServiceProviderCalendarViewType } from '../lib/types';
 import { ServiceProviderCalendarWrapper } from './service-provider-calendar-wrapper';
 
 type SearchParams = { [key: string]: string | string[] | undefined };

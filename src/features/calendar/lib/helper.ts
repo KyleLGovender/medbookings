@@ -3,7 +3,15 @@ import { DateRange } from 'react-day-picker';
 
 import { convertLocalToUTC, convertUTCToLocal, formatLocalDate } from '@/lib/timezone-helper';
 
-import { AvailabilityView, TimeRange, ViewType } from './types';
+import {
+  AvailabilityView,
+  CalendarViewType,
+  ServiceProviderCalendarViewType,
+  TimeRange,
+} from './types';
+
+// Define a union type for all view types
+type ViewType = CalendarViewType | ServiceProviderCalendarViewType;
 
 interface CalendarDay {
   date: string;

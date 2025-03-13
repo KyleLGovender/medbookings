@@ -10,7 +10,7 @@ import { DateRange } from 'react-day-picker';
 import { DatePicker } from '@/components/ui/date-picker';
 import { CalendarNavigation } from '@/features/calendar/components/calendar-utils/calendar-navigation';
 
-import { AvailabilitySlot, AvailabilityView, CalendarViewType } from '../lib/types';
+import { AvailabilitySlot, AvailabilityView, CalendarViewType } from '../../lib/types';
 
 interface CalendarHeaderProps {
   view: CalendarViewType;

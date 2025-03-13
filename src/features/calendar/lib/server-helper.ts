@@ -86,6 +86,7 @@ export async function checkAvailabilityModificationAllowed(
             },
           },
           service: true,
+          serviceConfig: true,
         },
       },
     },
@@ -99,7 +100,73 @@ export async function checkAvailabilityModificationAllowed(
     return { error: 'Cannot modify availability with confirmed bookings' };
   }
 
-  return { availability: availability as AvailabilityView };
+  // Transform the data to match AvailabilityView structure
+  return {
+    availability: {
+      id: availability.id,
+      startTime: availability.startTime,
+      endTime: availability.endTime,
+      serviceProvider: {
+        id: availability.serviceProvider.id,
+        name: availability.serviceProvider.name,
+        image: availability.serviceProvider.image,
+      },
+      slots: availability.calculatedSlots.map((slot) => ({
+        id: slot.id,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        status: slot.status,
+        service: {
+          id: slot.service.id,
+          name: slot.service.name,
+          description: slot.service.description,
+          displayPriority: slot.service.displayPriority,
+        },
+        serviceConfig: {
+          id: slot.serviceConfig?.id || '',
+          price: Number(slot.serviceConfig?.price || 0),
+          duration: slot.serviceConfig?.duration || 0,
+          isOnlineAvailable: slot.serviceConfig?.isOnlineAvailable || false,
+          isInPerson: slot.serviceConfig?.isInPerson || false,
+          location: slot.serviceConfig?.location || null,
+        },
+        booking: slot.booking
+          ? {
+              id: slot.booking.id,
+              status: slot.booking.status,
+              price: Number(slot.booking.price || 0),
+              startTime: slot.startTime,
+              endTime: slot.endTime,
+              service: {
+                id: slot.service.id,
+                name: slot.service.name,
+              },
+              client: slot.booking.client
+                ? {
+                    id: slot.booking.client.id,
+                    name: slot.booking.client.name,
+                    email: slot.booking.client.email,
+                    phone: null,
+                    whatsapp: null,
+                  }
+                : undefined,
+              guestName: slot.booking.guestName,
+              guestEmail: slot.booking.guestEmail,
+              guestPhone: slot.booking.guestPhone,
+              guestWhatsapp: slot.booking.guestWhatsapp,
+            }
+          : null,
+      })),
+      availableServices: availability.availableServices.map((service) => ({
+        serviceId: service.serviceId,
+        duration: service.duration,
+        price: Number(service.price),
+        isOnlineAvailable: service.isOnlineAvailable,
+        isInPerson: service.isInPerson,
+        location: service.location,
+      })),
+    },
+  };
 }
 
 export async function validateAvailabilityFormData(formData: FormData): Promise<{
@@ -179,128 +246,72 @@ export async function validateAvailabilityFormData(formData: FormData): Promise<
   }
 }
 
-export async function checkScheduleAccess(
-  scheduleId: string,
-  serviceProviderId: string
-): Promise<{
-  schedule?: Schedule;
-  error?: string;
-}> {
-  const schedule = await prisma.availability.findFirst({
-    where: {
-      id: scheduleId,
-      serviceProviderId,
-    },
-    include: {
-      calculatedSlots: {
-        include: {
-          booking: true,
-        },
-      },
-    },
-  });
-
-  if (!schedule) {
-    return { error: 'Schedule not found' };
-  }
-
-  if (schedule.calculatedSlots.some((slot) => slot.booking?.status === 'CONFIRMED')) {
-    return { error: 'Cannot modify schedule with confirmed bookings' };
-  }
-
-  return { schedule };
-}
-
 export async function validateBookingWithAvailability(
   data: z.infer<typeof BookingFormSchema>,
-  availability: z.infer<typeof AvailabilitySchema> & { bookings: any[] }
+  availability: any
 ): Promise<{
   isValid: boolean;
   error?: string;
   path?: string[];
 }> {
-  // Add online/in-person validation here while keeping existing validation
-  if (data.isOnline && !availability.isOnlineAvailable) {
-    return {
-      isValid: false,
-      error: 'Online bookings are not available for this time slot',
-      path: ['isOnline'],
-    };
-  }
-
-  if (data.isInPerson && !availability.isInPersonAvailable) {
-    return {
-      isValid: false,
-      error: 'In-person bookings are not available for this time slot',
-      path: ['isInPerson'],
-    };
-  }
-
-  // Validate location for in-person bookings
-  if (data.isInPerson && !data.location?.trim()) {
-    return {
-      isValid: false,
-      error: 'Location is required for in-person bookings',
-      path: ['location'],
-    };
-  }
-
-  // 1. Validate booking is within availability time range
-  const bookingStart = new Date(data.startTime);
-  const bookingEnd = new Date(data.endTime);
-  const availabilityStart = new Date(availability.startTime);
-  const availabilityEnd = new Date(availability.endTime);
-
-  if (bookingStart < availabilityStart || bookingEnd > availabilityEnd) {
-    return {
-      isValid: false,
-      error: 'Booking must be within availability time range',
-      path: ['startTime'],
-    };
-  }
-
-  // 2. Validate duration matches availability settings
-  if (data.duration !== availability.duration) {
-    return {
-      isValid: false,
-      error: 'Booking duration must match availability duration',
-      path: ['duration'],
-    };
-  }
-
-  // 3. Validate against maxBookings
-  if (availability.maxBookings) {
-    const existingBookingsCount = availability.bookings.length;
-    if (existingBookingsCount >= availability.maxBookings) {
-      return {
-        isValid: false,
-        error: 'Maximum number of bookings reached for this availability',
-        path: ['availabilityId'],
-      };
-    }
-  }
-
-  // 4. Validate price matches availability
-  if (data.price !== availability.price) {
-    return {
-      isValid: false,
-      error: 'Booking price must match availability price',
-      path: ['price'],
-    };
-  }
-
-  // 5. Check for overlapping bookings
-  const hasOverlap = availability.bookings.some((booking) => {
-    const existingStart = new Date(booking.startTime);
-    const existingEnd = new Date(booking.endTime);
-    return bookingStart < existingEnd && bookingEnd > existingStart;
+  // Get the slot from the availability
+  const slot = await prisma.calculatedAvailabilitySlot.findUnique({
+    where: { id: data.slotId },
+    include: {
+      service: true,
+      serviceConfig: true,
+      availability: true,
+    },
   });
 
-  if (hasOverlap) {
+  if (!slot) {
     return {
       isValid: false,
-      error: 'This time slot overlaps with an existing booking',
-      path: ['startTime'],
+      error: 'Slot not found',
+      path: ['slotId'],
+    };
+  }
+
+  // Check if the slot is available
+  if (slot.status !== 'AVAILABLE') {
+    return {
+      isValid: false,
+      error: 'This slot is not available',
+      path: ['slotId'],
+    };
+  }
+
+  // Check if the slot is within the availability time range
+  if (slot.availability.id !== availability.id) {
+    return {
+      isValid: false,
+      error: 'Slot does not belong to the specified availability',
+      path: ['slotId'],
+    };
+  }
+
+  // Validate notification preferences
+  if (
+    !data.notificationPreferences.email &&
+    !data.notificationPreferences.sms &&
+    !data.notificationPreferences.whatsapp
+  ) {
+    return {
+      isValid: false,
+      error: 'At least one notification method must be selected',
+      path: ['notificationPreferences'],
+    };
+  }
+
+  // Validate guest info if booking type requires it
+  if (
+    (data.bookingType === 'USER_GUEST' || data.bookingType === 'PROVIDER_GUEST') &&
+    !data.guestInfo
+  ) {
+    return {
+      isValid: false,
+      error: 'Guest information is required',
+      path: ['guestInfo'],
     };
   }
 
@@ -309,19 +320,45 @@ export async function validateBookingWithAvailability(
 
 export async function validateBookingFormData(formData: FormData): Promise<{
   data?: z.infer<typeof BookingFormSchema>;
+  error?: string;
   fieldErrors?: Record<string, string[]>;
   formErrors?: string[];
 }> {
-  const validationResult = await BookingFormSchema.safeParseAsync(formData);
+  try {
+    // Extract form data
+    const data = {
+      slotId: formData.get('slotId') as string,
+      bookingType: formData.get('bookingType') as any,
+      notificationPreferences: {
+        email: formData.get('notifyViaEmail') === 'true',
+        sms: formData.get('notifyViaSMS') === 'true',
+        whatsapp: formData.get('notifyViaWhatsapp') === 'true',
+      },
+      guestInfo: {
+        name: formData.get('guestName') as string,
+        email: (formData.get('guestEmail') as string) || undefined,
+        phone: (formData.get('guestPhone') as string) || undefined,
+        whatsapp: (formData.get('guestWhatsapp') as string) || undefined,
+      },
+      agreeToTerms: formData.get('agreeToTerms') === 'true',
+    };
 
-  if (!validationResult.success) {
+    // Validate using the schema
+    const result = BookingFormSchema.safeParse(data);
+
+    if (!result.success) {
+      return {
+        fieldErrors: result.error.flatten().fieldErrors,
+        formErrors: result.error.flatten().formErrors,
+      };
+    }
+
+    return { data: result.data };
+  } catch (error) {
     return {
-      fieldErrors: validationResult.error.flatten().fieldErrors,
-      formErrors: validationResult.error.flatten().formErrors,
+      error: error instanceof Error ? error.message : 'Failed to validate form data',
     };
   }
-
-  return { data: validationResult.data };
 }
 
 export async function checkBookingAccess(bookingId: string, userId: string) {

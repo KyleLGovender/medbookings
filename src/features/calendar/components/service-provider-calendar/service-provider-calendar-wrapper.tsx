@@ -12,7 +12,7 @@ import { CalendarSkeleton } from '@/features/calendar/components/calendar-utils/
 import { CalendarViewDay } from '@/features/calendar/components/calendar-view-day';
 import { CalendarViewSchedule } from '@/features/calendar/components/calendar-view-schedule';
 import { CalendarViewWeek } from '@/features/calendar/components/calendar-view-week';
-import { ServiceProviderCalendarHeader } from '@/features/calendar/components/service-provider-calendar-header';
+import { ServiceProviderCalendarHeader } from '@/features/calendar/components/service-provider-calendar/service-provider-calendar-header';
 import {
   getDateRange,
   getDistinctServices,

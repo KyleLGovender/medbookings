@@ -1,12 +1,12 @@
 'use client';
 
-import { AvailabilityView, TimeRange, ViewType } from '../../lib/types';
+import { AvailabilityView, ServiceProviderCalendarViewType, TimeRange } from '../../lib/types';
 import { CalendarViewWeekGrid } from './calendar-view-week-grid';
 
 interface CalendarViewWeekProps {
   rangeStartDate: Date;
   availabilityData: AvailabilityView[];
-  onDateChange: (date: Date, fromView: ViewType) => void;
+  onDateChange: (date: Date, fromView: ServiceProviderCalendarViewType) => void;
   onViewChange?: (view: 'day') => void;
   serviceProviderId: string;
   onRefresh: () => void;
@@ -30,11 +30,16 @@ export function CalendarViewWeek({
     await onRefresh();
   };
 
+  // Create an adapter function to handle the type mismatch
+  const handleDateChange = (date: Date, fromView: any) => {
+    onDateChange(date, 'week');
+  };
+
   return (
     <CalendarViewWeekGrid
       rangeStartDate={rangeStartDate}
       availabilityData={availabilityData}
-      onDateChange={onDateChange}
+      onDateChange={handleDateChange}
       onViewChange={onViewChange}
       serviceProviderId={serviceProviderId}
       onRefresh={handleRefresh}

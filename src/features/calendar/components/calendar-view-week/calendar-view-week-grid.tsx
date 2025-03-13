@@ -8,18 +8,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import classNames from '@/lib/classNames';
+import classNames from '@/lib/class-names';
 import { convertUTCToLocal } from '@/lib/timezone-helper';
 
 import { getEventGridPosition, isSameDay } from '../../lib/helper';
-import { AvailabilityView, TimeRange, ViewType } from '../../lib/types';
+import { AvailabilityView, ServiceProviderCalendarViewType, TimeRange } from '../../lib/types';
 import { CalendarItemAvailability } from '../calendar-utils';
 import { CalendarViewTimeColumn } from '../calendar-utils/calendar-view-time-column';
 
 interface CalendarViewWeekGridProps {
   rangeStartDate: Date;
   availabilityData: AvailabilityView[];
-  onDateChange: (date: Date, fromView: ViewType) => void;
+  onDateChange: (date: Date, fromView: ServiceProviderCalendarViewType) => void;
   onViewChange?: (view: 'day') => void;
   serviceProviderId: string;
   onRefresh: () => Promise<void>;
@@ -111,17 +111,9 @@ export function CalendarViewWeekGrid({
                     <DropdownMenuItem
                       onClick={() => {
                         onDateChange(date, 'day');
-                        onViewChange('day');
                       }}
                     >
                       View Day
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        onDateChange(date, 'slots');
-                      }}
-                    >
-                      View Slots
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

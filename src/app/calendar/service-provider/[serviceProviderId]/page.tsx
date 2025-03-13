@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 
-import { Calendar } from '@/features/calendar/components/calendar';
+import { Calendar } from '@/features/calendar/components/calendar/calendar';
 import { getServiceProviderName } from '@/lib/queries';
 
 export default async function CalendarPage({

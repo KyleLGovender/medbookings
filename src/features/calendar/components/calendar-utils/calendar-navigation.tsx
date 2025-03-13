@@ -2,7 +2,10 @@
 
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid';
 
-import { ViewType } from '../../lib/types';
+import { CalendarViewType, ServiceProviderCalendarViewType } from '../../lib/types';
+
+// Define a union type for all view types
+type ViewType = CalendarViewType | ServiceProviderCalendarViewType;
 
 interface CalendarNavigationProps {
   viewType: ViewType;
