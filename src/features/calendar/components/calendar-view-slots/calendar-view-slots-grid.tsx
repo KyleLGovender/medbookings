@@ -194,7 +194,7 @@ export function CalendarViewSlotsGrid({
 
     // Only navigate if the slot is in the future and not already booked
     if (startTime > now && !slot.booking) {
-      router.push(`/calendar/booking/${slot.id}`);
+      router.replace(`/calendar/booking/${slot.id}`, { scroll: false });
     }
   };
 

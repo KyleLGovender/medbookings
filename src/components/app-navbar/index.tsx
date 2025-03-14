@@ -15,7 +15,7 @@ export default function AppNavbar({ className = '' }: { className?: string }) {
   const pathname = usePathname();
   const menuItems = [
     { label: 'Home', href: '/' },
-    { label: 'Book with Shei', href: '/calendar/service-provider/cm6kttqh40003cqir96jnlgiz' },
+    { label: 'Service Providers', href: '/service-providers/' },
   ];
   const profileMenuItems = [
     { label: 'Profile', href: '/profile' },

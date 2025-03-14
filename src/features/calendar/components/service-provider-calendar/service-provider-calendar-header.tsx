@@ -1,10 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
+import { debounce } from 'lodash';
 import { DateRange } from 'react-day-picker';
 
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,13 @@ export function ServiceProviderCalendarHeader({
 }: ServiceProviderCalendarHeaderProps) {
   const router = useRouter();
   const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
+
+  const debouncedUpdateUrl = useCallback(
+    debounce((url: string) => {
+      router.replace(url, { scroll: false });
+    }, 300),
+    [router]
+  );
 
   const handlePrevious = () => {
     onPrevious();
@@ -160,8 +168,11 @@ export function ServiceProviderCalendarHeader({
           variant="outline"
           className="w-auto"
           onClick={() => {
-            router.push(
-              `/calendar/service-provider/${serviceProviderId}?start=${rangeStartDate.getFullYear()}-${String(rangeStartDate.getMonth() + 1).padStart(2, '0')}-${String(rangeStartDate.getDate()).padStart(2, '0')}`
+            const queryString = new URLSearchParams({
+              start: `${rangeStartDate.getFullYear()}-${String(rangeStartDate.getMonth() + 1).padStart(2, '0')}`,
+            }).toString();
+            debouncedUpdateUrl(
+              `/calendar/service-provider/${serviceProviderId}${queryString ? `?${queryString}` : ''}`
             );
           }}
         >

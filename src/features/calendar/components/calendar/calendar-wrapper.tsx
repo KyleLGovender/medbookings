@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState, useTransition } from 'react';
 
 import { startOfWeek } from 'date-fns';
+import { debounce } from 'lodash';
 import { DateRange } from 'react-day-picker';
 
 import { CalendarSkeleton } from '@/features/calendar/components/calendar-utils/calendar-skeleton';
@@ -64,6 +65,13 @@ export function CalendarWrapper({
     setTimeRange(getTimeRangeOfMultipleAvailabilityView(availabilityData));
   }, [availabilityData]);
 
+  const debouncedUpdateUrl = useCallback(
+    debounce((url: string) => {
+      router.replace(url, { scroll: false });
+    }, 300),
+    [router]
+  );
+
   const updateUrlParams = (updates: { range?: DateRange; view?: string }) => {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -100,7 +108,9 @@ export function CalendarWrapper({
 
     // Correct approach for Next.js 14 App Router
     const queryString = params.toString();
-    router.push(`/calendar${queryString ? `?${queryString}` : ''}`);
+    debouncedUpdateUrl(
+      `/calendar/service-provider/${serviceProviderId}/${queryString ? `?${queryString}` : ''}`
+    );
   };
 
   const handleViewChange = (newView: CalendarViewType) => {

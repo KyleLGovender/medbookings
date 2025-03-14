@@ -104,9 +104,9 @@ export function ServiceProviderCalendarWrapper({
 
     // Correct approach for Next.js 14 App Router
     const queryString = params.toString();
-    router.push(
-      `/calendar/service-provider/${serviceProviderId}${queryString ? `?${queryString}` : ''}`
-    );
+    router.replace(`/profile/service-provider/calendar${queryString ? `?${queryString}` : ''}`, {
+      scroll: false,
+    });
   };
 
   const handleViewChange = (newView: ServiceProviderCalendarViewType) => {
