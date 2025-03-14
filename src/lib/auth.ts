@@ -1,7 +1,10 @@
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { UserRole } from '@prisma/client';
-import { getServerSession } from 'next-auth';
+import { NextAuthOptions, getServerSession } from 'next-auth';
+import GoogleProvider from 'next-auth/providers/google';
 
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import env from '@/config/env/server';
+import { prisma } from '@/lib/prisma';
 
 interface User {
   id: string;
@@ -10,6 +13,42 @@ interface User {
   email?: string | null;
   image?: string | null;
 }
+
+export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
+  session: {
+    strategy: 'jwt', // Make sure this is set
+  },
+  providers: [
+    GoogleProvider({
+      clientId: env.GOOGLE_CLIENT_ID!,
+      clientSecret: env.GOOGLE_CLIENT_SECRET!,
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        return {
+          ...token,
+          id: user.id,
+          role: user.role,
+        };
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      // Add role and id to session
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id,
+          role: token.role,
+        },
+      };
+    },
+  },
+};
 
 export async function getCurrentUser() {
   const session = await getServerSession(authOptions);

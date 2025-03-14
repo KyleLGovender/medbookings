@@ -2,10 +2,10 @@ import Link from 'next/link';
 
 import { getServerSession } from 'next-auth';
 
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { authOptions } from '@/lib/auth';
 
 import { getServiceProviderId } from '../../../lib/server-helper';
 
