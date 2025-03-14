@@ -76,4 +76,4 @@ export const serviceProviderSchema = z.object({
   }),
 });
 
-export type ServiceProviderFormType = z.infer<typeof import('./schema').serviceProviderSchema>;
+export type ServiceProviderFormType = z.infer<typeof serviceProviderSchema>;
