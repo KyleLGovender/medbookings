@@ -37,3 +37,7 @@ yarn-error.log*
 next-env.d.ts
 
 docker_data
+
+# logs
+/logs/
+logs/

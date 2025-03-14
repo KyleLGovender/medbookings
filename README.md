@@ -194,3 +194,60 @@ The following checks are implemented:
 - Guests can only book for themselves
 
 For detailed implementation and usage examples, refer to the documentation in each component and utility file.
+
+## Deployment to Vercel
+
+This project is configured for deployment to Vercel with PostgreSQL.
+
+### Prerequisites
+
+1. A Vercel account
+2. A Vercel PostgreSQL database (or another PostgreSQL provider)
+
+### Deployment Steps
+
+1. Install the Vercel CLI:
+
+   ```bash
+   npm install -g vercel
+   ```
+
+2. Login to Vercel:
+
+   ```bash
+   vercel login
+   ```
+
+3. Deploy the project:
+
+   ```bash
+   vercel
+   ```
+
+4. During deployment, Vercel will ask you to configure environment variables. Make sure to set up:
+
+   - `DATABASE_URL`: Your PostgreSQL connection string
+   - `AUTH_SECRET`: A secure random string for NextAuth.js
+   - Other environment variables as needed (Google OAuth, Twilio, SendGrid, etc.)
+
+5. Connect your Vercel PostgreSQL database:
+
+   - Go to your Vercel project dashboard
+   - Navigate to Storage
+   - Create a new PostgreSQL database
+   - Vercel will automatically set up the `DATABASE_URL` environment variable
+
+6. Run database migrations:
+
+   ```bash
+   vercel env pull .env.production.local
+   npx prisma migrate deploy
+   ```
+
+7. Your application should now be deployed and connected to the database!
+
+### Production Considerations
+
+- Make sure to set `NEXTAUTH_URL` to your production URL
+- Configure proper CORS settings if needed
+- Set up proper authentication providers for production

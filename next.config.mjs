@@ -12,6 +12,9 @@ const nextConfig = {
     typedRoutes: true,
   },
   transpilePackages: ['react-hook-form', 'next-safe-action'],
+  images: {
+    domains: ['wfhq93qoozwnz2zu.public.blob.vercel-storage.com', 'lh3.googleusercontent.com'],
+  },
 };
 
 export default nextConfig;
