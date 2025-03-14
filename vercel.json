@@ -1,7 +1,15 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "installCommand": "npm install",
-  "framework": "nextjs",
-  "regions": ["iad1"]
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next",
+      "config": {
+        "buildCommand": "npm run build"
+      }
+    }
+  ],
+  "env": {
+    "PRISMA_SKIP_POSTINSTALL_GENERATE": "true"
+  }
 }

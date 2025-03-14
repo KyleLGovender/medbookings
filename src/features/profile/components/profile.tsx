@@ -11,6 +11,7 @@ import { getServiceProviderId } from '../../../lib/server-helper';
 
 export default async function Profile() {
   const session = await getServerSession(authOptions);
+  console.log('session', session);
   const serviceProvider = session?.user?.id ? await getServiceProviderId(session.user.id) : null;
 
   return (

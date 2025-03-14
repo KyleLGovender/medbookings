@@ -8,9 +8,9 @@ jiti('./src/config/env/server');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    typedRoutes: true,
-  },
+  // experimental: {
+  //   typedRoutes: true,
+  // },
   transpilePackages: ['react-hook-form', 'next-safe-action'],
   images: {
     domains: ['wfhq93qoozwnz2zu.public.blob.vercel-storage.com', 'lh3.googleusercontent.com'],

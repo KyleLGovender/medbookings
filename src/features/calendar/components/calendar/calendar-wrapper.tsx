@@ -65,7 +65,7 @@ export function CalendarWrapper({
   }, [availabilityData]);
 
   const updateUrlParams = (updates: { range?: DateRange; view?: string }) => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams.toString());
 
     if (updates.range) {
       params.delete('start');
@@ -98,8 +98,9 @@ export function CalendarWrapper({
       }
     }
 
-    const newUrl = `?${params.toString()}`;
-    router.push(newUrl, { scroll: false });
+    // Correct approach for Next.js 14 App Router
+    const queryString = params.toString();
+    router.push(`/calendar${queryString ? `?${queryString}` : ''}`);
   };
 
   const handleViewChange = (newView: CalendarViewType) => {
