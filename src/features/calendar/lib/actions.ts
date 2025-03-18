@@ -8,9 +8,9 @@ import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { z } from 'zod';
 
-import { NotificationService } from '@/features/notifications/notification-service';
 import { TemplateService } from '@/features/notifications/template-service';
 import { getCurrentUser } from '@/lib/auth';
+import { communicationsService } from '@/lib/communications';
 import { prisma } from '@/lib/prisma';
 
 import {
@@ -421,64 +421,93 @@ export async function lookupUser(email: string) {
 }
 
 async function sendBookingNotifications(booking: BookingView) {
-  const notificationPromises = [];
-  const templateText = TemplateService.getBookingConfirmationTemplate(
-    booking,
-    booking.client?.name || booking.guestName
-  );
+  try {
+    const notificationPromises = [];
 
-  const template = {
-    subject: 'Booking Confirmation',
-    body: templateText,
-  };
+    // Prepare the message content using existing template service
+    const messageText = TemplateService.getBookingConfirmationTemplate(
+      booking,
+      booking.client?.name || booking.guestName
+    );
 
-  if (booking.client) {
-    // Handle registered user notifications
-    const recipient = {
-      name: booking.client.name || 'Client',
-      email: booking.client.email || undefined,
-      phone: booking.client.phone || undefined,
-      whatsapp: booking.client.whatsapp || undefined,
+    const template = {
+      subject: 'Booking Confirmation',
+      body: messageText,
     };
 
-    if (booking.client.notificationPreferences?.email && recipient.email) {
-      notificationPromises.push(NotificationService.sendEmail(recipient, template));
-    }
-    if (booking.client.notificationPreferences?.sms && recipient.phone) {
-      notificationPromises.push(NotificationService.sendSMS(recipient, template));
-    }
-    if (booking.client.notificationPreferences?.whatsapp && recipient.whatsapp) {
-      notificationPromises.push(NotificationService.sendWhatsApp(recipient, template));
-    }
-  } else {
-    // Handle guest notifications
-    const recipient = {
-      name: booking.guestName || 'Guest',
-      email: booking.guestEmail || undefined,
-      phone: booking.guestPhone || undefined,
-      whatsapp: booking.guestWhatsapp || undefined,
-    };
+    if (booking.client) {
+      // Handle registered user notifications
+      if (booking.client.notificationPreferences?.email && booking.client.email) {
+        notificationPromises.push(
+          communicationsService.sendEmail({
+            to: booking.client.email,
+            subject: template.subject,
+            message: template.body,
+          })
+        );
+      }
 
-    if (booking.notifyViaEmail && recipient.email) {
-      notificationPromises.push(NotificationService.sendEmail(recipient, template));
+      if (booking.client.notificationPreferences?.whatsapp && booking.client.whatsapp) {
+        notificationPromises.push(
+          communicationsService.sendWhatsAppMessage({
+            to: booking.client.whatsapp,
+            message: template.body,
+          })
+        );
+      }
+    } else {
+      // Handle guest notifications
+      if (booking.notifyViaEmail && booking.guestEmail) {
+        notificationPromises.push(
+          communicationsService.sendEmail({
+            to: booking.guestEmail,
+            subject: template.subject,
+            message: template.body,
+          })
+        );
+      }
+
+      if (booking.notifyViaWhatsapp && booking.guestWhatsapp) {
+        notificationPromises.push(
+          communicationsService.sendWhatsAppMessage({
+            to: booking.guestWhatsapp,
+            message: template.body,
+          })
+        );
+      }
     }
-    if (booking.notifyViaSMS && recipient.phone) {
-      notificationPromises.push(NotificationService.sendSMS(recipient, template));
+
+    // Send provider notification
+    if (booking.serviceProvider?.whatsapp) {
+      notificationPromises.push(
+        communicationsService.sendWhatsAppMessage({
+          to: booking.serviceProvider.whatsapp,
+          message: TemplateService.getBookingConfirmationTemplate(booking, 'Provider'),
+        })
+      );
     }
-    if (booking.notifyViaWhatsapp && recipient.whatsapp) {
-      notificationPromises.push(NotificationService.sendWhatsApp(recipient, template));
-    }
+
+    // Send all notifications in parallel and log results
+    const results = await Promise.allSettled(notificationPromises);
+
+    // Create notification logs in the database
+    const notificationLogs = results.map((result, index) => ({
+      bookingId: booking.id,
+      type: 'BOOKING_CONFIRMATION',
+      channel: index === 0 ? 'EMAIL' : 'WHATSAPP',
+      content: JSON.stringify(template),
+      status: result.status === 'fulfilled' ? 'SENT' : 'FAILED',
+      error: result.status === 'rejected' ? result.reason.message : null,
+    }));
+
+    // Log notifications to database
+    await prisma.notificationLog.createMany({
+      data: notificationLogs,
+    });
+  } catch (error) {
+    console.error('Error sending notifications:', error);
+    // Don't throw the error - we don't want to fail the booking if notifications fail
   }
-
-  // Send all notifications in parallel
-  const results = await Promise.allSettled(notificationPromises);
-
-  // Log any failures
-  results.forEach((result, index) => {
-    if (result.status === 'rejected') {
-      console.error(`Notification ${index} failed:`, result.reason);
-    }
-  });
 }
 
 export async function createBooking(formData: FormData): Promise<BookingResponse> {
