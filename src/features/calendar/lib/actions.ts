@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { BookingStatus, NotificationChannel, SlotStatus } from '@prisma/client';
+import { BookingStatus, NotificationChannel, NotificationType, SlotStatus } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
@@ -10,8 +10,8 @@ import { z } from 'zod';
 
 import { TemplateService } from '@/features/notifications/template-service';
 import { getCurrentUser } from '@/lib/auth';
-import { communicationsService } from '@/lib/communications';
 import { prisma } from '@/lib/prisma';
+import { communicationsService } from '@/lib/services/communications.service';
 
 import {
   calculateInitialAvailabilitySlots,
@@ -493,8 +493,8 @@ async function sendBookingNotifications(booking: BookingView) {
     // Create notification logs in the database
     const notificationLogs = results.map((result, index) => ({
       bookingId: booking.id,
-      type: 'BOOKING_CONFIRMATION',
-      channel: index === 0 ? 'EMAIL' : 'WHATSAPP',
+      type: NotificationType.BOOKING_CONFIRMATION,
+      channel: index === 0 ? NotificationChannel.EMAIL : NotificationChannel.WHATSAPP,
       content: JSON.stringify(template),
       status: result.status === 'fulfilled' ? 'SENT' : 'FAILED',
       error: result.status === 'rejected' ? result.reason.message : null,

@@ -36,7 +36,27 @@ type BaseServiceConfig = z.infer<typeof ServiceAvailabilityConfigSchema>;
 type BaseBooking = z.infer<typeof BookingSchema>;
 
 // Simplified types that break circular references
-export type BookingView = Pick<BaseBooking, 'id' | 'status'> & {
+export interface BookingView {
+  id: string;
+  client?: {
+    name: string | null;
+    email: string | null;
+    whatsapp: string | null;
+    notificationPreferences?: {
+      email: boolean;
+      whatsapp: boolean;
+    };
+  };
+  serviceProvider?: {
+    id: string;
+    name: string;
+    whatsapp: string | null;
+  };
+  guestName: string | null;
+  guestEmail: string | null;
+  guestWhatsapp: string | null;
+  notifyViaEmail?: boolean;
+  notifyViaWhatsapp?: boolean;
   price: number;
   startTime: Date | string;
   endTime: Date | string;
@@ -44,26 +64,9 @@ export type BookingView = Pick<BaseBooking, 'id' | 'status'> & {
     id: string;
     name: string;
   };
-  client?: {
-    id: string;
-    name: string | null;
-    email: string | null;
-    phone: string | null;
-    whatsapp: string | null;
-    notificationPreferences?: {
-      email: boolean;
-      sms: boolean;
-      whatsapp: boolean;
-    };
-  };
-  guestName: string | null;
-  guestEmail: string | null;
   guestPhone: string | null;
-  guestWhatsapp: string | null;
-  notifyViaEmail?: boolean;
   notifyViaSMS?: boolean;
-  notifyViaWhatsapp?: boolean;
-};
+}
 
 export type AvailabilitySlot = Pick<BaseSlot, 'id' | 'startTime' | 'endTime' | 'status'> & {
   service: Pick<BaseService, 'id' | 'name' | 'description' | 'displayPriority'>;
