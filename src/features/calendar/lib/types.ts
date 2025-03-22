@@ -1,3 +1,4 @@
+import { SlotStatus } from '@prisma/client';
 import {
   AvailabilitySchema,
   BookingSchema,
@@ -38,34 +39,46 @@ type BaseBooking = z.infer<typeof BookingSchema>;
 // Simplified types that break circular references
 export interface BookingView {
   id: string;
-  client?: {
-    name: string | null;
-    email: string | null;
-    whatsapp: string | null;
-    notificationPreferences?: {
-      email: boolean;
-      whatsapp: boolean;
+  bookingType: 'USER_SELF' | 'USER_GUEST' | 'GUEST_SELF' | 'PROVIDER_GUEST';
+  notificationPreferences: {
+    email: boolean;
+    sms: boolean;
+    whatsapp: boolean;
+  };
+  guestInfo: {
+    name: string;
+    email?: string;
+    phone?: string;
+    whatsapp?: string;
+  };
+  agreeToTerms: boolean;
+  slot: {
+    id: string;
+    startTime: Date | string;
+    endTime: Date | string;
+    status: SlotStatus;
+    service: {
+      id: string;
+      name: string;
+      description?: string;
+      displayPriority?: number;
+    };
+    serviceConfig: {
+      id: string;
+      price: number;
+      duration: number; // Duration in minutes
+      isOnlineAvailable: boolean;
+      isInPerson: boolean;
+      location?: string;
+    };
+    serviceProvider: {
+      id: string;
+      name: string;
+      email?: string;
+      whatsapp?: string;
+      image?: string | null;
     };
   };
-  serviceProvider?: {
-    id: string;
-    name: string;
-    whatsapp: string | null;
-  };
-  guestName: string | null;
-  guestEmail: string | null;
-  guestWhatsapp: string | null;
-  notifyViaEmail?: boolean;
-  notifyViaWhatsapp?: boolean;
-  price: number;
-  startTime: Date | string;
-  endTime: Date | string;
-  service: {
-    id: string;
-    name: string;
-  };
-  guestPhone: string | null;
-  notifyViaSMS?: boolean;
 }
 
 export type AvailabilitySlot = Pick<BaseSlot, 'id' | 'startTime' | 'endTime' | 'status'> & {
@@ -74,7 +87,7 @@ export type AvailabilitySlot = Pick<BaseSlot, 'id' | 'startTime' | 'endTime' | '
     BaseServiceConfig,
     'id' | 'price' | 'duration' | 'isOnlineAvailable' | 'isInPerson' | 'location'
   >;
-  booking: BookingView | null;
+  booking: Omit<BookingView, 'slot'> | null;
 };
 
 export type AvailabilityView = Pick<

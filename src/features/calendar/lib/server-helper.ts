@@ -1,15 +1,33 @@
 'use server';
 
 import { Prisma } from '@prisma/client';
+import sgMail from '@sendgrid/mail';
+import twilio from 'twilio';
 import { z } from 'zod';
 
+import env from '@/config/env/server';
+import { NotificationChannel, NotificationType } from '@/features/notifications/lib/types';
 import { prisma } from '@/lib/prisma';
+import { formatLocalDate, formatLocalTime } from '@/lib/timezone-helper';
 
-import { AvailabilityFormSchema, AvailabilityView, BookingFormSchema } from './types';
+import { AvailabilityFormSchema, AvailabilityView, BookingFormSchema, BookingView } from './types';
 
 function hasTimeOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
   return start1 < end2 && start2 < end1;
 }
+
+// Load environment variables
+const accountSid = env.TWILIO_ACCOUNT_SID;
+const authToken = env.TWILIO_AUTH_TOKEN;
+
+if (!accountSid || !authToken) {
+  throw new Error('Twilio credentials are not set in environment variables');
+}
+
+const twilioClient = twilio(accountSid, authToken);
+
+// Initialize SendGrid
+sgMail.setApiKey(env.SENDGRID_API_KEY!);
 
 function hasTimeOfDayOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
   // Convert to minutes since midnight for comparison
@@ -119,41 +137,53 @@ export async function checkAvailabilityModificationAllowed(
         service: {
           id: slot.service.id,
           name: slot.service.name,
-          description: slot.service.description,
+          description: slot.service.description || null,
           displayPriority: slot.service.displayPriority,
         },
         serviceConfig: {
-          id: slot.serviceConfig?.id || '',
-          price: Number(slot.serviceConfig?.price || 0),
-          duration: slot.serviceConfig?.duration || 0,
-          isOnlineAvailable: slot.serviceConfig?.isOnlineAvailable || false,
-          isInPerson: slot.serviceConfig?.isInPerson || false,
-          location: slot.serviceConfig?.location || null,
+          id: slot.serviceConfig.id,
+          price: Number(slot.serviceConfig.price),
+          duration: slot.serviceConfig.duration,
+          isOnlineAvailable: slot.serviceConfig.isOnlineAvailable,
+          isInPerson: slot.serviceConfig.isInPerson,
+          location: slot.serviceConfig.location || null,
         },
         booking: slot.booking
           ? {
               id: slot.booking.id,
-              status: slot.booking.status,
-              price: Number(slot.booking.price || 0),
-              startTime: slot.startTime,
-              endTime: slot.endTime,
-              service: {
-                id: slot.service.id,
-                name: slot.service.name,
+              bookingType: 'USER_SELF',
+              notificationPreferences: {
+                email: false,
+                sms: false,
+                whatsapp: false,
               },
-              client: slot.booking.client
-                ? {
-                    id: slot.booking.client.id,
-                    name: slot.booking.client.name,
-                    email: slot.booking.client.email,
-                    phone: null,
-                    whatsapp: null,
-                  }
-                : undefined,
-              guestName: slot.booking.guestName,
-              guestEmail: slot.booking.guestEmail,
-              guestPhone: slot.booking.guestPhone,
-              guestWhatsapp: slot.booking.guestWhatsapp,
+              guestInfo: {
+                name: '',
+                email: undefined,
+                phone: undefined,
+                whatsapp: undefined,
+              },
+              agreeToTerms: true,
+              slot: {
+                id: slot.id,
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                status: slot.status,
+                service: {
+                  id: slot.service.id,
+                  name: slot.service.name,
+                  description: slot.service.description,
+                  displayPriority: slot.service.displayPriority,
+                },
+                serviceConfig: {
+                  id: slot.serviceConfig.id,
+                  price: slot.serviceConfig.price,
+                  duration: slot.serviceConfig.duration,
+                  isOnlineAvailable: slot.serviceConfig.isOnlineAvailable,
+                  isInPerson: slot.serviceConfig.isInPerson,
+                  location: slot.serviceConfig.location,
+                },
+              },
             }
           : null,
       })),
@@ -538,4 +568,108 @@ export async function calculateNonOverlappingSlots(
   });
 
   return slots;
+}
+
+export async function sendBookingNotifications(booking: BookingView) {
+  try {
+    const notificationPromises = [];
+
+    // Use timezone-helper functions directly without specifying timezone
+    const templateVariables = JSON.stringify({
+      1: formatLocalDate(booking.slot.startTime), // Access startTime from slot
+      2: formatLocalTime(booking.slot.startTime), // Access startTime from slot
+    });
+
+    if (booking.notificationPreferences.email) {
+      const email = booking.guestInfo.email;
+      if (email) {
+        const emailContent = {
+          to: email,
+          from: env.SENDGRID_FROM_EMAIL!,
+          subject: 'Booking Confirmation',
+          text: `Your booking is confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.`,
+          html: `<strong>Your booking is confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.</strong>`,
+        };
+
+        notificationPromises.push(
+          sgMail
+            .send(emailContent)
+            .then((response) => {
+              console.log('Email sent successfully:', response);
+            })
+            .catch((error) => {
+              console.error('Error sending email:', error);
+            })
+        );
+      }
+    }
+
+    // Send provider notification
+    if (booking.slot.serviceProvider.whatsapp) {
+      notificationPromises.push(
+        twilioClient.messages.create({
+          from: 'whatsapp:+14155238886',
+          contentSid: 'HXb5b62575e6e4ff6129ad7c8efe1f983e',
+          contentVariables: templateVariables,
+          to: `whatsapp:${booking.slot.serviceProvider.whatsapp}`,
+        })
+      );
+    }
+
+    if (booking.notificationPreferences.whatsapp) {
+      const whatsapp = booking.guestInfo.whatsapp;
+      if (whatsapp) {
+        notificationPromises.push(
+          twilioClient.messages.create({
+            from: 'whatsapp:+14155238886',
+            contentSid: 'HXb5b62575e6e4ff6129ad7c8efe1f983e',
+            contentVariables: templateVariables,
+            to: `whatsapp:${whatsapp}`,
+          })
+        );
+      }
+    }
+
+    // Send provider email notification
+    if (booking.slot.serviceProvider.email) {
+      const emailContent = {
+        to: booking.slot.serviceProvider.email,
+        from: env.SENDGRID_FROM_EMAIL!,
+        subject: 'New Booking Notification',
+        text: `A new booking has been confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.`,
+        html: `<strong>A new booking has been confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.</strong>`,
+      };
+
+      notificationPromises.push(
+        sgMail
+          .send(emailContent)
+          .then((response) => {
+            console.log('Provider email sent successfully:', response);
+          })
+          .catch((error) => {
+            console.error('Error sending provider email:', error);
+          })
+      );
+    }
+
+    // Send all notifications in parallel and log results
+    const results = await Promise.allSettled(notificationPromises);
+
+    // Create notification logs in the database
+    const notificationLogs = results.map((result, index) => ({
+      bookingId: booking.id,
+      type: NotificationType.BOOKING_CONFIRMATION,
+      channel: index === 0 ? NotificationChannel.EMAIL : NotificationChannel.WHATSAPP,
+      content: JSON.stringify({ templateVariables }),
+      status: result.status === 'fulfilled' ? 'SENT' : 'FAILED',
+    }));
+
+    // Log notifications to database
+    await prisma.notificationLog.createMany({
+      data: notificationLogs,
+    });
+  } catch (error) {
+    console.error('Error sending notifications:', error);
+    // Don't throw the error - we don't want to fail the booking if notifications fail
+  }
 }

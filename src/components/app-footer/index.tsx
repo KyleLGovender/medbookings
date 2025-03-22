@@ -1,22 +1,12 @@
-import ThemeSwitcher from '@/components/app-footer/theme-switcher';
-
 export default function AppFooter({ className = '' }: { className?: string }) {
   return (
     <footer
-      className={`flex w-full items-center justify-between bg-white px-6 py-3 shadow-sm ${className}`}
+      className={`flex w-full items-center justify-center bg-white px-6 py-3 shadow-sm ${className}`}
     >
-      {/* Empty div to help with spacing */}
-      <div className="w-[100px]" />
-
       {/* Centered text */}
       <span className="text-small text-default-600 text-center">
-        © 2024 Your Company Name. All rights reserved.
+        © 2024 MedBookings. All rights reserved.
       </span>
-
-      {/* Theme switcher */}
-      <div className="flex w-[100px] justify-end">
-        <ThemeSwitcher />
-      </div>
     </footer>
   );
 }

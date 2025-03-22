@@ -2,21 +2,20 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { BookingStatus, NotificationChannel, NotificationType, SlotStatus } from '@prisma/client';
+import { BookingStatus, NotificationChannel, SlotStatus } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { z } from 'zod';
 
-import { TemplateService } from '@/features/notifications/template-service';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { communicationsService } from '@/lib/services/communications.service';
 
 import {
   calculateInitialAvailabilitySlots,
   calculateNonOverlappingSlots,
   checkBookingAccess,
+  sendBookingNotifications,
   validateAvailabilityFormData,
   validateBookingFormData,
   validateBookingWithAvailability,
@@ -420,96 +419,6 @@ export async function lookupUser(email: string) {
   }
 }
 
-async function sendBookingNotifications(booking: BookingView) {
-  try {
-    const notificationPromises = [];
-
-    // Prepare the message content using existing template service
-    const messageText = TemplateService.getBookingConfirmationTemplate(
-      booking,
-      booking.client?.name || booking.guestName
-    );
-
-    const template = {
-      subject: 'Booking Confirmation',
-      body: messageText,
-    };
-
-    if (booking.client) {
-      // Handle registered user notifications
-      if (booking.client.notificationPreferences?.email && booking.client.email) {
-        notificationPromises.push(
-          communicationsService.sendEmail({
-            to: booking.client.email,
-            subject: template.subject,
-            message: template.body,
-          })
-        );
-      }
-
-      if (booking.client.notificationPreferences?.whatsapp && booking.client.whatsapp) {
-        notificationPromises.push(
-          communicationsService.sendWhatsAppMessage({
-            to: booking.client.whatsapp,
-            message: template.body,
-          })
-        );
-      }
-    } else {
-      // Handle guest notifications
-      if (booking.notifyViaEmail && booking.guestEmail) {
-        notificationPromises.push(
-          communicationsService.sendEmail({
-            to: booking.guestEmail,
-            subject: template.subject,
-            message: template.body,
-          })
-        );
-      }
-
-      if (booking.notifyViaWhatsapp && booking.guestWhatsapp) {
-        notificationPromises.push(
-          communicationsService.sendWhatsAppMessage({
-            to: booking.guestWhatsapp,
-            message: template.body,
-          })
-        );
-      }
-    }
-
-    // Send provider notification
-    if (booking.serviceProvider?.whatsapp) {
-      notificationPromises.push(
-        communicationsService.sendWhatsAppMessage({
-          to: booking.serviceProvider.whatsapp,
-          message: TemplateService.getBookingConfirmationTemplate(booking, 'Provider'),
-        })
-      );
-    }
-
-    // Send all notifications in parallel and log results
-    const results = await Promise.allSettled(notificationPromises);
-
-    // Create notification logs in the database
-    const notificationLogs = results.map((result, index) => ({
-      bookingId: booking.id,
-      type: NotificationType.BOOKING_CONFIRMATION,
-      channel: index === 0 ? NotificationChannel.EMAIL : NotificationChannel.WHATSAPP,
-      content: JSON.stringify(template),
-      status: result.status === 'fulfilled' ? 'SENT' : 'FAILED',
-      error: result.status === 'rejected' ? result.reason.message : null,
-    }));
-
-    // Log notifications to database
-    await prisma.notificationLog.createMany({
-      data: notificationLogs,
-    });
-  } catch (error) {
-    console.error('Error sending notifications:', error);
-    // Don't throw the error - we don't want to fail the booking if notifications fail
-  }
-}
-
 export async function createBooking(formData: FormData): Promise<BookingResponse> {
   try {
     // Extract form data
@@ -597,41 +506,81 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
           guestPhone: validatedData.guestInfo?.phone,
           guestWhatsapp: validatedData.guestInfo?.whatsapp,
         },
+        include: {
+          slot: {
+            include: {
+              serviceConfig: true,
+            },
+          },
+          service: true,
+          client: {
+            include: {
+              notificationPreferences: true,
+            },
+          },
+          serviceProvider: {
+            include: {
+              user: true,
+            },
+          },
+        },
       });
-
-      // 3. Create notification preferences if needed
-      if (validatedData.notificationPreferences) {
-        // Log notifications based on preferences
-        if (validatedData.notificationPreferences.email && validatedData.guestInfo?.email) {
-          await logBookingNotification(
-            booking.id,
-            slot.serviceConfig.serviceProviderId,
-            'BOOKING_CONFIRMATION',
-            'EMAIL'
-          );
-        }
-
-        if (validatedData.notificationPreferences.sms && validatedData.guestInfo?.phone) {
-          await logBookingNotification(
-            booking.id,
-            slot.serviceConfig.serviceProviderId,
-            'BOOKING_CONFIRMATION',
-            'SMS'
-          );
-        }
-
-        if (validatedData.notificationPreferences.whatsapp && validatedData.guestInfo?.whatsapp) {
-          await logBookingNotification(
-            booking.id,
-            slot.serviceConfig.serviceProviderId,
-            'BOOKING_CONFIRMATION',
-            'WHATSAPP'
-          );
-        }
-      }
 
       return booking;
     });
+
+    if (!result.slot) {
+      throw new Error('Booking slot not found');
+    }
+
+    const bookingView: BookingView = {
+      id: result.id,
+      bookingType: validatedData.bookingType,
+      notificationPreferences: {
+        email: validatedData.notificationPreferences.email,
+        sms: validatedData.notificationPreferences.sms,
+        whatsapp: validatedData.notificationPreferences.whatsapp,
+      },
+      guestInfo: validatedData.guestInfo
+        ? {
+            name: validatedData.guestInfo.name,
+            email: validatedData.guestInfo.email,
+            phone: validatedData.guestInfo.phone,
+            whatsapp: validatedData.guestInfo.whatsapp,
+          }
+        : { name: '', email: undefined, phone: undefined, whatsapp: undefined },
+      agreeToTerms: validatedData.agreeToTerms,
+      slot: {
+        id: result.slot.id,
+        startTime: result.slot.startTime,
+        endTime: result.slot.endTime,
+        status: result.slot.status,
+        service: {
+          id: result.service.id,
+          name: result.service.name,
+          description: result.service.description ?? undefined,
+          displayPriority: result.service.displayPriority,
+        },
+        serviceConfig: {
+          id: result.slot.serviceConfig.id,
+          price: Number(result.slot.serviceConfig.price),
+          duration: result.slot.serviceConfig.duration,
+          isOnlineAvailable: result.slot.serviceConfig.isOnlineAvailable,
+          isInPerson: result.slot.serviceConfig.isInPerson,
+          location: result.slot.serviceConfig.location ?? undefined,
+        },
+        serviceProvider: {
+          id: result.serviceProvider.id,
+          name: result.serviceProvider.name,
+          email: result.serviceProvider.user.email ?? undefined,
+          whatsapp: result.serviceProvider.user.whatsapp ?? undefined,
+          image: result.serviceProvider.user.image ?? undefined,
+        },
+      },
+    };
+
+    // Send notifications
+    await sendBookingNotifications(bookingView);
 
     // Revalidate relevant paths to update UI
     revalidatePath(`/calendar/service-provider/${slot.serviceConfig.serviceProviderId}`);
