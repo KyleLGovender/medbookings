@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 import { ServiceProvider } from '@prisma/client';
 import { CalendarIcon } from 'lucide-react';
@@ -18,10 +19,17 @@ interface ServiceProviderCardProps {
 
 export function ServiceProviderCard({ serviceProvider }: ServiceProviderCardProps) {
   const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const navigateToBooking = () => {
+    setIsNavigating(true);
     router.push(`/calendar/service-provider/${serviceProvider.id}`);
   };
+
+  useEffect(() => {
+    // Prefetch the calendar page when the card is rendered
+    router.prefetch(`/calendar/service-provider/${serviceProvider.id}`);
+  }, [router, serviceProvider.id]);
 
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
@@ -61,9 +69,23 @@ export function ServiceProviderCard({ serviceProvider }: ServiceProviderCardProp
         </div>
       </CardContent>
       <CardFooter className="bg-muted/10 p-4">
-        <Button onClick={navigateToBooking} className="w-full" variant="default">
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          Book Appointment
+        <Button
+          onClick={navigateToBooking}
+          className="w-full"
+          variant="default"
+          disabled={isNavigating}
+        >
+          {isNavigating ? (
+            <>
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-b-transparent"></div>
+              Loading...
+            </>
+          ) : (
+            <>
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              Book Appointment
+            </>
+          )}
         </Button>
       </CardFooter>
     </Card>
