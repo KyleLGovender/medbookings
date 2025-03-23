@@ -2,7 +2,7 @@ import { Spinner } from '@/components/ui/spinner';
 
 export default function Loading() {
   return (
-    <div className="mx-auto w-64 p-12">
+    <div className="flex h-screen w-full items-center justify-center">
       <Spinner className="h-8 w-8" />
     </div>
   );

@@ -127,13 +127,8 @@ export const ServiceConfigFormSchema = ServiceAvailabilityConfigSchema.omit({
     path: ['price'],
   });
 
-export const AvailabilityFormSchema = AvailabilitySchema.omit({
-  id: true,
-  serviceProviderId: true,
-  createdAt: true,
-  updatedAt: true,
-})
-  .extend({
+export const AvailabilityFormSchema = z
+  .object({
     date: z
       .date({
         required_error: 'Date is required',
@@ -212,13 +207,8 @@ export const BookingTypeSchema = z.enum([
   'PROVIDER_GUEST',
 ]);
 
-export const BookingFormSchema = BookingSchema.omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  // Omit other fields that shouldn't be in the form
-})
-  .extend({
+export const BookingFormSchema = z
+  .object({
     slotId: z.string(),
     bookingType: BookingTypeSchema,
     notificationPreferences: z.object({
@@ -226,14 +216,12 @@ export const BookingFormSchema = BookingSchema.omit({
       sms: z.boolean(),
       whatsapp: z.boolean(),
     }),
-    guestInfo: z
-      .object({
-        name: z.string().min(1, 'Guest name is required'),
-        email: z.string().email('Invalid email').optional(),
-        phone: z.string().optional(),
-        whatsapp: z.string().optional(),
-      })
-      .optional(),
+    guestInfo: z.object({
+      name: z.string().min(1, 'Guest name is required'),
+      email: z.string().email('Invalid email').optional().or(z.literal('')),
+      phone: z.string().optional().or(z.literal('')),
+      whatsapp: z.string().optional().or(z.literal('')),
+    }),
     agreeToTerms: z.boolean().refine((val) => val === true, {
       message: 'You must agree to the terms and conditions',
     }),

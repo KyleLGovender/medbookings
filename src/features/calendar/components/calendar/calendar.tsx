@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 
+import { CalendarSkeleton } from '@/features/calendar/components/calendar/calendar-skeleton';
 import { CalendarWrapper } from '@/features/calendar/components/calendar/calendar-wrapper';
 
 import { getDateRange } from '../../lib/helper';
@@ -42,7 +43,7 @@ export async function Calendar({ searchParams, serviceProviderId }: CalendarProp
   );
 
   return (
-    <Suspense fallback={<div className="h-[600px] animate-pulse rounded-lg bg-gray-100" />}>
+    <Suspense fallback={<CalendarSkeleton />}>
       <div className="rounded-lg bg-white shadow">
         <CalendarWrapper
           initialAvailability={availability}

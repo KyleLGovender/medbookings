@@ -1,12 +1,14 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 import { SlotStatusSchema } from '@prisma/zod';
 import { format } from 'date-fns';
 import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import {
   Table,
   TableBody,
@@ -38,31 +40,44 @@ export function CalendarViewScheduleGrid({
 }: CalendarViewScheduleGridProps) {
   const { toast } = useToast();
   const router = useRouter();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleDelete = async (id: string, type: 'availability' | 'booking') => {
-    const baseId = id.split('-')[0];
+    setDeletingId(id);
 
-    const response =
-      type === 'availability'
-        ? await deleteAvailability(baseId, serviceProviderId)
-        : await deleteBooking(baseId);
+    try {
+      const baseId = id.split('-')[0];
 
-    if (response.error) {
+      const response =
+        type === 'availability'
+          ? await deleteAvailability(baseId, serviceProviderId)
+          : await deleteBooking(baseId);
+
+      if (response.error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: response.error,
+        });
+        return;
+      }
+
+      toast({
+        title: 'Success',
+        description: `${type === 'availability' ? 'Availability' : 'Booking'} deleted successfully`,
+      });
+
+      router.refresh();
+      await onRefresh();
+    } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: response.error,
+        description: 'An unexpected error occurred',
       });
-      return;
+    } finally {
+      setDeletingId(null);
     }
-
-    toast({
-      title: 'Success',
-      description: `${type === 'availability' ? 'Availability' : 'Booking'} deleted successfully`,
-    });
-
-    router.refresh();
-    await onRefresh();
   };
 
   return (
@@ -127,9 +142,16 @@ export function CalendarViewScheduleGrid({
                         variant="destructive"
                         size="sm"
                         className="text-xs sm:text-sm"
+                        disabled={deletingId === availability.id}
                         onClick={() => handleDelete(availability.id, 'availability')}
                       >
-                        Delete
+                        {deletingId === availability.id ? (
+                          <>
+                            <Spinner className="mr-2 h-3 w-3" />
+                          </>
+                        ) : (
+                          'Delete'
+                        )}
                       </Button>
                     </div>
                   </TableCell>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -74,12 +74,16 @@ export function BookingForm({
     mode: 'onSubmit',
   });
 
+  // Add this to log form errors when they change
+  useEffect(() => {
+    if (Object.keys(form.formState.errors).length > 0) {
+      console.log('Form validation errors:', form.formState.errors);
+    }
+  }, [form.formState.errors]);
+
   async function onSubmit(values: any) {
     // Mark form as submitted to show validation errors
     setFormSubmitted(true);
-
-    // Log form values for debugging
-    console.log('Form values:', values);
 
     setIsSubmitting(true);
 
@@ -105,20 +109,10 @@ export function BookingForm({
     // IMPORTANT: Explicitly add the terms and conditions agreement
     formData.append('agreeToTerms', values.agreeToTerms.toString());
 
-    // Log what's being sent to the server
-    const formDataObj: Record<string, string> = {};
-    formData.forEach((value, key) => {
-      formDataObj[key] = value.toString();
-      console.log(`${key}: ${value}`);
-    });
-    console.log('FormData as object:', formDataObj);
-
     try {
       const response = await createBooking(formData);
 
       if (response.error) {
-        console.error('Server response error:', response);
-
         if (response.fieldErrors) {
           // Enhanced error handling for field errors
           Object.entries(response.fieldErrors).forEach(([field, errors]) => {
@@ -153,7 +147,6 @@ export function BookingForm({
 
       onSuccess(response.data?.bookingId || '');
     } catch (error) {
-      console.error('Booking creation error:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -166,13 +159,26 @@ export function BookingForm({
 
   return (
     <Form {...form}>
-      <div className="flex h-full flex-col">
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 space-y-6 p-4">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          setFormSubmitted(true);
+          form.handleSubmit(onSubmit)(e);
+        }}
+        className="flex h-full flex-col"
+      >
+        <div className="flex-1 space-y-6 p-4">
           {/* Service Provider Info */}
           <div className="flex items-start space-x-4">
-            <Avatar className="h-32 w-32">
-              <AvatarImage src={serviceProvider.image || undefined} />
-              <AvatarFallback>{serviceProvider.name[0]}</AvatarFallback>
+            <Avatar className="h-24 w-24 rounded-full">
+              <AvatarImage
+                src={serviceProvider.image || undefined}
+                alt={serviceProvider.name}
+                className="object-cover"
+              />
+              <AvatarFallback className="text-xl font-medium">
+                {serviceProvider.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
             </Avatar>
             <div>
               <h4 className="text-lg font-medium">{serviceProvider.name}</h4>
@@ -427,7 +433,7 @@ export function BookingForm({
             </div>
           </div>
 
-          {/* Terms and Conditions - Enhanced with better error display */}
+          {/* Terms and Conditions */}
           <FormField
             control={form.control}
             name="agreeToTerms"
@@ -462,7 +468,7 @@ export function BookingForm({
             )}
           />
 
-          {/* Add a general form error message section */}
+          {/* Error message section */}
           {Object.keys(form.formState.errors).length > 0 && formSubmitted && (
             <div className="mt-4 rounded-md bg-destructive/10 p-3">
               <div className="flex">
@@ -481,43 +487,76 @@ export function BookingForm({
                   </h3>
                   <div className="mt-2 text-sm text-destructive">
                     <ul className="list-disc space-y-1 pl-5">
-                      {Object.entries(form.formState.errors).map(([key, error]) => {
-                        // Handle nested errors
-                        if (key === 'guestInfo' && typeof error === 'object') {
-                          return Object.entries(error).map(([nestedKey, nestedError]) => (
-                            <li key={`${key}.${nestedKey}`}>
-                              {nestedError?.message || `Error in ${nestedKey}`}
-                            </li>
-                          ));
-                        }
+                      {(() => {
+                        const errorList: React.ReactNode[] = [];
 
-                        // Handle regular errors
-                        return (
-                          <li key={key}>
-                            {key === 'agreeToTerms'
-                              ? 'You must agree to the terms and conditions'
-                              : error?.message || `Error in ${key}`}
-                          </li>
-                        );
-                      })}
+                        // Handle top-level errors
+                        Object.entries(form.formState.errors).forEach(([key, error]) => {
+                          if (
+                            key === 'guestInfo' &&
+                            typeof error === 'object' &&
+                            error.type !== 'custom'
+                          ) {
+                            // Handle nested guestInfo errors
+                            Object.entries(error).forEach(([nestedKey, nestedError]) => {
+                              if (nestedError && typeof nestedError === 'object') {
+                                errorList.push(
+                                  <li key={`${key}.${nestedKey}`}>
+                                    <strong>Guest {nestedKey}:</strong> {nestedError.message}
+                                  </li>
+                                );
+                              }
+                            });
+                          } else if (
+                            key === 'notificationPreferences' &&
+                            typeof error === 'object' &&
+                            error.type !== 'custom'
+                          ) {
+                            // Handle nested notificationPreferences errors
+                            Object.entries(error).forEach(([nestedKey, nestedError]) => {
+                              if (nestedError && typeof nestedError === 'object') {
+                                errorList.push(
+                                  <li key={`${key}.${nestedKey}`}>
+                                    <strong>{nestedKey} notification:</strong> {nestedError.message}
+                                  </li>
+                                );
+                              }
+                            });
+                          } else if (error && typeof error === 'object') {
+                            // Handle regular errors
+                            const fieldName =
+                              {
+                                slotId: 'Booking slot',
+                                bookingType: 'Booking type',
+                                agreeToTerms: 'Terms and conditions',
+                              }[key] || key;
+
+                            errorList.push(
+                              <li key={key}>
+                                <strong>{fieldName}:</strong>{' '}
+                                {key === 'agreeToTerms'
+                                  ? 'You must agree to the terms and conditions'
+                                  : error.message || 'Required field'}
+                              </li>
+                            );
+                          }
+                        });
+
+                        return errorList;
+                      })()}
                     </ul>
                   </div>
                 </div>
               </div>
             </div>
           )}
-        </form>
+        </div>
 
         <div className="flex justify-end space-x-4 border-t border-gray-200 p-4">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            onClick={form.handleSubmit(onSubmit)}
-            className="min-w-[120px]"
-          >
+          <Button type="submit" disabled={isSubmitting} className="min-w-[120px]">
             {isSubmitting ? (
               <>
                 <Spinner className="mr-2 h-4 w-4" />
@@ -528,7 +567,7 @@ export function BookingForm({
             )}
           </Button>
         </div>
-      </div>
+      </form>
     </Form>
   );
 }

@@ -89,103 +89,107 @@ export function AvailabilityForm({
     formState: { errors },
   } = form;
 
-  // Add this to display validation errors
-  // console.log('Form Errors:', errors);
-
   // Modify the onSubmit function
   async function onSubmit(values: AvailabilityFormValues) {
-    // Combine date and times
-    const baseDate = values.date;
-    const startDateTime = new Date(
-      baseDate.getFullYear(),
-      baseDate.getMonth(),
-      baseDate.getDate(),
-      values.startTime.getHours(),
-      values.startTime.getMinutes()
-    );
-    const endDateTime = new Date(
-      baseDate.getFullYear(),
-      baseDate.getMonth(),
-      baseDate.getDate(),
-      values.endTime.getHours(),
-      values.endTime.getMinutes()
-    );
+    setIsSubmitting(true); // Set loading state immediately
 
-    const formData = new FormData();
-    formData.append('serviceProviderId', serviceProviderId);
-    formData.append('date', values.date.toISOString());
-    formData.append('startTime', roundToNearestMinute(startDateTime).toISOString());
-    formData.append('endTime', roundToNearestMinute(endDateTime).toISOString());
-
-    values.availableServices.forEach((service, index) => {
-      formData.append(`availableServices[${index}][serviceId]`, service.serviceId);
-      formData.append(`availableServices[${index}][duration]`, String(service.duration));
-      formData.append(`availableServices[${index}][price]`, String(service.price));
-      formData.append(
-        `availableServices[${index}][isOnlineAvailable]`,
-        String(service.isOnlineAvailable)
+    try {
+      // Combine date and times
+      const baseDate = values.date;
+      const startDateTime = new Date(
+        baseDate.getFullYear(),
+        baseDate.getMonth(),
+        baseDate.getDate(),
+        values.startTime.getHours(),
+        values.startTime.getMinutes()
       );
-      formData.append(`availableServices[${index}][isInPerson]`, String(service.isInPerson));
-      if (service.location) {
-        formData.append(`availableServices[${index}][location]`, service.location);
-      }
-    });
+      const endDateTime = new Date(
+        baseDate.getFullYear(),
+        baseDate.getMonth(),
+        baseDate.getDate(),
+        values.endTime.getHours(),
+        values.endTime.getMinutes()
+      );
 
-    const response =
-      mode === 'create'
-        ? await createAvailability(formData)
-        : await updateAvailability(availability?.id || '', formData);
+      const formData = new FormData();
+      formData.append('serviceProviderId', serviceProviderId);
+      formData.append('date', values.date.toISOString());
+      formData.append('startTime', roundToNearestMinute(startDateTime).toISOString());
+      formData.append('endTime', roundToNearestMinute(endDateTime).toISOString());
 
-    if (response.error) {
-      if (response.fieldErrors) {
-        Object.entries(response.fieldErrors).forEach(([field, errors]) => {
-          form.setError(field as any, {
-            type: 'server',
-            message: Array.isArray(errors) ? errors[0] : 'Unknown error',
-          });
-        });
-      }
+      values.availableServices.forEach((service, index) => {
+        formData.append(`availableServices[${index}][serviceId]`, service.serviceId);
+        formData.append(`availableServices[${index}][duration]`, String(service.duration));
+        formData.append(`availableServices[${index}][price]`, String(service.price));
+        formData.append(
+          `availableServices[${index}][isOnlineAvailable]`,
+          String(service.isOnlineAvailable)
+        );
+        formData.append(`availableServices[${index}][isInPerson]`, String(service.isInPerson));
+        if (service.location) {
+          formData.append(`availableServices[${index}][location]`, service.location);
+        }
+      });
 
-      if (response.formErrors?.length) {
-        toast({
-          variant: 'destructive',
-          title: 'Validation Error',
-          description: response.formErrors[0],
-        });
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: response.error,
-        });
-      }
-
-      setIsSubmitting(false);
-      return;
-    }
-
-    toast({
-      title: 'Success',
-      description:
+      const response =
         mode === 'create'
-          ? 'Availability created successfully'
-          : 'Availability updated successfully',
-    });
+          ? await createAvailability(formData)
+          : await updateAvailability(availability?.id || '', formData);
 
-    router.refresh();
-    await onRefresh();
-    onClose();
+      if (response.error) {
+        if (response.fieldErrors) {
+          Object.entries(response.fieldErrors).forEach(([field, errors]) => {
+            form.setError(field as any, {
+              type: 'server',
+              message: Array.isArray(errors) ? errors[0] : 'Unknown error',
+            });
+          });
+        }
+
+        if (response.formErrors?.length) {
+          toast({
+            variant: 'destructive',
+            title: 'Validation Error',
+            description: response.formErrors[0],
+          });
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: response.error,
+          });
+        }
+
+        setIsSubmitting(false);
+        return;
+      }
+
+      toast({
+        title: 'Success',
+        description:
+          mode === 'create'
+            ? 'Availability created successfully'
+            : 'Availability updated successfully',
+      });
+
+      router.refresh();
+      await onRefresh();
+      onClose();
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'An unexpected error occurred',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={(e) => {
-          console.log('Form submission attempted');
-          form.handleSubmit(onSubmit)(e);
-        }}
-        className="w-full max-w-xl space-y-6"
-      >
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-xl space-y-6">
         {/* Temporary error display */}
         {Object.keys(errors).length > 0 && (
           <div className="text-sm text-red-500">
