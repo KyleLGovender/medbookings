@@ -130,26 +130,14 @@ export async function getServiceProviderAvailabilityInRange(
           ? {
               id: slot.booking.id,
               status: slot.booking.status,
-              price: Number(slot.booking.price),
-              startTime: slot.startTime,
-              endTime: slot.endTime,
-              service: {
-                id: slot.service.id,
-                name: slot.service.name,
+              bookingType: 'USER_SELF',
+              notificationPreferences: { email: false, sms: false, whatsapp: false },
+              guestInfo: {
+                name: slot.booking.guestName ?? '',
+                email: slot.booking.guestEmail ?? undefined,
+                phone: slot.booking.guestPhone ?? undefined,
+                whatsapp: slot.booking.guestWhatsapp ?? undefined,
               },
-              client: slot.booking.client
-                ? {
-                    id: slot.booking.client.id,
-                    name: slot.booking.client.name,
-                    email: slot.booking.client.email,
-                    phone: null,
-                    whatsapp: null,
-                  }
-                : undefined,
-              guestName: slot.booking.guestName,
-              guestEmail: slot.booking.guestEmail,
-              guestPhone: slot.booking.guestPhone,
-              guestWhatsapp: slot.booking.guestWhatsapp,
             }
           : null,
       })),
@@ -248,26 +236,14 @@ export async function getBookingDetails(slotId: string): Promise<{
         ? {
             id: slot.booking.id,
             status: slot.booking.status,
-            price: Number(slot.booking.price),
-            startTime: slot.startTime,
-            endTime: slot.endTime,
-            service: {
-              id: slot.service.id,
-              name: slot.service.name,
+            bookingType: 'USER_SELF',
+            notificationPreferences: { email: false, sms: false, whatsapp: false },
+            guestInfo: {
+              name: slot.booking.guestName ?? '',
+              email: slot.booking.guestEmail ?? undefined,
+              phone: slot.booking.guestPhone ?? undefined,
+              whatsapp: slot.booking.guestWhatsapp ?? undefined,
             },
-            client: slot.booking.client
-              ? {
-                  id: slot.booking.client.id,
-                  name: slot.booking.client.name,
-                  email: slot.booking.client.email,
-                  phone: null,
-                  whatsapp: null,
-                }
-              : undefined,
-            guestName: slot.booking.guestName,
-            guestEmail: slot.booking.guestEmail,
-            guestPhone: slot.booking.guestPhone,
-            guestWhatsapp: slot.booking.guestWhatsapp,
           }
         : null,
     },

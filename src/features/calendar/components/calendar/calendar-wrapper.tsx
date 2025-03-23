@@ -113,18 +113,18 @@ export function CalendarWrapper({
     );
   };
 
-  const handleViewChange = (newView: CalendarViewType) => {
-    setView(newView);
+  const handleViewChange = useCallback((view: CalendarViewType) => {
+    setView(view);
 
-    if (newView === 'slots') {
+    if (view === 'slots') {
       const today = new Date();
       const newRange = getDateRange(today, 'week');
       setDateRange(newRange);
-      updateUrlParams({ range: newRange, view: newView });
+      updateUrlParams({ range: newRange, view: view });
       updateAvailabilityData(newRange);
       return;
     }
-  };
+  }, []);
 
   const handleDateSelect = (newDate: Date | undefined, fromView: CalendarViewType) => {
     if (!newDate) return;
@@ -254,7 +254,7 @@ export function CalendarWrapper({
       onRefresh: refreshData,
       onView: handleView,
       onEdit: handleEdit,
-      onViewChange: setView,
+      onViewChange: handleViewChange,
     };
 
     switch (view) {

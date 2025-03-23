@@ -112,6 +112,13 @@ export function ServiceProviderCalendarHeader({
     return Array.from(services.values());
   }, [availabilityData]);
 
+  const handleViewChange = useCallback(
+    (view: ServiceProviderCalendarViewType) => {
+      onViewChange(view);
+    },
+    [onViewChange]
+  );
+
   return (
     <header className="flex flex-col gap-4 border-b border-gray-200 px-6 py-4 md:flex-row md:items-center md:justify-between">
       <div className="mx-auto flex flex-col gap-2 md:mx-0 md:flex-row md:items-center">
@@ -134,7 +141,7 @@ export function ServiceProviderCalendarHeader({
                   <MenuItem key={viewOption}>
                     <button
                       type="button"
-                      onClick={() => onViewChange(viewOption)}
+                      onClick={() => handleViewChange(viewOption)}
                       className="block w-full px-4 py-2 text-left text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900 data-[focus]:outline-none"
                     >
                       {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} view

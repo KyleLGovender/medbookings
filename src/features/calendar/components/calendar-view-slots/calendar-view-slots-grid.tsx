@@ -168,19 +168,23 @@ export function CalendarViewSlotsGrid({
 
     // Slots with bookings
     if (slot.booking) {
-      // Different colors based on booking status
-      switch (slot.booking.status) {
-        case 'CONFIRMED':
-          return 'bg-blue-600 text-white hover:bg-blue-800';
-        case 'PENDING':
-          return 'bg-amber-500 text-white hover:bg-amber-600';
-        case 'CANCELLED':
-          return 'bg-red-500 text-white hover:bg-red-600';
-        case 'COMPLETED':
-          return 'bg-purple-500 text-white hover:bg-purple-600';
-        default:
-          return 'bg-blue-500 text-white hover:bg-blue-800';
+      // Different colors based on slot status instead of booking status
+      if (slot.status) {
+        switch (slot.status) {
+          case 'AVAILABLE':
+            return 'bg-green-500 text-white hover:bg-green-800';
+          case 'BOOKED':
+            return 'bg-blue-600 text-white hover:bg-blue-800';
+          case 'BLOCKED':
+            return 'bg-gray-500 text-white hover:bg-gray-600';
+          case 'INVALID':
+            return 'bg-gray-200 text-gray-600 hover:bg-gray-300 cursor-not-allowed';
+          default:
+            return 'bg-blue-500 text-white hover:bg-blue-800';
+        }
       }
+      // Fallback if no status on slot
+      return 'bg-blue-500 text-white hover:bg-blue-800';
     }
 
     // Available slots

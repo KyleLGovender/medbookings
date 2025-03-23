@@ -535,6 +535,7 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
 
     const bookingView: BookingView = {
       id: result.id,
+      status: result.status,
       bookingType: validatedData.bookingType,
       notificationPreferences: {
         email: validatedData.notificationPreferences.email,

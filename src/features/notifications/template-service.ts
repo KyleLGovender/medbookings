@@ -6,9 +6,9 @@ export class TemplateService {
     recipientName: string | null
   ): string {
     const name = recipientName || 'Guest';
-    const serviceName = booking.service?.name || 'Service';
-    const date = new Date(booking.startTime).toLocaleDateString();
-    const time = new Date(booking.startTime).toLocaleTimeString([], {
+    const serviceName = booking.slot.service.name;
+    const date = new Date(booking.slot.startTime).toLocaleDateString();
+    const time = new Date(booking.slot.startTime).toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit',
     });

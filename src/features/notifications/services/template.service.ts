@@ -29,8 +29,8 @@ export class TemplateService {
   private static getBookingConfirmationTemplate(recipientName: string, data: TemplateData): string {
     if (!data.booking) throw new Error('Booking data required');
 
-    const { date, time } = this.formatDateTime(new Date(data.booking.startTime));
-    const serviceName = data.booking.service?.name || 'Service';
+    const { date, time } = this.formatDateTime(new Date(data.booking.slot.startTime));
+    const serviceName = data.booking.slot.service.name;
 
     return `
       Hello ${recipientName},
@@ -44,8 +44,8 @@ export class TemplateService {
   private static getBookingUpdateTemplate(recipientName: string, data: TemplateData): string {
     if (!data.booking) throw new Error('Booking data required');
 
-    const { date, time } = this.formatDateTime(new Date(data.booking.startTime));
-    const serviceName = data.booking.service?.name || 'Service';
+    const { date, time } = this.formatDateTime(new Date(data.booking.slot.startTime));
+    const serviceName = data.booking.slot.service.name;
 
     return `
       Hello ${recipientName},
@@ -59,8 +59,8 @@ export class TemplateService {
   private static getBookingCancellationTemplate(recipientName: string, data: TemplateData): string {
     if (!data.booking) throw new Error('Booking data required');
 
-    const { date, time } = this.formatDateTime(new Date(data.booking.startTime));
-    const serviceName = data.booking.service?.name || 'Service';
+    const { date, time } = this.formatDateTime(new Date(data.booking.slot.startTime));
+    const serviceName = data.booking.slot.service.name;
 
     return `
       Hello ${recipientName},

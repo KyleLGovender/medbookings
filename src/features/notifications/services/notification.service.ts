@@ -3,6 +3,7 @@ import { TemplateService } from '@/features/notifications/services/template.serv
 import { WhatsAppService } from '@/features/notifications/services/whatsapp.service';
 
 import {
+  NotificationChannel,
   NotificationContent,
   NotificationOptions,
   NotificationRecipient,
@@ -30,10 +31,10 @@ export class NotificationService {
       let result: NotificationResult;
 
       switch (channel) {
-        case 'email':
+        case NotificationChannel.EMAIL:
           result = await this.emailService.send(recipient, content);
           break;
-        case 'whatsapp':
+        case NotificationChannel.WHATSAPP:
           result = await this.whatsappService.send(recipient, content);
           break;
         default:

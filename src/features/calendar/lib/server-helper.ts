@@ -151,19 +151,20 @@ export async function checkAvailabilityModificationAllowed(
         booking: slot.booking
           ? {
               id: slot.booking.id,
-              bookingType: 'USER_SELF',
+              status: slot.booking.status,
               notificationPreferences: {
-                email: false,
-                sms: false,
-                whatsapp: false,
+                email: Boolean(slot.booking.notifications?.some((n) => n.channel === 'EMAIL')),
+                sms: Boolean(slot.booking.notifications?.some((n) => n.channel === 'SMS')),
+                whatsapp: Boolean(
+                  slot.booking.notifications?.some((n) => n.channel === 'WHATSAPP')
+                ),
               },
               guestInfo: {
-                name: '',
-                email: undefined,
-                phone: undefined,
-                whatsapp: undefined,
+                name: slot.booking.guestName || slot.booking.client?.name || '',
+                email: slot.booking.guestEmail || slot.booking.client?.email || undefined,
+                phone: slot.booking.guestPhone || slot.booking.client?.phone || undefined,
+                whatsapp: slot.booking.guestWhatsapp || undefined,
               },
-              agreeToTerms: true,
               slot: {
                 id: slot.id,
                 startTime: slot.startTime,
@@ -177,11 +178,16 @@ export async function checkAvailabilityModificationAllowed(
                 },
                 serviceConfig: {
                   id: slot.serviceConfig.id,
-                  price: slot.serviceConfig.price,
+                  price: Number(slot.serviceConfig.price),
                   duration: slot.serviceConfig.duration,
                   isOnlineAvailable: slot.serviceConfig.isOnlineAvailable,
                   isInPerson: slot.serviceConfig.isInPerson,
                   location: slot.serviceConfig.location,
+                },
+                serviceProvider: {
+                  id: availability.serviceProvider.id,
+                  name: availability.serviceProvider.name,
+                  image: availability.serviceProvider.image,
                 },
               },
             }

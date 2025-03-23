@@ -36,51 +36,6 @@ type BaseService = z.infer<typeof ServiceSchema>;
 type BaseServiceConfig = z.infer<typeof ServiceAvailabilityConfigSchema>;
 type BaseBooking = z.infer<typeof BookingSchema>;
 
-// Simplified types that break circular references
-export interface BookingView {
-  id: string;
-  bookingType: 'USER_SELF' | 'USER_GUEST' | 'GUEST_SELF' | 'PROVIDER_GUEST';
-  notificationPreferences: {
-    email: boolean;
-    sms: boolean;
-    whatsapp: boolean;
-  };
-  guestInfo: {
-    name: string;
-    email?: string;
-    phone?: string;
-    whatsapp?: string;
-  };
-  agreeToTerms: boolean;
-  slot: {
-    id: string;
-    startTime: Date | string;
-    endTime: Date | string;
-    status: SlotStatus;
-    service: {
-      id: string;
-      name: string;
-      description?: string;
-      displayPriority?: number;
-    };
-    serviceConfig: {
-      id: string;
-      price: number;
-      duration: number; // Duration in minutes
-      isOnlineAvailable: boolean;
-      isInPerson: boolean;
-      location?: string;
-    };
-    serviceProvider: {
-      id: string;
-      name: string;
-      email?: string;
-      whatsapp?: string;
-      image?: string | null;
-    };
-  };
-}
-
 export type AvailabilitySlot = Pick<BaseSlot, 'id' | 'startTime' | 'endTime' | 'status'> & {
   service: Pick<BaseService, 'id' | 'name' | 'description' | 'displayPriority'>;
   serviceConfig: Pick<
@@ -104,6 +59,49 @@ export type AvailabilityView = Pick<
     BaseServiceConfig,
     'serviceId' | 'duration' | 'price' | 'isOnlineAvailable' | 'isInPerson' | 'location'
   >[];
+};
+
+export type BookingView = Pick<z.infer<typeof BookingSchema>, 'id' | 'status'> & {
+  bookingType?: string;
+  agreeToTerms?: boolean;
+  notificationPreferences: {
+    email: boolean;
+    sms: boolean;
+    whatsapp: boolean;
+  };
+  guestInfo: {
+    name: string;
+    email?: string;
+    phone?: string;
+    whatsapp?: string;
+  };
+  slot: {
+    id: string;
+    startTime: Date | string;
+    endTime: Date | string;
+    status: SlotStatus;
+    service: {
+      id: string;
+      name: string;
+      description?: string;
+      displayPriority?: number;
+    };
+    serviceConfig: {
+      id: string;
+      price: number;
+      duration: number;
+      isOnlineAvailable: boolean;
+      isInPerson: boolean;
+      location?: string;
+    };
+    serviceProvider: {
+      id: string;
+      name: string;
+      email?: string;
+      whatsapp?: string;
+      image?: string | null;
+    };
+  };
 };
 
 export const ServiceConfigFormSchema = ServiceAvailabilityConfigSchema.omit({
@@ -214,8 +212,13 @@ export const BookingTypeSchema = z.enum([
   'PROVIDER_GUEST',
 ]);
 
-export const BookingFormSchema = z
-  .object({
+export const BookingFormSchema = BookingSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  // Omit other fields that shouldn't be in the form
+})
+  .extend({
     slotId: z.string(),
     bookingType: BookingTypeSchema,
     notificationPreferences: z.object({
