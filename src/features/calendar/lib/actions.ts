@@ -5,10 +5,10 @@ import { revalidatePath } from 'next/cache';
 import { BookingStatus, NotificationChannel, SlotStatus } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { writeFile } from 'fs/promises';
+import { getServerSession } from 'next-auth';
 import { join } from 'path';
-import { z } from 'zod';
 
-import { getCurrentUser } from '@/lib/auth';
+import { authOptions, getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 import {
@@ -17,8 +17,6 @@ import {
   checkBookingAccess,
   sendBookingNotifications,
   validateAvailabilityFormData,
-  validateBookingFormData,
-  validateBookingWithAvailability,
 } from './server-helper';
 import { AvailabilityFormResponse, BookingFormSchema, BookingResponse, BookingView } from './types';
 
@@ -665,113 +663,129 @@ async function logBookingNotification(
   }
 }
 
-export async function updateBooking(
-  bookingId: string,
-  formData: FormData
-): Promise<BookingResponse> {
+export async function updateBooking(bookingId: string, data: FormData): Promise<BookingResponse> {
   try {
-    // Get the authenticated user
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-      return { error: 'Not authenticated' };
-    }
-
-    // First, get the booking to find its slot
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: { slot: true },
     });
 
-    if (!booking || !booking.slotId) {
-      return { error: 'Booking not found or has no associated slot' };
+    if (!booking) {
+      return { error: 'Booking not found' };
     }
 
-    // Then get the availability from the slot
-    const slot = await prisma.calculatedAvailabilitySlot.findUnique({
-      where: { id: booking.slotId },
-      select: { availabilityId: true },
-    });
-
-    if (!slot) {
-      return { error: 'Slot not found' };
-    }
-
-    // Now you can use slot.availabilityId
-    const availability = await prisma.availability.findUnique({
-      where: { id: slot.availabilityId },
-      include: {
-        calculatedSlots: {
-          include: {
-            booking: true,
-          },
-        },
+    // Parse and validate form data using the BookingFormSchema
+    const formValues = {
+      slotId: data.get('slotId') as string,
+      bookingType: data.get('bookingType') as any,
+      notificationPreferences: {
+        email: data.get('notifyViaEmail') === 'true',
+        sms: data.get('notifyViaSMS') === 'true',
+        whatsapp: data.get('notifyViaWhatsapp') === 'true',
       },
-    });
+      guestInfo: {
+        name: data.get('guestName') as string,
+        email: (data.get('guestEmail') as string) || undefined,
+        phone: (data.get('guestPhone') as string) || undefined,
+        whatsapp: (data.get('guestWhatsapp') as string) || undefined,
+      },
+      agreeToTerms: true, // Assume agreed for updates
+    };
 
-    if (!availability) {
-      return { error: 'No availability found for the requested time slot' };
-    }
-
-    // 1. Parse and validate form data with Zod schema
-    const { data: validated, fieldErrors, formErrors } = await validateBookingFormData(formData);
-    if (!validated) {
-      return { fieldErrors, formErrors };
-    }
-
-    // 2. Validate booking against availability
-    const validationResponse = await validateBookingWithAvailability(validated, availability);
-    if (!validationResponse.isValid) {
-      return {
-        error: validationResponse.error,
-        fieldErrors: validationResponse.path
-          ? { [validationResponse.path[0]]: [validationResponse.error!] }
-          : undefined,
-      };
-    }
-
-    // 3. Check access to the booking using the user's ID
-    try {
-      await checkBookingAccess(bookingId, currentUser.id);
-    } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Access denied' };
-    }
-
-    // 4. Update the booking
+    // Update the booking with validated data
     const updatedBooking = await prisma.booking.update({
       where: { id: bookingId },
-      data: validated,
-      include: {
-        client: true,
+      data: {
+        // Update fields based on the form schema
+        guestName: formValues.guestInfo.name,
+        guestEmail: formValues.guestInfo.email || null,
+        guestPhone: formValues.guestInfo.phone || null,
+        guestWhatsapp: formValues.guestInfo.whatsapp || null,
+        // Handle appointment type if it's in the form
+        isOnline: data.get('appointmentType') === 'online',
+        isInPerson: data.get('appointmentType') === 'inperson',
+        location:
+          data.get('appointmentType') === 'inperson'
+            ? (data.get('location') as string) || null
+            : null,
+        // Add any notes if provided
+        notes: (data.get('notes') as string) || booking.notes,
       },
     });
 
-    // 5. Format and return the response
+    revalidatePath('/calendar/service-provider/bookings');
+    revalidatePath('/dashboard/bookings');
+
     return {
-      data: {
-        bookingId: updatedBooking.id,
-      },
+      data: { bookingId: updatedBooking.id },
     };
   } catch (error) {
     console.error('Update booking error:', error);
-
-    // Handle specific known errors
-    if (error instanceof z.ZodError) {
-      return {
-        error: 'Validation failed',
-        formErrors: [error.message],
-      };
-    }
-
-    if (error instanceof SyntaxError && error.message.includes('JSON')) {
-      return {
-        error: 'Invalid notification preferences format',
-      };
-    }
-
-    // Handle generic errors
     return {
-      error: error instanceof Error ? error.message : 'An unexpected error occurred',
+      error: error instanceof Error ? error.message : 'Failed to update booking',
     };
+  }
+}
+
+export async function cancelBooking(bookingId: string) {
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    throw new Error('You must be logged in to cancel a booking');
+  }
+
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+  });
+
+  if (!booking) {
+    throw new Error('Booking not found');
+  }
+
+  // Check if user is authorized (either the client or service provider)
+  const isAuthorized =
+    booking.clientId === userId ||
+    booking.serviceProviderId === userId ||
+    session.user.role === 'ADMIN';
+
+  if (!isAuthorized) {
+    throw new Error('You are not authorized to cancel this booking');
+  }
+
+  // Use a transaction to update the booking and slot if it exists
+  if (booking.slotId) {
+    // If there's an associated slot, update both booking and slot
+    const result = await prisma.$transaction([
+      // Update booking status to CANCELLED and disconnect from slot
+      prisma.booking.update({
+        where: { id: bookingId },
+        data: {
+          status: BookingStatus.CANCELLED,
+          slot: { disconnect: true }, // Disconnect the relationship
+        },
+      }),
+
+      // Update slot status back to AVAILABLE
+      prisma.calculatedAvailabilitySlot.update({
+        where: { id: booking.slotId },
+        data: { status: SlotStatus.AVAILABLE },
+      }),
+    ]);
+
+    revalidatePath(`/booking/${booking.slotId}`);
+    return result[0]; // Return the updated booking
+  } else {
+    // If there's no associated slot, just update the booking
+    const result = await prisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        status: BookingStatus.CANCELLED,
+      },
+    });
+
+    revalidatePath('/dashboard/bookings');
+    return result;
   }
 }
 
@@ -792,10 +806,51 @@ export async function deleteBooking(
       return { error: error instanceof Error ? error.message : 'Access denied' };
     }
 
+    // Get the booking with all necessary relations
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        serviceProvider: true,
+        service: true,
+        client: true,
+      },
+    });
+
+    if (!booking) {
+      return { error: 'Booking not found' };
+    }
+
+    // Update notification logs to preserve booking context
+    await prisma.notificationLog.updateMany({
+      where: { bookingId },
+      data: {
+        bookingReference: bookingId,
+        serviceProviderName: booking.serviceProvider.name,
+        clientName: booking.client?.name || booking.guestName || 'Unknown',
+        serviceName: booking.service.name,
+        appointmentTime: booking.startTime,
+        bookingId: null, // Disconnect from booking
+      },
+    });
+
+    // If there's an associated slot, update its status before deleting the booking
+    if (booking.slotId) {
+      await prisma.calculatedAvailabilitySlot.update({
+        where: { id: booking.slotId },
+        data: { status: SlotStatus.AVAILABLE },
+      });
+    }
+
     // Delete the booking
     await prisma.booking.delete({
       where: { id: bookingId },
     });
+
+    // Revalidate paths
+    if (booking.slotId) {
+      revalidatePath(`/booking/${booking.slotId}`);
+    }
+    revalidatePath('/dashboard/bookings');
 
     return { success: true };
   } catch (error) {

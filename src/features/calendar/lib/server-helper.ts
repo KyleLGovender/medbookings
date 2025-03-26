@@ -679,3 +679,46 @@ export async function sendBookingNotifications(booking: BookingView) {
     // Don't throw the error - we don't want to fail the booking if notifications fail
   }
 }
+
+export async function logBookingNotification(
+  bookingId: string,
+  serviceProviderId: string,
+  type: NotificationType,
+  channel: NotificationChannel,
+  content?: string
+) {
+  try {
+    // Get booking details to store as context
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        serviceProvider: true,
+        service: true,
+        client: true,
+      },
+    });
+
+    if (!booking) {
+      throw new Error('Booking not found');
+    }
+
+    // Create notification log with context
+    return await prisma.notificationLog.create({
+      data: {
+        bookingId,
+        bookingReference: bookingId,
+        serviceProviderName: booking.serviceProvider.name,
+        clientName: booking.client?.name || booking.guestName || 'Unknown',
+        serviceName: booking.service.name,
+        appointmentTime: booking.startTime,
+        type,
+        channel,
+        content: content || `${type} notification sent via ${channel}`,
+        status: 'SENT',
+      },
+    });
+  } catch (error) {
+    console.error('Error logging notification:', error);
+    throw error;
+  }
+}

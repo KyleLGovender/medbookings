@@ -359,15 +359,20 @@ model NotificationPreference {
 }
 
 model NotificationLog {
-  id          String              @id @default(cuid())
-  booking     Booking             @relation(fields: [bookingId], references: [id])
-  bookingId   String
-  type        NotificationType
-  channel     NotificationChannel
-  content     String              @db.Text
-  status      String // SENT, DELIVERED, FAILED
-  sentAt      DateTime            @default(now())
-  deliveredAt DateTime?
+  id                 String              @id @default(cuid())
+  booking            Booking?            @relation(fields: [bookingId], references: [id])
+  bookingId          String?
+  bookingReference   String?             // Store original booking ID
+  serviceProviderName String?            // Store provider name at time of notification
+  clientName         String?             // Store client name at time of notification
+  serviceName        String?             // Store service name at time of notification
+  appointmentTime    DateTime?           // Store the appointment time
+  type               NotificationType
+  channel            NotificationChannel
+  content            String              @db.Text
+  status             String              // SENT, DELIVERED, FAILED
+  sentAt             DateTime            @default(now())
+  deliveredAt        DateTime?
 }
 
 enum NotificationType {

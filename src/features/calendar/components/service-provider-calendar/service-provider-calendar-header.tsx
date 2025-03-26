@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -170,21 +171,11 @@ export function ServiceProviderCalendarHeader({
       </div>
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-end">
-        <Button
-          type="button"
-          variant="outline"
-          className="w-auto"
-          onClick={() => {
-            const queryString = new URLSearchParams({
-              start: `${rangeStartDate.getFullYear()}-${String(rangeStartDate.getMonth() + 1).padStart(2, '0')}`,
-            }).toString();
-            debouncedUpdateUrl(
-              `/calendar/service-provider/${serviceProviderId}${queryString ? `?${queryString}` : ''}`
-            );
-          }}
-        >
-          Select a booking slot
-        </Button>
+        <Link href={`/calendar/service-provider/${serviceProviderId}`} className="w-auto">
+          <Button type="button" variant="outline" className="w-full">
+            Select a booking slot
+          </Button>
+        </Link>
       </div>
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center">

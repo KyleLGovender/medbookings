@@ -170,7 +170,7 @@ export default async function BookingSuccessPage({ searchParams }: BookingSucces
         </CardContent>
         <CardFooter className="flex justify-center space-x-4">
           <Button asChild variant="outline">
-            <Link href="/dashboard/bookings">View My Bookings</Link>
+            <Link href="/calendar/service-provider/bookings">View My Bookings</Link>
           </Button>
           <Button asChild>
             <Link href="/">Return Home</Link>
@@ -216,7 +216,7 @@ function renderGenericSuccess() {
         </CardContent>
         <CardFooter className="flex justify-center space-x-4">
           <Button asChild variant="outline">
-            <Link href="/dashboard/bookings">View My Bookings</Link>
+            <Link href="/calendar/service-provider/bookings">View My Bookings</Link>
           </Button>
           <Button asChild>
             <Link href="/">Return Home</Link>

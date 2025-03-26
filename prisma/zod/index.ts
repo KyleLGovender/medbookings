@@ -102,7 +102,7 @@ export const BookingScalarFieldEnumSchema = z.enum(['id','slotId','bookedById','
 
 export const NotificationPreferenceScalarFieldEnumSchema = z.enum(['id','userId','email','sms','whatsapp','phoneNumber','whatsappNumber','reminderHours','createdAt','updatedAt']);
 
-export const NotificationLogScalarFieldEnumSchema = z.enum(['id','bookingId','type','channel','content','status','sentAt','deliveredAt']);
+export const NotificationLogScalarFieldEnumSchema = z.enum(['id','bookingId','bookingReference','serviceProviderName','clientName','serviceName','appointmentTime','type','channel','content','status','sentAt','deliveredAt']);
 
 export const CalendarIntegrationScalarFieldEnumSchema = z.enum(['id','serviceProviderId','provider','accessToken','refreshToken','expiresAt','calendarId','syncEnabled','lastSyncedAt','createdAt','updatedAt']);
 
@@ -436,7 +436,12 @@ export const NotificationLogSchema = z.object({
   type: NotificationTypeSchema,
   channel: NotificationChannelSchema,
   id: z.string().cuid(),
-  bookingId: z.string(),
+  bookingId: z.string().nullable(),
+  bookingReference: z.string().nullable(),
+  serviceProviderName: z.string().nullable(),
+  clientName: z.string().nullable(),
+  serviceName: z.string().nullable(),
+  appointmentTime: z.coerce.date().nullable(),
   content: z.string(),
   status: z.string(),
   sentAt: z.coerce.date(),
@@ -1069,6 +1074,11 @@ export const NotificationLogArgsSchema: z.ZodType<Prisma.NotificationLogDefaultA
 export const NotificationLogSelectSchema: z.ZodType<Prisma.NotificationLogSelect> = z.object({
   id: z.boolean().optional(),
   bookingId: z.boolean().optional(),
+  bookingReference: z.boolean().optional(),
+  serviceProviderName: z.boolean().optional(),
+  clientName: z.boolean().optional(),
+  serviceName: z.boolean().optional(),
+  appointmentTime: z.boolean().optional(),
   type: z.boolean().optional(),
   channel: z.boolean().optional(),
   content: z.boolean().optional(),
@@ -2525,19 +2535,29 @@ export const NotificationLogWhereInputSchema: z.ZodType<Prisma.NotificationLogWh
   OR: z.lazy(() => NotificationLogWhereInputSchema).array().optional(),
   NOT: z.union([ z.lazy(() => NotificationLogWhereInputSchema),z.lazy(() => NotificationLogWhereInputSchema).array() ]).optional(),
   id: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
-  bookingId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  bookingId: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  bookingReference: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  serviceProviderName: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  clientName: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  serviceName: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  appointmentTime: z.union([ z.lazy(() => DateTimeNullableFilterSchema),z.coerce.date() ]).optional().nullable(),
   type: z.union([ z.lazy(() => EnumNotificationTypeFilterSchema),z.lazy(() => NotificationTypeSchema) ]).optional(),
   channel: z.union([ z.lazy(() => EnumNotificationChannelFilterSchema),z.lazy(() => NotificationChannelSchema) ]).optional(),
   content: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
   status: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
   sentAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   deliveredAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema),z.coerce.date() ]).optional().nullable(),
-  booking: z.union([ z.lazy(() => BookingRelationFilterSchema),z.lazy(() => BookingWhereInputSchema) ]).optional(),
+  booking: z.union([ z.lazy(() => BookingNullableRelationFilterSchema),z.lazy(() => BookingWhereInputSchema) ]).optional().nullable(),
 }).strict();
 
 export const NotificationLogOrderByWithRelationInputSchema: z.ZodType<Prisma.NotificationLogOrderByWithRelationInput> = z.object({
   id: z.lazy(() => SortOrderSchema).optional(),
-  bookingId: z.lazy(() => SortOrderSchema).optional(),
+  bookingId: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  bookingReference: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  serviceProviderName: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  clientName: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  serviceName: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  appointmentTime: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
   type: z.lazy(() => SortOrderSchema).optional(),
   channel: z.lazy(() => SortOrderSchema).optional(),
   content: z.lazy(() => SortOrderSchema).optional(),
@@ -2555,19 +2575,29 @@ export const NotificationLogWhereUniqueInputSchema: z.ZodType<Prisma.Notificatio
   AND: z.union([ z.lazy(() => NotificationLogWhereInputSchema),z.lazy(() => NotificationLogWhereInputSchema).array() ]).optional(),
   OR: z.lazy(() => NotificationLogWhereInputSchema).array().optional(),
   NOT: z.union([ z.lazy(() => NotificationLogWhereInputSchema),z.lazy(() => NotificationLogWhereInputSchema).array() ]).optional(),
-  bookingId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  bookingId: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  bookingReference: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  serviceProviderName: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  clientName: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  serviceName: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  appointmentTime: z.union([ z.lazy(() => DateTimeNullableFilterSchema),z.coerce.date() ]).optional().nullable(),
   type: z.union([ z.lazy(() => EnumNotificationTypeFilterSchema),z.lazy(() => NotificationTypeSchema) ]).optional(),
   channel: z.union([ z.lazy(() => EnumNotificationChannelFilterSchema),z.lazy(() => NotificationChannelSchema) ]).optional(),
   content: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
   status: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
   sentAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   deliveredAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema),z.coerce.date() ]).optional().nullable(),
-  booking: z.union([ z.lazy(() => BookingRelationFilterSchema),z.lazy(() => BookingWhereInputSchema) ]).optional(),
+  booking: z.union([ z.lazy(() => BookingNullableRelationFilterSchema),z.lazy(() => BookingWhereInputSchema) ]).optional().nullable(),
 }).strict());
 
 export const NotificationLogOrderByWithAggregationInputSchema: z.ZodType<Prisma.NotificationLogOrderByWithAggregationInput> = z.object({
   id: z.lazy(() => SortOrderSchema).optional(),
-  bookingId: z.lazy(() => SortOrderSchema).optional(),
+  bookingId: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  bookingReference: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  serviceProviderName: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  clientName: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  serviceName: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  appointmentTime: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
   type: z.lazy(() => SortOrderSchema).optional(),
   channel: z.lazy(() => SortOrderSchema).optional(),
   content: z.lazy(() => SortOrderSchema).optional(),
@@ -2584,7 +2614,12 @@ export const NotificationLogScalarWhereWithAggregatesInputSchema: z.ZodType<Pris
   OR: z.lazy(() => NotificationLogScalarWhereWithAggregatesInputSchema).array().optional(),
   NOT: z.union([ z.lazy(() => NotificationLogScalarWhereWithAggregatesInputSchema),z.lazy(() => NotificationLogScalarWhereWithAggregatesInputSchema).array() ]).optional(),
   id: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
-  bookingId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
+  bookingId: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema),z.string() ]).optional().nullable(),
+  bookingReference: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema),z.string() ]).optional().nullable(),
+  serviceProviderName: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema),z.string() ]).optional().nullable(),
+  clientName: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema),z.string() ]).optional().nullable(),
+  serviceName: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema),z.string() ]).optional().nullable(),
+  appointmentTime: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema),z.coerce.date() ]).optional().nullable(),
   type: z.union([ z.lazy(() => EnumNotificationTypeWithAggregatesFilterSchema),z.lazy(() => NotificationTypeSchema) ]).optional(),
   channel: z.union([ z.lazy(() => EnumNotificationChannelWithAggregatesFilterSchema),z.lazy(() => NotificationChannelSchema) ]).optional(),
   content: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
@@ -4404,18 +4439,28 @@ export const NotificationPreferenceUncheckedUpdateManyInputSchema: z.ZodType<Pri
 
 export const NotificationLogCreateInputSchema: z.ZodType<Prisma.NotificationLogCreateInput> = z.object({
   id: z.string().cuid().optional(),
+  bookingReference: z.string().optional().nullable(),
+  serviceProviderName: z.string().optional().nullable(),
+  clientName: z.string().optional().nullable(),
+  serviceName: z.string().optional().nullable(),
+  appointmentTime: z.coerce.date().optional().nullable(),
   type: z.lazy(() => NotificationTypeSchema),
   channel: z.lazy(() => NotificationChannelSchema),
   content: z.string(),
   status: z.string(),
   sentAt: z.coerce.date().optional(),
   deliveredAt: z.coerce.date().optional().nullable(),
-  booking: z.lazy(() => BookingCreateNestedOneWithoutNotificationsInputSchema)
+  booking: z.lazy(() => BookingCreateNestedOneWithoutNotificationsInputSchema).optional()
 }).strict();
 
 export const NotificationLogUncheckedCreateInputSchema: z.ZodType<Prisma.NotificationLogUncheckedCreateInput> = z.object({
   id: z.string().cuid().optional(),
-  bookingId: z.string(),
+  bookingId: z.string().optional().nullable(),
+  bookingReference: z.string().optional().nullable(),
+  serviceProviderName: z.string().optional().nullable(),
+  clientName: z.string().optional().nullable(),
+  serviceName: z.string().optional().nullable(),
+  appointmentTime: z.coerce.date().optional().nullable(),
   type: z.lazy(() => NotificationTypeSchema),
   channel: z.lazy(() => NotificationChannelSchema),
   content: z.string(),
@@ -4426,18 +4471,28 @@ export const NotificationLogUncheckedCreateInputSchema: z.ZodType<Prisma.Notific
 
 export const NotificationLogUpdateInputSchema: z.ZodType<Prisma.NotificationLogUpdateInput> = z.object({
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  bookingReference: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  serviceProviderName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  clientName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  serviceName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  appointmentTime: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   type: z.union([ z.lazy(() => NotificationTypeSchema),z.lazy(() => EnumNotificationTypeFieldUpdateOperationsInputSchema) ]).optional(),
   channel: z.union([ z.lazy(() => NotificationChannelSchema),z.lazy(() => EnumNotificationChannelFieldUpdateOperationsInputSchema) ]).optional(),
   content: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   status: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   sentAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   deliveredAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  booking: z.lazy(() => BookingUpdateOneRequiredWithoutNotificationsNestedInputSchema).optional()
+  booking: z.lazy(() => BookingUpdateOneWithoutNotificationsNestedInputSchema).optional()
 }).strict();
 
 export const NotificationLogUncheckedUpdateInputSchema: z.ZodType<Prisma.NotificationLogUncheckedUpdateInput> = z.object({
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  bookingId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  bookingId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  bookingReference: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  serviceProviderName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  clientName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  serviceName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  appointmentTime: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   type: z.union([ z.lazy(() => NotificationTypeSchema),z.lazy(() => EnumNotificationTypeFieldUpdateOperationsInputSchema) ]).optional(),
   channel: z.union([ z.lazy(() => NotificationChannelSchema),z.lazy(() => EnumNotificationChannelFieldUpdateOperationsInputSchema) ]).optional(),
   content: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
@@ -4448,7 +4503,12 @@ export const NotificationLogUncheckedUpdateInputSchema: z.ZodType<Prisma.Notific
 
 export const NotificationLogCreateManyInputSchema: z.ZodType<Prisma.NotificationLogCreateManyInput> = z.object({
   id: z.string().cuid().optional(),
-  bookingId: z.string(),
+  bookingId: z.string().optional().nullable(),
+  bookingReference: z.string().optional().nullable(),
+  serviceProviderName: z.string().optional().nullable(),
+  clientName: z.string().optional().nullable(),
+  serviceName: z.string().optional().nullable(),
+  appointmentTime: z.coerce.date().optional().nullable(),
   type: z.lazy(() => NotificationTypeSchema),
   channel: z.lazy(() => NotificationChannelSchema),
   content: z.string(),
@@ -4459,6 +4519,11 @@ export const NotificationLogCreateManyInputSchema: z.ZodType<Prisma.Notification
 
 export const NotificationLogUpdateManyMutationInputSchema: z.ZodType<Prisma.NotificationLogUpdateManyMutationInput> = z.object({
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  bookingReference: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  serviceProviderName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  clientName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  serviceName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  appointmentTime: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   type: z.union([ z.lazy(() => NotificationTypeSchema),z.lazy(() => EnumNotificationTypeFieldUpdateOperationsInputSchema) ]).optional(),
   channel: z.union([ z.lazy(() => NotificationChannelSchema),z.lazy(() => EnumNotificationChannelFieldUpdateOperationsInputSchema) ]).optional(),
   content: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
@@ -4469,7 +4534,12 @@ export const NotificationLogUpdateManyMutationInputSchema: z.ZodType<Prisma.Noti
 
 export const NotificationLogUncheckedUpdateManyInputSchema: z.ZodType<Prisma.NotificationLogUncheckedUpdateManyInput> = z.object({
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  bookingId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  bookingId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  bookingReference: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  serviceProviderName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  clientName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  serviceName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  appointmentTime: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   type: z.union([ z.lazy(() => NotificationTypeSchema),z.lazy(() => EnumNotificationTypeFieldUpdateOperationsInputSchema) ]).optional(),
   channel: z.union([ z.lazy(() => NotificationChannelSchema),z.lazy(() => EnumNotificationChannelFieldUpdateOperationsInputSchema) ]).optional(),
   content: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
@@ -6196,14 +6266,14 @@ export const EnumNotificationChannelFilterSchema: z.ZodType<Prisma.EnumNotificat
   not: z.union([ z.lazy(() => NotificationChannelSchema),z.lazy(() => NestedEnumNotificationChannelFilterSchema) ]).optional(),
 }).strict();
 
-export const BookingRelationFilterSchema: z.ZodType<Prisma.BookingRelationFilter> = z.object({
-  is: z.lazy(() => BookingWhereInputSchema).optional(),
-  isNot: z.lazy(() => BookingWhereInputSchema).optional()
-}).strict();
-
 export const NotificationLogCountOrderByAggregateInputSchema: z.ZodType<Prisma.NotificationLogCountOrderByAggregateInput> = z.object({
   id: z.lazy(() => SortOrderSchema).optional(),
   bookingId: z.lazy(() => SortOrderSchema).optional(),
+  bookingReference: z.lazy(() => SortOrderSchema).optional(),
+  serviceProviderName: z.lazy(() => SortOrderSchema).optional(),
+  clientName: z.lazy(() => SortOrderSchema).optional(),
+  serviceName: z.lazy(() => SortOrderSchema).optional(),
+  appointmentTime: z.lazy(() => SortOrderSchema).optional(),
   type: z.lazy(() => SortOrderSchema).optional(),
   channel: z.lazy(() => SortOrderSchema).optional(),
   content: z.lazy(() => SortOrderSchema).optional(),
@@ -6215,6 +6285,11 @@ export const NotificationLogCountOrderByAggregateInputSchema: z.ZodType<Prisma.N
 export const NotificationLogMaxOrderByAggregateInputSchema: z.ZodType<Prisma.NotificationLogMaxOrderByAggregateInput> = z.object({
   id: z.lazy(() => SortOrderSchema).optional(),
   bookingId: z.lazy(() => SortOrderSchema).optional(),
+  bookingReference: z.lazy(() => SortOrderSchema).optional(),
+  serviceProviderName: z.lazy(() => SortOrderSchema).optional(),
+  clientName: z.lazy(() => SortOrderSchema).optional(),
+  serviceName: z.lazy(() => SortOrderSchema).optional(),
+  appointmentTime: z.lazy(() => SortOrderSchema).optional(),
   type: z.lazy(() => SortOrderSchema).optional(),
   channel: z.lazy(() => SortOrderSchema).optional(),
   content: z.lazy(() => SortOrderSchema).optional(),
@@ -6226,6 +6301,11 @@ export const NotificationLogMaxOrderByAggregateInputSchema: z.ZodType<Prisma.Not
 export const NotificationLogMinOrderByAggregateInputSchema: z.ZodType<Prisma.NotificationLogMinOrderByAggregateInput> = z.object({
   id: z.lazy(() => SortOrderSchema).optional(),
   bookingId: z.lazy(() => SortOrderSchema).optional(),
+  bookingReference: z.lazy(() => SortOrderSchema).optional(),
+  serviceProviderName: z.lazy(() => SortOrderSchema).optional(),
+  clientName: z.lazy(() => SortOrderSchema).optional(),
+  serviceName: z.lazy(() => SortOrderSchema).optional(),
+  appointmentTime: z.lazy(() => SortOrderSchema).optional(),
   type: z.lazy(() => SortOrderSchema).optional(),
   channel: z.lazy(() => SortOrderSchema).optional(),
   content: z.lazy(() => SortOrderSchema).optional(),
@@ -6531,6 +6611,11 @@ export const EnumReviewStatusFilterSchema: z.ZodType<Prisma.EnumReviewStatusFilt
   in: z.lazy(() => ReviewStatusSchema).array().optional(),
   notIn: z.lazy(() => ReviewStatusSchema).array().optional(),
   not: z.union([ z.lazy(() => ReviewStatusSchema),z.lazy(() => NestedEnumReviewStatusFilterSchema) ]).optional(),
+}).strict();
+
+export const BookingRelationFilterSchema: z.ZodType<Prisma.BookingRelationFilter> = z.object({
+  is: z.lazy(() => BookingWhereInputSchema).optional(),
+  isNot: z.lazy(() => BookingWhereInputSchema).optional()
 }).strict();
 
 export const ReviewCountOrderByAggregateInputSchema: z.ZodType<Prisma.ReviewCountOrderByAggregateInput> = z.object({
@@ -8181,10 +8266,12 @@ export const EnumNotificationChannelFieldUpdateOperationsInputSchema: z.ZodType<
   set: z.lazy(() => NotificationChannelSchema).optional()
 }).strict();
 
-export const BookingUpdateOneRequiredWithoutNotificationsNestedInputSchema: z.ZodType<Prisma.BookingUpdateOneRequiredWithoutNotificationsNestedInput> = z.object({
+export const BookingUpdateOneWithoutNotificationsNestedInputSchema: z.ZodType<Prisma.BookingUpdateOneWithoutNotificationsNestedInput> = z.object({
   create: z.union([ z.lazy(() => BookingCreateWithoutNotificationsInputSchema),z.lazy(() => BookingUncheckedCreateWithoutNotificationsInputSchema) ]).optional(),
   connectOrCreate: z.lazy(() => BookingCreateOrConnectWithoutNotificationsInputSchema).optional(),
   upsert: z.lazy(() => BookingUpsertWithoutNotificationsInputSchema).optional(),
+  disconnect: z.union([ z.boolean(),z.lazy(() => BookingWhereInputSchema) ]).optional(),
+  delete: z.union([ z.boolean(),z.lazy(() => BookingWhereInputSchema) ]).optional(),
   connect: z.lazy(() => BookingWhereUniqueInputSchema).optional(),
   update: z.union([ z.lazy(() => BookingUpdateToOneWithWhereWithoutNotificationsInputSchema),z.lazy(() => BookingUpdateWithoutNotificationsInputSchema),z.lazy(() => BookingUncheckedUpdateWithoutNotificationsInputSchema) ]).optional(),
 }).strict();
@@ -12323,6 +12410,11 @@ export const ServiceCreateOrConnectWithoutBookingsInputSchema: z.ZodType<Prisma.
 
 export const NotificationLogCreateWithoutBookingInputSchema: z.ZodType<Prisma.NotificationLogCreateWithoutBookingInput> = z.object({
   id: z.string().cuid().optional(),
+  bookingReference: z.string().optional().nullable(),
+  serviceProviderName: z.string().optional().nullable(),
+  clientName: z.string().optional().nullable(),
+  serviceName: z.string().optional().nullable(),
+  appointmentTime: z.coerce.date().optional().nullable(),
   type: z.lazy(() => NotificationTypeSchema),
   channel: z.lazy(() => NotificationChannelSchema),
   content: z.string(),
@@ -12333,6 +12425,11 @@ export const NotificationLogCreateWithoutBookingInputSchema: z.ZodType<Prisma.No
 
 export const NotificationLogUncheckedCreateWithoutBookingInputSchema: z.ZodType<Prisma.NotificationLogUncheckedCreateWithoutBookingInput> = z.object({
   id: z.string().cuid().optional(),
+  bookingReference: z.string().optional().nullable(),
+  serviceProviderName: z.string().optional().nullable(),
+  clientName: z.string().optional().nullable(),
+  serviceName: z.string().optional().nullable(),
+  appointmentTime: z.coerce.date().optional().nullable(),
   type: z.lazy(() => NotificationTypeSchema),
   channel: z.lazy(() => NotificationChannelSchema),
   content: z.string(),
@@ -12660,7 +12757,12 @@ export const NotificationLogScalarWhereInputSchema: z.ZodType<Prisma.Notificatio
   OR: z.lazy(() => NotificationLogScalarWhereInputSchema).array().optional(),
   NOT: z.union([ z.lazy(() => NotificationLogScalarWhereInputSchema),z.lazy(() => NotificationLogScalarWhereInputSchema).array() ]).optional(),
   id: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
-  bookingId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  bookingId: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  bookingReference: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  serviceProviderName: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  clientName: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  serviceName: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  appointmentTime: z.union([ z.lazy(() => DateTimeNullableFilterSchema),z.coerce.date() ]).optional().nullable(),
   type: z.union([ z.lazy(() => EnumNotificationTypeFilterSchema),z.lazy(() => NotificationTypeSchema) ]).optional(),
   channel: z.union([ z.lazy(() => EnumNotificationChannelFilterSchema),z.lazy(() => NotificationChannelSchema) ]).optional(),
   content: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
@@ -15298,6 +15400,11 @@ export const CalculatedAvailabilitySlotUncheckedUpdateManyWithoutAvailabilityInp
 
 export const NotificationLogCreateManyBookingInputSchema: z.ZodType<Prisma.NotificationLogCreateManyBookingInput> = z.object({
   id: z.string().cuid().optional(),
+  bookingReference: z.string().optional().nullable(),
+  serviceProviderName: z.string().optional().nullable(),
+  clientName: z.string().optional().nullable(),
+  serviceName: z.string().optional().nullable(),
+  appointmentTime: z.coerce.date().optional().nullable(),
   type: z.lazy(() => NotificationTypeSchema),
   channel: z.lazy(() => NotificationChannelSchema),
   content: z.string(),
@@ -15308,6 +15415,11 @@ export const NotificationLogCreateManyBookingInputSchema: z.ZodType<Prisma.Notif
 
 export const NotificationLogUpdateWithoutBookingInputSchema: z.ZodType<Prisma.NotificationLogUpdateWithoutBookingInput> = z.object({
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  bookingReference: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  serviceProviderName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  clientName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  serviceName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  appointmentTime: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   type: z.union([ z.lazy(() => NotificationTypeSchema),z.lazy(() => EnumNotificationTypeFieldUpdateOperationsInputSchema) ]).optional(),
   channel: z.union([ z.lazy(() => NotificationChannelSchema),z.lazy(() => EnumNotificationChannelFieldUpdateOperationsInputSchema) ]).optional(),
   content: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
@@ -15318,6 +15430,11 @@ export const NotificationLogUpdateWithoutBookingInputSchema: z.ZodType<Prisma.No
 
 export const NotificationLogUncheckedUpdateWithoutBookingInputSchema: z.ZodType<Prisma.NotificationLogUncheckedUpdateWithoutBookingInput> = z.object({
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  bookingReference: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  serviceProviderName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  clientName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  serviceName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  appointmentTime: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   type: z.union([ z.lazy(() => NotificationTypeSchema),z.lazy(() => EnumNotificationTypeFieldUpdateOperationsInputSchema) ]).optional(),
   channel: z.union([ z.lazy(() => NotificationChannelSchema),z.lazy(() => EnumNotificationChannelFieldUpdateOperationsInputSchema) ]).optional(),
   content: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
@@ -15328,6 +15445,11 @@ export const NotificationLogUncheckedUpdateWithoutBookingInputSchema: z.ZodType<
 
 export const NotificationLogUncheckedUpdateManyWithoutBookingInputSchema: z.ZodType<Prisma.NotificationLogUncheckedUpdateManyWithoutBookingInput> = z.object({
   id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  bookingReference: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  serviceProviderName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  clientName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  serviceName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  appointmentTime: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   type: z.union([ z.lazy(() => NotificationTypeSchema),z.lazy(() => EnumNotificationTypeFieldUpdateOperationsInputSchema) ]).optional(),
   channel: z.union([ z.lazy(() => NotificationChannelSchema),z.lazy(() => EnumNotificationChannelFieldUpdateOperationsInputSchema) ]).optional(),
   content: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),

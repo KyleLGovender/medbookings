@@ -3,6 +3,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 export function CalendarSkeleton() {
   return (
     <div className="w-full space-y-4">
+      {/* Loading message */}
+      <div className="mb-4 flex items-center justify-center">
+        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-b-transparent"></div>
+        <p className="font-medium text-muted-foreground">Loading calendar data...</p>
+      </div>
+
       {/* Calendar header skeleton */}
       <div className="mb-4 flex items-center justify-between">
         <Skeleton className="h-8 w-32" />

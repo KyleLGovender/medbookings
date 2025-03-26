@@ -46,7 +46,8 @@
         "devDependencies": true,
         "packageDir": ["./"]
       }
-    ]
+    ],
+    "@next/next/no-img-element": "off"
   },
   "ignorePatterns": [
     "prisma/**/*",

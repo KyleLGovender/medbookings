@@ -20,12 +20,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Spinner } from '@/components/ui/spinner';
+import { createBooking } from '@/features/calendar/lib/actions';
+import { AvailabilitySlot, BookingFormSchema } from '@/features/calendar/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
-import { createBooking } from '../../lib/actions';
-import { AvailabilitySlot, BookingFormSchema } from '../../lib/types';
-
-interface BookingFormProps {
+interface BookingCreateFormProps {
   slot: AvailabilitySlot;
   serviceProvider: {
     id: string;
@@ -34,28 +33,19 @@ interface BookingFormProps {
   };
   onCancel: () => void;
   onSuccess: (bookingId: string) => void;
-  isSubmitting: boolean;
-  setIsSubmitting: (value: boolean) => void;
 }
 
-export function BookingForm({
+export function BookingCreateForm({
   slot,
   serviceProvider,
   onCancel,
   onSuccess,
-  isSubmitting,
-  setIsSubmitting,
-}: BookingFormProps) {
-  const router = useRouter();
-  const { toast } = useToast();
-
-  // Add this to track form submission attempts
-  const [formSubmitted, setFormSubmitted] = useState(false);
-
+}: BookingCreateFormProps) {
+  // Move the form initialization before any conditional returns
   const form = useForm({
     resolver: zodResolver(BookingFormSchema),
     defaultValues: {
-      slotId: slot.id,
+      slotId: slot?.id || '',
       bookingType: 'GUEST_SELF' as const,
       notificationPreferences: {
         email: true,
@@ -70,103 +60,87 @@ export function BookingForm({
       },
       agreeToTerms: false,
     },
-    // Show errors after first submission attempt
     mode: 'onSubmit',
   });
 
-  // Add this to log form errors when they change
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverErrors, setServerErrors] = useState<string[]>([]);
+  const { toast } = useToast();
+
   useEffect(() => {
     if (Object.keys(form.formState.errors).length > 0) {
       console.log('Form validation errors:', form.formState.errors);
     }
   }, [form.formState.errors]);
 
-  async function onSubmit(values: any) {
-    // Mark form as submitted to show validation errors
-    setFormSubmitted(true);
+  // Now you can have conditional returns
+  if (!slot || !serviceProvider) {
+    return <div>Error: Missing information</div>;
+  }
 
-    setIsSubmitting(true);
-
-    const formData = new FormData();
-    formData.append('slotId', values.slotId);
-    formData.append('bookingType', values.bookingType);
-
-    // Add notification preferences
-    formData.append('notifyViaEmail', values.notificationPreferences.email.toString());
-    formData.append('notifyViaSMS', values.notificationPreferences.sms.toString());
-    formData.append('notifyViaWhatsapp', values.notificationPreferences.whatsapp.toString());
-
-    // Add guest info
-    formData.append('guestName', values.guestInfo.name);
-    formData.append('guestEmail', values.guestInfo.email || '');
-    formData.append('guestPhone', values.guestInfo.phone || '');
-    formData.append('guestWhatsapp', values.guestInfo.whatsapp || '');
-
-    // Add appointment type (derived from slot configuration)
-    const appointmentType = slot.serviceConfig.isOnlineAvailable ? 'online' : 'inperson';
-    formData.append('appointmentType', appointmentType);
-
-    // IMPORTANT: Explicitly add the terms and conditions agreement
-    formData.append('agreeToTerms', values.agreeToTerms.toString());
-
+  const onSubmit = form.handleSubmit(async (data) => {
     try {
+      setIsSubmitting(true);
+      setServerErrors([]);
+
+      const formData = new FormData();
+
+      formData.append('slotId', data.slotId);
+      formData.append('bookingType', data.bookingType);
+      formData.append('notifyViaEmail', data.notificationPreferences.email.toString());
+      formData.append('notifyViaSMS', data.notificationPreferences.sms.toString());
+      formData.append('notifyViaWhatsapp', data.notificationPreferences.whatsapp.toString());
+      formData.append('guestName', data.guestInfo.name);
+      formData.append('guestEmail', data.guestInfo.email || '');
+      formData.append('guestPhone', data.guestInfo.phone || '');
+      formData.append('guestWhatsapp', data.guestInfo.whatsapp || '');
+      const appointmentType = slot.serviceConfig.isOnlineAvailable ? 'online' : 'inperson';
+      formData.append('appointmentType', appointmentType);
+      formData.append('agreeToTerms', data.agreeToTerms.toString());
+
       const response = await createBooking(formData);
 
       if (response.error) {
-        if (response.fieldErrors) {
-          // Enhanced error handling for field errors
-          Object.entries(response.fieldErrors).forEach(([field, errors]) => {
-            // Handle nested fields
-            if (field.includes('.')) {
-              const [parent, child] = field.split('.');
-              form.setError(`${parent}.${child}` as any, {
-                type: 'server',
-                message: Array.isArray(errors) ? errors[0] : 'Unknown error',
-              });
-            } else {
-              form.setError(field as any, {
-                type: 'server',
-                message: Array.isArray(errors) ? errors[0] : 'Unknown error',
-              });
-            }
-          });
-        }
+        setServerErrors([response.error]);
+        return;
+      }
 
-        toast({
-          variant: 'destructive',
-          title: 'Booking Error',
-          description: response.error,
-        });
+      const bookingId = response.data?.bookingId;
+
+      if (!bookingId) {
+        setServerErrors(['No booking ID returned from server']);
         return;
       }
 
       toast({
-        title: 'Success',
-        description: 'Booking created successfully',
+        title: 'Booking confirmed',
+        description: 'Your booking has been successfully created.',
       });
 
-      onSuccess(response.data?.bookingId || '');
+      onSuccess(bookingId);
     } catch (error) {
+      console.error('Booking submission error:', error);
+      setServerErrors([error instanceof Error ? error.message : 'An unknown error occurred']);
+
       toast({
-        variant: 'destructive',
         title: 'Error',
-        description: 'Failed to create booking',
+        description: 'Failed to create booking. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
     }
-  }
+  });
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          setFormSubmitted(true);
-          form.handleSubmit(onSubmit)(e);
-        }}
-        className="flex h-full flex-col"
-      >
+      <form onSubmit={onSubmit} className="flex h-full flex-col">
+        {/* Form title based on mode */}
+        <div className="border-b border-gray-200 p-4">
+          <h2 className="text-xl font-semibold">Request Booking</h2>
+        </div>
+
         <div className="flex-1 space-y-6 p-4">
           {/* Service Provider Info */}
           <div className="flex items-start space-x-4">
@@ -221,7 +195,7 @@ export function BookingForm({
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-medium">Price</span>
-                <span className="text-sm text-gray-600">${slot.serviceConfig.price}</span>
+                <span className="text-sm text-gray-600">R{slot.serviceConfig.price}</span>
               </div>
 
               <div className="flex flex-col pt-2">
@@ -469,7 +443,7 @@ export function BookingForm({
           />
 
           {/* Error message section */}
-          {Object.keys(form.formState.errors).length > 0 && formSubmitted && (
+          {Object.keys(form.formState.errors).length > 0 && (
             <div className="mt-4 rounded-md bg-destructive/10 p-3">
               <div className="flex">
                 <div className="flex-shrink-0">
@@ -490,14 +464,12 @@ export function BookingForm({
                       {(() => {
                         const errorList: React.ReactNode[] = [];
 
-                        // Handle top-level errors
                         Object.entries(form.formState.errors).forEach(([key, error]) => {
                           if (
                             key === 'guestInfo' &&
                             typeof error === 'object' &&
                             error.type !== 'custom'
                           ) {
-                            // Handle nested guestInfo errors
                             Object.entries(error).forEach(([nestedKey, nestedError]) => {
                               if (nestedError && typeof nestedError === 'object') {
                                 errorList.push(
@@ -512,7 +484,6 @@ export function BookingForm({
                             typeof error === 'object' &&
                             error.type !== 'custom'
                           ) {
-                            // Handle nested notificationPreferences errors
                             Object.entries(error).forEach(([nestedKey, nestedError]) => {
                               if (nestedError && typeof nestedError === 'object') {
                                 errorList.push(
@@ -523,7 +494,6 @@ export function BookingForm({
                               }
                             });
                           } else if (error && typeof error === 'object') {
-                            // Handle regular errors
                             const fieldName =
                               {
                                 slotId: 'Booking slot',

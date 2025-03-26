@@ -3,7 +3,7 @@
 import { Service } from '@/features/service-provider/lib/types';
 import { prisma } from '@/lib/prisma';
 
-import { AvailabilitySlot, AvailabilityView } from './types';
+import { AvailabilitySlot, AvailabilityView, BookingView } from './types';
 
 export async function getServiceProviderAvailabilityInRange(
   serviceProviderId: string,
@@ -105,7 +105,7 @@ export async function getServiceProviderAvailabilityInRange(
         price: Number(service.price),
         isOnlineAvailable: service.isOnlineAvailable,
         isInPerson: service.isInPerson,
-        location: service.location,
+        location: service.location || null,
       })),
       slots: availability.calculatedSlots.map((slot) => ({
         id: slot.id,
@@ -124,7 +124,7 @@ export async function getServiceProviderAvailabilityInRange(
           duration: slot.serviceConfig.duration,
           isOnlineAvailable: slot.serviceConfig.isOnlineAvailable,
           isInPerson: slot.serviceConfig.isInPerson,
-          location: slot.serviceConfig.location,
+          location: slot.serviceConfig.location || null,
         },
         booking: slot.booking
           ? {
@@ -180,7 +180,134 @@ export async function getServiceProviderServices(serviceProviderId: string): Pro
   }
 }
 
-export async function getBookingDetails(slotId: string): Promise<{
+export async function getSlotDetails(slotId: string): Promise<{
+  slot: AvailabilitySlot;
+  serviceProvider: {
+    id: string;
+    name: string;
+    image?: string | null;
+  };
+  booking: BookingView | null;
+}> {
+  const rawSlot = await prisma.calculatedAvailabilitySlot.findUnique({
+    where: { id: slotId },
+    include: {
+      service: true,
+      serviceConfig: true,
+      availability: {
+        include: {
+          serviceProvider: true,
+        },
+      },
+      booking: {
+        include: {
+          client: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+            },
+          },
+          service: true,
+        },
+      },
+    },
+  });
+
+  if (!rawSlot) {
+    throw new Error('Slot not found');
+  }
+
+  // Transform the data to match expected types
+  const slot = {
+    id: rawSlot.id,
+    startTime: rawSlot.startTime,
+    endTime: rawSlot.endTime,
+    status: rawSlot.status,
+    service: {
+      id: rawSlot.service.id,
+      name: rawSlot.service.name,
+      description: rawSlot.service.description,
+      displayPriority: rawSlot.service.displayPriority,
+    },
+    serviceConfig: {
+      id: rawSlot.serviceConfig.id,
+      price: Number(rawSlot.serviceConfig.price),
+      duration: rawSlot.serviceConfig.duration,
+      isOnlineAvailable: rawSlot.serviceConfig.isOnlineAvailable,
+      isInPerson: rawSlot.serviceConfig.isInPerson,
+      location: rawSlot.serviceConfig.location || null,
+    },
+    booking: rawSlot.booking
+      ? {
+          id: rawSlot.booking.id,
+          status: rawSlot.booking.status,
+          bookingType: 'GUEST_SELF',
+          notificationPreferences: { email: true, sms: false, whatsapp: false },
+          guestInfo: {
+            name: rawSlot.booking.guestName || '',
+            email: rawSlot.booking.guestEmail || undefined,
+            phone: rawSlot.booking.guestPhone || undefined,
+            whatsapp: rawSlot.booking.guestWhatsapp || undefined,
+          },
+        }
+      : null,
+  };
+
+  const serviceProvider = {
+    id: rawSlot.availability.serviceProvider.id,
+    name: rawSlot.availability.serviceProvider.name,
+    image: rawSlot.availability.serviceProvider.image,
+  };
+
+  const booking = rawSlot.booking
+    ? {
+        id: rawSlot.booking.id,
+        status: rawSlot.booking.status,
+        bookingType: 'GUEST_SELF',
+        notificationPreferences: { email: true, sms: false, whatsapp: false },
+        guestInfo: {
+          name: rawSlot.booking.guestName || '',
+          email: rawSlot.booking.guestEmail || undefined,
+          phone: rawSlot.booking.guestPhone || undefined,
+          whatsapp: rawSlot.booking.guestWhatsapp || undefined,
+        },
+        slot: {
+          id: rawSlot.id,
+          startTime: rawSlot.startTime,
+          endTime: rawSlot.endTime,
+          status: rawSlot.status,
+          service: {
+            id: rawSlot.service.id,
+            name: rawSlot.service.name,
+            description: rawSlot.service.description || undefined,
+            displayPriority: rawSlot.service.displayPriority,
+          },
+          serviceConfig: {
+            id: rawSlot.serviceConfig.id,
+            price: Number(rawSlot.serviceConfig.price),
+            duration: rawSlot.serviceConfig.duration,
+            isOnlineAvailable: rawSlot.serviceConfig.isOnlineAvailable,
+            isInPerson: rawSlot.serviceConfig.isInPerson,
+            location: rawSlot.serviceConfig.location ?? undefined,
+          },
+          serviceProvider: {
+            id: rawSlot.availability.serviceProvider.id,
+            name: rawSlot.availability.serviceProvider.name,
+            email: undefined,
+            whatsapp: undefined,
+            image: rawSlot.availability.serviceProvider.image ?? undefined,
+          },
+        },
+      }
+    : null;
+
+  return { slot, serviceProvider, booking };
+}
+
+export async function getBookingDetails(bookingId: string): Promise<{
+  booking: BookingView;
   slot: AvailabilitySlot;
   serviceProvider: {
     id: string;
@@ -188,31 +315,110 @@ export async function getBookingDetails(slotId: string): Promise<{
     image?: string | null;
   };
 }> {
-  const slot = await prisma.calculatedAvailabilitySlot.findUnique({
-    where: { id: slotId },
+  const rawBooking = await prisma.booking.findUnique({
+    where: { id: bookingId },
     include: {
       service: true,
-      serviceConfig: true,
-      booking: {
-        include: {
-          client: true,
+      serviceProvider: true,
+      client: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          whatsapp: true,
         },
       },
-      availability: {
+      slot: {
         include: {
-          serviceProvider: true,
+          service: true,
+          serviceConfig: true,
+          availability: {
+            include: {
+              serviceProvider: true,
+            },
+          },
         },
       },
     },
   });
 
-  if (!slot) {
-    throw new Error('Slot not found');
+  if (!rawBooking) {
+    throw new Error('Booking not found');
   }
 
-  const serviceProvider = slot.availability.serviceProvider;
+  // If there's an associated slot, create the slot object
+  let slot: AvailabilitySlot;
 
-  return {
+  if (rawBooking.slot) {
+    slot = {
+      id: rawBooking.slot.id,
+      startTime: rawBooking.slot.startTime,
+      endTime: rawBooking.slot.endTime,
+      status: rawBooking.slot.status,
+      service: {
+        id: rawBooking.slot.service.id,
+        name: rawBooking.slot.service.name,
+        description: rawBooking.slot.service.description,
+        displayPriority: rawBooking.slot.service.displayPriority,
+      },
+      serviceConfig: {
+        id: rawBooking.slot.serviceConfig.id,
+        price: Number(rawBooking.slot.serviceConfig.price),
+        duration: rawBooking.slot.serviceConfig.duration,
+        isOnlineAvailable: rawBooking.slot.serviceConfig.isOnlineAvailable,
+        isInPerson: rawBooking.slot.serviceConfig.isInPerson,
+        location: rawBooking.slot.serviceConfig.location || null,
+      },
+      booking: null, // We already have the booking separately
+    };
+  } else {
+    // If there's no slot, create a virtual slot from the booking data
+    slot = {
+      id: 'virtual-slot', // This is a placeholder
+      startTime: rawBooking.startTime,
+      endTime: rawBooking.endTime,
+      status: 'BOOKED', // Since this is a virtual slot for an existing booking
+      service: {
+        id: rawBooking.serviceId,
+        name: rawBooking.service.name,
+        description: rawBooking.service.description,
+        displayPriority: 0, // Default value
+      },
+      serviceConfig: {
+        id: 'virtual-config', // This is a placeholder
+        price: Number(rawBooking.price),
+        duration: rawBooking.duration,
+        isOnlineAvailable: rawBooking.isOnline,
+        isInPerson: rawBooking.isInPerson,
+        location: rawBooking.location || null,
+      },
+      booking: null, // We already have the booking separately
+    };
+  }
+
+  const serviceProvider = {
+    id: rawBooking.serviceProvider.id,
+    name: rawBooking.serviceProvider.name,
+    image: rawBooking.serviceProvider.image,
+  };
+
+  // Create the booking view object with the slot nested inside
+  const booking: BookingView = {
+    id: rawBooking.id,
+    status: rawBooking.status,
+    bookingType: rawBooking.clientId ? 'USER_SELF' : 'GUEST_SELF',
+    notificationPreferences: {
+      email: true, // Default values - you might want to fetch actual preferences
+      sms: false,
+      whatsapp: false,
+    },
+    guestInfo: {
+      name: rawBooking.guestName || rawBooking.client?.name || '',
+      email: rawBooking.guestEmail || rawBooking.client?.email || undefined,
+      phone: rawBooking.guestPhone || rawBooking.client?.phone || undefined,
+      whatsapp: rawBooking.guestWhatsapp || rawBooking.client?.whatsapp || undefined,
+    },
     slot: {
       id: slot.id,
       startTime: slot.startTime,
@@ -221,36 +427,24 @@ export async function getBookingDetails(slotId: string): Promise<{
       service: {
         id: slot.service.id,
         name: slot.service.name,
-        description: slot.service.description,
+        description: slot.service.description || undefined,
         displayPriority: slot.service.displayPriority,
       },
       serviceConfig: {
         id: slot.serviceConfig.id,
-        price: Number(slot.serviceConfig.price),
+        price: slot.serviceConfig.price,
         duration: slot.serviceConfig.duration,
         isOnlineAvailable: slot.serviceConfig.isOnlineAvailable,
         isInPerson: slot.serviceConfig.isInPerson,
-        location: slot.serviceConfig.location,
+        location: slot.serviceConfig.location || undefined,
       },
-      booking: slot.booking
-        ? {
-            id: slot.booking.id,
-            status: slot.booking.status,
-            bookingType: 'USER_SELF',
-            notificationPreferences: { email: false, sms: false, whatsapp: false },
-            guestInfo: {
-              name: slot.booking.guestName ?? '',
-              email: slot.booking.guestEmail ?? undefined,
-              phone: slot.booking.guestPhone ?? undefined,
-              whatsapp: slot.booking.guestWhatsapp ?? undefined,
-            },
-          }
-        : null,
-    },
-    serviceProvider: {
-      id: serviceProvider.id,
-      name: serviceProvider.name,
-      image: serviceProvider.image,
+      serviceProvider: {
+        id: serviceProvider.id,
+        name: serviceProvider.name,
+        image: serviceProvider.image || undefined,
+      },
     },
   };
+
+  return { booking, slot, serviceProvider };
 }

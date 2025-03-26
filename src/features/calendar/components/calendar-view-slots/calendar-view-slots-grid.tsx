@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
@@ -252,20 +253,44 @@ export function CalendarViewSlotsGrid({
                             (a, b) =>
                               new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
                           )
-                          .map((slot) => (
-                            <Button
-                              key={slot.id}
-                              variant="default"
-                              className={`w-full text-xs sm:text-sm ${getSlotColor(slot)}`}
-                              onClick={() => handleSlotClick(slot)}
-                            >
-                              {new Date(slot.startTime).toLocaleTimeString('en-US', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: false,
-                              })}
-                            </Button>
-                          ))}
+                          .map((slot) => {
+                            const now = new Date();
+                            const startTime = new Date(slot.startTime);
+                            const isPast = startTime < now;
+                            const isBooked = !!slot.booking;
+
+                            // Only make it a link if it's in the future and not booked
+                            if (isPast || isBooked) {
+                              return (
+                                <Button
+                                  key={slot.id}
+                                  variant="default"
+                                  className={`w-full text-xs sm:text-sm ${getSlotColor(slot)}`}
+                                  disabled={isPast}
+                                >
+                                  {new Date(slot.startTime).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: false,
+                                  })}
+                                </Button>
+                              );
+                            }
+
+                            return (
+                              <Link
+                                key={slot.id}
+                                href={`/calendar/booking/create/${slot.id}`}
+                                className={`inline-flex h-10 w-full items-center justify-center rounded-md px-4 py-2 text-xs font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:text-sm ${getSlotColor(slot)}`}
+                              >
+                                {new Date(slot.startTime).toLocaleTimeString('en-US', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: false,
+                                })}
+                              </Link>
+                            );
+                          })}
                       </div>
                     </TableCell>
                   );

@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { ServiceProvider } from '@prisma/client';
@@ -10,6 +10,7 @@ import { CalendarIcon } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Spinner } from '@/components/ui/spinner';
 
 interface ServiceProviderCardProps {
   serviceProvider: ServiceProvider & {
@@ -18,21 +19,18 @@ interface ServiceProviderCardProps {
 }
 
 export function ServiceProviderCard({ serviceProvider }: ServiceProviderCardProps) {
-  const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
 
-  const navigateToBooking = () => {
-    setIsNavigating(true);
-    router.push(`/calendar/service-provider/${serviceProvider.id}`);
-  };
-
+  // This effect will run when the component is about to unmount
+  // which happens during navigation
   useEffect(() => {
-    // Prefetch the calendar page when the card is rendered
-    router.prefetch(`/calendar/service-provider/${serviceProvider.id}`);
-  }, [router, serviceProvider.id]);
+    return () => {
+      // Clean up any resources if needed
+    };
+  }, []);
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
+    <Card className="flex h-full flex-col overflow-hidden transition-all hover:shadow-md">
       <CardHeader className="p-0">
         {serviceProvider.image ? (
           <div className="relative h-48 w-full">
@@ -47,7 +45,7 @@ export function ServiceProviderCard({ serviceProvider }: ServiceProviderCardProp
           <div className="h-24 w-full bg-muted" />
         )}
       </CardHeader>
-      <CardContent className="p-6">
+      <CardContent className="flex-grow p-6">
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16 border-2 border-white shadow-sm">
             <div className="flex h-full w-full items-center justify-center bg-primary/10 text-xl font-semibold text-primary">
@@ -68,25 +66,26 @@ export function ServiceProviderCard({ serviceProvider }: ServiceProviderCardProp
           )}
         </div>
       </CardContent>
-      <CardFooter className="bg-muted/10 p-4">
-        <Button
-          onClick={navigateToBooking}
-          className="w-full"
-          variant="default"
-          disabled={isNavigating}
+      <CardFooter className="mt-auto h-[68px] bg-muted/10 p-4">
+        <Link
+          href={`/calendar/service-provider/${serviceProvider.id}`}
+          onClick={() => setIsNavigating(true)}
+          className="inline-block w-full"
         >
-          {isNavigating ? (
-            <>
-              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-b-transparent"></div>
-              Loading...
-            </>
-          ) : (
-            <>
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              Book Appointment
-            </>
-          )}
-        </Button>
+          <Button className="w-full" variant="default" disabled={isNavigating}>
+            {isNavigating ? (
+              <>
+                <Spinner className="mr-2 h-4 w-4" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                Book Appointment
+              </>
+            )}
+          </Button>
+        </Link>
       </CardFooter>
     </Card>
   );

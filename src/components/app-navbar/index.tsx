@@ -21,6 +21,7 @@ export default function AppNavbar({ className = '' }: { className?: string }) {
     { label: 'Profile', href: '/profile' },
     { label: 'Service Provider', href: '/profile/service-provider' },
     { label: 'Calendar', href: '/profile/service-provider/calendar' },
+    { label: 'Bookings', href: '/calendar/service-provider/bookings' },
     { label: 'Settings', href: '/settings' },
   ];
 
@@ -36,7 +37,7 @@ export default function AppNavbar({ className = '' }: { className?: string }) {
             </div>
             <div className="hidden md:ml-6 md:flex md:space-x-8">
               {menuItems.map((item) => (
-                <a
+                <Link
                   key={item.href}
                   href={item.href}
                   className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 ${
@@ -44,7 +45,7 @@ export default function AppNavbar({ className = '' }: { className?: string }) {
                   }`}
                 >
                   {item.label}
-                </a>
+                </Link>
               ))}
             </div>
           </div>
@@ -122,9 +123,9 @@ export default function AppNavbar({ className = '' }: { className?: string }) {
           <div className="mt-3 space-y-1">
             {profileMenuItems.map((item) => (
               <DisclosureButton
-                as="a"
+                as={Link}
                 key={item.label}
-                href={item.label}
+                href={item.href}
                 className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800 sm:px-6"
               >
                 {item.label}
