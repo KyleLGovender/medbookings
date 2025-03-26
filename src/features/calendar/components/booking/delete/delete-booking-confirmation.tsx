@@ -20,7 +20,7 @@ interface DeleteBookingConfirmationProps {
 
 export function DeleteBookingConfirmation({
   bookingId,
-  returnUrl = '/calendar/bookings',
+  returnUrl = '/calendar/service-provider/bookings',
 }: DeleteBookingConfirmationProps) {
   const router = useRouter();
   const { toast } = useToast();

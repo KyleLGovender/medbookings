@@ -21,7 +21,12 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Spinner } from '@/components/ui/spinner';
 import { updateBooking } from '@/features/calendar/lib/actions';
-import { AvailabilitySlot, BookingFormSchema, BookingView } from '@/features/calendar/lib/types';
+import {
+  AvailabilitySlot,
+  BookingFormSchema,
+  BookingFormValues,
+  BookingView,
+} from '@/features/calendar/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface BookingEditFormProps {
@@ -44,11 +49,13 @@ export function BookingEditForm({
   onSuccess,
 }: BookingEditFormProps) {
   // Move the form initialization before any conditional returns
-  const form = useForm({
+  const form = useForm<BookingFormValues>({
     resolver: zodResolver(BookingFormSchema),
     defaultValues: {
       slotId: slot?.id || '',
-      bookingType: booking?.bookingType || ('GUEST_SELF' as const),
+      bookingType:
+        (booking?.bookingType as 'GUEST_SELF' | 'USER_SELF' | 'USER_GUEST' | 'PROVIDER_GUEST') ||
+        'GUEST_SELF',
       notificationPreferences: {
         email: booking?.notificationPreferences.email || true,
         sms: booking?.notificationPreferences.sms || false,
@@ -76,68 +83,70 @@ export function BookingEditForm({
     }
   }, [form.formState.errors]);
 
-  // Now you can have conditional returns
+  // Group all conditional returns together
   if (!slot || !serviceProvider) {
     return <div>Error: Missing information</div>;
   }
 
-  const onSubmit = form.handleSubmit(async (data) => {
+  if (isSubmitting) {
+    return (
+      <div className="flex h-full items-center justify-center p-8">
+        <Spinner className="h-8 w-8" />
+        <span className="ml-2">Updating booking...</span>
+      </div>
+    );
+  }
+
+  async function onSubmit(values: BookingFormValues) {
     try {
       setIsSubmitting(true);
       setServerErrors([]);
 
       const formData = new FormData();
 
-      formData.append('slotId', data.slotId);
-      formData.append('bookingType', data.bookingType);
-      formData.append('notifyViaEmail', data.notificationPreferences.email.toString());
-      formData.append('notifyViaSMS', data.notificationPreferences.sms.toString());
-      formData.append('notifyViaWhatsapp', data.notificationPreferences.whatsapp.toString());
-      formData.append('guestName', data.guestInfo.name);
-      formData.append('guestEmail', data.guestInfo.email || '');
-      formData.append('guestPhone', data.guestInfo.phone || '');
-      formData.append('guestWhatsapp', data.guestInfo.whatsapp || '');
+      formData.append('slotId', values.slotId);
+      formData.append('bookingType', values.bookingType);
+      formData.append('notifyViaEmail', values.notificationPreferences.email.toString());
+      formData.append('notifyViaSMS', values.notificationPreferences.sms.toString());
+      formData.append('notifyViaWhatsapp', values.notificationPreferences.whatsapp.toString());
+      formData.append('guestName', values.guestInfo.name);
+      formData.append('guestEmail', values.guestInfo.email || '');
+      formData.append('guestPhone', values.guestInfo.phone || '');
+      formData.append('guestWhatsapp', values.guestInfo.whatsapp || '');
       const appointmentType = slot.serviceConfig.isOnlineAvailable ? 'online' : 'inperson';
       formData.append('appointmentType', appointmentType);
-      formData.append('agreeToTerms', data.agreeToTerms.toString());
+      formData.append('agreeToTerms', values.agreeToTerms.toString());
 
       const response = await updateBooking(booking.id, formData);
 
       if (response.error) {
         setServerErrors([response.error]);
+        toast({
+          title: 'Error',
+          description: response.error,
+          variant: 'destructive',
+        });
+        setIsSubmitting(false);
         return;
       }
 
-      const bookingId = response.data?.bookingId;
-
-      if (!bookingId) {
-        setServerErrors(['No booking ID returned from server']);
-        return;
+      if (response.data?.bookingId) {
+        onSuccess(response.data.bookingId);
       }
-
-      toast({
-        title: 'Booking updated',
-        description: 'Your booking has been successfully updated.',
-      });
-
-      onSuccess(bookingId);
     } catch (error) {
-      console.error('Booking submission error:', error);
-      setServerErrors([error instanceof Error ? error.message : 'An unknown error occurred']);
-
+      console.error('Error updating booking:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update booking. Please try again.',
+        description: 'An unexpected error occurred',
         variant: 'destructive',
       });
-    } finally {
       setIsSubmitting(false);
     }
-  });
+  }
 
   return (
     <Form {...form}>
-      <form onSubmit={onSubmit} className="flex h-full flex-col">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex h-full flex-col">
         {/* Form title based on mode */}
         <div className="border-b border-gray-200 p-4">
           <h2 className="text-xl font-semibold">Update Booking</h2>
@@ -231,17 +240,21 @@ export function BookingEditForm({
                 )}
               </div>
               <div className="flex flex-col items-start py-2">
+                <div className="mb-2 text-sm text-gray-600">
+                  If this time slot no longer works for you, you can cancel this booking and create
+                  a new one at a more convenient time.
+                </div>
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-auto"
+                  className="w-auto text-destructive hover:bg-destructive/10"
                   onClick={() => {
-                    router.push(
-                      `/calendar/service-provider/${serviceProvider.id}?start=${new Date(slot.startTime).toISOString().split('T')[0]}`
-                    );
+                    if (confirm('Are you sure you want to cancel this booking?')) {
+                      router.push(`/calendar/booking/cancel/${booking.id}`);
+                    }
                   }}
                 >
-                  Select a different booking slot
+                  Cancel this booking
                 </Button>
               </div>
             </div>
@@ -525,9 +538,6 @@ export function BookingEditForm({
         </div>
 
         <div className="flex justify-end space-x-4 border-t border-gray-200 p-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
           <Button type="submit" disabled={isSubmitting} className="min-w-[120px]">
             {isSubmitting ? (
               <>

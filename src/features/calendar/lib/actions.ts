@@ -8,13 +8,12 @@ import { writeFile } from 'fs/promises';
 import { getServerSession } from 'next-auth';
 import { join } from 'path';
 
-import { authOptions, getCurrentUser } from '@/lib/auth';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 import {
   calculateInitialAvailabilitySlots,
   calculateNonOverlappingSlots,
-  checkBookingAccess,
   sendBookingNotifications,
   validateAvailabilityFormData,
 } from './server-helper';
@@ -438,15 +437,10 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
       agreeToTerms: formData.get('agreeToTerms') === 'true',
     };
 
-    // Log the data for debugging
-    console.log('Server received data:', data);
-    console.log('Terms and conditions value:', formData.get('agreeToTerms'));
-
     // Validate using the existing schema
     const validationResult = BookingFormSchema.safeParse(data);
 
     if (!validationResult.success) {
-      console.error('Validation errors:', validationResult.error.format());
       return {
         error: 'Validation failed',
         fieldErrors: validationResult.error.flatten().fieldErrors,
@@ -793,19 +787,6 @@ export async function deleteBooking(
   bookingId: string
 ): Promise<{ success?: boolean; error?: string }> {
   try {
-    // Get the authenticated user
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-      return { error: 'Not authenticated' };
-    }
-
-    // Check access to the booking
-    try {
-      await checkBookingAccess(bookingId, currentUser.id);
-    } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Access denied' };
-    }
-
     // Get the booking with all necessary relations
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
@@ -846,11 +827,7 @@ export async function deleteBooking(
       where: { id: bookingId },
     });
 
-    // Revalidate paths
-    if (booking.slotId) {
-      revalidatePath(`/booking/${booking.slotId}`);
-    }
-    revalidatePath('/dashboard/bookings');
+    revalidatePath('/calendar/service-provider/bookings');
 
     return { success: true };
   } catch (error) {
