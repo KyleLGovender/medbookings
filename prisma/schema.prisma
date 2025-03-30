@@ -93,6 +93,8 @@ model ServiceProvider {
   serviceProviderType    ServiceProviderType         @relation(fields: [serviceProviderTypeId], references: [id])
   serviceProviderTypeId  String
   bio                    String?                     @db.Text
+  email                  String @default("default@example.com")
+  whatsapp               String @default("+1234567890")                     
   services               Service[]
   requirementSubmissions RequirementSubmission[]
   availabilities         Availability[]

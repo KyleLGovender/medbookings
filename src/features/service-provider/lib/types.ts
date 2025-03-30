@@ -15,10 +15,42 @@ export type ServiceProviderType = {
   description: string | null;
 };
 
-export type ServiceProvider = z.infer<typeof ServiceProviderSchema> & {
-  services: Service[];
+export type ServiceProvider = Omit<
+  z.infer<typeof ServiceProviderSchema>,
+  'createdAt' | 'updatedAt' | 'verifiedAt' | 'trialStarted' | 'trialEnded'
+> & {
+  services: Array<
+    Omit<Service, 'createdAt' | 'updatedAt' | 'defaultPrice' | 'defaultDuration'> & {
+      defaultPrice: number | null;
+      defaultDuration: number | null;
+      createdAt: string;
+      updatedAt: string;
+    }
+  >;
   user: ServiceProviderUser;
   serviceProviderType: ServiceProviderType;
+  createdAt: string;
+  updatedAt: string;
+  verifiedAt: string | null;
+  trialStarted: string | null;
+  trialEnded: string | null;
+  requirementSubmissions?: Array<{
+    requirementTypeId: string;
+    documentUrl: string | null;
+    documentMetadata: { value?: string } | null;
+    createdAt: string;
+    updatedAt: string;
+    validatedAt: string | null;
+    expiresAt: string | null;
+    requirementType: {
+      id: string;
+      name: string;
+      description: string | null;
+      createdAt: string;
+      updatedAt: string;
+      validationConfig: any | null;
+    };
+  }>;
 };
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -59,6 +91,8 @@ export const serviceProviderSchema = z.object({
     .nullable(),
   languages: z.array(z.string()).min(1, 'Select at least one language'),
   billingType: z.nativeEnum(BillingType),
+  email: z.string().email('Please enter a valid email').min(1, 'Email is required'),
+  whatsapp: z.string().min(1, 'WhatsApp number is required'),
   website: z.string().url('Invalid website URL').optional().or(z.literal('')),
   services: z.array(z.string()).min(1, 'Select at least one service'),
   requirements: z
@@ -68,6 +102,7 @@ export const serviceProviderSchema = z.object({
         value: z.string().optional(),
         documentUrl: z.string().optional(),
         otherValue: z.string().optional(),
+        documentFile: z.instanceof(File).optional(),
       })
     )
     .optional(),

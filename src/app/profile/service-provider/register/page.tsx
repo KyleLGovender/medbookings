@@ -46,6 +46,7 @@ export default async function RegisterProviderPage() {
         requirementTypes={requirementTypes}
         languages={languages}
         billingTypes={billingTypes}
+        mode="register"
       />
     </div>
   );

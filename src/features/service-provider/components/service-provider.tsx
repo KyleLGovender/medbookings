@@ -30,6 +30,18 @@ export function ServiceProviderProfile({ serviceProvider }: ServiceProviderProps
               </AspectRatio>
             )}
             <Link
+              href="/profile/service-provider/view"
+              className={buttonVariants({ className: 'mt-2 w-full' })}
+            >
+              View Service Provider Profile
+            </Link>
+            <Link
+              href="/profile/service-provider/edit"
+              className={buttonVariants({ className: 'mt-2 w-full' })}
+            >
+              Edit Service Provider Profile
+            </Link>
+            <Link
               href="/profile/service-provider/calendar"
               className={buttonVariants({ className: 'w-full' })}
             >

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { ServiceProvider } from '@prisma/client';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, UserRound } from 'lucide-react';
 
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,8 @@ interface ServiceProviderCardProps {
 }
 
 export function ServiceProviderCard({ serviceProvider }: ServiceProviderCardProps) {
-  const [isNavigating, setIsNavigating] = useState(false);
+  const [isNavigatingProfile, setIsNavigatingProfile] = useState(false);
+  const [isNavigatingCalendar, setIsNavigatingCalendar] = useState(false);
 
   // This effect will run when the component is about to unmount
   // which happens during navigation
@@ -66,14 +67,33 @@ export function ServiceProviderCard({ serviceProvider }: ServiceProviderCardProp
           )}
         </div>
       </CardContent>
-      <CardFooter className="mt-auto h-[68px] bg-muted/10 p-4">
+      <CardFooter className="flex flex-col gap-3 bg-muted/10 p-6">
+        <Link
+          href={`/service-providers/${serviceProvider.id}`}
+          onClick={() => setIsNavigatingProfile(true)}
+          className="w-full"
+        >
+          <Button className="w-full" variant="default" disabled={isNavigatingProfile}>
+            {isNavigatingProfile ? (
+              <>
+                <Spinner className="mr-2 h-4 w-4" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <UserRound className="mr-2 h-4 w-4" />
+                View Profile
+              </>
+            )}
+          </Button>
+        </Link>
         <Link
           href={`/calendar/service-provider/${serviceProvider.id}`}
-          onClick={() => setIsNavigating(true)}
-          className="inline-block w-full"
+          onClick={() => setIsNavigatingCalendar(true)}
+          className="w-full"
         >
-          <Button className="w-full" variant="default" disabled={isNavigating}>
-            {isNavigating ? (
+          <Button className="w-full" variant="default" disabled={isNavigatingCalendar}>
+            {isNavigatingCalendar ? (
               <>
                 <Spinner className="mr-2 h-4 w-4" />
                 Loading...

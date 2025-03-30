@@ -13,7 +13,18 @@ const nextConfig = {
   // },
   transpilePackages: ['react-hook-form', 'next-safe-action'],
   images: {
-    domains: ['wfhq93qoozwnz2zu.public.blob.vercel-storage.com', 'lh3.googleusercontent.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'wfhq93qoozwnz2zu.public.blob.vercel-storage.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        pathname: '/**',
+      },
+    ],
   },
 };
 

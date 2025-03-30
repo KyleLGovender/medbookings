@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
@@ -21,7 +22,7 @@ export default function AuthButton({ profileMenuItems = [] }: AuthButtonProps) {
   // Preload the image when session data is available
   useEffect(() => {
     if (data?.user?.image) {
-      const img = new Image();
+      const img = new window.Image();
       img.onload = () => setImageLoaded(true);
       img.onerror = () => setImageLoaded(false);
       img.src = data.user.image;
@@ -66,7 +67,7 @@ export default function AuthButton({ profileMenuItems = [] }: AuthButtonProps) {
         <MenuButton className="relative flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
           <span className="absolute -inset-1.5" />
           <span className="sr-only">Open user menu</span>
-          <div className="size-8 overflow-hidden rounded-full bg-gray-200">
+          <div className="relative size-8 overflow-hidden rounded-full bg-gray-200">
             {/* Always show the user initial or a placeholder */}
             <div className="flex h-full w-full items-center justify-center">
               <span className="text-sm font-medium text-gray-600">
@@ -76,12 +77,14 @@ export default function AuthButton({ profileMenuItems = [] }: AuthButtonProps) {
 
             {/* Show the image on top if it's loaded and authenticated */}
             {status === 'authenticated' && data?.user?.image && imageLoaded && (
-              <img
+              <Image
                 src={data.user.image}
                 alt=""
-                className="absolute inset-0 size-8 rounded-full"
-                crossOrigin="anonymous"
+                fill
+                sizes="32px"
+                className="absolute inset-0 rounded-full object-cover"
                 style={{ opacity: 1 }}
+                unoptimized={data.user.image?.includes('googleusercontent.com')}
               />
             )}
           </div>

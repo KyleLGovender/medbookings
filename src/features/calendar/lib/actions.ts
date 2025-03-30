@@ -390,32 +390,6 @@ export async function updateAvailability(
   }
 }
 
-export async function lookupUser(email: string) {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        whatsapp: true,
-        notificationPreferences: {
-          select: {
-            email: true,
-            sms: true,
-            whatsapp: true,
-          },
-        },
-      },
-    });
-    return user;
-  } catch (error) {
-    console.error('User lookup error:', error);
-    return null;
-  }
-}
-
 export async function createBooking(formData: FormData): Promise<BookingResponse> {
   try {
     // Extract form data

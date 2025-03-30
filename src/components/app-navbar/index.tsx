@@ -15,14 +15,13 @@ export default function AppNavbar({ className = '' }: { className?: string }) {
   const pathname = usePathname();
   const menuItems = [
     { label: 'Home', href: '/' },
-    { label: 'Service Providers', href: '/service-providers/' },
+    { label: 'Find a Service', href: '/service-providers/' },
   ];
   const profileMenuItems = [
     { label: 'Profile', href: '/profile' },
     { label: 'Service Provider', href: '/profile/service-provider' },
     { label: 'Calendar', href: '/profile/service-provider/calendar' },
     { label: 'Bookings', href: '/calendar/service-provider/bookings' },
-    { label: 'Settings', href: '/settings' },
   ];
 
   return (
