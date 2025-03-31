@@ -33,6 +33,8 @@ export async function sendServiceProviderWhatsappConfirmation(
       1: name,
     });
 
+    console.log('accountSid: ', accountSid);
+    console.log('authToken: ', authToken);
     console.log('TwilioWhatsappNumber: ', TwilioWhatsappNumber);
 
     // Send WhatsApp message
