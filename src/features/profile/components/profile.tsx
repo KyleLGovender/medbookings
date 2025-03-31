@@ -36,9 +36,7 @@ export default async function Profile() {
         <CardContent className="pt-6">
           <Link
             href={
-              serviceProvider
-                ? '/profile/service-provider'
-                : '/profile/service-provider/registration'
+              serviceProvider ? '/profile/service-provider' : '/profile/service-provider/register'
             }
             className={buttonVariants({ className: 'w-full' })}
           >

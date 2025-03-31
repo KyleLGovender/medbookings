@@ -2,14 +2,12 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { BookingStatus, NotificationChannel, SlotStatus } from '@prisma/client';
-import { randomUUID } from 'crypto';
-import { writeFile } from 'fs/promises';
+import { BookingStatus, SlotStatus } from '@prisma/client';
 import { getServerSession } from 'next-auth';
-import { join } from 'path';
 
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { convertLocalToUTC, convertUTCToLocal } from '@/lib/timezone-helper';
 
 import {
   calculateInitialAvailabilitySlots,
@@ -31,6 +29,10 @@ export async function createAvailability(formData: FormData): Promise<Availabili
     const { data } = validationResult;
     console.log('Validated data:', data);
 
+    // Convert local times to UTC for storage
+    const startTime = convertLocalToUTC(data.startTime);
+    const endTime = convertLocalToUTC(data.endTime);
+
     // Check which configurations already exist
     const existingConfigs = await prisma.serviceAvailabilityConfig.findMany({
       where: {
@@ -47,8 +49,8 @@ export async function createAvailability(formData: FormData): Promise<Availabili
 
     const availability = await prisma.availability.create({
       data: {
-        startTime: data.startTime,
-        endTime: data.endTime,
+        startTime,
+        endTime,
         serviceProvider: {
           connect: {
             id: formData.get('serviceProviderId') as string,
@@ -112,8 +114,8 @@ export async function createAvailability(formData: FormData): Promise<Availabili
 
     return {
       data: {
-        startTime: availability.startTime,
-        endTime: availability.endTime,
+        startTime: convertUTCToLocal(availability.startTime),
+        endTime: convertUTCToLocal(availability.endTime),
         availableServices: availability.availableServices.map((service) => ({
           serviceId: service.serviceId,
           duration: service.duration,
@@ -208,6 +210,10 @@ export async function updateAvailability(
 
     const { data } = validationResult;
 
+    // Convert local times to UTC for storage
+    const startTime = convertLocalToUTC(data.startTime);
+    const endTime = convertLocalToUTC(data.endTime);
+
     // 1. First, check if there are any bookings associated with this availability
     const existingSlots = await prisma.calculatedAvailabilitySlot.findMany({
       where: { availabilityId },
@@ -228,10 +234,6 @@ export async function updateAvailability(
 
     // 2. If there are bookings, perform safety checks
     if (bookedSlots.length > 0) {
-      // Check if the new time range would exclude any booked slots
-      const newStartTime = data.startTime;
-      const newEndTime = data.endTime;
-
       // Get the original availability to compare
       const originalAvailability = await prisma.availability.findUnique({
         where: { id: availabilityId },
@@ -240,10 +242,9 @@ export async function updateAvailability(
       if (!originalAvailability) {
         return { error: 'Availability not found' };
       }
-
-      // Ensure new time range doesn't exclude any booked slots
+      // Check if the new time range would exclude any booked slots
       for (const slot of bookedSlots) {
-        if (slot.startTime < newStartTime || slot.endTime > newEndTime) {
+        if (slot.startTime < startTime || slot.endTime > endTime) {
           return {
             error: 'Cannot modify availability: new time range would exclude existing bookings',
           };
@@ -285,8 +286,8 @@ export async function updateAvailability(
     const availability = await prisma.availability.update({
       where: { id: availabilityId },
       data: {
-        startTime: data.startTime,
-        endTime: data.endTime,
+        startTime,
+        endTime,
         availableServices: {
           // Connect existing configs
           connect: existingConfigs.map((config) => ({
@@ -369,8 +370,8 @@ export async function updateAvailability(
 
     return {
       data: {
-        startTime: availability.startTime,
-        endTime: availability.endTime,
+        startTime: convertUTCToLocal(availability.startTime),
+        endTime: convertUTCToLocal(availability.endTime),
         availableServices: availability.availableServices.map((service) => ({
           serviceId: service.serviceId,
           duration: service.duration,
@@ -519,8 +520,8 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
       agreeToTerms: validatedData.agreeToTerms,
       slot: {
         id: result.slot.id,
-        startTime: result.slot.startTime,
-        endTime: result.slot.endTime,
+        startTime: convertUTCToLocal(result.slot.startTime),
+        endTime: convertUTCToLocal(result.slot.endTime),
         status: result.slot.status,
         service: {
           id: result.service.id,
@@ -563,71 +564,6 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
     return {
       error: error instanceof Error ? error.message : 'Failed to create booking',
     };
-  }
-}
-
-// Helper function to log notifications instead of sending them
-async function logBookingNotification(
-  bookingId: string,
-  serviceProviderId: string,
-  type:
-    | 'BOOKING_CONFIRMATION'
-    | 'BOOKING_REMINDER'
-    | 'BOOKING_CANCELLATION'
-    | 'BOOKING_MODIFICATION',
-  channel: 'EMAIL' | 'SMS' | 'WHATSAPP'
-) {
-  try {
-    const booking = await prisma.booking.findUnique({
-      where: { id: bookingId },
-      include: {
-        serviceProvider: true,
-        service: true,
-      },
-    });
-
-    if (!booking) return;
-
-    const logEntry = {
-      timestamp: new Date().toISOString(),
-      type,
-      channel,
-      bookingId,
-      serviceProviderId,
-      guestName: booking.guestName || 'Unknown Guest',
-      serviceName: booking.service.name,
-      startTime: booking.startTime.toISOString(),
-      endTime: booking.endTime.toISOString(),
-      confirmationLink: `/dashboard/bookings/confirm/${bookingId}`,
-      declineLink: `/dashboard/bookings/decline/${bookingId}`,
-    };
-
-    // Create logs directory if it doesn't exist
-    const logsDir = join(process.cwd(), 'logs');
-    await writeFile(
-      join(logsDir, `booking-notifications-${randomUUID()}.json`),
-      JSON.stringify(logEntry, null, 2),
-      { flag: 'a' }
-    ).catch(() => {
-      // If the directory doesn't exist, create it and try again
-      return writeFile(
-        join(process.cwd(), `booking-notification-${randomUUID()}.json`),
-        JSON.stringify(logEntry, null, 2)
-      );
-    });
-
-    // Also create a DB entry for the notification
-    await prisma.notificationLog.create({
-      data: {
-        bookingId,
-        type: type,
-        channel: channel as NotificationChannel,
-        content: JSON.stringify(logEntry),
-        status: 'SENT',
-      },
-    });
-  } catch (error) {
-    console.error('Error logging notification:', error);
   }
 }
 
@@ -838,14 +774,6 @@ export async function confirmBooking(bookingId: string): Promise<BookingResponse
       },
     });
 
-    // Log the confirmation notification
-    await logBookingNotification(
-      bookingId,
-      booking.serviceProviderId,
-      'BOOKING_CONFIRMATION',
-      'EMAIL'
-    );
-
     // Revalidate relevant paths
     revalidatePath(`/calendar/service-provider/${booking.serviceProviderId}`);
     revalidatePath('/dashboard/bookings');
@@ -900,14 +828,6 @@ export async function declineBooking(bookingId: string, reason?: string): Promis
         });
       }
     });
-
-    // Log the cancellation notification
-    await logBookingNotification(
-      bookingId,
-      booking.serviceProviderId,
-      'BOOKING_CANCELLATION',
-      'EMAIL'
-    );
 
     // Revalidate relevant paths
     revalidatePath(`/calendar/service-provider/${booking.serviceProviderId}`);

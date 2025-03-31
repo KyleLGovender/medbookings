@@ -5,6 +5,10 @@ import { BillingType, Languages } from '@prisma/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ServiceProvider } from '@/features/service-provider/lib/types';
+import { getCurrentUser } from '@/lib/auth';
+
+import { DeleteServiceProviderButton } from './delete-service-provider-button';
+import { EditServiceProviderButton } from './edit-service-provider-button';
 
 interface ServiceProviderViewProps {
   serviceProvider: ServiceProvider;
@@ -36,7 +40,7 @@ interface ServiceProviderViewProps {
   }>;
 }
 
-export function ServiceProviderView({
+export async function ServiceProviderView({
   serviceProvider,
   serviceProviderTypes,
   services,
@@ -48,12 +52,24 @@ export function ServiceProviderView({
     (type) => type.id === serviceProvider.serviceProviderTypeId
   );
 
+  const currentUser = await getCurrentUser();
+  const isAuthorized =
+    currentUser?.id === serviceProvider.userId ||
+    currentUser?.role === 'ADMIN' ||
+    currentUser?.role === 'SUPER_ADMIN';
+
   return (
     <div className="space-y-6">
       {/* Basic Information */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Basic Information</CardTitle>
+          {isAuthorized && (
+            <div className="flex gap-2">
+              <EditServiceProviderButton serviceProviderId={serviceProvider.id} />
+              <DeleteServiceProviderButton serviceProviderId={serviceProvider.id} />
+            </div>
+          )}
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-start gap-6">

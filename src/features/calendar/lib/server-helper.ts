@@ -1,20 +1,16 @@
 'use server';
 
-import { Prisma } from '@prisma/client';
+import { NotificationChannel, Prisma } from '@prisma/client';
 import sgMail from '@sendgrid/mail';
 import twilio from 'twilio';
 import { z } from 'zod';
 
 import env from '@/config/env/server';
-import { NotificationChannel, NotificationType } from '@/features/notifications/lib/types';
+import { NotificationType } from '@/features/notifications/lib/types';
 import { prisma } from '@/lib/prisma';
-import { formatLocalDate, formatLocalTime } from '@/lib/timezone-helper';
+import { convertLocalToUTC, formatLocalDate, formatLocalTime } from '@/lib/timezone-helper';
 
 import { AvailabilityFormSchema, AvailabilityView, BookingFormSchema, BookingView } from './types';
-
-function hasTimeOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
-  return start1 < end2 && start2 < end1;
-}
 
 // Load environment variables
 const accountSid = env.TWILIO_ACCOUNT_SID;
@@ -28,18 +24,6 @@ const twilioClient = twilio(accountSid, authToken);
 
 // Initialize SendGrid
 sgMail.setApiKey(env.SENDGRID_API_KEY!);
-
-function hasTimeOfDayOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
-  // Convert to minutes since midnight for comparison
-  const getMinutesSinceMidnight = (date: Date) => date.getHours() * 60 + date.getMinutes();
-
-  const start1Minutes = getMinutesSinceMidnight(start1);
-  const end1Minutes = getMinutesSinceMidnight(end1);
-  const start2Minutes = getMinutesSinceMidnight(start2);
-  const end2Minutes = getMinutesSinceMidnight(end2);
-
-  return start1Minutes < end2Minutes && start2Minutes < end1Minutes;
-}
 
 export async function checkForOverlappingAvailability(
   serviceProviderId: string,
@@ -455,10 +439,13 @@ export async function calculateAvailabilitySlots(
     );
     if (!availableService) return;
 
-    let currentTime = new Date(formData.startTime);
-    while (currentTime < formData.endTime) {
+    // Convert start time to UTC for storage
+    let currentTime = convertLocalToUTC(new Date(formData.startTime));
+    const endTime = convertLocalToUTC(new Date(formData.endTime));
+
+    while (currentTime < endTime) {
       const slotEnd = new Date(currentTime.getTime() + serviceConfig.duration * 60000);
-      if (slotEnd <= formData.endTime) {
+      if (slotEnd <= endTime) {
         // Check if this time slot overlaps with any existing booked slot
         const overlappingBookedSlot = slotsWithBookings.find(
           (slot) =>
@@ -507,10 +494,13 @@ export async function calculateInitialAvailabilitySlots(
     );
     if (!availableService) return;
 
-    let currentTime = new Date(formData.startTime);
-    while (currentTime < formData.endTime) {
+    // Convert start time to UTC for storage
+    let currentTime = convertLocalToUTC(new Date(formData.startTime));
+    const endTime = convertLocalToUTC(new Date(formData.endTime));
+
+    while (currentTime < endTime) {
       const slotEnd = new Date(currentTime.getTime() + serviceConfig.duration * 60000);
-      if (slotEnd <= formData.endTime) {
+      if (slotEnd <= endTime) {
         slots.push({
           availabilityId,
           serviceId: serviceConfig.serviceId,
@@ -542,15 +532,18 @@ export async function calculateNonOverlappingSlots(
     );
     if (!availableService) return;
 
+    // Convert start time to UTC for storage
+    let currentTime = convertLocalToUTC(new Date(formData.startTime));
+    const endTime = convertLocalToUTC(new Date(formData.endTime));
+
     // Get booked ranges for this service
     const serviceBookedRanges = bookedTimeRanges.filter(
       (range) => range.serviceId === serviceConfig.serviceId
     );
 
-    let currentTime = new Date(formData.startTime);
-    while (currentTime < formData.endTime) {
+    while (currentTime < endTime) {
       const slotEnd = new Date(currentTime.getTime() + serviceConfig.duration * 60000);
-      if (slotEnd <= formData.endTime) {
+      if (slotEnd <= endTime) {
         // Check if this slot overlaps with any booked slot
         const overlapsWithBooking = serviceBookedRanges.some(
           (range) => currentTime < range.endTime && slotEnd > range.startTime
@@ -586,31 +579,7 @@ export async function sendBookingNotifications(booking: BookingView) {
       2: formatLocalTime(booking.slot.startTime), // Access startTime from slot
     });
 
-    if (booking.notificationPreferences.email) {
-      const email = booking.guestInfo.email;
-      if (email) {
-        const emailContent = {
-          to: email,
-          from: env.SENDGRID_FROM_EMAIL!,
-          subject: 'Booking Confirmation',
-          text: `Your booking is confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.`,
-          html: `<strong>Your booking is confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.</strong>`,
-        };
-
-        notificationPromises.push(
-          sgMail
-            .send(emailContent)
-            .then((response) => {
-              console.log('Email sent successfully:', response);
-            })
-            .catch((error) => {
-              console.error('Error sending email:', error);
-            })
-        );
-      }
-    }
-
-    // Send provider notification
+    // Send provider whatsapp notification
     if (booking.slot.serviceProvider.whatsapp) {
       notificationPromises.push(
         twilioClient.messages.create({
@@ -622,6 +591,7 @@ export async function sendBookingNotifications(booking: BookingView) {
       );
     }
 
+    // Send client whatsapp notification
     if (booking.notificationPreferences.whatsapp) {
       const whatsapp = booking.guestInfo.whatsapp;
       if (whatsapp) {
@@ -658,6 +628,31 @@ export async function sendBookingNotifications(booking: BookingView) {
       );
     }
 
+    // Send client email notification
+    if (booking.notificationPreferences.email) {
+      const email = booking.guestInfo.email;
+      if (email) {
+        const emailContent = {
+          to: email,
+          from: env.SENDGRID_FROM_EMAIL!,
+          subject: 'Booking Confirmation',
+          text: `Your booking is confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.`,
+          html: `<strong>Your booking is confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.</strong>`,
+        };
+
+        notificationPromises.push(
+          sgMail
+            .send(emailContent)
+            .then((response) => {
+              console.log('Email sent successfully:', response);
+            })
+            .catch((error) => {
+              console.error('Error sending email:', error);
+            })
+        );
+      }
+    }
+
     // Send all notifications in parallel and log results
     const results = await Promise.allSettled(notificationPromises);
 
@@ -677,48 +672,5 @@ export async function sendBookingNotifications(booking: BookingView) {
   } catch (error) {
     console.error('Error sending notifications:', error);
     // Don't throw the error - we don't want to fail the booking if notifications fail
-  }
-}
-
-export async function logBookingNotification(
-  bookingId: string,
-  serviceProviderId: string,
-  type: NotificationType,
-  channel: NotificationChannel,
-  content?: string
-) {
-  try {
-    // Get booking details to store as context
-    const booking = await prisma.booking.findUnique({
-      where: { id: bookingId },
-      include: {
-        serviceProvider: true,
-        service: true,
-        client: true,
-      },
-    });
-
-    if (!booking) {
-      throw new Error('Booking not found');
-    }
-
-    // Create notification log with context
-    return await prisma.notificationLog.create({
-      data: {
-        bookingId,
-        bookingReference: bookingId,
-        serviceProviderName: booking.serviceProvider.name,
-        clientName: booking.client?.name || booking.guestName || 'Unknown',
-        serviceName: booking.service.name,
-        appointmentTime: booking.startTime,
-        type,
-        channel,
-        content: content || `${type} notification sent via ${channel}`,
-        status: 'SENT',
-      },
-    });
-  } catch (error) {
-    console.error('Error logging notification:', error);
-    throw error;
   }
 }
