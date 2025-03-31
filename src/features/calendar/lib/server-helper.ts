@@ -576,16 +576,21 @@ export async function sendBookingNotifications(booking: BookingView) {
 
     // Use timezone-helper functions directly without specifying timezone
     const templateVariables = JSON.stringify({
-      1: formatLocalDate(booking.slot.startTime), // Access startTime from slot
-      2: formatLocalTime(booking.slot.startTime), // Access startTime from slot
+      1: booking.slot.serviceProvider.name,
+      2: formatLocalTime(booking.slot.startTime),
+      3: booking.slot.serviceConfig.duration,
+      4: booking.slot.serviceConfig.price,
+      5: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
+      6: booking.guestInfo.name,
+      7: booking.id,
     });
 
     // Send provider whatsapp notification
     if (booking.slot.serviceProvider.whatsapp) {
       notificationPromises.push(
         twilioClient.messages.create({
-          from: 'whatsapp:+14155238886',
-          contentSid: 'HXb5b62575e6e4ff6129ad7c8efe1f983e',
+          from: `whatsapp:${TwilioWhatsappNumber}`,
+          contentSid: 'HX8f15dc3170cb91ac0ee0cc5831e647ab',
           contentVariables: templateVariables,
           to: `whatsapp:${booking.slot.serviceProvider.whatsapp}`,
         })
@@ -598,7 +603,7 @@ export async function sendBookingNotifications(booking: BookingView) {
       if (whatsapp) {
         notificationPromises.push(
           twilioClient.messages.create({
-            from: 'whatsapp:+14155238886',
+            from: `whatsapp:${TwilioWhatsappNumber}`,
             contentSid: 'HXb5b62575e6e4ff6129ad7c8efe1f983e',
             contentVariables: templateVariables,
             to: `whatsapp:${whatsapp}`,
