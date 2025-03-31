@@ -587,6 +587,14 @@ export async function sendBookingNotifications(booking: BookingView) {
 
     // Send provider whatsapp notification
     if (booking.slot.serviceProvider.whatsapp) {
+      console.log('Sending provider whatsapp notification');
+      console.log('TwilioWhatsappNumber', TwilioWhatsappNumber);
+      console.log('booking.slot.serviceProvider.whatsapp', booking.slot.serviceProvider.whatsapp);
+
+      console.log('HXb5b62575e6e4ff6129ad7c8efe1f983e');
+      console.log('templateVariables', templateVariables);
+      console.log('booking.slot.serviceProvider.whatsapp', booking.slot.serviceProvider.whatsapp);
+
       notificationPromises.push(
         twilioClient.messages.create({
           from: `whatsapp:${TwilioWhatsappNumber}`,
@@ -661,6 +669,7 @@ export async function sendBookingNotifications(booking: BookingView) {
 
     // Send all notifications in parallel and log results
     const results = await Promise.allSettled(notificationPromises);
+    console.log('Notification results:', results);
 
     // Create notification logs in the database
     const notificationLogs = results.map((result, index) => ({
