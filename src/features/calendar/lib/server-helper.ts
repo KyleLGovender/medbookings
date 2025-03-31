@@ -15,6 +15,7 @@ import { AvailabilityFormSchema, AvailabilityView, BookingFormSchema, BookingVie
 // Load environment variables
 const accountSid = env.TWILIO_ACCOUNT_SID;
 const authToken = env.TWILIO_AUTH_TOKEN;
+const TwilioWhatsappNumber = env.TWILIO_WHATSAPP_NUMBER;
 
 if (!accountSid || !authToken) {
   throw new Error('Twilio credentials are not set in environment variables');

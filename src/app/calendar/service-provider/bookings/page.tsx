@@ -1,7 +1,6 @@
 import { Suspense } from 'react';
 
 import { BookingStatus } from '@prisma/client';
-import { format } from 'date-fns';
 
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,7 @@ import {
 } from '@/components/ui/table';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { formatLocalDate, formatLocalTime } from '@/lib/timezone-helper';
 
 async function BookingsList() {
   const user = await getCurrentUser();
@@ -52,6 +52,16 @@ async function BookingsList() {
     (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
   );
 
+  // After fetching bookings, you can either:
+  // Option 1: Transform the data before passing to the UI
+  const formattedBookings = sortedBookings.map((booking) => ({
+    ...booking,
+    startTime: {
+      date: formatLocalDate(booking.startTime),
+      time: formatLocalTime(booking.startTime),
+    },
+  }));
+
   return (
     <div className="space-y-6">
       <div className="rounded-md border">
@@ -79,13 +89,13 @@ async function BookingsList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedBookings.map((booking) => (
+            {formattedBookings.map((booking) => (
               <TableRow key={booking.id}>
                 <TableCell className="text-center text-xs sm:text-base">
-                  {format(booking.startTime, 'EEE, MMM dd')}
+                  {booking.startTime.date}
                 </TableCell>
                 <TableCell className="text-center text-xs sm:text-base">
-                  {format(booking.startTime, 'p')} - {format(booking.endTime, 'p')}
+                  {booking.startTime.time}
                 </TableCell>
                 <TableCell className="text-center text-xs sm:text-base">
                   <div className="flex flex-col items-center space-y-2 md:flex-row md:justify-center md:space-x-2 md:space-y-0">
