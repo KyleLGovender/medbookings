@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useState, useTransition } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState, useTransition } from 'react';
 
 import { startOfWeek } from 'date-fns';
 import { debounce } from 'lodash';
@@ -66,65 +66,85 @@ export function CalendarWrapper({
   }, [availabilityData]);
 
   const debouncedUpdateUrl = useCallback(
-    debounce((url: string) => {
+    (url: string) => {
       router.replace(url, { scroll: false });
-    }, 300),
+    },
     [router]
   );
 
-  const updateUrlParams = (updates: { range?: DateRange; view?: string }) => {
-    const params = new URLSearchParams(searchParams.toString());
+  const debouncedUrlUpdate = useMemo(() => debounce(debouncedUpdateUrl, 300), [debouncedUpdateUrl]);
 
-    if (updates.range) {
-      params.delete('start');
-      params.delete('end');
+  const updateUrlParams = useCallback(
+    (updates: { range?: DateRange; view?: string }) => {
+      const params = new URLSearchParams(searchParams.toString());
 
-      if (updates.range.from) {
-        const localDate = new Date(updates.range.from);
-        const startDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
-        params.set('start', startDate);
-      }
-      if (updates.range.to) {
-        const localDate = new Date(updates.range.to);
-        const endDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
-        params.set('end', endDate);
-      }
-    }
-
-    if (updates.view) {
-      params.set('view', updates.view);
-
-      // Only set to today if there's no range provided and we're switching to week/day/slots view
-      if (
-        (updates.view === 'week' || updates.view === 'day' || updates.view === 'slots') &&
-        !updates.range
-      ) {
-        const localToday = new Date();
-        const startDate = `${localToday.getFullYear()}-${String(localToday.getMonth() + 1).padStart(2, '0')}-${String(localToday.getDate()).padStart(2, '0')}`;
-        params.set('start', startDate);
+      if (updates.range) {
+        params.delete('start');
         params.delete('end');
+
+        if (updates.range.from) {
+          const localDate = new Date(updates.range.from);
+          const startDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+          params.set('start', startDate);
+        }
+        if (updates.range.to) {
+          const localDate = new Date(updates.range.to);
+          const endDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+          params.set('end', endDate);
+        }
       }
-    }
 
-    // Correct approach for Next.js 14 App Router
-    const queryString = params.toString();
-    debouncedUpdateUrl(
-      `/calendar/service-provider/${serviceProviderId}/${queryString ? `?${queryString}` : ''}`
-    );
-  };
+      if (updates.view) {
+        params.set('view', updates.view);
 
-  const handleViewChange = useCallback((view: CalendarViewType) => {
-    setView(view);
+        if (
+          (updates.view === 'week' || updates.view === 'day' || updates.view === 'slots') &&
+          !updates.range
+        ) {
+          const localToday = new Date();
+          const startDate = `${localToday.getFullYear()}-${String(localToday.getMonth() + 1).padStart(2, '0')}-${String(localToday.getDate()).padStart(2, '0')}`;
+          params.set('start', startDate);
+          params.delete('end');
+        }
+      }
 
-    if (view === 'slots') {
-      const today = new Date();
-      const newRange = getDateRange(today, 'week');
-      setDateRange(newRange);
-      updateUrlParams({ range: newRange, view: view });
-      updateAvailabilityData(newRange);
-      return;
-    }
-  }, []);
+      const queryString = params.toString();
+      debouncedUrlUpdate(
+        `/calendar/service-provider/${serviceProviderId}/${queryString ? `?${queryString}` : ''}`
+      );
+    },
+    [searchParams, debouncedUrlUpdate, serviceProviderId]
+  );
+
+  const updateAvailabilityData = useCallback(
+    (range: DateRange) => {
+      startTransition(async () => {
+        const data = await getServiceProviderAvailabilityInRange(
+          serviceProviderId,
+          range.from!,
+          range.to!
+        );
+        setAvailabilityData(data);
+      });
+    },
+    [serviceProviderId]
+  );
+
+  const handleViewChange = useCallback(
+    (view: CalendarViewType) => {
+      setView(view);
+
+      if (view === 'slots') {
+        const today = new Date();
+        const newRange = getDateRange(today, 'week');
+        setDateRange(newRange);
+        updateUrlParams({ range: newRange, view: view });
+        updateAvailabilityData(newRange);
+        return;
+      }
+    },
+    [updateAvailabilityData, updateUrlParams]
+  );
 
   const handleDateSelect = (newDate: Date | undefined, fromView: CalendarViewType) => {
     if (!newDate) return;
@@ -205,17 +225,6 @@ export function CalendarWrapper({
       setAvailabilityData(data);
     });
   }, [serviceProviderId, dateRange]);
-
-  const updateAvailabilityData = (range: DateRange) => {
-    startTransition(async () => {
-      const data = await getServiceProviderAvailabilityInRange(
-        serviceProviderId,
-        range.from!,
-        range.to!
-      );
-      setAvailabilityData(data);
-    });
-  };
 
   const handleView = (availability: AvailabilityView) => {
     setSelectedAvailability(availability);

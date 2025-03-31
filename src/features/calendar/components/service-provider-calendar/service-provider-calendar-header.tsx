@@ -62,11 +62,13 @@ export function ServiceProviderCalendarHeader({
   const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
 
   const debouncedUpdateUrl = useCallback(
-    debounce((url: string) => {
+    (url: string) => {
       router.replace(url, { scroll: false });
-    }, 300),
+    },
     [router]
   );
+
+  const debouncedUrlUpdate = useMemo(() => debounce(debouncedUpdateUrl, 300), [debouncedUpdateUrl]);
 
   const handlePrevious = () => {
     onPrevious();
