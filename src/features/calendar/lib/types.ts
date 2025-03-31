@@ -71,8 +71,8 @@ export type BookingView = Pick<z.infer<typeof BookingSchema>, 'id' | 'status'> &
   };
   guestInfo: {
     name: string;
-    email?: string;
-    phone?: string;
+    // email?: string;
+    // phone?: string;
     whatsapp?: string;
   };
   slot: {

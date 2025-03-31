@@ -8,7 +8,7 @@ import { z } from 'zod';
 import env from '@/config/env/server';
 import { NotificationType } from '@/features/notifications/lib/types';
 import { prisma } from '@/lib/prisma';
-import { convertLocalToUTC, formatLocalDate, formatLocalTime } from '@/lib/timezone-helper';
+import { convertLocalToUTC, formatLocalTime } from '@/lib/timezone-helper';
 
 import { AvailabilityFormSchema, AvailabilityView, BookingFormSchema, BookingView } from './types';
 
@@ -586,6 +586,7 @@ export async function sendBookingNotifications(booking: BookingView) {
     });
 
     // Send provider whatsapp notification
+    console.log('booking.slot.serviceProvider.whatsapp', booking.slot.serviceProvider.whatsapp);
     if (booking.slot.serviceProvider.whatsapp) {
       console.log('Sending provider whatsapp notification');
       console.log('TwilioWhatsappNumber', TwilioWhatsappNumber);
@@ -620,52 +621,52 @@ export async function sendBookingNotifications(booking: BookingView) {
       }
     }
 
-    // Send provider email notification
-    if (booking.slot.serviceProvider.email) {
-      const emailContent = {
-        to: booking.slot.serviceProvider.email,
-        from: env.SENDGRID_FROM_EMAIL!,
-        subject: 'New Booking Notification',
-        text: `A new booking has been confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.`,
-        html: `<strong>A new booking has been confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.</strong>`,
-      };
+    // // Send provider email notification
+    // if (booking.slot.serviceProvider.email) {
+    //   const emailContent = {
+    //     to: booking.slot.serviceProvider.email,
+    //     from: env.SENDGRID_FROM_EMAIL!,
+    //     subject: 'New Booking Notification',
+    //     text: `A new booking has been confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.`,
+    //     html: `<strong>A new booking has been confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.</strong>`,
+    //   };
 
-      notificationPromises.push(
-        sgMail
-          .send(emailContent)
-          .then((response) => {
-            console.log('Provider email sent successfully:', response);
-          })
-          .catch((error) => {
-            console.error('Error sending provider email:', error);
-          })
-      );
-    }
+    //   notificationPromises.push(
+    //     sgMail
+    //       .send(emailContent)
+    //       .then((response) => {
+    //         console.log('Provider email sent successfully:', response);
+    //       })
+    //       .catch((error) => {
+    //         console.error('Error sending provider email:', error);
+    //       })
+    //   );
+    // }
 
-    // Send client email notification
-    if (booking.notificationPreferences.email) {
-      const email = booking.guestInfo.email;
-      if (email) {
-        const emailContent = {
-          to: email,
-          from: env.SENDGRID_FROM_EMAIL!,
-          subject: 'Booking Confirmation',
-          text: `Your booking is confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.`,
-          html: `<strong>Your booking is confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.</strong>`,
-        };
+    // // Send client email notification
+    // if (booking.notificationPreferences.email) {
+    //   const email = booking.guestInfo.email;
+    //   if (email) {
+    //     const emailContent = {
+    //       to: email,
+    //       from: env.SENDGRID_FROM_EMAIL!,
+    //       subject: 'Booking Confirmation',
+    //       text: `Your booking is confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.`,
+    //       html: `<strong>Your booking is confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.</strong>`,
+    //     };
 
-        notificationPromises.push(
-          sgMail
-            .send(emailContent)
-            .then((response) => {
-              console.log('Email sent successfully:', response);
-            })
-            .catch((error) => {
-              console.error('Error sending email:', error);
-            })
-        );
-      }
-    }
+    //     notificationPromises.push(
+    //       sgMail
+    //         .send(emailContent)
+    //         .then((response) => {
+    //           console.log('Email sent successfully:', response);
+    //         })
+    //         .catch((error) => {
+    //           console.error('Error sending email:', error);
+    //         })
+    //     );
+    //   }
+    // }
 
     // Send all notifications in parallel and log results
     const results = await Promise.allSettled(notificationPromises);
