@@ -582,7 +582,7 @@ export async function sendBookingNotifications(booking: BookingView) {
       notificationPromises.push(
         twilioClient.messages.create({
           from: `whatsapp:${TwilioWhatsappNumber}`,
-          contentSid: 'HXe442f21608ffb40ed62e48a941577df8',
+          contentSid: 'HX7b7542c849bf762b63fc38dcb069f6f1',
           contentVariables: templateVariablesServiceProvider,
           to: `whatsapp:${booking.slot.serviceProvider.whatsapp}`,
         })
@@ -606,7 +606,7 @@ export async function sendBookingNotifications(booking: BookingView) {
         notificationPromises.push(
           twilioClient.messages.create({
             from: `whatsapp:${TwilioWhatsappNumber}`,
-            contentSid: 'HX69ed19defb47077f955d94b2af3461d5',
+            contentSid: 'HXd872a8922fc1bffd95bb57e4c702dc9e',
             contentVariables: templateVariablesPatient,
             to: `whatsapp:${booking.guestInfo.whatsapp}`,
           })
@@ -657,7 +657,7 @@ export async function sendBookingConfirmation(booking: BookingView) {
       notificationPromises.push(
         twilioClient.messages.create({
           from: `whatsapp:${TwilioWhatsappNumber}`,
-          contentSid: 'HX71f695147170ef935ebd3f8687179c24',
+          contentSid: 'HXd0c506bfac36d6f91860f2e7b5ef73bc',
           contentVariables: templateVariablesServiceProvider,
           to: `whatsapp:${booking.slot.serviceProvider.whatsapp}`,
         })
@@ -673,6 +673,7 @@ export async function sendBookingConfirmation(booking: BookingView) {
       6: `R${booking.slot.serviceConfig.price}`,
       7: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
       8: booking.guestInfo.name,
+      9: booking.id,
     });
 
     // Send patient whatsapp notification
@@ -681,7 +682,7 @@ export async function sendBookingConfirmation(booking: BookingView) {
         notificationPromises.push(
           twilioClient.messages.create({
             from: `whatsapp:${TwilioWhatsappNumber}`,
-            contentSid: 'HXbab5c6938306450462bddd0360954bba',
+            contentSid: 'HX8bfd0fc829de1adfe41f2e526d42cabf',
             contentVariables: templateVariablesPatient,
             to: `whatsapp:${booking.guestInfo.whatsapp}`,
           })
