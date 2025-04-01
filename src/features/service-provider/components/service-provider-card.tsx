@@ -16,9 +16,10 @@ interface ServiceProviderCardProps {
   serviceProvider: ServiceProvider & {
     serviceProviderType: { name: string } | null;
   };
+  className?: string;
 }
 
-export function ServiceProviderCard({ serviceProvider }: ServiceProviderCardProps) {
+export function ServiceProviderCard({ serviceProvider, className }: ServiceProviderCardProps) {
   const [isNavigatingProfile, setIsNavigatingProfile] = useState(false);
   const [isNavigatingCalendar, setIsNavigatingCalendar] = useState(false);
 
@@ -31,7 +32,9 @@ export function ServiceProviderCard({ serviceProvider }: ServiceProviderCardProp
   }, []);
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden transition-all hover:shadow-md">
+    <Card
+      className={`flex h-full flex-col overflow-hidden transition-all hover:shadow-md ${className || ''}`}
+    >
       <CardHeader className="p-0">
         {serviceProvider.image ? (
           <div className="relative h-48 w-full">

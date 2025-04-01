@@ -13,10 +13,10 @@ import AuthButton from '@/components/app-navbar/auth-button';
 export default function AppNavbar({ className = '' }: { className?: string }) {
   const { data: session } = useSession();
   const pathname = usePathname();
-  const menuItems = [
-    { label: 'Home', href: '/' },
-    { label: 'Find a Service', href: '/service-providers/' },
-  ];
+  // const menuItems = [
+  //   { label: 'Home', href: '/' },
+  //   { label: 'Find a Service', href: '/service-providers/' },
+  // ];
   const profileMenuItems = [
     { label: 'Profile', href: '/profile' },
     { label: 'Service Provider', href: '/profile/service-provider' },
@@ -35,7 +35,7 @@ export default function AppNavbar({ className = '' }: { className?: string }) {
               </Link>
             </div>
             <div className="hidden md:ml-6 md:flex md:space-x-8">
-              {menuItems.map((item) => (
+              {/* {menuItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -45,7 +45,7 @@ export default function AppNavbar({ className = '' }: { className?: string }) {
                 >
                   {item.label}
                 </Link>
-              ))}
+              ))} */}
             </div>
           </div>
           <div className="flex items-center">
@@ -76,7 +76,7 @@ export default function AppNavbar({ className = '' }: { className?: string }) {
 
       <DisclosurePanel className="md:hidden">
         <div className="space-y-1 pb-3 pt-2">
-          {menuItems.map((item) => (
+          {/* {menuItems.map((item) => (
             <DisclosureButton
               as="a"
               key={item.href}
@@ -85,7 +85,7 @@ export default function AppNavbar({ className = '' }: { className?: string }) {
             >
               {item.label}
             </DisclosureButton>
-          ))}
+          ))} */}
         </div>
         <div className="border-t border-gray-200 pb-3 pt-4">
           <div className="flex items-center px-4 sm:px-6">
