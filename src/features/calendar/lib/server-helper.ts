@@ -2,13 +2,16 @@
 
 import { NotificationChannel, Prisma } from '@prisma/client';
 import sgMail from '@sendgrid/mail';
+import fs from 'fs/promises';
+import path from 'path';
 import twilio from 'twilio';
+import vCardsJS from 'vcards-js';
 import { z } from 'zod';
 
 import env from '@/config/env/server';
 import { NotificationType } from '@/features/notifications/lib/types';
 import { prisma } from '@/lib/prisma';
-import { convertLocalToUTC, formatLocalTime } from '@/lib/timezone-helper';
+import { convertLocalToUTC, formatLocalDate, formatLocalTime } from '@/lib/timezone-helper';
 
 import { AvailabilityFormSchema, AvailabilityView, BookingFormSchema, BookingView } from './types';
 
@@ -146,8 +149,6 @@ export async function checkAvailabilityModificationAllowed(
               },
               guestInfo: {
                 name: slot.booking.guestName || slot.booking.client?.name || '',
-                email: slot.booking.guestEmail || slot.booking.client?.email || undefined,
-                phone: slot.booking.guestPhone || slot.booking.client?.phone || undefined,
                 whatsapp: slot.booking.guestWhatsapp || undefined,
               },
               slot: {
@@ -312,11 +313,7 @@ export async function validateBookingWithAvailability(
   }
 
   // Validate notification preferences
-  if (
-    !data.notificationPreferences.email &&
-    !data.notificationPreferences.sms &&
-    !data.notificationPreferences.whatsapp
-  ) {
+  if (!data.notificationPreferences.whatsapp) {
     return {
       isValid: false,
       error: 'At least one notification method must be selected',
@@ -351,14 +348,10 @@ export async function validateBookingFormData(formData: FormData): Promise<{
       slotId: formData.get('slotId') as string,
       bookingType: formData.get('bookingType') as any,
       notificationPreferences: {
-        email: formData.get('notifyViaEmail') === 'true',
-        sms: formData.get('notifyViaSMS') === 'true',
         whatsapp: formData.get('notifyViaWhatsapp') === 'true',
       },
       guestInfo: {
         name: formData.get('guestName') as string,
-        email: (formData.get('guestEmail') as string) || undefined,
-        phone: (formData.get('guestPhone') as string) || undefined,
         whatsapp: (formData.get('guestWhatsapp') as string) || undefined,
       },
       agreeToTerms: formData.get('agreeToTerms') === 'true',
@@ -574,99 +567,52 @@ export async function sendBookingNotifications(booking: BookingView) {
   try {
     const notificationPromises = [];
 
-    // Use timezone-helper functions directly without specifying timezone
-    const templateVariables = JSON.stringify({
+    const templateVariablesServiceProvider = JSON.stringify({
       1: booking.slot.serviceProvider.name,
-      2: formatLocalTime(booking.slot.startTime),
-      3: booking.slot.serviceConfig.duration,
-      4: booking.slot.serviceConfig.price,
+      2: `${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}`,
+      3: `${booking.slot.serviceConfig.duration} minutes`,
+      4: `R${booking.slot.serviceConfig.price}`,
       5: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
       6: booking.guestInfo.name,
       7: booking.id,
     });
 
     // Send provider whatsapp notification
-    console.log('booking.slot.serviceProvider.whatsapp', booking.slot.serviceProvider.whatsapp);
     if (booking.slot.serviceProvider.whatsapp) {
-      console.log('Sending provider whatsapp notification');
-      console.log('TwilioWhatsappNumber', TwilioWhatsappNumber);
-      console.log('booking.slot.serviceProvider.whatsapp', booking.slot.serviceProvider.whatsapp);
-
-      console.log('HXb5b62575e6e4ff6129ad7c8efe1f983e');
-      console.log('templateVariables', templateVariables);
-      console.log('booking.slot.serviceProvider.whatsapp', booking.slot.serviceProvider.whatsapp);
-
       notificationPromises.push(
         twilioClient.messages.create({
           from: `whatsapp:${TwilioWhatsappNumber}`,
-          contentSid: 'HX8f15dc3170cb91ac0ee0cc5831e647ab',
-          contentVariables: templateVariables,
+          contentSid: 'HXe442f21608ffb40ed62e48a941577df8',
+          contentVariables: templateVariablesServiceProvider,
           to: `whatsapp:${booking.slot.serviceProvider.whatsapp}`,
         })
       );
     }
 
-    // Send client whatsapp notification
+    const templateVariablesPatient = JSON.stringify({
+      1: booking.guestInfo.name,
+      2: booking.slot.serviceProvider.name,
+      3: `${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}`,
+      4: `${booking.slot.serviceConfig.duration} minutes`,
+      5: `R${booking.slot.serviceConfig.price}`,
+      6: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
+      7: booking.guestInfo.name,
+      8: booking.id,
+    });
+
+    // Send patient whatsapp notification
     if (booking.notificationPreferences.whatsapp) {
-      const whatsapp = booking.guestInfo.whatsapp;
-      if (whatsapp) {
+      if (booking.notificationPreferences.whatsapp) {
         notificationPromises.push(
           twilioClient.messages.create({
             from: `whatsapp:${TwilioWhatsappNumber}`,
-            contentSid: 'HXb5b62575e6e4ff6129ad7c8efe1f983e',
-            contentVariables: templateVariables,
-            to: `whatsapp:${whatsapp}`,
+            contentSid: 'HX69ed19defb47077f955d94b2af3461d5',
+            contentVariables: templateVariablesPatient,
+            to: `whatsapp:${booking.guestInfo.whatsapp}`,
           })
         );
       }
     }
-
-    // // Send provider email notification
-    // if (booking.slot.serviceProvider.email) {
-    //   const emailContent = {
-    //     to: booking.slot.serviceProvider.email,
-    //     from: env.SENDGRID_FROM_EMAIL!,
-    //     subject: 'New Booking Notification',
-    //     text: `A new booking has been confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.`,
-    //     html: `<strong>A new booking has been confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.</strong>`,
-    //   };
-
-    //   notificationPromises.push(
-    //     sgMail
-    //       .send(emailContent)
-    //       .then((response) => {
-    //         console.log('Provider email sent successfully:', response);
-    //       })
-    //       .catch((error) => {
-    //         console.error('Error sending provider email:', error);
-    //       })
-    //   );
-    // }
-
-    // // Send client email notification
-    // if (booking.notificationPreferences.email) {
-    //   const email = booking.guestInfo.email;
-    //   if (email) {
-    //     const emailContent = {
-    //       to: email,
-    //       from: env.SENDGRID_FROM_EMAIL!,
-    //       subject: 'Booking Confirmation',
-    //       text: `Your booking is confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.`,
-    //       html: `<strong>Your booking is confirmed for ${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}.</strong>`,
-    //     };
-
-    //     notificationPromises.push(
-    //       sgMail
-    //         .send(emailContent)
-    //         .then((response) => {
-    //           console.log('Email sent successfully:', response);
-    //         })
-    //         .catch((error) => {
-    //           console.error('Error sending email:', error);
-    //         })
-    //     );
-    //   }
-    // }
 
     // Send all notifications in parallel and log results
     const results = await Promise.allSettled(notificationPromises);
@@ -677,7 +623,7 @@ export async function sendBookingNotifications(booking: BookingView) {
       bookingId: booking.id,
       type: NotificationType.BOOKING_CONFIRMATION,
       channel: index === 0 ? NotificationChannel.EMAIL : NotificationChannel.WHATSAPP,
-      content: JSON.stringify({ templateVariables }),
+      content: JSON.stringify({ templateVariablesServiceProvider }),
       status: result.status === 'fulfilled' ? 'SENT' : 'FAILED',
     }));
 
@@ -688,5 +634,130 @@ export async function sendBookingNotifications(booking: BookingView) {
   } catch (error) {
     console.error('Error sending notifications:', error);
     // Don't throw the error - we don't want to fail the booking if notifications fail
+  }
+}
+
+export async function sendBookingConfirmation(booking: BookingView) {
+  try {
+    const notificationPromises = [];
+
+    const templateVariablesServiceProvider = JSON.stringify({
+      1: booking.slot.serviceProvider.name,
+      2: booking.id,
+      3: `${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}`,
+      4: `${booking.slot.serviceConfig.duration} minutes`,
+      5: `R${booking.slot.serviceConfig.price}`,
+      6: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
+      7: booking.guestInfo.name,
+      8: booking.id,
+    });
+
+    // Send provider whatsapp notification
+    if (booking.slot.serviceProvider.whatsapp) {
+      notificationPromises.push(
+        twilioClient.messages.create({
+          from: `whatsapp:${TwilioWhatsappNumber}`,
+          contentSid: 'HX71f695147170ef935ebd3f8687179c24',
+          contentVariables: templateVariablesServiceProvider,
+          to: `whatsapp:${booking.slot.serviceProvider.whatsapp}`,
+        })
+      );
+    }
+
+    const templateVariablesPatient = JSON.stringify({
+      1: booking.guestInfo.name,
+      2: booking.slot.serviceProvider.name,
+      3: booking.id,
+      4: `${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}`,
+      5: `${booking.slot.serviceConfig.duration} minutes`,
+      6: `R${booking.slot.serviceConfig.price}`,
+      7: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
+      8: booking.guestInfo.name,
+    });
+
+    // Send patient whatsapp notification
+    if (booking.notificationPreferences.whatsapp) {
+      if (booking.notificationPreferences.whatsapp) {
+        notificationPromises.push(
+          twilioClient.messages.create({
+            from: `whatsapp:${TwilioWhatsappNumber}`,
+            contentSid: 'HXbab5c6938306450462bddd0360954bba',
+            contentVariables: templateVariablesPatient,
+            to: `whatsapp:${booking.guestInfo.whatsapp}`,
+          })
+        );
+      }
+    }
+
+    // Send all notifications in parallel and log results
+    const results = await Promise.allSettled(notificationPromises);
+    console.log('Notification results:', results);
+
+    // Create notification logs in the database
+    const notificationLogs = results.map((result, index) => ({
+      bookingId: booking.id,
+      type: NotificationType.BOOKING_CONFIRMATION,
+      channel: index === 0 ? NotificationChannel.EMAIL : NotificationChannel.WHATSAPP,
+      content: JSON.stringify({ templateVariablesServiceProvider }),
+      status: result.status === 'fulfilled' ? 'SENT' : 'FAILED',
+    }));
+
+    // Log notifications to database
+    await prisma.notificationLog.createMany({
+      data: notificationLogs,
+    });
+  } catch (error) {
+    console.error('Error sending booking confirmation:', error);
+  }
+}
+
+export async function sendGuestVCardToServiceProvider(booking: BookingView) {
+  try {
+    // Create vCard for guest
+    const vCard = vCardsJS();
+    vCard.firstName = booking.guestInfo.name;
+    if (booking.guestInfo.whatsapp) {
+      vCard.workPhone = booking.guestInfo.whatsapp;
+    }
+
+    // Save vCard to public directory
+    const publicPath = path.join(process.cwd(), 'public', 'vcards');
+    const fileName = `guest-${booking.id}.vcf`;
+    const filePath = path.join(publicPath, fileName);
+
+    // Ensure directory exists
+    await fs.mkdir(publicPath, { recursive: true });
+
+    // Save vCard file
+    await fs.writeFile(filePath, vCard.getFormattedString());
+
+    // Get public URL for the vCard
+    const vCardUrl = `${env.NEXTAUTH_URL}/vcards/${fileName}`;
+
+    const templateVariables = JSON.stringify({
+      1: booking.slot.serviceProvider.name,
+      2: `${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}`,
+      3: `${booking.slot.serviceConfig.duration} minutes`,
+      4: `R${booking.slot.serviceConfig.price}`,
+      5: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
+      6: booking.guestInfo.name,
+      7: booking.id,
+    });
+
+    // // Create notification logs in the database
+    // const notificationLogs = results.map((result, index) => ({
+    //   bookingId: booking.id,
+    //   type: NotificationType.BOOKING_CONFIRMATION,
+    //   channel: index === 0 ? NotificationChannel.EMAIL : NotificationChannel.WHATSAPP,
+    //   content: JSON.stringify({ templateVariables }),
+    //   status: result.status === 'fulfilled' ? 'SENT' : 'FAILED',
+    // }));
+
+    // // Log notifications to database
+    // await prisma.notificationLog.createMany({
+    //   data: notificationLogs,
+    // });
+  } catch (error) {
+    console.error('Error sending booking confirmation:', error);
   }
 }

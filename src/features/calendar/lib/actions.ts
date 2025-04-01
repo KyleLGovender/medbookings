@@ -398,14 +398,10 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
       slotId: formData.get('slotId') as string,
       bookingType: formData.get('bookingType') as any,
       notificationPreferences: {
-        email: formData.get('notifyViaEmail') === 'true',
-        sms: formData.get('notifyViaSMS') === 'true',
         whatsapp: formData.get('notifyViaWhatsapp') === 'true',
       },
       guestInfo: {
         name: formData.get('guestName') as string,
-        email: (formData.get('guestEmail') as string) || undefined,
-        phone: (formData.get('guestPhone') as string) || undefined,
         whatsapp: (formData.get('guestWhatsapp') as string) || undefined,
       },
       // Explicitly handle the terms and conditions field
@@ -469,8 +465,6 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
           location: appointmentType === 'inperson' ? slot.serviceConfig.location : null,
           status: BookingStatus.PENDING,
           guestName: validatedData.guestInfo?.name,
-          guestEmail: validatedData.guestInfo?.email,
-          guestPhone: validatedData.guestInfo?.phone,
           guestWhatsapp: validatedData.guestInfo?.whatsapp,
         },
         include: {
@@ -505,18 +499,14 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
       status: result.status,
       bookingType: validatedData.bookingType,
       notificationPreferences: {
-        email: validatedData.notificationPreferences.email,
-        sms: validatedData.notificationPreferences.sms,
         whatsapp: validatedData.notificationPreferences.whatsapp,
       },
       guestInfo: validatedData.guestInfo
         ? {
             name: validatedData.guestInfo.name,
-            email: validatedData.guestInfo.email,
-            phone: validatedData.guestInfo.phone,
             whatsapp: validatedData.guestInfo.whatsapp,
           }
-        : { name: '', email: undefined, phone: undefined, whatsapp: undefined },
+        : { name: '', whatsapp: undefined },
       agreeToTerms: validatedData.agreeToTerms,
       slot: {
         id: result.slot.id,
@@ -540,8 +530,7 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
         serviceProvider: {
           id: result.serviceProvider.id,
           name: result.serviceProvider.name,
-          email: result.serviceProvider.user.email ?? undefined,
-          whatsapp: result.serviceProvider.user.whatsapp ?? undefined,
+          whatsapp: result.serviceProvider.whatsapp ?? undefined,
           image: result.serviceProvider.user.image ?? undefined,
         },
       },
@@ -583,14 +572,10 @@ export async function updateBooking(bookingId: string, data: FormData): Promise<
       slotId: data.get('slotId') as string,
       bookingType: data.get('bookingType') as any,
       notificationPreferences: {
-        email: data.get('notifyViaEmail') === 'true',
-        sms: data.get('notifyViaSMS') === 'true',
         whatsapp: data.get('notifyViaWhatsapp') === 'true',
       },
       guestInfo: {
         name: data.get('guestName') as string,
-        email: (data.get('guestEmail') as string) || undefined,
-        phone: (data.get('guestPhone') as string) || undefined,
         whatsapp: (data.get('guestWhatsapp') as string) || undefined,
       },
       agreeToTerms: true, // Assume agreed for updates
@@ -602,8 +587,6 @@ export async function updateBooking(bookingId: string, data: FormData): Promise<
       data: {
         // Update fields based on the form schema
         guestName: formValues.guestInfo.name,
-        guestEmail: formValues.guestInfo.email || null,
-        guestPhone: formValues.guestInfo.phone || null,
         guestWhatsapp: formValues.guestInfo.whatsapp || null,
         // Handle appointment type if it's in the form
         isOnline: data.get('appointmentType') === 'online',

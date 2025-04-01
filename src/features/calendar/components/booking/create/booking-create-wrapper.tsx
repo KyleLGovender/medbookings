@@ -26,6 +26,7 @@ export function BookingCreateWrapper({
   const [serviceProvider, setServiceProvider] = useState<{
     id: string;
     name: string;
+    whatsapp?: string | null;
     image?: string | null;
   } | null>(null);
 

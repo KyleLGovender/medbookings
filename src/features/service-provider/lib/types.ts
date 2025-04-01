@@ -29,6 +29,7 @@ export type ServiceProvider = Omit<
   >;
   user: ServiceProviderUser;
   serviceProviderType: ServiceProviderType;
+  whatsapp: string | null;
   createdAt: string;
   updatedAt: string;
   verifiedAt: string | null;

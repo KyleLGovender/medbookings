@@ -63,8 +63,6 @@ export async function getServiceProviderAvailabilityInRange(
                 status: true,
                 price: true,
                 guestName: true,
-                guestEmail: true,
-                guestPhone: true,
                 guestWhatsapp: true,
                 client: {
                   select: {
@@ -132,11 +130,9 @@ export async function getServiceProviderAvailabilityInRange(
               id: slot.booking.id,
               status: slot.booking.status,
               bookingType: 'USER_SELF',
-              notificationPreferences: { email: false, sms: false, whatsapp: false },
+              notificationPreferences: { whatsapp: false },
               guestInfo: {
                 name: slot.booking.guestName ?? '',
-                email: slot.booking.guestEmail ?? undefined,
-                phone: slot.booking.guestPhone ?? undefined,
                 whatsapp: slot.booking.guestWhatsapp ?? undefined,
               },
             }
@@ -186,6 +182,7 @@ export async function getSlotDetails(slotId: string): Promise<{
   serviceProvider: {
     id: string;
     name: string;
+    whatsapp?: string | null;
     image?: string | null;
   };
   booking: BookingView | null;
@@ -245,11 +242,9 @@ export async function getSlotDetails(slotId: string): Promise<{
           id: rawSlot.booking.id,
           status: rawSlot.booking.status,
           bookingType: 'GUEST_SELF',
-          notificationPreferences: { email: true, sms: false, whatsapp: false },
+          notificationPreferences: { whatsapp: false },
           guestInfo: {
             name: rawSlot.booking.guestName || '',
-            email: rawSlot.booking.guestEmail || undefined,
-            phone: rawSlot.booking.guestPhone || undefined,
             whatsapp: rawSlot.booking.guestWhatsapp || undefined,
           },
         }
@@ -259,6 +254,7 @@ export async function getSlotDetails(slotId: string): Promise<{
   const serviceProvider = {
     id: rawSlot.availability.serviceProvider.id,
     name: rawSlot.availability.serviceProvider.name,
+    whatsapp: rawSlot.availability.serviceProvider.whatsapp,
     image: rawSlot.availability.serviceProvider.image,
   };
 
@@ -267,11 +263,9 @@ export async function getSlotDetails(slotId: string): Promise<{
         id: rawSlot.booking.id,
         status: rawSlot.booking.status,
         bookingType: 'GUEST_SELF',
-        notificationPreferences: { email: true, sms: false, whatsapp: false },
+        notificationPreferences: { whatsapp: false },
         guestInfo: {
           name: rawSlot.booking.guestName || '',
-          email: rawSlot.booking.guestEmail || undefined,
-          phone: rawSlot.booking.guestPhone || undefined,
           whatsapp: rawSlot.booking.guestWhatsapp || undefined,
         },
         slot: {
@@ -296,8 +290,7 @@ export async function getSlotDetails(slotId: string): Promise<{
           serviceProvider: {
             id: rawSlot.availability.serviceProvider.id,
             name: rawSlot.availability.serviceProvider.name,
-            email: undefined,
-            whatsapp: undefined,
+            whatsapp: rawSlot.availability.serviceProvider.whatsapp,
             image: rawSlot.availability.serviceProvider.image ?? undefined,
           },
         },
@@ -313,6 +306,7 @@ export async function getBookingDetails(bookingId: string): Promise<{
   serviceProvider: {
     id: string;
     name: string;
+    whatsapp?: string | null;
     image?: string | null;
   };
 }> {
@@ -401,6 +395,7 @@ export async function getBookingDetails(bookingId: string): Promise<{
   const serviceProvider = {
     id: rawBooking.serviceProvider.id,
     name: rawBooking.serviceProvider.name,
+    whatsapp: rawBooking.serviceProvider.whatsapp,
     image: rawBooking.serviceProvider.image,
   };
 
@@ -410,14 +405,10 @@ export async function getBookingDetails(bookingId: string): Promise<{
     status: rawBooking.status,
     bookingType: rawBooking.clientId ? 'USER_SELF' : 'GUEST_SELF',
     notificationPreferences: {
-      email: true, // Default values - you might want to fetch actual preferences
-      sms: false,
       whatsapp: false,
     },
     guestInfo: {
       name: rawBooking.guestName || rawBooking.client?.name || '',
-      email: rawBooking.guestEmail || rawBooking.client?.email || undefined,
-      phone: rawBooking.guestPhone || rawBooking.client?.phone || undefined,
       whatsapp: rawBooking.guestWhatsapp || rawBooking.client?.whatsapp || undefined,
     },
     slot: {
@@ -442,6 +433,7 @@ export async function getBookingDetails(bookingId: string): Promise<{
       serviceProvider: {
         id: serviceProvider.id,
         name: serviceProvider.name,
+        whatsapp: serviceProvider.whatsapp,
         image: serviceProvider.image || undefined,
       },
     },

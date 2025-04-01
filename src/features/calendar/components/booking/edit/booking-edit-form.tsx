@@ -57,14 +57,10 @@ export function BookingEditForm({
         (booking?.bookingType as 'GUEST_SELF' | 'USER_SELF' | 'USER_GUEST' | 'PROVIDER_GUEST') ||
         'GUEST_SELF',
       notificationPreferences: {
-        email: booking?.notificationPreferences.email || true,
-        sms: booking?.notificationPreferences.sms || false,
         whatsapp: booking?.notificationPreferences.whatsapp || false,
       },
       guestInfo: {
         name: booking?.guestInfo.name || '',
-        email: booking?.guestInfo.email || '',
-        phone: booking?.guestInfo.phone || '',
         whatsapp: booking?.guestInfo.whatsapp || '',
       },
       agreeToTerms: booking ? true : false,
@@ -106,12 +102,8 @@ export function BookingEditForm({
 
       formData.append('slotId', values.slotId);
       formData.append('bookingType', values.bookingType);
-      formData.append('notifyViaEmail', values.notificationPreferences.email.toString());
-      formData.append('notifyViaSMS', values.notificationPreferences.sms.toString());
       formData.append('notifyViaWhatsapp', values.notificationPreferences.whatsapp.toString());
       formData.append('guestName', values.guestInfo.name);
-      formData.append('guestEmail', values.guestInfo.email || '');
-      formData.append('guestPhone', values.guestInfo.phone || '');
       formData.append('guestWhatsapp', values.guestInfo.whatsapp || '');
       const appointmentType = slot.serviceConfig.isOnlineAvailable ? 'online' : 'inperson';
       formData.append('appointmentType', appointmentType);
@@ -286,57 +278,6 @@ export function BookingEditForm({
 
             <FormField
               control={form.control}
-              name="guestInfo.email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel
-                    className={form.formState.errors.guestInfo?.email ? 'text-destructive' : ''}
-                  >
-                    Email{' '}
-                    {form.watch('notificationPreferences.email') && (
-                      <span className="text-destructive">*</span>
-                    )}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      {...field}
-                      className={form.formState.errors.guestInfo?.email ? 'border-destructive' : ''}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="guestInfo.phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel
-                    className={form.formState.errors.guestInfo?.phone ? 'text-destructive' : ''}
-                  >
-                    Phone Number{' '}
-                    {form.watch('notificationPreferences.sms') && (
-                      <span className="text-destructive">*</span>
-                    )}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="tel"
-                      placeholder="+1234567890"
-                      {...field}
-                      className={form.formState.errors.guestInfo?.phone ? 'border-destructive' : ''}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="guestInfo.whatsapp"
               render={({ field }) => (
                 <FormItem>
@@ -375,36 +316,6 @@ export function BookingEditForm({
               </p>
             )}
             <div className="space-y-2">
-              <FormField
-                control={form.control}
-                name="notificationPreferences.email"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox checked={Boolean(field.value)} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Email notifications</FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="notificationPreferences.sms"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox checked={Boolean(field.value)} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>SMS notifications</FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
               <FormField
                 control={form.control}
                 name="notificationPreferences.whatsapp"

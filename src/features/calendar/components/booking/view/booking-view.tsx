@@ -155,14 +155,6 @@ export async function BookingView({ bookingId }: BookingViewProps) {
                   <span className="text-sm text-gray-600">{guestInfo.name}</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium">Email</span>
-                  <span className="text-sm text-gray-600">{guestInfo.email || 'Not provided'}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">Phone</span>
-                  <span className="text-sm text-gray-600">{guestInfo.phone || 'Not provided'}</span>
-                </div>
-                <div className="flex flex-col">
                   <span className="text-sm font-medium">WhatsApp</span>
                   <span className="text-sm text-gray-600">
                     {guestInfo.whatsapp || 'Not provided'}
@@ -179,28 +171,16 @@ export async function BookingView({ bookingId }: BookingViewProps) {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {notificationPreferences.email && (
-                  <Badge variant="outline" className="bg-blue-50">
-                    Email
-                  </Badge>
-                )}
-                {notificationPreferences.sms && (
-                  <Badge variant="outline" className="bg-green-50">
-                    SMS
-                  </Badge>
-                )}
                 {notificationPreferences.whatsapp && (
                   <Badge variant="outline" className="bg-emerald-50">
                     WhatsApp
                   </Badge>
                 )}
-                {!notificationPreferences.email &&
-                  !notificationPreferences.sms &&
-                  !notificationPreferences.whatsapp && (
-                    <span className="text-sm text-gray-500">
-                      No notification preferences selected
-                    </span>
-                  )}
+                {!notificationPreferences.whatsapp && (
+                  <span className="text-sm text-gray-500">
+                    No notification preferences selected
+                  </span>
+                )}
               </div>
             </CardContent>
           </Card>

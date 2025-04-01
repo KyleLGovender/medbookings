@@ -150,8 +150,6 @@ export function DeleteBookingConfirmation({
         <div>
           <p className="text-sm text-gray-500">Guest</p>
           <p className="font-medium">{booking.guestInfo.name}</p>
-          <p className="font-medium">{booking.guestInfo.email}</p>
-          <p className="font-medium">{booking.guestInfo.phone}</p>
           <p className="font-medium">{booking.guestInfo.whatsapp}</p>
         </div>
       </div>

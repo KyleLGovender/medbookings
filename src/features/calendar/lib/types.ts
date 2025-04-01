@@ -65,8 +65,8 @@ export type BookingView = Pick<z.infer<typeof BookingSchema>, 'id' | 'status'> &
   bookingType?: string;
   agreeToTerms?: boolean;
   notificationPreferences: {
-    email: boolean;
-    sms: boolean;
+    // email: boolean;
+    // sms: boolean;
     whatsapp: boolean;
   };
   guestInfo: {
@@ -212,14 +212,10 @@ export const BookingFormSchema = z
     slotId: z.string(),
     bookingType: BookingTypeSchema,
     notificationPreferences: z.object({
-      email: z.boolean(),
-      sms: z.boolean(),
       whatsapp: z.boolean(),
     }),
     guestInfo: z.object({
       name: z.string().min(1, 'Guest name is required'),
-      email: z.string().email('Invalid email').optional().or(z.literal('')),
-      phone: z.string().optional().or(z.literal('')),
       whatsapp: z.string().optional().or(z.literal('')),
     }),
     agreeToTerms: z.boolean().refine((val) => val === true, {
@@ -227,38 +223,19 @@ export const BookingFormSchema = z
     }),
   })
   .superRefine((data, ctx) => {
-    const hasNotificationMethod =
-      data.notificationPreferences.email ||
-      data.notificationPreferences.sms ||
-      data.notificationPreferences.whatsapp;
-
-    if (!hasNotificationMethod) {
+    if (!data.notificationPreferences.whatsapp) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'At least one notification method must be selected',
+        message: 'WhatsApp notifications are required',
         path: ['notificationPreferences'],
       });
     }
 
     if (data.guestInfo) {
-      if (data.notificationPreferences.email && !data.guestInfo.email) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Email is required for email notifications',
-          path: ['guestInfo.email'],
-        });
-      }
-      if (data.notificationPreferences.sms && !data.guestInfo.phone) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Phone number is required for SMS notifications',
-          path: ['guestInfo.phone'],
-        });
-      }
       if (data.notificationPreferences.whatsapp && !data.guestInfo.whatsapp) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'WhatsApp number is required for WhatsApp notifications',
+          message: 'WhatsApp number is required',
           path: ['guestInfo.whatsapp'],
         });
       }

@@ -70,8 +70,6 @@ export function CalendarItemSlot({
             <div className="flex flex-col gap-1">
               <p className="font-semibold">Booking Details:</p>
               <p>{slot.booking.guestInfo.name}</p>
-              {slot.booking.guestInfo.email && <p>Email: {slot.booking.guestInfo.email}</p>}
-              {slot.booking.guestInfo.phone && <p>Phone: {slot.booking.guestInfo.phone}</p>}
               {slot.booking.guestInfo.whatsapp && (
                 <p>WhatsApp: {slot.booking.guestInfo.whatsapp}</p>
               )}
