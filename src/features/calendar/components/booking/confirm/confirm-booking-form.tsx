@@ -38,7 +38,9 @@ export function ConfirmBookingForm({ bookingId }: { bookingId: string }) {
         // Get booking details and send confirmation
         const { booking } = await getBookingDetails(bookingId);
         await sendBookingConfirmation(booking);
+        console.log('after sendBookingConfirmation');
         await sendGuestVCardToServiceProvider(booking);
+        console.log('after sendGuestVCardToServiceProvider');
 
         setSuccess(true);
         router.push(`/calendar/booking/view/${bookingId}`);

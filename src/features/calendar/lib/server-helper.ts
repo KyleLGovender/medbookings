@@ -713,13 +713,17 @@ export async function sendBookingConfirmation(booking: BookingView) {
 }
 
 export async function sendGuestVCardToServiceProvider(booking: BookingView) {
+  console.log('inside before try sendGuestVCardToServiceProvider');
   try {
+    console.log('inside inside try sendGuestVCardToServiceProvider');
     // Create vCard for guest
     const vCard = vCardsJS();
     vCard.firstName = booking.guestInfo.name;
     if (booking.guestInfo.whatsapp) {
       vCard.workPhone = booking.guestInfo.whatsapp;
     }
+
+    console.log('vCard', vCard);
 
     // Save vCard to public directory
     const publicPath = path.join(process.cwd(), 'public', 'vcards');
@@ -736,15 +740,15 @@ export async function sendGuestVCardToServiceProvider(booking: BookingView) {
     const vCardUrl = `${env.NEXTAUTH_URL}/vcards/${fileName}`;
     console.log('vCardUrl', vCardUrl);
 
-    const templateVariables = JSON.stringify({
-      1: booking.slot.serviceProvider.name,
-      2: `${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}`,
-      3: `${booking.slot.serviceConfig.duration} minutes`,
-      4: `R${booking.slot.serviceConfig.price}`,
-      5: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
-      6: booking.guestInfo.name,
-      7: booking.id,
-    });
+    // const templateVariables = JSON.stringify({
+    //   1: booking.slot.serviceProvider.name,
+    //   2: `${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}`,
+    //   3: `${booking.slot.serviceConfig.duration} minutes`,
+    //   4: `R${booking.slot.serviceConfig.price}`,
+    //   5: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
+    //   6: booking.guestInfo.name,
+    //   7: booking.id,
+    // });
 
     // // Create notification logs in the database
     // const notificationLogs = results.map((result, index) => ({
