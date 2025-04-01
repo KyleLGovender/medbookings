@@ -2,8 +2,7 @@
 
 import { NotificationChannel, Prisma } from '@prisma/client';
 import sgMail from '@sendgrid/mail';
-import fs from 'fs/promises';
-import path from 'path';
+import { put } from '@vercel/blob';
 import twilio from 'twilio';
 import vCardsJS from 'vcards-js';
 import { z } from 'zod';
@@ -713,9 +712,7 @@ export async function sendBookingConfirmation(booking: BookingView) {
 }
 
 export async function sendGuestVCardToServiceProvider(booking: BookingView) {
-  console.log('inside before try sendGuestVCardToServiceProvider');
   try {
-    console.log('inside inside try sendGuestVCardToServiceProvider');
     // Create vCard for guest
     const vCard = vCardsJS();
     vCard.firstName = booking.guestInfo.name;
@@ -723,46 +720,16 @@ export async function sendGuestVCardToServiceProvider(booking: BookingView) {
       vCard.workPhone = booking.guestInfo.whatsapp;
     }
 
-    console.log('vCard', vCard);
+    // Upload to Vercel Blob instead of filesystem
+    const { url } = await put(`guest-${booking.id}.vcf`, vCard.getFormattedString(), {
+      access: 'public',
+      contentType: 'text/vcard',
+    });
 
-    // Save vCard to public directory
-    const publicPath = path.join(process.cwd(), 'public', 'vcards');
-    const fileName = `guest-${booking.id}.vcf`;
-    const filePath = path.join(publicPath, fileName);
+    // Now you can use the url variable to share the vCard
+    console.log('vCard URL:', url);
 
-    // Ensure directory exists
-    await fs.mkdir(publicPath, { recursive: true });
-
-    // Save vCard file
-    await fs.writeFile(filePath, vCard.getFormattedString());
-
-    // Get public URL for the vCard
-    const vCardUrl = `${env.NEXTAUTH_URL}/vcards/${fileName}`;
-    console.log('vCardUrl', vCardUrl);
-
-    // const templateVariables = JSON.stringify({
-    //   1: booking.slot.serviceProvider.name,
-    //   2: `${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}`,
-    //   3: `${booking.slot.serviceConfig.duration} minutes`,
-    //   4: `R${booking.slot.serviceConfig.price}`,
-    //   5: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
-    //   6: booking.guestInfo.name,
-    //   7: booking.id,
-    // });
-
-    // // Create notification logs in the database
-    // const notificationLogs = results.map((result, index) => ({
-    //   bookingId: booking.id,
-    //   type: NotificationType.BOOKING_CONFIRMATION,
-    //   channel: index === 0 ? NotificationChannel.EMAIL : NotificationChannel.WHATSAPP,
-    //   content: JSON.stringify({ templateVariables }),
-    //   status: result.status === 'fulfilled' ? 'SENT' : 'FAILED',
-    // }));
-
-    // // Log notifications to database
-    // await prisma.notificationLog.createMany({
-    //   data: notificationLogs,
-    // });
+    // ... rest of your notification logic using the url ...
   } catch (error) {
     console.error('Error sending booking confirmation:', error);
   }
