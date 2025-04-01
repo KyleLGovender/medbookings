@@ -720,17 +720,21 @@ export async function sendGuestVCardToServiceProvider(booking: BookingView) {
       vCard.workPhone = booking.guestInfo.whatsapp;
     }
 
-    // Upload to Vercel Blob instead of filesystem
+    // Upload to Vercel Blob
     const { url } = await put(`vcards/guest-${booking.id}.vcf`, vCard.getFormattedString(), {
       access: 'public',
       contentType: 'text/vcard',
     });
 
-    // Now you can use the url variable to share the vCard
-    console.log('vCard URL:', url);
+    // Send the vCard via WhatsApp using Twilio
+    await twilioClient.messages.create({
+      from: `whatsapp:${TwilioWhatsappNumber}`,
+      to: `whatsapp:${booking.slot.serviceProvider.whatsapp}`,
+      mediaUrl: [url],
+    });
 
-    // ... rest of your notification logic using the url ...
+    console.log('vCard sent successfully to service provider');
   } catch (error) {
-    console.error('Error sending booking confirmation:', error);
+    console.error('Error sending vCard:', error);
   }
 }
