@@ -734,6 +734,7 @@ export async function sendGuestVCardToServiceProvider(booking: BookingView) {
 
     // Get public URL for the vCard
     const vCardUrl = `${env.NEXTAUTH_URL}/vcards/${fileName}`;
+    console.log('vCardUrl', vCardUrl);
 
     const templateVariables = JSON.stringify({
       1: booking.slot.serviceProvider.name,

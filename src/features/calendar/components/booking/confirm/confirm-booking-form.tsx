@@ -41,10 +41,7 @@ export function ConfirmBookingForm({ bookingId }: { bookingId: string }) {
         await sendGuestVCardToServiceProvider(booking);
 
         setSuccess(true);
-        // Redirect after a short delay
-        setTimeout(() => {
-          router.push(`/calendar/booking/view/${bookingId}`);
-        }, 1000);
+        router.push(`/calendar/booking/view/${bookingId}`);
       }
     } catch (err) {
       setError('An unexpected error occurred');
