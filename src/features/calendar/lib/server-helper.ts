@@ -721,7 +721,7 @@ export async function sendGuestVCardToServiceProvider(booking: BookingView) {
     }
 
     // Upload to Vercel Blob instead of filesystem
-    const { url } = await put(`guest-${booking.id}.vcf`, vCard.getFormattedString(), {
+    const { url } = await put(`vcards/guest-${booking.id}.vcf`, vCard.getFormattedString(), {
       access: 'public',
       contentType: 'text/vcard',
     });
