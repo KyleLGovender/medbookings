@@ -656,7 +656,7 @@ export async function sendBookingConfirmation(booking: BookingView) {
       notificationPromises.push(
         twilioClient.messages.create({
           from: `whatsapp:${TwilioWhatsappNumber}`,
-          contentSid: 'HXd0c506bfac36d6f91860f2e7b5ef73bc',
+          contentSid: 'HX1fd2ded0e2ec8f3668367e805e9eed44',
           contentVariables: templateVariablesServiceProvider,
           to: `whatsapp:${booking.slot.serviceProvider.whatsapp}`,
         })
