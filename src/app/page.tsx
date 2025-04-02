@@ -45,14 +45,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </CardFooter>
         </Card>
       </div>
-      <div id="service-providers" className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Our Service Providers</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Browse our qualified service providers and book an appointment
-          </p>
-        </div>
-        <ServiceProviderGrid typeId={typeId} />
+      <div
+        id="service-providers"
+        className="mx-auto flex max-w-7xl items-center justify-center p-6"
+      >
+        <Card className="mx-auto w-full max-w-4xl">
+          <CardHeader>
+            <CardTitle className="text-center text-4xl font-bold">Service Providers</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-center">
+            <ServiceProviderGrid typeId={typeId} />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

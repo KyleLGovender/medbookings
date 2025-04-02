@@ -1,31 +1,15 @@
-import { ServiceProvider } from '@prisma/client';
-
 import { ServiceProviderCard } from '@/features/service-provider/components/service-provider-card';
-import { prisma } from '@/lib/prisma';
+
+import { getApprovedServiceProviders } from '../lib/queries';
+import { ServiceProvider } from '../lib/types';
 
 interface ServiceProviderGridProps {
   typeId?: string;
 }
 
-// Define the type for service providers with included relations
-type ServiceProviderWithType = ServiceProvider & {
-  serviceProviderType: { name: string } | null;
-};
-
 export async function ServiceProviderGrid({ typeId }: ServiceProviderGridProps) {
   // Fetch service providers with optional type filter
-  const serviceProviders = await prisma.serviceProvider.findMany({
-    include: {
-      serviceProviderType: {
-        select: {
-          name: true,
-        },
-      },
-    },
-    orderBy: {
-      name: 'asc',
-    },
-  });
+  const serviceProviders = await getApprovedServiceProviders();
 
   return (
     <div className="space-y-6 rounded-lg bg-white shadow">
@@ -37,7 +21,7 @@ export async function ServiceProviderGrid({ typeId }: ServiceProviderGridProps) 
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {serviceProviders.map((provider: ServiceProviderWithType) => (
+              {serviceProviders.map((provider: ServiceProvider) => (
                 <ServiceProviderCard key={provider.id} serviceProvider={provider} />
               ))}
             </div>

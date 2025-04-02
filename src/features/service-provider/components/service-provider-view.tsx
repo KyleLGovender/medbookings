@@ -4,11 +4,13 @@ import { BillingType, Languages } from '@prisma/client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { ApproveServiceProviderButton } from '@/features/service-provider/components/approve-service-provider-button';
 import { ServiceProvider } from '@/features/service-provider/lib/types';
 import { getCurrentUser } from '@/lib/auth';
 
 import { DeleteServiceProviderButton } from './delete-service-provider-button';
 import { EditServiceProviderButton } from './edit-service-provider-button';
+import { SuspendServiceProviderButton } from './suspend-service-provider-button';
 
 interface ServiceProviderViewProps {
   serviceProvider: ServiceProvider;
@@ -40,6 +42,21 @@ interface ServiceProviderViewProps {
   }>;
 }
 
+function getStatusBadgeColor(status: string) {
+  switch (status) {
+    case 'PENDING':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'APPROVED':
+      return 'bg-green-100 text-green-800';
+    case 'REJECTED':
+      return 'bg-red-100 text-red-800';
+    case 'SUSPENDED':
+      return 'bg-gray-100 text-gray-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+}
+
 export async function ServiceProviderView({
   serviceProvider,
   serviceProviderTypes,
@@ -57,17 +74,44 @@ export async function ServiceProviderView({
     currentUser?.id === serviceProvider.userId ||
     currentUser?.role === 'ADMIN' ||
     currentUser?.role === 'SUPER_ADMIN';
+  const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN';
+
+  console.log('currentUser', currentUser);
 
   return (
     <div className="space-y-6">
       {/* Basic Information */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Basic Information</CardTitle>
+          <div>
+            <CardTitle>Basic Information</CardTitle>
+            <div className="mt-2">
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeColor(serviceProvider.status)}`}
+              >
+                {serviceProvider.status}
+              </span>
+              {serviceProvider.verifiedAt && (
+                <span className="ml-2 text-xs text-gray-500">
+                  Verified on {new Date(serviceProvider.verifiedAt).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+          </div>
           {isAuthorized && (
             <div className="flex gap-2">
               <EditServiceProviderButton serviceProviderId={serviceProvider.id} />
               <DeleteServiceProviderButton serviceProviderId={serviceProvider.id} />
+            </div>
+          )}
+          {isAdmin && (
+            <div className="flex gap-2">
+              {serviceProvider.status !== 'APPROVED' && (
+                <ApproveServiceProviderButton serviceProviderId={serviceProvider.id} />
+              )}
+              {serviceProvider.status !== 'SUSPENDED' && (
+                <SuspendServiceProviderButton serviceProviderId={serviceProvider.id} />
+              )}
             </div>
           )}
         </CardHeader>
@@ -151,6 +195,30 @@ export async function ServiceProviderView({
           </div>
         </CardContent>
       </Card>
+
+      {/* Add a warning message for pending providers */}
+      {serviceProvider.status === 'PENDING' && (isAuthorized || currentUser?.role === 'ADMIN') && (
+        <div className="rounded-md bg-yellow-50 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  d="M8.485 2.495c.873-1.512 3.157-1.512 4.03 0l8.485 14.7c.873 1.512-.218 3.405-2.015 3.405H2.015C.218 20.6-.873 18.707 0 17.195l8.485-14.7zM10 6a.75.75 0 01.75.75v5a.75.75 0 01-1.5 0v-5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">Pending Approval</h3>
+              <p className="mt-2 text-sm text-yellow-700">
+                This profile is pending administrative approval. Some features may be limited until
+                approved.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Services */}
       <Card>

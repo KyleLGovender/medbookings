@@ -4,18 +4,16 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { ServiceProvider } from '@prisma/client';
 import { CalendarIcon, UserRound } from 'lucide-react';
 
-import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 
+import { ServiceProvider } from '../lib/types';
+
 interface ServiceProviderCardProps {
-  serviceProvider: ServiceProvider & {
-    serviceProviderType: { name: string } | null;
-  };
+  serviceProvider: ServiceProvider;
   className?: string;
 }
 
@@ -51,11 +49,11 @@ export function ServiceProviderCard({ serviceProvider, className }: ServiceProvi
       </CardHeader>
       <CardContent className="flex-grow p-6">
         <div className="flex items-center gap-4">
-          <Avatar className="h-16 w-16 border-2 border-white shadow-sm">
+          {/* <Avatar className="h-16 w-16 border-2 border-white shadow-sm">
             <div className="flex h-full w-full items-center justify-center bg-primary/10 text-xl font-semibold text-primary">
               {serviceProvider.name.charAt(0)}
             </div>
-          </Avatar>
+          </Avatar> */}
           <div>
             <h3 className="text-xl font-semibold">{serviceProvider.name}</h3>
             {serviceProvider.serviceProviderType && (

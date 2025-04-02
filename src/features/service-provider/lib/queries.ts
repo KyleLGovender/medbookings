@@ -68,3 +68,35 @@ export async function getServiceProviderByServiceProviderId(
   const serialized = serializeServiceProvider(provider);
   return serialized;
 }
+
+export async function getApprovedServiceProviders() {
+  const providers = await prisma.serviceProvider.findMany({
+    where: {
+      status: 'APPROVED', // Only fetch approved providers
+    },
+    include: {
+      serviceProviderType: {
+        select: {
+          name: true,
+          description: true,
+        },
+      },
+      services: true,
+      user: {
+        select: {
+          email: true,
+        },
+      },
+      requirementSubmissions: {
+        include: {
+          requirementType: true,
+        },
+      },
+    },
+    orderBy: {
+      name: 'asc',
+    },
+  });
+
+  return providers.map((provider) => serializeServiceProvider(provider));
+}
