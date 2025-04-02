@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 
 import AuthButton from '@/components/app-navbar/auth-button';
 
@@ -132,9 +132,9 @@ export default function AppNavbar({ className = '' }: { className?: string }) {
             ))}
 
             <DisclosureButton
-              as="a"
-              href="#"
-              className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800 sm:px-6"
+              as="button"
+              onClick={() => signOut({ callbackUrl: '/' })}
+              className="block w-full px-4 py-2 text-left text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800 sm:px-6"
             >
               Sign out
             </DisclosureButton>
