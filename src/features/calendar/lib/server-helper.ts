@@ -648,7 +648,8 @@ export async function sendBookingConfirmation(booking: BookingView) {
       5: `R${booking.slot.serviceConfig.price}`,
       6: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
       7: booking.guestInfo.name,
-      8: booking.id,
+      8: booking.guestInfo.whatsapp,
+      9: booking.id,
     });
 
     // Send provider whatsapp notification
@@ -656,7 +657,7 @@ export async function sendBookingConfirmation(booking: BookingView) {
       notificationPromises.push(
         twilioClient.messages.create({
           from: `whatsapp:${TwilioWhatsappNumber}`,
-          contentSid: 'HX1fd2ded0e2ec8f3668367e805e9eed44',
+          contentSid: 'HXd4581d3971aba1d4c6343c97e5c5cf2e',
           contentVariables: templateVariablesServiceProvider,
           to: `whatsapp:${booking.slot.serviceProvider.whatsapp}`,
         })
