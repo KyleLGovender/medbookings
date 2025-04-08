@@ -832,7 +832,7 @@ export async function declineBooking(bookingId: string, reason?: string): Promis
 
 export async function sendServiceProviderPatientsDetailsByWhatsapp(
   bookingId: string
-): Promise<{ success?: boolean; error?: string }> {
+): Promise<{ success?: boolean; error?: string; message?: string }> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -895,9 +895,13 @@ export async function sendServiceProviderPatientsDetailsByWhatsapp(
     };
 
     await sendGuestVCardToServiceProvider(bookingView);
-    return { success: true };
+    console.log('[Action] sendGuestVCardToServiceProvider completed.');
+
+    // Return success with a message
+    return { success: true, message: 'Patient details sent successfully via WhatsApp!' };
   } catch (error) {
-    console.error('Error sending details:', error);
+    console.error('[Action] Error sending details:', error);
+    // Return error
     return { error: 'Failed to send patient details' };
   }
 }

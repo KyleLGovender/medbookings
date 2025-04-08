@@ -727,13 +727,26 @@ export async function sendGuestVCardToServiceProvider(booking: BookingView) {
     });
 
     // Send the vCard via WhatsApp using Twilio
-    await twilioClient.messages.create({
-      from: `whatsapp:${TwilioWhatsappNumber}`,
-      to: `whatsapp:${booking.slot.serviceProvider.whatsapp}`,
-      mediaUrl: [url],
-    });
+    try {
+      // Capture the result of the Twilio API call
+      const message = await twilioClient.messages.create({
+        from: `whatsapp:${TwilioWhatsappNumber}`,
+        to: `whatsapp:${booking.slot.serviceProvider.whatsapp}`,
+        mediaUrl: [url],
+      });
 
-    console.log('vCard sent successfully to service provider');
+      // Log the successful result (or specific properties)
+      console.log('Twilio message creation successful:');
+      console.log('Message SID:', message.sid);
+      console.log('Status:', message.status);
+      // You can log the whole message object too, but it can be large
+      // console.log('  Full Twilio Response:', message);
+    } catch (error) {
+      // Log if the promise itself rejects (e.g., API error)
+      console.error('Error sending Twilio message:', error);
+      // Re-throw the error or handle it as appropriate for your flow
+      throw error;
+    }
   } catch (error) {
     console.error('Error sending vCard:', error);
   }
