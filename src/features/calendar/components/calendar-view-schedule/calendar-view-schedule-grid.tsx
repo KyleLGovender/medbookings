@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { SlotStatusSchema } from '@prisma/zod';
-import { format } from 'date-fns';
 import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
@@ -20,6 +19,7 @@ import {
 import { deleteAvailability, deleteBooking } from '@/features/calendar/lib/actions';
 import { AvailabilityView } from '@/features/calendar/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { formatLocalDateWeekdayMonthDay, formatLocalTime } from '@/lib/timezone-helper';
 
 interface CalendarViewScheduleGridProps {
   availabilityData: AvailabilityView[];
@@ -106,11 +106,11 @@ export function CalendarViewScheduleGrid({
               .map((availability) => (
                 <TableRow key={availability.id}>
                   <TableCell className="text-center text-xs sm:text-base">
-                    {format(new Date(availability.startTime), 'EEE, MMM dd')}
+                    {formatLocalDateWeekdayMonthDay(availability.startTime)}
                   </TableCell>
                   <TableCell className="text-center text-xs sm:text-base">
-                    {format(new Date(availability.startTime), 'HH:mm')} -{' '}
-                    {format(new Date(availability.endTime), 'HH:mm')}
+                    {formatLocalTime(availability.startTime)} -{' '}
+                    {formatLocalTime(availability.endTime)}
                   </TableCell>
                   <TableCell className="text-center text-xs sm:text-base">
                     {Math.round(

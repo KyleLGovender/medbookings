@@ -19,6 +19,20 @@ export function formatLocalDate(utcDate: string | Date, timezone = DEFAULT_TIMEZ
   return formatInTimeZone(new Date(utcDate), timezone, 'yyyy-MM-dd');
 }
 
+/**
+ * Formats a UTC date into a local date string with the format 'EEE, MMM dd'.
+ * Example: 'Tue, Apr 09'
+ * @param utcDate The UTC date string or Date object.
+ * @param timezone The target timezone (defaults to DEFAULT_TIMEZONE).
+ * @returns The formatted local date string.
+ */
+export function formatLocalDateWeekdayMonthDay(
+  utcDate: string | Date,
+  timezone = DEFAULT_TIMEZONE
+): string {
+  return formatInTimeZone(new Date(utcDate), timezone, 'EEE, MMM dd');
+}
+
 export function getLocalDayBounds(utcDate: string | Date, timezone = DEFAULT_TIMEZONE) {
   const localDate = convertUTCToLocal(utcDate, timezone);
 
