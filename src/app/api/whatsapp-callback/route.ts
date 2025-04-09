@@ -201,8 +201,15 @@ export async function POST(request: NextRequest) {
 
 // You might also want a GET handler for Twilio's initial connectivity check if needed
 export async function GET(request: NextRequest) {
-  // console.log('/api/whatsapp-callback/route.ts GET request', request);
-  console.log(`[RootLayout] Current NODE_ENV: ${env.NODE_ENV}`);
+  const timestamp = new Date().toISOString();
+  const userAgent = request.headers.get('user-agent') || 'N/A';
+  const ip = request.ip || 'N/A'; // Vercel provides this
+
+  console.log(
+    `[GET /api/whatsapp-callback] START ${timestamp} - IP: ${ip} - User-Agent: ${userAgent}`
+  );
+  console.log(`[GET] NODE_ENV: ${env.NODE_ENV}`);
+  console.log(`[GET /api/whatsapp-callback] END ${timestamp}`);
 
   return NextResponse.json({ message: 'Webhook reachable' });
 }

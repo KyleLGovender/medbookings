@@ -42,6 +42,10 @@ export async function Calendar({ searchParams, serviceProviderId }: CalendarProp
     endDate
   );
 
+  console.log('[Calendar] Availability:', availability);
+  console.log('[Calendar] startDate:', startDate);
+  console.log('[Calendar] endDate:', endDate);
+
   return (
     <Suspense fallback={<CalendarSkeleton />}>
       <div className="rounded-lg bg-white shadow">
