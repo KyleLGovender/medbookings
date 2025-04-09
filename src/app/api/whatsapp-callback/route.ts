@@ -202,5 +202,7 @@ export async function POST(request: NextRequest) {
 // You might also want a GET handler for Twilio's initial connectivity check if needed
 export async function GET(request: NextRequest) {
   console.log('/api/whatsapp-callback/route.ts GET request', request);
+  console.log(`[RootLayout] Current NODE_ENV: ${env.NODE_ENV}`);
+
   return NextResponse.json({ message: 'Webhook reachable' });
 }
