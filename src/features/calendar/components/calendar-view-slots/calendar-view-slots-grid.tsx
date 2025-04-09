@@ -62,6 +62,10 @@ export function CalendarViewSlotsGrid({
   const containerNav = useRef<HTMLDivElement>(null);
   const containerOffset = useRef<HTMLDivElement>(null);
 
+  console.log('[CalendarViewSlotsGrid] Received availabilityData:', availabilityData);
+  console.log('[CalendarViewSlotsGrid] Received timeRange:', timeRange);
+  console.log('[CalendarViewSlotsGrid] Received selectedServiceId:', selectedServiceId);
+
   const weekDays = useMemo(() => {
     return generateDaysForWeekCalendar(rangeStartDate);
   }, [rangeStartDate]);
