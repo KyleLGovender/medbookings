@@ -1,7 +1,7 @@
 import { formatInTimeZone, toDate, toZonedTime } from 'date-fns-tz';
 
-// Get user's timezone (can be overridden by user preference)
-const DEFAULT_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+// Set default timezone to Pretoria (GMT+2)
+const DEFAULT_TIMEZONE = 'Africa/Johannesburg';
 
 export function convertUTCToLocal(utcDate: string | Date, timezone = DEFAULT_TIMEZONE): Date {
   return toZonedTime(new Date(utcDate), timezone);

@@ -652,7 +652,7 @@ export async function sendBookingConfirmation(booking: BookingView) {
       9: booking.id,
     });
 
-    // Send provider whatsapp notification
+    // Send provider whatsapp notification with option to request vCard
     if (booking.slot.serviceProvider.whatsapp) {
       notificationPromises.push(
         twilioClient.messages.create({

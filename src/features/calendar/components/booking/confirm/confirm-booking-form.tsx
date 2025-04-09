@@ -14,10 +14,7 @@ import {
 } from '@/components/ui/card';
 import { confirmBooking } from '@/features/calendar/lib/actions';
 import { getBookingDetails } from '@/features/calendar/lib/queries';
-import {
-  sendBookingConfirmation,
-  sendGuestVCardToServiceProvider,
-} from '@/features/calendar/lib/server-helper';
+import { sendBookingConfirmation } from '@/features/calendar/lib/server-helper';
 
 export function ConfirmBookingForm({ bookingId }: { bookingId: string }) {
   const router = useRouter();
@@ -38,9 +35,6 @@ export function ConfirmBookingForm({ bookingId }: { bookingId: string }) {
         // Get booking details and send confirmation
         const { booking } = await getBookingDetails(bookingId);
         await sendBookingConfirmation(booking);
-        console.log('after sendBookingConfirmation');
-        await sendGuestVCardToServiceProvider(booking);
-        console.log('after sendGuestVCardToServiceProvider');
 
         setSuccess(true);
         router.push(`/calendar/booking/view/${bookingId}`);
