@@ -2,7 +2,6 @@
 
 import { Service } from '@/features/service-provider/lib/types';
 import { prisma } from '@/lib/prisma';
-import { convertUTCToLocal } from '@/lib/timezone-helper';
 
 import { AvailabilitySlot, AvailabilityView, BookingView } from './types';
 
@@ -91,8 +90,8 @@ export async function getServiceProviderAvailabilityInRange(
     // Convert price fields to numbers
     return availabilities.map((availability) => ({
       id: availability.id,
-      startTime: convertUTCToLocal(availability.startTime),
-      endTime: convertUTCToLocal(availability.endTime),
+      startTime: availability.startTime,
+      endTime: availability.endTime,
       serviceProvider: {
         id: availability.serviceProvider.id,
         name: availability.serviceProvider.name,
@@ -108,8 +107,8 @@ export async function getServiceProviderAvailabilityInRange(
       })),
       slots: availability.calculatedSlots.map((slot) => ({
         id: slot.id,
-        startTime: convertUTCToLocal(slot.startTime),
-        endTime: convertUTCToLocal(slot.endTime),
+        startTime: slot.startTime,
+        endTime: slot.endTime,
         status: slot.status,
         service: {
           id: slot.service.id,
@@ -220,8 +219,8 @@ export async function getSlotDetails(slotId: string): Promise<{
   // Transform the data to match expected types
   const slot = {
     id: rawSlot.id,
-    startTime: convertUTCToLocal(rawSlot.startTime),
-    endTime: convertUTCToLocal(rawSlot.endTime),
+    startTime: rawSlot.startTime,
+    endTime: rawSlot.endTime,
     status: rawSlot.status,
     service: {
       id: rawSlot.service.id,
@@ -270,8 +269,8 @@ export async function getSlotDetails(slotId: string): Promise<{
         },
         slot: {
           id: rawSlot.id,
-          startTime: convertUTCToLocal(rawSlot.startTime),
-          endTime: convertUTCToLocal(rawSlot.endTime),
+          startTime: rawSlot.startTime,
+          endTime: rawSlot.endTime,
           status: rawSlot.status,
           service: {
             id: rawSlot.service.id,
@@ -348,8 +347,8 @@ export async function getBookingDetails(bookingId: string): Promise<{
   if (rawBooking.slot) {
     slot = {
       id: rawBooking.slot.id,
-      startTime: convertUTCToLocal(rawBooking.slot.startTime),
-      endTime: convertUTCToLocal(rawBooking.slot.endTime),
+      startTime: rawBooking.slot.startTime,
+      endTime: rawBooking.slot.endTime,
       status: rawBooking.slot.status,
       service: {
         id: rawBooking.slot.service.id,
@@ -371,8 +370,8 @@ export async function getBookingDetails(bookingId: string): Promise<{
     // If there's no slot, create a virtual slot from the booking data
     slot = {
       id: 'virtual-slot', // This is a placeholder
-      startTime: convertUTCToLocal(rawBooking.startTime),
-      endTime: convertUTCToLocal(rawBooking.endTime),
+      startTime: rawBooking.startTime,
+      endTime: rawBooking.endTime,
       status: 'BOOKED', // Since this is a virtual slot for an existing booking
       service: {
         id: rawBooking.serviceId,
@@ -413,8 +412,8 @@ export async function getBookingDetails(bookingId: string): Promise<{
     },
     slot: {
       id: slot.id,
-      startTime: convertUTCToLocal(slot.startTime),
-      endTime: convertUTCToLocal(slot.endTime),
+      startTime: slot.startTime,
+      endTime: slot.endTime,
       status: slot.status,
       service: {
         id: slot.service.id,

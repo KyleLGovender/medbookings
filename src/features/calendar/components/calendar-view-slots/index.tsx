@@ -45,6 +45,8 @@ export function CalendarViewSlots({
   // Create an adapter function to handle the view type mismatch
   const handleViewChange = onViewChange ? () => onViewChange('slots') : undefined;
 
+  console.log('[CalendarViewSlots] AvailabilityData:', availabilityData);
+
   return (
     <CalendarViewSlotsGrid
       rangeStartDate={rangeStartDate}
