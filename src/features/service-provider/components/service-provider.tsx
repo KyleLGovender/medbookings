@@ -14,7 +14,7 @@ interface ServiceProviderProps {
 export function ServiceProviderProfile({ serviceProvider }: ServiceProviderProps) {
   return (
     <>
-      <Card className="mx-auto mt-4 max-w-md">
+      <Card className="mx-auto mt-4 max-w-lg">
         <CardContent className="pt-6 text-center">
           <div className="space-y-6">
             {serviceProvider.image && (

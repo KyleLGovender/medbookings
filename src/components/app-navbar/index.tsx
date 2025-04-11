@@ -19,8 +19,7 @@ export default function AppNavbar({ className = '' }: { className?: string }) {
   // ];
   const profileMenuItems = [
     { label: 'Profile', href: '/profile' },
-    { label: 'Service Provider', href: '/profile/service-provider' },
-    { label: 'Calendar', href: '/profile/service-provider/calendar' },
+    { label: 'Availabilty', href: '/profile/service-provider/calendar' },
     { label: 'Bookings', href: '/calendar/service-provider/bookings' },
   ];
 
