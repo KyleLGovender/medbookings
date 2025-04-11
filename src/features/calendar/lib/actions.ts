@@ -511,8 +511,8 @@ export async function createBooking(formData: FormData): Promise<BookingResponse
       agreeToTerms: validatedData.agreeToTerms,
       slot: {
         id: result.slot.id,
-        startTime: convertUTCToLocal(result.slot.startTime),
-        endTime: convertUTCToLocal(result.slot.endTime),
+        startTime: result.slot.startTime,
+        endTime: result.slot.endTime,
         status: result.slot.status,
         service: {
           id: result.service.id,
