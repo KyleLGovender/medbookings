@@ -15,6 +15,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 
 import { deleteServiceProvider } from '../lib/actions';
 
@@ -49,7 +50,16 @@ export function DeleteServiceProviderButton({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive">Delete Profile</Button>
+        <Button variant="destructive" className="w-full max-w-64">
+          {isDeleting ? (
+            <>
+              <Spinner className="mr-2" />
+              Deleting...
+            </>
+          ) : (
+            'Delete Service Provider Profile'
+          )}
+        </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -66,7 +76,14 @@ export function DeleteServiceProviderButton({
             disabled={isDeleting}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {isDeleting ? 'Deleting...' : 'Delete Profile'}
+            {isDeleting ? (
+              <>
+                <Spinner className="mr-2" />
+                Deleting...
+              </>
+            ) : (
+              'Delete Service Provider Profile'
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

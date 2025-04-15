@@ -9,6 +9,8 @@ import { ServiceProviderProfile } from '@/features/service-provider/components/s
 import { getServiceProviderByUserId } from '@/features/service-provider/lib/queries';
 import { authOptions } from '@/lib/auth';
 
+import { DeleteAccountButton } from './delete-account-button';
+
 export default async function Profile() {
   const session = await getServerSession(authOptions);
 
@@ -28,6 +30,9 @@ export default async function Profile() {
             <div className="space-y-1 text-center">
               <h4 className="text-sm font-semibold">{session?.user?.name ?? ''}</h4>
               <p className="text-sm text-muted-foreground">{session?.user?.email ?? ''}</p>
+            </div>
+            <div className="flex w-full justify-center pt-4">
+              <DeleteAccountButton hasServiceProvider={!!serviceProvider} />
             </div>
           </div>
         </CardContent>

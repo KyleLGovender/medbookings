@@ -10,8 +10,8 @@ interface EditServiceProviderButtonProps {
 
 export function EditServiceProviderButton({ serviceProviderId }: EditServiceProviderButtonProps) {
   return (
-    <Button asChild variant="outline">
-      <Link href={'/profile/service-provider/edit/'}>Edit Profile</Link>
+    <Button asChild variant="outline" className="w-full max-w-64">
+      <Link href={'/profile/service-provider/edit/'}>Edit Service Provider Profile</Link>
     </Button>
   );
 }

@@ -25,7 +25,7 @@ export function SuspendServiceProviderButton({
   };
 
   return (
-    <Button onClick={handleSuspend} variant="destructive" size="sm">
+    <Button onClick={handleSuspend} variant="destructive" className="w-full max-w-64">
       Suspend Provider
     </Button>
   );

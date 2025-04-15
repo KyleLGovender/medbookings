@@ -9,18 +9,18 @@ generator client {
 
 // Add this new generator configuration
 generator zod {
-  provider              = "zod-prisma-types"
-  output               = "./zod"
-  relationModel        = true
-  modelCase            = "camelCase"
-  modelSuffix          = "Schema"
-  prismaJsonNullability = true
+  provider               = "zod-prisma-types"
+  output                 = "./zod"
+  relationModel          = true
+  modelCase              = "camelCase"
+  modelSuffix            = "Schema"
+  prismaJsonNullability  = true
   // Add these options
-  useDecimalJs         = false  // This will make Decimals serialize as numbers
-  dateTimeAsDate      = false  // This will make Dates serialize as strings
+  useDecimalJs           = false // This will make Decimals serialize as numbers
+  dateTimeAsDate         = false // This will make Dates serialize as strings
   addInputTypeValidation = true
   // Add custom transformer configuration
-  decimalType         = "number"  // This will make Decimals use number type
+  decimalType            = "number" // This will make Decimals use number type
 }
 
 // Base User model and auth
@@ -93,8 +93,8 @@ model ServiceProvider {
   serviceProviderType    ServiceProviderType         @relation(fields: [serviceProviderTypeId], references: [id])
   serviceProviderTypeId  String
   bio                    String?                     @db.Text
-  email                  String @default("default@example.com")
-  whatsapp               String @default("+1234567890")                     
+  email                  String                      @default("default@example.com")
+  whatsapp               String                      @default("+1234567890")
   services               Service[]
   requirementSubmissions RequirementSubmission[]
   availabilities         Availability[]
@@ -234,14 +234,14 @@ model Service {
 // New model for service-specific availability configurations
 model ServiceAvailabilityConfig {
   id                String                       @id @default(cuid())
-  service           Service         @relation(fields: [serviceId], references: [id])
+  service           Service                      @relation(fields: [serviceId], references: [id])
   serviceId         String
-  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
+  serviceProvider   ServiceProvider              @relation(fields: [serviceProviderId], references: [id])
   serviceProviderId String
   duration          Int // Duration in minutes
-  price             Decimal         @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
-  isOnlineAvailable Boolean         @default(false)
-  isInPerson        Boolean         @default(false)
+  price             Decimal                      @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
+  isOnlineAvailable Boolean                      @default(false)
+  isInPerson        Boolean                      @default(false)
   location          String?
   availabilities    Availability[]
   calculatedSlots   CalculatedAvailabilitySlot[]
@@ -269,18 +269,18 @@ model Availability {
 
 // Modified CalculatedAvailabilitySlot model
 model CalculatedAvailabilitySlot {
-  id                String                   @id @default(cuid())
-  availability      Availability             @relation(fields: [availabilityId], references: [id])
-  availabilityId    String
-  service           Service                  @relation(fields: [serviceId], references: [id])
-  serviceId         String
-  serviceConfig     ServiceAvailabilityConfig @relation(fields: [serviceConfigId], references: [id])
-  serviceConfigId   String
-  startTime         DateTime
-  endTime           DateTime
-  status            SlotStatus               @default(AVAILABLE)
-  booking           Booking?                 // One-to-one relation with booking
-  lastCalculated    DateTime                 // When this slot was last recalculated
+  id              String                    @id @default(cuid())
+  availability    Availability              @relation(fields: [availabilityId], references: [id])
+  availabilityId  String
+  service         Service                   @relation(fields: [serviceId], references: [id])
+  serviceId       String
+  serviceConfig   ServiceAvailabilityConfig @relation(fields: [serviceConfigId], references: [id])
+  serviceConfigId String
+  startTime       DateTime
+  endTime         DateTime
+  status          SlotStatus                @default(AVAILABLE)
+  booking         Booking? // One-to-one relation with booking
+  lastCalculated  DateTime // When this slot was last recalculated
 
   @@index([availabilityId, serviceId, startTime, status])
   @@index([startTime, status, serviceId])
@@ -329,6 +329,11 @@ model Booking {
   notes         String?           @db.Text
   notifications NotificationLog[]
   review        Review?
+  meetSession   MeetSession?
+
+  // Add these fields
+  meetLink        String? // Store Google Meet link
+  calendarEventId String? // Store Google Calendar event ID
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -361,20 +366,20 @@ model NotificationPreference {
 }
 
 model NotificationLog {
-  id                 String              @id @default(cuid())
-  booking            Booking?            @relation(fields: [bookingId], references: [id])
-  bookingId          String?
-  bookingReference   String?             // Store original booking ID
-  serviceProviderName String?            // Store provider name at time of notification
-  clientName         String?             // Store client name at time of notification
-  serviceName        String?             // Store service name at time of notification
-  appointmentTime    DateTime?           // Store the appointment time
-  type               NotificationType
-  channel            NotificationChannel
-  content            String              @db.Text
-  status             String              // SENT, DELIVERED, FAILED
-  sentAt             DateTime            @default(now())
-  deliveredAt        DateTime?
+  id                  String              @id @default(cuid())
+  booking             Booking?            @relation(fields: [bookingId], references: [id])
+  bookingId           String?
+  bookingReference    String? // Store original booking ID
+  serviceProviderName String? // Store provider name at time of notification
+  clientName          String? // Store client name at time of notification
+  serviceName         String? // Store service name at time of notification
+  appointmentTime     DateTime? // Store the appointment time
+  type                NotificationType
+  channel             NotificationChannel
+  content             String              @db.Text
+  status              String // SENT, DELIVERED, FAILED
+  sentAt              DateTime            @default(now())
+  deliveredAt         DateTime?
 }
 
 enum NotificationType {
@@ -402,8 +407,31 @@ model CalendarIntegration {
   calendarId        String?
   syncEnabled       Boolean         @default(true)
   lastSyncedAt      DateTime?
+  // Add these fields
+  googleEmail       String? // The Google email account used
+  grantedScopes     String[] // Array of granted OAuth scopes
+  meetSettings      Json? // Store Meet preferences (default duration, etc.)
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
+}
+
+model MeetSession {
+  id        String            @id @default(cuid())
+  booking   Booking           @relation(fields: [bookingId], references: [id])
+  bookingId String            @unique
+  meetLink  String
+  eventId   String // Google Calendar event ID
+  joinCode  String? // Optional meeting code
+  status    MeetSessionStatus @default(SCHEDULED)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+enum MeetSessionStatus {
+  SCHEDULED
+  STARTED
+  ENDED
+  CANCELLED
 }
 
 model Subscription {

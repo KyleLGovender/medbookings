@@ -172,7 +172,7 @@ export async function registerServiceProvider(prevState: any, formData: FormData
     }
 
     // Return success with redirect path
-    return { success: true, redirect: '/profile/service-provider' };
+    return { success: true, redirect: '/profile/service-provider/view/' };
   } catch (error) {
     // Log any errors
     console.error('Service Provider Registration Error:', {

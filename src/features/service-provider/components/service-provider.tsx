@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DeleteServiceProviderButton } from '@/features/service-provider/components/delete-service-provider-button';
+import { EditServiceProviderButton } from '@/features/service-provider/components/edit-service-provider-button';
 
 import { ServiceProvider } from '../lib/types';
 
@@ -31,22 +33,20 @@ export function ServiceProviderProfile({ serviceProvider }: ServiceProviderProps
             )}
             <Link
               href="/profile/service-provider/view"
-              className={buttonVariants({ className: 'mt-2 w-full' })}
+              className={buttonVariants({ variant: 'outline', className: 'mt-2 w-full' })}
             >
               View Service Provider Profile
             </Link>
             <Link
-              href="/profile/service-provider/edit"
-              className={buttonVariants({ className: 'mt-2 w-full' })}
-            >
-              Edit Service Provider Profile
-            </Link>
-            <Link
               href="/profile/service-provider/calendar"
-              className={buttonVariants({ className: 'w-full' })}
+              className={buttonVariants({ variant: 'outline', className: 'w-full' })}
             >
               Manage Availability
             </Link>
+            <div className="mt-6 flex flex-col justify-center gap-4 sm:flex-row">
+              <EditServiceProviderButton serviceProviderId={serviceProvider.id} />
+              <DeleteServiceProviderButton serviceProviderId={serviceProvider.id} />
+            </div>
 
             {/* Basic Info */}
             <Card>

@@ -35,6 +35,13 @@ export type ServiceProvider = Omit<
   verifiedAt: string | null;
   trialStarted: string | null;
   trialEnded: string | null;
+  calendarIntegration?: {
+    id: string;
+    provider: string;
+    googleEmail?: string | null;
+    grantedScopes?: string[];
+    meetSettings?: any;
+  } | null;
   requirementSubmissions?: Array<{
     requirementTypeId: string;
     documentUrl: string | null;

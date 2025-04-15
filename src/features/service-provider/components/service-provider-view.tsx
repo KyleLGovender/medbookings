@@ -5,6 +5,7 @@ import { BillingType, Languages } from '@prisma/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ApproveServiceProviderButton } from '@/features/service-provider/components/approve-service-provider-button';
+import { IntegrateGoogleServicesButton } from '@/features/service-provider/components/integrate-google-services-button';
 import { ServiceProvider } from '@/features/service-provider/lib/types';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -82,115 +83,105 @@ export async function ServiceProviderView({
     <div className="space-y-6">
       {/* Basic Information */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Basic Information</CardTitle>
-            <div className="mt-2">
+        <CardHeader>
+          <div className="space-y-2">
+            <div>
+              <CardTitle className="text-2xl">{serviceProvider.name}</CardTitle>
+              <p className="text-sm text-muted-foreground">{providerType?.name}</p>
+            </div>
+            <div className="flex items-center gap-2">
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeColor(serviceProvider.status)}`}
               >
                 {serviceProvider.status}
               </span>
               {serviceProvider.verifiedAt && (
-                <span className="ml-2 text-xs text-gray-500">
+                <span className="text-xs text-muted-foreground">
                   Verified on {new Date(serviceProvider.verifiedAt).toLocaleDateString()}
                 </span>
               )}
             </div>
           </div>
-          {isAuthorized && (
-            <div className="flex gap-2">
-              <EditServiceProviderButton serviceProviderId={serviceProvider.id} />
-              <DeleteServiceProviderButton serviceProviderId={serviceProvider.id} />
-            </div>
-          )}
-          {isAdmin && (
-            <div className="flex gap-2">
-              {serviceProvider.status !== 'APPROVED' && (
-                <ApproveServiceProviderButton serviceProviderId={serviceProvider.id} />
-              )}
-              {serviceProvider.status !== 'SUSPENDED' && (
-                <SuspendServiceProviderButton serviceProviderId={serviceProvider.id} />
-              )}
-            </div>
-          )}
         </CardHeader>
+
         <CardContent className="space-y-6">
-          <div className="flex items-start gap-6">
+          {/* Profile Section */}
+          <div className="space-y-4">
             {serviceProvider.image && (
-              <div className="relative h-32 w-32 overflow-hidden rounded-lg">
+              <div className="relative h-48 w-48 overflow-hidden rounded-lg">
                 <Image
                   src={serviceProvider.image}
                   alt={`${serviceProvider.name}'s profile`}
                   fill
-                  sizes="128px"
+                  sizes="(max-width: 768px) 192px, 192px"
                   className="object-cover"
+                  priority
                 />
               </div>
             )}
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold">{serviceProvider.name}</h2>
-              <p className="text-sm text-gray-500">{providerType?.name}</p>
-              <p className="mt-2 whitespace-pre-wrap text-gray-700">{serviceProvider.bio}</p>
+            <div>
+              <p className="whitespace-pre-wrap text-muted-foreground">{serviceProvider.bio}</p>
             </div>
           </div>
 
-          <Separator />
+          <Separator className="my-4" />
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <h3 className="font-semibold">Contact Information</h3>
-              <div className="mt-2 space-y-2">
-                <p>
-                  <span className="text-sm text-gray-500">Email:</span>{' '}
+          {/* Actions Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Actions</h3>
+            <div className="flex flex-col gap-2">
+              {isAuthorized && (
+                <>
+                  <EditServiceProviderButton serviceProviderId={serviceProvider.id} />
+                  <IntegrateGoogleServicesButton
+                    serviceProviderId={serviceProvider.id}
+                    hasIntegration={!!serviceProvider.calendarIntegration}
+                  />
+                  <DeleteServiceProviderButton serviceProviderId={serviceProvider.id} />
+                </>
+              )}
+              {isAdmin && (
+                <>
+                  {serviceProvider.status !== 'APPROVED' && (
+                    <ApproveServiceProviderButton serviceProviderId={serviceProvider.id} />
+                  )}
+                  {serviceProvider.status !== 'SUSPENDED' && (
+                    <SuspendServiceProviderButton serviceProviderId={serviceProvider.id} />
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          <Separator className="my-4" />
+
+          {/* Contact Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Contact Information</h3>
+            <div className="space-y-2">
+              <p className="flex items-center gap-2">
+                <span className="font-medium">Email:</span>
+                {serviceProvider.email}
+              </p>
+              {serviceProvider.whatsapp && (
+                <p className="flex items-center gap-2">
+                  <span className="font-medium">WhatsApp:</span>
+                  {serviceProvider.whatsapp}
+                </p>
+              )}
+              {serviceProvider.website && (
+                <p className="flex items-center gap-2">
+                  <span className="font-medium">Website:</span>
                   <a
-                    href={`mailto:${serviceProvider.email}`}
-                    className="text-blue-600 hover:underline"
+                    href={serviceProvider.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
                   >
-                    {serviceProvider.email}
+                    {serviceProvider.website}
                   </a>
                 </p>
-                {serviceProvider.whatsapp && (
-                  <p>
-                    <span className="text-sm text-gray-500">WhatsApp:</span>{' '}
-                    <a
-                      href={`https://wa.me/${serviceProvider.whatsapp.replace(/\D/g, '')}`}
-                      className="text-blue-600 hover:underline"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {serviceProvider.whatsapp}
-                    </a>
-                  </p>
-                )}
-                {serviceProvider.website && (
-                  <p>
-                    <span className="text-sm text-gray-500">Website:</span>{' '}
-                    <a
-                      href={serviceProvider.website}
-                      className="text-blue-600 hover:underline"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {serviceProvider.website}
-                    </a>
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-semibold">Additional Details</h3>
-              <div className="mt-2 space-y-2">
-                <p>
-                  <span className="text-sm text-gray-500">Languages:</span>{' '}
-                  {serviceProvider.languages.join(', ')}
-                </p>
-                <p>
-                  <span className="text-sm text-gray-500">Billing Type:</span>{' '}
-                  {serviceProvider.billingType}
-                </p>
-              </div>
+              )}
             </div>
           </div>
         </CardContent>

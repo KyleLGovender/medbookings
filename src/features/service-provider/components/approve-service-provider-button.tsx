@@ -23,7 +23,7 @@ export function ApproveServiceProviderButton({
   };
 
   return (
-    <Button onClick={handleApprove} variant="outline" size="sm">
+    <Button onClick={handleApprove} variant="outline" className="w-full max-w-64">
       Approve Provider
     </Button>
   );

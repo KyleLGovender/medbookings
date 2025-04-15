@@ -98,13 +98,15 @@ export const AvailabilityScalarFieldEnumSchema = z.enum(['id','serviceProviderId
 
 export const CalculatedAvailabilitySlotScalarFieldEnumSchema = z.enum(['id','availabilityId','serviceId','serviceConfigId','startTime','endTime','status','lastCalculated']);
 
-export const BookingScalarFieldEnumSchema = z.enum(['id','slotId','bookedById','clientId','guestName','guestEmail','guestPhone','guestWhatsapp','serviceProviderId','serviceId','startTime','endTime','duration','price','isOnline','isInPerson','location','status','notes','createdAt','updatedAt']);
+export const BookingScalarFieldEnumSchema = z.enum(['id','slotId','bookedById','clientId','guestName','guestEmail','guestPhone','guestWhatsapp','serviceProviderId','serviceId','startTime','endTime','duration','price','isOnline','isInPerson','location','status','notes','meetLink','calendarEventId','createdAt','updatedAt']);
 
 export const NotificationPreferenceScalarFieldEnumSchema = z.enum(['id','userId','email','sms','whatsapp','phoneNumber','whatsappNumber','reminderHours','createdAt','updatedAt']);
 
 export const NotificationLogScalarFieldEnumSchema = z.enum(['id','bookingId','bookingReference','serviceProviderName','clientName','serviceName','appointmentTime','type','channel','content','status','sentAt','deliveredAt']);
 
-export const CalendarIntegrationScalarFieldEnumSchema = z.enum(['id','serviceProviderId','provider','accessToken','refreshToken','expiresAt','calendarId','syncEnabled','lastSyncedAt','createdAt','updatedAt']);
+export const CalendarIntegrationScalarFieldEnumSchema = z.enum(['id','serviceProviderId','provider','accessToken','refreshToken','expiresAt','calendarId','syncEnabled','lastSyncedAt','googleEmail','grantedScopes','meetSettings','createdAt','updatedAt']);
+
+export const MeetSessionScalarFieldEnumSchema = z.enum(['id','bookingId','meetLink','eventId','joinCode','status','createdAt','updatedAt']);
 
 export const SubscriptionScalarFieldEnumSchema = z.enum(['id','serviceProviderId','status','planId','trialStart','trialEnd','startDate','endDate','cancelledAt','cancelReason','stripeCustomerId','stripeSubscriptionId','createdAt','updatedAt']);
 
@@ -163,6 +165,10 @@ export type NotificationTypeType = `${z.infer<typeof NotificationTypeSchema>}`
 export const NotificationChannelSchema = z.enum(['EMAIL','SMS','WHATSAPP']);
 
 export type NotificationChannelType = `${z.infer<typeof NotificationChannelSchema>}`
+
+export const MeetSessionStatusSchema = z.enum(['SCHEDULED','STARTED','ENDED','CANCELLED']);
+
+export type MeetSessionStatusType = `${z.infer<typeof MeetSessionStatusSchema>}`
 
 export const SubscriptionStatusSchema = z.enum(['ACTIVE','PAST_DUE','CANCELLED','EXPIRED','TRIALING']);
 
@@ -405,6 +411,8 @@ export const BookingSchema = z.object({
   isInPerson: z.boolean(),
   location: z.string().nullable(),
   notes: z.string().nullable(),
+  meetLink: z.string().nullable(),
+  calendarEventId: z.string().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })
@@ -466,11 +474,31 @@ export const CalendarIntegrationSchema = z.object({
   calendarId: z.string().nullable(),
   syncEnabled: z.boolean(),
   lastSyncedAt: z.coerce.date().nullable(),
+  googleEmail: z.string().nullable(),
+  grantedScopes: z.string().array(),
+  meetSettings: JsonValueSchema.nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })
 
 export type CalendarIntegration = z.infer<typeof CalendarIntegrationSchema>
+
+/////////////////////////////////////////
+// MEET SESSION SCHEMA
+/////////////////////////////////////////
+
+export const MeetSessionSchema = z.object({
+  status: MeetSessionStatusSchema,
+  id: z.string().cuid(),
+  bookingId: z.string(),
+  meetLink: z.string(),
+  eventId: z.string(),
+  joinCode: z.string().nullable(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+})
+
+export type MeetSession = z.infer<typeof MeetSessionSchema>
 
 /////////////////////////////////////////
 // SUBSCRIPTION SCHEMA
@@ -989,6 +1017,7 @@ export const BookingIncludeSchema: z.ZodType<Prisma.BookingInclude> = z.object({
   service: z.union([z.boolean(),z.lazy(() => ServiceArgsSchema)]).optional(),
   notifications: z.union([z.boolean(),z.lazy(() => NotificationLogFindManyArgsSchema)]).optional(),
   review: z.union([z.boolean(),z.lazy(() => ReviewArgsSchema)]).optional(),
+  meetSession: z.union([z.boolean(),z.lazy(() => MeetSessionArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => BookingCountOutputTypeArgsSchema)]).optional(),
 }).strict()
 
@@ -1025,6 +1054,8 @@ export const BookingSelectSchema: z.ZodType<Prisma.BookingSelect> = z.object({
   location: z.boolean().optional(),
   status: z.boolean().optional(),
   notes: z.boolean().optional(),
+  meetLink: z.boolean().optional(),
+  calendarEventId: z.boolean().optional(),
   createdAt: z.boolean().optional(),
   updatedAt: z.boolean().optional(),
   slot: z.union([z.boolean(),z.lazy(() => CalculatedAvailabilitySlotArgsSchema)]).optional(),
@@ -1034,6 +1065,7 @@ export const BookingSelectSchema: z.ZodType<Prisma.BookingSelect> = z.object({
   service: z.union([z.boolean(),z.lazy(() => ServiceArgsSchema)]).optional(),
   notifications: z.union([z.boolean(),z.lazy(() => NotificationLogFindManyArgsSchema)]).optional(),
   review: z.union([z.boolean(),z.lazy(() => ReviewArgsSchema)]).optional(),
+  meetSession: z.union([z.boolean(),z.lazy(() => MeetSessionArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => BookingCountOutputTypeArgsSchema)]).optional(),
 }).strict()
 
@@ -1114,9 +1146,36 @@ export const CalendarIntegrationSelectSchema: z.ZodType<Prisma.CalendarIntegrati
   calendarId: z.boolean().optional(),
   syncEnabled: z.boolean().optional(),
   lastSyncedAt: z.boolean().optional(),
+  googleEmail: z.boolean().optional(),
+  grantedScopes: z.boolean().optional(),
+  meetSettings: z.boolean().optional(),
   createdAt: z.boolean().optional(),
   updatedAt: z.boolean().optional(),
   serviceProvider: z.union([z.boolean(),z.lazy(() => ServiceProviderArgsSchema)]).optional(),
+}).strict()
+
+// MEET SESSION
+//------------------------------------------------------
+
+export const MeetSessionIncludeSchema: z.ZodType<Prisma.MeetSessionInclude> = z.object({
+  booking: z.union([z.boolean(),z.lazy(() => BookingArgsSchema)]).optional(),
+}).strict()
+
+export const MeetSessionArgsSchema: z.ZodType<Prisma.MeetSessionDefaultArgs> = z.object({
+  select: z.lazy(() => MeetSessionSelectSchema).optional(),
+  include: z.lazy(() => MeetSessionIncludeSchema).optional(),
+}).strict();
+
+export const MeetSessionSelectSchema: z.ZodType<Prisma.MeetSessionSelect> = z.object({
+  id: z.boolean().optional(),
+  bookingId: z.boolean().optional(),
+  meetLink: z.boolean().optional(),
+  eventId: z.boolean().optional(),
+  joinCode: z.boolean().optional(),
+  status: z.boolean().optional(),
+  createdAt: z.boolean().optional(),
+  updatedAt: z.boolean().optional(),
+  booking: z.union([z.boolean(),z.lazy(() => BookingArgsSchema)]).optional(),
 }).strict()
 
 // SUBSCRIPTION
@@ -2315,6 +2374,8 @@ export const BookingWhereInputSchema: z.ZodType<Prisma.BookingWhereInput> = z.ob
   location: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
   status: z.union([ z.lazy(() => EnumBookingStatusFilterSchema),z.lazy(() => BookingStatusSchema) ]).optional(),
   notes: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  meetLink: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  calendarEventId: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   slot: z.union([ z.lazy(() => CalculatedAvailabilitySlotNullableRelationFilterSchema),z.lazy(() => CalculatedAvailabilitySlotWhereInputSchema) ]).optional().nullable(),
@@ -2324,6 +2385,7 @@ export const BookingWhereInputSchema: z.ZodType<Prisma.BookingWhereInput> = z.ob
   service: z.union([ z.lazy(() => ServiceRelationFilterSchema),z.lazy(() => ServiceWhereInputSchema) ]).optional(),
   notifications: z.lazy(() => NotificationLogListRelationFilterSchema).optional(),
   review: z.union([ z.lazy(() => ReviewNullableRelationFilterSchema),z.lazy(() => ReviewWhereInputSchema) ]).optional().nullable(),
+  meetSession: z.union([ z.lazy(() => MeetSessionNullableRelationFilterSchema),z.lazy(() => MeetSessionWhereInputSchema) ]).optional().nullable(),
 }).strict();
 
 export const BookingOrderByWithRelationInputSchema: z.ZodType<Prisma.BookingOrderByWithRelationInput> = z.object({
@@ -2346,6 +2408,8 @@ export const BookingOrderByWithRelationInputSchema: z.ZodType<Prisma.BookingOrde
   location: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
   status: z.lazy(() => SortOrderSchema).optional(),
   notes: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  meetLink: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  calendarEventId: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional(),
   slot: z.lazy(() => CalculatedAvailabilitySlotOrderByWithRelationInputSchema).optional(),
@@ -2354,7 +2418,8 @@ export const BookingOrderByWithRelationInputSchema: z.ZodType<Prisma.BookingOrde
   serviceProvider: z.lazy(() => ServiceProviderOrderByWithRelationInputSchema).optional(),
   service: z.lazy(() => ServiceOrderByWithRelationInputSchema).optional(),
   notifications: z.lazy(() => NotificationLogOrderByRelationAggregateInputSchema).optional(),
-  review: z.lazy(() => ReviewOrderByWithRelationInputSchema).optional()
+  review: z.lazy(() => ReviewOrderByWithRelationInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionOrderByWithRelationInputSchema).optional()
 }).strict();
 
 export const BookingWhereUniqueInputSchema: z.ZodType<Prisma.BookingWhereUniqueInput> = z.union([
@@ -2392,6 +2457,8 @@ export const BookingWhereUniqueInputSchema: z.ZodType<Prisma.BookingWhereUniqueI
   location: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
   status: z.union([ z.lazy(() => EnumBookingStatusFilterSchema),z.lazy(() => BookingStatusSchema) ]).optional(),
   notes: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  meetLink: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  calendarEventId: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   slot: z.union([ z.lazy(() => CalculatedAvailabilitySlotNullableRelationFilterSchema),z.lazy(() => CalculatedAvailabilitySlotWhereInputSchema) ]).optional().nullable(),
@@ -2401,6 +2468,7 @@ export const BookingWhereUniqueInputSchema: z.ZodType<Prisma.BookingWhereUniqueI
   service: z.union([ z.lazy(() => ServiceRelationFilterSchema),z.lazy(() => ServiceWhereInputSchema) ]).optional(),
   notifications: z.lazy(() => NotificationLogListRelationFilterSchema).optional(),
   review: z.union([ z.lazy(() => ReviewNullableRelationFilterSchema),z.lazy(() => ReviewWhereInputSchema) ]).optional().nullable(),
+  meetSession: z.union([ z.lazy(() => MeetSessionNullableRelationFilterSchema),z.lazy(() => MeetSessionWhereInputSchema) ]).optional().nullable(),
 }).strict());
 
 export const BookingOrderByWithAggregationInputSchema: z.ZodType<Prisma.BookingOrderByWithAggregationInput> = z.object({
@@ -2423,6 +2491,8 @@ export const BookingOrderByWithAggregationInputSchema: z.ZodType<Prisma.BookingO
   location: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
   status: z.lazy(() => SortOrderSchema).optional(),
   notes: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  meetLink: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  calendarEventId: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional(),
   _count: z.lazy(() => BookingCountOrderByAggregateInputSchema).optional(),
@@ -2455,6 +2525,8 @@ export const BookingScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.Booki
   location: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema),z.string() ]).optional().nullable(),
   status: z.union([ z.lazy(() => EnumBookingStatusWithAggregatesFilterSchema),z.lazy(() => BookingStatusSchema) ]).optional(),
   notes: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema),z.string() ]).optional().nullable(),
+  meetLink: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema),z.string() ]).optional().nullable(),
+  calendarEventId: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema),z.string() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema),z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema),z.coerce.date() ]).optional(),
 }).strict();
@@ -2655,6 +2727,9 @@ export const CalendarIntegrationWhereInputSchema: z.ZodType<Prisma.CalendarInteg
   calendarId: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
   syncEnabled: z.union([ z.lazy(() => BoolFilterSchema),z.boolean() ]).optional(),
   lastSyncedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema),z.coerce.date() ]).optional().nullable(),
+  googleEmail: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  grantedScopes: z.lazy(() => StringNullableListFilterSchema).optional(),
+  meetSettings: z.lazy(() => JsonNullableFilterSchema).optional(),
   createdAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   serviceProvider: z.union([ z.lazy(() => ServiceProviderRelationFilterSchema),z.lazy(() => ServiceProviderWhereInputSchema) ]).optional(),
@@ -2670,6 +2745,9 @@ export const CalendarIntegrationOrderByWithRelationInputSchema: z.ZodType<Prisma
   calendarId: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
   syncEnabled: z.lazy(() => SortOrderSchema).optional(),
   lastSyncedAt: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  googleEmail: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  grantedScopes: z.lazy(() => SortOrderSchema).optional(),
+  meetSettings: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional(),
   serviceProvider: z.lazy(() => ServiceProviderOrderByWithRelationInputSchema).optional()
@@ -2700,6 +2778,9 @@ export const CalendarIntegrationWhereUniqueInputSchema: z.ZodType<Prisma.Calenda
   calendarId: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
   syncEnabled: z.union([ z.lazy(() => BoolFilterSchema),z.boolean() ]).optional(),
   lastSyncedAt: z.union([ z.lazy(() => DateTimeNullableFilterSchema),z.coerce.date() ]).optional().nullable(),
+  googleEmail: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  grantedScopes: z.lazy(() => StringNullableListFilterSchema).optional(),
+  meetSettings: z.lazy(() => JsonNullableFilterSchema).optional(),
   createdAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   serviceProvider: z.union([ z.lazy(() => ServiceProviderRelationFilterSchema),z.lazy(() => ServiceProviderWhereInputSchema) ]).optional(),
@@ -2715,6 +2796,9 @@ export const CalendarIntegrationOrderByWithAggregationInputSchema: z.ZodType<Pri
   calendarId: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
   syncEnabled: z.lazy(() => SortOrderSchema).optional(),
   lastSyncedAt: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  googleEmail: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  grantedScopes: z.lazy(() => SortOrderSchema).optional(),
+  meetSettings: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional(),
   _count: z.lazy(() => CalendarIntegrationCountOrderByAggregateInputSchema).optional(),
@@ -2735,6 +2819,91 @@ export const CalendarIntegrationScalarWhereWithAggregatesInputSchema: z.ZodType<
   calendarId: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema),z.string() ]).optional().nullable(),
   syncEnabled: z.union([ z.lazy(() => BoolWithAggregatesFilterSchema),z.boolean() ]).optional(),
   lastSyncedAt: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema),z.coerce.date() ]).optional().nullable(),
+  googleEmail: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema),z.string() ]).optional().nullable(),
+  grantedScopes: z.lazy(() => StringNullableListFilterSchema).optional(),
+  meetSettings: z.lazy(() => JsonNullableWithAggregatesFilterSchema).optional(),
+  createdAt: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema),z.coerce.date() ]).optional(),
+  updatedAt: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema),z.coerce.date() ]).optional(),
+}).strict();
+
+export const MeetSessionWhereInputSchema: z.ZodType<Prisma.MeetSessionWhereInput> = z.object({
+  AND: z.union([ z.lazy(() => MeetSessionWhereInputSchema),z.lazy(() => MeetSessionWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => MeetSessionWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => MeetSessionWhereInputSchema),z.lazy(() => MeetSessionWhereInputSchema).array() ]).optional(),
+  id: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  bookingId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  meetLink: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  eventId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  joinCode: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnumMeetSessionStatusFilterSchema),z.lazy(() => MeetSessionStatusSchema) ]).optional(),
+  createdAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
+  updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
+  booking: z.union([ z.lazy(() => BookingRelationFilterSchema),z.lazy(() => BookingWhereInputSchema) ]).optional(),
+}).strict();
+
+export const MeetSessionOrderByWithRelationInputSchema: z.ZodType<Prisma.MeetSessionOrderByWithRelationInput> = z.object({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  bookingId: z.lazy(() => SortOrderSchema).optional(),
+  meetLink: z.lazy(() => SortOrderSchema).optional(),
+  eventId: z.lazy(() => SortOrderSchema).optional(),
+  joinCode: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  createdAt: z.lazy(() => SortOrderSchema).optional(),
+  updatedAt: z.lazy(() => SortOrderSchema).optional(),
+  booking: z.lazy(() => BookingOrderByWithRelationInputSchema).optional()
+}).strict();
+
+export const MeetSessionWhereUniqueInputSchema: z.ZodType<Prisma.MeetSessionWhereUniqueInput> = z.union([
+  z.object({
+    id: z.string().cuid(),
+    bookingId: z.string()
+  }),
+  z.object({
+    id: z.string().cuid(),
+  }),
+  z.object({
+    bookingId: z.string(),
+  }),
+])
+.and(z.object({
+  id: z.string().cuid().optional(),
+  bookingId: z.string().optional(),
+  AND: z.union([ z.lazy(() => MeetSessionWhereInputSchema),z.lazy(() => MeetSessionWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => MeetSessionWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => MeetSessionWhereInputSchema),z.lazy(() => MeetSessionWhereInputSchema).array() ]).optional(),
+  meetLink: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  eventId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  joinCode: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnumMeetSessionStatusFilterSchema),z.lazy(() => MeetSessionStatusSchema) ]).optional(),
+  createdAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
+  updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
+  booking: z.union([ z.lazy(() => BookingRelationFilterSchema),z.lazy(() => BookingWhereInputSchema) ]).optional(),
+}).strict());
+
+export const MeetSessionOrderByWithAggregationInputSchema: z.ZodType<Prisma.MeetSessionOrderByWithAggregationInput> = z.object({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  bookingId: z.lazy(() => SortOrderSchema).optional(),
+  meetLink: z.lazy(() => SortOrderSchema).optional(),
+  eventId: z.lazy(() => SortOrderSchema).optional(),
+  joinCode: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  createdAt: z.lazy(() => SortOrderSchema).optional(),
+  updatedAt: z.lazy(() => SortOrderSchema).optional(),
+  _count: z.lazy(() => MeetSessionCountOrderByAggregateInputSchema).optional(),
+  _max: z.lazy(() => MeetSessionMaxOrderByAggregateInputSchema).optional(),
+  _min: z.lazy(() => MeetSessionMinOrderByAggregateInputSchema).optional()
+}).strict();
+
+export const MeetSessionScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.MeetSessionScalarWhereWithAggregatesInput> = z.object({
+  AND: z.union([ z.lazy(() => MeetSessionScalarWhereWithAggregatesInputSchema),z.lazy(() => MeetSessionScalarWhereWithAggregatesInputSchema).array() ]).optional(),
+  OR: z.lazy(() => MeetSessionScalarWhereWithAggregatesInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => MeetSessionScalarWhereWithAggregatesInputSchema),z.lazy(() => MeetSessionScalarWhereWithAggregatesInputSchema).array() ]).optional(),
+  id: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
+  bookingId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
+  meetLink: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
+  eventId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
+  joinCode: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema),z.string() ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnumMeetSessionStatusWithAggregatesFilterSchema),z.lazy(() => MeetSessionStatusSchema) ]).optional(),
   createdAt: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema),z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema),z.coerce.date() ]).optional(),
 }).strict();
@@ -4219,6 +4388,8 @@ export const BookingCreateInputSchema: z.ZodType<Prisma.BookingCreateInput> = z.
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   slot: z.lazy(() => CalculatedAvailabilitySlotCreateNestedOneWithoutBookingInputSchema).optional(),
@@ -4227,7 +4398,8 @@ export const BookingCreateInputSchema: z.ZodType<Prisma.BookingCreateInput> = z.
   serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutBookingsInputSchema),
   service: z.lazy(() => ServiceCreateNestedOneWithoutBookingsInputSchema),
   notifications: z.lazy(() => NotificationLogCreateNestedManyWithoutBookingInputSchema).optional(),
-  review: z.lazy(() => ReviewCreateNestedOneWithoutBookingInputSchema).optional()
+  review: z.lazy(() => ReviewCreateNestedOneWithoutBookingInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionCreateNestedOneWithoutBookingInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedCreateInputSchema: z.ZodType<Prisma.BookingUncheckedCreateInput> = z.object({
@@ -4250,10 +4422,13 @@ export const BookingUncheckedCreateInputSchema: z.ZodType<Prisma.BookingUnchecke
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   notifications: z.lazy(() => NotificationLogUncheckedCreateNestedManyWithoutBookingInputSchema).optional(),
-  review: z.lazy(() => ReviewUncheckedCreateNestedOneWithoutBookingInputSchema).optional()
+  review: z.lazy(() => ReviewUncheckedCreateNestedOneWithoutBookingInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUncheckedCreateNestedOneWithoutBookingInputSchema).optional()
 }).strict();
 
 export const BookingUpdateInputSchema: z.ZodType<Prisma.BookingUpdateInput> = z.object({
@@ -4271,6 +4446,8 @@ export const BookingUpdateInputSchema: z.ZodType<Prisma.BookingUpdateInput> = z.
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   slot: z.lazy(() => CalculatedAvailabilitySlotUpdateOneWithoutBookingNestedInputSchema).optional(),
@@ -4279,7 +4456,8 @@ export const BookingUpdateInputSchema: z.ZodType<Prisma.BookingUpdateInput> = z.
   serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutBookingsNestedInputSchema).optional(),
   service: z.lazy(() => ServiceUpdateOneRequiredWithoutBookingsNestedInputSchema).optional(),
   notifications: z.lazy(() => NotificationLogUpdateManyWithoutBookingNestedInputSchema).optional(),
-  review: z.lazy(() => ReviewUpdateOneWithoutBookingNestedInputSchema).optional()
+  review: z.lazy(() => ReviewUpdateOneWithoutBookingNestedInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedUpdateInputSchema: z.ZodType<Prisma.BookingUncheckedUpdateInput> = z.object({
@@ -4302,10 +4480,13 @@ export const BookingUncheckedUpdateInputSchema: z.ZodType<Prisma.BookingUnchecke
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   notifications: z.lazy(() => NotificationLogUncheckedUpdateManyWithoutBookingNestedInputSchema).optional(),
-  review: z.lazy(() => ReviewUncheckedUpdateOneWithoutBookingNestedInputSchema).optional()
+  review: z.lazy(() => ReviewUncheckedUpdateOneWithoutBookingNestedInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUncheckedUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const BookingCreateManyInputSchema: z.ZodType<Prisma.BookingCreateManyInput> = z.object({
@@ -4328,6 +4509,8 @@ export const BookingCreateManyInputSchema: z.ZodType<Prisma.BookingCreateManyInp
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional()
 }).strict();
@@ -4347,6 +4530,8 @@ export const BookingUpdateManyMutationInputSchema: z.ZodType<Prisma.BookingUpdat
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
@@ -4371,6 +4556,8 @@ export const BookingUncheckedUpdateManyInputSchema: z.ZodType<Prisma.BookingUnch
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
@@ -4585,6 +4772,9 @@ export const CalendarIntegrationCreateInputSchema: z.ZodType<Prisma.CalendarInte
   calendarId: z.string().optional().nullable(),
   syncEnabled: z.boolean().optional(),
   lastSyncedAt: z.coerce.date().optional().nullable(),
+  googleEmail: z.string().optional().nullable(),
+  grantedScopes: z.union([ z.lazy(() => CalendarIntegrationCreategrantedScopesInputSchema),z.string().array() ]).optional(),
+  meetSettings: z.union([ z.lazy(() => NullableJsonNullValueInputSchema),InputJsonValueSchema ]).optional(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutCalendarIntegrationInputSchema)
@@ -4600,6 +4790,9 @@ export const CalendarIntegrationUncheckedCreateInputSchema: z.ZodType<Prisma.Cal
   calendarId: z.string().optional().nullable(),
   syncEnabled: z.boolean().optional(),
   lastSyncedAt: z.coerce.date().optional().nullable(),
+  googleEmail: z.string().optional().nullable(),
+  grantedScopes: z.union([ z.lazy(() => CalendarIntegrationCreategrantedScopesInputSchema),z.string().array() ]).optional(),
+  meetSettings: z.union([ z.lazy(() => NullableJsonNullValueInputSchema),InputJsonValueSchema ]).optional(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional()
 }).strict();
@@ -4613,6 +4806,9 @@ export const CalendarIntegrationUpdateInputSchema: z.ZodType<Prisma.CalendarInte
   calendarId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   syncEnabled: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   lastSyncedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  googleEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  grantedScopes: z.union([ z.lazy(() => CalendarIntegrationUpdategrantedScopesInputSchema),z.string().array() ]).optional(),
+  meetSettings: z.union([ z.lazy(() => NullableJsonNullValueInputSchema),InputJsonValueSchema ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutCalendarIntegrationNestedInputSchema).optional()
@@ -4628,6 +4824,9 @@ export const CalendarIntegrationUncheckedUpdateInputSchema: z.ZodType<Prisma.Cal
   calendarId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   syncEnabled: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   lastSyncedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  googleEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  grantedScopes: z.union([ z.lazy(() => CalendarIntegrationUpdategrantedScopesInputSchema),z.string().array() ]).optional(),
+  meetSettings: z.union([ z.lazy(() => NullableJsonNullValueInputSchema),InputJsonValueSchema ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
@@ -4642,6 +4841,9 @@ export const CalendarIntegrationCreateManyInputSchema: z.ZodType<Prisma.Calendar
   calendarId: z.string().optional().nullable(),
   syncEnabled: z.boolean().optional(),
   lastSyncedAt: z.coerce.date().optional().nullable(),
+  googleEmail: z.string().optional().nullable(),
+  grantedScopes: z.union([ z.lazy(() => CalendarIntegrationCreategrantedScopesInputSchema),z.string().array() ]).optional(),
+  meetSettings: z.union([ z.lazy(() => NullableJsonNullValueInputSchema),InputJsonValueSchema ]).optional(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional()
 }).strict();
@@ -4655,6 +4857,9 @@ export const CalendarIntegrationUpdateManyMutationInputSchema: z.ZodType<Prisma.
   calendarId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   syncEnabled: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   lastSyncedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  googleEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  grantedScopes: z.union([ z.lazy(() => CalendarIntegrationUpdategrantedScopesInputSchema),z.string().array() ]).optional(),
+  meetSettings: z.union([ z.lazy(() => NullableJsonNullValueInputSchema),InputJsonValueSchema ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
@@ -4669,6 +4874,85 @@ export const CalendarIntegrationUncheckedUpdateManyInputSchema: z.ZodType<Prisma
   calendarId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   syncEnabled: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   lastSyncedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  googleEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  grantedScopes: z.union([ z.lazy(() => CalendarIntegrationUpdategrantedScopesInputSchema),z.string().array() ]).optional(),
+  meetSettings: z.union([ z.lazy(() => NullableJsonNullValueInputSchema),InputJsonValueSchema ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+}).strict();
+
+export const MeetSessionCreateInputSchema: z.ZodType<Prisma.MeetSessionCreateInput> = z.object({
+  id: z.string().cuid().optional(),
+  meetLink: z.string(),
+  eventId: z.string(),
+  joinCode: z.string().optional().nullable(),
+  status: z.lazy(() => MeetSessionStatusSchema).optional(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+  booking: z.lazy(() => BookingCreateNestedOneWithoutMeetSessionInputSchema)
+}).strict();
+
+export const MeetSessionUncheckedCreateInputSchema: z.ZodType<Prisma.MeetSessionUncheckedCreateInput> = z.object({
+  id: z.string().cuid().optional(),
+  bookingId: z.string(),
+  meetLink: z.string(),
+  eventId: z.string(),
+  joinCode: z.string().optional().nullable(),
+  status: z.lazy(() => MeetSessionStatusSchema).optional(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional()
+}).strict();
+
+export const MeetSessionUpdateInputSchema: z.ZodType<Prisma.MeetSessionUpdateInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  meetLink: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eventId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  joinCode: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => MeetSessionStatusSchema),z.lazy(() => EnumMeetSessionStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  booking: z.lazy(() => BookingUpdateOneRequiredWithoutMeetSessionNestedInputSchema).optional()
+}).strict();
+
+export const MeetSessionUncheckedUpdateInputSchema: z.ZodType<Prisma.MeetSessionUncheckedUpdateInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  bookingId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  meetLink: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eventId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  joinCode: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => MeetSessionStatusSchema),z.lazy(() => EnumMeetSessionStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+}).strict();
+
+export const MeetSessionCreateManyInputSchema: z.ZodType<Prisma.MeetSessionCreateManyInput> = z.object({
+  id: z.string().cuid().optional(),
+  bookingId: z.string(),
+  meetLink: z.string(),
+  eventId: z.string(),
+  joinCode: z.string().optional().nullable(),
+  status: z.lazy(() => MeetSessionStatusSchema).optional(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional()
+}).strict();
+
+export const MeetSessionUpdateManyMutationInputSchema: z.ZodType<Prisma.MeetSessionUpdateManyMutationInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  meetLink: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eventId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  joinCode: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => MeetSessionStatusSchema),z.lazy(() => EnumMeetSessionStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+}).strict();
+
+export const MeetSessionUncheckedUpdateManyInputSchema: z.ZodType<Prisma.MeetSessionUncheckedUpdateManyInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  bookingId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  meetLink: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eventId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  joinCode: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => MeetSessionStatusSchema),z.lazy(() => EnumMeetSessionStatusFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
@@ -6143,6 +6427,11 @@ export const ReviewNullableRelationFilterSchema: z.ZodType<Prisma.ReviewNullable
   isNot: z.lazy(() => ReviewWhereInputSchema).optional().nullable()
 }).strict();
 
+export const MeetSessionNullableRelationFilterSchema: z.ZodType<Prisma.MeetSessionNullableRelationFilter> = z.object({
+  is: z.lazy(() => MeetSessionWhereInputSchema).optional().nullable(),
+  isNot: z.lazy(() => MeetSessionWhereInputSchema).optional().nullable()
+}).strict();
+
 export const NotificationLogOrderByRelationAggregateInputSchema: z.ZodType<Prisma.NotificationLogOrderByRelationAggregateInput> = z.object({
   _count: z.lazy(() => SortOrderSchema).optional()
 }).strict();
@@ -6167,6 +6456,8 @@ export const BookingCountOrderByAggregateInputSchema: z.ZodType<Prisma.BookingCo
   location: z.lazy(() => SortOrderSchema).optional(),
   status: z.lazy(() => SortOrderSchema).optional(),
   notes: z.lazy(() => SortOrderSchema).optional(),
+  meetLink: z.lazy(() => SortOrderSchema).optional(),
+  calendarEventId: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional()
 }).strict();
@@ -6196,6 +6487,8 @@ export const BookingMaxOrderByAggregateInputSchema: z.ZodType<Prisma.BookingMaxO
   location: z.lazy(() => SortOrderSchema).optional(),
   status: z.lazy(() => SortOrderSchema).optional(),
   notes: z.lazy(() => SortOrderSchema).optional(),
+  meetLink: z.lazy(() => SortOrderSchema).optional(),
+  calendarEventId: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional()
 }).strict();
@@ -6220,6 +6513,8 @@ export const BookingMinOrderByAggregateInputSchema: z.ZodType<Prisma.BookingMinO
   location: z.lazy(() => SortOrderSchema).optional(),
   status: z.lazy(() => SortOrderSchema).optional(),
   notes: z.lazy(() => SortOrderSchema).optional(),
+  meetLink: z.lazy(() => SortOrderSchema).optional(),
+  calendarEventId: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional()
 }).strict();
@@ -6368,6 +6663,14 @@ export const EnumNotificationChannelWithAggregatesFilterSchema: z.ZodType<Prisma
   _max: z.lazy(() => NestedEnumNotificationChannelFilterSchema).optional()
 }).strict();
 
+export const StringNullableListFilterSchema: z.ZodType<Prisma.StringNullableListFilter> = z.object({
+  equals: z.string().array().optional().nullable(),
+  has: z.string().optional().nullable(),
+  hasEvery: z.string().array().optional(),
+  hasSome: z.string().array().optional(),
+  isEmpty: z.boolean().optional()
+}).strict();
+
 export const CalendarIntegrationCountOrderByAggregateInputSchema: z.ZodType<Prisma.CalendarIntegrationCountOrderByAggregateInput> = z.object({
   id: z.lazy(() => SortOrderSchema).optional(),
   serviceProviderId: z.lazy(() => SortOrderSchema).optional(),
@@ -6378,6 +6681,9 @@ export const CalendarIntegrationCountOrderByAggregateInputSchema: z.ZodType<Pris
   calendarId: z.lazy(() => SortOrderSchema).optional(),
   syncEnabled: z.lazy(() => SortOrderSchema).optional(),
   lastSyncedAt: z.lazy(() => SortOrderSchema).optional(),
+  googleEmail: z.lazy(() => SortOrderSchema).optional(),
+  grantedScopes: z.lazy(() => SortOrderSchema).optional(),
+  meetSettings: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional()
 }).strict();
@@ -6392,6 +6698,7 @@ export const CalendarIntegrationMaxOrderByAggregateInputSchema: z.ZodType<Prisma
   calendarId: z.lazy(() => SortOrderSchema).optional(),
   syncEnabled: z.lazy(() => SortOrderSchema).optional(),
   lastSyncedAt: z.lazy(() => SortOrderSchema).optional(),
+  googleEmail: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional()
 }).strict();
@@ -6406,8 +6713,64 @@ export const CalendarIntegrationMinOrderByAggregateInputSchema: z.ZodType<Prisma
   calendarId: z.lazy(() => SortOrderSchema).optional(),
   syncEnabled: z.lazy(() => SortOrderSchema).optional(),
   lastSyncedAt: z.lazy(() => SortOrderSchema).optional(),
+  googleEmail: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional()
+}).strict();
+
+export const EnumMeetSessionStatusFilterSchema: z.ZodType<Prisma.EnumMeetSessionStatusFilter> = z.object({
+  equals: z.lazy(() => MeetSessionStatusSchema).optional(),
+  in: z.lazy(() => MeetSessionStatusSchema).array().optional(),
+  notIn: z.lazy(() => MeetSessionStatusSchema).array().optional(),
+  not: z.union([ z.lazy(() => MeetSessionStatusSchema),z.lazy(() => NestedEnumMeetSessionStatusFilterSchema) ]).optional(),
+}).strict();
+
+export const BookingRelationFilterSchema: z.ZodType<Prisma.BookingRelationFilter> = z.object({
+  is: z.lazy(() => BookingWhereInputSchema).optional(),
+  isNot: z.lazy(() => BookingWhereInputSchema).optional()
+}).strict();
+
+export const MeetSessionCountOrderByAggregateInputSchema: z.ZodType<Prisma.MeetSessionCountOrderByAggregateInput> = z.object({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  bookingId: z.lazy(() => SortOrderSchema).optional(),
+  meetLink: z.lazy(() => SortOrderSchema).optional(),
+  eventId: z.lazy(() => SortOrderSchema).optional(),
+  joinCode: z.lazy(() => SortOrderSchema).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  createdAt: z.lazy(() => SortOrderSchema).optional(),
+  updatedAt: z.lazy(() => SortOrderSchema).optional()
+}).strict();
+
+export const MeetSessionMaxOrderByAggregateInputSchema: z.ZodType<Prisma.MeetSessionMaxOrderByAggregateInput> = z.object({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  bookingId: z.lazy(() => SortOrderSchema).optional(),
+  meetLink: z.lazy(() => SortOrderSchema).optional(),
+  eventId: z.lazy(() => SortOrderSchema).optional(),
+  joinCode: z.lazy(() => SortOrderSchema).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  createdAt: z.lazy(() => SortOrderSchema).optional(),
+  updatedAt: z.lazy(() => SortOrderSchema).optional()
+}).strict();
+
+export const MeetSessionMinOrderByAggregateInputSchema: z.ZodType<Prisma.MeetSessionMinOrderByAggregateInput> = z.object({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  bookingId: z.lazy(() => SortOrderSchema).optional(),
+  meetLink: z.lazy(() => SortOrderSchema).optional(),
+  eventId: z.lazy(() => SortOrderSchema).optional(),
+  joinCode: z.lazy(() => SortOrderSchema).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  createdAt: z.lazy(() => SortOrderSchema).optional(),
+  updatedAt: z.lazy(() => SortOrderSchema).optional()
+}).strict();
+
+export const EnumMeetSessionStatusWithAggregatesFilterSchema: z.ZodType<Prisma.EnumMeetSessionStatusWithAggregatesFilter> = z.object({
+  equals: z.lazy(() => MeetSessionStatusSchema).optional(),
+  in: z.lazy(() => MeetSessionStatusSchema).array().optional(),
+  notIn: z.lazy(() => MeetSessionStatusSchema).array().optional(),
+  not: z.union([ z.lazy(() => MeetSessionStatusSchema),z.lazy(() => NestedEnumMeetSessionStatusWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _min: z.lazy(() => NestedEnumMeetSessionStatusFilterSchema).optional(),
+  _max: z.lazy(() => NestedEnumMeetSessionStatusFilterSchema).optional()
 }).strict();
 
 export const EnumSubscriptionStatusFilterSchema: z.ZodType<Prisma.EnumSubscriptionStatusFilter> = z.object({
@@ -6645,11 +7008,6 @@ export const EnumReviewStatusFilterSchema: z.ZodType<Prisma.EnumReviewStatusFilt
   in: z.lazy(() => ReviewStatusSchema).array().optional(),
   notIn: z.lazy(() => ReviewStatusSchema).array().optional(),
   not: z.union([ z.lazy(() => ReviewStatusSchema),z.lazy(() => NestedEnumReviewStatusFilterSchema) ]).optional(),
-}).strict();
-
-export const BookingRelationFilterSchema: z.ZodType<Prisma.BookingRelationFilter> = z.object({
-  is: z.lazy(() => BookingWhereInputSchema).optional(),
-  isNot: z.lazy(() => BookingWhereInputSchema).optional()
 }).strict();
 
 export const ReviewCountOrderByAggregateInputSchema: z.ZodType<Prisma.ReviewCountOrderByAggregateInput> = z.object({
@@ -8161,6 +8519,12 @@ export const ReviewCreateNestedOneWithoutBookingInputSchema: z.ZodType<Prisma.Re
   connect: z.lazy(() => ReviewWhereUniqueInputSchema).optional()
 }).strict();
 
+export const MeetSessionCreateNestedOneWithoutBookingInputSchema: z.ZodType<Prisma.MeetSessionCreateNestedOneWithoutBookingInput> = z.object({
+  create: z.union([ z.lazy(() => MeetSessionCreateWithoutBookingInputSchema),z.lazy(() => MeetSessionUncheckedCreateWithoutBookingInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => MeetSessionCreateOrConnectWithoutBookingInputSchema).optional(),
+  connect: z.lazy(() => MeetSessionWhereUniqueInputSchema).optional()
+}).strict();
+
 export const NotificationLogUncheckedCreateNestedManyWithoutBookingInputSchema: z.ZodType<Prisma.NotificationLogUncheckedCreateNestedManyWithoutBookingInput> = z.object({
   create: z.union([ z.lazy(() => NotificationLogCreateWithoutBookingInputSchema),z.lazy(() => NotificationLogCreateWithoutBookingInputSchema).array(),z.lazy(() => NotificationLogUncheckedCreateWithoutBookingInputSchema),z.lazy(() => NotificationLogUncheckedCreateWithoutBookingInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => NotificationLogCreateOrConnectWithoutBookingInputSchema),z.lazy(() => NotificationLogCreateOrConnectWithoutBookingInputSchema).array() ]).optional(),
@@ -8172,6 +8536,12 @@ export const ReviewUncheckedCreateNestedOneWithoutBookingInputSchema: z.ZodType<
   create: z.union([ z.lazy(() => ReviewCreateWithoutBookingInputSchema),z.lazy(() => ReviewUncheckedCreateWithoutBookingInputSchema) ]).optional(),
   connectOrCreate: z.lazy(() => ReviewCreateOrConnectWithoutBookingInputSchema).optional(),
   connect: z.lazy(() => ReviewWhereUniqueInputSchema).optional()
+}).strict();
+
+export const MeetSessionUncheckedCreateNestedOneWithoutBookingInputSchema: z.ZodType<Prisma.MeetSessionUncheckedCreateNestedOneWithoutBookingInput> = z.object({
+  create: z.union([ z.lazy(() => MeetSessionCreateWithoutBookingInputSchema),z.lazy(() => MeetSessionUncheckedCreateWithoutBookingInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => MeetSessionCreateOrConnectWithoutBookingInputSchema).optional(),
+  connect: z.lazy(() => MeetSessionWhereUniqueInputSchema).optional()
 }).strict();
 
 export const EnumBookingStatusFieldUpdateOperationsInputSchema: z.ZodType<Prisma.EnumBookingStatusFieldUpdateOperationsInput> = z.object({
@@ -8248,6 +8618,16 @@ export const ReviewUpdateOneWithoutBookingNestedInputSchema: z.ZodType<Prisma.Re
   update: z.union([ z.lazy(() => ReviewUpdateToOneWithWhereWithoutBookingInputSchema),z.lazy(() => ReviewUpdateWithoutBookingInputSchema),z.lazy(() => ReviewUncheckedUpdateWithoutBookingInputSchema) ]).optional(),
 }).strict();
 
+export const MeetSessionUpdateOneWithoutBookingNestedInputSchema: z.ZodType<Prisma.MeetSessionUpdateOneWithoutBookingNestedInput> = z.object({
+  create: z.union([ z.lazy(() => MeetSessionCreateWithoutBookingInputSchema),z.lazy(() => MeetSessionUncheckedCreateWithoutBookingInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => MeetSessionCreateOrConnectWithoutBookingInputSchema).optional(),
+  upsert: z.lazy(() => MeetSessionUpsertWithoutBookingInputSchema).optional(),
+  disconnect: z.union([ z.boolean(),z.lazy(() => MeetSessionWhereInputSchema) ]).optional(),
+  delete: z.union([ z.boolean(),z.lazy(() => MeetSessionWhereInputSchema) ]).optional(),
+  connect: z.lazy(() => MeetSessionWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => MeetSessionUpdateToOneWithWhereWithoutBookingInputSchema),z.lazy(() => MeetSessionUpdateWithoutBookingInputSchema),z.lazy(() => MeetSessionUncheckedUpdateWithoutBookingInputSchema) ]).optional(),
+}).strict();
+
 export const NotificationLogUncheckedUpdateManyWithoutBookingNestedInputSchema: z.ZodType<Prisma.NotificationLogUncheckedUpdateManyWithoutBookingNestedInput> = z.object({
   create: z.union([ z.lazy(() => NotificationLogCreateWithoutBookingInputSchema),z.lazy(() => NotificationLogCreateWithoutBookingInputSchema).array(),z.lazy(() => NotificationLogUncheckedCreateWithoutBookingInputSchema),z.lazy(() => NotificationLogUncheckedCreateWithoutBookingInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => NotificationLogCreateOrConnectWithoutBookingInputSchema),z.lazy(() => NotificationLogCreateOrConnectWithoutBookingInputSchema).array() ]).optional(),
@@ -8270,6 +8650,16 @@ export const ReviewUncheckedUpdateOneWithoutBookingNestedInputSchema: z.ZodType<
   delete: z.union([ z.boolean(),z.lazy(() => ReviewWhereInputSchema) ]).optional(),
   connect: z.lazy(() => ReviewWhereUniqueInputSchema).optional(),
   update: z.union([ z.lazy(() => ReviewUpdateToOneWithWhereWithoutBookingInputSchema),z.lazy(() => ReviewUpdateWithoutBookingInputSchema),z.lazy(() => ReviewUncheckedUpdateWithoutBookingInputSchema) ]).optional(),
+}).strict();
+
+export const MeetSessionUncheckedUpdateOneWithoutBookingNestedInputSchema: z.ZodType<Prisma.MeetSessionUncheckedUpdateOneWithoutBookingNestedInput> = z.object({
+  create: z.union([ z.lazy(() => MeetSessionCreateWithoutBookingInputSchema),z.lazy(() => MeetSessionUncheckedCreateWithoutBookingInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => MeetSessionCreateOrConnectWithoutBookingInputSchema).optional(),
+  upsert: z.lazy(() => MeetSessionUpsertWithoutBookingInputSchema).optional(),
+  disconnect: z.union([ z.boolean(),z.lazy(() => MeetSessionWhereInputSchema) ]).optional(),
+  delete: z.union([ z.boolean(),z.lazy(() => MeetSessionWhereInputSchema) ]).optional(),
+  connect: z.lazy(() => MeetSessionWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => MeetSessionUpdateToOneWithWhereWithoutBookingInputSchema),z.lazy(() => MeetSessionUpdateWithoutBookingInputSchema),z.lazy(() => MeetSessionUncheckedUpdateWithoutBookingInputSchema) ]).optional(),
 }).strict();
 
 export const UserCreateNestedOneWithoutNotificationPreferencesInputSchema: z.ZodType<Prisma.UserCreateNestedOneWithoutNotificationPreferencesInput> = z.object({
@@ -8310,10 +8700,19 @@ export const BookingUpdateOneWithoutNotificationsNestedInputSchema: z.ZodType<Pr
   update: z.union([ z.lazy(() => BookingUpdateToOneWithWhereWithoutNotificationsInputSchema),z.lazy(() => BookingUpdateWithoutNotificationsInputSchema),z.lazy(() => BookingUncheckedUpdateWithoutNotificationsInputSchema) ]).optional(),
 }).strict();
 
+export const CalendarIntegrationCreategrantedScopesInputSchema: z.ZodType<Prisma.CalendarIntegrationCreategrantedScopesInput> = z.object({
+  set: z.string().array()
+}).strict();
+
 export const ServiceProviderCreateNestedOneWithoutCalendarIntegrationInputSchema: z.ZodType<Prisma.ServiceProviderCreateNestedOneWithoutCalendarIntegrationInput> = z.object({
   create: z.union([ z.lazy(() => ServiceProviderCreateWithoutCalendarIntegrationInputSchema),z.lazy(() => ServiceProviderUncheckedCreateWithoutCalendarIntegrationInputSchema) ]).optional(),
   connectOrCreate: z.lazy(() => ServiceProviderCreateOrConnectWithoutCalendarIntegrationInputSchema).optional(),
   connect: z.lazy(() => ServiceProviderWhereUniqueInputSchema).optional()
+}).strict();
+
+export const CalendarIntegrationUpdategrantedScopesInputSchema: z.ZodType<Prisma.CalendarIntegrationUpdategrantedScopesInput> = z.object({
+  set: z.string().array().optional(),
+  push: z.union([ z.string(),z.string().array() ]).optional(),
 }).strict();
 
 export const ServiceProviderUpdateOneRequiredWithoutCalendarIntegrationNestedInputSchema: z.ZodType<Prisma.ServiceProviderUpdateOneRequiredWithoutCalendarIntegrationNestedInput> = z.object({
@@ -8322,6 +8721,24 @@ export const ServiceProviderUpdateOneRequiredWithoutCalendarIntegrationNestedInp
   upsert: z.lazy(() => ServiceProviderUpsertWithoutCalendarIntegrationInputSchema).optional(),
   connect: z.lazy(() => ServiceProviderWhereUniqueInputSchema).optional(),
   update: z.union([ z.lazy(() => ServiceProviderUpdateToOneWithWhereWithoutCalendarIntegrationInputSchema),z.lazy(() => ServiceProviderUpdateWithoutCalendarIntegrationInputSchema),z.lazy(() => ServiceProviderUncheckedUpdateWithoutCalendarIntegrationInputSchema) ]).optional(),
+}).strict();
+
+export const BookingCreateNestedOneWithoutMeetSessionInputSchema: z.ZodType<Prisma.BookingCreateNestedOneWithoutMeetSessionInput> = z.object({
+  create: z.union([ z.lazy(() => BookingCreateWithoutMeetSessionInputSchema),z.lazy(() => BookingUncheckedCreateWithoutMeetSessionInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => BookingCreateOrConnectWithoutMeetSessionInputSchema).optional(),
+  connect: z.lazy(() => BookingWhereUniqueInputSchema).optional()
+}).strict();
+
+export const EnumMeetSessionStatusFieldUpdateOperationsInputSchema: z.ZodType<Prisma.EnumMeetSessionStatusFieldUpdateOperationsInput> = z.object({
+  set: z.lazy(() => MeetSessionStatusSchema).optional()
+}).strict();
+
+export const BookingUpdateOneRequiredWithoutMeetSessionNestedInputSchema: z.ZodType<Prisma.BookingUpdateOneRequiredWithoutMeetSessionNestedInput> = z.object({
+  create: z.union([ z.lazy(() => BookingCreateWithoutMeetSessionInputSchema),z.lazy(() => BookingUncheckedCreateWithoutMeetSessionInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => BookingCreateOrConnectWithoutMeetSessionInputSchema).optional(),
+  upsert: z.lazy(() => BookingUpsertWithoutMeetSessionInputSchema).optional(),
+  connect: z.lazy(() => BookingWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => BookingUpdateToOneWithWhereWithoutMeetSessionInputSchema),z.lazy(() => BookingUpdateWithoutMeetSessionInputSchema),z.lazy(() => BookingUncheckedUpdateWithoutMeetSessionInputSchema) ]).optional(),
 }).strict();
 
 export const ServiceProviderCreateNestedOneWithoutSubscriptionInputSchema: z.ZodType<Prisma.ServiceProviderCreateNestedOneWithoutSubscriptionInput> = z.object({
@@ -8921,6 +9338,23 @@ export const NestedEnumNotificationChannelWithAggregatesFilterSchema: z.ZodType<
   _max: z.lazy(() => NestedEnumNotificationChannelFilterSchema).optional()
 }).strict();
 
+export const NestedEnumMeetSessionStatusFilterSchema: z.ZodType<Prisma.NestedEnumMeetSessionStatusFilter> = z.object({
+  equals: z.lazy(() => MeetSessionStatusSchema).optional(),
+  in: z.lazy(() => MeetSessionStatusSchema).array().optional(),
+  notIn: z.lazy(() => MeetSessionStatusSchema).array().optional(),
+  not: z.union([ z.lazy(() => MeetSessionStatusSchema),z.lazy(() => NestedEnumMeetSessionStatusFilterSchema) ]).optional(),
+}).strict();
+
+export const NestedEnumMeetSessionStatusWithAggregatesFilterSchema: z.ZodType<Prisma.NestedEnumMeetSessionStatusWithAggregatesFilter> = z.object({
+  equals: z.lazy(() => MeetSessionStatusSchema).optional(),
+  in: z.lazy(() => MeetSessionStatusSchema).array().optional(),
+  notIn: z.lazy(() => MeetSessionStatusSchema).array().optional(),
+  not: z.union([ z.lazy(() => MeetSessionStatusSchema),z.lazy(() => NestedEnumMeetSessionStatusWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _min: z.lazy(() => NestedEnumMeetSessionStatusFilterSchema).optional(),
+  _max: z.lazy(() => NestedEnumMeetSessionStatusFilterSchema).optional()
+}).strict();
+
 export const NestedEnumSubscriptionStatusFilterSchema: z.ZodType<Prisma.NestedEnumSubscriptionStatusFilter> = z.object({
   equals: z.lazy(() => SubscriptionStatusSchema).optional(),
   in: z.lazy(() => SubscriptionStatusSchema).array().optional(),
@@ -9111,6 +9545,8 @@ export const BookingCreateWithoutBookedByInputSchema: z.ZodType<Prisma.BookingCr
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   slot: z.lazy(() => CalculatedAvailabilitySlotCreateNestedOneWithoutBookingInputSchema).optional(),
@@ -9118,7 +9554,8 @@ export const BookingCreateWithoutBookedByInputSchema: z.ZodType<Prisma.BookingCr
   serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutBookingsInputSchema),
   service: z.lazy(() => ServiceCreateNestedOneWithoutBookingsInputSchema),
   notifications: z.lazy(() => NotificationLogCreateNestedManyWithoutBookingInputSchema).optional(),
-  review: z.lazy(() => ReviewCreateNestedOneWithoutBookingInputSchema).optional()
+  review: z.lazy(() => ReviewCreateNestedOneWithoutBookingInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionCreateNestedOneWithoutBookingInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedCreateWithoutBookedByInputSchema: z.ZodType<Prisma.BookingUncheckedCreateWithoutBookedByInput> = z.object({
@@ -9140,10 +9577,13 @@ export const BookingUncheckedCreateWithoutBookedByInputSchema: z.ZodType<Prisma.
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   notifications: z.lazy(() => NotificationLogUncheckedCreateNestedManyWithoutBookingInputSchema).optional(),
-  review: z.lazy(() => ReviewUncheckedCreateNestedOneWithoutBookingInputSchema).optional()
+  review: z.lazy(() => ReviewUncheckedCreateNestedOneWithoutBookingInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUncheckedCreateNestedOneWithoutBookingInputSchema).optional()
 }).strict();
 
 export const BookingCreateOrConnectWithoutBookedByInputSchema: z.ZodType<Prisma.BookingCreateOrConnectWithoutBookedByInput> = z.object({
@@ -9171,6 +9611,8 @@ export const BookingCreateWithoutClientInputSchema: z.ZodType<Prisma.BookingCrea
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   slot: z.lazy(() => CalculatedAvailabilitySlotCreateNestedOneWithoutBookingInputSchema).optional(),
@@ -9178,7 +9620,8 @@ export const BookingCreateWithoutClientInputSchema: z.ZodType<Prisma.BookingCrea
   serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutBookingsInputSchema),
   service: z.lazy(() => ServiceCreateNestedOneWithoutBookingsInputSchema),
   notifications: z.lazy(() => NotificationLogCreateNestedManyWithoutBookingInputSchema).optional(),
-  review: z.lazy(() => ReviewCreateNestedOneWithoutBookingInputSchema).optional()
+  review: z.lazy(() => ReviewCreateNestedOneWithoutBookingInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionCreateNestedOneWithoutBookingInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedCreateWithoutClientInputSchema: z.ZodType<Prisma.BookingUncheckedCreateWithoutClientInput> = z.object({
@@ -9200,10 +9643,13 @@ export const BookingUncheckedCreateWithoutClientInputSchema: z.ZodType<Prisma.Bo
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   notifications: z.lazy(() => NotificationLogUncheckedCreateNestedManyWithoutBookingInputSchema).optional(),
-  review: z.lazy(() => ReviewUncheckedCreateNestedOneWithoutBookingInputSchema).optional()
+  review: z.lazy(() => ReviewUncheckedCreateNestedOneWithoutBookingInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUncheckedCreateNestedOneWithoutBookingInputSchema).optional()
 }).strict();
 
 export const BookingCreateOrConnectWithoutClientInputSchema: z.ZodType<Prisma.BookingCreateOrConnectWithoutClientInput> = z.object({
@@ -9474,6 +9920,8 @@ export const BookingScalarWhereInputSchema: z.ZodType<Prisma.BookingScalarWhereI
   location: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
   status: z.union([ z.lazy(() => EnumBookingStatusFilterSchema),z.lazy(() => BookingStatusSchema) ]).optional(),
   notes: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  meetLink: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+  calendarEventId: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
   createdAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
 }).strict();
@@ -10147,6 +10595,8 @@ export const BookingCreateWithoutServiceProviderInputSchema: z.ZodType<Prisma.Bo
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   slot: z.lazy(() => CalculatedAvailabilitySlotCreateNestedOneWithoutBookingInputSchema).optional(),
@@ -10154,7 +10604,8 @@ export const BookingCreateWithoutServiceProviderInputSchema: z.ZodType<Prisma.Bo
   client: z.lazy(() => UserCreateNestedOneWithoutBookingsAsClientInputSchema).optional(),
   service: z.lazy(() => ServiceCreateNestedOneWithoutBookingsInputSchema),
   notifications: z.lazy(() => NotificationLogCreateNestedManyWithoutBookingInputSchema).optional(),
-  review: z.lazy(() => ReviewCreateNestedOneWithoutBookingInputSchema).optional()
+  review: z.lazy(() => ReviewCreateNestedOneWithoutBookingInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionCreateNestedOneWithoutBookingInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedCreateWithoutServiceProviderInputSchema: z.ZodType<Prisma.BookingUncheckedCreateWithoutServiceProviderInput> = z.object({
@@ -10176,10 +10627,13 @@ export const BookingUncheckedCreateWithoutServiceProviderInputSchema: z.ZodType<
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   notifications: z.lazy(() => NotificationLogUncheckedCreateNestedManyWithoutBookingInputSchema).optional(),
-  review: z.lazy(() => ReviewUncheckedCreateNestedOneWithoutBookingInputSchema).optional()
+  review: z.lazy(() => ReviewUncheckedCreateNestedOneWithoutBookingInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUncheckedCreateNestedOneWithoutBookingInputSchema).optional()
 }).strict();
 
 export const BookingCreateOrConnectWithoutServiceProviderInputSchema: z.ZodType<Prisma.BookingCreateOrConnectWithoutServiceProviderInput> = z.object({
@@ -10201,6 +10655,9 @@ export const CalendarIntegrationCreateWithoutServiceProviderInputSchema: z.ZodTy
   calendarId: z.string().optional().nullable(),
   syncEnabled: z.boolean().optional(),
   lastSyncedAt: z.coerce.date().optional().nullable(),
+  googleEmail: z.string().optional().nullable(),
+  grantedScopes: z.union([ z.lazy(() => CalendarIntegrationCreategrantedScopesInputSchema),z.string().array() ]).optional(),
+  meetSettings: z.union([ z.lazy(() => NullableJsonNullValueInputSchema),InputJsonValueSchema ]).optional(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional()
 }).strict();
@@ -10214,6 +10671,9 @@ export const CalendarIntegrationUncheckedCreateWithoutServiceProviderInputSchema
   calendarId: z.string().optional().nullable(),
   syncEnabled: z.boolean().optional(),
   lastSyncedAt: z.coerce.date().optional().nullable(),
+  googleEmail: z.string().optional().nullable(),
+  grantedScopes: z.union([ z.lazy(() => CalendarIntegrationCreategrantedScopesInputSchema),z.string().array() ]).optional(),
+  meetSettings: z.union([ z.lazy(() => NullableJsonNullValueInputSchema),InputJsonValueSchema ]).optional(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional()
 }).strict();
@@ -10520,6 +10980,9 @@ export const CalendarIntegrationUpdateWithoutServiceProviderInputSchema: z.ZodTy
   calendarId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   syncEnabled: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   lastSyncedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  googleEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  grantedScopes: z.union([ z.lazy(() => CalendarIntegrationUpdategrantedScopesInputSchema),z.string().array() ]).optional(),
+  meetSettings: z.union([ z.lazy(() => NullableJsonNullValueInputSchema),InputJsonValueSchema ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
@@ -10533,6 +10996,9 @@ export const CalendarIntegrationUncheckedUpdateWithoutServiceProviderInputSchema
   calendarId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   syncEnabled: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
   lastSyncedAt: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  googleEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  grantedScopes: z.union([ z.lazy(() => CalendarIntegrationUpdategrantedScopesInputSchema),z.string().array() ]).optional(),
+  meetSettings: z.union([ z.lazy(() => NullableJsonNullValueInputSchema),InputJsonValueSchema ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
@@ -11235,6 +11701,8 @@ export const BookingCreateWithoutServiceInputSchema: z.ZodType<Prisma.BookingCre
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   slot: z.lazy(() => CalculatedAvailabilitySlotCreateNestedOneWithoutBookingInputSchema).optional(),
@@ -11242,7 +11710,8 @@ export const BookingCreateWithoutServiceInputSchema: z.ZodType<Prisma.BookingCre
   client: z.lazy(() => UserCreateNestedOneWithoutBookingsAsClientInputSchema).optional(),
   serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutBookingsInputSchema),
   notifications: z.lazy(() => NotificationLogCreateNestedManyWithoutBookingInputSchema).optional(),
-  review: z.lazy(() => ReviewCreateNestedOneWithoutBookingInputSchema).optional()
+  review: z.lazy(() => ReviewCreateNestedOneWithoutBookingInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionCreateNestedOneWithoutBookingInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedCreateWithoutServiceInputSchema: z.ZodType<Prisma.BookingUncheckedCreateWithoutServiceInput> = z.object({
@@ -11264,10 +11733,13 @@ export const BookingUncheckedCreateWithoutServiceInputSchema: z.ZodType<Prisma.B
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   notifications: z.lazy(() => NotificationLogUncheckedCreateNestedManyWithoutBookingInputSchema).optional(),
-  review: z.lazy(() => ReviewUncheckedCreateNestedOneWithoutBookingInputSchema).optional()
+  review: z.lazy(() => ReviewUncheckedCreateNestedOneWithoutBookingInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUncheckedCreateNestedOneWithoutBookingInputSchema).optional()
 }).strict();
 
 export const BookingCreateOrConnectWithoutServiceInputSchema: z.ZodType<Prisma.BookingCreateOrConnectWithoutServiceInput> = z.object({
@@ -12047,6 +12519,8 @@ export const BookingCreateWithoutSlotInputSchema: z.ZodType<Prisma.BookingCreate
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   bookedBy: z.lazy(() => UserCreateNestedOneWithoutBookingsCreatedInputSchema).optional(),
@@ -12054,7 +12528,8 @@ export const BookingCreateWithoutSlotInputSchema: z.ZodType<Prisma.BookingCreate
   serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutBookingsInputSchema),
   service: z.lazy(() => ServiceCreateNestedOneWithoutBookingsInputSchema),
   notifications: z.lazy(() => NotificationLogCreateNestedManyWithoutBookingInputSchema).optional(),
-  review: z.lazy(() => ReviewCreateNestedOneWithoutBookingInputSchema).optional()
+  review: z.lazy(() => ReviewCreateNestedOneWithoutBookingInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionCreateNestedOneWithoutBookingInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedCreateWithoutSlotInputSchema: z.ZodType<Prisma.BookingUncheckedCreateWithoutSlotInput> = z.object({
@@ -12076,10 +12551,13 @@ export const BookingUncheckedCreateWithoutSlotInputSchema: z.ZodType<Prisma.Book
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   notifications: z.lazy(() => NotificationLogUncheckedCreateNestedManyWithoutBookingInputSchema).optional(),
-  review: z.lazy(() => ReviewUncheckedCreateNestedOneWithoutBookingInputSchema).optional()
+  review: z.lazy(() => ReviewUncheckedCreateNestedOneWithoutBookingInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUncheckedCreateNestedOneWithoutBookingInputSchema).optional()
 }).strict();
 
 export const BookingCreateOrConnectWithoutSlotInputSchema: z.ZodType<Prisma.BookingCreateOrConnectWithoutSlotInput> = z.object({
@@ -12224,6 +12702,8 @@ export const BookingUpdateWithoutSlotInputSchema: z.ZodType<Prisma.BookingUpdate
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   bookedBy: z.lazy(() => UserUpdateOneWithoutBookingsCreatedNestedInputSchema).optional(),
@@ -12231,7 +12711,8 @@ export const BookingUpdateWithoutSlotInputSchema: z.ZodType<Prisma.BookingUpdate
   serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutBookingsNestedInputSchema).optional(),
   service: z.lazy(() => ServiceUpdateOneRequiredWithoutBookingsNestedInputSchema).optional(),
   notifications: z.lazy(() => NotificationLogUpdateManyWithoutBookingNestedInputSchema).optional(),
-  review: z.lazy(() => ReviewUpdateOneWithoutBookingNestedInputSchema).optional()
+  review: z.lazy(() => ReviewUpdateOneWithoutBookingNestedInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedUpdateWithoutSlotInputSchema: z.ZodType<Prisma.BookingUncheckedUpdateWithoutSlotInput> = z.object({
@@ -12253,10 +12734,13 @@ export const BookingUncheckedUpdateWithoutSlotInputSchema: z.ZodType<Prisma.Book
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   notifications: z.lazy(() => NotificationLogUncheckedUpdateManyWithoutBookingNestedInputSchema).optional(),
-  review: z.lazy(() => ReviewUncheckedUpdateOneWithoutBookingNestedInputSchema).optional()
+  review: z.lazy(() => ReviewUncheckedUpdateOneWithoutBookingNestedInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUncheckedUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const CalculatedAvailabilitySlotCreateWithoutBookingInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotCreateWithoutBookingInput> = z.object({
@@ -12559,6 +13043,31 @@ export const ReviewUncheckedCreateWithoutBookingInputSchema: z.ZodType<Prisma.Re
 export const ReviewCreateOrConnectWithoutBookingInputSchema: z.ZodType<Prisma.ReviewCreateOrConnectWithoutBookingInput> = z.object({
   where: z.lazy(() => ReviewWhereUniqueInputSchema),
   create: z.union([ z.lazy(() => ReviewCreateWithoutBookingInputSchema),z.lazy(() => ReviewUncheckedCreateWithoutBookingInputSchema) ]),
+}).strict();
+
+export const MeetSessionCreateWithoutBookingInputSchema: z.ZodType<Prisma.MeetSessionCreateWithoutBookingInput> = z.object({
+  id: z.string().cuid().optional(),
+  meetLink: z.string(),
+  eventId: z.string(),
+  joinCode: z.string().optional().nullable(),
+  status: z.lazy(() => MeetSessionStatusSchema).optional(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional()
+}).strict();
+
+export const MeetSessionUncheckedCreateWithoutBookingInputSchema: z.ZodType<Prisma.MeetSessionUncheckedCreateWithoutBookingInput> = z.object({
+  id: z.string().cuid().optional(),
+  meetLink: z.string(),
+  eventId: z.string(),
+  joinCode: z.string().optional().nullable(),
+  status: z.lazy(() => MeetSessionStatusSchema).optional(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional()
+}).strict();
+
+export const MeetSessionCreateOrConnectWithoutBookingInputSchema: z.ZodType<Prisma.MeetSessionCreateOrConnectWithoutBookingInput> = z.object({
+  where: z.lazy(() => MeetSessionWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => MeetSessionCreateWithoutBookingInputSchema),z.lazy(() => MeetSessionUncheckedCreateWithoutBookingInputSchema) ]),
 }).strict();
 
 export const CalculatedAvailabilitySlotUpsertWithoutBookingInputSchema: z.ZodType<Prisma.CalculatedAvailabilitySlotUpsertWithoutBookingInput> = z.object({
@@ -12894,6 +13403,37 @@ export const ReviewUncheckedUpdateWithoutBookingInputSchema: z.ZodType<Prisma.Re
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
 
+export const MeetSessionUpsertWithoutBookingInputSchema: z.ZodType<Prisma.MeetSessionUpsertWithoutBookingInput> = z.object({
+  update: z.union([ z.lazy(() => MeetSessionUpdateWithoutBookingInputSchema),z.lazy(() => MeetSessionUncheckedUpdateWithoutBookingInputSchema) ]),
+  create: z.union([ z.lazy(() => MeetSessionCreateWithoutBookingInputSchema),z.lazy(() => MeetSessionUncheckedCreateWithoutBookingInputSchema) ]),
+  where: z.lazy(() => MeetSessionWhereInputSchema).optional()
+}).strict();
+
+export const MeetSessionUpdateToOneWithWhereWithoutBookingInputSchema: z.ZodType<Prisma.MeetSessionUpdateToOneWithWhereWithoutBookingInput> = z.object({
+  where: z.lazy(() => MeetSessionWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => MeetSessionUpdateWithoutBookingInputSchema),z.lazy(() => MeetSessionUncheckedUpdateWithoutBookingInputSchema) ]),
+}).strict();
+
+export const MeetSessionUpdateWithoutBookingInputSchema: z.ZodType<Prisma.MeetSessionUpdateWithoutBookingInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  meetLink: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eventId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  joinCode: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => MeetSessionStatusSchema),z.lazy(() => EnumMeetSessionStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+}).strict();
+
+export const MeetSessionUncheckedUpdateWithoutBookingInputSchema: z.ZodType<Prisma.MeetSessionUncheckedUpdateWithoutBookingInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  meetLink: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eventId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  joinCode: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => MeetSessionStatusSchema),z.lazy(() => EnumMeetSessionStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+}).strict();
+
 export const UserCreateWithoutNotificationPreferencesInputSchema: z.ZodType<Prisma.UserCreateWithoutNotificationPreferencesInput> = z.object({
   id: z.string().cuid().optional(),
   name: z.string().optional().nullable(),
@@ -13013,6 +13553,8 @@ export const BookingCreateWithoutNotificationsInputSchema: z.ZodType<Prisma.Book
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   slot: z.lazy(() => CalculatedAvailabilitySlotCreateNestedOneWithoutBookingInputSchema).optional(),
@@ -13020,7 +13562,8 @@ export const BookingCreateWithoutNotificationsInputSchema: z.ZodType<Prisma.Book
   client: z.lazy(() => UserCreateNestedOneWithoutBookingsAsClientInputSchema).optional(),
   serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutBookingsInputSchema),
   service: z.lazy(() => ServiceCreateNestedOneWithoutBookingsInputSchema),
-  review: z.lazy(() => ReviewCreateNestedOneWithoutBookingInputSchema).optional()
+  review: z.lazy(() => ReviewCreateNestedOneWithoutBookingInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionCreateNestedOneWithoutBookingInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedCreateWithoutNotificationsInputSchema: z.ZodType<Prisma.BookingUncheckedCreateWithoutNotificationsInput> = z.object({
@@ -13043,9 +13586,12 @@ export const BookingUncheckedCreateWithoutNotificationsInputSchema: z.ZodType<Pr
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
-  review: z.lazy(() => ReviewUncheckedCreateNestedOneWithoutBookingInputSchema).optional()
+  review: z.lazy(() => ReviewUncheckedCreateNestedOneWithoutBookingInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUncheckedCreateNestedOneWithoutBookingInputSchema).optional()
 }).strict();
 
 export const BookingCreateOrConnectWithoutNotificationsInputSchema: z.ZodType<Prisma.BookingCreateOrConnectWithoutNotificationsInput> = z.object({
@@ -13079,6 +13625,8 @@ export const BookingUpdateWithoutNotificationsInputSchema: z.ZodType<Prisma.Book
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   slot: z.lazy(() => CalculatedAvailabilitySlotUpdateOneWithoutBookingNestedInputSchema).optional(),
@@ -13086,7 +13634,8 @@ export const BookingUpdateWithoutNotificationsInputSchema: z.ZodType<Prisma.Book
   client: z.lazy(() => UserUpdateOneWithoutBookingsAsClientNestedInputSchema).optional(),
   serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutBookingsNestedInputSchema).optional(),
   service: z.lazy(() => ServiceUpdateOneRequiredWithoutBookingsNestedInputSchema).optional(),
-  review: z.lazy(() => ReviewUpdateOneWithoutBookingNestedInputSchema).optional()
+  review: z.lazy(() => ReviewUpdateOneWithoutBookingNestedInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedUpdateWithoutNotificationsInputSchema: z.ZodType<Prisma.BookingUncheckedUpdateWithoutNotificationsInput> = z.object({
@@ -13109,9 +13658,12 @@ export const BookingUncheckedUpdateWithoutNotificationsInputSchema: z.ZodType<Pr
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  review: z.lazy(() => ReviewUncheckedUpdateOneWithoutBookingNestedInputSchema).optional()
+  review: z.lazy(() => ReviewUncheckedUpdateOneWithoutBookingNestedInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUncheckedUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const ServiceProviderCreateWithoutCalendarIntegrationInputSchema: z.ZodType<Prisma.ServiceProviderCreateWithoutCalendarIntegrationInput> = z.object({
@@ -13256,6 +13808,134 @@ export const ServiceProviderUncheckedUpdateWithoutCalendarIntegrationInputSchema
   subscription: z.lazy(() => SubscriptionUncheckedUpdateOneWithoutServiceProviderNestedInputSchema).optional(),
   reviews: z.lazy(() => ReviewUncheckedUpdateManyWithoutServiceProviderNestedInputSchema).optional(),
   availabilityConfigs: z.lazy(() => ServiceAvailabilityConfigUncheckedUpdateManyWithoutServiceProviderNestedInputSchema).optional()
+}).strict();
+
+export const BookingCreateWithoutMeetSessionInputSchema: z.ZodType<Prisma.BookingCreateWithoutMeetSessionInput> = z.object({
+  id: z.string().cuid().optional(),
+  guestName: z.string().optional().nullable(),
+  guestEmail: z.string().optional().nullable(),
+  guestPhone: z.string().optional().nullable(),
+  guestWhatsapp: z.string().optional().nullable(),
+  startTime: z.coerce.date(),
+  endTime: z.coerce.date(),
+  duration: z.number().int(),
+  price: z.number().positive(),
+  isOnline: z.boolean(),
+  isInPerson: z.boolean().optional(),
+  location: z.string().optional().nullable(),
+  status: z.lazy(() => BookingStatusSchema).optional(),
+  notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+  slot: z.lazy(() => CalculatedAvailabilitySlotCreateNestedOneWithoutBookingInputSchema).optional(),
+  bookedBy: z.lazy(() => UserCreateNestedOneWithoutBookingsCreatedInputSchema).optional(),
+  client: z.lazy(() => UserCreateNestedOneWithoutBookingsAsClientInputSchema).optional(),
+  serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutBookingsInputSchema),
+  service: z.lazy(() => ServiceCreateNestedOneWithoutBookingsInputSchema),
+  notifications: z.lazy(() => NotificationLogCreateNestedManyWithoutBookingInputSchema).optional(),
+  review: z.lazy(() => ReviewCreateNestedOneWithoutBookingInputSchema).optional()
+}).strict();
+
+export const BookingUncheckedCreateWithoutMeetSessionInputSchema: z.ZodType<Prisma.BookingUncheckedCreateWithoutMeetSessionInput> = z.object({
+  id: z.string().cuid().optional(),
+  slotId: z.string().optional().nullable(),
+  bookedById: z.string().optional().nullable(),
+  clientId: z.string().optional().nullable(),
+  guestName: z.string().optional().nullable(),
+  guestEmail: z.string().optional().nullable(),
+  guestPhone: z.string().optional().nullable(),
+  guestWhatsapp: z.string().optional().nullable(),
+  serviceProviderId: z.string(),
+  serviceId: z.string(),
+  startTime: z.coerce.date(),
+  endTime: z.coerce.date(),
+  duration: z.number().int(),
+  price: z.number().positive(),
+  isOnline: z.boolean(),
+  isInPerson: z.boolean().optional(),
+  location: z.string().optional().nullable(),
+  status: z.lazy(() => BookingStatusSchema).optional(),
+  notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+  notifications: z.lazy(() => NotificationLogUncheckedCreateNestedManyWithoutBookingInputSchema).optional(),
+  review: z.lazy(() => ReviewUncheckedCreateNestedOneWithoutBookingInputSchema).optional()
+}).strict();
+
+export const BookingCreateOrConnectWithoutMeetSessionInputSchema: z.ZodType<Prisma.BookingCreateOrConnectWithoutMeetSessionInput> = z.object({
+  where: z.lazy(() => BookingWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => BookingCreateWithoutMeetSessionInputSchema),z.lazy(() => BookingUncheckedCreateWithoutMeetSessionInputSchema) ]),
+}).strict();
+
+export const BookingUpsertWithoutMeetSessionInputSchema: z.ZodType<Prisma.BookingUpsertWithoutMeetSessionInput> = z.object({
+  update: z.union([ z.lazy(() => BookingUpdateWithoutMeetSessionInputSchema),z.lazy(() => BookingUncheckedUpdateWithoutMeetSessionInputSchema) ]),
+  create: z.union([ z.lazy(() => BookingCreateWithoutMeetSessionInputSchema),z.lazy(() => BookingUncheckedCreateWithoutMeetSessionInputSchema) ]),
+  where: z.lazy(() => BookingWhereInputSchema).optional()
+}).strict();
+
+export const BookingUpdateToOneWithWhereWithoutMeetSessionInputSchema: z.ZodType<Prisma.BookingUpdateToOneWithWhereWithoutMeetSessionInput> = z.object({
+  where: z.lazy(() => BookingWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => BookingUpdateWithoutMeetSessionInputSchema),z.lazy(() => BookingUncheckedUpdateWithoutMeetSessionInputSchema) ]),
+}).strict();
+
+export const BookingUpdateWithoutMeetSessionInputSchema: z.ZodType<Prisma.BookingUpdateWithoutMeetSessionInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  guestName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  guestEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  guestPhone: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  guestWhatsapp: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  duration: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  price: z.union([ z.number().positive(),z.lazy(() => DecimalFieldUpdateOperationsInputSchema) ]).optional(),
+  isOnline: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
+  isInPerson: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
+  location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  slot: z.lazy(() => CalculatedAvailabilitySlotUpdateOneWithoutBookingNestedInputSchema).optional(),
+  bookedBy: z.lazy(() => UserUpdateOneWithoutBookingsCreatedNestedInputSchema).optional(),
+  client: z.lazy(() => UserUpdateOneWithoutBookingsAsClientNestedInputSchema).optional(),
+  serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutBookingsNestedInputSchema).optional(),
+  service: z.lazy(() => ServiceUpdateOneRequiredWithoutBookingsNestedInputSchema).optional(),
+  notifications: z.lazy(() => NotificationLogUpdateManyWithoutBookingNestedInputSchema).optional(),
+  review: z.lazy(() => ReviewUpdateOneWithoutBookingNestedInputSchema).optional()
+}).strict();
+
+export const BookingUncheckedUpdateWithoutMeetSessionInputSchema: z.ZodType<Prisma.BookingUncheckedUpdateWithoutMeetSessionInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  slotId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  bookedById: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  clientId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  guestName: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  guestEmail: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  guestPhone: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  guestWhatsapp: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  serviceProviderId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  serviceId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  startTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  endTime: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  duration: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  price: z.union([ z.number().positive(),z.lazy(() => DecimalFieldUpdateOperationsInputSchema) ]).optional(),
+  isOnline: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
+  isInPerson: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
+  location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  notifications: z.lazy(() => NotificationLogUncheckedUpdateManyWithoutBookingNestedInputSchema).optional(),
+  review: z.lazy(() => ReviewUncheckedUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const ServiceProviderCreateWithoutSubscriptionInputSchema: z.ZodType<Prisma.ServiceProviderCreateWithoutSubscriptionInput> = z.object({
@@ -13840,6 +14520,8 @@ export const BookingCreateWithoutReviewInputSchema: z.ZodType<Prisma.BookingCrea
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   slot: z.lazy(() => CalculatedAvailabilitySlotCreateNestedOneWithoutBookingInputSchema).optional(),
@@ -13847,7 +14529,8 @@ export const BookingCreateWithoutReviewInputSchema: z.ZodType<Prisma.BookingCrea
   client: z.lazy(() => UserCreateNestedOneWithoutBookingsAsClientInputSchema).optional(),
   serviceProvider: z.lazy(() => ServiceProviderCreateNestedOneWithoutBookingsInputSchema),
   service: z.lazy(() => ServiceCreateNestedOneWithoutBookingsInputSchema),
-  notifications: z.lazy(() => NotificationLogCreateNestedManyWithoutBookingInputSchema).optional()
+  notifications: z.lazy(() => NotificationLogCreateNestedManyWithoutBookingInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionCreateNestedOneWithoutBookingInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedCreateWithoutReviewInputSchema: z.ZodType<Prisma.BookingUncheckedCreateWithoutReviewInput> = z.object({
@@ -13870,9 +14553,12 @@ export const BookingUncheckedCreateWithoutReviewInputSchema: z.ZodType<Prisma.Bo
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
-  notifications: z.lazy(() => NotificationLogUncheckedCreateNestedManyWithoutBookingInputSchema).optional()
+  notifications: z.lazy(() => NotificationLogUncheckedCreateNestedManyWithoutBookingInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUncheckedCreateNestedOneWithoutBookingInputSchema).optional()
 }).strict();
 
 export const BookingCreateOrConnectWithoutReviewInputSchema: z.ZodType<Prisma.BookingCreateOrConnectWithoutReviewInput> = z.object({
@@ -14036,6 +14722,8 @@ export const BookingUpdateWithoutReviewInputSchema: z.ZodType<Prisma.BookingUpda
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   slot: z.lazy(() => CalculatedAvailabilitySlotUpdateOneWithoutBookingNestedInputSchema).optional(),
@@ -14043,7 +14731,8 @@ export const BookingUpdateWithoutReviewInputSchema: z.ZodType<Prisma.BookingUpda
   client: z.lazy(() => UserUpdateOneWithoutBookingsAsClientNestedInputSchema).optional(),
   serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutBookingsNestedInputSchema).optional(),
   service: z.lazy(() => ServiceUpdateOneRequiredWithoutBookingsNestedInputSchema).optional(),
-  notifications: z.lazy(() => NotificationLogUpdateManyWithoutBookingNestedInputSchema).optional()
+  notifications: z.lazy(() => NotificationLogUpdateManyWithoutBookingNestedInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedUpdateWithoutReviewInputSchema: z.ZodType<Prisma.BookingUncheckedUpdateWithoutReviewInput> = z.object({
@@ -14066,9 +14755,12 @@ export const BookingUncheckedUpdateWithoutReviewInputSchema: z.ZodType<Prisma.Bo
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  notifications: z.lazy(() => NotificationLogUncheckedUpdateManyWithoutBookingNestedInputSchema).optional()
+  notifications: z.lazy(() => NotificationLogUncheckedUpdateManyWithoutBookingNestedInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUncheckedUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const AccountCreateManyUserInputSchema: z.ZodType<Prisma.AccountCreateManyUserInput> = z.object({
@@ -14104,6 +14796,8 @@ export const BookingCreateManyBookedByInputSchema: z.ZodType<Prisma.BookingCreat
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional()
 }).strict();
@@ -14127,6 +14821,8 @@ export const BookingCreateManyClientInputSchema: z.ZodType<Prisma.BookingCreateM
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional()
 }).strict();
@@ -14228,6 +14924,8 @@ export const BookingUpdateWithoutBookedByInputSchema: z.ZodType<Prisma.BookingUp
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   slot: z.lazy(() => CalculatedAvailabilitySlotUpdateOneWithoutBookingNestedInputSchema).optional(),
@@ -14235,7 +14933,8 @@ export const BookingUpdateWithoutBookedByInputSchema: z.ZodType<Prisma.BookingUp
   serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutBookingsNestedInputSchema).optional(),
   service: z.lazy(() => ServiceUpdateOneRequiredWithoutBookingsNestedInputSchema).optional(),
   notifications: z.lazy(() => NotificationLogUpdateManyWithoutBookingNestedInputSchema).optional(),
-  review: z.lazy(() => ReviewUpdateOneWithoutBookingNestedInputSchema).optional()
+  review: z.lazy(() => ReviewUpdateOneWithoutBookingNestedInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedUpdateWithoutBookedByInputSchema: z.ZodType<Prisma.BookingUncheckedUpdateWithoutBookedByInput> = z.object({
@@ -14257,10 +14956,13 @@ export const BookingUncheckedUpdateWithoutBookedByInputSchema: z.ZodType<Prisma.
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   notifications: z.lazy(() => NotificationLogUncheckedUpdateManyWithoutBookingNestedInputSchema).optional(),
-  review: z.lazy(() => ReviewUncheckedUpdateOneWithoutBookingNestedInputSchema).optional()
+  review: z.lazy(() => ReviewUncheckedUpdateOneWithoutBookingNestedInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUncheckedUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedUpdateManyWithoutBookedByInputSchema: z.ZodType<Prisma.BookingUncheckedUpdateManyWithoutBookedByInput> = z.object({
@@ -14282,6 +14984,8 @@ export const BookingUncheckedUpdateManyWithoutBookedByInputSchema: z.ZodType<Pri
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
@@ -14301,6 +15005,8 @@ export const BookingUpdateWithoutClientInputSchema: z.ZodType<Prisma.BookingUpda
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   slot: z.lazy(() => CalculatedAvailabilitySlotUpdateOneWithoutBookingNestedInputSchema).optional(),
@@ -14308,7 +15014,8 @@ export const BookingUpdateWithoutClientInputSchema: z.ZodType<Prisma.BookingUpda
   serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutBookingsNestedInputSchema).optional(),
   service: z.lazy(() => ServiceUpdateOneRequiredWithoutBookingsNestedInputSchema).optional(),
   notifications: z.lazy(() => NotificationLogUpdateManyWithoutBookingNestedInputSchema).optional(),
-  review: z.lazy(() => ReviewUpdateOneWithoutBookingNestedInputSchema).optional()
+  review: z.lazy(() => ReviewUpdateOneWithoutBookingNestedInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedUpdateWithoutClientInputSchema: z.ZodType<Prisma.BookingUncheckedUpdateWithoutClientInput> = z.object({
@@ -14330,10 +15037,13 @@ export const BookingUncheckedUpdateWithoutClientInputSchema: z.ZodType<Prisma.Bo
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   notifications: z.lazy(() => NotificationLogUncheckedUpdateManyWithoutBookingNestedInputSchema).optional(),
-  review: z.lazy(() => ReviewUncheckedUpdateOneWithoutBookingNestedInputSchema).optional()
+  review: z.lazy(() => ReviewUncheckedUpdateOneWithoutBookingNestedInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUncheckedUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedUpdateManyWithoutClientInputSchema: z.ZodType<Prisma.BookingUncheckedUpdateManyWithoutClientInput> = z.object({
@@ -14355,6 +15065,8 @@ export const BookingUncheckedUpdateManyWithoutClientInputSchema: z.ZodType<Prism
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
@@ -14734,6 +15446,8 @@ export const BookingCreateManyServiceProviderInputSchema: z.ZodType<Prisma.Booki
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional()
 }).strict();
@@ -14891,6 +15605,8 @@ export const BookingUpdateWithoutServiceProviderInputSchema: z.ZodType<Prisma.Bo
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   slot: z.lazy(() => CalculatedAvailabilitySlotUpdateOneWithoutBookingNestedInputSchema).optional(),
@@ -14898,7 +15614,8 @@ export const BookingUpdateWithoutServiceProviderInputSchema: z.ZodType<Prisma.Bo
   client: z.lazy(() => UserUpdateOneWithoutBookingsAsClientNestedInputSchema).optional(),
   service: z.lazy(() => ServiceUpdateOneRequiredWithoutBookingsNestedInputSchema).optional(),
   notifications: z.lazy(() => NotificationLogUpdateManyWithoutBookingNestedInputSchema).optional(),
-  review: z.lazy(() => ReviewUpdateOneWithoutBookingNestedInputSchema).optional()
+  review: z.lazy(() => ReviewUpdateOneWithoutBookingNestedInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedUpdateWithoutServiceProviderInputSchema: z.ZodType<Prisma.BookingUncheckedUpdateWithoutServiceProviderInput> = z.object({
@@ -14920,10 +15637,13 @@ export const BookingUncheckedUpdateWithoutServiceProviderInputSchema: z.ZodType<
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   notifications: z.lazy(() => NotificationLogUncheckedUpdateManyWithoutBookingNestedInputSchema).optional(),
-  review: z.lazy(() => ReviewUncheckedUpdateOneWithoutBookingNestedInputSchema).optional()
+  review: z.lazy(() => ReviewUncheckedUpdateOneWithoutBookingNestedInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUncheckedUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedUpdateManyWithoutServiceProviderInputSchema: z.ZodType<Prisma.BookingUncheckedUpdateManyWithoutServiceProviderInput> = z.object({
@@ -14945,6 +15665,8 @@ export const BookingUncheckedUpdateManyWithoutServiceProviderInputSchema: z.ZodT
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
@@ -15128,6 +15850,8 @@ export const BookingCreateManyServiceInputSchema: z.ZodType<Prisma.BookingCreate
   location: z.string().optional().nullable(),
   status: z.lazy(() => BookingStatusSchema).optional(),
   notes: z.string().optional().nullable(),
+  meetLink: z.string().optional().nullable(),
+  calendarEventId: z.string().optional().nullable(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional()
 }).strict();
@@ -15308,6 +16032,8 @@ export const BookingUpdateWithoutServiceInputSchema: z.ZodType<Prisma.BookingUpd
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   slot: z.lazy(() => CalculatedAvailabilitySlotUpdateOneWithoutBookingNestedInputSchema).optional(),
@@ -15315,7 +16041,8 @@ export const BookingUpdateWithoutServiceInputSchema: z.ZodType<Prisma.BookingUpd
   client: z.lazy(() => UserUpdateOneWithoutBookingsAsClientNestedInputSchema).optional(),
   serviceProvider: z.lazy(() => ServiceProviderUpdateOneRequiredWithoutBookingsNestedInputSchema).optional(),
   notifications: z.lazy(() => NotificationLogUpdateManyWithoutBookingNestedInputSchema).optional(),
-  review: z.lazy(() => ReviewUpdateOneWithoutBookingNestedInputSchema).optional()
+  review: z.lazy(() => ReviewUpdateOneWithoutBookingNestedInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedUpdateWithoutServiceInputSchema: z.ZodType<Prisma.BookingUncheckedUpdateWithoutServiceInput> = z.object({
@@ -15337,10 +16064,13 @@ export const BookingUncheckedUpdateWithoutServiceInputSchema: z.ZodType<Prisma.B
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   notifications: z.lazy(() => NotificationLogUncheckedUpdateManyWithoutBookingNestedInputSchema).optional(),
-  review: z.lazy(() => ReviewUncheckedUpdateOneWithoutBookingNestedInputSchema).optional()
+  review: z.lazy(() => ReviewUncheckedUpdateOneWithoutBookingNestedInputSchema).optional(),
+  meetSession: z.lazy(() => MeetSessionUncheckedUpdateOneWithoutBookingNestedInputSchema).optional()
 }).strict();
 
 export const BookingUncheckedUpdateManyWithoutServiceInputSchema: z.ZodType<Prisma.BookingUncheckedUpdateManyWithoutServiceInput> = z.object({
@@ -15362,6 +16092,8 @@ export const BookingUncheckedUpdateManyWithoutServiceInputSchema: z.ZodType<Pris
   location: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   status: z.union([ z.lazy(() => BookingStatusSchema),z.lazy(() => EnumBookingStatusFieldUpdateOperationsInputSchema) ]).optional(),
   notes: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  meetLink: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  calendarEventId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
@@ -16570,6 +17302,68 @@ export const CalendarIntegrationFindUniqueOrThrowArgsSchema: z.ZodType<Prisma.Ca
   where: CalendarIntegrationWhereUniqueInputSchema,
 }).strict() ;
 
+export const MeetSessionFindFirstArgsSchema: z.ZodType<Prisma.MeetSessionFindFirstArgs> = z.object({
+  select: MeetSessionSelectSchema.optional(),
+  include: MeetSessionIncludeSchema.optional(),
+  where: MeetSessionWhereInputSchema.optional(),
+  orderBy: z.union([ MeetSessionOrderByWithRelationInputSchema.array(),MeetSessionOrderByWithRelationInputSchema ]).optional(),
+  cursor: MeetSessionWhereUniqueInputSchema.optional(),
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ MeetSessionScalarFieldEnumSchema,MeetSessionScalarFieldEnumSchema.array() ]).optional(),
+}).strict() ;
+
+export const MeetSessionFindFirstOrThrowArgsSchema: z.ZodType<Prisma.MeetSessionFindFirstOrThrowArgs> = z.object({
+  select: MeetSessionSelectSchema.optional(),
+  include: MeetSessionIncludeSchema.optional(),
+  where: MeetSessionWhereInputSchema.optional(),
+  orderBy: z.union([ MeetSessionOrderByWithRelationInputSchema.array(),MeetSessionOrderByWithRelationInputSchema ]).optional(),
+  cursor: MeetSessionWhereUniqueInputSchema.optional(),
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ MeetSessionScalarFieldEnumSchema,MeetSessionScalarFieldEnumSchema.array() ]).optional(),
+}).strict() ;
+
+export const MeetSessionFindManyArgsSchema: z.ZodType<Prisma.MeetSessionFindManyArgs> = z.object({
+  select: MeetSessionSelectSchema.optional(),
+  include: MeetSessionIncludeSchema.optional(),
+  where: MeetSessionWhereInputSchema.optional(),
+  orderBy: z.union([ MeetSessionOrderByWithRelationInputSchema.array(),MeetSessionOrderByWithRelationInputSchema ]).optional(),
+  cursor: MeetSessionWhereUniqueInputSchema.optional(),
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ MeetSessionScalarFieldEnumSchema,MeetSessionScalarFieldEnumSchema.array() ]).optional(),
+}).strict() ;
+
+export const MeetSessionAggregateArgsSchema: z.ZodType<Prisma.MeetSessionAggregateArgs> = z.object({
+  where: MeetSessionWhereInputSchema.optional(),
+  orderBy: z.union([ MeetSessionOrderByWithRelationInputSchema.array(),MeetSessionOrderByWithRelationInputSchema ]).optional(),
+  cursor: MeetSessionWhereUniqueInputSchema.optional(),
+  take: z.number().optional(),
+  skip: z.number().optional(),
+}).strict() ;
+
+export const MeetSessionGroupByArgsSchema: z.ZodType<Prisma.MeetSessionGroupByArgs> = z.object({
+  where: MeetSessionWhereInputSchema.optional(),
+  orderBy: z.union([ MeetSessionOrderByWithAggregationInputSchema.array(),MeetSessionOrderByWithAggregationInputSchema ]).optional(),
+  by: MeetSessionScalarFieldEnumSchema.array(),
+  having: MeetSessionScalarWhereWithAggregatesInputSchema.optional(),
+  take: z.number().optional(),
+  skip: z.number().optional(),
+}).strict() ;
+
+export const MeetSessionFindUniqueArgsSchema: z.ZodType<Prisma.MeetSessionFindUniqueArgs> = z.object({
+  select: MeetSessionSelectSchema.optional(),
+  include: MeetSessionIncludeSchema.optional(),
+  where: MeetSessionWhereUniqueInputSchema,
+}).strict() ;
+
+export const MeetSessionFindUniqueOrThrowArgsSchema: z.ZodType<Prisma.MeetSessionFindUniqueOrThrowArgs> = z.object({
+  select: MeetSessionSelectSchema.optional(),
+  include: MeetSessionIncludeSchema.optional(),
+  where: MeetSessionWhereUniqueInputSchema,
+}).strict() ;
+
 export const SubscriptionFindFirstArgsSchema: z.ZodType<Prisma.SubscriptionFindFirstArgs> = z.object({
   select: SubscriptionSelectSchema.optional(),
   include: SubscriptionIncludeSchema.optional(),
@@ -17460,6 +18254,52 @@ export const CalendarIntegrationUpdateManyArgsSchema: z.ZodType<Prisma.CalendarI
 
 export const CalendarIntegrationDeleteManyArgsSchema: z.ZodType<Prisma.CalendarIntegrationDeleteManyArgs> = z.object({
   where: CalendarIntegrationWhereInputSchema.optional(),
+}).strict() ;
+
+export const MeetSessionCreateArgsSchema: z.ZodType<Prisma.MeetSessionCreateArgs> = z.object({
+  select: MeetSessionSelectSchema.optional(),
+  include: MeetSessionIncludeSchema.optional(),
+  data: z.union([ MeetSessionCreateInputSchema,MeetSessionUncheckedCreateInputSchema ]),
+}).strict() ;
+
+export const MeetSessionUpsertArgsSchema: z.ZodType<Prisma.MeetSessionUpsertArgs> = z.object({
+  select: MeetSessionSelectSchema.optional(),
+  include: MeetSessionIncludeSchema.optional(),
+  where: MeetSessionWhereUniqueInputSchema,
+  create: z.union([ MeetSessionCreateInputSchema,MeetSessionUncheckedCreateInputSchema ]),
+  update: z.union([ MeetSessionUpdateInputSchema,MeetSessionUncheckedUpdateInputSchema ]),
+}).strict() ;
+
+export const MeetSessionCreateManyArgsSchema: z.ZodType<Prisma.MeetSessionCreateManyArgs> = z.object({
+  data: z.union([ MeetSessionCreateManyInputSchema,MeetSessionCreateManyInputSchema.array() ]),
+  skipDuplicates: z.boolean().optional(),
+}).strict() ;
+
+export const MeetSessionCreateManyAndReturnArgsSchema: z.ZodType<Prisma.MeetSessionCreateManyAndReturnArgs> = z.object({
+  data: z.union([ MeetSessionCreateManyInputSchema,MeetSessionCreateManyInputSchema.array() ]),
+  skipDuplicates: z.boolean().optional(),
+}).strict() ;
+
+export const MeetSessionDeleteArgsSchema: z.ZodType<Prisma.MeetSessionDeleteArgs> = z.object({
+  select: MeetSessionSelectSchema.optional(),
+  include: MeetSessionIncludeSchema.optional(),
+  where: MeetSessionWhereUniqueInputSchema,
+}).strict() ;
+
+export const MeetSessionUpdateArgsSchema: z.ZodType<Prisma.MeetSessionUpdateArgs> = z.object({
+  select: MeetSessionSelectSchema.optional(),
+  include: MeetSessionIncludeSchema.optional(),
+  data: z.union([ MeetSessionUpdateInputSchema,MeetSessionUncheckedUpdateInputSchema ]),
+  where: MeetSessionWhereUniqueInputSchema,
+}).strict() ;
+
+export const MeetSessionUpdateManyArgsSchema: z.ZodType<Prisma.MeetSessionUpdateManyArgs> = z.object({
+  data: z.union([ MeetSessionUpdateManyMutationInputSchema,MeetSessionUncheckedUpdateManyInputSchema ]),
+  where: MeetSessionWhereInputSchema.optional(),
+}).strict() ;
+
+export const MeetSessionDeleteManyArgsSchema: z.ZodType<Prisma.MeetSessionDeleteManyArgs> = z.object({
+  where: MeetSessionWhereInputSchema.optional(),
 }).strict() ;
 
 export const SubscriptionCreateArgsSchema: z.ZodType<Prisma.SubscriptionCreateArgs> = z.object({
