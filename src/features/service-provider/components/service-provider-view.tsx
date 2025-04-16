@@ -132,11 +132,11 @@ export async function ServiceProviderView({
             <div className="flex flex-col gap-2">
               {isAuthorized && (
                 <>
-                  <EditServiceProviderButton serviceProviderId={serviceProvider.id} />
                   <IntegrateGoogleServicesButton
                     serviceProviderId={serviceProvider.id}
                     hasIntegration={!!serviceProvider.calendarIntegration}
                   />
+                  <EditServiceProviderButton serviceProviderId={serviceProvider.id} />
                   <DeleteServiceProviderButton serviceProviderId={serviceProvider.id} />
                 </>
               )}

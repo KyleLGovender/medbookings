@@ -1,5 +1,7 @@
 'use client';
 
+import { signIn } from 'next-auth/react';
+
 import { GoogleIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 
@@ -13,9 +15,22 @@ export function IntegrateGoogleServicesButton({
   hasIntegration,
 }: IntegrateGoogleServicesButtonProps) {
   const handleIntegrate = async () => {
-    // Redirect to Google OAuth consent screen
-    // The URL should be your API endpoint that initiates OAuth flow
-    window.location.href = `/api/auth/google/calendar?serviceProviderId=${serviceProviderId}`;
+    // Use Auth.js signIn instead of direct redirect
+    await signIn('google', {
+      callbackUrl: '/profile/service-provider/view',
+      // Request all necessary Google Workspace scopes
+      scope: [
+        'openid',
+        'email',
+        'profile',
+        'https://www.googleapis.com/auth/calendar',
+        'https://www.googleapis.com/auth/calendar.events',
+        'https://www.googleapis.com/auth/meetings.space.created',
+        'https://www.googleapis.com/auth/gmail.send',
+      ].join(' '),
+      // Pass serviceProviderId as state to use in callback
+      state: serviceProviderId,
+    });
   };
 
   return (
