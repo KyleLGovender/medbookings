@@ -252,4 +252,4 @@ This project is configured for deployment to Vercel with PostgreSQL.
 - Configure proper CORS settings if needed
 - Set up proper authentication providers for production
 
-//Testing changes to Branch vs Master
+//Testing changes to Branch vs Master.
