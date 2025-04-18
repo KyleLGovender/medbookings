@@ -1,46 +1,48 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
+import { useState } from 'react';
 
 import { GoogleIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 
 interface IntegrateGoogleServicesButtonProps {
   serviceProviderId: string;
   hasIntegration: boolean;
+  children: React.ReactNode;
 }
 
 export function IntegrateGoogleServicesButton({
   serviceProviderId,
   hasIntegration,
+  children,
 }: IntegrateGoogleServicesButtonProps) {
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleIntegrate = async () => {
-    // Use Auth.js signIn instead of direct redirect
-    await signIn('google', {
-      callbackUrl: '/profile/service-provider/view',
-      // Request all necessary Google Workspace scopes
-      scope: [
-        'openid',
-        'email',
-        'profile',
-        'https://www.googleapis.com/auth/calendar',
-        'https://www.googleapis.com/auth/calendar.events',
-        'https://www.googleapis.com/auth/meetings.space.created',
-        'https://www.googleapis.com/auth/gmail.send',
-      ].join(' '),
-      // Pass serviceProviderId as state to use in callback
-      state: serviceProviderId,
-    });
+    setIsLoading(true);
+    const url = `/api/auth/google/calendar?serviceProviderId=${serviceProviderId}`;
+    window.location.href = url;
   };
 
   return (
     <Button
       onClick={handleIntegrate}
       variant="outline"
-      className="flex max-w-64 items-center gap-2"
+      className="flex w-full max-w-64 items-center gap-2"
+      disabled={isLoading}
     >
-      <GoogleIcon className="h-4 w-4" />
-      {hasIntegration ? 'Reconfigure Google' : 'Connect Google'}
+      {isLoading ? (
+        <>
+          <Spinner className="mr-2 h-4 w-4" />
+          Connecting...
+        </>
+      ) : (
+        <>
+          <GoogleIcon className="h-4 w-4" />
+          {children}
+        </>
+      )}
     </Button>
   );
 }

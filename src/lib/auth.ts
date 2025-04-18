@@ -40,9 +40,7 @@ export const authOptions: NextAuthOptions = {
       clientSecret: env.GOOGLE_CLIENT_SECRET!,
       authorization: {
         params: {
-          // Base scopes for all users
           scope: 'openid email profile',
-          // Additional parameters for handling advanced scopes
           access_type: 'offline',
           prompt: 'consent',
         },

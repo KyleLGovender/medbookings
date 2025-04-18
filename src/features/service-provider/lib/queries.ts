@@ -26,6 +26,7 @@ export async function getServiceProviderByUserId(userId: string): Promise<Servic
           requirementType: true,
         },
       },
+      calendarIntegration: true,
     },
   });
 

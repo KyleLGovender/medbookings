@@ -78,6 +78,7 @@ export async function ServiceProviderView({
   const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN';
 
   console.log('currentUser', currentUser);
+  console.log('serviceProvider', serviceProvider);
 
   return (
     <div className="space-y-6">
@@ -127,30 +128,64 @@ export async function ServiceProviderView({
           <Separator className="my-4" />
 
           {/* Actions Section */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             <h3 className="text-lg font-semibold">Actions</h3>
-            <div className="flex flex-col gap-2">
-              {isAuthorized && (
-                <>
+
+            {/* Calendar Integration Section */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-700">Calendar Integration</h4>
+              {serviceProvider.calendarIntegration ? (
+                <div className="space-y-3">
+                  <div className="space-y-2 rounded-lg bg-gray-50 p-4">
+                    <p className="text-sm">Connected to Google Workspace:</p>
+                    <ul className="space-y-1 text-sm text-gray-600">
+                      <li>• Calendar: {serviceProvider.calendarIntegration.googleEmail}</li>
+                      <li>• Meet: Enabled for video consultations</li>
+                      <li>• Gmail: {serviceProvider.calendarIntegration.googleEmail}</li>
+                    </ul>
+                  </div>
                   <IntegrateGoogleServicesButton
                     serviceProviderId={serviceProvider.id}
-                    hasIntegration={!!serviceProvider.calendarIntegration}
-                  />
+                    hasIntegration={true}
+                  >
+                    Update Integration
+                  </IntegrateGoogleServicesButton>
+                </div>
+              ) : (
+                <IntegrateGoogleServicesButton
+                  serviceProviderId={serviceProvider.id}
+                  hasIntegration={false}
+                >
+                  Connect Google
+                </IntegrateGoogleServicesButton>
+              )}
+            </div>
+
+            {/* Profile Management Section */}
+            {isAuthorized && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-gray-700">Manage Profile</h4>
+                <div className="flex flex-col gap-3">
                   <EditServiceProviderButton serviceProviderId={serviceProvider.id} />
                   <DeleteServiceProviderButton serviceProviderId={serviceProvider.id} />
-                </>
-              )}
-              {isAdmin && (
-                <>
+                </div>
+              </div>
+            )}
+
+            {/* Admin Controls Section */}
+            {isAdmin && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-gray-700">Admin Controls</h4>
+                <div className="flex flex-col gap-3">
                   {serviceProvider.status !== 'APPROVED' && (
                     <ApproveServiceProviderButton serviceProviderId={serviceProvider.id} />
                   )}
                   {serviceProvider.status !== 'SUSPENDED' && (
                     <SuspendServiceProviderButton serviceProviderId={serviceProvider.id} />
                   )}
-                </>
-              )}
-            </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <Separator className="my-4" />

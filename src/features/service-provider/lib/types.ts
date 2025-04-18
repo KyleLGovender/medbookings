@@ -38,9 +38,15 @@ export type ServiceProvider = Omit<
   calendarIntegration?: {
     id: string;
     provider: string;
-    googleEmail?: string | null;
-    grantedScopes?: string[];
-    meetSettings?: any;
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: string;
+    calendarId: string | null;
+    syncEnabled: boolean;
+    lastSyncedAt: string | null;
+    googleEmail: string | null;
+    grantedScopes: string[];
+    meetSettings: any | null;
   } | null;
   requirementSubmissions?: Array<{
     requirementTypeId: string;
