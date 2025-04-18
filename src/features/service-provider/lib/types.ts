@@ -126,3 +126,9 @@ export const serviceProviderSchema = z.object({
 });
 
 export type ServiceProviderFormType = z.infer<typeof serviceProviderSchema>;
+
+export interface MeetSettings {
+  requireAuthentication: boolean;
+  allowExternalGuests: boolean;
+  defaultConferenceSolution: 'google_meet';
+}

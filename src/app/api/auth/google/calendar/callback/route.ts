@@ -5,6 +5,12 @@ import { google } from 'googleapis';
 import env from '@/config/env/server';
 import { prisma } from '@/lib/prisma';
 
+const defaultMeetSettings = {
+  requireAuthentication: true,
+  allowExternalGuests: true,
+  defaultConferenceSolution: 'google_meet',
+};
+
 export async function GET(req: NextRequest) {
   const { code, state: serviceProviderId } = Object.fromEntries(req.nextUrl.searchParams);
 
@@ -46,6 +52,7 @@ export async function GET(req: NextRequest) {
       googleEmail: userProfile.data.emailAddresses?.[0].value,
       calendarId: calendarList.data.items?.[0].id,
       grantedScopes: tokens.scope?.split(' '),
+      meetSettings: defaultMeetSettings,
     },
     create: {
       serviceProviderId,
@@ -56,6 +63,7 @@ export async function GET(req: NextRequest) {
       googleEmail: userProfile.data.emailAddresses?.[0].value,
       calendarId: calendarList.data.items?.[0].id,
       grantedScopes: tokens.scope?.split(' '),
+      meetSettings: defaultMeetSettings,
     },
   });
 

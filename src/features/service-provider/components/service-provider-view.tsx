@@ -11,6 +11,7 @@ import { getCurrentUser } from '@/lib/auth';
 
 import { DeleteServiceProviderButton } from './delete-service-provider-button';
 import { EditServiceProviderButton } from './edit-service-provider-button';
+import { MeetSettingsForm } from './meet-settings-form';
 import { SuspendServiceProviderButton } from './suspend-service-provider-button';
 
 interface ServiceProviderViewProps {
@@ -134,6 +135,12 @@ export async function ServiceProviderView({
             {/* Calendar Integration Section */}
             <div className="space-y-3">
               <h4 className="text-sm font-medium text-gray-700">Calendar Integration</h4>
+              <IntegrateGoogleServicesButton
+                serviceProviderId={serviceProvider.id}
+                hasIntegration={true}
+              >
+                Update Integration
+              </IntegrateGoogleServicesButton>
               {serviceProvider.calendarIntegration ? (
                 <div className="space-y-3">
                   <div className="space-y-2 rounded-lg bg-gray-50 p-4">
@@ -144,12 +151,20 @@ export async function ServiceProviderView({
                       <li>• Gmail: {serviceProvider.calendarIntegration.googleEmail}</li>
                     </ul>
                   </div>
-                  <IntegrateGoogleServicesButton
-                    serviceProviderId={serviceProvider.id}
-                    hasIntegration={true}
-                  >
-                    Update Integration
-                  </IntegrateGoogleServicesButton>
+
+                  {/* Add Meet Settings Form */}
+                  <div className="rounded-lg border p-4">
+                    <h4 className="mb-4 text-sm font-medium text-gray-700">Google Meet Settings</h4>
+                    <MeetSettingsForm
+                      initialSettings={
+                        serviceProvider.calendarIntegration.meetSettings || {
+                          requireAuthentication: true,
+                          allowExternalGuests: false,
+                          defaultConferenceSolution: 'google_meet',
+                        }
+                      }
+                    />
+                  </div>
                 </div>
               ) : (
                 <IntegrateGoogleServicesButton
