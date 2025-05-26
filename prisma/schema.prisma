@@ -39,12 +39,16 @@ model User {
   // Relations
   accounts                 Account[]
   serviceProvider          ServiceProvider?
-  bookingsCreated          Booking[]                       @relation("BookedByUser") // Bookings created by individual users
   bookingsAsClient         Booking[]                       @relation("BookingClient")
+  bookingsCreated          Booking[]                       @relation("BookingCreator") // Bookings created by this user
+  bookingsConfirmed        Booking[]                       @relation("BookingConfirmer") // Bookings confirmed by this user
   notificationPreferences  NotificationPreference[]
   organizationMemberships  OrganizationMembership[]
   membershipHistoryChanges OrganizationMembershipHistory[]
-  availabilitiesCreated    Availability[] // Availabilities created by this user
+  availabilitiesCreated    Availability[]                  // Availabilities created by this user
+  availabilitiesAccepted   Availability[]                  @relation("AvailabilityAccepter") // Availabilities accepted by this user
+  organizationsApproved    Organization[]                  @relation("OrganizationApprovals") // Organizations approved by this admin
+  sentInvitations          OrganizationInvitation[]        @relation("SentInvitations") // Invitations sent by this user
   createdAt                DateTime                        @default(now())
   updatedAt                DateTime                        @updatedAt
   reviews                  Review[]
@@ -283,11 +287,25 @@ model Availability {
   startTime DateTime
   endTime   DateTime
 
-  // Status for organization-created availability
-  status      AvailabilityStatus @default(PENDING)
-  createdBy   User?              @relation(fields: [createdById], references: [id])
-  createdById String? // Who created this availability (org admin)
-  acceptedAt  DateTime? // When provider accepted
+  // Who created this availability
+  createdBy           User                     @relation(fields: [createdById], references: [id])
+  createdById         String                   // Who created this availability (always required)
+  
+  // Context of creation
+  createdByMembership   OrganizationMembership? @relation("CreatedByOrgMember", fields: [createdByMembershipId], references: [id])
+  createdByMembershipId String?                 // If created by organization staff
+  
+  // Availability type flags
+  isProviderCreated    Boolean                 @default(false) // If created by the provider themselves
+  
+  // Acceptance tracking
+  status              AvailabilityStatus       @default(PENDING) // Only relevant for org-created availability
+  acceptedBy          User?                    @relation("AvailabilityAccepter", fields: [acceptedById], references: [id])
+  acceptedById        String?                  // Who accepted this availability
+  acceptedAt          DateTime?                // When the availability was accepted
+  
+  // Booking configuration
+  requiresConfirmation Boolean          @default(true)  // Whether bookings for this availability require confirmation
 
   // Billing context - determines who pays for slots from this availability
   billingEntity         BillingEntity? // Who is responsible for billing slots from this availability
@@ -355,11 +373,23 @@ model Booking {
   slot   CalculatedAvailabilitySlot? @relation(fields: [slotId], references: [id])
   slotId String?                     @unique // One booking per slot
 
-  // Who created the booking - simplified to single reference
-  bookedByMembership   OrganizationMembership? @relation("BookedByOrgMember", fields: [bookedByMembershipId], references: [id])
-  bookedByMembershipId String? // When booked by organization staff
-  bookedByUser         User?                   @relation("BookedByUser", fields: [bookedByUserId], references: [id])
-  bookedByUserId       String? // When booked by individual user (not org staff)
+  // Who created the booking - optional for guest self-bookings
+  createdBy           User?                    @relation("BookingCreator", fields: [createdById], references: [id])
+  createdById         String?                  // User who created this booking (null for guest self-bookings)
+  
+  // Context of creation
+  createdByMembership   OrganizationMembership? @relation("BookedByOrgMember", fields: [createdByMembershipId], references: [id])
+  createdByMembershipId String?                 // If created by organization staff
+  
+  // Booking type flags
+  isProviderCreated    Boolean                 @default(false) // If created by a service provider
+  isGuestBooking       Boolean                 @default(false) // If created for a guest (non-registered user)
+  isGuestSelfBooking   Boolean                 @default(false) // If created by the guest themselves (not a registered user)
+  
+  // Confirmation tracking
+  confirmedBy          User?                   @relation("BookingConfirmer", fields: [confirmedById], references: [id])
+  confirmedById        String?                 // Who confirmed this booking
+  confirmedAt          DateTime?               // When the booking was confirmed
 
   // Client Information
   client        User?   @relation("BookingClient", fields: [clientId], references: [id])
@@ -393,7 +423,7 @@ model Booking {
 
   @@index([slotId, status])
   @@index([clientId, createdAt])
-  @@index([bookedByMembershipId])
+  @@index([createdByMembershipId])
 }
 
 enum BookingStatus {
@@ -656,9 +686,14 @@ model Organization {
   phone                String?
   website              String? @db.Text
   logo                 String? // URL to logo in Vercel Blob
-  businessRegistration String? // Company registration number
-  taxNumber            String? // Tax/VAT number
-  billingAddress       String? @db.Text
+
+  // Approval system
+  status               OrganizationStatus @default(PENDING_APPROVAL)
+  approvedById         String?           // ID of the admin who approved
+  approvedBy           User?             @relation("OrganizationApprovals", fields: [approvedById], references: [id])
+  approvedAt           DateTime?         // When the organization was approved
+  rejectedAt           DateTime?         // When the organization was rejected
+  rejectionReason      String?           @db.Text // Reason for rejection if applicable
 
   // Billing configuration
   billingModel OrganizationBillingModel @default(CONSOLIDATED) // How this org handles billing
@@ -667,14 +702,10 @@ model Organization {
   locations           Location[]
   serviceProviders    ServiceProvider[]
   memberships         OrganizationMembership[]
+  invitations         OrganizationInvitation[]
   subscriptions       Subscription[] // For consolidated billing
   providerConnections OrganizationProviderConnection[]
   availabilities      Availability[] // Availabilities created by this organization
-
-  // Settings
-  timezone             String  @default("UTC")
-  defaultBookingWindow Int     @default(30) // Days in advance bookings can be made
-  requiresApproval     Boolean @default(false) // Whether new providers need approval
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -688,6 +719,51 @@ enum OrganizationBillingModel {
   HYBRID // Mix of consolidated and per-location
 }
 
+enum OrganizationStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+// Separate model for invitations
+model OrganizationInvitation {
+  id             String                   @id @default(cuid())
+  organization   Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  email          String                   // Email address of the invitee
+  role           OrganizationRole         // Proposed role
+  permissions    OrganizationPermission[] // Proposed permissions
+  token          String                   @unique // Unique token for accepting invitation
+  expiresAt      DateTime                 // When the invitation expires
+  
+  // Who sent the invitation
+  invitedBy      User                     @relation("SentInvitations", fields: [invitedById], references: [id])
+  invitedById    String
+  
+  // Status tracking
+  status         InvitationStatus         @default(PENDING)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  acceptedAt     DateTime?
+  
+  // If accepted, the resulting membership
+  membership     OrganizationMembership?  @relation(fields: [membershipId], references: [id])
+  membershipId   String?                  @unique
+  
+  @@index([organizationId])
+  @@index([email])
+  @@index([token])
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  CANCELLED
+}
+
 model OrganizationMembership {
   id             String                   @id @default(cuid())
   organization   Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -697,18 +773,17 @@ model OrganizationMembership {
   role           OrganizationRole
   permissions    OrganizationPermission[]
 
-  // Invitation management
-  invitedBy  String? // User ID who sent the invitation
-  invitedAt  DateTime?
-  acceptedAt DateTime?
-  status     MembershipStatus @default(ACTIVE)
-
+  // Membership status
+  status         MembershipStatus         @default(ACTIVE)
+  
   // Relations
-  bookingsCreated Booking[]                       @relation("BookedByOrgMember")
-  history         OrganizationMembershipHistory[] // Back-reference for membership history
+  invitation         OrganizationInvitation?
+  bookingsCreated    Booking[]               @relation("BookedByOrgMember")
+  availabilitiesCreated Availability[]      @relation("CreatedByOrgMember") // Track availabilities created by this member
+  history            OrganizationMembershipHistory[] // Back-reference for membership history
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
 
   @@unique([organizationId, userId])
   @@index([userId])
@@ -788,41 +863,32 @@ model Location {
   organizationId String
 
   // Location details
-  name       String // e.g., "Downtown Clinic", "Main Branch"
-  address    String  @db.Text
-  city       String
-  state      String?
-  postalCode String?
-  country    String  @default("South Africa")
-
+  name           String // e.g., "Downtown Clinic", "Main Branch"
+  
+  // Google Maps integration (source of truth for address data)
+  googlePlaceId  String       @unique // Google Places API ID (required)
+  formattedAddress String      @db.Text // Full formatted address from Google
+  coordinates    Json         // Store lat/lng coordinates as {lat: number, lng: number}
+  addressComponents Json       // Store all address components from Google
+  
+  // Cached address components for search/filtering (derived from Google data)
+  city           String
+  country        String       @default("South Africa")
+  
   // Contact information
-  phone String?
-  email String?
-
-  // Operational details
-  operatingHours    Json? // Store operating hours as JSON
-  timezone          String? // Override organization timezone if needed
-  capacity          Int? // Maximum concurrent appointments
-  facilities        String[] // Array of available facilities
-  accessibilityInfo String?  @db.Text
-
-  // Google integration
-  googlePlaceId String? // Google Places API ID
-  coordinates   Json? // Store lat/lng coordinates
-
+  phone          String?
+  email          String?
+  
   // Relations
   serviceProviders ServiceProvider[]
   subscriptions    Subscription[] // For per-location billing
   availabilities   Availability[] // Availabilities at this location
-
-  // Status
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
   @@index([organizationId])
-  @@index([city, isActive])
+  @@index([city, country])
 }
 
 // ORGANIZATION-PROVIDER CONNECTIONS
