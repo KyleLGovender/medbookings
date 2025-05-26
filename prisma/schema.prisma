@@ -25,27 +25,29 @@ generator zod {
 
 // Base User model and auth
 model User {
-  id                      String                   @id @default(cuid())
-  name                    String?
-  email                   String?                  @unique
-  emailVerified           DateTime?
-  phone                   String?
-  phoneVerified           DateTime?
-  whatsapp                String?
-  whatsappVerified        DateTime?
-  password                String?
-  image                   String?
-  role                    UserRole                 @default(USER)
+  id                       String                          @id @default(cuid())
+  name                     String?
+  email                    String?                         @unique
+  emailVerified            DateTime?
+  phone                    String?
+  phoneVerified            DateTime?
+  whatsapp                 String?
+  whatsappVerified         DateTime?
+  password                 String?
+  image                    String?
+  role                     UserRole                        @default(USER)
   // Relations
-  accounts                Account[]
-  serviceProvider         ServiceProvider?
-  bookingsCreated         Booking[]                @relation("BookedBy")
-  bookingsAsClient        Booking[]                @relation("BookingClient")
-  notificationPreferences NotificationPreference[]
-  createdAt               DateTime                 @default(now())
-  updatedAt               DateTime                 @updatedAt
-  reviews                 Review[]
-  validatedRequirements   RequirementSubmission[]  @relation("ValidatedBy")
+  accounts                 Account[]
+  serviceProvider          ServiceProvider?
+  bookingsCreated          Booking[]                       @relation("BookedBy")
+  bookingsAsClient         Booking[]                       @relation("BookingClient")
+  notificationPreferences  NotificationPreference[]
+  organizationMemberships  OrganizationMembership[]
+  membershipHistoryChanges OrganizationMembershipHistory[]
+  createdAt                DateTime                        @default(now())
+  updatedAt                DateTime                        @updatedAt
+  reviews                  Review[]
+  validatedRequirements    RequirementSubmission[]         @relation("ValidatedBy")
 }
 
 enum UserRole {
@@ -107,7 +109,6 @@ model ServiceProvider {
   updatedAt              DateTime                    @updatedAt
   trialStarted           DateTime?
   trialEnded             DateTime?
-  subscription           Subscription?
   googlePlaceId          String? // Google Business Profile ID
   googleBusinessAccount  String? // Google Business Account ID
   averageRating          Float? // Cached average rating
@@ -118,6 +119,21 @@ model ServiceProvider {
   billingType            BillingType                 @default(PRIVATE_ONLY)
   website                String?                     @db.Text // Must be a valid URL
   availabilityConfigs    ServiceAvailabilityConfig[]
+
+  // Provider connections to organizations
+  providerConnections OrganizationProviderConnection[]
+
+  // Direct organization/location (for simple cases)
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+  location       Location?     @relation(fields: [locationId], references: [id])
+  locationId     String?
+
+  // Individual subscription (always available)
+  subscriptions Subscription[]
+
+  // Permissions
+  canBeBookedByOrg Boolean @default(false) // Whether org admins can book on their behalf
 }
 
 enum ServiceProviderStatus {
@@ -282,8 +298,13 @@ model CalculatedAvailabilitySlot {
   booking         Booking? // One-to-one relation with booking
   lastCalculated  DateTime // When this slot was last recalculated
 
+  // Add billing relationship
+  billedToSubscription   Subscription? @relation(name: "BilledSlots", fields: [billedToSubscriptionId], references: [id])
+  billedToSubscriptionId String? // Which subscription this slot is billed to
+
   @@index([availabilityId, serviceId, startTime, status])
   @@index([startTime, status, serviceId])
+  @@index([billedToSubscriptionId]) // For billing queries
 }
 
 enum SlotStatus {
@@ -324,7 +345,6 @@ model Booking {
   price         Decimal           @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
   isOnline      Boolean
   isInPerson    Boolean           @default(false)
-  location      String?
   status        BookingStatus     @default(PENDING)
   notes         String?           @db.Text
   notifications NotificationLog[]
@@ -334,6 +354,12 @@ model Booking {
   // Add these fields
   meetLink        String? // Store Google Meet link
   calendarEventId String? // Store Google Calendar event ID
+
+  // Location and organization context
+  location             Location?               @relation(fields: [locationId], references: [id])
+  locationId           String?
+  bookedByOrgMember    OrganizationMembership? @relation("BookedByOrgMember", fields: [bookedByMembershipId], references: [id])
+  bookedByMembershipId String? // When booked by organization staff
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -434,24 +460,352 @@ enum MeetSessionStatus {
   CANCELLED
 }
 
+// ORGANIZATION MODELS
+model Organization {
+  id                   String  @id @default(cuid())
+  name                 String
+  description          String? @db.Text
+  email                String?
+  phone                String?
+  website              String? @db.Text
+  logo                 String? // URL to logo in Vercel Blob
+  businessRegistration String? // Company registration number
+  taxNumber            String? // Tax/VAT number
+  billingAddress       String? @db.Text
+
+  // Billing configuration
+  billingModel OrganizationBillingModel @default(CONSOLIDATED) // How this org handles billing
+
+  // Relations
+  locations           Location[]
+  serviceProviders    ServiceProvider[]
+  memberships         OrganizationMembership[]
+  subscriptions       Subscription[] // For consolidated billing
+  providerConnections OrganizationProviderConnection[]
+
+  // Settings
+  timezone             String  @default("UTC")
+  defaultBookingWindow Int     @default(30) // Days in advance bookings can be made
+  requiresApproval     Boolean @default(false) // Whether new providers need approval
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+}
+
+enum OrganizationBillingModel {
+  CONSOLIDATED // One subscription for entire organization
+  PER_LOCATION // Each location has its own subscription
+  HYBRID // Mix of consolidated and per-location
+}
+
+model OrganizationMembership {
+  id             String                   @id @default(cuid())
+  organization   Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  user           User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  role           OrganizationRole
+  permissions    OrganizationPermission[]
+
+  // Invitation management
+  invitedBy  String? // User ID who sent the invitation
+  invitedAt  DateTime?
+  acceptedAt DateTime?
+  status     MembershipStatus @default(ACTIVE)
+
+  // Relations
+  bookingsCreated Booking[]                       @relation("BookedByOrgMember")
+  history         OrganizationMembershipHistory[] // Back-reference for membership history
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+enum OrganizationRole {
+  OWNER // Full control, billing responsibility
+  ADMIN // Operational control, can manage providers and bookings
+  MANAGER // Limited admin rights, can manage specific locations/providers
+  STAFF // Basic operational access
+}
+
+enum OrganizationPermission {
+  MANAGE_PROVIDERS // Add/remove/edit service providers
+  MANAGE_BOOKINGS // Create/modify/cancel bookings on behalf of providers
+  MANAGE_LOCATIONS // Add/edit locations
+  MANAGE_STAFF // Invite/remove staff members
+  VIEW_ANALYTICS // Access to reports and analytics
+  MANAGE_BILLING // Access to billing and subscription
+  RESPOND_TO_MESSAGES // Respond to patient messages
+  MANAGE_AVAILABILITY // Set availability for providers
+}
+
+enum MembershipStatus {
+  PENDING // Invitation sent but not accepted
+  ACTIVE // Active member
+  SUSPENDED // Temporarily suspended
+  INACTIVE // Left or removed
+}
+
+// Add audit trail for organization membership changes
+model OrganizationMembershipHistory {
+  id           String                 @id @default(cuid())
+  membership   OrganizationMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  membershipId String
+
+  // What changed
+  changeType     MembershipChangeType
+  oldRole        OrganizationRole? // Previous role (null for new memberships)
+  newRole        OrganizationRole? // New role (null for deletions)
+  oldPermissions OrganizationPermission[] // Previous permissions
+  newPermissions OrganizationPermission[] // New permissions
+  oldStatus      MembershipStatus? // Previous status
+  newStatus      MembershipStatus? // New status
+
+  // Who and when
+  changedBy    User    @relation(fields: [changedById], references: [id])
+  changedById  String
+  changeReason String? @db.Text // Optional reason for the change
+
+  // Context
+  ipAddress String? // IP address of the person making the change
+  userAgent String? @db.Text // Browser/app info
+
+  createdAt DateTime @default(now())
+
+  @@index([membershipId, createdAt])
+  @@index([changedById, createdAt])
+  @@index([changeType, createdAt])
+}
+
+enum MembershipChangeType {
+  CREATED // New membership created
+  ROLE_CHANGED // Role was modified
+  PERMISSIONS_CHANGED // Permissions were modified
+  STATUS_CHANGED // Status changed (activated, suspended, etc.)
+  DELETED // Membership was removed
+  INVITATION_SENT // Invitation was sent
+  INVITATION_ACCEPTED // User accepted invitation
+  INVITATION_REJECTED // User rejected invitation
+}
+
+// LOCATION MODEL
+model Location {
+  id             String       @id @default(cuid())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  // Location details
+  name       String // e.g., "Downtown Clinic", "Main Branch"
+  address    String  @db.Text
+  city       String
+  state      String?
+  postalCode String?
+  country    String  @default("South Africa")
+
+  // Contact information
+  phone String?
+  email String?
+
+  // Operational details
+  operatingHours    Json? // Store operating hours as JSON
+  timezone          String? // Override organization timezone if needed
+  capacity          Int? // Maximum concurrent appointments
+  facilities        String[] // Array of available facilities
+  accessibilityInfo String?  @db.Text
+
+  // Google integration
+  googlePlaceId String? // Google Places API ID
+  coordinates   Json? // Store lat/lng coordinates
+
+  // Relations
+  serviceProviders ServiceProvider[]
+  bookings         Booking[]
+  subscriptions    Subscription[] // For per-location billing
+
+  // Status
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([city, isActive])
+}
+
+// ORGANIZATION-PROVIDER CONNECTIONS
+// Simple connection model to establish relationships between organizations and providers
+model OrganizationProviderConnection {
+  id                String          @id @default(cuid())
+  organization      Organization    @relation(fields: [organizationId], references: [id])
+  organizationId    String
+  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
+  serviceProviderId String
+
+  status ConnectionStatus @default(PENDING)
+
+  // Billing preference (can be changed per availability)
+  defaultBilledBy BillingEntity @default(ORGANIZATION)
+
+  requestedAt DateTime  @default(now())
+  acceptedAt  DateTime?
+
+  @@unique([organizationId, serviceProviderId])
+  @@index([serviceProviderId])
+  @@index([organizationId])
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  SUSPENDED
+}
+
+enum BillingEntity {
+  ORGANIZATION // Organization pays for bookings
+  LOCATION // Location pays for bookings  
+  PROVIDER // Provider pays for their own subscription
+}
+
+// SUBSCRIPTIONS
 model Subscription {
-  id                   String             @id @default(cuid())
-  serviceProvider      ServiceProvider    @relation(fields: [serviceProviderId], references: [id])
-  serviceProviderId    String             @unique
-  status               SubscriptionStatus
-  plan                 SubscriptionPlan   @relation(fields: [planId], references: [id])
-  planId               String
-  trialStart           DateTime?
-  trialEnd             DateTime?
-  startDate            DateTime
-  endDate              DateTime?
-  cancelledAt          DateTime?
-  cancelReason         String?
+  id String @id @default(cuid())
+
+  // Polymorphic relations - only one should be set
+  organization      Organization?    @relation(fields: [organizationId], references: [id])
+  organizationId    String?
+  location          Location?        @relation(fields: [locationId], references: [id])
+  locationId        String?
+  serviceProvider   ServiceProvider? @relation(fields: [serviceProviderId], references: [id])
+  serviceProviderId String?
+
+  // Subscription details
+  status SubscriptionStatus
+  plan   SubscriptionPlan   @relation(fields: [planId], references: [id])
+  planId String
+
+  // Trial management
+  trialStart DateTime?
+  trialEnd   DateTime?
+
+  // Subscription lifecycle
+  startDate    DateTime
+  endDate      DateTime?
+  cancelledAt  DateTime?
+  cancelReason String?
+
+  // Stripe integration
   stripeCustomerId     String?
   stripeSubscriptionId String?
-  payments             Payment[]
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+
+  // Usage tracking for tiered pricing
+  currentMonthSlots Int      @default(0) // Changed from bookings to slots
+  billingCycleStart DateTime // When current billing cycle started
+  billingCycleEnd   DateTime // When current billing cycle ends
+
+  // Relations
+  payments     Payment[]
+  usageRecords UsageRecord[] // Track slot usage for billing
+  billedSlots  CalculatedAvailabilitySlot[] @relation("BilledSlots") // Slots billed to this subscription
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Replace existing SubscriptionPlan model
+model SubscriptionPlan {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+
+  // Base pricing
+  basePrice Decimal         @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive()) // e.g., R300
+  currency  String          @default("ZAR")
+  interval  BillingInterval
+
+  // Tiered slot pricing
+  includedSlots Int   @default(30) // Free slots included in base price
+  tierPricing   Json // Store tiered pricing structure as JSON
+  // Plan features and limits
+  features      Json? // Store plan features as JSON
+  maxProviders  Int? // Max providers (for org/location plans)
+  maxLocations  Int? // Max locations (for org plans)
+
+  // Plan status
+  isActive      Boolean @default(true)
+  stripePriceId String? // Base price ID in Stripe
+
+  // Relations
+  subscriptions Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// New model: Track usage for tiered billing
+model UsageRecord {
+  id             String       @id @default(cuid())
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String
+
+  // Usage details - linked to availability slot
+  slotId       String // Reference to CalculatedAvailabilitySlot
+  slotDate     DateTime // When the slot occurred (for billing cycle)
+  slotStatus   SlotStatus // Track what happened to the slot
+  billingCycle String // e.g., "2024-01" for Jan 2024
+
+  // Provider and service context
+  serviceProviderId String // Which provider this slot belongs to
+  serviceId         String // Which service this slot was for
+
+  // Pricing applied
+  tierUsed     Int // Which tier this slot fell into
+  priceCharged Decimal @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
+
+  // Tracking
+  processed   Boolean   @default(false) // Whether this has been billed
+  processedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([subscriptionId, billingCycle])
+  @@index([processed, billingCycle])
+  @@index([slotId]) // For quick slot lookups
+}
+
+// Update Payment model
+model Payment {
+  id             String       @id @default(cuid())
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String
+
+  // Payment details
+  amount      Decimal  @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
+  baseAmount  Decimal? @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive()) // Base subscription fee
+  usageAmount Decimal? @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive()) // Usage-based charges
+  currency    String
+
+  // Payment status
+  status          PaymentStatus
+  stripePaymentId String?
+  stripeInvoiceId String?
+  paidAt          DateTime?
+  failureReason   String?
+
+  // Billing period this payment covers
+  billingPeriodStart DateTime?
+  billingPeriodEnd   DateTime?
+  slotsCovered       Int? // Number of slots this payment covers
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subscriptionId, billingPeriodStart])
 }
 
 enum SubscriptionStatus {
@@ -462,46 +816,9 @@ enum SubscriptionStatus {
   TRIALING
 }
 
-model SubscriptionPlan {
-  id            String          @id @default(cuid())
-  name          String
-  description   String?
-  price         Decimal         @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
-  interval      BillingInterval
-  currency      String          @default("USD")
-  isActive      Boolean         @default(true)
-  stripePriceId String? // Stripe price ID
-  subscriptions Subscription[]
-  features      Json? // Store plan features as JSON
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-}
-
 enum BillingInterval {
   MONTHLY
   YEARLY
-}
-
-model Payment {
-  id              String        @id @default(cuid())
-  subscription    Subscription  @relation(fields: [subscriptionId], references: [id])
-  subscriptionId  String
-  amount          Decimal       @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
-  currency        String
-  status          PaymentStatus
-  stripePaymentId String?
-  stripeInvoiceId String?
-  paidAt          DateTime?
-  failureReason   String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-}
-
-enum PaymentStatus {
-  PENDING
-  SUCCEEDED
-  FAILED
-  REFUNDED
 }
 
 model Review {
@@ -531,4 +848,11 @@ enum ReviewStatus {
   HIDDEN // Hidden by admin
   FLAGGED // Flagged for review
   SYNCED // Synced with Google
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
 }
