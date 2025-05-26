@@ -39,11 +39,12 @@ model User {
   // Relations
   accounts                 Account[]
   serviceProvider          ServiceProvider?
-  bookingsCreated          Booking[]                       @relation("BookedBy")
+  bookingsCreated          Booking[]                       @relation("BookedByUser") // Bookings created by individual users
   bookingsAsClient         Booking[]                       @relation("BookingClient")
   notificationPreferences  NotificationPreference[]
   organizationMemberships  OrganizationMembership[]
   membershipHistoryChanges OrganizationMembershipHistory[]
+  availabilitiesCreated    Availability[] // Availabilities created by this user
   createdAt                DateTime                        @default(now())
   updatedAt                DateTime                        @updatedAt
   reviews                  Review[]
@@ -88,52 +89,47 @@ model ServiceProviderType {
 
 // Service Provider
 model ServiceProvider {
-  id                     String                      @id @default(cuid())
+  id                     String                           @id @default(cuid())
   name                   String
-  user                   User                        @relation(fields: [userId], references: [id])
-  userId                 String                      @unique
-  serviceProviderType    ServiceProviderType         @relation(fields: [serviceProviderTypeId], references: [id])
+  user                   User                             @relation(fields: [userId], references: [id])
+  userId                 String                           @unique
+  serviceProviderType    ServiceProviderType              @relation(fields: [serviceProviderTypeId], references: [id])
   serviceProviderTypeId  String
-  bio                    String?                     @db.Text
-  email                  String                      @default("default@example.com")
-  whatsapp               String                      @default("+1234567890")
+  bio                    String?                          @db.Text
+  email                  String                           @default("default@example.com")
+  whatsapp               String                           @default("+1234567890")
   services               Service[]
   requirementSubmissions RequirementSubmission[]
   availabilities         Availability[]
-  bookings               Booking[]
   calendarIntegration    CalendarIntegration?
-  status                 ServiceProviderStatus       @default(PENDING)
+  status                 ServiceProviderStatus            @default(PENDING)
   verifiedAt             DateTime?
-  timezone               String                      @default("UTC")
-  createdAt              DateTime                    @default(now())
-  updatedAt              DateTime                    @updatedAt
+  timezone               String                           @default("UTC")
+  createdAt              DateTime                         @default(now())
+  updatedAt              DateTime                         @updatedAt
   trialStarted           DateTime?
   trialEnded             DateTime?
   googlePlaceId          String? // Google Business Profile ID
   googleBusinessAccount  String? // Google Business Account ID
   averageRating          Float? // Cached average rating
-  totalReviews           Int                         @default(0)
+  totalReviews           Int                              @default(0)
   reviews                Review[]
   image                  String // URL to provider's image in Vercel Blob
   languages              Languages[] // Array of languages spoken
-  billingType            BillingType                 @default(PRIVATE_ONLY)
-  website                String?                     @db.Text // Must be a valid URL
+  billingType            BillingType                      @default(PRIVATE_ONLY)
+  website                String?                          @db.Text // Must be a valid URL
   availabilityConfigs    ServiceAvailabilityConfig[]
-
   // Provider connections to organizations
-  providerConnections OrganizationProviderConnection[]
-
+  providerConnections    OrganizationProviderConnection[]
   // Direct organization/location (for simple cases)
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  organizationId String?
-  location       Location?     @relation(fields: [locationId], references: [id])
-  locationId     String?
-
+  organization           Organization?                    @relation(fields: [organizationId], references: [id])
+  organizationId         String?
+  location               Location?                        @relation(fields: [locationId], references: [id])
+  locationId             String?
   // Individual subscription (always available)
-  subscriptions Subscription[]
-
+  subscriptions          Subscription[]
   // Permissions
-  canBeBookedByOrg Boolean @default(false) // Whether org admins can book on their behalf
+  canBeBookedByOrg       Boolean                          @default(false) // Whether org admins can book on their behalf
 }
 
 enum ServiceProviderStatus {
@@ -240,7 +236,6 @@ model Service {
   providers             ServiceProvider[]
   availabilityConfigs   ServiceAvailabilityConfig[]
   calculatedSlots       CalculatedAvailabilitySlot[]
-  bookings              Booking[]
   createdAt             DateTime                     @default(now())
   updatedAt             DateTime                     @updatedAt
 
@@ -270,41 +265,81 @@ model ServiceAvailabilityConfig {
 
 // Modified Availability model
 model Availability {
-  id                String                       @id @default(cuid())
-  serviceProvider   ServiceProvider              @relation(fields: [serviceProviderId], references: [id])
+  id                String          @id @default(cuid())
+  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
   serviceProviderId String
-  startTime         DateTime
-  endTime           DateTime
+
+  // Organization context - who created this availability
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+  location       Location?     @relation(fields: [locationId], references: [id])
+  locationId     String?
+
+  // Reference to the connection (if created by organization)
+  providerConnection OrganizationProviderConnection? @relation(fields: [connectionId], references: [id])
+  connectionId       String?
+
+  // Availability details
+  startTime DateTime
+  endTime   DateTime
+
+  // Status for organization-created availability
+  status      AvailabilityStatus @default(PENDING)
+  createdBy   User?              @relation(fields: [createdById], references: [id])
+  createdById String? // Who created this availability (org admin)
+  acceptedAt  DateTime? // When provider accepted
+
+  // Billing context - determines who pays for slots from this availability
+  billingEntity         BillingEntity? // Who is responsible for billing slots from this availability
+  defaultSubscription   Subscription?  @relation(fields: [defaultSubscriptionId], references: [id])
+  defaultSubscriptionId String? // Default subscription to bill slots to
+
   availableServices ServiceAvailabilityConfig[]
   calculatedSlots   CalculatedAvailabilitySlot[]
   createdAt         DateTime                     @default(now())
   updatedAt         DateTime                     @updatedAt
 
   @@index([serviceProviderId, startTime, endTime])
+  @@index([organizationId, status])
+  @@index([connectionId])
+  @@index([billingEntity, organizationId])
+}
+
+enum AvailabilityStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }
 
 // Modified CalculatedAvailabilitySlot model
 model CalculatedAvailabilitySlot {
-  id              String                    @id @default(cuid())
-  availability    Availability              @relation(fields: [availabilityId], references: [id])
-  availabilityId  String
-  service         Service                   @relation(fields: [serviceId], references: [id])
-  serviceId       String
-  serviceConfig   ServiceAvailabilityConfig @relation(fields: [serviceConfigId], references: [id])
-  serviceConfigId String
-  startTime       DateTime
-  endTime         DateTime
-  status          SlotStatus                @default(AVAILABLE)
-  booking         Booking? // One-to-one relation with booking
-  lastCalculated  DateTime // When this slot was last recalculated
+  id                     String                    @id @default(cuid())
+  availability           Availability              @relation(fields: [availabilityId], references: [id])
+  availabilityId         String
+  service                Service                   @relation(fields: [serviceId], references: [id])
+  serviceId              String
+  serviceConfig          ServiceAvailabilityConfig @relation(fields: [serviceConfigId], references: [id])
+  serviceConfigId        String
+  startTime              DateTime
+  endTime                DateTime
+  status                 SlotStatus                @default(AVAILABLE)
+  booking                Booking? // One-to-one relation with booking
+  lastCalculated         DateTime // When this slot was last recalculated
+  // Billing relationship - which subscription this slot is billed to
+  billedToSubscription   Subscription?             @relation(name: "BilledSlots", fields: [billedToSubscriptionId], references: [id])
+  billedToSubscriptionId String?
+  // Calendar blocking - external events that make this slot unavailable
+  blockedByCalendarEvent CalendarEvent?            @relation(name: "BlockedByCalendarEvent", fields: [blockedByEventId], references: [id])
+  blockedByEventId       String? // If this slot is blocked by an external calendar event
 
-  // Add billing relationship
-  billedToSubscription   Subscription? @relation(name: "BilledSlots", fields: [billedToSubscriptionId], references: [id])
-  billedToSubscriptionId String? // Which subscription this slot is billed to
+  // Version tracking for optimistic locking during sync operations
+  version Int @default(1) // Increment on each update to prevent race conditions
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([availabilityId, serviceId, startTime, status])
   @@index([startTime, status, serviceId])
-  @@index([billedToSubscriptionId]) // For billing queries
 }
 
 enum SlotStatus {
@@ -320,9 +355,11 @@ model Booking {
   slot   CalculatedAvailabilitySlot? @relation(fields: [slotId], references: [id])
   slotId String?                     @unique // One booking per slot
 
-  // Who created the booking
-  bookedBy   User?   @relation("BookedBy", fields: [bookedById], references: [id])
-  bookedById String?
+  // Who created the booking - simplified to single reference
+  bookedByMembership   OrganizationMembership? @relation("BookedByOrgMember", fields: [bookedByMembershipId], references: [id])
+  bookedByMembershipId String? // When booked by organization staff
+  bookedByUser         User?                   @relation("BookedByUser", fields: [bookedByUserId], references: [id])
+  bookedByUserId       String? // When booked by individual user (not org staff)
 
   // Client Information
   client        User?   @relation("BookingClient", fields: [clientId], references: [id])
@@ -332,40 +369,31 @@ model Booking {
   guestPhone    String? // Optional contact for guests
   guestWhatsapp String? // Optional contact for guests
 
-  // Service Provider and Service details
-  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
-  serviceProviderId String
-  service           Service         @relation(fields: [serviceId], references: [id])
-  serviceId         String
+  // Booking details (price and preferences not in slot)
+  price      Decimal       @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
+  isOnline   Boolean
+  isInPerson Boolean       @default(false)
+  status     BookingStatus @default(PENDING)
+  notes      String?       @db.Text
 
-  // Booking details
-  startTime     DateTime
-  endTime       DateTime
-  duration      Int // in minutes
-  price         Decimal           @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
-  isOnline      Boolean
-  isInPerson    Boolean           @default(false)
-  status        BookingStatus     @default(PENDING)
-  notes         String?           @db.Text
+  // Integration details
+  meetLink        String? // Store Google Meet link
+  calendarEventId String? // Store Google Calendar event ID
+
+  // Relations
   notifications NotificationLog[]
   review        Review?
   meetSession   MeetSession?
 
-  // Add these fields
-  meetLink        String? // Store Google Meet link
-  calendarEventId String? // Store Google Calendar event ID
-
-  // Location and organization context
-  location             Location?               @relation(fields: [locationId], references: [id])
-  locationId           String?
-  bookedByOrgMember    OrganizationMembership? @relation("BookedByOrgMember", fields: [bookedByMembershipId], references: [id])
-  bookedByMembershipId String? // When booked by organization staff
+  // Version tracking for optimistic locking during sync operations
+  version Int @default(1) // Increment on each update to prevent race conditions
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([serviceProviderId, status])
+  @@index([slotId, status])
   @@index([clientId, createdAt])
+  @@index([bookedByMembershipId])
 }
 
 enum BookingStatus {
@@ -433,14 +461,173 @@ model CalendarIntegration {
   calendarId        String?
   syncEnabled       Boolean         @default(true)
   lastSyncedAt      DateTime?
-  // Add these fields
-  googleEmail       String? // The Google email account used
-  grantedScopes     String[] // Array of granted OAuth scopes
-  meetSettings      Json? // Store Meet preferences (default duration, etc.)
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+
+  // Enhanced sync capabilities
+  googleEmail   String? // The Google email account used
+  grantedScopes String[] // Array of granted OAuth scopes
+  meetSettings  Json? // Store Meet preferences (default duration, etc.)
+
+  // Webhook/Push notification setup
+  webhookChannelId  String? // Google Calendar push notification channel ID
+  webhookResourceId String? // Google Calendar resource ID for the watch
+  webhookExpiresAt  DateTime? // When the webhook expires
+  nextSyncToken     String? // For incremental sync from Google Calendar
+
+  // Sync configuration
+  syncDirection       CalendarSyncDirection @default(BIDIRECTIONAL)
+  blockingEventTypes  String[] // Which event types should block availability
+  autoCreateMeetLinks Boolean               @default(true)
+
+  // Background sync tracking
+  backgroundSyncEnabled Boolean   @default(true)
+  syncIntervalMinutes   Int       @default(15) // How often to run background reconciliation
+  lastFullSyncAt        DateTime? // When was the last complete reconciliation
+  syncFailureCount      Int       @default(0) // Track consecutive failures
+
+  // Relations
+  calendarEvents CalendarEvent[] // Track events synced from external calendar
+  syncOperations CalendarSyncOperation[] // Track all sync operations
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
+// Track external calendar events that block availability
+model CalendarEvent {
+  id                    String              @id @default(cuid())
+  calendarIntegration   CalendarIntegration @relation(fields: [calendarIntegrationId], references: [id])
+  calendarIntegrationId String
+
+  // External calendar details
+  externalEventId    String // Google Calendar event ID
+  externalCalendarId String // Which calendar this event is from
+  etag               String? // Google Calendar etag for change detection
+
+  // Event details
+  title     String
+  startTime DateTime
+  endTime   DateTime
+  isAllDay  Boolean  @default(false)
+
+  // Sync metadata for robust operations
+  lastSyncedAt           DateTime                @default(now())
+  eventType              String? // meeting, appointment, personal, etc.
+  blocksAvailability     Boolean                 @default(true) // Whether this event should block slots
+  syncStatus             CalendarEventSyncStatus @default(SYNCED)
+  lastModifiedInExternal DateTime? // When the event was last modified in Google Calendar
+
+  // Conflict detection
+  hasConflict        Boolean   @default(false)
+  conflictDetails    String?   @db.Text // JSON with conflict information
+  conflictResolvedAt DateTime?
+
+  // Version tracking for optimistic locking
+  version Int @default(1)
+
+  // Relations to blocked slots
+  blockedSlots CalculatedAvailabilitySlot[] @relation("BlockedByCalendarEvent")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([calendarIntegrationId, externalEventId])
+  @@index([calendarIntegrationId, startTime, endTime])
+  @@index([syncStatus, hasConflict])
+  @@index([lastSyncedAt])
+}
+
+enum CalendarEventSyncStatus {
+  SYNCED // Successfully synced
+  PENDING_SYNC // Needs to be synced
+  SYNC_FAILED // Sync failed, needs retry
+  CONFLICT_DETECTED // Conflict detected, needs resolution
+  EXTERNAL_DELETED // Event was deleted in external calendar
+}
+
+enum CalendarSyncDirection {
+  IMPORT_ONLY // Only Google Calendar → MedBookings
+  EXPORT_ONLY // Only MedBookings → Google Calendar  
+  BIDIRECTIONAL // Both directions
+}
+
+// New model for tracking calendar sync operations
+model CalendarSyncOperation {
+  id                    String              @id @default(cuid())
+  calendarIntegration   CalendarIntegration @relation(fields: [calendarIntegrationId], references: [id])
+  calendarIntegrationId String
+
+  // Operation details
+  operationType CalendarSyncOperationType
+  sourceSystem  CalendarSyncSource // Which system initiated the change
+  status        CalendarSyncStatus        @default(PENDING)
+
+  // Target details
+  entityType      CalendarEntityType // BOOKING, CALENDAR_EVENT, AVAILABILITY_SLOT
+  entityId        String? // ID of the entity being synced
+  externalEventId String? // Google Calendar event ID
+
+  // Operation metadata
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  retryCount  Int       @default(0)
+  maxRetries  Int       @default(3)
+
+  // Error handling
+  errorMessage       String?             @db.Text
+  conflictResolution ConflictResolution? // How conflicts should be resolved
+
+  // Sync window for background operations
+  syncWindowStart DateTime?
+  syncWindowEnd   DateTime?
+  eventsProcessed Int       @default(0)
+  eventsSucceeded Int       @default(0)
+  eventsFailed    Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([calendarIntegrationId, status])
+  @@index([operationType, startedAt])
+  @@index([status, retryCount])
+}
+
+enum CalendarSyncOperationType {
+  FULL_SYNC // Complete reconciliation of all events
+  INCREMENTAL_SYNC // Process changes since last sync
+  WEBHOOK_SYNC // Process webhook notification
+  MANUAL_SYNC // User-triggered sync
+  CONFLICT_RESOLUTION // Resolve detected conflicts
+}
+
+enum CalendarSyncSource {
+  MEDBOOKINGS // Change originated in MedBookings
+  GOOGLE_CALENDAR // Change originated in Google Calendar
+  SYSTEM // System-initiated (background sync)
+}
+
+enum CalendarSyncStatus {
+  PENDING // Operation is queued
+  IN_PROGRESS // Currently processing
+  SUCCESS // Completed successfully
+  FAILED // Failed after retries
+  CONFLICT_DETECTED // Conflict needs resolution
+  SKIPPED // Skipped due to business rules
+}
+
+enum CalendarEntityType {
+  BOOKING
+  CALENDAR_EVENT
+  AVAILABILITY_SLOT
+}
+
+enum ConflictResolution {
+  GOOGLE_WINS // Prefer Google Calendar version
+  MEDBOOKINGS_WINS // Prefer MedBookings version
+  MANUAL_REVIEW // Require manual intervention
+  LATEST_WINS // Use most recently updated version
+}
+
+// Modified MeetSession model
 model MeetSession {
   id        String            @id @default(cuid())
   booking   Booking           @relation(fields: [bookingId], references: [id])
@@ -482,6 +669,7 @@ model Organization {
   memberships         OrganizationMembership[]
   subscriptions       Subscription[] // For consolidated billing
   providerConnections OrganizationProviderConnection[]
+  availabilities      Availability[] // Availabilities created by this organization
 
   // Settings
   timezone             String  @default("UTC")
@@ -624,8 +812,8 @@ model Location {
 
   // Relations
   serviceProviders ServiceProvider[]
-  bookings         Booking[]
   subscriptions    Subscription[] // For per-location billing
+  availabilities   Availability[] // Availabilities at this location
 
   // Status
   isActive Boolean @default(true)
@@ -650,6 +838,9 @@ model OrganizationProviderConnection {
 
   // Billing preference (can be changed per availability)
   defaultBilledBy BillingEntity @default(ORGANIZATION)
+
+  // Relations
+  availabilities Availability[] // Availabilities created through this connection
 
   requestedAt DateTime  @default(now())
   acceptedAt  DateTime?
@@ -709,12 +900,15 @@ model Subscription {
   billingCycleEnd   DateTime // When current billing cycle ends
 
   // Relations
-  payments     Payment[]
-  usageRecords UsageRecord[] // Track slot usage for billing
-  billedSlots  CalculatedAvailabilitySlot[] @relation("BilledSlots") // Slots billed to this subscription
+  payments                 Payment[]
+  usageRecords             UsageRecord[] // Track slot usage for billing
+  billedSlots              CalculatedAvailabilitySlot[] @relation("BilledSlots") // Slots billed to this subscription
+  defaultForAvailabilities Availability[] // Availabilities that default to this subscription
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([organizationId, startDate])
 }
 
 // Replace existing SubscriptionPlan model
