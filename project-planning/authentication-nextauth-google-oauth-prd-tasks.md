@@ -56,11 +56,11 @@
 
 - [ ] **4.0 Implement Route Protection using Middleware**
 
-  - [ ] 4.1 Review and update `src/middleware.ts`.
-  - [ ] 4.2 Import `withAuth` from `next-auth/middleware`.
-  - [ ] 4.3 Configure `withAuth` with the `authOptions` from `src/features/auth/lib/auth-options.ts` if custom callbacks/pages are needed in middleware context, or use default behavior.
-  - [ ] 4.4 Define the `config.matcher` in `middleware.ts` to protect routes like `/profile/:path*`, `/dashboard/:path*`, `/organizations/:path*`, `/providers/:path*`, `/bookings/:path*`, `/settings/:path*`, `/admin/:path*` (FR5.1).
-  - [ ] 4.5 Configure `pages.signIn` in `authOptions` (if not already done) or in `withAuth` options if redirecting unauthenticated users to a custom login page (e.g., `/auth/login` from task 3.7) (FR5.2).
+  - [x] 4.1 Create or verify `src/middleware.ts` to protect routes based on authentication status (FR5.1).
+  - [x] 4.2 Import `withAuth` from `next-auth/middleware`.
+  - [x] 4.3 Configure `withAuth` with the `authOptions` from `src/features/auth/lib/auth-options.ts` if custom callbacks/pages are needed in middleware context, or use default behavior.
+  - [x] 4.4 Define the `config.matcher` in `middleware.ts` to protect routes like `/profile/:path*`, `/dashboard/:path*`, `/organizations/:path*`, `/providers/:path*`, `/bookings/:path*`, `/settings/:path*`, `/admin/:path*` (FR5.1).
+  - [x] 4.5 Configure `pages.signIn` in `authOptions` (if not already done) or in `withAuth` options if redirecting unauthenticated users to a custom login page (e.g., `/auth/login` from task 3.7) (FR5.2).
 
 - [ ] **5.0 Finalize Implementation: Error Handling, Testing, and Cleanup**
   - [ ] 5.1 Implement basic UI feedback for Google sign-in errors (e.g., using query params like `?error=OAuthAccountNotLinked` on the sign-in page, or a toast notification system if available).
