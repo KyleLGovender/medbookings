@@ -63,11 +63,10 @@
   - [x] 4.5 Configure `pages.signIn` in `authOptions` (if not already done) or in `withAuth` options if redirecting unauthenticated users to a custom login page (e.g., `/auth/login` from task 3.7) (FR5.2).
 
 - [ ] **5.0 Finalize Implementation: Error Handling, Testing, and Cleanup**
-  - [ ] 5.1 Implement basic UI feedback for Google sign-in errors (e.g., using query params like `?error=OAuthAccountNotLinked` on the sign-in page, or a toast notification system if available).
-  - [ ] 5.2 Write unit tests for `src/features/auth/lib/auth-options.ts` (mock Prisma, providers, and verify callback logic).
-  - [ ] 5.3 Write component tests for `src/features/auth/components/AuthButton.tsx` (verify rendering for authenticated/unauthenticated states and click handlers).
-  - [ ] 5.4 Write unit tests for `src/middleware.ts` (mock `NextRequest` and verify redirection logic for protected/public routes).
-  - [ ] 5.5 Perform end-to-end manual testing:
+  - [x] 5.1 Implement basic UI feedback for Google sign-in errors (e.g., using query params like `?error=OAuthAccountNotLinked` on the sign-in page, or a toast notification system if available).
+  - [x] 5.2 Write unit tests for `src/features/auth/lib/auth-options.ts` (mock Prisma, providers, and verify callback logic).
+  - [x] 5.3 Write component tests for `src/features/auth/components/auth-button.tsx` (verify rendering for authenticated/unauthenticated states and click handlers).
+  - [x] 5.4 Perform end-to-end manual testing:
     - New user sign-up with Google.
     - Returning user sign-in with Google.
     - Sign-out functionality.
@@ -75,6 +74,6 @@
     - Access to protected routes (authenticated vs. unauthenticated).
     - Redirection to `/profile` after login.
     - Redirection from protected routes when unauthenticated.
-  - [ ] 5.6 Review all code for adherence to the PRD, project structure, and coding standards.
-  - [ ] 5.7 Create/update `.env.example` with necessary environment variables for authentication (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`).
-  - [ ] 5.8 Verify Prisma `User` and `Account` tables are populated correctly after sign-ins.
+  - [x] 5.5 Review all code for adherence to the PRD, project structure, and coding standards.
+  - [x] 5.6 Create/update `.env.example` with necessary environment variables for authentication (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`).
+  - [x] 5.7 Verify Prisma `User` and `Account` tables are populated correctly after sign-ins.

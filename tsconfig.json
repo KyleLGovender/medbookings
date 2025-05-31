@@ -13,6 +13,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "types": ["jest"],
     "plugins": [
       {
         "name": "next"
@@ -20,8 +21,8 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@prisma/*": ["./prisma/*"]
+      "@/*": ["./src/*"]
+      // "@prisma/*": ["./prisma/*"] // This can conflict with @prisma/client from node_modules
     }
   },
   "include": [

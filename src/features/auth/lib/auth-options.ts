@@ -1,6 +1,7 @@
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
-import { PrismaClient } from '@prisma/client';
-import { AuthOptions } from 'next-auth';
+import { PrismaClient, UserRole } from '@prisma/client';
+// Import UserRole from Prisma
+import type { AuthOptions, DefaultSession } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 
 import env from '@/config/env/server';
@@ -33,7 +34,12 @@ export const authOptions: AuthOptions = {
     },
     async session({ session, token }) {
       // The `token` object contains the data from the `jwt` callback
-      if (token && session.user) {
+      if (token) {
+        if (!session.user) {
+          // Initialize session.user if it doesn't exist and we have a token
+          // Adjust the type assertion as necessary for your DefaultSession['user']
+          session.user = {} as DefaultSession['user'] & { id: string; role: UserRole };
+        }
         session.user.id = token.id as string; // Add user ID to session
         session.user.name = token.name;
         session.user.email = token.email;
@@ -41,7 +47,7 @@ export const authOptions: AuthOptions = {
       }
       return session;
     },
-    async signIn() {
+    async signIn({ user, account, profile, email, credentials }) {
       // Return true to allow the sign-in process to continue.
       // The PrismaAdapter will handle user creation/update.
       return true;

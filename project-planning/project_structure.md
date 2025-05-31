@@ -33,6 +33,7 @@ src/
 │   │   │   ├── [id]/                 # Single booking view
 │   │   │   └── calendar/             # Calendar view
 │   │   │
+│   │   ├── admin/                    # Admin dashboard for SUPER_ADMIN & ADMIN roles
 │   │   └── settings/                 # User settings
 │   │
 │   ├── (marketing)/                  # Public marketing pages
@@ -78,7 +79,14 @@ src/
 │   ├── billing/                      # Billing and subscription feature
 │   ├── communications/               # Communications feature
 │   ├── reviews/                      # Reviews feature
-│   └── compliance/                   # Compliance feature
+│   ├── compliance/                   # Compliance feature
+│   └── admin/                        # Admin feature (management for ADMIN/SUPER_ADMIN)
+│       ├── api/                      # Admin API handlers
+│       ├── components/               # Admin-specific components
+│       ├── hooks/                    # Admin-related hooks
+│       ├── lib/                      # Admin utilities and services
+│       ├── types/                    # Admin types and schemas
+│       └── index.ts                  # Public exports
 │
 ├── components/                       # Shared UI components
 │   ├── ui/                           # Base UI components

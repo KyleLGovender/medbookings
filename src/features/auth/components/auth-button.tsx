@@ -79,7 +79,7 @@ export default function AuthButton({ profileMenuItems = [] }: AuthButtonProps) {
             {status === 'authenticated' && data?.user?.image && imageLoaded && (
               <Image
                 src={data.user.image}
-                alt=""
+                alt={data.user.name || 'User avatar'}
                 fill
                 sizes="32px"
                 className="absolute inset-0 rounded-full object-cover"

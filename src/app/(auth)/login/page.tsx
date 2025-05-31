@@ -1,7 +1,9 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import React from 'react';
 
+// Added
 import { signIn } from 'next-auth/react';
 
 // Placeholder for a simple button if you don't have a UI library Button
@@ -57,6 +59,23 @@ const GoogleIcon = () => (
 );
 
 export default function LoginPage() {
+  const searchParams = useSearchParams(); // Added
+  const error = searchParams.get('error'); // Added
+
+  // Added error messages map
+  const errorMessages: { [key: string]: string } = {
+    OAuthAccountNotLinked:
+      'This email is already associated with another account. Please sign in with the original method you used for this email.',
+    OAuthCallback: 'There was an error during the authentication process. Please try again.',
+    CredentialsSignin: 'Sign in failed. Check the details you provided are correct.',
+    EmailCreateAccount: 'Could not create account. Please try again later.',
+    EmailSignin: 'Could not send sign-in email. Please try again later.',
+    SessionRequired: 'Please sign in to access this page.',
+    Default: 'An unknown error occurred during authentication. Please try again.',
+    // Add more specific NextAuth.js error codes and messages as needed
+    // See: https://next-auth.js.org/configuration/pages#error-page
+  };
+
   return (
     <div
       style={{
@@ -68,6 +87,30 @@ export default function LoginPage() {
       }}
     >
       <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>Sign In to MedBookings</h1>
+
+      {/* Added error display block */}
+      {error && (
+        <div
+          style={{
+            color: 'hsl(350, 70%, 50%)', // A reddish color
+            backgroundColor: 'hsl(350, 70%, 95%)', // Light red background
+            marginTop: '0px',
+            marginBottom: '20px',
+            padding: '15px',
+            border: '1px solid hsl(350, 70%, 80%)', // Reddish border
+            borderRadius: '8px',
+            maxWidth: '400px',
+            textAlign: 'center',
+            fontSize: '14px',
+          }}
+        >
+          <p style={{ margin: 0, fontWeight: 'bold' }}>Authentication Error</p>
+          <p style={{ marginTop: '5px', marginBottom: 0 }}>
+            {errorMessages[error] || errorMessages.Default}
+          </p>
+        </div>
+      )}
+
       <Button onClick={() => signIn('google', { callbackUrl: '/profile' })}>
         {' '}
         {/* Ensure callbackUrl is desired */}
