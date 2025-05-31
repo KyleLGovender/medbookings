@@ -7,6 +7,10 @@ src/
 │   ├── (auth)/                       # Auth-related routes grouped
 │   │   └── login/                    # Google OAuth login page
 │   │
+│   ├── (compliance)/                 # Legal and compliance pages
+│   │   ├── privacy-policy/           # Privacy policy
+│   │   └── terms-of-use/             # Terms of use
+│   │
 │   ├── (dashboard)/                  # Protected dashboard routes
 │   │   ├── admin/                    # Admin dashboard for SUPER_ADMIN & ADMIN roles
 │   │   ├── bookings/                 # Booking management
@@ -33,44 +37,30 @@ src/
 │   │   │
 │   │   └── settings/                 # User settings
 │   │
-│   ├── (dynamic-content)/            # Public interactive content
-│   │   ├── bookings/                 # User's bookings
-│   │   │   ├── [id]/                 # Single booking view
-│   │   │   │   ├── cancel/           # Cancel booking
-│   │   │   │   ├── confirm/          # Confirm booking
-│   │   │   │   ├── decline/          # Decline booking
-│   │   │   │   ├── delete/           # Delete booking
-│   │   │   │   └── edit/             # Edit booking
-│   │   │   ├── new/                  # Create new booking
-│   │   │   │   └── [slotId]/         # Create booking for specific slot
-│   │   │   └── success/              # Booking success page
-│   │   │
-│   │   └── providers/                # Browse providers
-│   │       └── [id]/                 # Single provider view
-│   │           └── calendar/         # Provider's calendar for booking
+│   ├── bookings/                     # Public booking routes
+│   │   ├── [id]/                     # Single booking view
+│   │   ├── new/                      # Create new booking
+│   │   └── success/                  # Booking success page
 │   │
-│   ├── (static-content)/             # Public static content pages
-│   │   ├── about/                    # About page
-│   │   ├── contact/                  # Contact page
-│   │   ├── features/                 # Features showcase
-│   │   ├── pricing/                  # Pricing page
-│   │   ├── privacy-policy/           # Privacy policy page
-│   │   └── terms-of-use/             # Terms of use page
+│   ├── join-medbookings/             # Onboarding and signup pages
+│   │
+│   ├── providers/                    # Public provider discovery
+│   │   ├── [id]/                     # Single provider view
+│   │   └── bookings/                 # Provider's bookings page
 │   │
 │   ├── api/                          # API routes
 │   │   ├── auth/                     # Auth API endpoints
-│   │   │   └── [...nextauth]/         # NextAuth.js API route
-│   │   ├── availability/             # Availability API endpoints
 │   │   ├── billing/                  # Billing API endpoints
-│   │   ├── bookings/                 # Booking API endpoints
+│   │   ├── calendar/                 # Calendar API endpoints
+│   │   │   ├── availability/         # Availability API endpoints
+│   │   │   └── bookings/             # Bookings API endpoints
 │   │   ├── communications/           # Communications API endpoints
-│   │   ├── compliance/               # Compliance API endpoints
-│   │   ├── locations/                # Location API endpoints
-│   │   ├── organizations/            # Organization API endpoints
-│   │   ├── providers/                # Provider API endpoints
-│   │   ├── reviews/                  # Review API endpoints
-│   │   ├── services/                 # Service API endpoints
-│   │   └── users/                    # User API endpoints
+│   │   ├── debug-session/            # Debug session API endpoints
+│   │   ├── organizations/            # Organizations API endpoints (includes locations)
+│   │   ├── profile/                  # Profile API endpoints
+│   │   ├── providers/                # Providers API endpoints (includes compliance)
+│   │   ├── reviews/                  # Reviews API endpoints
+│   │   └── whatsapp-callback/        # WhatsApp webhook callback
 │   │
 │   ├── error.tsx                     # Global error handling
 │   ├── layout.tsx                    # Root layout
@@ -107,32 +97,23 @@ src/
 │
 ├── features/                         # Feature modules
 │   ├── admin/                        # Admin feature (management for ADMIN/SUPER_ADMIN)
-│   │   ├── api/                      # Admin API handlers
 │   │   ├── components/               # Admin-specific components
 │   │   ├── hooks/                    # Admin-related hooks
 │   │   ├── index.ts                  # Public exports
-│   │   ├── lib/                      # Admin utilities and services
+│   │   ├── lib/                      # Admin utilities and services (including API handlers)
 │   │   └── types/                    # Admin types and schemas
 │   │
 │   ├── auth/                         # Authentication feature (Google OAuth)
-│   │   ├── api/                      # Auth API handlers
-│   │   ├── components/               # Auth-specific components (e.g., AuthButton.tsx)
-│   │   ├── hooks/                    # Auth-related hooks (e.g., useAuth.ts)
-│   │   ├── index.ts                  # Public exports
-│   │   ├── lib/                      # Auth utilities and services (e.g., auth-options.ts)
-│   │   └── types/                    # Auth types and schemas
-│   │
-│   ├── availability/                 # Availability management feature
 │   ├── billing/                      # Billing and subscription feature
-│   ├── bookings/                     # Booking management feature
+│   ├── calendar/                      # Calendar management feature
+│   │   ├── availability/             # Availability management subfolder
+│   │   └── bookings/                # Bookings management subfolder
+│   │
 │   ├── communications/               # Communications feature
-│   ├── compliance/                   # Compliance feature
-│   ├── locations/                    # Location management feature
-│   ├── organizations/                # Organization management feature
-│   ├── providers/                    # Provider management feature
-│   ├── reviews/                      # Reviews feature
-│   ├── services/                     # Service management feature
-│   └── users/                        # User management feature
+│   ├── organizations/                # Organization management feature (includes locations)
+│   ├── providers/                    # Provider management feature (includes services and compliance)
+│   ├── profile/                      # User profile and account management
+│   └── reviews/                      # Reviews feature
 │
 ├── hooks/                            # Shared hooks
 │   ├── use-form.ts                   # Form handling hook

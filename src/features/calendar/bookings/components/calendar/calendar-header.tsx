@@ -1,37 +1,28 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
-import { debounce } from 'lodash';
 import { DateRange } from 'react-day-picker';
 
-import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
-import { DateRangeSelector } from '@/components/ui/date-range-selector';
 import { CalendarNavigation } from '@/features/calendar/components/calendar-utils/calendar-navigation';
 
-import {
-  AvailabilitySlot,
-  AvailabilityView,
-  ServiceProviderCalendarViewType,
-} from '../../lib/types';
-import { AvailabilityFormDialog } from '../availability-form/availability-form-dialog';
+import { AvailabilitySlot, AvailabilityView, CalendarViewType } from '../../../calendar/lib/types';
 
-interface ServiceProviderCalendarHeaderProps {
-  view: ServiceProviderCalendarViewType;
+interface CalendarHeaderProps {
+  view: CalendarViewType;
   rangeStartDate: Date;
   dateRange?: DateRange;
   serviceProviderId: string;
-  onDateSelect: (date: Date | undefined, fromView: ServiceProviderCalendarViewType) => void;
+  onDateSelect: (date: Date | undefined, fromView: CalendarViewType) => void;
   onDateRangeSelect: (range: DateRange | undefined) => void;
   onPrevious: () => void;
   onNext: () => void;
   onToday: () => void;
-  onViewChange: (view: ServiceProviderCalendarViewType) => void;
+  onViewChange: (view: CalendarViewType) => void;
   onRefresh: () => Promise<void>;
   onThisWeek: () => void;
   onTimeRangeChange?: (range: { start: number; end: number }) => void;
@@ -40,7 +31,7 @@ interface ServiceProviderCalendarHeaderProps {
   onServiceSelect: (serviceId: string | undefined) => void;
 }
 
-export function ServiceProviderCalendarHeader({
+export function CalendarHeader({
   view,
   rangeStartDate,
   dateRange = undefined,
@@ -57,18 +48,9 @@ export function ServiceProviderCalendarHeader({
   availabilityData = [],
   selectedServiceId,
   onServiceSelect,
-}: ServiceProviderCalendarHeaderProps) {
+}: CalendarHeaderProps) {
   const router = useRouter();
   const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
-
-  const debouncedUpdateUrl = useCallback(
-    (url: string) => {
-      router.replace(url, { scroll: false });
-    },
-    [router]
-  );
-
-  const debouncedUrlUpdate = useMemo(() => debounce(debouncedUpdateUrl, 300), [debouncedUpdateUrl]);
 
   const handlePrevious = () => {
     onPrevious();
@@ -82,7 +64,7 @@ export function ServiceProviderCalendarHeader({
     onToday();
   };
 
-  const handleDateSelect = (date: Date | undefined, fromView: ServiceProviderCalendarViewType) => {
+  const handleDateSelect = (date: Date | undefined, fromView: CalendarViewType) => {
     onDateSelect(date, view);
   };
 
@@ -98,9 +80,7 @@ export function ServiceProviderCalendarHeader({
   };
 
   // Get array of view options from ViewType
-  const viewOptions = Object.values(
-    ServiceProviderCalendarViewType
-  ) as ServiceProviderCalendarViewType[];
+  const viewOptions = Object.values(CalendarViewType) as CalendarViewType[];
 
   // Add this helper to get unique services
   const uniqueServices = useMemo(() => {
@@ -114,13 +94,6 @@ export function ServiceProviderCalendarHeader({
     });
     return Array.from(services.values());
   }, [availabilityData]);
-
-  const handleViewChange = useCallback(
-    (view: ServiceProviderCalendarViewType) => {
-      onViewChange(view);
-    },
-    [onViewChange]
-  );
 
   return (
     <header className="flex flex-col gap-4 border-b border-gray-200 px-6 py-4 md:flex-row md:items-center md:justify-between">
@@ -144,7 +117,7 @@ export function ServiceProviderCalendarHeader({
                   <MenuItem key={viewOption}>
                     <button
                       type="button"
-                      onClick={() => handleViewChange(viewOption)}
+                      onClick={() => onViewChange(viewOption)}
                       className="block w-full px-4 py-2 text-left text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900 data-[focus]:outline-none"
                     >
                       {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} view
@@ -157,12 +130,44 @@ export function ServiceProviderCalendarHeader({
         </div>
       </div>
 
+      {/* Add service filter for slots view */}
+      {view === 'slots' && (
+        <div className="mx-auto flex flex-col gap-2 md:mx-0 md:flex-row md:items-center">
+          <Menu as="div" className="relative">
+            <MenuButton
+              type="button"
+              className="flex items-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+            >
+              {selectedServiceId
+                ? uniqueServices.find((s) => s.id === selectedServiceId)?.name
+                : 'Please select service'}
+              <ChevronDownIcon className="-mr-1 size-5 text-gray-400" aria-hidden="true" />
+            </MenuButton>
+
+            <MenuItems
+              transition
+              className="absolute right-0 z-10 mt-3 w-56 origin-top-right overflow-hidden rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in"
+            >
+              <div className="py-1">
+                {uniqueServices.map((service) => (
+                  <MenuItem key={service.id}>
+                    <button
+                      type="button"
+                      onClick={() => onServiceSelect(service.id)}
+                      className="block w-full px-4 py-2 text-left text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900 data-[focus]:outline-none"
+                    >
+                      {service.name}
+                    </button>
+                  </MenuItem>
+                ))}
+              </div>
+            </MenuItems>
+          </Menu>
+        </div>
+      )}
+
       <div className="mx-auto flex flex-col gap-2 md:flex-row md:items-center md:justify-center">
-        {view === 'schedule' ? (
-          <DateRangeSelector dateRange={dateRange} onSelect={handleDateRangeChange} />
-        ) : (
-          <DatePicker date={rangeStartDate} onChange={(date) => handleDateSelect(date, view)} />
-        )}
+        <DatePicker date={rangeStartDate} onChange={(date) => handleDateSelect(date, view)} />
         <CalendarNavigation
           viewType={view}
           onPrevious={handlePrevious}
@@ -170,35 +175,6 @@ export function ServiceProviderCalendarHeader({
           onToday={handleToday}
           onThisWeek={onThisWeek}
         />
-      </div>
-
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-end">
-        <Link href={`/calendar/service-provider/${serviceProviderId}`} className="w-auto">
-          <Button type="button" variant="outline" className="w-full">
-            Select a booking slot
-          </Button>
-        </Link>
-      </div>
-
-      <div className="flex flex-col gap-2 md:flex-row md:items-center">
-        <>
-          <AvailabilityFormDialog
-            mode="create"
-            open={isAvailabilityDialogOpen}
-            onOpenChange={setIsAvailabilityDialogOpen}
-            serviceProviderId={serviceProviderId}
-            onRefresh={onRefresh}
-          />
-          <div className="flex flex-col gap-2 md:flex-row">
-            <button
-              type="button"
-              onClick={() => setIsAvailabilityDialogOpen(true)}
-              className="mx-auto w-full max-w-sm rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 md:ml-2 md:w-auto"
-            >
-              Add availability
-            </button>
-          </div>
-        </>
       </div>
     </header>
   );

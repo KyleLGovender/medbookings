@@ -1,18 +1,15 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useState, useTransition } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState, useTransition } from 'react';
 
 import { startOfWeek } from 'date-fns';
+import { debounce } from 'lodash';
 import { DateRange } from 'react-day-picker';
 
-import { AvailabilityFormDialog } from '@/features/calendar/components/availability-form/availability-form-dialog';
-import { AvailabilityViewDialog } from '@/features/calendar/components/availability-view/availability-view-dialog';
+import { CalendarHeader } from '@/features/bookings/components/calendar/calendar-header';
 import { CalendarSkeleton } from '@/features/calendar/components/calendar-utils/calendar-skeleton';
-import { CalendarViewDay } from '@/features/calendar/components/calendar-view-day';
-import { CalendarViewSchedule } from '@/features/calendar/components/calendar-view-schedule';
-import { CalendarViewWeek } from '@/features/calendar/components/calendar-view-week';
-import { ServiceProviderCalendarHeader } from '@/features/calendar/components/service-provider-calendar/service-provider-calendar-header';
+import { CalendarViewSlots } from '@/features/calendar/components/calendar-view-slots/index';
 import {
   getDateRange,
   getDistinctServices,
@@ -21,28 +18,28 @@ import {
   getTimeRangeOfMultipleAvailabilityView,
 } from '@/features/calendar/lib/helper';
 import { getServiceProviderAvailabilityInRange } from '@/features/calendar/lib/queries';
-import { AvailabilityView, ServiceProviderCalendarViewType } from '@/features/calendar/lib/types';
+import { AvailabilityView, CalendarViewType } from '@/features/calendar/lib/types';
 
-interface ServiceProviderCalendarWrapperProps {
+interface CalendarWrapperProps {
   initialAvailability: AvailabilityView[];
   serviceProviderId: string;
   initialDateRange: DateRange;
-  initialView: ServiceProviderCalendarViewType;
+  initialView: CalendarViewType;
 }
 
-export function ServiceProviderCalendarWrapper({
+export function CalendarWrapper({
   initialAvailability,
   serviceProviderId,
   initialDateRange,
   initialView,
-}: ServiceProviderCalendarWrapperProps) {
+}: CalendarWrapperProps) {
   const [isPending, startTransition] = useTransition();
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const [dateRange, setDateRange] = useState<DateRange>(initialDateRange);
   const [availabilityData, setAvailabilityData] = useState<AvailabilityView[]>(initialAvailability);
-  const [view, setView] = useState<ServiceProviderCalendarViewType>(initialView);
+  const [view, setView] = useState<CalendarViewType>(initialView);
   const [timeRange, setTimeRange] = useState(() =>
     getTimeRangeOfMultipleAvailabilityView(initialAvailability)
   );
@@ -68,84 +65,91 @@ export function ServiceProviderCalendarWrapper({
     setTimeRange(getTimeRangeOfMultipleAvailabilityView(availabilityData));
   }, [availabilityData]);
 
-  const updateUrlParams = (updates: { range?: DateRange; view?: string }) => {
-    const params = new URLSearchParams(searchParams.toString());
+  const debouncedUpdateUrl = useCallback(
+    (url: string) => {
+      router.replace(url, { scroll: false });
+    },
+    [router]
+  );
 
-    if (updates.range) {
-      params.delete('start');
-      params.delete('end');
+  const debouncedUrlUpdate = useMemo(() => debounce(debouncedUpdateUrl, 300), [debouncedUpdateUrl]);
 
-      if (updates.range.from) {
-        const localDate = new Date(updates.range.from);
-        const startDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
-        params.set('start', startDate);
-      }
-      if (updates.range.to) {
-        const localDate = new Date(updates.range.to);
-        const endDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
-        params.set('end', endDate);
-      }
-    }
+  const updateUrlParams = useCallback(
+    (updates: { range?: DateRange; view?: string }) => {
+      const params = new URLSearchParams(searchParams.toString());
 
-    if (updates.view) {
-      params.set('view', updates.view);
-
-      // Only set to today if there's no range provided and we're switching to week/day/slots view
-      if (
-        (updates.view === 'week' || updates.view === 'day' || updates.view === 'slots') &&
-        !updates.range
-      ) {
-        const localToday = new Date();
-        const startDate = `${localToday.getFullYear()}-${String(localToday.getMonth() + 1).padStart(2, '0')}-${String(localToday.getDate()).padStart(2, '0')}`;
-        params.set('start', startDate);
+      if (updates.range) {
+        params.delete('start');
         params.delete('end');
+
+        if (updates.range.from) {
+          const localDate = new Date(updates.range.from);
+          const startDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+          params.set('start', startDate);
+        }
+        if (updates.range.to) {
+          const localDate = new Date(updates.range.to);
+          const endDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+          params.set('end', endDate);
+        }
       }
-    }
 
-    // Correct approach for Next.js 14 App Router
-    const queryString = params.toString();
-    router.replace(`/profile/service-provider/calendar${queryString ? `?${queryString}` : ''}`, {
-      scroll: false,
-    });
-  };
+      if (updates.view) {
+        params.set('view', updates.view);
 
-  const handleViewChange = (newView: ServiceProviderCalendarViewType) => {
-    setView(newView);
+        if (
+          (updates.view === 'week' || updates.view === 'day' || updates.view === 'slots') &&
+          !updates.range
+        ) {
+          const localToday = new Date();
+          const startDate = `${localToday.getFullYear()}-${String(localToday.getMonth() + 1).padStart(2, '0')}-${String(localToday.getDate()).padStart(2, '0')}`;
+          params.set('start', startDate);
+          params.delete('end');
+        }
+      }
 
-    // Keep existing range for schedule view, but update URL
-    if (newView === 'schedule') {
-      updateUrlParams({ view: newView });
-      return;
-    }
+      const queryString = params.toString();
+      debouncedUrlUpdate(
+        `/calendar/service-provider/${serviceProviderId}/${queryString ? `?${queryString}` : ''}`
+      );
+    },
+    [searchParams, debouncedUrlUpdate, serviceProviderId]
+  );
 
-    // For week and slots views, show current week
-    if (newView === 'week') {
-      const today = new Date();
-      const newRange = getDateRange(today, 'week');
-      setDateRange(newRange);
-      updateUrlParams({ range: newRange, view: newView });
-      updateAvailabilityData(newRange);
-      return;
-    }
+  const updateAvailabilityData = useCallback(
+    (range: DateRange) => {
+      startTransition(async () => {
+        const data = await getServiceProviderAvailabilityInRange(
+          serviceProviderId,
+          range.from!,
+          range.to!
+        );
+        setAvailabilityData(data);
+      });
+    },
+    [serviceProviderId]
+  );
 
-    // For day view, show today
-    if (newView === 'day') {
-      const today = new Date();
-      const newRange = getDateRange(today, newView);
-      setDateRange(newRange);
-      updateUrlParams({ range: newRange, view: newView });
-      updateAvailabilityData(newRange);
-    }
-  };
+  const handleViewChange = useCallback(
+    (view: CalendarViewType) => {
+      setView(view);
 
-  const handleDateSelect = (
-    newDate: Date | undefined,
-    fromView: ServiceProviderCalendarViewType
-  ) => {
+      if (view === 'slots') {
+        const today = new Date();
+        const newRange = getDateRange(today, 'week');
+        setDateRange(newRange);
+        updateUrlParams({ range: newRange, view: view });
+        updateAvailabilityData(newRange);
+        return;
+      }
+    },
+    [updateAvailabilityData, updateUrlParams]
+  );
+
+  const handleDateSelect = (newDate: Date | undefined, fromView: CalendarViewType) => {
     if (!newDate) return;
 
-    // Set view based on context - if coming from week view, go to day view
-    const newView = fromView === 'week' ? 'day' : view === 'day' ? 'day' : 'day';
+    const newView = 'slots';
     setView(newView);
 
     console.log('fromView', fromView);
@@ -222,17 +226,6 @@ export function ServiceProviderCalendarWrapper({
     });
   }, [serviceProviderId, dateRange]);
 
-  const updateAvailabilityData = (range: DateRange) => {
-    startTransition(async () => {
-      const data = await getServiceProviderAvailabilityInRange(
-        serviceProviderId,
-        range.from!,
-        range.to!
-      );
-      setAvailabilityData(data);
-    });
-  };
-
   const handleView = (availability: AvailabilityView) => {
     setSelectedAvailability(availability);
     setIsViewDialogOpen(true);
@@ -270,25 +263,33 @@ export function ServiceProviderCalendarWrapper({
       onRefresh: refreshData,
       onView: handleView,
       onEdit: handleEdit,
-      onViewChange: setView,
+      onViewChange: handleViewChange,
     };
 
     switch (view) {
-      case 'day':
-        return <CalendarViewDay {...props} timeRange={timeRange} />;
-      case 'week':
-        return <CalendarViewWeek {...props} timeRange={timeRange} />;
-      case 'schedule':
-        return <CalendarViewSchedule {...props} />;
+      case 'slots':
+        return (
+          <CalendarViewSlots
+            {...props}
+            selectedServiceId={selectedServiceId}
+            timeRange={timeRange}
+          />
+        );
       default:
-        return <CalendarViewSchedule {...props} />;
+        return (
+          <CalendarViewSlots
+            {...props}
+            selectedServiceId={selectedServiceId}
+            timeRange={timeRange}
+          />
+        );
     }
   };
 
   return (
     <div className="max-w-[100vw] overflow-x-hidden p-4">
       <div className="rounded-lg bg-white shadow">
-        <ServiceProviderCalendarHeader
+        <CalendarHeader
           view={view}
           rangeStartDate={rangeStartDate}
           dateRange={dateRange}
@@ -307,20 +308,6 @@ export function ServiceProviderCalendarWrapper({
         />
         <Suspense fallback={<CalendarSkeleton />}>{renderCalendar()}</Suspense>
       </div>
-
-      <AvailabilityFormDialog
-        availability={selectedAvailability}
-        serviceProviderId={serviceProviderId}
-        mode="edit"
-        open={isEditDialogOpen}
-        onOpenChange={handleDialogChange}
-        onRefresh={refreshData}
-      />
-      <AvailabilityViewDialog
-        availability={selectedAvailability}
-        open={isViewDialogOpen}
-        onOpenChange={handleViewDialogChange}
-      />
     </div>
   );
 }
