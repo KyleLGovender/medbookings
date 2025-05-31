@@ -1,1 +1,1 @@
-// Export public API for providers feature
+// Export public API for service-provider feature

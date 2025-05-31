@@ -1,4 +1,4 @@
-import { DeleteBookingConfirmation } from '@/features/calendar/components/booking/delete/delete-booking-confirmation';
+import { DeleteBookingConfirmation } from '@/features/bookings/components/delete/delete-booking-confirmation';
 
 interface DeleteBookingPageProps {
   params: {

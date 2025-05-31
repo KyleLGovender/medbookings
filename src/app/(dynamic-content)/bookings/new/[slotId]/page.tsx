@@ -1,4 +1,4 @@
-import { BookingCreateWrapper } from '@/features/calendar/components/booking/create/booking-create-wrapper';
+import { BookingCreateWrapper } from '@/features/bookings/components/create/booking-create-wrapper';
 
 interface BookingCreatePageProps {
   params: {

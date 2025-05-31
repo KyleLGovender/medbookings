@@ -2,8 +2,8 @@ import { redirect } from 'next/navigation';
 
 import { BillingType, Languages } from '@prisma/client';
 
+import { getServiceProviderByUserId } from '@/features/providers/lib/queries';
 import ServiceProviderForm from '@/features/service-provider/components/service-provider-form';
-import { getServiceProviderByUserId } from '@/features/service-provider/lib/queries';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 

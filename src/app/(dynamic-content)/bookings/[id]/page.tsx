@@ -1,4 +1,4 @@
-import { BookingView } from '@/features/calendar/components/booking/view/booking-view';
+import { BookingView } from '@/features/bookings/components/view/booking-view';
 
 interface BookingCreatePageProps {
   params: {

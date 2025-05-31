@@ -1,4 +1,4 @@
-import { BookingEditWrapper } from '@/features/calendar/components/booking/edit/booking-edit-wrapper';
+import { BookingEditWrapper } from '@/features/bookings/components/edit/booking-edit-wrapper';
 
 interface BookingEditPageProps {
   params: {

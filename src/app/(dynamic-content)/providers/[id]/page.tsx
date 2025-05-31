@@ -2,8 +2,8 @@ import { notFound } from 'next/navigation';
 
 import { BillingType, Languages } from '@prisma/client';
 
+import { getServiceProviderByServiceProviderId } from '@/features/providers/lib/queries';
 import { ServiceProviderView } from '@/features/service-provider/components/service-provider-view';
-import { getServiceProviderByServiceProviderId } from '@/features/service-provider/lib/queries';
 import { prisma } from '@/lib/prisma';
 
 interface ServiceProviderDetailsPageProps {

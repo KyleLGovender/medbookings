@@ -1,4 +1,4 @@
-import { ServiceProviderCalendar } from '@/features/calendar/components/service-provider-calendar';
+import { ServiceProviderCalendar } from '@/features/providers/components/service-provider-calendar';
 
 export default async function ServiceProviderProfilePage({
   searchParams,

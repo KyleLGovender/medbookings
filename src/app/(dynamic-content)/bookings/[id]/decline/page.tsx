@@ -1,5 +1,5 @@
-import { DeclineBookingForm } from '@/features/calendar/components/booking/decline/decline-booking-form';
-import { BookingView } from '@/features/calendar/components/booking/view/booking-view';
+import { DeclineBookingForm } from '@/features/bookings/components/decline/decline-booking-form';
+import { BookingView } from '@/features/bookings/components/view/booking-view';
 import { getBookingDetails } from '@/features/calendar/lib/queries';
 
 interface DeclineBookingPageProps {

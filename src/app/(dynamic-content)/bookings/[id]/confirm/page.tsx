@@ -1,5 +1,5 @@
-import { ConfirmBookingForm } from '@/features/calendar/components/booking/confirm/confirm-booking-form';
-import { BookingView } from '@/features/calendar/components/booking/view/booking-view';
+import { ConfirmBookingForm } from '@/features/bookings/components/confirm/confirm-booking-form';
+import { BookingView } from '@/features/bookings/components/view/booking-view';
 import { getBookingDetails } from '@/features/calendar/lib/queries';
 
 interface ConfirmBookingPageProps {

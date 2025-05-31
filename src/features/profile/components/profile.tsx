@@ -5,8 +5,8 @@ import { getServerSession } from 'next-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { getServiceProviderByUserId } from '@/features/providers/lib/queries';
 import { ServiceProviderProfile } from '@/features/service-provider/components/service-provider';
-import { getServiceProviderByUserId } from '@/features/service-provider/lib/queries';
 import { authOptions } from '@/lib/auth';
 
 import { DeleteAccountButton } from './delete-account-button';
