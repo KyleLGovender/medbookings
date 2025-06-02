@@ -27,7 +27,7 @@ src/
 │   │   │   └── new/                  # Create new organization
 │   │   │
 │   │   ├── profile/                  # User profile
-│   │   ├── providers/                # Provider management
+│   │   ├── service-providers/        # Provider management
 │   │   │   ├── [id]/                 # Single provider view
 │   │   │   │   ├── availability/     # Provider availability
 │   │   │   │   ├── compliance/       # Provider compliance
