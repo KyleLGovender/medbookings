@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
-import AppFooter from '@/components/app-footer';
-import AppNavbar from '@/components/app-navbar';
+import Footer from '@/components/footer';
+import Header from '@/components/header';
 import Providers from '@/components/providers';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -26,11 +26,11 @@ export default function RootLayout({
       />
       <body className="flex h-full flex-col">
         <Providers>
-          <AppNavbar className="flex-shrink-0" />
+          <Header />
           <main className="flex-1 bg-gray-50">
             <Suspense>{children}</Suspense>
           </main>
-          <AppFooter className="mt-auto" />
+          <Footer />
         </Providers>
         <Toaster />
       </body>

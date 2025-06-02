@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { GoogleIcon } from '@/components/icons';
+import { GoogleIcon } from '@/components/google-icon';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 
