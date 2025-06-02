@@ -42,7 +42,7 @@ model User {
   bookingsAsClient         Booking[]                       @relation("BookingClient")
   bookingsCreated          Booking[]                       @relation("BookingCreator") // Bookings created by this user
   bookingsConfirmed        Booking[]                       @relation("BookingConfirmer") // Bookings confirmed by this user
-  notificationPreferences  NotificationPreference[]
+  communicationPreferences  CommunicationPreference[]
   organizationMemberships  OrganizationMembership[]
   membershipHistoryChanges OrganizationMembershipHistory[]
   availabilitiesCreated    Availability[]                  // Availabilities created by this user
@@ -862,7 +862,7 @@ model Booking {
   calendarEventId String? // Store Google Calendar event ID
 
   // Relations
-  notifications NotificationLog[]
+  communications CommunicationLog[]
   review        Review?
   meetSession   MeetSession?
 
@@ -885,8 +885,8 @@ enum BookingStatus {
   NO_SHOW
 }
 
-// Notifications
-model NotificationPreference {
+// Communications
+model CommunicationPreference {
   id             String   @id @default(cuid())
   user           User     @relation(fields: [userId], references: [id])
   userId         String
@@ -900,7 +900,7 @@ model NotificationPreference {
   updatedAt      DateTime @updatedAt
 }
 
-model NotificationLog {
+model CommunicationLog {
   id                  String              @id @default(cuid())
   booking             Booking?            @relation(fields: [bookingId], references: [id])
   bookingId           String?
@@ -909,22 +909,22 @@ model NotificationLog {
   clientName          String? // Store client name at time of notification
   serviceName         String? // Store service name at time of notification
   appointmentTime     DateTime? // Store the appointment time
-  type                NotificationType
-  channel             NotificationChannel
+  type                CommunicationType
+  channel             CommunicationChannel
   content             String              @db.Text
   status              String // SENT, DELIVERED, FAILED
   sentAt              DateTime            @default(now())
   deliveredAt         DateTime?
 }
 
-enum NotificationType {
+enum CommunicationType {
   BOOKING_CONFIRMATION
   BOOKING_REMINDER
   BOOKING_CANCELLATION
   BOOKING_MODIFICATION
 }
 
-enum NotificationChannel {
+enum CommunicationChannel {
   EMAIL
   SMS
   WHATSAPP
@@ -1108,7 +1108,6 @@ enum ConflictResolution {
   LATEST_WINS // Use most recently updated version
 }
 
-// Modified MeetSession model
 model MeetSession {
   id        String            @id @default(cuid())
   booking   Booking           @relation(fields: [bookingId], references: [id])
