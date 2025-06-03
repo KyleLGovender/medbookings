@@ -27,7 +27,7 @@ export default function RootLayout({
       <body className="flex h-full flex-col">
         <Providers>
           <Header />
-          <main className="flex-1 bg-gray-50">
+          <main className="flex-1 bg-background">
             <Suspense>{children}</Suspense>
           </main>
           <Footer />

@@ -11,25 +11,25 @@ export default function JoinMedbookingsPage() {
   return (
     <div className="mx-auto max-w-7xl">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-teal-500 to-teal-600 py-20 text-white">
+      <section className="relative overflow-hidden bg-gradient-to-r from-sky-400 to-sky-600 py-20 text-white">
         <div className="container mx-auto px-6">
           <div className="grid items-center gap-12 md:grid-cols-2">
             <div className="space-y-6">
               <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
                 Grow Your Practice with Medbookings
               </h1>
-              <p className="text-xl text-teal-100">
+              <p className="text-xl text-white">
                 Join thousands of healthcare providers who use Medbookings to streamline their
                 workflow, reduce admin, and connect with new patients.
               </p>
               <div className="flex flex-col gap-4 sm:flex-row">
-                <Button size="lg" className="bg-white text-teal-700 hover:bg-teal-50">
+                <Button size="lg" className="bg-white text-sky-700 hover:bg-sky-50">
                   Register Now
                 </Button>
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-white text-white hover:bg-teal-600"
+                  className="border-white bg-sky-700 text-white hover:bg-sky-500 hover:text-white"
                 >
                   Request Demo
                 </Button>
@@ -51,7 +51,7 @@ export default function JoinMedbookingsPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="mb-8 text-center">
             <h1 className="mb-4 text-4xl font-bold">Transparent Pricing</h1>
-            <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
+            <p className="mx-auto max-w-2xl text-xl">
               Calculate exactly what you will pay based on your booking volume. No hidden fees, no
               surprises.
             </p>
@@ -292,7 +292,7 @@ export default function JoinMedbookingsPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-teal-600 py-20 text-white">
+      <section className="bg-sky-600 py-20 text-white">
         <div className="container mx-auto px-6">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="mb-6 text-3xl font-bold md:text-4xl">
@@ -303,7 +303,7 @@ export default function JoinMedbookingsPage() {
               their practice with Medbookings.
             </p>
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
-              <Button size="lg" className="bg-white text-teal-700 hover:bg-teal-50">
+              <Button size="lg" className="bg-white from-sky-600 to-sky-400 hover:bg-sky-50">
                 Register Your Practice
               </Button>
               <Button

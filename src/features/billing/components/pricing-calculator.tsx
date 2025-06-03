@@ -143,14 +143,14 @@ export function PricingCalculator() {
     <div className="mx-auto w-full max-w-4xl space-y-6 px-4 md:px-0">
       <Card className="border border-gray-200 shadow-md">
         <CardHeader className="pb-2">
-          <CardTitle className="text-xl font-bold text-gray-800 md:text-2xl">
+          <CardTitle className="text-xl font-bold md:text-2xl">
             MedBookings Pricing Calculator
           </CardTitle>
-          <CardDescription className="text-sm text-gray-600 md:text-base">
+          <CardDescription className="text-sm md:text-base">
             Our pricing follows a tiered model designed to be cost-effective as your booking volume
             grows.
           </CardDescription>
-          <div className="mt-2 text-sm text-gray-500">
+          <div className="mt-2 text-sm">
             <ul className="list-disc space-y-1 pl-5">
               <li>R300 monthly subscription fee which includes your first 30 bookings</li>
               <li>Additional bookings are charged at decreasing rates as volume increases</li>
@@ -177,7 +177,7 @@ export function PricingCalculator() {
                     className="w-32"
                     placeholder="Enter amount"
                   />
-                  <span className="text-sm text-gray-500">bookings per month</span>
+                  <span className="text-sm text-muted-foreground">bookings per month</span>
                 </div>
               </div>
               {/* Quick Value Buttons */}
@@ -198,7 +198,7 @@ export function PricingCalculator() {
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs text-gray-500">
+                <div className="flex items-center justify-between text-xs">
                   <span>0</span>
                   <span>{maxSliderValue.toLocaleString()}</span>
                 </div>
@@ -216,17 +216,17 @@ export function PricingCalculator() {
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Card className="border border-gray-100 shadow-sm">
+            <Card className="border shadow-sm">
               <CardContent className="pt-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-2xl font-bold">
                     {pricingBreakdown.totalBookings.toLocaleString()}
                   </div>
-                  <div className="text-sm text-gray-500">Total Bookings</div>
+                  <div className="text-sm text-muted-foreground">Total Bookings</div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="border border-gray-100 shadow-sm">
+            <Card className="border shadow-sm">
               <CardContent className="pt-6">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">
@@ -236,17 +236,17 @@ export function PricingCalculator() {
                       maximumFractionDigits: 2,
                     })}
                   </div>
-                  <div className="text-sm text-gray-500">Total Monthly Cost</div>
+                  <div className="text-sm">Total Monthly Cost</div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="border border-gray-100 shadow-sm">
+            <Card className="border shadow-sm">
               <CardContent className="pt-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-2xl font-bold">
                     R{pricingBreakdown.averagePricePerBooking.toFixed(2)}
                   </div>
-                  <div className="text-sm text-gray-500">Average per Booking</div>
+                  <div className="text-sm">Average per Booking</div>
                 </div>
               </CardContent>
             </Card>
@@ -254,11 +254,11 @@ export function PricingCalculator() {
 
           {/* Pricing Breakdown Table/Cards */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800">Pricing Breakdown</h3>
+            <h3 className="text-lg font-semibold">Pricing Breakdown</h3>
 
             {/* Desktop Table View */}
             {!isMobile && (
-              <Card className="border border-gray-100 shadow-sm">
+              <Card className="border shadow-sm">
                 <CardContent className="p-0">
                   <Table>
                     <TableHeader>
@@ -326,9 +326,9 @@ export function PricingCalculator() {
             {isMobile && (
               <div className="space-y-3">
                 {pricingBreakdown.tiers.map((tier, index) => (
-                  <Card key={index} className="border border-gray-100 shadow-sm">
+                  <Card key={index} className="border shadow-sm">
                     <CardContent className="p-4">
-                      <div className="mb-2 font-medium text-gray-800">
+                      <div className="mb-2 font-medium">
                         {index === 0
                           ? 'Monthly Subscription'
                           : tier.name === 'Bookings 31-60'
@@ -338,17 +338,17 @@ export function PricingCalculator() {
                               : 'Premium Volume (91+)'}
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div className="text-gray-500">Price per booking:</div>
+                        <div className="text-muted-foreground">Price per booking:</div>
                         <div className="text-right font-medium">
                           R{tier.pricePerBooking.toFixed(2)}
                         </div>
 
-                        <div className="text-gray-500">Bookings:</div>
+                        <div className="text-muted-foreground">Bookings:</div>
                         <div className="text-right font-medium">
                           {tier.bookingsUsed.toLocaleString()}
                         </div>
 
-                        <div className="text-gray-500">Total price:</div>
+                        <div className="text-muted-foreground">Total price:</div>
                         <div className="text-right font-medium">
                           R
                           {tier.totalPrice.toLocaleString('en-ZA', {
@@ -362,21 +362,21 @@ export function PricingCalculator() {
                 ))}
 
                 {/* Total Card */}
-                <Card className="border border-gray-100 bg-gray-50 shadow-sm">
+                <Card className="border shadow-sm">
                   <CardContent className="p-4">
-                    <div className="mb-2 font-bold text-gray-800">Total</div>
+                    <div className="mb-2 font-bold">Total</div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="text-gray-500">Average per booking:</div>
+                      <div className="text-muted-foreground">Average per booking:</div>
                       <div className="text-right font-medium">
                         R{pricingBreakdown.averagePricePerBooking.toFixed(2)}
                       </div>
 
-                      <div className="text-gray-500">Total bookings:</div>
+                      <div className="text-muted-foreground">Total bookings:</div>
                       <div className="text-right font-medium">
                         {pricingBreakdown.totalBookings.toLocaleString()}
                       </div>
 
-                      <div className="text-gray-500">Total cost:</div>
+                      <div className="text-muted-foreground">Total cost:</div>
                       <div className="text-right font-medium">
                         R
                         {pricingBreakdown.totalCost.toLocaleString('en-ZA', {

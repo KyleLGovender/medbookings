@@ -11,12 +11,12 @@ export default function LandingPage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden bg-background">
         <div className="relative z-10 grid w-full gap-8 px-6 py-12 md:grid-cols-2 md:px-24 md:py-24">
           <div className="flex flex-col justify-center space-y-6">
             <div>
-              <h1 className="mb-4 text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
-                Your Health. <span className="text-primary">On Demand.</span>
+              <h1 className="mb-4 text-4xl font-bold tracking-tighter text-foreground sm:text-5xl md:text-6xl">
+                What are you looking for?
               </h1>
               <p className="max-w-[600px] text-xl text-muted-foreground">
                 Book appointments with healthcare providers in your area or online.
@@ -24,22 +24,22 @@ export default function LandingPage() {
             </div>
             <div className="hidden flex-col space-y-4 md:flex">
               <div className="flex items-center gap-4">
-                <div className="rounded-full bg-primary/10 p-3">
+                <div className="rounded-full bg-primary/10 p-3 dark:bg-primary/20">
                   <CheckCircle className="h-5 w-5 text-primary" />
                 </div>
-                <p>Find the right healthcare provider for your needs</p>
+                <p className="text-foreground">Find the right healthcare provider for your needs</p>
               </div>
               <div className="flex items-center gap-4">
-                <div className="rounded-full bg-primary/10 p-3">
+                <div className="rounded-full bg-primary/10 p-3 dark:bg-primary/20">
                   <CheckCircle className="h-5 w-5 text-primary" />
                 </div>
-                <p>Book appointments instantly, 24/7</p>
+                <p className="text-foreground">Book appointments instantly, 24/7</p>
               </div>
               <div className="flex items-center gap-4">
-                <div className="rounded-full bg-primary/10 p-3">
+                <div className="rounded-full bg-primary/10 p-3 dark:bg-primary/20">
                   <CheckCircle className="h-5 w-5 text-primary" />
                 </div>
-                <p>Choose between in-person or online consultations</p>
+                <p className="text-foreground">Choose between in-person or online consultations</p>
               </div>
             </div>
           </div>
@@ -50,50 +50,58 @@ export default function LandingPage() {
       </section>
 
       {/* Benefits Section */}
-      <section className="bg-muted/30 py-16">
+      <section className="bg-muted/30 py-16 dark:bg-muted/10">
         <div className="w-full space-y-12 px-6 md:px-24">
           <div className="mx-auto max-w-3xl space-y-4 text-center">
-            <h2 className="text-3xl font-bold tracking-tighter">Why Choose Medbookings?</h2>
-            <p className="text-xl text-muted-foreground">
+            <h2 className="text-3xl font-bold tracking-tighter text-foreground dark:text-foreground">
+              Why Choose Medbookings?
+            </h2>
+            <p className="text-xl text-muted-foreground dark:text-muted-foreground">
               We make finding and booking healthcare appointments simple and convenient
             </p>
           </div>
           <div className="grid gap-8 md:grid-cols-3">
-            <Card>
+            <Card className="border-border bg-card dark:border-border dark:bg-card">
               <CardContent className="pt-6">
                 <div className="space-y-4 text-center">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 p-4">
-                    <Calendar className="h-8 w-8 text-primary" />
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 p-4 dark:bg-primary/20">
+                    <Calendar className="h-8 w-8 text-primary dark:text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold">Easy Scheduling</h3>
-                  <p className="text-muted-foreground">
+                  <h3 className="text-xl font-bold text-foreground dark:text-foreground">
+                    Easy Scheduling
+                  </h3>
+                  <p className="text-muted-foreground dark:text-muted-foreground">
                     Book appointments with your preferred healthcare providers anytime, anywhere.
                   </p>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border bg-card dark:border-border dark:bg-card">
               <CardContent className="pt-6">
                 <div className="space-y-4 text-center">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 p-4">
-                    <Bell className="h-8 w-8 text-primary" />
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 p-4 dark:bg-primary/20">
+                    <Bell className="h-8 w-8 text-primary dark:text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold">Appointment Reminders</h3>
-                  <p className="text-muted-foreground">
+                  <h3 className="text-xl font-bold text-foreground dark:text-foreground">
+                    Appointment Reminders
+                  </h3>
+                  <p className="text-muted-foreground dark:text-muted-foreground">
                     Receive timely reminders via WhatsApp and email so you never miss an
                     appointment.
                   </p>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border bg-card dark:border-border dark:bg-card">
               <CardContent className="pt-6">
                 <div className="space-y-4 text-center">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 p-4">
-                    <Users className="h-8 w-8 text-primary" />
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 p-4 dark:bg-primary/20">
+                    <Users className="h-8 w-8 text-primary dark:text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold">Verified Providers</h3>
-                  <p className="text-muted-foreground">
+                  <h3 className="text-xl font-bold text-foreground dark:text-foreground">
+                    Verified Providers
+                  </h3>
+                  <p className="text-muted-foreground dark:text-muted-foreground">
                     Connect with qualified healthcare professionals who have been verified by our
                     team.
                   </p>
@@ -105,7 +113,7 @@ export default function LandingPage() {
       </section>
 
       {/* For Professionals Section */}
-      <section id="for-professionals" className="py-16 md:py-24">
+      <section id="for-professionals" className="bg-background py-16 dark:bg-background md:py-24">
         <div className="w-full px-6 md:px-24">
           <div className="grid items-center gap-12 md:grid-cols-2">
             <div className="order-2 hidden md:order-1 md:block">
@@ -118,57 +126,68 @@ export default function LandingPage() {
               />
             </div>
             <div className="order-1 space-y-6 md:order-2">
-              <div className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
+              <div className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary dark:bg-primary/20 dark:text-primary">
                 For Healthcare Providers
               </div>
-              <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">
+              <h2 className="text-3xl font-bold tracking-tighter text-foreground dark:text-foreground md:text-4xl">
                 Grow your practice with Medbookings
               </h2>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-lg text-muted-foreground dark:text-muted-foreground">
                 Join thousands of healthcare providers who use Medbookings to streamline their
                 booking process and find new patients.
               </p>
               <div className="space-y-4">
                 <div className="flex gap-3">
-                  <CheckCircle className="h-6 w-6 flex-shrink-0 text-primary" />
+                  <CheckCircle className="h-6 w-6 flex-shrink-0 text-primary dark:text-primary" />
                   <div>
-                    <h3 className="font-medium">Professional booking experience</h3>
-                    <p className="text-muted-foreground">
+                    <h3 className="font-medium text-foreground dark:text-foreground">
+                      Professional booking experience
+                    </h3>
+                    <p className="text-muted-foreground dark:text-muted-foreground">
                       Provide your patients with a seamless booking experience that reflects your
                       professionalism.
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <CheckCircle className="h-6 w-6 flex-shrink-0 text-primary" />
+                  <CheckCircle className="h-6 w-6 flex-shrink-0 text-primary dark:text-primary" />
                   <div>
-                    <h3 className="font-medium">Automated communications</h3>
-                    <p className="text-muted-foreground">
+                    <h3 className="font-medium text-foreground dark:text-foreground">
+                      Automated communications
+                    </h3>
+                    <p className="text-muted-foreground dark:text-muted-foreground">
                       Keep your patients informed with automated WhatsApp and email communications.
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <CheckCircle className="h-6 w-6 flex-shrink-0 text-primary" />
+                  <CheckCircle className="h-6 w-6 flex-shrink-0 text-primary dark:text-primary" />
                   <div>
-                    <h3 className="font-medium">Appointment reminders</h3>
-                    <p className="text-muted-foreground">
+                    <h3 className="font-medium text-foreground dark:text-foreground">
+                      Appointment reminders
+                    </h3>
+                    <p className="text-muted-foreground dark:text-muted-foreground">
                       Reduce no-shows with automated appointment reminders sent to your patients.
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <CheckCircle className="h-6 w-6 flex-shrink-0 text-primary" />
+                  <CheckCircle className="h-6 w-6 flex-shrink-0 text-primary dark:text-primary" />
                   <div>
-                    <h3 className="font-medium">Find new patients</h3>
-                    <p className="text-muted-foreground">
+                    <h3 className="font-medium text-foreground dark:text-foreground">
+                      Find new patients
+                    </h3>
+                    <p className="text-muted-foreground dark:text-muted-foreground">
                       Expand your practice by connecting with new patients looking for your
                       services.
                     </p>
                   </div>
                 </div>
               </div>
-              <Button size="lg" className="mt-4">
+              <Button
+                size="lg"
+                className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
+              >
                 Register as a Professional
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -178,54 +197,68 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works */}
-      <section className="bg-muted/30 py-16">
+      <section className="bg-muted/30 py-16 dark:bg-muted/10">
         <div className="w-full space-y-12 px-6 md:px-24">
           <div className="mx-auto max-w-3xl space-y-4 text-center">
-            <h2 className="text-3xl font-bold tracking-tighter">How Medbookings Works</h2>
-            <p className="text-xl text-muted-foreground">
+            <h2 className="text-3xl font-bold tracking-tighter text-foreground dark:text-foreground">
+              How Medbookings Works
+            </h2>
+            <p className="text-xl text-muted-foreground dark:text-muted-foreground">
               Book your next medical appointment in 3 simple steps
             </p>
           </div>
           <div className="grid gap-8 md:grid-cols-3">
             <div className="relative flex flex-col items-center space-y-4 text-center">
-              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground dark:bg-primary dark:text-primary-foreground">
                 1
               </div>
-              <div className="rounded-full bg-primary/10 p-4">
-                <Users className="h-8 w-8 text-primary" />
+              <div className="rounded-full bg-primary/10 p-4 dark:bg-primary/20">
+                <Users className="h-8 w-8 text-primary dark:text-primary" />
               </div>
-              <h3 className="text-xl font-bold">Find a Healthcare Provider</h3>
-              <p className="text-muted-foreground">
+              <h3 className="text-xl font-bold text-foreground dark:text-foreground">
+                Find a Healthcare Provider
+              </h3>
+              <p className="text-muted-foreground dark:text-muted-foreground">
                 Search for healthcare providers based on your needs, location, and availability
               </p>
               <div className="absolute right-0 top-24 hidden h-4 w-24 translate-x-1/2 transform md:block">
-                <ArrowRightIcon className="h-4 w-24 text-primary/50" strokeWidth={1} />
+                <ArrowRightIcon
+                  className="h-8 w-24 text-primary/50 dark:text-primary/50"
+                  strokeWidth={1}
+                />
               </div>
             </div>
             <div className="relative flex flex-col items-center space-y-4 text-center">
-              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground dark:bg-primary dark:text-primary-foreground">
                 2
               </div>
-              <div className="rounded-full bg-primary/10 p-4">
-                <Calendar className="h-8 w-8 text-primary" />
+              <div className="rounded-full bg-primary/10 p-4 dark:bg-primary/20">
+                <Calendar className="h-8 w-8 text-primary dark:text-primary" />
               </div>
-              <h3 className="text-xl font-bold">Book an Appointment</h3>
-              <p className="text-muted-foreground">
+              <h3 className="text-xl font-bold text-foreground dark:text-foreground">
+                Book an Appointment
+              </h3>
+              <p className="text-muted-foreground dark:text-muted-foreground">
                 Select a convenient time slot and book your appointment instantly
               </p>
               <div className="absolute right-0 top-24 hidden h-4 w-24 translate-x-1/2 transform md:block">
-                <ArrowRightIcon className="h-4 w-24 text-primary/50" strokeWidth={1} />
+                <ArrowRightIcon
+                  className="h-8 w-24 text-primary/50 dark:text-primary/50"
+                  strokeWidth={1}
+                />
               </div>
             </div>
             <div className="flex flex-col items-center space-y-4 text-center">
-              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground dark:bg-primary dark:text-primary-foreground">
                 3
               </div>
-              <div className="rounded-full bg-primary/10 p-4">
-                <Bell className="h-8 w-8 text-primary" />
+              <div className="rounded-full bg-primary/10 p-4 dark:bg-primary/20">
+                <Bell className="h-8 w-8 text-primary dark:text-primary" />
               </div>
-              <h3 className="text-xl font-bold">Receive Confirmations</h3>
-              <p className="text-muted-foreground">
+              <h3 className="text-xl font-bold text-foreground dark:text-foreground">
+                Receive Confirmations
+              </h3>
+              <p className="text-muted-foreground dark:text-muted-foreground">
                 Get appointment confirmations and reminders via WhatsApp and email
               </p>
             </div>
@@ -234,19 +267,31 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-16">
+      <section className="bg-background py-16 dark:bg-background">
         <div className="w-full space-y-12 px-6 md:px-24">
           <div className="mx-auto max-w-3xl space-y-4 text-center">
-            <h2 className="text-3xl font-bold tracking-tighter">What Our Users Say</h2>
-            <p className="text-xl text-muted-foreground">
+            <h2 className="text-3xl font-bold tracking-tighter text-foreground dark:text-foreground">
+              What Our Users Say
+            </h2>
+            <p className="text-xl text-muted-foreground dark:text-muted-foreground">
               Join thousands of satisfied patients and healthcare providers
             </p>
           </div>
           <Tabs defaultValue="patients" className="w-full">
             <div className="mb-8 flex justify-center">
-              <TabsList>
-                <TabsTrigger value="patients">Patients</TabsTrigger>
-                <TabsTrigger value="professionals">Healthcare Providers</TabsTrigger>
+              <TabsList className="bg-muted dark:bg-muted">
+                <TabsTrigger
+                  value="patients"
+                  className="data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-[state=active]:bg-background dark:data-[state=active]:text-foreground"
+                >
+                  Patients
+                </TabsTrigger>
+                <TabsTrigger
+                  value="professionals"
+                  className="data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-[state=active]:bg-background dark:data-[state=active]:text-foreground"
+                >
+                  Healthcare Providers
+                </TabsTrigger>
               </TabsList>
             </div>
             <TabsContent value="patients" className="space-y-8">
@@ -271,9 +316,14 @@ export default function LandingPage() {
                     image: '/patient-3.png',
                   },
                 ].map((testimonial, index) => (
-                  <Card key={index} className="p-6">
+                  <Card
+                    key={index}
+                    className="border-border bg-card p-6 dark:border-border dark:bg-card"
+                  >
                     <div className="space-y-4">
-                      <p className="italic">&quot;{testimonial.quote}&quot;</p>
+                      <p className="italic text-foreground dark:text-foreground">
+                        &quot;{testimonial.quote}&quot;
+                      </p>
                       <div className="flex items-center gap-3">
                         {/* <Image
                             src={testimonial.image || '/placeholder.svg'}
@@ -283,7 +333,9 @@ export default function LandingPage() {
                             className="rounded-full"
                           /> */}
                         <div>
-                          <p className="font-medium">{testimonial.name}</p>
+                          <p className="font-medium text-foreground dark:text-foreground">
+                            {testimonial.name}
+                          </p>
                           <div className="flex">
                             {Array(5)
                               .fill(0)
@@ -293,7 +345,7 @@ export default function LandingPage() {
                                   xmlns="http://www.w3.org/2000/svg"
                                   viewBox="0 0 24 24"
                                   fill="currentColor"
-                                  className="h-4 w-4 text-primary"
+                                  className="h-4 w-4 text-primary dark:text-primary"
                                 >
                                   <path
                                     fillRule="evenodd"
@@ -335,9 +387,14 @@ export default function LandingPage() {
                     image: '/doctor-3.png',
                   },
                 ].map((testimonial, index) => (
-                  <Card key={index} className="p-6">
+                  <Card
+                    key={index}
+                    className="border-border bg-card p-6 dark:border-border dark:bg-card"
+                  >
                     <div className="space-y-4">
-                      <p className="italic">&quot;{testimonial.quote}&quot;</p>
+                      <p className="italic text-foreground dark:text-foreground">
+                        &quot;{testimonial.quote}&quot;
+                      </p>
                       <div className="flex items-center gap-3">
                         {/* <Image
                           src={testimonial.image || '/placeholder.svg'}
@@ -347,8 +404,12 @@ export default function LandingPage() {
                           className="rounded-full"
                         /> */}
                         <div>
-                          <p className="font-medium">{testimonial.name}</p>
-                          <p className="text-sm text-muted-foreground">{testimonial.specialty}</p>
+                          <p className="font-medium text-foreground dark:text-foreground">
+                            {testimonial.name}
+                          </p>
+                          <p className="text-sm text-muted-foreground dark:text-muted-foreground">
+                            {testimonial.specialty}
+                          </p>
                           <div className="flex">
                             {Array(5)
                               .fill(0)
@@ -358,7 +419,7 @@ export default function LandingPage() {
                                   xmlns="http://www.w3.org/2000/svg"
                                   viewBox="0 0 24 24"
                                   fill="currentColor"
-                                  className="h-4 w-4 text-primary"
+                                  className="h-4 w-4 text-primary dark:text-primary"
                                 >
                                   <path
                                     fillRule="evenodd"
@@ -380,7 +441,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-primary py-16 text-primary-foreground">
+      <section className="relative overflow-hidden bg-gradient-to-r from-sky-400 to-sky-600 py-20 text-white">
         <div className="w-full px-6 md:px-24">
           <div className="flex flex-col items-center justify-between gap-8 md:flex-row">
             <div className="max-w-xl space-y-4">
@@ -393,13 +454,13 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="flex flex-col gap-4 sm:flex-row">
-              <Button variant="secondary" size="lg">
+              <Button size="lg" className="bg-white text-sky-700 hover:bg-sky-50">
                 For Providers
               </Button>
               <Button
-                variant="outline"
                 size="lg"
-                className="border-primary-foreground bg-transparent text-primary-foreground hover:bg-primary-foreground hover:text-primary"
+                variant="outline"
+                className="border-white bg-sky-700 text-white hover:bg-sky-500 hover:text-white"
               >
                 Find Providers
               </Button>

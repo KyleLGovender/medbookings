@@ -34,7 +34,7 @@ export default function AuthButton({ profileMenuItems = [] }: AuthButtonProps) {
     return (
       <button
         onClick={() => signIn('google', { callbackUrl: '/profile' })}
-        className="ml-3 inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        className="ml-3 inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
         aria-label="Sign in with Google"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

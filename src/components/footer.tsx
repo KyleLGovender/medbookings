@@ -16,8 +16,8 @@ export default function Footer() {
               Medbookings
             </Link>
             <p className="max-w-xs text-muted-foreground">
-              Your Health. On Demand. Connecting patients with healthcare professionals for a
-              healthier tomorrow.
+              Your Health. On Demand. Connecting patients with healthcare providers for a healthier
+              tomorrow.
             </p>
           </div>
           <div>

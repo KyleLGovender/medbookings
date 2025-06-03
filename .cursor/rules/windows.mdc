@@ -3,5 +3,11 @@ description:
 globs: 
 alwaysApply: true
 ---
+---
+name: Windows
+description: Always give me commands that can be implemented in powershell on windows
+---
+
 Always give me commands that can be implemented in powershell on windows
+
 

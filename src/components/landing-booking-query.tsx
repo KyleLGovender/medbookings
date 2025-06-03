@@ -112,48 +112,32 @@ export default function LandingBookingQuery() {
                     <Stethoscope
                       strokeWidth={1}
                       absoluteStrokeWidth={true}
-                      className="mb-2 flex h-12 w-12 text-primary"
+                      className="mb-2 flex h-12 w-12"
                     />
                   ),
                 },
                 {
                   name: 'Dentist',
                   icon: (
-                    <Tooth
-                      strokeWidth={1}
-                      absoluteStrokeWidth={true}
-                      className="mb-2 h-12 w-12 text-primary"
-                    />
+                    <Tooth strokeWidth={1} absoluteStrokeWidth={true} className="mb-2 h-12 w-12" />
                   ),
                 },
                 {
                   name: 'Psychologist',
                   icon: (
-                    <Brain
-                      strokeWidth={1}
-                      absoluteStrokeWidth={true}
-                      className="mb-2 h-12 w-12 text-primary"
-                    />
+                    <Brain strokeWidth={1} absoluteStrokeWidth={true} className="mb-2 h-12 w-12" />
                   ),
                 },
                 {
                   name: 'Chiropractor',
                   icon: (
-                    <Disc
-                      strokeWidth={1}
-                      absoluteStrokeWidth={true}
-                      className="mb-2 h-12 w-12 text-primary"
-                    />
+                    <Disc strokeWidth={1} absoluteStrokeWidth={true} className="mb-2 h-12 w-12" />
                   ),
                 },
                 {
                   name: 'Dietician',
                   icon: (
-                    <Apple
-                      strokeWidth={1}
-                      absoluteStrokeWidth={true}
-                      className="mb-2 h-12 w-12 text-primary"
-                    />
+                    <Apple strokeWidth={1} absoluteStrokeWidth={true} className="mb-2 h-12 w-12" />
                   ),
                 },
                 {
@@ -162,7 +146,7 @@ export default function LandingBookingQuery() {
                     <Activity
                       strokeWidth={1}
                       absoluteStrokeWidth={true}
-                      className="mb-2 h-12 w-12 text-primary"
+                      className="mb-2 h-12 w-12"
                     />
                   ),
                 },
@@ -172,7 +156,7 @@ export default function LandingBookingQuery() {
                     <HeartPulse
                       strokeWidth={1}
                       absoluteStrokeWidth={true}
-                      className="mb-2 h-12 w-12 text-primary"
+                      className="mb-2 h-12 w-12"
                     />
                   ),
                 },
@@ -180,7 +164,7 @@ export default function LandingBookingQuery() {
                 <Button
                   key={service.name}
                   variant={selectedService === service.name ? 'default' : 'outline'}
-                  className="h-auto flex-col items-center justify-center gap-2 rounded-md border-2 border-muted bg-popover px-4 py-3 hover:bg-accent hover:text-accent-foreground [&_svg]:size-8"
+                  className="h-auto flex-col items-center justify-center gap-2 rounded-md border-2 border-muted bg-popover px-4 py-3 transition-colors hover:border-muted/70 hover:bg-popover/90 [&_svg]:size-8"
                   onClick={() => handleServiceSelection(service.name)}
                 >
                   {service.icon}
@@ -194,7 +178,12 @@ export default function LandingBookingQuery() {
         return (
           <div className="space-y-4">
             <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
-              <Button variant="ghost" size="sm" className="h-8 p-0" onClick={resetForm}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 p-0 hover:bg-transparent hover:opacity-80"
+                onClick={resetForm}
+              >
                 <span>{selectedService}</span>
               </Button>
               <ChevronRight className="h-4 w-4" />
@@ -206,15 +195,11 @@ export default function LandingBookingQuery() {
             <div className={`grid gap-4 ${containerSize === 'sm' ? 'grid-cols-1' : 'grid-cols-2'}`}>
               <Button
                 variant={consultationType === 'in-person' ? 'default' : 'outline'}
-                className="h-auto w-full flex-col items-start justify-start gap-3 rounded-md border-2 border-muted bg-popover p-6 text-left hover:bg-accent hover:text-accent-foreground [&_svg]:size-8"
+                className="h-auto w-full flex-col items-start justify-start gap-3 rounded-md border-2 border-muted bg-popover p-6 text-left transition-colors hover:border-muted/70 hover:bg-popover/90 [&_svg]:size-8"
                 onClick={() => handleConsultationTypeSelection('in-person')}
               >
                 <div className="flex items-center justify-center">
-                  <MapPin
-                    strokeWidth={1}
-                    absoluteStrokeWidth={true}
-                    className="h-12 w-12 text-primary"
-                  />
+                  <MapPin strokeWidth={1} absoluteStrokeWidth={true} className="h-12 w-12" />
                 </div>
                 <div className="w-full space-y-1">
                   <span className="text-wrap text-base font-medium">In-person consultation</span>
@@ -225,15 +210,11 @@ export default function LandingBookingQuery() {
               </Button>
               <Button
                 variant={consultationType === 'online' ? 'default' : 'outline'}
-                className="h-auto w-full flex-col items-start justify-start gap-3 rounded-md border-2 border-muted bg-popover p-6 text-left hover:bg-accent hover:text-accent-foreground [&_svg]:size-8"
+                className="h-auto w-full flex-col items-start justify-start gap-3 rounded-md border-2 border-muted bg-popover p-6 text-left transition-colors hover:border-muted/70 hover:bg-popover/90 [&_svg]:size-8"
                 onClick={() => handleConsultationTypeSelection('online')}
               >
                 <div className="flex items-center justify-center">
-                  <Video
-                    strokeWidth={1}
-                    absoluteStrokeWidth={true}
-                    className="h-12 w-12 text-primary"
-                  />
+                  <Video strokeWidth={1} absoluteStrokeWidth={true} className="h-12 w-12" />
                 </div>
                 <div className="w-full space-y-1">
                   <span className="text-wrap text-base font-medium">Online consultation</span>
@@ -249,14 +230,19 @@ export default function LandingBookingQuery() {
         return (
           <div className="space-y-4">
             <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
-              <Button variant="ghost" size="sm" className="h-8 p-0" onClick={resetForm}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 p-0 hover:bg-transparent hover:opacity-80"
+                onClick={resetForm}
+              >
                 <span>{selectedService}</span>
               </Button>
               <ChevronRight className="h-4 w-4" />
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 p-0"
+                className="h-8 p-0 hover:bg-transparent hover:opacity-80"
                 onClick={() => setBookingStep(2)}
               >
                 <span>In-person</span>
@@ -268,9 +254,13 @@ export default function LandingBookingQuery() {
               Where would you like to find a {selectedService.toLowerCase()}?
             </h3>
             <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" onClick={handleUseCurrentLocation} className="w-full">
-                  <MapPin className="mr-2 h-4 w-4 text-primary" />
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={handleUseCurrentLocation}
+                  className="w-full justify-start transition-colors hover:bg-muted/30"
+                >
+                  <MapPin className="mr-2 h-4 w-4" />
                   Use my current location
                 </Button>
               </div>
@@ -287,7 +277,7 @@ export default function LandingBookingQuery() {
               <Button
                 onClick={handleLocationSelection}
                 disabled={!location && !useCurrentLocation}
-                className="w-full"
+                className="w-full transition-opacity hover:opacity-90"
               >
                 Continue
               </Button>

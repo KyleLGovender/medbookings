@@ -93,6 +93,17 @@ export default function Header() {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
 
+  // Helper function to check if a path matches the current pathname
+  const isActivePath = (itemHref: string) => {
+    // For the home page, exact match
+    if (itemHref === '/') {
+      return pathname === '/';
+    }
+
+    // For other pages, check if pathname starts with the href (handles nested routes)
+    return pathname.startsWith(itemHref);
+  };
+
   // Check if user is signed in and has ADMIN role
   const isSignedIn = !!session;
   const isAdmin = session?.user?.role === 'ADMIN';
@@ -149,8 +160,10 @@ export default function Header() {
                   <NavigationMenuItem key={item.title}>
                     <NavigationMenuLink
                       href={item.href}
-                      className={navigationMenuTriggerStyle()}
-                      active={pathname === item.href}
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        isActivePath(item.href) && 'text-primary'
+                      )}
                     >
                       {item.title}
                     </NavigationMenuLink>
@@ -186,7 +199,7 @@ export default function Header() {
                     href={item.href}
                     className={cn(
                       'text-lg font-medium transition-colors hover:text-foreground/80',
-                      pathname === item.href ? 'text-foreground' : 'text-foreground/60'
+                      isActivePath(item.href) ? 'text-primary' : 'text-foreground/60'
                     )}
                     onClick={() => setOpen(false)}
                   >
