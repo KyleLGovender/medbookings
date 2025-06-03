@@ -1,59 +1,72 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { ProfileImageUploader } from "./profile-image-uploader"
+import { useEffect, useState } from 'react';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+
+import { ProfileImageUploader } from './profile-image-uploader';
 
 const basicInfoSchema = z.object({
-  firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  phone: z.string().min(10, "Please enter a valid phone number"),
-  bio: z.string().min(50, "Bio must be at least 50 characters").max(500, "Bio must be less than 500 characters"),
+  firstName: z.string().min(2, 'First name must be at least 2 characters'),
+  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+  email: z.string().email('Please enter a valid email address'),
+  phone: z.string().min(10, 'Please enter a valid phone number'),
+  bio: z
+    .string()
+    .min(50, 'Bio must be at least 50 characters')
+    .max(500, 'Bio must be less than 500 characters'),
   profileImage: z.string().optional(),
-})
+});
 
-type BasicInfoData = z.infer<typeof basicInfoSchema>
+type BasicInfoData = z.infer<typeof basicInfoSchema>;
 
 interface BasicInfoStepProps {
-  data: any
-  onDataChange: (data: any) => void
-  onNext: () => void
-  onPrevious: () => void
+  data: any;
+  onDataChange: (data: any) => void;
+  onNext: () => void;
+  onPrevious: () => void;
 }
 
 export function BasicInfoStep({ data, onDataChange, onNext }: BasicInfoStepProps) {
-  const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [profileImage, setProfileImage] = useState<string | null>(null);
 
   const form = useForm<BasicInfoData>({
     resolver: zodResolver(basicInfoSchema),
     defaultValues: {
-      firstName: data?.firstName || "",
-      lastName: data?.lastName || "",
-      email: data?.email || "",
-      phone: data?.phone || "",
-      bio: data?.bio || "",
-      profileImage: data?.profileImage || "",
+      firstName: data?.firstName || '',
+      lastName: data?.lastName || '',
+      email: data?.email || '',
+      phone: data?.phone || '',
+      bio: data?.bio || '',
+      profileImage: data?.profileImage || '',
     },
-  })
+  });
 
   const onSubmit = (formData: BasicInfoData) => {
-    onDataChange({ basicInfo: { ...formData, profileImage } })
-    onNext()
-  }
+    onDataChange({ basicInfo: { ...formData, profileImage } });
+    onNext();
+  };
 
   useEffect(() => {
     const subscription = form.watch((value) => {
-      onDataChange({ basicInfo: { ...value, profileImage } })
-    })
-    return () => subscription.unsubscribe()
-  }, [form, onDataChange, profileImage])
+      onDataChange({ basicInfo: { ...value, profileImage } });
+    });
+    return () => subscription.unsubscribe();
+  }, [form, onDataChange, profileImage]);
 
   return (
     <div className="space-y-6">
@@ -68,7 +81,7 @@ export function BasicInfoStep({ data, onDataChange, onNext }: BasicInfoStepProps
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField
               control={form.control}
               name="firstName"
@@ -98,7 +111,7 @@ export function BasicInfoStep({ data, onDataChange, onNext }: BasicInfoStepProps
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField
               control={form.control}
               name="email"
@@ -142,7 +155,9 @@ export function BasicInfoStep({ data, onDataChange, onNext }: BasicInfoStepProps
                   />
                 </FormControl>
                 <FormMessage />
-                <p className="text-xs text-muted-foreground">{field.value?.length || 0}/500 characters</p>
+                <p className="text-xs text-muted-foreground">
+                  {field.value?.length || 0}/500 characters
+                </p>
               </FormItem>
             )}
           />
@@ -153,5 +168,5 @@ export function BasicInfoStep({ data, onDataChange, onNext }: BasicInfoStepProps
         </form>
       </Form>
     </div>
-  )
+  );
 }

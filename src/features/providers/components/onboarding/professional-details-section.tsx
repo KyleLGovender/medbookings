@@ -1,36 +1,52 @@
-"use client"
+'use client';
 
-import { useFormContext } from "react-hook-form"
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useFormContext } from 'react-hook-form';
+
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 const SPECIALIZATIONS = [
-  "Cardiology",
-  "Dermatology",
-  "Emergency Medicine",
-  "Family Medicine",
-  "Internal Medicine",
-  "Neurology",
-  "Oncology",
-  "Orthopedics",
-  "Pediatrics",
-  "Psychiatry",
-  "Radiology",
-  "Surgery",
-]
+  'Cardiology',
+  'Dermatology',
+  'Emergency Medicine',
+  'Family Medicine',
+  'Internal Medicine',
+  'Neurology',
+  'Oncology',
+  'Orthopedics',
+  'Pediatrics',
+  'Psychiatry',
+  'Radiology',
+  'Surgery',
+];
 
-const EXPERIENCE_RANGES = ["0-2 years", "3-5 years", "6-10 years", "11-15 years", "16-20 years", "20+ years"]
+const EXPERIENCE_RANGES = [
+  '0-2 years',
+  '3-5 years',
+  '6-10 years',
+  '11-15 years',
+  '16-20 years',
+  '20+ years',
+];
 
 export function ProfessionalDetailsSection() {
-  const { control } = useFormContext()
+  const { control } = useFormContext();
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-muted-foreground">Provide your professional qualifications and experience details.</p>
+      <p className="text-sm text-muted-foreground">
+        Provide your professional qualifications and experience details.
+      </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <FormField
           control={control}
           name="professionalDetails.medicalLicenseNumber"
@@ -114,7 +130,7 @@ export function ProfessionalDetailsSection() {
         )}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <FormField
           control={control}
           name="professionalDetails.languagesSpoken"
@@ -144,5 +160,5 @@ export function ProfessionalDetailsSection() {
         />
       </div>
     </div>
-  )
+  );
 }

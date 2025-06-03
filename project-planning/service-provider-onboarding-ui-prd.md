@@ -78,8 +78,6 @@ The Service Provider Onboarding UI will provide a user-friendly interface for he
 6. The UI must use AWS S3 presigned URLs for secure uploads
 7. The UI must support PDF document preview for admins during the review process
 
-
-
 ### Admin Review Interface
 
 1. The UI must provide a dashboard listing all pending provider applications

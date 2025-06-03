@@ -1,71 +1,83 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { useFormContext } from "react-hook-form"
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ProfileImageUploader } from "./profile-image-uploader"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { X } from "lucide-react"
+import { useState } from 'react';
+
+import { X } from 'lucide-react';
+import { useFormContext } from 'react-hook-form';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+
+import { ProfileImageUploader } from './profile-image-uploader';
 
 // Languages enum from Prisma schema
 const LANGUAGES = [
-  "English",
-  "IsiZulu",
-  "IsiXhosa",
-  "Afrikaans",
-  "Sepedi",
-  "Setswana",
-  "Sesotho",
-  "IsiNdebele",
-  "SiSwati",
-  "Tshivenda",
-  "Xitsonga",
-  "Portuguese",
-  "French",
-  "Hindi",
-  "German",
-  "Mandarin",
-]
+  'English',
+  'IsiZulu',
+  'IsiXhosa',
+  'Afrikaans',
+  'Sepedi',
+  'Setswana',
+  'Sesotho',
+  'IsiNdebele',
+  'SiSwati',
+  'Tshivenda',
+  'Xitsonga',
+  'Portuguese',
+  'French',
+  'Hindi',
+  'German',
+  'Mandarin',
+];
 
 export function BasicInfoSection() {
-  const [profileImage, setProfileImage] = useState<string | null>(null)
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([])
-  const { control, setValue, watch } = useFormContext()
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const { control, setValue, watch } = useFormContext();
 
   // Watch the bio field to show character count
-  const bio = watch("basicInfo.bio") || ""
+  const bio = watch('basicInfo.bio') || '';
 
   const handleProfileImageChange = (imageUrl: string | null) => {
-    setProfileImage(imageUrl)
-    setValue("basicInfo.image", imageUrl || "")
-  }
+    setProfileImage(imageUrl);
+    setValue('basicInfo.image', imageUrl || '');
+  };
 
   const addLanguage = (language: string) => {
     if (!selectedLanguages.includes(language)) {
-      const newLanguages = [...selectedLanguages, language]
-      setSelectedLanguages(newLanguages)
-      setValue("basicInfo.languages", newLanguages)
+      const newLanguages = [...selectedLanguages, language];
+      setSelectedLanguages(newLanguages);
+      setValue('basicInfo.languages', newLanguages);
     }
-  }
+  };
 
   const removeLanguage = (languageToRemove: string) => {
-    const newLanguages = selectedLanguages.filter((lang) => lang !== languageToRemove)
-    setSelectedLanguages(newLanguages)
-    setValue("basicInfo.languages", newLanguages)
-  }
+    const newLanguages = selectedLanguages.filter((lang) => lang !== languageToRemove);
+    setSelectedLanguages(newLanguages);
+    setValue('basicInfo.languages', newLanguages);
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-8">
+      <div className="flex flex-col gap-8 md:flex-row">
         <div className="md:w-1/3">
-          <ProfileImageUploader onImageChange={handleProfileImageChange} currentImage={profileImage} />
+          <ProfileImageUploader
+            onImageChange={handleProfileImageChange}
+            currentImage={profileImage}
+          />
         </div>
 
-        <div className="md:w-2/3 space-y-4">
+        <div className="space-y-4 md:w-2/3">
           <FormField
             control={control}
             name="basicInfo.name"
@@ -80,7 +92,7 @@ export function BasicInfoSection() {
             )}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField
               control={control}
               name="basicInfo.email"
@@ -171,10 +183,10 @@ export function BasicInfoSection() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-auto p-0 w-4 h-4"
+                      className="h-4 h-auto w-4 p-0"
                       onClick={() => removeLanguage(language)}
                     >
-                      <X className="w-3 h-3" />
+                      <X className="h-3 w-3" />
                     </Button>
                   </Badge>
                 ))}
@@ -188,5 +200,5 @@ export function BasicInfoSection() {
         </div>
       </div>
     </div>
-  )
+  );
 }

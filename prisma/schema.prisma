@@ -194,10 +194,10 @@ enum Languages {
 }
 
 enum BillingType {
-  MEDICAL_AID_ONLY // Only accepts medical aid
-  PRIVATE_ONLY // Only accepts private payments
+  MEDICAL_AID_ONLY       // Only accepts medical aid
+  PRIVATE_ONLY           // Only accepts private payments
   MEDICAL_AID_AND_PRIVATE // Accepts both medical aid and private payments
-  ALL // Accepts all payment types
+  ALL                    // Accepts all payment types
 }
 
 // ORGANIZATION MODELS

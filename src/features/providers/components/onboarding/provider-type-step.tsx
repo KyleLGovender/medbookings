@@ -1,86 +1,92 @@
-"use client"
+'use client';
 
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Stethoscope, Brain, Heart, Eye, Bone, Baby } from "lucide-react"
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Baby, Bone, Brain, Eye, Heart, Stethoscope } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const providerTypeSchema = z.object({
-  providerType: z.string().min(1, "Please select a provider type"),
-})
+  providerType: z.string().min(1, 'Please select a provider type'),
+});
 
-type ProviderTypeData = z.infer<typeof providerTypeSchema>
+type ProviderTypeData = z.infer<typeof providerTypeSchema>;
 
 interface ProviderTypeStepProps {
-  data: any
-  onDataChange: (data: any) => void
-  onNext: () => void
-  onPrevious: () => void
+  data: any;
+  onDataChange: (data: any) => void;
+  onNext: () => void;
+  onPrevious: () => void;
 }
 
 const PROVIDER_TYPES = [
   {
-    id: "general_practitioner",
-    title: "General Practitioner",
-    description: "Primary care physician providing comprehensive healthcare",
+    id: 'general_practitioner',
+    title: 'General Practitioner',
+    description: 'Primary care physician providing comprehensive healthcare',
     icon: Stethoscope,
   },
   {
-    id: "specialist",
-    title: "Medical Specialist",
-    description: "Specialized medical care in specific areas",
+    id: 'specialist',
+    title: 'Medical Specialist',
+    description: 'Specialized medical care in specific areas',
     icon: Heart,
   },
   {
-    id: "mental_health",
-    title: "Mental Health Professional",
-    description: "Psychiatrists, psychologists, and counselors",
+    id: 'mental_health',
+    title: 'Mental Health Professional',
+    description: 'Psychiatrists, psychologists, and counselors',
     icon: Brain,
   },
   {
-    id: "optometrist",
-    title: "Optometrist",
-    description: "Eye care and vision health specialists",
+    id: 'optometrist',
+    title: 'Optometrist',
+    description: 'Eye care and vision health specialists',
     icon: Eye,
   },
   {
-    id: "physiotherapist",
-    title: "Physiotherapist",
-    description: "Physical therapy and rehabilitation services",
+    id: 'physiotherapist',
+    title: 'Physiotherapist',
+    description: 'Physical therapy and rehabilitation services',
     icon: Bone,
   },
   {
-    id: "pediatrician",
-    title: "Pediatrician",
-    description: "Specialized care for infants, children, and adolescents",
+    id: 'pediatrician',
+    title: 'Pediatrician',
+    description: 'Specialized care for infants, children, and adolescents',
     icon: Baby,
   },
-]
+];
 
-export function ProviderTypeStep({ data, onDataChange, onNext, onPrevious }: ProviderTypeStepProps) {
+export function ProviderTypeStep({
+  data,
+  onDataChange,
+  onNext,
+  onPrevious,
+}: ProviderTypeStepProps) {
   const form = useForm<ProviderTypeData>({
     resolver: zodResolver(providerTypeSchema),
     defaultValues: {
-      providerType: data?.providerType?.providerType || "",
+      providerType: data?.providerType?.providerType || '',
     },
-  })
+  });
 
   const onSubmit = (formData: ProviderTypeData) => {
-    onDataChange({ providerType: formData })
-    onNext()
-  }
+    onDataChange({ providerType: formData });
+    onNext();
+  };
 
   return (
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium">Provider Type</h3>
         <p className="text-sm text-muted-foreground">
-          Select the type of healthcare services you provide. This will determine the regulatory requirements for your
-          application.
+          Select the type of healthcare services you provide. This will determine the regulatory
+          requirements for your application.
         </p>
       </div>
 
@@ -95,19 +101,19 @@ export function ProviderTypeStep({ data, onDataChange, onNext, onPrevious }: Pro
                   <RadioGroup
                     onValueChange={field.onChange}
                     value={field.value}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                    className="grid grid-cols-1 gap-4 md:grid-cols-2"
                   >
                     {PROVIDER_TYPES.map((type) => {
-                      const Icon = type.icon
+                      const Icon = type.icon;
                       return (
                         <div key={type.id}>
                           <RadioGroupItem value={type.id} id={type.id} className="peer sr-only" />
                           <label htmlFor={type.id} className="cursor-pointer">
-                            <Card className="hover:bg-accent peer-checked:ring-2 peer-checked:ring-primary transition-all">
+                            <Card className="transition-all hover:bg-accent peer-checked:ring-2 peer-checked:ring-primary">
                               <CardHeader className="pb-3">
                                 <div className="flex items-center gap-3">
-                                  <div className="p-2 bg-primary/10 rounded-lg">
-                                    <Icon className="w-5 h-5 text-primary" />
+                                  <div className="rounded-lg bg-primary/10 p-2">
+                                    <Icon className="h-5 w-5 text-primary" />
                                   </div>
                                   <div>
                                     <CardTitle className="text-base">{type.title}</CardTitle>
@@ -120,7 +126,7 @@ export function ProviderTypeStep({ data, onDataChange, onNext, onPrevious }: Pro
                             </Card>
                           </label>
                         </div>
-                      )
+                      );
                     })}
                   </RadioGroup>
                 </FormControl>
@@ -138,5 +144,5 @@ export function ProviderTypeStep({ data, onDataChange, onNext, onPrevious }: Pro
         </form>
       </Form>
     </div>
-  )
+  );
 }

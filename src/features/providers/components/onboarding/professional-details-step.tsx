@@ -1,66 +1,92 @@
-"use client"
+'use client';
 
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 const professionalDetailsSchema = z.object({
-  medicalLicenseNumber: z.string().min(1, "Medical license number is required"),
-  yearsOfExperience: z.string().min(1, "Years of experience is required"),
-  education: z.string().min(10, "Please provide details about your education"),
-  specializations: z.string().min(1, "Please select at least one specialization"),
-  languagesSpoken: z.string().min(1, "Please specify languages spoken"),
+  medicalLicenseNumber: z.string().min(1, 'Medical license number is required'),
+  yearsOfExperience: z.string().min(1, 'Years of experience is required'),
+  education: z.string().min(10, 'Please provide details about your education'),
+  specializations: z.string().min(1, 'Please select at least one specialization'),
+  languagesSpoken: z.string().min(1, 'Please specify languages spoken'),
   hospitalAffiliations: z.string().optional(),
-})
+});
 
-type ProfessionalDetailsData = z.infer<typeof professionalDetailsSchema>
+type ProfessionalDetailsData = z.infer<typeof professionalDetailsSchema>;
 
 interface ProfessionalDetailsStepProps {
-  data: any
-  onDataChange: (data: any) => void
-  onNext: () => void
-  onPrevious: () => void
+  data: any;
+  onDataChange: (data: any) => void;
+  onNext: () => void;
+  onPrevious: () => void;
 }
 
 const SPECIALIZATIONS = [
-  "Cardiology",
-  "Dermatology",
-  "Emergency Medicine",
-  "Family Medicine",
-  "Internal Medicine",
-  "Neurology",
-  "Oncology",
-  "Orthopedics",
-  "Pediatrics",
-  "Psychiatry",
-  "Radiology",
-  "Surgery",
-]
+  'Cardiology',
+  'Dermatology',
+  'Emergency Medicine',
+  'Family Medicine',
+  'Internal Medicine',
+  'Neurology',
+  'Oncology',
+  'Orthopedics',
+  'Pediatrics',
+  'Psychiatry',
+  'Radiology',
+  'Surgery',
+];
 
-const EXPERIENCE_RANGES = ["0-2 years", "3-5 years", "6-10 years", "11-15 years", "16-20 years", "20+ years"]
+const EXPERIENCE_RANGES = [
+  '0-2 years',
+  '3-5 years',
+  '6-10 years',
+  '11-15 years',
+  '16-20 years',
+  '20+ years',
+];
 
-export function ProfessionalDetailsStep({ data, onDataChange, onNext, onPrevious }: ProfessionalDetailsStepProps) {
+export function ProfessionalDetailsStep({
+  data,
+  onDataChange,
+  onNext,
+  onPrevious,
+}: ProfessionalDetailsStepProps) {
   const form = useForm<ProfessionalDetailsData>({
     resolver: zodResolver(professionalDetailsSchema),
     defaultValues: {
-      medicalLicenseNumber: data?.professionalDetails?.medicalLicenseNumber || "",
-      yearsOfExperience: data?.professionalDetails?.yearsOfExperience || "",
-      education: data?.professionalDetails?.education || "",
-      specializations: data?.professionalDetails?.specializations || "",
-      languagesSpoken: data?.professionalDetails?.languagesSpoken || "",
-      hospitalAffiliations: data?.professionalDetails?.hospitalAffiliations || "",
+      medicalLicenseNumber: data?.professionalDetails?.medicalLicenseNumber || '',
+      yearsOfExperience: data?.professionalDetails?.yearsOfExperience || '',
+      education: data?.professionalDetails?.education || '',
+      specializations: data?.professionalDetails?.specializations || '',
+      languagesSpoken: data?.professionalDetails?.languagesSpoken || '',
+      hospitalAffiliations: data?.professionalDetails?.hospitalAffiliations || '',
     },
-  })
+  });
 
   const onSubmit = (formData: ProfessionalDetailsData) => {
-    onDataChange({ professionalDetails: formData })
-    onNext()
-  }
+    onDataChange({ professionalDetails: formData });
+    onNext();
+  };
 
   return (
     <div className="space-y-6">
@@ -73,7 +99,7 @@ export function ProfessionalDetailsStep({ data, onDataChange, onNext, onPrevious
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField
               control={form.control}
               name="medicalLicenseNumber"
@@ -157,7 +183,7 @@ export function ProfessionalDetailsStep({ data, onDataChange, onNext, onPrevious
             )}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField
               control={form.control}
               name="languagesSpoken"
@@ -196,5 +222,5 @@ export function ProfessionalDetailsStep({ data, onDataChange, onNext, onPrevious
         </form>
       </Form>
     </div>
-  )
+  );
 }

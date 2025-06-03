@@ -9,8 +9,7 @@ import { CalendarIcon, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-
-import { ServiceProvider } from '../lib/types';
+import { ServiceProvider } from '@/features/providers/types/types';
 
 interface ServiceProviderCardProps {
   serviceProvider: ServiceProvider;
