@@ -28,17 +28,6 @@ import { ProfessionalDetailsSection } from './professional-details-section';
 import { ProviderTypeSection } from './provider-type-section';
 import { RegulatoryRequirementsSection } from './regulatory-requirements-section';
 import { ServicesSection } from './services-section';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { FormField, FormItem, FormControl, FormLabel, FormMessage } from '@/components/ui/form';
-import { Checkbox } from '@/components/ui/checkbox';
 
 // Updated schema to match Prisma ServiceProvider model
 const basicInfoSchema = z.object({
@@ -148,7 +137,7 @@ export function ProviderOnboardingForm() {
       toast({
         title: 'Application submitted successfully!',
         description:
-          'Your provider application has been submitted for review. You\'ll receive an email confirmation shortly.',
+          'Your provider application has been submitted for review. You will receive an email confirmation shortly.',
       });
     } catch (error) {
       toast({
@@ -184,7 +173,7 @@ export function ProviderOnboardingForm() {
 
     setFormErrors(errors);
 
-    const firstErrorElement = document.querySelector('[aria-invalid=\'true\']');
+    const firstErrorElement = document.querySelector('[aria-invalid="true"]');
     if (firstErrorElement) {
       firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -303,7 +292,7 @@ export function ProviderOnboardingForm() {
             <DialogHeader>
               <DialogTitle>Confirm Submission</DialogTitle>
               <DialogDescription>
-                Are you sure you want to submit your provider application? Once submitted, you'll
+                Are you sure you want to submit your provider application? Once submitted, you will
                 need to contact support to make changes.
               </DialogDescription>
             </DialogHeader>

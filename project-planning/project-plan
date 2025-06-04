@@ -1,0 +1,147 @@
+# MedBookings MVP Project Plan
+
+## Clean up from previous code
+
+- [ ] Remove all types built on Prisma/Zod
+- [x] Implement TanStack Query as the default pattern for interacting with the database
+
+## User Authentication & Profile Management
+
+- [x] Implement Google OAuth login integration
+- [x] Create secure authentication flow with Google credentials
+- [x] Design and implement user profile page
+- [x] Build profile edit/update functionality
+- [ ] Add profile image upload capability (with option to use Google profile image)
+- [ ] Implement user roles system (guest, user, provider, organization manager, admin)
+
+## Service Provider Management
+
+- [ ] Create provider registration flow
+- [ ] Implement Google Calendar connection during provider registration
+- [ ] Add Google Meet integration for virtual appointments
+- [ ] Set up email sync permissions for notifications
+- [ ] Design provider profile edit interface
+- [ ] Implement provider specialization and services selection
+- [ ] Build provider approval workflow for admins
+- [ ] Create provider dashboard
+- [ ] Design provider public profile page for guests/users to view
+- [ ] Implement provider search and filtering
+
+## Organization Management
+
+- [ ] Build organization creation interface
+- [ ] Implement organization profile management
+- [ ] Create organization manager role assignment
+- [ ] Design organization approval workflow for admins
+- [ ] Build organization dashboard
+- [ ] Implement organization public profile for guests/users to view
+- [ ] Create organization search and filtering
+
+## Location Management
+
+- [ ] Design location creation interface for organizations
+- [ ] Implement location details management (address, contact info, services)
+- [ ] Build location operation hours configuration
+- [ ] Create location service assignment functionality
+- [ ] Implement location search with geolocation support
+
+## Availability Management
+
+- [ ] Design provider availability interface
+- [ ] Implement recurring availability patterns
+- [ ] Build one-time availability exceptions
+- [ ] Create organization-level availability management for providers
+- [ ] Implement location-specific availability settings
+- [ ] Design availability visualization calendar
+
+## Booking System
+
+- [ ] Create booking slot generation based on availability
+- [ ] Implement booking creation workflow for guests/users
+- [ ] Build booking confirmation and notification system
+- [ ] Design booking management for providers
+- [ ] Implement booking management for organization managers
+- [ ] Create booking modification and cancellation flows
+- [ ] Build booking history views
+
+## Calendar Integration
+
+- [ ] Research and implement Google Calendar API integration
+- [ ] Build OAuth flow for Google Calendar authorization
+- [ ] Implement bidirectional sync for provider availability
+- [ ] Create bidirectional sync for bookings
+- [ ] Handle calendar conflict resolution
+- [ ] Implement webhook listeners for external calendar changes
+- [ ] Design fallback mechanisms for sync failures
+
+## Admin Dashboard
+
+- [ ] Create admin dashboard interface
+- [ ] Implement provider approval management
+- [ ] Build organization approval workflow
+- [ ] Design system-wide analytics and reporting
+- [ ] Implement user management functionality
+- [ ] Create configuration settings interface
+
+## Multi-provider Views & Management
+
+- [ ] Design organization diary views showing multiple providers
+- [ ] Implement filtering by provider type/specialization
+- [ ] Build time-slot allocation across providers
+- [ ] Create resource management functionality
+- [ ] Implement team availability visualization
+
+## Email Communications
+
+- [ ] Set up email service integration
+- [ ] Create email templates for registration, verification
+- [ ] Implement booking confirmation emails
+- [ ] Build reminder notification system
+- [ ] Create cancellation and modification communications
+- [ ] Implement organization invitation emails
+- [ ] Design HTML email templates with branding
+
+## WhatsApp Communications
+
+- [ ] Research and implement WhatsApp Business API integration
+- [ ] Set up WhatsApp templates for booking confirmations
+- [ ] Create WhatsApp reminder notification system
+- [ ] Implement booking modification and cancellation alerts via WhatsApp
+- [ ] Build opt-in/opt-out functionality for WhatsApp communications
+- [ ] Design fallback to email when WhatsApp delivery fails
+- [ ] Create WhatsApp template approval workflow
+
+## Infrastructure & Technical Foundation
+
+- [ ] Set up project repository and CI/CD pipeline
+- [ ] Configure database schema and migrations
+- [ ] Implement role-based access control system
+- [ ] Design and build reusable UI component library
+- [ ] Create responsive layouts for mobile and desktop
+- [ ] Set up logging, monitoring and error reporting
+- [ ] Implement secure API architecture
+- [ ] Design global state management solution
+
+## Testing
+
+- [ ] Write unit tests for critical components
+- [ ] Implement integration tests for main workflows
+- [ ] Create end-to-end tests for key user journeys
+- [ ] Perform security testing and vulnerability assessment
+- [ ] Conduct performance testing and optimization
+
+## Deployment
+
+- [ ] Configure staging environment
+- [ ] Set up production environment
+- [ ] Implement database backup strategy
+- [ ] Create deployment automation
+- [ ] Set up monitoring and alerts
+- [ ] Implement SSL/TLS security
+
+## Documentation
+
+- [ ] Create user documentation and help guides
+- [ ] Write technical documentation for developers
+- [ ] Build API documentation for integrations
+- [ ] Create onboarding guides for different user types

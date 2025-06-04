@@ -1,20 +1,33 @@
-import {
-  AccountSchema,
-  BookingSchema,
-  NotificationPreferenceSchema,
-  RequirementSubmissionSchema,
-  ReviewSchema,
-  ServiceProviderSchema,
-  UserSchema,
-} from '@prisma/zod';
-import { z } from 'zod';
+export interface UserProfile {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  role: UserRole;
+}
 
-export type User = z.infer<typeof UserSchema> & {
-  accounts: z.infer<typeof AccountSchema>[];
-  serviceProvider: z.infer<typeof ServiceProviderSchema> | null;
-  bookingsCreated: z.infer<typeof BookingSchema>[];
-  bookingsAsClient: z.infer<typeof BookingSchema>[];
-  notificationPreferences: z.infer<typeof NotificationPreferenceSchema>[];
-  reviews: z.infer<typeof ReviewSchema>[];
-  validatedRequirements: z.infer<typeof RequirementSubmissionSchema>[];
-};
+export enum UserRole {
+  USER = 'USER',
+  ADMIN = 'ADMIN',
+  SUPER_ADMIN = 'SUPER_ADMIN',
+}
+
+export interface UpdateProfileRequest {
+  name?: string;
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+}
+
+export interface UpdateProfileResponse {
+  success: boolean;
+  error?: string;
+  user?: UserProfile;
+}
+
+export interface DeleteAccountResponse {
+  success: boolean;
+  error?: string;
+}

@@ -9,7 +9,7 @@ import { PricingCalculator } from '@/features/billing/components/pricing-calcula
 
 export default function JoinMedbookingsPage() {
   return (
-    <div className="mx-auto max-w-7xl">
+    <>
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-r from-sky-400 to-sky-600 py-20 text-white">
         <div className="container mx-auto px-6">
@@ -37,7 +37,7 @@ export default function JoinMedbookingsPage() {
             </div>
             <div className="relative hidden h-[400px] md:block">
               <Image
-                src="/medbookings-landing.png"
+                src="/medbookings-providers-landing.png"
                 alt="Medbookings Professional Dashboard"
                 fill
                 className="rounded-lg object-cover shadow-xl"
@@ -48,7 +48,7 @@ export default function JoinMedbookingsPage() {
       </section>
 
       <section>
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-20">
           <div className="mb-8 text-center">
             <h1 className="mb-4 text-4xl font-bold">Transparent Pricing</h1>
             <p className="mx-auto max-w-2xl text-xl">
@@ -368,6 +368,6 @@ export default function JoinMedbookingsPage() {
           </div>
         </div>
       </section>
-    </div>
+    </>
   );
 }

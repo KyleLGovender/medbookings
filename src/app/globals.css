@@ -22,7 +22,7 @@
     --muted: 220 6% 95%; /* neutral-200 */
     --muted-foreground: 220 6% 10%; /* neutral-800 */
 
-    --accent: 199 89% 60%; /* sky-400 */
+    --accent: 220 6% 98%; /* neutral-100 */
     --accent-foreground: 220 6% 10%; /* neutral-800 */
 
     --destructive: 0 84.2% 60.2%;
@@ -62,8 +62,8 @@
     --muted: 220 6% 14%; /* neutral-700 */
     --muted-foreground: 220 6% 98%; /* neutral-100 */
 
-    --accent: 199 89% 65%; /* sky-300 */
-    --accent-foreground: 0 0% 0%; /* black text for contrast */
+    --accent: 220 6% 14%; /* neutral-700 */
+    --accent-foreground: 220 6% 98%; /* neutral-100 */
 
     --destructive: 0 70% 45%;
     --destructive-foreground: 0 0% 98%;

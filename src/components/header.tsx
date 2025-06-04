@@ -55,30 +55,37 @@ const getNavigationItems = (isSignedIn: boolean, isAdmin: boolean): NavigationIt
       {
         title: 'Dashboard',
         href: '/dashboard/',
-      },
-      {
-        title: 'Profile',
-        href: '/profile/',
-      },
-      {
-        title: 'Organizations',
-        href: '/organizations/',
-      },
-      {
-        title: 'Calendar',
-        href: '/calendar/',
-      },
-      {
-        title: 'Settings',
-        href: '/settings/ ',
+        children: [
+          {
+            title: 'Profile',
+            href: '/profile/',
+            description: 'View and edit your profile information',
+          },
+          {
+            title: 'Organizations',
+            href: '/organizations/',
+            description: 'Manage your organizations',
+          },
+          {
+            title: 'Calendar',
+            href: '/calendar/',
+            description: 'View your appointments and availability',
+          },
+          {
+            title: 'Settings',
+            href: '/settings/',
+            description: 'Customize your account preferences',
+          },
+        ],
       },
     ];
 
     // Only add Admin menu item if user is an admin
     if (isAdmin) {
-      signedInItems.push({
+      signedInItems[signedInItems.length - 1].children?.push({
         title: 'Admin',
-        href: '/admin/ ',
+        href: '/admin/',
+        description: 'Access admin dashboard and controls',
       });
     }
 
@@ -118,98 +125,104 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-16 items-center justify-between px-10">
-        <div className="flex items-center">
-          <Link href="/" className="ml-3 flex items-center gap-2 font-semibold">
-            <Logo />
-            <span className="hidden text-xl sm:inline">Medbookings</span>
-          </Link>
-        </div>
+      <div className="mx-auto max-w-7xl">
+        <div className="relative flex h-16 items-center px-6 md:px-24">
+          {/* Logo - Left */}
+          <div className="flex shrink-0 items-center">
+            <Link href="/" className="flex items-center gap-2 font-semibold">
+              <Logo />
+              <span className="hidden text-xl sm:inline">Medbookings</span>
+            </Link>
+          </div>
 
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex md:gap-10">
-          <NavigationMenu>
-            <NavigationMenuList>
-              {navigationItems.map((item) =>
-                item.children ? (
-                  <NavigationMenuItem key={item.title}>
-                    <NavigationMenuTrigger>{item.title}</NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                        {item.children.map((child) => (
-                          <li key={child.title}>
-                            <NavigationMenuLink asChild>
-                              <Link
-                                href={child.href}
-                                className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                              >
-                                <div className="text-sm font-medium leading-none">
-                                  {child.title}
-                                </div>
-                                <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                                  {child.description}
-                                </p>
-                              </Link>
-                            </NavigationMenuLink>
-                          </li>
-                        ))}
-                      </ul>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-                ) : (
-                  <NavigationMenuItem key={item.title}>
-                    <NavigationMenuLink
-                      href={item.href}
-                      className={cn(
-                        navigationMenuTriggerStyle(),
-                        isActivePath(item.href) && 'text-primary'
-                      )}
-                    >
-                      {item.title}
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                )
-              )}
-            </NavigationMenuList>
-          </NavigationMenu>
-        </div>
+          {/* Navigation - Center */}
+          <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 transform md:flex">
+            <NavigationMenu>
+              <NavigationMenuList>
+                {navigationItems.map((item) =>
+                  item.children ? (
+                    <NavigationMenuItem key={item.title}>
+                      <NavigationMenuTrigger>{item.title}</NavigationMenuTrigger>
+                      <NavigationMenuContent>
+                        <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                          {item.children.map((child) => (
+                            <li key={child.title}>
+                              <NavigationMenuLink asChild>
+                                <Link
+                                  href={child.href}
+                                  className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                >
+                                  <div className="text-sm font-medium leading-none">
+                                    {child.title}
+                                  </div>
+                                  <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                    {child.description}
+                                  </p>
+                                </Link>
+                              </NavigationMenuLink>
+                            </li>
+                          ))}
+                        </ul>
+                      </NavigationMenuContent>
+                    </NavigationMenuItem>
+                  ) : (
+                    <NavigationMenuItem key={item.title}>
+                      <NavigationMenuLink
+                        href={item.href}
+                        className={cn(
+                          navigationMenuTriggerStyle(),
+                          isActivePath(item.href) && 'text-primary'
+                        )}
+                      >
+                        {item.title}
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                  )
+                )}
+              </NavigationMenuList>
+            </NavigationMenu>
+          </div>
 
-        <div className="hidden items-center gap-2 md:flex">
-          <AuthButton profileMenuItems={profileMenuItems} />
-        </div>
+          {/* Auth button - Right */}
+          <div className="ml-auto flex items-center gap-2">
+            <div className="hidden md:flex">
+              <AuthButton profileMenuItems={profileMenuItems} />
+            </div>
 
-        <div className="flex items-center gap-2 md:hidden">
-          <AuthButton profileMenuItems={profileMenuItems} />
-          {/* Mobile Navigation */}
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right">
-              <SheetHeader className="sr-only">
-                <SheetTitle>Navigation Menu</SheetTitle>
-              </SheetHeader>
-              <nav className="flex flex-col gap-4 p-6">
-                {navigationItems.map((item) => (
-                  <Link
-                    key={item.title}
-                    href={item.href}
-                    className={cn(
-                      'text-lg font-medium transition-colors hover:text-foreground/80',
-                      isActivePath(item.href) ? 'text-primary' : 'text-foreground/60'
-                    )}
-                    onClick={() => setOpen(false)}
-                  >
-                    {item.title}
-                  </Link>
-                ))}
-              </nav>
-              <Separator className="mx-6" />
-            </SheetContent>
-          </Sheet>
+            <div className="flex items-center gap-2 md:hidden">
+              <AuthButton profileMenuItems={profileMenuItems} />
+              {/* Mobile Navigation */}
+              <Sheet open={open} onOpenChange={setOpen}>
+                <SheetTrigger asChild className="md:hidden">
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">Toggle menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right">
+                  <SheetHeader className="sr-only">
+                    <SheetTitle>Navigation Menu</SheetTitle>
+                  </SheetHeader>
+                  <nav className="flex flex-col gap-4 p-6">
+                    {navigationItems.map((item) => (
+                      <Link
+                        key={item.title}
+                        href={item.href}
+                        className={cn(
+                          'text-lg font-medium transition-colors hover:text-foreground/80',
+                          isActivePath(item.href) ? 'text-primary' : 'text-foreground/60'
+                        )}
+                        onClick={() => setOpen(false)}
+                      >
+                        {item.title}
+                      </Link>
+                    ))}
+                  </nav>
+                  <Separator className="mx-6" />
+                </SheetContent>
+              </Sheet>
+            </div>
+          </div>
         </div>
       </div>
     </header>

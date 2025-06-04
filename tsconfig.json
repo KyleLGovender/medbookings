@@ -22,7 +22,6 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-      // "@prisma/*": ["./prisma/*"] // This can conflict with @prisma/client from node_modules
     }
   },
   "include": [

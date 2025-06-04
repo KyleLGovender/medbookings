@@ -7,22 +7,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Add this new generator configuration
-generator zod {
-  provider               = "zod-prisma-types"
-  output                 = "./zod"
-  relationModel          = true
-  modelCase              = "camelCase"
-  modelSuffix            = "Schema"
-  prismaJsonNullability  = true
-  // Add these options
-  useDecimalJs           = false // This will make Decimals serialize as numbers
-  dateTimeAsDate         = false // This will make Dates serialize as strings
-  addInputTypeValidation = true
-  // Add custom transformer configuration
-  decimalType            = "number" // This will make Decimals use number type
-}
-
 // Base User model and auth
 model User {
   id                       String                          @id @default(cuid())
@@ -191,13 +175,6 @@ enum Languages {
   Hindi
   German
   Mandarin
-}
-
-enum BillingType {
-  MEDICAL_AID_ONLY       // Only accepts medical aid
-  PRIVATE_ONLY           // Only accepts private payments
-  MEDICAL_AID_AND_PRIVATE // Accepts both medical aid and private payments
-  ALL                    // Accepts all payment types
 }
 
 // ORGANIZATION MODELS

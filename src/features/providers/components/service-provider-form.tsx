@@ -5,16 +5,15 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { BillingType, Languages } from '@prisma/client';
+import { Languages } from '@prisma/client';
 import { useFormState } from 'react-dom';
 import { useForm, useWatch } from 'react-hook-form';
 
+import { renderRequirementInput } from '@/components/forms/render-requirement-input';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { renderRequirementInput } from '@/features/service-provider/components/render-requirement-input';
-
-import { registerServiceProvider, updateServiceProvider } from '../lib/actions';
-import { type ServiceProviderFormType, serviceProviderSchema } from '../lib/types';
+import { registerServiceProvider, updateServiceProvider } from '@/features/providers/lib/actions';
+import { ServiceProviderFormType, serviceProviderSchema } from '@/features/providers/types/types';
 
 const ACCEPTED_IMAGE_TYPES = ['.jpg', '.jpeg', '.png', '.webp'];
 
@@ -43,10 +42,6 @@ interface Props {
     id: Languages;
     name: Languages;
   }>;
-  billingTypes: Array<{
-    id: BillingType;
-    name: BillingType;
-  }>;
   userId: string;
   mode: FormMode;
   initialData?: Partial<ServiceProviderFormType> & {
@@ -64,7 +59,6 @@ function ServiceProviderForm({
   services,
   requirementTypes,
   languages,
-  billingTypes,
   userId,
   mode = 'register',
   initialData = {},
@@ -90,7 +84,6 @@ function ServiceProviderForm({
       bio: initialData?.bio || '',
       image: null, // File input can't have a default string value
       languages: initialData?.languages || [],
-      billingType: initialData?.billingType,
       website: initialData?.website || '',
       email: initialData?.email || '',
       whatsapp: initialData?.whatsapp || '',
@@ -360,30 +353,6 @@ function ServiceProviderForm({
               )}
             </label>
             <p className="text-sm text-gray-500">Hold Ctrl/Cmd to select multiple languages</p>
-          </div>
-
-          {/* Billing Type */}
-          <div className="space-y-2">
-            <label htmlFor="billingType" className="block text-sm font-medium text-gray-700">
-              Billing Type
-              <select
-                id="billingType"
-                {...form.register('billingType')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="">Select billing type...</option>
-                {billingTypes.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>
-                ))}
-              </select>
-              {form.formState.errors.billingType && (
-                <p className="mt-1 text-sm text-red-500">
-                  {form.formState.errors.billingType.message}
-                </p>
-              )}
-            </label>
           </div>
 
           {/* Website */}

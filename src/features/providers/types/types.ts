@@ -1,5 +1,3 @@
-import { BillingType } from '@prisma/client';
-import { ServiceProviderSchema, ServiceSchema } from '@prisma/zod';
 import { z } from 'zod';
 
 export type Service = z.infer<typeof ServiceSchema>;
@@ -104,7 +102,6 @@ export const serviceProviderSchema = z.object({
     ])
     .nullable(),
   languages: z.array(z.string()).min(1, 'Select at least one language'),
-  billingType: z.nativeEnum(BillingType),
   email: z.string().email('Please enter a valid email').min(1, 'Email is required'),
   whatsapp: z.string().min(1, 'WhatsApp number is required'),
   website: z.string().url('Invalid website URL').optional().or(z.literal('')),

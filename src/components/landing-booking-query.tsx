@@ -100,10 +100,6 @@ export default function LandingBookingQuery() {
       case 1:
         return (
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">
-              What type of medical service are you looking for?
-            </h3>
-
             <div className={`grid gap-3 ${getGridCols()}`}>
               {[
                 {
