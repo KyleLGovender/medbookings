@@ -1,10 +1,18 @@
 'use client';
 
-import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { signIn, signOut, useSession } from 'next-auth/react';
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface MenuItemType {
   label: string;
@@ -32,9 +40,10 @@ export default function AuthButton({ profileMenuItems = [] }: AuthButtonProps) {
   // Show sign-in button for unauthenticated users
   if (status === 'unauthenticated') {
     return (
-      <button
+      <Button
         onClick={() => signIn('google', { callbackUrl: '/profile' })}
-        className="ml-3 inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+        variant="outline"
+        className="ml-3"
         aria-label="Sign in with Google"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -56,66 +65,51 @@ export default function AuthButton({ profileMenuItems = [] }: AuthButtonProps) {
           />
         </svg>
         Sign in
-      </button>
+      </Button>
     );
   }
 
   // For authenticated users or loading state, show the profile menu with initials
   return (
-    <Menu as="div" className="relative ml-3">
-      <div>
-        <MenuButton className="relative flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-          <span className="absolute -inset-1.5" />
-          <span className="sr-only">Open user menu</span>
-          <div className="relative size-8 overflow-hidden rounded-full bg-gray-200">
-            {/* Always show the user initial or a placeholder */}
-            <div className="flex h-full w-full items-center justify-center">
-              <span className="text-sm font-medium text-gray-600">
+    <div className="relative ml-3">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="relative h-8 w-8 rounded-full p-0"
+            aria-label="Open user menu"
+          >
+            <Avatar className="h-8 w-8">
+              {status === 'authenticated' && data?.user?.image && imageLoaded ? (
+                <AvatarImage
+                  src={data.user.image}
+                  alt={data.user.name || 'User avatar'}
+                  referrerPolicy="no-referrer"
+                />
+              ) : null}
+              <AvatarFallback className="text-sm font-medium">
                 {status === 'loading' ? '...' : data?.user?.name?.[0] || '?'}
-              </span>
-            </div>
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
 
-            {/* Show the image on top if it's loaded and authenticated */}
-            {status === 'authenticated' && data?.user?.image && imageLoaded && (
-              <Image
-                src={data.user.image}
-                alt={data.user.name || 'User avatar'}
-                fill
-                sizes="32px"
-                className="absolute inset-0 rounded-full object-cover"
-                style={{ opacity: 1 }}
-                unoptimized={data.user.image?.includes('googleusercontent.com')}
-              />
-            )}
-          </div>
-        </MenuButton>
-      </div>
-      {status === 'authenticated' && (
-        <MenuItems
-          transition
-          className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 transition focus:outline-none data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in"
-        >
-          {profileMenuItems.map((item) => (
-            <MenuItem key={item.label}>
-              <a
-                href={item.href}
-                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none"
-              >
-                {item.label}
-              </a>
-            </MenuItem>
-          ))}
-          <MenuItem>
-            <a
-              href="#"
+        {status === 'authenticated' && (
+          <DropdownMenuContent align="end" className="w-48">
+            {profileMenuItems.map((item) => (
+              <DropdownMenuItem key={item.label} asChild>
+                <Link href={item.href}>{item.label}</Link>
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuItem
               onClick={() => signOut({ callbackUrl: '/' })}
-              className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none"
+              className="cursor-pointer"
             >
               Sign out
-            </a>
-          </MenuItem>
-        </MenuItems>
-      )}
-    </Menu>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        )}
+      </DropdownMenu>
+    </div>
   );
 }

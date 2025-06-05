@@ -49,49 +49,6 @@ const getNavigationItems = (isSignedIn: boolean, isAdmin: boolean): NavigationIt
     },
   ];
 
-  if (isSignedIn) {
-    const signedInItems = [
-      ...baseItems,
-      {
-        title: 'Dashboard',
-        href: '/dashboard/',
-        children: [
-          {
-            title: 'Profile',
-            href: '/profile/',
-            description: 'View and edit your profile information',
-          },
-          {
-            title: 'Organizations',
-            href: '/organizations/',
-            description: 'Manage your organizations',
-          },
-          {
-            title: 'Calendar',
-            href: '/calendar/',
-            description: 'View your appointments and availability',
-          },
-          {
-            title: 'Settings',
-            href: '/settings/',
-            description: 'Customize your account preferences',
-          },
-        ],
-      },
-    ];
-
-    // Only add Admin menu item if user is an admin
-    if (isAdmin) {
-      signedInItems[signedInItems.length - 1].children?.push({
-        title: 'Admin',
-        href: '/admin/',
-        description: 'Access admin dashboard and controls',
-      });
-    }
-
-    return signedInItems;
-  }
-
   return [...baseItems];
 };
 
@@ -119,8 +76,9 @@ export default function Header() {
 
   const profileMenuItems = [
     { label: 'Profile', href: '/profile' },
-    { label: 'Availabilty', href: '/profile/service-provider/calendar' },
-    { label: 'Bookings', href: '/calendar/service-provider/bookings' },
+    { label: 'Organizations', href: '/organizations' },
+    { label: 'Calendar', href: '/calendar' },
+    { label: 'Settings', href: '/settings' },
   ];
 
   return (
