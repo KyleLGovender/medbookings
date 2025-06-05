@@ -25,38 +25,17 @@ export function DocumentUploader({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<any>(null);
-  const previousFileRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const firstRenderRef = useRef(true);
   const { toast } = useToast();
 
-  // Initialize uploadedFile from currentFile only on mount or when currentFile changes
+  // Initialize with currentFile on first render only
   useEffect(() => {
-    if (currentFile && (!uploadedFile || currentFile.name !== uploadedFile.name)) {
+    if (firstRenderRef.current && currentFile) {
       setUploadedFile(currentFile);
+      firstRenderRef.current = false;
     }
   }, [currentFile]);
-
-  // Only call onUpload when uploadedFile changes
-  useEffect(() => {
-    // Skip the first render
-    if (!previousFileRef.current) {
-      previousFileRef.current = uploadedFile;
-      return;
-    }
-
-    // Check if file has actually changed before calling onUpload
-    const prevFile = previousFileRef.current;
-    const currentUploadedFile = uploadedFile;
-
-    if (
-      (!prevFile && currentUploadedFile) ||
-      (prevFile && !currentUploadedFile) ||
-      (prevFile && currentUploadedFile && prevFile.name !== currentUploadedFile.name)
-    ) {
-      onUpload(currentUploadedFile);
-      previousFileRef.current = currentUploadedFile;
-    }
-  }, [uploadedFile, onUpload]);
 
   const validateFile = (file: File) => {
     // Get the file extension with dot
@@ -106,8 +85,10 @@ export function DocumentUploader({
       // In a real app, you would upload to S3 here
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
+      clearInterval(interval);
       setUploadProgress(100);
 
+      // Create the file data
       const fileData = {
         name: file.name,
         size: file.size,
@@ -116,21 +97,11 @@ export function DocumentUploader({
         uploadedAt: new Date().toISOString(),
       };
 
-      // Only update if the file has changed
-      if (!uploadedFile || uploadedFile.name !== fileData.name) {
-        // Save the current scroll position
-        const scrollPosition = window.scrollY;
+      // Update local state
+      setUploadedFile(fileData);
 
-        setUploadedFile(fileData);
-
-        // Restore scroll position after state update
-        setTimeout(() => {
-          window.scrollTo({
-            top: scrollPosition,
-            behavior: 'auto',
-          });
-        }, 0);
-      }
+      // Notify parent
+      onUpload(fileData);
 
       toast({
         title: 'File uploaded successfully',
@@ -144,7 +115,6 @@ export function DocumentUploader({
       });
     } finally {
       setIsUploading(false);
-      setUploadProgress(0);
     }
   };
 
@@ -170,9 +140,6 @@ export function DocumentUploader({
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Prevent any default behavior that might cause scrolling
-    e.preventDefault();
-
     const files = e.target.files;
     if (files && files[0]) {
       handleFileUpload(files[0]);
@@ -180,8 +147,8 @@ export function DocumentUploader({
   };
 
   const removeFile = () => {
-    previousFileRef.current = uploadedFile;
     setUploadedFile(null);
+    onUpload(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -244,8 +211,7 @@ export function DocumentUploader({
                 <Button
                   variant="link"
                   className="h-auto p-0"
-                  onClick={(e) => {
-                    e.preventDefault(); // Prevent default behavior
+                  onClick={() => {
                     if (fileInputRef.current) {
                       fileInputRef.current.click();
                     }

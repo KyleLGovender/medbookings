@@ -105,34 +105,31 @@ export const renderRequirementInput = (
           <DocumentUploader
             acceptedFormats={acceptedFileTypes}
             onUpload={(fileData) => {
-              // Don't scroll or focus after file upload
-              const shouldNotValidate = true;
+              // Only trigger validation when needed
+              const shouldValidate = false;
 
               if (fileData) {
-                // Set document file first
                 form.setValue(
                   `regulatoryRequirements.requirements.${requirement.index}.documentFile`,
                   fileData,
-                  { shouldValidate: false, shouldFocus: false }
+                  { shouldValidate }
                 );
 
-                // Then set the value
                 form.setValue(
                   `regulatoryRequirements.requirements.${requirement.index}.value`,
-                  fileData.name,
-                  { shouldValidate: shouldNotValidate, shouldFocus: false }
+                  fileData ? fileData.name : null,
+                  { shouldValidate }
                 );
               } else {
-                // Clear values when file is removed
                 form.setValue(
                   `regulatoryRequirements.requirements.${requirement.index}.documentFile`,
                   null,
-                  { shouldValidate: false, shouldFocus: false }
+                  { shouldValidate }
                 );
                 form.setValue(
                   `regulatoryRequirements.requirements.${requirement.index}.value`,
                   null,
-                  { shouldValidate: shouldNotValidate, shouldFocus: false }
+                  { shouldValidate }
                 );
               }
             }}

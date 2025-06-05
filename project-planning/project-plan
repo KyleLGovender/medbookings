@@ -17,7 +17,7 @@
 
 ## Service Provider Management
 
-- [ ] Create provider registration flow
+- [x] Create provider registration flow
 - [ ] Implement Google Calendar connection during provider registration
 - [ ] Add Google Meet integration for virtual appointments
 - [ ] Set up email sync permissions for notifications

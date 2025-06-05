@@ -29,15 +29,6 @@ import { ProviderTypeSection } from './provider-type-section';
 import { RegulatoryRequirementsSection } from './regulatory-requirements-section';
 import { ServicesSection } from './services-section';
 
-// Helper function to preserve scroll position
-const preserveScroll = (callback: () => void) => {
-  const scrollPosition = window.scrollY;
-  callback();
-  setTimeout(() => {
-    window.scrollTo({ top: scrollPosition, behavior: 'auto' });
-  }, 0);
-};
-
 // API mutation function
 const submitProviderApplication = async (data: ServiceProviderFormType) => {
   const response = await fetch('/api/providers', {
@@ -87,22 +78,12 @@ export function ProviderOnboardingForm() {
     mode: 'onBlur',
   });
 
-  // Watch for validation errors
+  // Watch for validation errors - only update on submission
   useEffect(() => {
-    const subscription = methods.watch(() => {
-      // Only update errors after a submission attempt and when there are actual errors
-      if (methods.formState.submitCount > 0 && Object.keys(methods.formState.errors).length > 0) {
-        // Use requestAnimationFrame to batch updates and prevent render loops
-        requestAnimationFrame(() => {
-          preserveScroll(() => {
-            updateFormErrors();
-          });
-        });
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [methods.formState.submitCount]);
+    if (methods.formState.isSubmitted && Object.keys(methods.formState.errors).length > 0) {
+      updateFormErrors();
+    }
+  }, [methods.formState.isSubmitted, methods.formState.errors]);
 
   // TanStack Query mutation
   const mutation = useMutation({
@@ -140,19 +121,44 @@ export function ProviderOnboardingForm() {
   };
 
   const updateFormErrors = () => {
+    // Collect errors from form state
     const errors = Object.entries(methods.formState.errors)
       .flatMap(([key, value]) => {
-        if (
-          key === 'basicInfo' ||
-          key === 'providerType' ||
-          key === 'professionalDetails' ||
-          key === 'services'
-        ) {
+        if (key === 'basicInfo' || key === 'providerType') {
           // Handle nested errors
           const sectionErrors = Object.entries(value as Record<string, { message?: string }>)
             .filter(([_, err]) => err.message)
             .map(([field, err]) => `${field}: ${err.message}`);
           return sectionErrors;
+        }
+        if (key === 'services') {
+          // Handle service errors
+          const servicesError = value as any; // Type assertion to avoid TypeScript errors
+
+          if (servicesError.availableServices?.message) {
+            return [`services: ${servicesError.availableServices.message}`];
+          }
+
+          // Handle service configs errors (price, duration)
+          if (servicesError.serviceConfigs) {
+            const serviceConfigErrors: string[] = [];
+
+            // Extract service config errors
+            Object.entries(servicesError.serviceConfigs).forEach(
+              ([serviceId, serviceConfig]: [string, any]) => {
+                if (serviceConfig.price?.message) {
+                  serviceConfigErrors.push(`Service price: ${serviceConfig.price.message}`);
+                }
+                if (serviceConfig.duration?.message) {
+                  serviceConfigErrors.push(`Service duration: ${serviceConfig.duration.message}`);
+                }
+              }
+            );
+
+            return serviceConfigErrors;
+          }
+
+          return [];
         }
         if (key === 'regulatoryRequirements') {
           return ['Please complete all required regulatory requirements'];
@@ -168,25 +174,12 @@ export function ProviderOnboardingForm() {
       })
       .filter(Boolean);
 
-    // Only update state if errors have changed
-    if (JSON.stringify(errors) !== JSON.stringify(formErrors)) {
-      setFormErrors(errors);
-    }
-
-    // Only scroll to the first error element when there are actual errors
-    // and only on submission - not during regular form interaction
-    if (errors.length > 0 && methods.formState.isSubmitted) {
-      // Use a short timeout to allow DOM updates to complete
-      setTimeout(() => {
-        const firstErrorElement = document.querySelector('[aria-invalid="true"]');
-        if (firstErrorElement) {
-          firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 100);
-    }
+    // Set errors directly without checking previous state to avoid loops
+    setFormErrors(errors);
   };
 
   const handleInvalidSubmit = () => {
+    // On invalid submit, directly update errors
     updateFormErrors();
 
     toast({
@@ -304,8 +297,8 @@ export function ProviderOnboardingForm() {
             <DialogHeader>
               <DialogTitle>Confirm Submission</DialogTitle>
               <DialogDescription>
-                Are you sure you want to submit your provider application? Once submitted, you will
-                not be able to make changes until it has been reviewed.
+                Your submission should be reviewed within 2 business days. You will be able to edit
+                your submission at any time.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

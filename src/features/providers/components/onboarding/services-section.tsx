@@ -5,12 +5,18 @@ import { useEffect, useRef } from 'react';
 import { useFormContext } from 'react-hook-form';
 
 import { Checkbox } from '@/components/ui/checkbox';
-import { FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { ServiceTypeData } from '@/features/providers/lib/provider-types';
 
 export function ServicesSection() {
-  const { control, setValue, watch, getValues } = useFormContext();
+  const {
+    control,
+    setValue,
+    watch,
+    getValues,
+    formState: { errors },
+  } = useFormContext();
   const initializedRef = useRef(false);
 
   // Get the selected services from the form state
@@ -49,6 +55,9 @@ export function ServicesSection() {
       </div>
     );
   }
+
+  // Debug errors
+  console.log('Service errors:', errors?.services);
 
   return (
     <div className="space-y-6 bg-background">
@@ -109,35 +118,37 @@ export function ServicesSection() {
                                 <FormField
                                   control={control}
                                   name={`services.serviceConfigs.${service.id}.duration`}
-                                  defaultValue={service.defaultDuration}
+                                  defaultValue={Number(service.defaultDuration)}
                                   render={({ field }) => (
-                                    <div className="w-1/2">
-                                      <div className="flex flex-col">
-                                        <label className="mb-1 text-xs font-medium">
-                                          Duration (min)
-                                        </label>
+                                    <FormItem className="w-1/2">
+                                      <FormLabel className="text-xs">Duration (min)</FormLabel>
+                                      <FormControl>
                                         <Input
                                           type="number"
                                           className="h-8"
-                                          {...field}
-                                          onChange={(e) =>
-                                            field.onChange(parseInt(e.target.value) || 0)
-                                          }
+                                          value={field.value}
+                                          min="1"
+                                          onChange={(e) => {
+                                            // Ensure we're getting a number
+                                            const value =
+                                              e.target.value === '' ? 0 : Number(e.target.value);
+                                            field.onChange(value);
+                                          }}
+                                          onBlur={field.onBlur}
                                         />
-                                      </div>
-                                    </div>
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
                                   )}
                                 />
                                 <FormField
                                   control={control}
                                   name={`services.serviceConfigs.${service.id}.price`}
-                                  defaultValue={service.defaultPrice}
+                                  defaultValue={Number(service.defaultPrice)}
                                   render={({ field }) => (
-                                    <div className="w-1/2">
-                                      <div className="flex flex-col">
-                                        <label className="mb-1 text-xs font-medium">
-                                          Price (R)
-                                        </label>
+                                    <FormItem className="w-1/2">
+                                      <FormLabel className="text-xs">Price (R)</FormLabel>
+                                      <FormControl>
                                         <div className="relative">
                                           <span className="absolute left-2 top-1/2 -translate-y-1/2 transform text-xs text-muted-foreground">
                                             R
@@ -145,14 +156,23 @@ export function ServicesSection() {
                                           <Input
                                             type="number"
                                             className="h-8 pl-6"
-                                            {...field}
-                                            onChange={(e) =>
-                                              field.onChange(parseFloat(e.target.value) || 0)
-                                            }
+                                            step="5"
+                                            value={field.value}
+                                            onChange={(e) => {
+                                              // Convert to number first
+                                              const rawValue =
+                                                e.target.value === '' ? 0 : Number(e.target.value);
+                                              // Then round to nearest 5
+                                              const roundedValue = Math.round(rawValue / 5) * 5;
+                                              // Ensure we're passing a number, not a string
+                                              field.onChange(roundedValue);
+                                            }}
+                                            onBlur={field.onBlur}
                                           />
                                         </div>
-                                      </div>
-                                    </div>
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
                                   )}
                                 />
                               </div>

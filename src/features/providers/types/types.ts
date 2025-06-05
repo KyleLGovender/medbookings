@@ -144,11 +144,12 @@ export const regulatoryRequirementsSchema = z.object({
 
 export const servicesSchema = z.object({
   availableServices: z.array(z.string()).min(1, 'Please select at least one service'),
+  loadedServices: z.array(z.any()).optional(), // For storing available services
   serviceConfigs: z
     .record(
       z.object({
-        duration: z.number().min(1).optional(),
-        price: z.number().min(0).optional(),
+        duration: z.coerce.number().min(1, 'Duration must be at least 1 minute'),
+        price: z.coerce.number().min(0, 'Price cannot be negative'),
       })
     )
     .optional(),
