@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
 import { AlertCircle, Send } from 'lucide-react';
-import { FormProvider, useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -21,74 +21,48 @@ import {
 } from '@/components/ui/dialog';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
+import { ServiceProviderFormType, providerFormSchema } from '@/features/providers/types/types';
 import { useToast } from '@/hooks/use-toast';
 
 import { BasicInfoSection } from './basic-info-section';
-import { ProfessionalDetailsSection } from './professional-details-section';
 import { ProviderTypeSection } from './provider-type-section';
 import { RegulatoryRequirementsSection } from './regulatory-requirements-section';
 import { ServicesSection } from './services-section';
 
-// Updated schema to match Prisma ServiceProvider model
-const basicInfoSchema = z.object({
-  name: z.string().min(2, 'Full name must be at least 2 characters'),
-  bio: z
-    .string()
-    .min(50, 'Bio must be at least 50 characters')
-    .max(500, 'Bio must be less than 500 characters'),
-  image: z.string().min(1, 'Profile image is required'),
-  languages: z.array(z.string()).min(1, 'Please select at least one language'),
-  website: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
-  email: z.string().email('Please enter a valid email address'),
-  whatsapp: z.string().min(10, 'Please enter a valid WhatsApp number'),
-});
+// Helper function to preserve scroll position
+const preserveScroll = (callback: () => void) => {
+  const scrollPosition = window.scrollY;
+  callback();
+  setTimeout(() => {
+    window.scrollTo({ top: scrollPosition, behavior: 'auto' });
+  }, 0);
+};
 
-const providerTypeSchema = z.object({
-  providerType: z.string().min(1, 'Please select a provider type'),
-});
+// API mutation function
+const submitProviderApplication = async (data: ServiceProviderFormType) => {
+  const response = await fetch('/api/providers', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
 
-const professionalDetailsSchema = z.object({
-  medicalLicenseNumber: z.string().min(1, 'Medical license number is required'),
-  yearsOfExperience: z.string().min(1, 'Years of experience is required'),
-  education: z.string().min(10, 'Please provide details about your education'),
-  specializations: z.string().min(1, 'Please select at least one specialization'),
-  hospitalAffiliations: z.string().optional(),
-});
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to submit application');
+  }
 
-const regulatoryRequirementsSchema = z.object({
-  requirements: z.record(z.any()).refine((data) => {
-    return Object.keys(data).length > 0;
-  }, 'Please complete all required regulatory requirements'),
-});
-
-const servicesSchema = z.object({
-  consultationFee: z.string().min(1, 'Consultation fee is required'),
-  availableServices: z.array(z.string()).min(1, 'Please select at least one service'),
-  customServices: z.array(z.string()).optional(),
-});
-
-// Combine all schemas
-const formSchema = z.object({
-  basicInfo: basicInfoSchema,
-  providerType: providerTypeSchema,
-  professionalDetails: professionalDetailsSchema,
-  regulatoryRequirements: regulatoryRequirementsSchema,
-  services: servicesSchema,
-  termsAccepted: z.boolean().refine((val) => val === true, {
-    message: 'You must accept the terms and conditions',
-  }),
-});
-
-type FormData = z.infer<typeof formSchema>;
+  return response.json();
+};
 
 export function ProviderOnboardingForm() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const { toast } = useToast();
 
-  const methods = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+  const methods = useForm<ServiceProviderFormType>({
+    resolver: zodResolver(providerFormSchema),
     defaultValues: {
       basicInfo: {
         name: '',
@@ -102,55 +76,70 @@ export function ProviderOnboardingForm() {
       providerType: {
         providerType: '',
       },
-      professionalDetails: {
-        medicalLicenseNumber: '',
-        yearsOfExperience: '',
-        education: '',
-        specializations: '',
-        hospitalAffiliations: '',
-      },
       regulatoryRequirements: {
-        requirements: {},
+        requirements: [],
       },
       services: {
-        consultationFee: '',
         availableServices: [],
-        customServices: [],
       },
       termsAccepted: false,
     },
     mode: 'onBlur',
   });
 
-  const onSubmit = (data: FormData) => {
-    setShowConfirmDialog(true);
-  };
+  // Watch for validation errors
+  useEffect(() => {
+    const subscription = methods.watch(() => {
+      // Only update errors after a submission attempt and when there are actual errors
+      if (methods.formState.submitCount > 0 && Object.keys(methods.formState.errors).length > 0) {
+        // Use requestAnimationFrame to batch updates and prevent render loops
+        requestAnimationFrame(() => {
+          preserveScroll(() => {
+            updateFormErrors();
+          });
+        });
+      }
+    });
 
-  const handleConfirmSubmit = async () => {
-    setShowConfirmDialog(false);
-    setIsSubmitting(true);
+    return () => subscription.unsubscribe();
+  }, [methods.formState.submitCount]);
 
-    try {
-      // Simulate API submission
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
+  // TanStack Query mutation
+  const mutation = useMutation({
+    mutationFn: submitProviderApplication,
+    onSuccess: (data) => {
       toast({
         title: 'Application submitted successfully!',
         description:
           'Your provider application has been submitted for review. You will receive an email confirmation shortly.',
       });
-    } catch (error) {
+
+      // Redirect if provided in the response
+      if (data.redirect) {
+        window.location.href = data.redirect;
+      }
+    },
+    onError: (error: Error) => {
       toast({
         title: 'Submission failed',
-        description: 'There was an error submitting your application. Please try again.',
+        description:
+          error.message || 'There was an error submitting your application. Please try again.',
         variant: 'destructive',
       });
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+  });
+
+  const onSubmit: SubmitHandler<ServiceProviderFormType> = (data) => {
+    setShowConfirmDialog(true);
   };
 
-  const handleInvalidSubmit = () => {
+  const handleConfirmSubmit = () => {
+    setShowConfirmDialog(false);
+    const formData = methods.getValues();
+    mutation.mutate(formData);
+  };
+
+  const updateFormErrors = () => {
     const errors = Object.entries(methods.formState.errors)
       .flatMap(([key, value]) => {
         if (
@@ -159,24 +148,46 @@ export function ProviderOnboardingForm() {
           key === 'professionalDetails' ||
           key === 'services'
         ) {
+          // Handle nested errors
           const sectionErrors = Object.entries(value as Record<string, { message?: string }>)
             .filter(([_, err]) => err.message)
             .map(([field, err]) => `${field}: ${err.message}`);
           return sectionErrors;
         }
+        if (key === 'regulatoryRequirements') {
+          return ['Please complete all required regulatory requirements'];
+        }
         if (key === 'termsAccepted') {
           return ['You must accept the terms and conditions'];
+        }
+        // Handle any other top-level errors
+        if ((value as any)?.message) {
+          return [`${key}: ${(value as any).message}`];
         }
         return [];
       })
       .filter(Boolean);
 
-    setFormErrors(errors);
-
-    const firstErrorElement = document.querySelector('[aria-invalid="true"]');
-    if (firstErrorElement) {
-      firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Only update state if errors have changed
+    if (JSON.stringify(errors) !== JSON.stringify(formErrors)) {
+      setFormErrors(errors);
     }
+
+    // Only scroll to the first error element when there are actual errors
+    // and only on submission - not during regular form interaction
+    if (errors.length > 0 && methods.formState.isSubmitted) {
+      // Use a short timeout to allow DOM updates to complete
+      setTimeout(() => {
+        const firstErrorElement = document.querySelector('[aria-invalid="true"]');
+        if (firstErrorElement) {
+          firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+  };
+
+  const handleInvalidSubmit = () => {
+    updateFormErrors();
 
     toast({
       title: 'Please fix the errors in the form',
@@ -203,104 +214,107 @@ export function ProviderOnboardingForm() {
         )}
 
         <Card className="p-6">
-          <h2 className="mb-4 text-xl font-semibold">Basic Information</h2>
+          <h2 className="text-2xl font-bold">Basic Information</h2>
+          <p className="text-sm text-muted-foreground">
+            Let potential patients know who you are with your basic details.
+          </p>
+          <Separator className="my-4" />
           <BasicInfoSection />
         </Card>
 
         <Card className="p-6">
-          <h2 className="mb-4 text-xl font-semibold">Provider Type</h2>
+          <h2 className="text-2xl font-bold">Provider Type</h2>
+          <p className="text-sm text-muted-foreground">
+            Select your medical profession or specialty.
+          </p>
+          <Separator className="my-4" />
           <ProviderTypeSection />
         </Card>
 
         <Card className="p-6">
-          <h2 className="mb-4 text-xl font-semibold">Professional Details</h2>
-          <ProfessionalDetailsSection />
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="mb-4 text-xl font-semibold">Regulatory Requirements</h2>
-          <RegulatoryRequirementsSection />
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="mb-4 text-xl font-semibold">Services Offered</h2>
+          <h2 className="text-2xl font-bold">Services</h2>
+          <p className="text-sm text-muted-foreground">
+            Let patients know what services you offer and your fee structure.
+          </p>
+          <Separator className="my-4" />
           <ServicesSection />
         </Card>
 
         <Card className="p-6">
-          <h2 className="mb-4 text-xl font-semibold">Terms and Conditions</h2>
-          <div className="space-y-4">
-            <div className="rounded-md bg-muted p-4 text-sm">
-              <p className="mb-2">
-                By submitting this application, I confirm that all information provided is accurate
-                and complete to the best of my knowledge.
-              </p>
-              <p>
-                I understand that my application will be reviewed by MedBookings staff and that I
-                may be contacted for additional information or verification. I agree to provide any
-                requested documentation in a timely manner.
-              </p>
-            </div>
-
-            <FormField
-              control={methods.control}
-              name="termsAccepted"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      I agree to the{' '}
-                      <a href="/terms" className="text-primary hover:underline">
-                        Terms of Service
-                      </a>{' '}
-                      and{' '}
-                      <a href="/privacy" className="text-primary hover:underline">
-                        Privacy Policy
-                      </a>
-                    </FormLabel>
-                    <FormMessage />
-                  </div>
-                </FormItem>
-              )}
-            />
-          </div>
+          <h2 className="text-2xl font-bold">Regulatory Requirements</h2>
+          <p className="text-sm text-muted-foreground">
+            Please complete all required regulatory information and upload necessary documents.
+          </p>
+          <Separator className="my-4" />
+          <RegulatoryRequirementsSection />
         </Card>
 
-        <Separator />
+        <FormField
+          control={methods.control}
+          name="termsAccepted"
+          render={({ field }) => (
+            <FormItem className="flex flex-col space-y-4 rounded-md border p-4">
+              <div className="flex flex-row items-start space-x-3">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    id="termsAccepted"
+                    aria-describedby="terms-error"
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel
+                    htmlFor="termsAccepted"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    I accept the terms and conditions
+                  </FormLabel>
+                  <p className="text-xs text-muted-foreground">
+                    By submitting this application, you agree to our{' '}
+                    <a href="/terms-of-use" className="text-primary underline">
+                      Terms of Service
+                    </a>{' '}
+                    and{' '}
+                    <a href="/privacy-policy" className="text-primary underline">
+                      Privacy Policy
+                    </a>
+                    .
+                  </p>
+                </div>
+              </div>
+              <FormMessage id="terms-error" className="mt-2" />
+            </FormItem>
+          )}
+        />
 
-        <div className="flex justify-end">
-          <Button type="submit" disabled={isSubmitting} className="flex items-center gap-2">
-            {isSubmitting ? (
-              <>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                Submitting...
-              </>
-            ) : (
-              <>
-                <Send className="h-4 w-4" />
-                Submit Application
-              </>
-            )}
+        <div className="flex justify-end space-x-4">
+          <Button type="reset" variant="outline" onClick={() => methods.reset()}>
+            Reset
+          </Button>
+          <Button type="submit" disabled={mutation.isPending}>
+            {mutation.isPending ? 'Submitting...' : 'Submit Application'}{' '}
+            <Send className="ml-2 h-4 w-4" />
           </Button>
         </div>
 
+        {/* Confirmation Dialog */}
         <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Confirm Submission</DialogTitle>
               <DialogDescription>
                 Are you sure you want to submit your provider application? Once submitted, you will
-                need to contact support to make changes.
+                not be able to make changes until it has been reviewed.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleConfirmSubmit}>Submit Application</Button>
+              <Button onClick={handleConfirmSubmit} disabled={mutation.isPending}>
+                {mutation.isPending ? 'Submitting...' : 'Confirm Submission'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

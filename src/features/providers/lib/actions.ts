@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { BillingType, Languages, Prisma, RequirementsValidationStatus } from '@prisma/client';
+import { Languages, Prisma, RequirementsValidationStatus } from '@prisma/client';
 import { put } from '@vercel/blob';
 import { getServerSession } from 'next-auth/next';
 
@@ -131,7 +131,6 @@ export async function registerServiceProvider(prevState: any, formData: FormData
         languages: {
           set: languages,
         },
-        billingType,
         serviceProviderTypeId: formData.get('serviceProviderTypeId') as string,
         requirementSubmissions: {
           create: requirementSubmissions,
@@ -198,7 +197,6 @@ export async function updateServiceProvider(prevState: any, formData: FormData) 
     const email = formData.get('email') as string;
     const whatsapp = formData.get('whatsapp') as string;
     const website = (formData.get('website') as string) || null;
-    const billingType = formData.get('billingType') as BillingType;
     const languages = formData.getAll('languages') as Languages[];
     const services = formData.getAll('services') as string[];
     const userId = formData.get('userId') as string;
@@ -240,7 +238,6 @@ export async function updateServiceProvider(prevState: any, formData: FormData) 
     if (email !== currentProvider.email) updateData.email = email;
     if (whatsapp !== currentProvider.whatsapp) updateData.whatsapp = whatsapp;
     if (website !== currentProvider.website) updateData.website = website;
-    if (billingType !== currentProvider.billingType) updateData.billingType = billingType;
     if (JSON.stringify(languages) !== JSON.stringify(currentProvider.languages)) {
       updateData.languages = languages;
     }

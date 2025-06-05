@@ -1,15 +1,13 @@
 'use client';
 
 import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-import { useRef, useState } from 'react';
-
-import { CheckCircle, type File, Upload, X } from 'lucide-react';
+import { CheckCircle, Upload, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Upload, type File, X, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface DocumentUploaderProps {
@@ -20,20 +18,52 @@ interface DocumentUploaderProps {
 
 export function DocumentUploader({
   onUpload,
-  acceptedFormats = ['PDF', 'JPG', 'PNG'],
+  acceptedFormats = ['.pdf', '.jpg', '.png'],
   currentFile,
 }: DocumentUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<any>(currentFile);
+  const [uploadedFile, setUploadedFile] = useState<any>(null);
+  const previousFileRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const validateFile = (file: File) => {
-    const fileExtension = file.name.split('.').pop()?.toUpperCase();
+  // Initialize uploadedFile from currentFile only on mount or when currentFile changes
+  useEffect(() => {
+    if (currentFile && (!uploadedFile || currentFile.name !== uploadedFile.name)) {
+      setUploadedFile(currentFile);
+    }
+  }, [currentFile]);
 
-    if (!fileExtension || !acceptedFormats.includes(fileExtension)) {
+  // Only call onUpload when uploadedFile changes
+  useEffect(() => {
+    // Skip the first render
+    if (!previousFileRef.current) {
+      previousFileRef.current = uploadedFile;
+      return;
+    }
+
+    // Check if file has actually changed before calling onUpload
+    const prevFile = previousFileRef.current;
+    const currentUploadedFile = uploadedFile;
+
+    if (
+      (!prevFile && currentUploadedFile) ||
+      (prevFile && !currentUploadedFile) ||
+      (prevFile && currentUploadedFile && prevFile.name !== currentUploadedFile.name)
+    ) {
+      onUpload(currentUploadedFile);
+      previousFileRef.current = currentUploadedFile;
+    }
+  }, [uploadedFile, onUpload]);
+
+  const validateFile = (file: File) => {
+    // Get the file extension with dot
+    const fileExt = `.${file.name.split('.').pop()?.toLowerCase()}`;
+
+    // Check if the file extension is in the accepted formats
+    if (!acceptedFormats.some((format) => fileExt.endsWith(format.toLowerCase()))) {
       toast({
         title: 'Invalid file type',
         description: `Please upload a file in one of these formats: ${acceptedFormats.join(', ')}`,
@@ -86,8 +116,21 @@ export function DocumentUploader({
         uploadedAt: new Date().toISOString(),
       };
 
-      setUploadedFile(fileData);
-      onUpload(fileData);
+      // Only update if the file has changed
+      if (!uploadedFile || uploadedFile.name !== fileData.name) {
+        // Save the current scroll position
+        const scrollPosition = window.scrollY;
+
+        setUploadedFile(fileData);
+
+        // Restore scroll position after state update
+        setTimeout(() => {
+          window.scrollTo({
+            top: scrollPosition,
+            behavior: 'auto',
+          });
+        }, 0);
+      }
 
       toast({
         title: 'File uploaded successfully',
@@ -127,6 +170,9 @@ export function DocumentUploader({
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Prevent any default behavior that might cause scrolling
+    e.preventDefault();
+
     const files = e.target.files;
     if (files && files[0]) {
       handleFileUpload(files[0]);
@@ -134,12 +180,17 @@ export function DocumentUploader({
   };
 
   const removeFile = () => {
+    previousFileRef.current = uploadedFile;
     setUploadedFile(null);
-    onUpload(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
+
+  // Format the accepted formats for display
+  const displayFormats = acceptedFormats.map((format) =>
+    format.startsWith('.') ? format.slice(1).toUpperCase() : format.toUpperCase()
+  );
 
   if (uploadedFile) {
     return (
@@ -193,13 +244,18 @@ export function DocumentUploader({
                 <Button
                   variant="link"
                   className="h-auto p-0"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={(e) => {
+                    e.preventDefault(); // Prevent default behavior
+                    if (fileInputRef.current) {
+                      fileInputRef.current.click();
+                    }
+                  }}
                 >
                   browse
                 </Button>
               </p>
               <p className="text-xs text-muted-foreground">
-                Accepted formats: {acceptedFormats.join(', ')} • Max size: 10MB
+                Accepted formats: {displayFormats.join(', ')} • Max size: 10MB
               </p>
             </div>
           </div>
@@ -219,7 +275,7 @@ export function DocumentUploader({
       <input
         ref={fileInputRef}
         type="file"
-        accept={acceptedFormats.map((format) => `.${format.toLowerCase()}`).join(',')}
+        accept={acceptedFormats.join(',')}
         onChange={handleFileSelect}
         className="hidden"
       />

@@ -87,10 +87,10 @@ export function ProfileImageUploader({ onImageChange, currentImage }: ProfileIma
   return (
     <div className="flex flex-col items-center space-y-4">
       <div className="relative">
-        <Avatar className="h-24 w-24">
-          <AvatarImage src={previewUrl || undefined} alt="Profile" />
-          <AvatarFallback className="text-lg">
-            <Camera className="h-8 w-8" />
+        <Avatar className="h-40 w-40 border-2 border-border">
+          <AvatarImage src={previewUrl || undefined} alt="Profile" className="object-cover" />
+          <AvatarFallback className="bg-muted text-lg">
+            <Camera className="h-12 w-12 text-muted-foreground" />
           </AvatarFallback>
         </Avatar>
 
@@ -98,10 +98,10 @@ export function ProfileImageUploader({ onImageChange, currentImage }: ProfileIma
           <Button
             size="sm"
             variant="destructive"
-            className="absolute -right-2 -top-2 h-6 w-6 rounded-full p-0"
+            className="absolute -right-2 -top-2 h-8 w-8 rounded-full p-0"
             onClick={handleRemoveImage}
           >
-            <X className="h-3 w-3" />
+            <X className="h-4 w-4" />
           </Button>
         )}
       </div>

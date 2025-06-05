@@ -1,15 +1,16 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import { useQuery } from '@tanstack/react-query';
 
-import { buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Simplified service provider client component
 export function ServiceProviderProfileClient({ userId }: { userId: string }) {
+  const router = useRouter();
   const { data: serviceProvider, isLoading } = useQuery({
     queryKey: ['serviceProvider', userId],
     queryFn: async () => {
@@ -26,7 +27,7 @@ export function ServiceProviderProfileClient({ userId }: { userId: string }) {
 
   if (isLoading) {
     return (
-      <Card className="mx-auto max-w-lg border-border bg-card dark:border-border dark:bg-card">
+      <Card className="mx-auto max-w-4xl border-border bg-card dark:border-border dark:bg-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-xl text-foreground dark:text-foreground">
             Service Provider
@@ -42,7 +43,7 @@ export function ServiceProviderProfileClient({ userId }: { userId: string }) {
 
   if (!serviceProvider) {
     return (
-      <Card className="mx-auto max-w-lg border-border bg-card dark:border-border dark:bg-card">
+      <Card className="mx-auto max-w-4xl border-border bg-card dark:border-border dark:bg-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-xl text-foreground dark:text-foreground">
             Service Provider
@@ -52,19 +53,16 @@ export function ServiceProviderProfileClient({ userId }: { userId: string }) {
           <p className="mb-4 text-muted-foreground dark:text-muted-foreground">
             Register as a service provider to offer your services on our platform.
           </p>
-          <Link
-            href="/service-provider/new"
-            className={buttonVariants({ className: 'mt-2 w-full' })}
-          >
+          <Button variant="outline" onClick={() => router.push('/service-provider/new')}>
             Register as a Service Provider
-          </Link>
+          </Button>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="mx-auto max-w-lg border-border bg-card dark:border-border dark:bg-card">
+    <Card className="mx-auto max-w-4xl border-border bg-card dark:border-border dark:bg-card">
       <CardHeader className="pb-3">
         <CardTitle className="text-xl text-foreground dark:text-foreground">
           Service Provider Profile
@@ -84,12 +82,9 @@ export function ServiceProviderProfileClient({ userId }: { userId: string }) {
             <p className="text-sm text-foreground dark:text-foreground">{serviceProvider.bio}</p>
           )}
           <div className="flex justify-end">
-            <Link
-              href="/profile/service-provider/edit"
-              className={buttonVariants({ variant: 'outline', size: 'sm' })}
-            >
+            <Button variant="outline" onClick={() => router.push('/profile/service-provider/edit')}>
               Edit Provider Profile
-            </Link>
+            </Button>
           </div>
         </div>
       </CardContent>

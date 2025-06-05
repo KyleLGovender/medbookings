@@ -20,7 +20,7 @@ export function ProfileClient() {
 
   if (error || !profile) {
     return (
-      <Card className="mx-auto max-w-lg border-border bg-card dark:border-border dark:bg-card">
+      <Card className="mx-auto max-w-4xl border-border bg-card dark:border-border dark:bg-card">
         <CardContent className="pt-6 text-center">
           <p className="text-destructive">
             {error instanceof Error ? error.message : 'Failed to load profile'}
@@ -32,7 +32,7 @@ export function ProfileClient() {
 
   return (
     <div className="space-y-6">
-      <Card className="mx-auto max-w-lg border-border bg-card dark:border-border dark:bg-card">
+      <Card className="mx-auto max-w-4xl border-border bg-card dark:border-border dark:bg-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-xl text-foreground dark:text-foreground">
             Personal Profile

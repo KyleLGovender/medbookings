@@ -2,9 +2,6 @@
 
 import { prisma } from '@/lib/prisma';
 
-import { ServiceProvider } from '../types/types';
-import { serializeServiceProvider } from './helper';
-
 export async function getServiceProviderByUserId(userId: string): Promise<ServiceProvider | null> {
   const provider = await prisma.serviceProvider.findUnique({
     where: {

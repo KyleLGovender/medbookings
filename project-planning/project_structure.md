@@ -105,9 +105,9 @@ src/
 │   │
 │   ├── auth/                         # Authentication feature (Google OAuth)
 │   ├── billing/                      # Billing and subscription feature
-│   ├── calendar/                      # Calendar management feature
+│   ├── calendar/                     # Calendar management feature
 │   │   ├── availability/             # Availability management subfolder
-│   │   └── bookings/                # Bookings management subfolder
+│   │   └── bookings/                 # Bookings management subfolder
 │   │
 │   ├── communications/               # Communications feature
 │   ├── organizations/                # Organization management feature (includes locations)

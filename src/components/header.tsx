@@ -75,6 +75,7 @@ export default function Header() {
   const navigationItems = getNavigationItems(isSignedIn, isAdmin);
 
   const profileMenuItems = [
+    ...(isAdmin ? [{ label: 'Admin', href: '/admin' }] : []),
     { label: 'Profile', href: '/profile' },
     { label: 'Organizations', href: '/organizations' },
     { label: 'Calendar', href: '/calendar' },

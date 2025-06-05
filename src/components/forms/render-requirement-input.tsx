@@ -11,47 +11,41 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ServiceProviderFormType } from '@/features/providers/types/types';
+import { DocumentUploader } from '@/features/providers/components/onboarding/document-uploader';
+import { RequirementType, RequirementValidationType } from '@/features/providers/types/types';
 
-type RequirementType = {
-  id: string;
-  name: string;
-  description?: string | null;
-  validationType: string;
-  isRequired: boolean;
-  validationConfig?: {
-    options?: Array<{ value: string; label: string }>;
-    allowOther?: boolean;
-    otherLabel?: string;
-    otherValidation?: {
-      required?: boolean;
-      minLength?: number;
-      maxLength?: number;
-    };
+// Define a specific type for our form structure to match how we're accessing requirements
+interface RequirementForm {
+  regulatoryRequirements: {
+    requirements: Array<{
+      requirementTypeId: string;
+      value?: any;
+      documentFile?: File;
+      otherValue?: string;
+      index?: number;
+    }>;
   };
-  index: number;
-  existingSubmission?: {
-    documentUrl: string | null;
-    documentMetadata: { value?: string } | null;
-  };
-};
+}
 
 export const renderRequirementInput = (
   requirement: RequirementType,
   form: {
-    register: UseFormRegister<ServiceProviderFormType>;
-    watch: UseFormWatch<ServiceProviderFormType>;
-    setValue: UseFormSetValue<ServiceProviderFormType>;
+    register: UseFormRegister<any>;
+    watch: UseFormWatch<any>;
+    setValue: UseFormSetValue<any>;
     errors: any;
   }
 ) => {
   // Set the requirement ID directly
-  form.setValue(`requirements.${requirement.index}.requirementTypeId`, requirement.id);
+  form.setValue(
+    `regulatoryRequirements.requirements.${requirement.index}.requirementTypeId`,
+    requirement.id
+  );
 
   const inputId = `requirement-${requirement.id}`;
 
   // Fix how errors are accessed - check if the specific requirement has errors
-  const error = form.errors?.[requirement.index];
+  const error = form.errors?.regulatoryRequirements?.requirements?.[requirement.index];
   const errorMessage = error?.message || error?.value?.message;
 
   // Show error message below the input
@@ -63,10 +57,12 @@ export const renderRequirementInput = (
   };
 
   switch (requirement.validationType) {
-    case 'BOOLEAN':
+    case RequirementValidationType.BOOLEAN:
       return (
         <RadioGroup
-          onValueChange={(value) => form.setValue(`requirements.${requirement.index}.value`, value)}
+          onValueChange={(value) => {
+            form.setValue(`regulatoryRequirements.requirements.${requirement.index}.value`, value);
+          }}
           defaultValue={requirement.existingSubmission?.documentMetadata?.value || ''}
           className="flex gap-4"
         >
@@ -80,7 +76,17 @@ export const renderRequirementInput = (
           </div>
         </RadioGroup>
       );
-    case 'DOCUMENT':
+    case RequirementValidationType.DOCUMENT:
+      // Extract accepted file types from validation config
+      const acceptedFileTypes = (requirement.validationConfig as any)?.acceptedFileTypes || [
+        '.pdf',
+        '.doc',
+        '.docx',
+        '.jpg',
+        '.jpeg',
+        '.png',
+      ];
+
       return (
         <div className="space-y-2">
           {requirement.existingSubmission?.documentUrl && (
@@ -96,28 +102,54 @@ export const renderRequirementInput = (
               </a>
             </div>
           )}
-          <Input
-            id={inputId}
-            required={!requirement.existingSubmission && requirement.isRequired}
-            type="file"
-            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                form.setValue(`requirements.${requirement.index}.documentFile`, file);
+          <DocumentUploader
+            acceptedFormats={acceptedFileTypes}
+            onUpload={(fileData) => {
+              // Don't scroll or focus after file upload
+              const shouldNotValidate = true;
+
+              if (fileData) {
+                // Set document file first
+                form.setValue(
+                  `regulatoryRequirements.requirements.${requirement.index}.documentFile`,
+                  fileData,
+                  { shouldValidate: false, shouldFocus: false }
+                );
+
+                // Then set the value
+                form.setValue(
+                  `regulatoryRequirements.requirements.${requirement.index}.value`,
+                  fileData.name,
+                  { shouldValidate: shouldNotValidate, shouldFocus: false }
+                );
+              } else {
+                // Clear values when file is removed
+                form.setValue(
+                  `regulatoryRequirements.requirements.${requirement.index}.documentFile`,
+                  null,
+                  { shouldValidate: false, shouldFocus: false }
+                );
+                form.setValue(
+                  `regulatoryRequirements.requirements.${requirement.index}.value`,
+                  null,
+                  { shouldValidate: shouldNotValidate, shouldFocus: false }
+                );
               }
             }}
-            className={error ? 'border-destructive' : ''}
+            currentFile={form.watch(
+              `regulatoryRequirements.requirements.${requirement.index}.documentFile`
+            )}
           />
+          {renderError()}
         </div>
       );
-    case 'TEXT':
+    case RequirementValidationType.TEXT:
       return (
         <Input
           id={inputId}
           required={requirement.isRequired}
           type="text"
-          {...form.register(`requirements.${requirement.index}.value`)}
+          {...form.register(`regulatoryRequirements.requirements.${requirement.index}.value`)}
           className={error ? 'border-destructive' : ''}
           defaultValue={
             requirement.existingSubmission?.documentMetadata?.value ||
@@ -126,10 +158,10 @@ export const renderRequirementInput = (
           }
         />
       );
-    case 'FUTURE_DATE':
+    case RequirementValidationType.FUTURE_DATE:
       const dateValue =
         requirement.existingSubmission?.documentMetadata?.value ||
-        form.watch(`requirements.${requirement.index}.value`) ||
+        form.watch(`regulatoryRequirements.requirements.${requirement.index}.value`) ||
         null;
       return (
         <div className="max-w-64">
@@ -137,19 +169,20 @@ export const renderRequirementInput = (
             date={dateValue ? new Date(dateValue) : undefined}
             onChange={(date?: Date) => {
               if (date) {
+                const dateString = date.toISOString().split('T')[0];
                 form.setValue(
-                  `requirements.${requirement.index}.value`,
-                  date.toISOString().split('T')[0]
+                  `regulatoryRequirements.requirements.${requirement.index}.value`,
+                  dateString
                 );
               }
             }}
           />
         </div>
       );
-    case 'PAST_DATE':
+    case RequirementValidationType.PAST_DATE:
       const pastDateValue =
         requirement.existingSubmission?.documentMetadata?.value ||
-        form.watch(`requirements.${requirement.index}.value`) ||
+        form.watch(`regulatoryRequirements.requirements.${requirement.index}.value`) ||
         null;
       return (
         <div className="max-w-64">
@@ -157,24 +190,25 @@ export const renderRequirementInput = (
             date={pastDateValue ? new Date(pastDateValue) : undefined}
             onChange={(date?: Date) => {
               if (date) {
+                const dateString = date.toISOString().split('T')[0];
                 form.setValue(
-                  `requirements.${requirement.index}.value`,
-                  date.toISOString().split('T')[0]
+                  `regulatoryRequirements.requirements.${requirement.index}.value`,
+                  dateString
                 );
               }
             }}
           />
         </div>
       );
-    case 'PREDEFINED_LIST':
+    case RequirementValidationType.PREDEFINED_LIST:
       const selectedValue =
         requirement.existingSubmission?.documentMetadata?.value ||
-        form.watch(`requirements.${requirement.index}.value`);
+        form.watch(`regulatoryRequirements.requirements.${requirement.index}.value`);
       return (
         <div>
           <Select
             onValueChange={(value) =>
-              form.setValue(`requirements.${requirement.index}.value`, value)
+              form.setValue(`regulatoryRequirements.requirements.${requirement.index}.value`, value)
             }
             defaultValue={selectedValue}
           >
@@ -182,34 +216,69 @@ export const renderRequirementInput = (
               <SelectValue placeholder="Select an option..." />
             </SelectTrigger>
             <SelectContent>
-              {requirement.validationConfig?.options?.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-              {requirement.validationConfig?.allowOther && (
-                <SelectItem value="other">{requirement.validationConfig.otherLabel}</SelectItem>
-              )}
+              {requirement.validationConfig &&
+                'options' in requirement.validationConfig &&
+                requirement.validationConfig.options?.map((option: any) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              {requirement.validationConfig &&
+                'allowOther' in requirement.validationConfig &&
+                requirement.validationConfig.allowOther && (
+                  <SelectItem value="other">
+                    {requirement.validationConfig.otherLabel || 'Other'}
+                  </SelectItem>
+                )}
             </SelectContent>
           </Select>
-          {selectedValue === 'other' && requirement.validationConfig?.allowOther && (
-            <Input
-              type="text"
-              className="mt-2 w-full"
-              placeholder={requirement.validationConfig?.otherLabel}
-              value={
-                requirement.existingSubmission?.documentMetadata?.value === 'other'
-                  ? form.watch(`requirements.${requirement.index}.otherValue`) ||
-                    requirement.existingSubmission?.documentUrl ||
-                    ''
-                  : form.watch(`requirements.${requirement.index}.otherValue`) || ''
-              }
-              onChange={(e) =>
-                form.setValue(`requirements.${requirement.index}.otherValue`, e.target.value)
-              }
-            />
-          )}
+          {selectedValue === 'other' &&
+            requirement.validationConfig &&
+            'allowOther' in requirement.validationConfig &&
+            requirement.validationConfig.allowOther && (
+              <Input
+                type="text"
+                className="mt-2 w-full"
+                placeholder={
+                  requirement.validationConfig && 'otherLabel' in requirement.validationConfig
+                    ? requirement.validationConfig.otherLabel
+                    : 'Please specify'
+                }
+                value={
+                  requirement.existingSubmission?.documentMetadata?.value === 'other'
+                    ? form.watch(
+                        `regulatoryRequirements.requirements.${requirement.index}.otherValue`
+                      ) ||
+                      requirement.existingSubmission?.documentUrl ||
+                      ''
+                    : form.watch(
+                        `regulatoryRequirements.requirements.${requirement.index}.otherValue`
+                      ) || ''
+                }
+                onChange={(e) => {
+                  form.setValue(
+                    `regulatoryRequirements.requirements.${requirement.index}.otherValue`,
+                    e.target.value
+                  );
+                }}
+              />
+            )}
+          {renderError()}
         </div>
+      );
+    case RequirementValidationType.NUMBER:
+      return (
+        <Input
+          id={inputId}
+          required={requirement.isRequired}
+          type="number"
+          min={(requirement.validationConfig as any)?.min}
+          max={(requirement.validationConfig as any)?.max}
+          step={(requirement.validationConfig as any)?.step || 1}
+          {...form.register(`regulatoryRequirements.requirements.${requirement.index}.value`)}
+          className={error ? 'border-destructive' : ''}
+          defaultValue={requirement.existingSubmission?.documentMetadata?.value || ''}
+        />
       );
     default:
       return (
@@ -217,13 +286,9 @@ export const renderRequirementInput = (
           id={inputId}
           required={requirement.isRequired}
           type="text"
-          {...form.register(`requirements.${requirement.index}.value`)}
-          className="input-field"
-          defaultValue={
-            requirement.existingSubmission?.documentMetadata?.value ||
-            requirement.existingSubmission?.documentUrl ||
-            ''
-          }
+          {...form.register(`regulatoryRequirements.requirements.${requirement.index}.value`)}
+          className={error ? 'border-destructive' : ''}
+          defaultValue={requirement.existingSubmission?.documentMetadata?.value || ''}
         />
       );
   }

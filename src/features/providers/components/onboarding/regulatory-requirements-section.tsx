@@ -2,168 +2,24 @@
 
 import { useEffect, useState } from 'react';
 
-import { AlertCircle, CheckCircle } from 'lucide-react';
 import { useFormContext, useWatch } from 'react-hook-form';
 
+import { renderRequirementInput } from '@/components/forms/render-requirement-input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-
-import { RequirementField } from './requirement-field';
-
-// Mock regulatory requirements based on provider type
-const REGULATORY_REQUIREMENTS = {
-  general_practitioner: [
-    {
-      id: 'medical_license',
-      title: 'Medical License',
-      description: 'Upload a copy of your current medical license',
-      validationType: 'DOCUMENT',
-      required: true,
-      acceptedFormats: ['PDF', 'JPG', 'PNG'],
-    },
-    {
-      id: 'malpractice_insurance',
-      title: 'Malpractice Insurance',
-      description: 'Provide proof of current malpractice insurance coverage',
-      validationType: 'DOCUMENT',
-      required: true,
-      acceptedFormats: ['PDF'],
-    },
-    {
-      id: 'board_certification',
-      title: 'Board Certification',
-      description: 'Upload your board certification documents',
-      validationType: 'DOCUMENT',
-      required: true,
-      acceptedFormats: ['PDF', 'JPG', 'PNG'],
-    },
-    {
-      id: 'license_expiry',
-      title: 'License Expiry Date',
-      description: 'When does your medical license expire?',
-      validationType: 'FUTURE_DATE',
-      required: true,
-    },
-    {
-      id: 'disciplinary_action',
-      title: 'Disciplinary Actions',
-      description: 'Have you ever been subject to disciplinary action by a medical board?',
-      validationType: 'BOOLEAN',
-      required: true,
-    },
-  ],
-  specialist: [
-    {
-      id: 'medical_license',
-      title: 'Medical License',
-      description: 'Upload a copy of your current medical license',
-      validationType: 'DOCUMENT',
-      required: true,
-      acceptedFormats: ['PDF', 'JPG', 'PNG'],
-    },
-    {
-      id: 'specialty_certification',
-      title: 'Specialty Certification',
-      description: 'Upload your specialty board certification',
-      validationType: 'DOCUMENT',
-      required: true,
-      acceptedFormats: ['PDF', 'JPG', 'PNG'],
-    },
-    {
-      id: 'malpractice_insurance',
-      title: 'Malpractice Insurance',
-      description: 'Provide proof of current malpractice insurance coverage',
-      validationType: 'DOCUMENT',
-      required: true,
-      acceptedFormats: ['PDF'],
-    },
-    {
-      id: 'hospital_privileges',
-      title: 'Hospital Privileges',
-      description: 'Do you have current hospital privileges?',
-      validationType: 'BOOLEAN',
-      required: true,
-    },
-    {
-      id: 'license_expiry',
-      title: 'License Expiry Date',
-      description: 'When does your medical license expire?',
-      validationType: 'FUTURE_DATE',
-      required: true,
-    },
-    {
-      id: 'fellowship_training',
-      title: 'Fellowship Training',
-      description: 'Upload documentation of your fellowship training',
-      validationType: 'DOCUMENT',
-      required: false,
-      acceptedFormats: ['PDF'],
-    },
-  ],
-  mental_health: [
-    {
-      id: 'professional_license',
-      title: 'Professional License',
-      description: 'Upload a copy of your current professional license',
-      validationType: 'DOCUMENT',
-      required: true,
-      acceptedFormats: ['PDF', 'JPG', 'PNG'],
-    },
-    {
-      id: 'liability_insurance',
-      title: 'Professional Liability Insurance',
-      description: 'Provide proof of current liability insurance coverage',
-      validationType: 'DOCUMENT',
-      required: true,
-      acceptedFormats: ['PDF'],
-    },
-    {
-      id: 'license_expiry',
-      title: 'License Expiry Date',
-      description: 'When does your professional license expire?',
-      validationType: 'FUTURE_DATE',
-      required: true,
-    },
-    {
-      id: 'certification',
-      title: 'Professional Certification',
-      description: 'Upload your professional certification documents',
-      validationType: 'DOCUMENT',
-      required: true,
-      acceptedFormats: ['PDF', 'JPG', 'PNG'],
-    },
-  ],
-  // Add more provider types as needed
-  default: [
-    {
-      id: 'professional_license',
-      title: 'Professional License',
-      description: 'Upload a copy of your current professional license',
-      validationType: 'DOCUMENT',
-      required: true,
-      acceptedFormats: ['PDF', 'JPG', 'PNG'],
-    },
-    {
-      id: 'liability_insurance',
-      title: 'Professional Liability Insurance',
-      description: 'Provide proof of current liability insurance coverage',
-      validationType: 'DOCUMENT',
-      required: true,
-      acceptedFormats: ['PDF'],
-    },
-    {
-      id: 'license_expiry',
-      title: 'License Expiry Date',
-      description: 'When does your professional license expire?',
-      validationType: 'FUTURE_DATE',
-      required: true,
-    },
-  ],
-};
+import { getRequirementsForProviderType } from '@/features/providers/lib/provider-types';
+import { RequirementType, RequirementValidationType } from '@/features/providers/types/types';
 
 export function RegulatoryRequirementsSection() {
-  const { control, setValue } = useFormContext();
-  const [completedRequirements, setCompletedRequirements] = useState<string[]>([]);
+  const {
+    control,
+    setValue,
+    watch,
+    register,
+    formState: { errors },
+  } = useFormContext();
+  const [requirements, setRequirements] = useState<RequirementType[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Watch the provider type to dynamically update requirements
   const providerType = useWatch({
@@ -171,44 +27,71 @@ export function RegulatoryRequirementsSection() {
     name: 'providerType.providerType',
   });
 
-  // Get the appropriate requirements based on provider type
-  const requirements = providerType
-    ? REGULATORY_REQUIREMENTS[providerType as keyof typeof REGULATORY_REQUIREMENTS] ||
-      REGULATORY_REQUIREMENTS.default
-    : [];
-
-  const handleRequirementChange = (requirementId: string, value: any) => {
-    setValue(`regulatoryRequirements.requirements.${requirementId}`, value);
-
-    // Update completed requirements
-    if (value && value !== '') {
-      setCompletedRequirements((prev) => [
-        ...prev.filter((id) => id !== requirementId),
-        requirementId,
-      ]);
-    } else {
-      setCompletedRequirements((prev) => prev.filter((id) => id !== requirementId));
-    }
-  };
-
-  const requiredRequirements = requirements.filter((req) => req.required);
-  const completedRequired = requiredRequirements.filter((req) =>
-    completedRequirements.includes(req.id)
-  ).length;
-
-  // If provider type changes, reset the requirements
+  // Fetch requirements when provider type changes
   useEffect(() => {
-    if (providerType) {
-      setValue('regulatoryRequirements.requirements', {});
-      setCompletedRequirements([]);
+    async function fetchRequirements() {
+      if (!providerType) return;
+
+      setIsLoading(true);
+      try {
+        const fetchedRequirements = await getRequirementsForProviderType(providerType);
+
+        // Transform the fetched requirements to match our component's expected format
+        const transformedRequirements: RequirementType[] = fetchedRequirements.map((req, idx) => ({
+          id: req.id,
+          name: req.name,
+          description: req.description || '',
+          validationType: req.validationType as RequirementValidationType,
+          isRequired: req.isRequired,
+          validationConfig: req.validationConfig,
+          index: idx,
+        }));
+
+        setRequirements(transformedRequirements);
+
+        // Set the requirements array with proper indexes in the form
+        setValue(
+          'regulatoryRequirements.requirements',
+          transformedRequirements.map((req, idx) => ({
+            requirementTypeId: req.id,
+            index: idx,
+          }))
+        );
+      } catch (error) {
+        console.error('Failed to fetch requirements:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
+
+    fetchRequirements();
   }, [providerType, setValue]);
+
+  const requiredRequirements = requirements.filter((req) => req.isRequired);
 
   if (!providerType) {
     return (
       <div className="rounded-lg bg-muted/50 p-6 text-center">
         <p className="text-muted-foreground">
           Please select a provider type to see applicable regulatory requirements.
+        </p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="rounded-lg bg-muted/50 p-6 text-center">
+        <p className="text-muted-foreground">Loading requirements...</p>
+      </div>
+    );
+  }
+
+  if (requirements.length === 0 && !isLoading) {
+    return (
+      <div className="rounded-lg bg-muted/50 p-6 text-center">
+        <p className="text-muted-foreground">
+          No regulatory requirements found for this provider type.
         </p>
       </div>
     );
@@ -221,51 +104,34 @@ export function RegulatoryRequirementsSection() {
           Complete all required regulatory documentation to verify your credentials.
         </p>
 
-        <Badge
-          variant={completedRequired === requiredRequirements.length ? 'default' : 'secondary'}
-        >
-          {completedRequired}/{requiredRequirements.length} Required
-        </Badge>
+        <Badge variant="secondary">{requiredRequirements.length} Required</Badge>
       </div>
 
       <div className="space-y-4">
-        {requirements.map((requirement) => (
-          <Card
-            key={requirement.id}
-            className={`${
-              requirement.required && !completedRequirements.includes(requirement.id)
-                ? 'border-orange-200 bg-orange-50/50'
-                : completedRequirements.includes(requirement.id)
-                  ? 'border-green-200 bg-green-50/50'
-                  : ''
-            }`}
-          >
+        {requirements.map((requirement, index) => (
+          <Card key={requirement.id}>
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2 text-base">
-                    {requirement.title}
-                    {requirement.required && (
+                    {requirement.name}
+                    {requirement.isRequired && (
                       <Badge variant="destructive" className="text-xs">
                         Required
                       </Badge>
                     )}
-                    {completedRequirements.includes(requirement.id) && (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    )}
                   </CardTitle>
                   <CardDescription className="mt-1">{requirement.description}</CardDescription>
                 </div>
-                {requirement.required && !completedRequirements.includes(requirement.id) && (
-                  <AlertCircle className="h-5 w-5 flex-shrink-0 text-orange-500" />
-                )}
               </div>
             </CardHeader>
             <CardContent>
-              <RequirementField
-                requirement={requirement}
-                onChange={(value) => handleRequirementChange(requirement.id, value)}
-              />
+              {renderRequirementInput(requirement, {
+                register,
+                watch,
+                setValue,
+                errors,
+              })}
             </CardContent>
           </Card>
         ))}

@@ -69,134 +69,137 @@ export function BasicInfoSection() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-8 md:flex-row">
-        <div className="md:w-1/3">
-          <ProfileImageUploader
-            onImageChange={handleProfileImageChange}
-            currentImage={profileImage}
+      <div className="flex w-full flex-col gap-6">
+        <div className="w-full">
+          <FormLabel>Profile Image</FormLabel>
+          <div className="mt-2 flex justify-center">
+            <div className="w-[250px]">
+              <ProfileImageUploader
+                onImageChange={handleProfileImageChange}
+                currentImage={profileImage}
+              />
+            </div>
+          </div>
+        </div>
+
+        <FormField
+          control={control}
+          name="basicInfo.name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Full Name *</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter your full name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <FormField
+            control={control}
+            name="basicInfo.email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email Address *</FormLabel>
+                <FormControl>
+                  <Input type="email" placeholder="Enter your email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={control}
+            name="basicInfo.whatsapp"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>WhatsApp Number *</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., +27123456789" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
 
-        <div className="space-y-4 md:w-2/3">
-          <FormField
-            control={control}
-            name="basicInfo.name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Full Name *</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter your full name" {...field} />
-                </FormControl>
+        <FormField
+          control={control}
+          name="basicInfo.website"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Website (Optional)</FormLabel>
+              <FormControl>
+                <Input type="url" placeholder="https://your-website.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={control}
+          name="basicInfo.bio"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Professional Bio *</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Tell patients about your background, experience, and approach to care..."
+                  className="min-h-[120px]"
+                  {...field}
+                />
+              </FormControl>
+              <div className="flex justify-between">
                 <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FormField
-              control={control}
-              name="basicInfo.email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email Address *</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="Enter your email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={control}
-              name="basicInfo.whatsapp"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>WhatsApp Number *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., +27123456789" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <FormField
-            control={control}
-            name="basicInfo.website"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Website (Optional)</FormLabel>
-                <FormControl>
-                  <Input type="url" placeholder="https://your-website.com" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={control}
-            name="basicInfo.bio"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Professional Bio *</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Tell patients about your background, experience, and approach to care..."
-                    className="min-h-[120px]"
-                    {...field}
-                  />
-                </FormControl>
-                <div className="flex justify-between">
-                  <FormMessage />
-                  <p className="text-xs text-muted-foreground">{bio.length}/500 characters</p>
-                </div>
-              </FormItem>
-            )}
-          />
-
-          <div className="space-y-3">
-            <FormLabel>Languages Spoken *</FormLabel>
-            <div className="flex gap-2">
-              <Select onValueChange={addLanguage}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select languages you speak" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LANGUAGES.filter((lang) => !selectedLanguages.includes(lang)).map((language) => (
-                    <SelectItem key={language} value={language}>
-                      {language}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {selectedLanguages.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {selectedLanguages.map((language) => (
-                  <Badge key={language} variant="secondary" className="flex items-center gap-1">
-                    {language}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-4 h-auto w-4 p-0"
-                      onClick={() => removeLanguage(language)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </Badge>
-                ))}
+                <p className="text-xs text-muted-foreground">{bio.length}/500 characters</p>
               </div>
-            )}
+            </FormItem>
+          )}
+        />
 
-            {selectedLanguages.length === 0 && (
-              <p className="text-sm text-muted-foreground">Please select at least one language</p>
-            )}
+        <div className="space-y-3">
+          <FormLabel>Languages Spoken *</FormLabel>
+          <div className="flex gap-2">
+            <Select onValueChange={addLanguage}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Select languages you speak" />
+              </SelectTrigger>
+              <SelectContent>
+                {LANGUAGES.filter((lang) => !selectedLanguages.includes(lang)).map((language) => (
+                  <SelectItem key={language} value={language}>
+                    {language}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
+          {selectedLanguages.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedLanguages.map((language) => (
+                <Badge key={language} variant="secondary" className="flex items-center gap-1">
+                  {language}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 h-auto w-4 p-0"
+                    onClick={() => removeLanguage(language)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {selectedLanguages.length === 0 && (
+            <p className="text-sm text-muted-foreground">Please select at least one language</p>
+          )}
         </div>
       </div>
     </div>

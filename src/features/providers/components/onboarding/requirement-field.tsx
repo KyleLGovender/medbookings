@@ -56,7 +56,7 @@ export function RequirementField({ requirement, onChange }: RequirementFieldProp
 
     case 'DOCUMENT':
       return (
-        <DocumentUploader onUpload={handleChange} acceptedFormats={requirement.acceptedFormats} />;
+        <DocumentUploader onUpload={handleChange} acceptedFormats={requirement.acceptedFormats} />
       );
 
     case 'TEXT':
