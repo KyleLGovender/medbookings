@@ -92,7 +92,7 @@ export function EditProfileForm() {
 
   if (isProfileLoading) {
     return (
-      <Card className="mx-auto max-w-lg border-border bg-card dark:border-border dark:bg-card">
+      <Card className="mx-auto max-w-4xl border-border bg-card dark:border-border dark:bg-card">
         <CardContent className="pt-6">
           <div className="flex justify-center py-8">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
@@ -103,7 +103,7 @@ export function EditProfileForm() {
   }
 
   return (
-    <Card className="mx-auto max-w-lg border-border bg-card dark:border-border dark:bg-card">
+    <Card className="mx-auto max-w-4xl border-border bg-card dark:border-border dark:bg-card">
       <CardHeader>
         <CardTitle className="text-foreground dark:text-foreground">Edit Profile</CardTitle>
         <CardDescription className="text-muted-foreground dark:text-muted-foreground">

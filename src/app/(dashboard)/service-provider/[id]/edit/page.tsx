@@ -1,7 +1,9 @@
 import { notFound, redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { getServerSession } from 'next-auth';
 
+import CalendarLoader from '@/components/calendar-loader';
 import { EditBasicInfo } from '@/features/providers/components/profile/edit-basic-info';
 import { getServiceProviderByServiceProviderId } from '@/features/providers/lib/queries';
 import { authOptions } from '@/lib/auth';
@@ -35,7 +37,15 @@ export default async function EditProviderPage({ params }: EditProviderPageProps
   }
 
   return (
-    <>
+    <Suspense
+      fallback={
+        <CalendarLoader
+          message="Loading Editor"
+          submessage="Preparing provider editor..."
+          showAfterMs={0}
+        />
+      }
+    >
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Edit Profile</h1>
         <p className="mt-2 text-muted-foreground">
@@ -44,6 +54,6 @@ export default async function EditProviderPage({ params }: EditProviderPageProps
       </div>
 
       <EditBasicInfo provider={provider} />
-    </>
+    </Suspense>
   );
 }

@@ -5,7 +5,7 @@ export default function Loading() {
     <CalendarLoader
       message="Loading MedBookings"
       submessage="Preparing your healthcare platform..."
-      showAfterMs={100}
+      showAfterMs={0}
     />
   );
 }
