@@ -91,7 +91,7 @@ export function EditBasicInfo({ provider }: EditBasicInfoProps) {
       if (data.redirect) {
         router.push(data.redirect);
       } else {
-        router.push(`/service-provider/${provider.id}`);
+        router.push(`/providers/${provider.id}/edit`);
       }
       router.refresh();
     },

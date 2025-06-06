@@ -379,11 +379,85 @@ export async function updateServiceProvider(prevState: any, formData: FormData) 
 
     // Only update services if they've changed
     const currentServiceIds = currentProvider.services.map((s) => s.id);
+
+    // Compare service configs (duration and price)
+    const serviceConfigChanges = [];
+    const serviceUpdates = [];
+
+    for (const serviceId of services) {
+      const currentService = currentProvider.services.find((s) => s.id === serviceId);
+      const newDuration = formData.get(`serviceConfigs[${serviceId}][duration]`);
+      const newPrice = formData.get(`serviceConfigs[${serviceId}][price]`);
+
+      if (currentService) {
+        // Compare with existing service values
+        const durationChanged =
+          newDuration && parseInt(newDuration as string) !== currentService.defaultDuration;
+        const priceChanged =
+          newPrice && parseFloat(newPrice as string) !== Number(currentService.defaultPrice);
+
+        if (durationChanged) {
+          serviceConfigChanges.push(
+            `Service ${currentService.name}: Duration changed from ${currentService.defaultDuration} to ${newDuration}`
+          );
+
+          // Add to service updates
+          serviceUpdates.push({
+            serviceId,
+            updateData: {
+              defaultDuration: parseInt(newDuration as string),
+            },
+          });
+        }
+
+        if (priceChanged) {
+          serviceConfigChanges.push(
+            `Service ${currentService.name}: Price changed from ${currentService.defaultPrice} to ${newPrice}`
+          );
+
+          // Add to service updates
+          const existingUpdate = serviceUpdates.find((update) => update.serviceId === serviceId);
+          if (existingUpdate) {
+            existingUpdate.updateData.defaultPrice = parseFloat(newPrice as string);
+          } else {
+            serviceUpdates.push({
+              serviceId,
+              updateData: {
+                defaultPrice: parseFloat(newPrice as string),
+              },
+            });
+          }
+        }
+      }
+    }
+
+    // Update services in database if they've changed
     if (JSON.stringify(services.sort()) !== JSON.stringify(currentServiceIds.sort())) {
       updateData.services = {
         set: [],
         connect: services.map((serviceId) => ({ id: serviceId })),
       };
+    }
+
+    console.log('updateData.services', updateData.services);
+
+    // Apply service updates directly to the database
+    if (serviceUpdates.length > 0) {
+      for (const update of serviceUpdates) {
+        await prisma.service.update({
+          where: { id: update.serviceId },
+          data: update.updateData,
+        });
+      }
+    }
+
+    // If there are service config changes, we need to update the service configs
+    if (serviceConfigChanges.length > 0) {
+      // This will be handled in the ServiceAvailabilityConfig section below,
+      // but we need to ensure the update happens even if no other fields changed
+      if (Object.keys(updateData).length === 0) {
+        updateData.name = currentProvider.name; // Add a dummy field that won't change anything
+      }
     }
 
     // If no fields were changed and no requirements were updated, return early
@@ -392,7 +466,7 @@ export async function updateServiceProvider(prevState: any, formData: FormData) 
         success: true,
         message: 'No changes detected',
         data: serializeServiceProvider(currentProvider),
-        redirect: '/profile',
+        redirect: `/providers/${id}/edit`,
       };
     }
 
@@ -422,12 +496,12 @@ export async function updateServiceProvider(prevState: any, formData: FormData) 
     });
 
     // Revalidate paths to update UI
-    revalidatePath(`/service-provider/${id}`);
+    revalidatePath(`/providers/${id}`);
 
     return {
       success: true,
       data: serializeServiceProvider(updatedProvider),
-      redirect: '/profile',
+      redirect: `/providers/${id}/edit`,
     };
   } catch (error) {
     console.error('Error updating service provider:', error);

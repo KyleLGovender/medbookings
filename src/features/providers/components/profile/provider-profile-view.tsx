@@ -81,7 +81,7 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
         </div>
 
         {isOwner && (
-          <Link href={`/service-provider/${provider.id}/edit`}>
+          <Link href={`/providers/${provider.id}/edit`}>
             <Button variant="outline" className="flex items-center gap-2">
               <PenSquare className="h-4 w-4" />
               Edit Profile
@@ -183,20 +183,24 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
           <div className="space-y-4">
             {provider.services.map((service) => (
               <div key={service.id} className="rounded-md border p-4">
-                <div className="flex justify-between">
+                <div className="flex flex-col">
                   <h3 className="font-medium">{service.name}</h3>
-                  <div className="text-right">
-                    <div className="text-sm font-semibold text-primary">
-                      R{service.defaultPrice || 'Varies'}
+                  {service.description && (
+                    <p className="mt-2 text-sm text-muted-foreground">{service.description}</p>
+                  )}
+                  <div className="mt-3 space-y-1">
+                    <div className="flex items-center">
+                      <span className="w-16 text-xs text-muted-foreground">Price:</span>
+                      <span className="text-sm font-semibold text-primary">
+                        R{service.defaultPrice || 'Varies'}
+                      </span>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {service.defaultDuration || 'Varies'} min
+                    <div className="flex items-center">
+                      <span className="w-16 text-xs text-muted-foreground">Duration:</span>
+                      <span className="text-sm">{service.defaultDuration || 'Varies'} min</span>
                     </div>
                   </div>
                 </div>
-                {service.description && (
-                  <p className="mt-2 text-sm text-muted-foreground">{service.description}</p>
-                )}
               </div>
             ))}
           </div>

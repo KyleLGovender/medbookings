@@ -7,11 +7,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserProfile } from '@/features/profile/types/types';
+import { SerializedServiceProvider } from '@/features/providers/types/types';
 
 import { DeleteAccountButton } from './delete-account-button';
 
 interface ProfileClientProps {
   profile: UserProfile;
+  provider?: SerializedServiceProvider | null;
   isProfileLoading: boolean;
   profileError: Error | null;
   hasServiceProvider: boolean;
@@ -19,6 +21,7 @@ interface ProfileClientProps {
 
 export function ProfileClient({
   profile,
+  provider,
   isProfileLoading,
   profileError,
   hasServiceProvider,
@@ -73,7 +76,24 @@ export function ProfileClient({
                   <Link href="/profile/edit" passHref>
                     <Button variant="outline">Edit Profile</Button>
                   </Link>
+
                   <DeleteAccountButton hasServiceProvider={hasServiceProvider} />
+                </div>
+                <div className="flex w-full flex-col gap-3 pt-4 text-center">
+                  <p className="text-sm text-muted-foreground dark:text-muted-foreground">
+                    Provider Status: {provider?.status ?? 'Not Registered'}
+                  </p>
+                  <div>
+                    {hasServiceProvider ? (
+                      <Link href={`/providers/${provider?.id}`} passHref>
+                        <Button variant="outline">Provider View</Button>
+                      </Link>
+                    ) : (
+                      <Link href="/providers/register" passHref>
+                        <Button variant="outline">Register Provider</Button>
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>

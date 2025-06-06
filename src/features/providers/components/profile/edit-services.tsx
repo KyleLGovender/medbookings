@@ -36,6 +36,7 @@ interface Service {
   defaultDuration?: number | null;
   defaultPrice?: number | null;
   isSelected?: boolean;
+  displayPriority?: number;
 }
 
 interface EditServicesProps {
@@ -113,7 +114,7 @@ export function EditServices({ provider, availableServices }: EditServicesProps)
       if (data.redirect) {
         router.push(data.redirect);
       } else {
-        router.push(`/service-provider/${provider.id}`);
+        router.push(`/providers/${provider.id}/edit`);
       }
       router.refresh();
     },
@@ -132,9 +133,30 @@ export function EditServices({ provider, availableServices }: EditServicesProps)
     formData.append('id', provider.id);
     formData.append('userId', provider.userId);
 
+    // Add required fields to prevent validation errors
+    formData.append('name', provider.name || '');
+    formData.append('bio', provider.bio || '');
+    formData.append('email', provider.email || '');
+    formData.append('whatsapp', provider.whatsapp || '');
+    if (provider.website) formData.append('website', provider.website);
+
+    // Add languages if available
+    if (provider.languages && Array.isArray(provider.languages)) {
+      provider.languages.forEach((lang: string) => {
+        formData.append('languages', lang);
+      });
+    }
+
     // Append services
     data.services.forEach((serviceId) => {
       formData.append('services', serviceId);
+    });
+
+    // Append service configurations
+    const serviceConfigs = methods.getValues('serviceConfigs') || {};
+    Object.entries(serviceConfigs).forEach(([serviceId, config]) => {
+      formData.append(`serviceConfigs[${serviceId}][duration]`, config.duration.toString());
+      formData.append(`serviceConfigs[${serviceId}][price]`, config.price.toString());
     });
 
     // Trigger the mutation
@@ -187,111 +209,109 @@ export function EditServices({ provider, availableServices }: EditServicesProps)
                       <FormLabel>Select services you provide *</FormLabel>
                       <FormMessage />
                       <div className="mt-2 space-y-4">
-                        {availableServices.map((service) => {
-                          const isChecked = fieldValue.includes(service.id);
-                          return (
-                            <div key={service.id} className="rounded-md border p-4">
-                              <div className="flex items-start space-x-3">
-                                <FormControl>
-                                  <Checkbox
-                                    checked={isChecked}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) {
-                                        field.onChange([...fieldValue, service.id]);
-                                      } else {
-                                        field.onChange(
-                                          fieldValue.filter((value: string) => value !== service.id)
-                                        );
-                                      }
-                                    }}
-                                  />
-                                </FormControl>
-                                <div className="flex-1">
-                                  <div className="space-y-1">
-                                    <span className="text-sm font-medium">{service.name}</span>
-                                    {service.description && (
-                                      <p className="text-xs text-muted-foreground">
-                                        {service.description}
-                                      </p>
-                                    )}
-                                  </div>
+                        {[...availableServices]
+                          .sort((a, b) => (a.displayPriority || 0) - (b.displayPriority || 0))
+                          .map((service) => {
+                            const isChecked = fieldValue.includes(service.id);
+                            return (
+                              <div key={service.id} className="rounded-md border p-4">
+                                <div className="flex items-start space-x-3">
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={isChecked}
+                                      onCheckedChange={(checked) => {
+                                        if (checked) {
+                                          field.onChange([...fieldValue, service.id]);
+                                        } else {
+                                          field.onChange(
+                                            fieldValue.filter(
+                                              (value: string) => value !== service.id
+                                            )
+                                          );
+                                        }
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <div className="flex-1">
+                                    <div className="space-y-1">
+                                      <span className="text-sm font-medium">{service.name}</span>
+                                      {service.description && (
+                                        <p className="text-xs text-muted-foreground">
+                                          {service.description}
+                                        </p>
+                                      )}
+                                    </div>
 
-                                  {isChecked && (
-                                    <div className="mt-3 flex flex-col space-y-3">
-                                      <FormField
-                                        control={methods.control}
-                                        name={`serviceConfigs.${service.id}.duration`}
-                                        defaultValue={Number(service.defaultDuration) || 30}
-                                        render={({ field }) => (
-                                          <FormItem className="w-1/2">
-                                            <FormLabel className="text-xs">
-                                              Duration (min)
-                                            </FormLabel>
-                                            <FormControl>
-                                              <Input
-                                                type="number"
-                                                className="h-8"
-                                                value={field.value}
-                                                min="5"
-                                                onChange={(e) => {
-                                                  // Ensure we're getting a number
-                                                  const value =
-                                                    e.target.value === ''
-                                                      ? 0
-                                                      : Number(e.target.value);
-                                                  field.onChange(value);
-                                                }}
-                                                onBlur={field.onBlur}
-                                              />
-                                            </FormControl>
-                                            <FormMessage />
-                                          </FormItem>
-                                        )}
-                                      />
-                                      <FormField
-                                        control={methods.control}
-                                        name={`serviceConfigs.${service.id}.price`}
-                                        defaultValue={Number(service.defaultPrice) || 0}
-                                        render={({ field }) => (
-                                          <FormItem className="w-1/2">
-                                            <FormLabel className="text-xs">Price (R)</FormLabel>
-                                            <FormControl>
-                                              <div className="relative">
-                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 transform text-xs text-muted-foreground">
-                                                  R
-                                                </span>
+                                    {isChecked && (
+                                      <div className="mt-3 flex flex-col space-y-3">
+                                        <FormField
+                                          control={methods.control}
+                                          name={`serviceConfigs.${service.id}.price`}
+                                          defaultValue={Number(service.defaultPrice) || 0}
+                                          render={({ field }) => (
+                                            <FormItem className="w-1/2">
+                                              <FormLabel className="text-xs">Price (R)</FormLabel>
+                                              <FormControl>
+                                                <div className="relative">
+                                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 transform text-xs text-muted-foreground">
+                                                    R
+                                                  </span>
+                                                  <Input
+                                                    type="number"
+                                                    className="h-8 pl-4"
+                                                    value={field.value}
+                                                    onChange={(e) => {
+                                                      // Simple conversion to number
+                                                      const value =
+                                                        e.target.value === ''
+                                                          ? 0
+                                                          : Number(e.target.value);
+                                                      field.onChange(value);
+                                                    }}
+                                                    onBlur={field.onBlur}
+                                                  />
+                                                </div>
+                                              </FormControl>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                                        <FormField
+                                          control={methods.control}
+                                          name={`serviceConfigs.${service.id}.duration`}
+                                          defaultValue={Number(service.defaultDuration) || 30}
+                                          render={({ field }) => (
+                                            <FormItem className="w-1/2">
+                                              <FormLabel className="text-xs">
+                                                Duration (min)
+                                              </FormLabel>
+                                              <FormControl>
                                                 <Input
                                                   type="number"
-                                                  className="h-8 pl-6"
-                                                  step="5"
+                                                  className="h-8"
                                                   value={field.value}
                                                   onChange={(e) => {
-                                                    // Convert to number first
-                                                    const rawValue =
+                                                    // Simple conversion to number
+                                                    const value =
                                                       e.target.value === ''
                                                         ? 0
                                                         : Number(e.target.value);
-                                                    // Then round to nearest 5
-                                                    const roundedValue =
-                                                      Math.round(rawValue / 5) * 5;
-                                                    // Ensure we're passing a number, not a string
-                                                    field.onChange(roundedValue);
+                                                    field.onChange(value);
                                                   }}
                                                   onBlur={field.onBlur}
                                                 />
-                                              </div>
-                                            </FormControl>
-                                            <FormMessage />
-                                          </FormItem>
-                                        )}
-                                      />
-                                    </div>
-                                  )}
+                                              </FormControl>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
                       </div>
                     </FormItem>
                   );

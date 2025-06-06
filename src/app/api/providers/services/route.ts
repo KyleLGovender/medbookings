@@ -19,11 +19,7 @@ export async function GET(request: NextRequest) {
     if (providerTypeId) {
       servicesQuery.where = {
         ...servicesQuery.where,
-        serviceProviderTypes: {
-          some: {
-            id: providerTypeId,
-          },
-        },
+        serviceProviderTypeId: providerTypeId,
       };
     }
 

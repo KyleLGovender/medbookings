@@ -15,6 +15,7 @@ export function ProfileClientPage() {
       {profile && (
         <ProfileClient
           profile={profile}
+          provider={provider}
           isProfileLoading={isProfileLoading}
           profileError={profileError}
           hasServiceProvider={!!provider}
