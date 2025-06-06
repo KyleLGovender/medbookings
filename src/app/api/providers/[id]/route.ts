@@ -3,7 +3,59 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 
 import { updateServiceProvider } from '@/features/providers/lib/actions';
+import { serializeServiceProvider } from '@/features/providers/lib/helper';
 import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const { id } = params;
+
+    if (!id) {
+      return NextResponse.json({ error: 'Provider ID is required' }, { status: 400 });
+    }
+
+    const serviceProvider = await prisma.serviceProvider.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        services: true,
+        user: {
+          select: {
+            email: true,
+          },
+        },
+        serviceProviderType: {
+          select: {
+            name: true,
+            description: true,
+          },
+        },
+        requirementSubmissions: {
+          include: {
+            requirementType: true,
+          },
+        },
+      },
+    });
+
+    if (!serviceProvider) {
+      return NextResponse.json({ error: 'Service provider not found' }, { status: 404 });
+    }
+
+    // Serialize the provider data to handle Decimal values and dates
+    const serializedProvider = serializeServiceProvider(serviceProvider);
+
+    return NextResponse.json(serializedProvider);
+  } catch (error) {
+    console.error('Error fetching service provider:', error);
+    return NextResponse.json(
+      { error: 'An error occurred while fetching the service provider' },
+      { status: 500 }
+    );
+  }
+}
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {

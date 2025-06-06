@@ -4,8 +4,7 @@ import { Suspense } from 'react';
 import { getServerSession } from 'next-auth';
 
 import CalendarLoader from '@/components/calendar-loader';
-import { EditBasicInfo } from '@/features/providers/components/profile/edit-basic-info';
-import { getServiceProviderByServiceProviderId } from '@/features/providers/lib/queries';
+import { EditProviderClient } from '@/features/providers/components/profile/edit-provider-client';
 import { authOptions } from '@/lib/auth';
 
 interface EditProviderPageProps {
@@ -23,17 +22,9 @@ export default async function EditProviderPage({ params }: EditProviderPageProps
 
   const userId = session.user.id;
 
-  // Get the provider data
-  const provider = await getServiceProviderByServiceProviderId(params.id);
-
-  // Check if provider exists
-  if (!provider) {
+  // Ensure ID exists
+  if (!params.id) {
     notFound();
-  }
-
-  // Check if the current user is authorized to edit this provider
-  if (provider.userId !== userId) {
-    redirect('/dashboard'); // Redirect to dashboard if not authorized
   }
 
   return (
@@ -48,12 +39,10 @@ export default async function EditProviderPage({ params }: EditProviderPageProps
     >
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Edit Profile</h1>
-        <p className="mt-2 text-muted-foreground">
-          Update your basic profile information visible to patients.
-        </p>
+        <p className="mt-2 text-muted-foreground">Update your profile information and services.</p>
       </div>
 
-      <EditBasicInfo provider={provider} />
+      <EditProviderClient providerId={params.id} userId={userId} />
     </Suspense>
   );
 }

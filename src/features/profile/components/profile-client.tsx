@@ -6,25 +6,34 @@ import QueryLoader from '@/components/query-loader';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useProfile } from '@/features/profile/hooks/use-profile';
-import { ServiceProviderProfileClient } from '@/features/providers/components/service-provider-client';
+import { UserProfile } from '@/features/profile/types/types';
 
 import { DeleteAccountButton } from './delete-account-button';
 
-export function ProfileClient() {
-  const { data: profile, isLoading, error } = useProfile();
+interface ProfileClientProps {
+  profile: UserProfile;
+  isProfileLoading: boolean;
+  profileError: Error | null;
+  hasServiceProvider: boolean;
+}
 
+export function ProfileClient({
+  profile,
+  isProfileLoading,
+  profileError,
+  hasServiceProvider,
+}: ProfileClientProps) {
   return (
     <QueryLoader
-      isLoading={isLoading}
+      isLoading={isProfileLoading}
       message="Loading Profile"
       submessage="Retrieving your profile information..."
     >
-      {error || !profile ? (
+      {profileError || !profile ? (
         <Card className="mx-auto max-w-4xl border-border bg-card dark:border-border dark:bg-card">
           <CardContent className="pt-6 text-center">
             <p className="text-destructive">
-              {error instanceof Error ? error.message : 'Failed to load profile'}
+              {profileError instanceof Error ? profileError.message : 'Failed to load profile'}
             </p>
           </CardContent>
         </Card>
@@ -64,13 +73,11 @@ export function ProfileClient() {
                   <Link href="/profile/edit" passHref>
                     <Button variant="outline">Edit Profile</Button>
                   </Link>
-                  <DeleteAccountButton hasServiceProvider={false} />
+                  <DeleteAccountButton hasServiceProvider={hasServiceProvider} />
                 </div>
               </div>
             </CardContent>
           </Card>
-
-          <ServiceProviderProfileClient userId={profile.id} />
         </div>
       )}
     </QueryLoader>

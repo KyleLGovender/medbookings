@@ -29,7 +29,7 @@ src/
 │   │   │   └── new/                  # Create new organization
 │   │   │
 │   │   ├── profile/                  # User profile
-│   │   ├── service-providers/        # Provider management
+│   │   ├── providers/        # Provider management
 │   │   │   ├── [id]/                 # Single provider view
 │   │   │   │   ├── compliance/       # Provider compliance
 │   │   │   │   ├── services/         # Provider services
@@ -45,7 +45,7 @@ src/
 │   │
 │   ├── join-medbookings/             # Onboarding and signup pages
 │   │
-│   ├── providers/                    # Public provider discovery
+│   ├── search/                       # Public provider discovery
 │   │   ├── [id]/                     # Single provider view
 │   │   └── bookings/                 # Provider's bookings page
 │   │

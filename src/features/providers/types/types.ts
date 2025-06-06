@@ -47,6 +47,61 @@ export enum RequirementsValidationStatus {
   REJECTED = 'REJECTED',
 }
 
+/**
+ * Type for serialized Service
+ */
+export interface SerializedService {
+  id: string;
+  name: string;
+  description?: string | null;
+  defaultDuration: number | null;
+  defaultPrice: number | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Type for serialized ServiceProvider
+ */
+export interface SerializedServiceProvider {
+  id: string;
+  userId: string;
+  name: string;
+  bio: string | null;
+  image: string | null;
+  email: string;
+  whatsapp: string | null;
+  website: string | null;
+  languages: string[];
+  billingType: string | null;
+  status: string;
+  serviceProviderTypeId: string;
+  createdAt: string;
+  updatedAt: string;
+  services: SerializedService[];
+  serviceProviderType: {
+    name: string;
+    description: string | null;
+  };
+  requirementSubmissions?: Array<{
+    id: string;
+    requirementTypeId: string;
+    documentUrl: string | null;
+    documentMetadata: Record<string, any> | null;
+    createdAt: string;
+    updatedAt: string;
+    requirementType?: {
+      id: string;
+      name: string;
+      description: string | null;
+      validationType: string;
+    };
+  }>;
+  user: {
+    email: string;
+  };
+}
+
 // Types for validation configurations
 export interface ValidationConfigBase {
   helpText?: string;

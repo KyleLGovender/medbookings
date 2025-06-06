@@ -1,5 +1,5 @@
 import { QueryProvider } from '@/components/providers/query-provider';
-import { ProfileClient } from '@/features/profile/components/profile-client';
+import { ProfileClientPage } from '@/features/profile/components/profile-client-page';
 
 export default function ProfilePage() {
   return (
@@ -13,7 +13,7 @@ export default function ProfilePage() {
         </p>
       </div>
       <QueryProvider>
-        <ProfileClient />
+        <ProfileClientPage />
       </QueryProvider>
     </>
   );

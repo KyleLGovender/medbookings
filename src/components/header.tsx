@@ -21,6 +21,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import AuthButton from '@/features/auth/components/auth-button';
+import { useServiceProviderByUserId } from '@/features/providers/hooks/use-service-provider-by-user-id';
 import { cn } from '@/lib/utils';
 
 type NavigationItem = {
@@ -55,6 +56,7 @@ const getNavigationItems = (isSignedIn: boolean, isAdmin: boolean): NavigationIt
 export default function Header() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const { data: provider } = useServiceProviderByUserId(session?.user?.id);
   const [open, setOpen] = useState(false);
 
   // Helper function to check if a path matches the current pathname
@@ -77,6 +79,7 @@ export default function Header() {
   const profileMenuItems = [
     ...(isAdmin ? [{ label: 'Admin', href: '/admin' }] : []),
     { label: 'Profile', href: '/profile' },
+    ...(provider?.id ? [{ label: 'Provider', href: `/providers/${provider.id}` }] : []),
     { label: 'Organizations', href: '/organizations' },
     { label: 'Calendar', href: '/calendar' },
     { label: 'Settings', href: '/settings' },
