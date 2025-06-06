@@ -1,6 +1,18 @@
 'use server';
 
+import { Service, ServiceProvider } from '@prisma/client';
+
+import { serializeServiceProvider } from '@/features/providers/lib/helper';
 import { prisma } from '@/lib/prisma';
+
+// Define a serialized service type that has number instead of Decimal
+interface SerializedService extends Omit<Service, 'defaultPrice'> {
+  defaultPrice: number;
+  availabilityConfigs?: Array<{
+    price: number;
+    [key: string]: any;
+  }>;
+}
 
 export async function getServiceProviderByUserId(userId: string): Promise<ServiceProvider | null> {
   const provider = await prisma.serviceProvider.findUnique({
@@ -101,7 +113,9 @@ export async function getApprovedServiceProviders() {
   return providers.map((provider) => serializeServiceProvider(provider));
 }
 
-export async function getServiceProviderServices(serviceProviderId: string): Promise<Service[]> {
+export async function getServiceProviderServices(
+  serviceProviderId: string
+): Promise<SerializedService[]> {
   try {
     const services = await prisma.service.findMany({
       where: {

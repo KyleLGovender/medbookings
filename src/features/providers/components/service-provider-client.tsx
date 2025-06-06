@@ -81,8 +81,17 @@ export function ServiceProviderProfileClient({ userId }: { userId: string }) {
           {serviceProvider.bio && (
             <p className="text-sm text-foreground dark:text-foreground">{serviceProvider.bio}</p>
           )}
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={() => router.push('/profile/service-provider/edit')}>
+          <div className="flex justify-end space-x-2">
+            <Button
+              variant="default"
+              onClick={() => router.push(`/service-provider/${serviceProvider.id}`)}
+            >
+              View Profile
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/service-provider/${serviceProvider.id}/edit`)}
+            >
               Edit Provider Profile
             </Button>
           </div>

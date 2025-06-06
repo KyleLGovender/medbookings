@@ -392,7 +392,7 @@ export async function updateServiceProvider(prevState: any, formData: FormData) 
         success: true,
         message: 'No changes detected',
         data: serializeServiceProvider(currentProvider),
-        redirect: '/profile/service-provider/view',
+        redirect: '/profile',
       };
     }
 
@@ -427,7 +427,7 @@ export async function updateServiceProvider(prevState: any, formData: FormData) 
     return {
       success: true,
       data: serializeServiceProvider(updatedProvider),
-      redirect: '/profile/service-provider/view',
+      redirect: '/profile',
     };
   } catch (error) {
     console.error('Error updating service provider:', error);

@@ -13,9 +13,11 @@ src/
 │   │
 │   ├── (dashboard)/                  # Protected dashboard routes
 │   │   ├── admin/                    # Admin dashboard for SUPER_ADMIN & ADMIN roles
-│   │   ├── bookings/                 # Booking management
-│   │   │   ├── [id]/                 # Single booking view
-│   │   │   └── calendar/             # Calendar view
+│   │   ├── calendar/                 # Calendar management
+│   │   │   ├── availability/         # Availability management
+│   │   │   └── bookings/             # Booking management
+│   │   │       ├── [id]/             # Single booking view
+│   │   │       └── calendar/         # Calendar view
 │   │   │
 │   │   ├── dashboard/                # Main dashboard
 │   │   ├── organizations/            # Organization management
@@ -29,7 +31,6 @@ src/
 │   │   ├── profile/                  # User profile
 │   │   ├── service-providers/        # Provider management
 │   │   │   ├── [id]/                 # Single provider view
-│   │   │   │   ├── availability/     # Provider availability
 │   │   │   │   ├── compliance/       # Provider compliance
 │   │   │   │   ├── services/         # Provider services
 │   │   │   │   └── settings/         # Provider settings

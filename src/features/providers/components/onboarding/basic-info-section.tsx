@@ -17,28 +17,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { SUPPORTED_LANGUAGES } from '@/features/providers/types/types';
 
 import { ProfileImageUploader } from './profile-image-uploader';
-
-// Languages enum from Prisma schema
-const LANGUAGES = [
-  'English',
-  'IsiZulu',
-  'IsiXhosa',
-  'Afrikaans',
-  'Sepedi',
-  'Setswana',
-  'Sesotho',
-  'IsiNdebele',
-  'SiSwati',
-  'Tshivenda',
-  'Xitsonga',
-  'Portuguese',
-  'French',
-  'Hindi',
-  'German',
-  'Mandarin',
-];
 
 export function BasicInfoSection() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -169,11 +150,13 @@ export function BasicInfoSection() {
                 <SelectValue placeholder="Select languages you speak" />
               </SelectTrigger>
               <SelectContent>
-                {LANGUAGES.filter((lang) => !selectedLanguages.includes(lang)).map((language) => (
-                  <SelectItem key={language} value={language}>
-                    {language}
-                  </SelectItem>
-                ))}
+                {SUPPORTED_LANGUAGES.filter((lang) => !selectedLanguages.includes(lang)).map(
+                  (language) => (
+                    <SelectItem key={language} value={language}>
+                      {language}
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
           </div>

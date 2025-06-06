@@ -1,5 +1,33 @@
 import { z } from 'zod';
 
+/**
+ * Supported languages for service providers
+ * This should match the Languages enum from the Prisma schema
+ */
+export const SUPPORTED_LANGUAGES = [
+  'English',
+  'IsiZulu',
+  'IsiXhosa',
+  'Afrikaans',
+  'Sepedi',
+  'Setswana',
+  'Sesotho',
+  'IsiNdebele',
+  'SiSwati',
+  'Tshivenda',
+  'Xitsonga',
+  'Portuguese',
+  'French',
+  'Hindi',
+  'German',
+  'Mandarin',
+] as const;
+
+/**
+ * Type for supported languages
+ */
+export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
+
 // Enum for requirement validation types (matching Prisma schema)
 export enum RequirementValidationType {
   BOOLEAN = 'BOOLEAN', // Yes/No or True/False answers
