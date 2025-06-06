@@ -7,9 +7,5 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  return (
-    <Section className="bg-background py-16 dark:bg-background">
-      <div className="mx-auto max-w-4xl">{children}</div>
-    </Section>
-  );
+  return <Section className="bg-background py-16 dark:bg-background">{children}</Section>;
 }

@@ -15,9 +15,12 @@ export default function CalendarLoader({
   submessage = 'We will be with you shortly',
   showAfterMs = 300,
 }: CalendarLoaderProps) {
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(showAfterMs <= 0);
 
   useEffect(() => {
+    // If showAfterMs is 0 or negative, show immediately
+    if (showAfterMs <= 0) return;
+
     const timer = setTimeout(() => {
       setShow(true);
     }, showAfterMs);

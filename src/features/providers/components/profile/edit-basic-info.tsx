@@ -8,6 +8,7 @@ import { useMutation } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { FormProvider, useForm } from 'react-hook-form';
 
+import CalendarLoader from '@/components/calendar-loader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -156,59 +157,92 @@ export function EditBasicInfo({ provider }: EditBasicInfoProps) {
   };
 
   return (
-    <FormProvider {...methods}>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const data = methods.getValues();
-          onSubmit(data);
-        }}
-        className="space-y-6"
-      >
-        <Card className="p-6">
-          <h2 className="text-2xl font-bold">Basic Information</h2>
-          <p className="text-sm text-muted-foreground">
-            Update your profile information visible to patients.
-          </p>
-          <Separator className="my-4" />
+    <>
+      {mutation.isPending && (
+        <CalendarLoader message="Saving Changes" submessage="Updating your provider profile..." />
+      )}
+      <FormProvider {...methods}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const data = methods.getValues();
+            onSubmit(data);
+          }}
+          className="space-y-6"
+        >
+          <Card className="p-6">
+            <h2 className="text-2xl font-bold">Basic Information</h2>
+            <p className="text-sm text-muted-foreground">
+              Update your profile information visible to patients.
+            </p>
+            <Separator className="my-4" />
 
-          <div className="space-y-6">
-            <div className="flex w-full flex-col gap-6">
-              <div className="w-full">
-                <FormLabel>Profile Image</FormLabel>
-                <div className="mt-2 flex justify-center">
-                  <div className="w-[250px]">
-                    <ProfileImageUploader
-                      onImageChange={handleProfileImageChange}
-                      currentImage={profileImage}
-                    />
+            <div className="space-y-6">
+              <div className="flex w-full flex-col gap-6">
+                <div className="w-full">
+                  <FormLabel>Profile Image</FormLabel>
+                  <div className="mt-2 flex justify-center">
+                    <div className="w-[250px]">
+                      <ProfileImageUploader
+                        onImageChange={handleProfileImageChange}
+                        currentImage={profileImage}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <FormField
-                control={methods.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter your full name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <FormField
                   control={methods.control}
-                  name="email"
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email Address *</FormLabel>
+                      <FormLabel>Full Name *</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="Enter your email" {...field} />
+                        <Input placeholder="Enter your full name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <FormField
+                    control={methods.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Address *</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="Enter your email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={methods.control}
+                    name="whatsapp"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>WhatsApp Number *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., +27123456789" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={methods.control}
+                  name="website"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Website (Optional)</FormLabel>
+                      <FormControl>
+                        <Input type="url" placeholder="https://your-website.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -217,111 +251,87 @@ export function EditBasicInfo({ provider }: EditBasicInfoProps) {
 
                 <FormField
                   control={methods.control}
-                  name="whatsapp"
+                  name="bio"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>WhatsApp Number *</FormLabel>
+                      <FormLabel>Professional Bio *</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., +27123456789" {...field} />
+                        <Textarea
+                          placeholder="Tell patients about your background, experience, and approach to care..."
+                          className="min-h-[120px]"
+                          {...field}
+                        />
                       </FormControl>
-                      <FormMessage />
+                      <div className="flex justify-between">
+                        <FormMessage />
+                        <p className="text-xs text-muted-foreground">{bio.length}/500 characters</p>
+                      </div>
                     </FormItem>
                   )}
                 />
-              </div>
 
-              <FormField
-                control={methods.control}
-                name="website"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Website (Optional)</FormLabel>
-                    <FormControl>
-                      <Input type="url" placeholder="https://your-website.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={methods.control}
-                name="bio"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Professional Bio *</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Tell patients about your background, experience, and approach to care..."
-                        className="min-h-[120px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <div className="flex justify-between">
-                      <FormMessage />
-                      <p className="text-xs text-muted-foreground">{bio.length}/500 characters</p>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <div className="space-y-3">
-                <FormLabel>Languages Spoken *</FormLabel>
-                <div className="flex gap-2">
-                  <Select onValueChange={addLanguage}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Select languages you speak" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SUPPORTED_LANGUAGES.filter((lang) => !selectedLanguages.includes(lang)).map(
-                        (language) => (
+                <div className="space-y-3">
+                  <FormLabel>Languages Spoken *</FormLabel>
+                  <div className="flex gap-2">
+                    <Select onValueChange={addLanguage}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Select languages you speak" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUPPORTED_LANGUAGES.filter(
+                          (lang) => !selectedLanguages.includes(lang)
+                        ).map((language) => (
                           <SelectItem key={language} value={language}>
                             {language}
                           </SelectItem>
-                        )
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {selectedLanguages.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {selectedLanguages.map((language) => (
-                      <Badge key={language} variant="secondary" className="flex items-center gap-1">
-                        {language}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-4 h-auto w-4 p-0"
-                          onClick={() => removeLanguage(language)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </Badge>
-                    ))}
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
 
-                {selectedLanguages.length === 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    Please select at least one language
-                  </p>
-                )}
+                  {selectedLanguages.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedLanguages.map((language) => (
+                        <Badge
+                          key={language}
+                          variant="secondary"
+                          className="flex items-center gap-1"
+                        >
+                          {language}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-4 h-auto w-4 p-0"
+                            onClick={() => removeLanguage(language)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+
+                  {selectedLanguages.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      Please select at least one language
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        <div className="flex justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={() => router.back()}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </div>
-      </form>
-    </FormProvider>
+          <div className="flex justify-end space-x-4">
+            <Button type="button" variant="outline" onClick={() => router.back()}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={mutation.isPending}>
+              {mutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </form>
+      </FormProvider>
+    </>
   );
 }

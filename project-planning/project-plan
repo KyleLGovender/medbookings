@@ -5,6 +5,7 @@
 - [ ] Remove all types built on Prisma/Zod
 - [ ] Remove all references for headlessui
 - [ ] Implement side bar dashboard layout
+- [x] Implement loading page throughout app
 - [x] Implement TanStack Query as the default pattern for interacting with the database
 
 ## User Authentication & Profile Management
@@ -19,7 +20,7 @@
 ## Service Provider Management
 
 - [x] Create provider registration flow
-- [ ] Edit basic info provider profile
+- [x] Edit basic info provider profile
 - [ ] Edit services in provider profile
 - [ ] Edit regulatory submission in provider profile
 - [ ] Implement Google Calendar connection during provider registration
