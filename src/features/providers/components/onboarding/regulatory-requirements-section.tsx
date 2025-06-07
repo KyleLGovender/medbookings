@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 
 import { useFormContext, useWatch } from 'react-hook-form';
 
-import { renderRequirementInput } from '@/components/forms/render-requirement-input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { renderRequirementInput } from '@/features/providers/components/onboarding/render-requirement-input';
 import { getRequirementsForProviderType } from '@/features/providers/lib/provider-types';
 import { RequirementType, RequirementValidationType } from '@/features/providers/types/types';
 

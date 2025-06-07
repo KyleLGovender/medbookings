@@ -31,7 +31,6 @@ export async function registerServiceProvider(prevState: any, formData: FormData
     const imageFile = formData.get('image') as File;
     const services = formData.getAll('services') as string[];
     const languages = formData.getAll('languages') as Languages[];
-    const billingType = formData.get('billingType') as BillingType;
     const email = formData.get('email') as string;
     const whatsapp = formData.get('whatsapp') as string;
     const website = (formData.get('website') as string) || null;
@@ -159,11 +158,7 @@ export async function registerServiceProvider(prevState: any, formData: FormData
 
     // Send WhatsApp confirmation
     try {
-      const message = await sendServiceProviderWhatsappConfirmation(
-        provider.name,
-        provider.whatsapp
-      );
-      console.log('WhatsApp confirmation sent:', message);
+      await sendServiceProviderWhatsappConfirmation(provider.name, provider.whatsapp);
     } catch (error) {
       console.error('Failed to send WhatsApp confirmation:', error);
       // Note: We don't want to fail the registration if WhatsApp fails
@@ -245,11 +240,7 @@ export async function updateServiceProvider(prevState: any, formData: FormData) 
     if (whatsapp !== currentProvider.whatsapp) {
       // Send WhatsApp confirmation
       try {
-        const message = await sendServiceProviderWhatsappConfirmation(
-          updateData.name,
-          updateData.whatsapp
-        );
-        console.log('WhatsApp confirmation sent:', message);
+        await sendServiceProviderWhatsappConfirmation(updateData.name, updateData.whatsapp);
       } catch (error) {
         console.error('Failed to send WhatsApp confirmation:', error);
         // Note: We don't want to fail the registration if WhatsApp fails
@@ -438,8 +429,6 @@ export async function updateServiceProvider(prevState: any, formData: FormData) 
         connect: services.map((serviceId) => ({ id: serviceId })),
       };
     }
-
-    console.log('updateData.services', updateData.services);
 
     // Apply service updates directly to the database
     if (serviceUpdates.length > 0) {
