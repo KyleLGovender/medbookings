@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import { getServerSession } from 'next-auth';
 
 import CalendarLoader from '@/components/calendar-loader';
-import CancelButton from '@/features/providers/components/profile/cancel-button';
+import { CancelButton } from '@/components/cancel-button';
 import { EditProviderClient } from '@/features/providers/components/profile/edit-provider-client';
 import { authOptions } from '@/lib/auth';
 
@@ -45,7 +45,7 @@ export default async function EditProviderPage({ params }: EditProviderPageProps
             Update your profile information and services.
           </p>
         </div>
-        <CancelButton providerId={params.id} />
+        <CancelButton cancelTo={`/providers/${params.id}`}>Cancel</CancelButton>
       </div>
 
       <EditProviderClient providerId={params.id} userId={userId} />
