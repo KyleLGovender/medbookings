@@ -246,7 +246,6 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
                     <FormLabel>Change Provider Type</FormLabel>
                     <Select
                       onValueChange={(value) => {
-                        console.log('Provider type changed to:', value);
                         field.onChange(value);
                         // Explicitly update the form value
                         methods.setValue('serviceProviderTypeId', value);
