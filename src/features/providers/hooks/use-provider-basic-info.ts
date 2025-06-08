@@ -1,0 +1,54 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+/**
+ * Hook for updating a provider's basic information
+ * @param options Optional mutation options including onSuccess and onError callbacks
+ * @returns Mutation object for updating provider basic info
+ */
+export function useUpdateProviderBasicInfo(options?: {
+  onSuccess?: (data: any) => void;
+  onError?: (error: Error) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  return useMutation<any, Error, FormData>({
+    mutationFn: async (formData: FormData) => {
+      const providerId = formData.get('id') as string;
+
+      if (!providerId) {
+        throw new Error('Provider ID is required');
+      }
+
+      const response = await fetch(`/api/providers/${providerId}/basic-info`, {
+        method: 'PUT',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update basic information');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      const providerId = variables.get('id') as string;
+
+      // Invalidate and refetch provider data
+      queryClient.invalidateQueries({ queryKey: ['provider', providerId] });
+
+      // Call the user-provided onSuccess callback if it exists
+      if (options?.onSuccess) {
+        options.onSuccess(data);
+      }
+
+      return data;
+    },
+    onError: (error) => {
+      // Call the user-provided onError callback if it exists
+      if (options?.onError) {
+        options.onError(error);
+      }
+    },
+  });
+}

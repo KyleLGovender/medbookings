@@ -1,15 +1,11 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-
-import { useQuery } from '@tanstack/react-query';
-
-import CalendarLoader from '@/components/calendar-loader';
 import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import { EditBasicInfo } from '@/features/providers/components/profile/edit-basic-info';
 import { EditServices } from '@/features/providers/components/profile/edit-services';
-import { SerializedServiceProvider } from '@/features/providers/types/types';
+import { useProvider } from '@/features/providers/hooks/use-provider';
 
 interface EditProviderClientProps {
   providerId: string;
@@ -17,95 +13,138 @@ interface EditProviderClientProps {
 }
 
 export function EditProviderClient({ providerId, userId }: EditProviderClientProps) {
-  const router = useRouter();
+  const { provider, isLoading } = useProvider(providerId);
 
-  // Fetch service provider data
-  const {
-    data: provider,
-    isLoading: isProviderLoading,
-    error: providerError,
-  } = useQuery<SerializedServiceProvider>({
-    queryKey: ['serviceProvider', providerId],
-    queryFn: async () => {
-      const response = await fetch(`/api/providers/${providerId}`);
-      if (!response.ok) {
-        if (response.status === 404) {
-          router.push('/404');
-          return null;
-        }
-        throw new Error('Failed to fetch service provider');
-      }
-      return response.json();
-    },
-  });
-
-  // Fetch all available services, enabled only after we have the provider data
-  const {
-    data: services,
-    isLoading: isServicesLoading,
-    error: servicesError,
-  } = useQuery({
-    queryKey: ['services', provider?.id, provider?.serviceProviderTypeId],
-    queryFn: async () => {
-      // Build the URL with query parameters
-      const url = new URL('/api/providers/services', window.location.origin);
-
-      // Add providerId to check which services are already selected
-      url.searchParams.append('providerId', providerId);
-
-      // If we have provider type ID, filter services by provider type
-      if (provider?.serviceProviderTypeId) {
-        url.searchParams.append('providerTypeId', provider.serviceProviderTypeId);
-      }
-
-      const response = await fetch(url.toString());
-      if (!response.ok) {
-        throw new Error('Failed to fetch services');
-      }
-      return response.json();
-    },
-    // Only run this query when we have the provider data
-    enabled: !!provider?.id,
-  });
-
-  // Check if current user is authorized to edit this provider
-  useEffect(() => {
-    if (provider && provider.userId !== userId) {
-      router.push('/dashboard');
-    }
-  }, [provider, userId, router]);
-
-  if (isProviderLoading || isServicesLoading) {
+  if (isLoading) {
     return (
-      <CalendarLoader
-        message="Loading Editor"
-        submessage="Preparing provider editor..."
-        showAfterMs={0}
-      />
-    );
-  }
+      <div className="space-y-8">
+        {/* Provider Type Card Skeleton */}
+        <Card>
+          <CardContent className="p-6">
+            <Skeleton className="mb-2 h-8 w-40" />
+            <Skeleton className="mb-4 h-4 w-64" />
+            <Separator className="my-4" />
+            <div className="mb-4">
+              <Skeleton className="mb-2 h-5 w-32" />
+              <Skeleton className="h-10 w-full max-w-xs" />
+            </div>
+          </CardContent>
+        </Card>
 
-  if (providerError || servicesError || !provider || !services) {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center">
-          <h2 className="text-xl font-semibold text-destructive">Error loading profile</h2>
-          <p className="mt-2 text-muted-foreground">
-            {providerError instanceof Error
-              ? providerError.message
-              : servicesError instanceof Error
-                ? servicesError.message
-                : 'Unable to load profile data'}
-          </p>
-        </CardContent>
-      </Card>
+        {/* Basic Information Card Skeleton */}
+        <Card>
+          <CardContent className="p-6">
+            <Skeleton className="mb-2 h-8 w-48" />
+            <Skeleton className="mb-4 h-4 w-64" />
+            <Separator className="my-4" />
+
+            <div className="space-y-6">
+              <div className="flex justify-start">
+                <Skeleton className="h-40 w-40 rounded-full" />
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                  <Skeleton className="mb-2 h-5 w-32" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+
+                <div>
+                  <Skeleton className="mb-2 h-5 w-32" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+
+                <div>
+                  <Skeleton className="mb-2 h-5 w-32" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+
+                <div>
+                  <Skeleton className="mb-2 h-5 w-32" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </div>
+
+              <div>
+                <Skeleton className="mb-2 h-5 w-32" />
+                <div className="flex flex-wrap gap-2">
+                  <Skeleton className="h-10 w-24 rounded-md" />
+                  <Skeleton className="h-10 w-24 rounded-md" />
+                  <Skeleton className="h-10 w-24 rounded-md" />
+                </div>
+              </div>
+
+              <div>
+                <Skeleton className="mb-2 h-5 w-32" />
+                <Skeleton className="h-32 w-full" />
+              </div>
+
+              <div className="flex justify-end">
+                <Skeleton className="h-10 w-32" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Services Card Skeleton */}
+        <Card>
+          <CardContent className="p-6">
+            <Skeleton className="mb-2 h-8 w-32" />
+            <Skeleton className="mb-4 h-4 w-64" />
+            <Separator className="my-4" />
+
+            <div className="space-y-6">
+              {[1, 2].map((i) => (
+                <div key={i} className="rounded-md border p-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <Skeleton className="mb-2 h-5 w-32" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div>
+                      <Skeleton className="mb-2 h-5 w-32" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div>
+                      <Skeleton className="mb-2 h-5 w-32" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div>
+                      <Skeleton className="mb-2 h-5 w-32" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <Skeleton className="mb-2 h-5 w-32" />
+                    <Skeleton className="h-24 w-full" />
+                  </div>
+                </div>
+              ))}
+
+              <div className="flex justify-between">
+                <Skeleton className="h-10 w-32" />
+                <Skeleton className="h-10 w-32" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
     <div className="space-y-8">
-      <EditBasicInfo provider={provider} />
-      <EditServices provider={provider} availableServices={services} />
+      <Card>
+        <CardContent className="p-6">
+          <EditBasicInfo providerId={providerId} userId={userId} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6">
+          <EditServices providerId={providerId} userId={userId} />
+        </CardContent>
+      </Card>
     </div>
   );
 }

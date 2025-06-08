@@ -1,10 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { FormProvider, useForm } from 'react-hook-form';
 
@@ -24,63 +23,94 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { ProfileImageUploader } from '@/features/providers/components/onboarding/profile-image-uploader';
+import { useUpdateProviderBasicInfo } from '@/features/providers/hooks/use-provider-basic-info';
+import { useProviderInfo } from '@/features/providers/hooks/use-provider-info';
+import { useProviderTypes } from '@/features/providers/hooks/use-provider-types';
 import { SUPPORTED_LANGUAGES, basicInfoSchema } from '@/features/providers/types/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface EditBasicInfoProps {
-  provider: any; // Will be replaced with proper type
+  providerId: string;
+  userId: string;
 }
 
-// API mutation function
-const updateProviderProfile = async (formData: FormData) => {
-  // Validate required fields
-  const requiredFields = ['id', 'email', 'name', 'bio', 'whatsapp', 'userId'];
-  const missingFields = requiredFields.filter((field) => !formData.has(field));
-
-  if (missingFields.length > 0) {
-    throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
-  }
-
-  const response = await fetch(`/api/providers/${formData.get('id')}`, {
-    method: 'PUT',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to update profile');
-  }
-
-  return await response.json();
-};
-
-export function EditBasicInfo({ provider }: EditBasicInfoProps) {
+export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(provider.languages || []);
-  const [profileImage, setProfileImage] = useState<string | null>(provider.image || null);
+
+  // Fetch provider data
+  const { data: provider, isLoading, error } = useProviderInfo(providerId);
+
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  // Update state when provider data is loaded
+  useEffect(() => {
+    if (provider) {
+      setSelectedLanguages(provider.languages || []);
+      setProfileImage(provider.image || null);
+    }
+  }, [provider]);
+
+  // Check if current user is authorized to edit this provider
+  useEffect(() => {
+    if (provider && provider.userId !== userId) {
+      router.push('/dashboard');
+    }
+  }, [provider, userId, router]);
+
+  // Fetch provider types
+  const { data: providerTypes, isLoading: isLoadingProviderTypes } = useProviderTypes();
 
   // Set up form with default values from provider
   const methods = useForm({
     resolver: zodResolver(basicInfoSchema),
     defaultValues: {
-      name: provider.name || '',
-      bio: provider.bio || '',
-      image: provider.image || '',
-      languages: provider.languages || [],
-      website: provider.website || '',
-      email: provider.email || '',
-      whatsapp: provider.whatsapp || '',
+      name: '',
+      bio: '',
+      image: '',
+      languages: [] as string[], // Explicitly type as string[] to match schema
+      website: '',
+      email: '',
+      whatsapp: '',
+      serviceProviderTypeId: '',
     },
     mode: 'onBlur',
   });
 
+  // Update form values when provider data is loaded
+  useEffect(() => {
+    if (provider) {
+      // Make sure we have the provider type ID
+      const providerTypeId = provider.serviceProviderTypeId || '';
+      console.log('Provider type ID from provider data:', providerTypeId);
+      console.log('Provider type object:', provider.serviceProviderType);
+
+      // Set form values including provider type ID
+      methods.reset({
+        name: provider.name || '',
+        bio: provider.bio || '',
+        image: provider.image || '',
+        languages: provider.languages || [],
+        website: provider.website || '',
+        email: provider.email || '',
+        whatsapp: provider.whatsapp || '',
+        serviceProviderTypeId: providerTypeId,
+      });
+
+      // Force set the value directly to ensure it's updated
+      methods.setValue('serviceProviderTypeId', providerTypeId);
+
+      // Log the form value after setting
+      console.log('Form value after setting:', methods.getValues('serviceProviderTypeId'));
+    }
+  }, [provider, methods]);
+
   // Watch the bio field to show character count
   const bio = methods.watch('bio') || '';
 
-  // TanStack Query mutation
-  const mutation = useMutation({
-    mutationFn: updateProviderProfile,
+  // Use our custom mutation hook
+  const { mutate, isPending } = useUpdateProviderBasicInfo({
     onSuccess: (data) => {
       toast({
         title: 'Profile updated',
@@ -90,8 +120,11 @@ export function EditBasicInfo({ provider }: EditBasicInfoProps) {
       // Navigate back to profile view
       if (data.redirect) {
         router.push(data.redirect);
-      } else {
+      } else if (provider) {
         router.push(`/providers/${provider.id}/edit`);
+      } else {
+        // Fallback if provider is not yet loaded
+        router.push('/dashboard');
       }
       router.refresh();
     },
@@ -123,57 +156,126 @@ export function EditBasicInfo({ provider }: EditBasicInfoProps) {
     methods.setValue('languages', newLanguages);
   };
 
-  const onSubmit = async (data: any) => {
-    // Create FormData object for the API
+  const onSubmit = async (data: Record<string, any>) => {
+    if (!provider) return;
+
+    // Create FormData object
     const formData = new FormData();
+
+    // Add provider ID
     formData.append('id', provider.id);
     formData.append('userId', provider.userId);
 
-    // Ensure required fields are included
-    if (!data.email) data.email = provider.email || '';
-    if (!data.name) data.name = provider.name || '';
-    if (!data.bio) data.bio = provider.bio || '';
-    if (!data.whatsapp) data.whatsapp = provider.whatsapp || '';
+    // Add form fields
+    formData.append('name', data.name);
+    formData.append('bio', data.bio);
+    formData.append('email', data.email);
+    formData.append('whatsapp', data.whatsapp);
+    formData.append('website', data.website || '');
+    formData.append('serviceProviderTypeId', data.serviceProviderTypeId);
 
-    // Append all form fields
-    Object.entries(data).forEach(([key, value]) => {
-      if (key === 'languages') {
-        // Handle languages array separately
-        (value as string[]).forEach((lang) => {
-          formData.append('languages', lang);
-        });
-      } else if (value !== undefined && value !== null) {
-        formData.append(key, value as string);
-      }
+    // Add languages
+    selectedLanguages.forEach((lang) => {
+      formData.append('languages', lang);
     });
 
-    // If we have an image as a URL (not a File object), add it
-    if (profileImage && typeof profileImage === 'string') {
-      formData.append('image', profileImage);
+    // Add image if it exists and has changed
+    if (data.image instanceof File && data.image.size > 0) {
+      formData.append('image', data.image);
     }
 
-    // Trigger the mutation
-    mutation.mutate(formData);
+    // Submit the form using our custom mutation hook
+    mutate(formData);
   };
 
+  // Show loading state
+  if (isLoading) {
+    return <CalendarLoader message="Loading" submessage="Fetching provider data..." />;
+  }
+
+  // Show error state
+  if (error || !provider) {
+    return (
+      <div className="p-4">
+        <h2 className="text-xl font-bold text-red-500">Error</h2>
+        <p>Failed to load provider data. Please try again later.</p>
+        <button
+          onClick={() => router.back()}
+          className="mt-4 rounded bg-blue-500 px-4 py-2 text-white"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <>
-      {mutation.isPending && (
+    <div className="space-y-8">
+      {isPending && (
         <CalendarLoader message="Saving Changes" submessage="Updating your provider profile..." />
       )}
       <FormProvider {...methods}>
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            const data = methods.getValues();
-            onSubmit(data);
+            methods.handleSubmit(onSubmit)(e);
           }}
           className="space-y-6"
         >
+          {/* Provider Type Card */}
+          <Card className="mb-8 p-6">
+            <h2 className="text-2xl font-bold">Provider Type</h2>
+            <p className="text-sm text-muted-foreground">
+              Specialization and category of the provider.
+            </p>
+            <Separator className="my-4" />
+
+            <div className="space-y-6">
+              <h3 className="mb-2 font-medium">Current Type</h3>
+              <p className="mb-4">{provider?.serviceProviderType?.name || 'Not specified'}</p>
+
+              <FormField
+                control={methods.control}
+                name="serviceProviderTypeId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Change Provider Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select provider type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {isLoadingProviderTypes ? (
+                          <SelectItem value="loading" disabled>
+                            Loading provider types...
+                          </SelectItem>
+                        ) : providerTypes?.length ? (
+                          providerTypes.map((type) => (
+                            <SelectItem key={type.id} value={type.id}>
+                              {type.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="none" disabled>
+                            No provider types available
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </Card>
+
+          {/* Basic Information Card */}
           <Card className="p-6">
             <h2 className="text-2xl font-bold">Basic Information</h2>
             <p className="text-sm text-muted-foreground">
-              Update your profile information visible to patients.
+              Provider details and contact information.
             </p>
             <Separator className="my-4" />
 
@@ -302,7 +404,7 @@ export function EditBasicInfo({ provider }: EditBasicInfoProps) {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="h-4 h-auto w-4 p-0"
+                            className="h-auto w-4 p-0"
                             onClick={() => removeLanguage(language)}
                           >
                             <X className="h-3 w-3" />
@@ -326,12 +428,12 @@ export function EditBasicInfo({ provider }: EditBasicInfoProps) {
             <Button type="button" variant="outline" onClick={() => router.back()}>
               Cancel
             </Button>
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Saving...' : 'Save Changes'}
+            <Button type="submit" className="w-full md:w-auto" disabled={isPending}>
+              {isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </form>
       </FormProvider>
-    </>
+    </div>
   );
 }

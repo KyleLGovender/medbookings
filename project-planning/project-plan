@@ -3,7 +3,7 @@
 ## Clean up from previous code
 
 - [ ] Remove all types built on Prisma/Zod
-- [ ] Remove all references for headlessui
+- [ ] Remove all references for headless UI
 - [ ] Implement side bar dashboard layout
 - [x] Implement loading page throughout app
 - [x] Implement TanStack Query as the default pattern for interacting with the database
@@ -23,6 +23,7 @@
 - [x] Edit basic info provider profile
 - [x] Edit services in provider profile
 - [ ] Edit regulatory submission in provider profile
+- [ ] Create a Cancel button on top right of Provider Edit Form
 - [ ] Implement Google Calendar connection during provider registration
 - [ ] Add Google Meet integration for virtual appointments
 - [ ] Set up email sync permissions for notifications
@@ -151,3 +152,7 @@
 - [ ] Write technical documentation for developers
 - [ ] Build API documentation for integrations
 - [ ] Create onboarding guides for different user types
+
+## Nice to haves
+
+- [ ] Change the database structure of provider type to include an icon. Drive all provider type fields such as landing page search from database. Make it so that it displays the top provider types by availability. All provider types throughout app will be driven from database.

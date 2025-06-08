@@ -206,6 +206,7 @@ export const basicInfoSchema = z.object({
   website: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
   email: z.string().email('Please enter a valid email address'),
   whatsapp: z.string().min(10, 'Please enter a valid WhatsApp number'),
+  serviceProviderTypeId: z.string().min(1, 'Provider type is required'),
 });
 
 export const providerTypeSchema = z.object({

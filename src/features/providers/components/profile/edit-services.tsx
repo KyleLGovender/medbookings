@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -15,6 +15,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { useProviderInfo } from '@/features/providers/hooks/use-provider-info';
+import {
+  useProviderServices,
+  useUpdateProviderServices,
+} from '@/features/providers/hooks/use-provider-services';
 import { useToast } from '@/hooks/use-toast';
 
 const servicesSchema = z.object({
@@ -40,70 +45,91 @@ interface Service {
 }
 
 interface EditServicesProps {
-  provider: any; // Will be replaced with proper type
-  availableServices: Service[];
+  providerId: string;
+  userId: string;
 }
 
-// API mutation function
-const updateProviderServices = async (formData: FormData) => {
-  const response = await fetch(`/api/providers/${formData.get('id')}`, {
-    method: 'PUT',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to update services');
-  }
-
-  return await response.json();
-};
-
-export function EditServices({ provider, availableServices }: EditServicesProps) {
+export function EditServices({ providerId, userId }: EditServicesProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch provider data
+  const {
+    data: provider,
+    isLoading: isProviderLoading,
+    error: providerError,
+  } = useProviderInfo(providerId);
+
+  // Fetch available services
+  const {
+    data: availableServices,
+    isLoading: isServicesLoading,
+    error: servicesError,
+  } = useProviderServices(providerId);
 
   // Get provider's current services
-  const providerServiceIds = provider.services?.map((s: any) => s.id) || [];
+  const providerServiceIds = provider?.services?.map((s: any) => s.id) || [];
 
-  // Set up form with default values from provider
+  // Set up form with default values
   const methods = useForm<ServicesFormValues>({
     resolver: zodResolver(servicesSchema),
     defaultValues: {
-      services: providerServiceIds,
-      serviceConfigs: provider.services?.reduce((acc: any, service: any) => {
+      services: [],
+      serviceConfigs: {},
+    },
+    mode: 'onBlur',
+  });
+
+  // Update form values when provider data is loaded
+  useEffect(() => {
+    if (provider && provider.services) {
+      const serviceIds = provider.services.map((s: any) => s.id);
+      const serviceConfigs = provider.services.reduce((acc: any, service: any) => {
         acc[service.id] = {
           duration: service.duration || service.defaultDuration || 30,
           price: service.price || service.defaultPrice || 0,
         };
         return acc;
-      }, {}),
-    },
-    mode: 'onBlur',
-  });
+      }, {});
+
+      methods.reset({
+        services: serviceIds,
+        serviceConfigs: serviceConfigs,
+      });
+    }
+  }, [provider, methods]);
 
   // Initialize form with pre-selected services when available
   useEffect(() => {
-    // If we have services with isSelected property, use that to pre-select services
-    const selectedServices = availableServices
-      .filter((service) => service.isSelected)
-      .map((service) => service.id);
+    if (availableServices) {
+      // If we have services with isSelected property, use that to pre-select services
+      const selectedServices = availableServices
+        .filter((service) => service.isSelected)
+        .map((service) => service.id);
 
-    if (selectedServices.length > 0) {
-      // Only update if we have pre-selected services and they differ from current selection
-      const currentSelection = methods.getValues('services') || [];
-      if (
-        selectedServices.length !== currentSelection.length ||
-        !selectedServices.every((id) => currentSelection.includes(id))
-      ) {
-        methods.setValue('services', selectedServices);
+      if (selectedServices.length > 0) {
+        // Only update if we have pre-selected services and they differ from current selection
+        const currentSelection = methods.getValues('services') || [];
+        if (
+          selectedServices.length !== currentSelection.length ||
+          !selectedServices.every((id) => currentSelection.includes(id))
+        ) {
+          methods.setValue('services', selectedServices);
+        }
       }
     }
   }, [availableServices, methods]);
 
-  // TanStack Query mutation
-  const mutation = useMutation({
-    mutationFn: updateProviderServices,
+  // Check if current user is authorized to edit this provider
+  useEffect(() => {
+    if (provider && provider.userId !== userId) {
+      router.push('/dashboard');
+    }
+  }, [provider, userId, router]);
+
+  // Use our custom mutation hook
+  const mutation = useUpdateProviderServices({
     onSuccess: (data) => {
       toast({
         title: 'Services updated',
@@ -113,12 +139,12 @@ export function EditServices({ provider, availableServices }: EditServicesProps)
       // Navigate back to profile view
       if (data.redirect) {
         router.push(data.redirect);
-      } else {
+      } else if (provider) {
         router.push(`/providers/${provider.id}/edit`);
       }
       router.refresh();
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         title: 'Update failed',
         description: error.message || 'There was an error updating your services.',
@@ -128,6 +154,8 @@ export function EditServices({ provider, availableServices }: EditServicesProps)
   });
 
   const onSubmit = async (data: ServicesFormValues) => {
+    if (!provider) return;
+
     // Create FormData object for the API
     const formData = new FormData();
     formData.append('id', provider.id);
@@ -163,25 +191,50 @@ export function EditServices({ provider, availableServices }: EditServicesProps)
     mutation.mutate(formData);
   };
 
-  const watchedServices = methods.watch('services') || [];
-
-  // Update service configs when services change
+  const watchedServices = methods.watch('services');
   useEffect(() => {
+    if (!watchedServices || !availableServices) return;
+
+    // Get current service configs
     const currentConfigs = methods.getValues('serviceConfigs') || {};
 
-    // Add configs for newly selected services
+    // Add any missing service configs
     watchedServices.forEach((serviceId) => {
       if (!currentConfigs[serviceId]) {
         const service = availableServices.find((s) => s.id === serviceId);
-        currentConfigs[serviceId] = {
-          duration: service?.defaultDuration || 30,
-          price: service?.defaultPrice || 0,
-        };
+        if (service) {
+          currentConfigs[serviceId] = {
+            duration: service.defaultDuration || 30,
+            price: service.defaultPrice || 0,
+          };
+        }
       }
     });
 
+    // Update the form
     methods.setValue('serviceConfigs', currentConfigs);
   }, [watchedServices, availableServices, methods]);
+
+  // Show loading state
+  if (isProviderLoading || isServicesLoading) {
+    return <CalendarLoader message="Loading" submessage="Fetching services data..." />;
+  }
+
+  // Show error state
+  if (providerError || servicesError || !provider || !availableServices) {
+    return (
+      <div className="p-4">
+        <h2 className="text-xl font-bold text-red-500">Error</h2>
+        <p>Failed to load services data. Please try again later.</p>
+        <button
+          onClick={() => router.back()}
+          className="mt-4 rounded bg-blue-500 px-4 py-2 text-white"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -191,7 +244,7 @@ export function EditServices({ provider, availableServices }: EditServicesProps)
       <FormProvider {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
           <Card className="p-6">
-            <h2 className="text-2xl font-bold">Services</h2>
+            <h2 className="mb-6 text-2xl font-semibold">Services</h2>
             <p className="text-sm text-muted-foreground">
               Select the services you offer to patients.
             </p>
@@ -209,56 +262,87 @@ export function EditServices({ provider, availableServices }: EditServicesProps)
                       <FormLabel>Select services you provide *</FormLabel>
                       <FormMessage />
                       <div className="mt-2 space-y-4">
-                        {[...availableServices]
-                          .sort((a, b) => (a.displayPriority || 0) - (b.displayPriority || 0))
-                          .map((service) => {
-                            const isChecked = fieldValue.includes(service.id);
-                            return (
-                              <div key={service.id} className="rounded-md border p-4">
-                                <div className="flex items-start space-x-3">
-                                  <FormControl>
-                                    <Checkbox
-                                      checked={isChecked}
-                                      onCheckedChange={(checked) => {
-                                        if (checked) {
-                                          field.onChange([...fieldValue, service.id]);
-                                        } else {
-                                          field.onChange(
-                                            fieldValue.filter(
-                                              (value: string) => value !== service.id
-                                            )
-                                          );
-                                        }
-                                      }}
-                                    />
-                                  </FormControl>
-                                  <div className="flex-1">
-                                    <div className="space-y-1">
-                                      <span className="text-sm font-medium">{service.name}</span>
-                                      {service.description && (
-                                        <p className="text-xs text-muted-foreground">
-                                          {service.description}
-                                        </p>
-                                      )}
-                                    </div>
+                        {availableServices ? (
+                          [...availableServices]
+                            .sort((a, b) => (a.displayPriority || 0) - (b.displayPriority || 0))
+                            .map((service) => {
+                              const isChecked = fieldValue.includes(service.id);
+                              return (
+                                <div key={service.id} className="rounded-md border p-4">
+                                  <div className="flex items-start space-x-3">
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={isChecked}
+                                        onCheckedChange={(checked) => {
+                                          if (checked) {
+                                            field.onChange([...fieldValue, service.id]);
+                                          } else {
+                                            field.onChange(
+                                              fieldValue.filter(
+                                                (value: string) => value !== service.id
+                                              )
+                                            );
+                                          }
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <div className="flex-1">
+                                      <div className="space-y-1">
+                                        <span className="text-sm font-medium">{service.name}</span>
+                                        {service.description && (
+                                          <p className="text-xs text-muted-foreground">
+                                            {service.description}
+                                          </p>
+                                        )}
+                                      </div>
 
-                                    {isChecked && (
-                                      <div className="mt-3 flex flex-col space-y-3">
-                                        <FormField
-                                          control={methods.control}
-                                          name={`serviceConfigs.${service.id}.price`}
-                                          defaultValue={Number(service.defaultPrice) || 0}
-                                          render={({ field }) => (
-                                            <FormItem className="w-1/2">
-                                              <FormLabel className="text-xs">Price (R)</FormLabel>
-                                              <FormControl>
-                                                <div className="relative">
-                                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 transform text-xs text-muted-foreground">
-                                                    R
-                                                  </span>
+                                      {isChecked && (
+                                        <div className="mt-3 flex flex-col space-y-3">
+                                          <FormField
+                                            control={methods.control}
+                                            name={`serviceConfigs.${service.id}.price`}
+                                            defaultValue={Number(service.defaultPrice) || 0}
+                                            render={({ field }) => (
+                                              <FormItem className="w-1/2">
+                                                <FormLabel className="text-xs">Price (R)</FormLabel>
+                                                <FormControl>
+                                                  <div className="relative">
+                                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 transform text-xs text-muted-foreground">
+                                                      R
+                                                    </span>
+                                                    <Input
+                                                      type="number"
+                                                      className="h-8 pl-4"
+                                                      value={field.value}
+                                                      onChange={(e) => {
+                                                        // Simple conversion to number
+                                                        const value =
+                                                          e.target.value === ''
+                                                            ? 0
+                                                            : Number(e.target.value);
+                                                        field.onChange(value);
+                                                      }}
+                                                      onBlur={field.onBlur}
+                                                    />
+                                                  </div>
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                          <FormField
+                                            control={methods.control}
+                                            name={`serviceConfigs.${service.id}.duration`}
+                                            defaultValue={Number(service.defaultDuration) || 30}
+                                            render={({ field }) => (
+                                              <FormItem className="w-1/2">
+                                                <FormLabel className="text-xs">
+                                                  Duration (min)
+                                                </FormLabel>
+                                                <FormControl>
                                                   <Input
                                                     type="number"
-                                                    className="h-8 pl-4"
+                                                    className="h-8"
                                                     value={field.value}
                                                     onChange={(e) => {
                                                       // Simple conversion to number
@@ -270,48 +354,21 @@ export function EditServices({ provider, availableServices }: EditServicesProps)
                                                     }}
                                                     onBlur={field.onBlur}
                                                   />
-                                                </div>
-                                              </FormControl>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                        <FormField
-                                          control={methods.control}
-                                          name={`serviceConfigs.${service.id}.duration`}
-                                          defaultValue={Number(service.defaultDuration) || 30}
-                                          render={({ field }) => (
-                                            <FormItem className="w-1/2">
-                                              <FormLabel className="text-xs">
-                                                Duration (min)
-                                              </FormLabel>
-                                              <FormControl>
-                                                <Input
-                                                  type="number"
-                                                  className="h-8"
-                                                  value={field.value}
-                                                  onChange={(e) => {
-                                                    // Simple conversion to number
-                                                    const value =
-                                                      e.target.value === ''
-                                                        ? 0
-                                                        : Number(e.target.value);
-                                                    field.onChange(value);
-                                                  }}
-                                                  onBlur={field.onBlur}
-                                                />
-                                              </FormControl>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                      </div>
-                                    )}
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            })
+                        ) : (
+                          <p>No services available</p>
+                        )}
                       </div>
                     </FormItem>
                   );

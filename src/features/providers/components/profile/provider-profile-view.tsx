@@ -6,10 +6,10 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { PenSquare } from 'lucide-react';
 
-import CalendarLoader from '@/components/calendar-loader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import { SerializedServiceProvider } from '@/features/providers/types/types';
 
 interface ProviderProfileViewProps {
@@ -42,11 +42,93 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
 
   if (isLoading) {
     return (
-      <CalendarLoader
-        message="Loading Provider"
-        submessage="Retrieving provider details..."
-        showAfterMs={0}
-      />
+      <div className="space-y-8">
+        {/* Header Skeleton */}
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <Skeleton className="h-10 w-64" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+
+        {/* Provider Type Card Skeleton */}
+        <Card className="p-6">
+          <Skeleton className="mb-2 h-8 w-40" />
+          <Skeleton className="mb-4 h-4 w-64" />
+          <Separator className="my-4" />
+          <div>
+            <Skeleton className="mb-2 h-5 w-20" />
+            <Skeleton className="h-6 w-48" />
+          </div>
+        </Card>
+
+        {/* Basic Information Card Skeleton */}
+        <Card className="p-6">
+          <Skeleton className="mb-2 h-8 w-48" />
+          <Skeleton className="mb-4 h-4 w-64" />
+          <Separator className="my-4" />
+
+          <div className="space-y-6">
+            <div className="flex justify-start">
+              <Skeleton className="h-40 w-40 rounded-full" />
+            </div>
+
+            <div>
+              <Skeleton className="mb-2 h-5 w-20" />
+              <Skeleton className="h-6 w-48" />
+            </div>
+
+            <div>
+              <Skeleton className="mb-2 h-5 w-20" />
+              <Skeleton className="h-6 w-64" />
+            </div>
+
+            <div>
+              <Skeleton className="mb-2 h-5 w-20" />
+              <Skeleton className="h-6 w-48" />
+            </div>
+
+            <div>
+              <Skeleton className="mb-2 h-5 w-20" />
+              <Skeleton className="h-6 w-64" />
+            </div>
+
+            <div>
+              <Skeleton className="mb-2 h-5 w-20" />
+              <div className="flex flex-wrap gap-1">
+                <Skeleton className="h-6 w-16 rounded-full" />
+                <Skeleton className="h-6 w-16 rounded-full" />
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </div>
+            </div>
+
+            <div>
+              <Skeleton className="mb-2 h-5 w-20" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+          </div>
+        </Card>
+
+        {/* Services Card Skeleton */}
+        <Card className="p-6">
+          <Skeleton className="mb-2 h-8 w-32" />
+          <Skeleton className="mb-4 h-4 w-64" />
+          <Separator className="my-4" />
+
+          <div className="space-y-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="rounded-md border p-4">
+                <Skeleton className="mb-2 h-6 w-48" />
+                <Skeleton className="mb-2 h-4 w-full" />
+                <div className="mt-4 flex items-center justify-between">
+                  <Skeleton className="h-6 w-24" />
+                  <Skeleton className="h-6 w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
     );
   }
 
@@ -77,7 +159,6 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{provider.name}</h1>
-          <p className="mt-2 text-muted-foreground">{providerTypeName}</p>
         </div>
 
         {isOwner && (
@@ -89,6 +170,20 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
           </Link>
         )}
       </div>
+
+      {/* Provider Type Section */}
+      <Card className="p-6">
+        <h2 className="text-2xl font-bold">Provider Type</h2>
+        <p className="text-sm text-muted-foreground">
+          Specialization and category of the provider.
+        </p>
+        <Separator className="my-4" />
+
+        <div>
+          <h3 className="font-medium">Type</h3>
+          <p>{providerTypeName}</p>
+        </div>
+      </Card>
 
       {/* Basic Information Section */}
       <Card className="p-6">
