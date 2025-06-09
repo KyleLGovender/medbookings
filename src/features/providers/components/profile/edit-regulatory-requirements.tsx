@@ -42,7 +42,10 @@ export function EditRegulatoryRequirements({
   const { toast } = useToast();
 
   // Fetch provider data
-  const { provider, isLoading: isProviderLoading, error: providerError } = useProvider(providerId);
+  const providerQuery = useProvider(providerId);
+  const provider = providerQuery.data;
+  const isProviderLoading = providerQuery.isLoading;
+  const providerError = providerQuery.error;
 
   // Fetch requirement types for this provider
   const {

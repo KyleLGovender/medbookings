@@ -15,7 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { useProviderInfo } from '@/features/providers/hooks/use-provider-info';
+import { useProvider } from '@/features/providers/hooks/use-provider';
 import {
   useProviderServices,
   useUpdateProviderServices,
@@ -59,7 +59,7 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
     data: provider,
     isLoading: isProviderLoading,
     error: providerError,
-  } = useProviderInfo(providerId);
+  } = useProvider(providerId);
 
   // Fetch available services
   const {

@@ -16,8 +16,31 @@ interface Service {
  * @returns Query result containing the available services
  */
 export function useProviderServices(providerId: string | undefined) {
+  // First, fetch the provider to get its type ID
+  const providerQuery = useQuery({
+    queryKey: ['provider', providerId],
+    queryFn: async () => {
+      if (!providerId) {
+        throw new Error('Provider ID is required');
+      }
+
+      const response = await fetch(`/api/providers/${providerId}`);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Provider not found');
+        }
+        throw new Error('Failed to fetch provider data');
+      }
+
+      return response.json();
+    },
+    enabled: !!providerId,
+  });
+
+  // Then fetch services based on the provider type ID
   return useQuery<Service[]>({
-    queryKey: ['provider-services', providerId],
+    queryKey: ['provider-services', providerId, providerQuery.data?.serviceProviderTypeId],
     queryFn: async () => {
       if (!providerId) {
         throw new Error('Provider ID is required');
@@ -27,13 +50,18 @@ export function useProviderServices(providerId: string | undefined) {
       const url = new URL('/api/providers/services', window.location.origin);
       url.searchParams.append('providerId', providerId);
 
+      // If we have provider type ID, filter services by provider type
+      if (providerQuery.data?.serviceProviderTypeId) {
+        url.searchParams.append('providerTypeId', providerQuery.data.serviceProviderTypeId);
+      }
+
       const response = await fetch(url.toString());
       if (!response.ok) {
         throw new Error('Failed to fetch services');
       }
       return response.json();
     },
-    enabled: !!providerId,
+    enabled: !!providerId && !!providerQuery.data?.id,
   });
 }
 

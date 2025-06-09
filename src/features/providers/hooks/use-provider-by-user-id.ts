@@ -2,9 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 
 import { SerializedServiceProvider } from '@/features/providers/types/types';
 
-export function useServiceProviderByUserId(userId: string | undefined) {
+/**
+ * Hook to fetch a provider by user ID
+ * @param userId The ID of the user to fetch the provider for
+ * @returns Query result containing the provider data or null if not found
+ */
+export function useProviderByUserId(userId: string | undefined) {
   return useQuery<SerializedServiceProvider | null>({
-    queryKey: ['serviceProviderByUserId', userId],
+    queryKey: ['providerByUserId', userId],
     queryFn: async () => {
       if (!userId) return null;
 

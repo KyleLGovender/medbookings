@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { getRequirementsForProviderType } from '../lib/provider-types';
 import { RequirementType } from '../types/types';
 
 /**
@@ -41,18 +40,24 @@ export function useProviderRequirementTypes(providerId: string | undefined) {
         return [];
       }
 
-      const requirements = await getRequirementsForProviderType(providerTypeId);
+      // Build the URL with query parameters
+      const url = new URL('/api/providers/requirement-types', window.location.origin);
+      url.searchParams.append('providerTypeId', providerTypeId);
 
-      // Transform the fetched requirements to match our component's expected format
-      return requirements.map((req, idx) => ({
-        id: req.id,
-        name: req.name,
-        description: req.description || '',
-        validationType: req.validationType,
-        isRequired: req.isRequired,
-        validationConfig: req.validationConfig,
-        index: idx,
-      })) as RequirementType[];
+      // Add providerId to check which requirements are already submitted
+      if (providerId) {
+        url.searchParams.append('providerId', providerId);
+      }
+
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        throw new Error('Failed to fetch requirement types');
+      }
+
+      const requirements = await response.json();
+
+      // The API now returns data in the RequirementType format, so we don't need much transformation
+      return requirements as RequirementType[];
     },
     enabled: !!providerId && !!providerQuery.data?.serviceProviderTypeId,
   });
