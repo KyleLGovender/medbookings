@@ -6,6 +6,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { EditBasicInfo } from '@/features/providers/components/profile/edit-basic-info';
+import { EditRegulatoryRequirements } from '@/features/providers/components/profile/edit-regulatory-requirements';
 import { EditServices } from '@/features/providers/components/profile/edit-services';
 import { BasicInformationCardSkeleton } from '@/features/providers/components/skeletons/basic-information-card-skeleton';
 import { ProviderTypeCardSkeleton } from '@/features/providers/components/skeletons/provider-type-card-skeleton';
@@ -64,11 +65,7 @@ export function EditProviderClient({ providerId, userId }: EditProviderClientPro
 
         <Card>
           <CardContent className="p-6">
-            {/* <EditRegulatoryRequirements
-              providerId={providerId}
-              userId={userId}
-              providerTypeId={provider?.serviceProviderTypeId || ''}
-            /> */}
+            <EditRegulatoryRequirements providerId={providerId} userId={userId} />
           </CardContent>
         </Card>
       </div>

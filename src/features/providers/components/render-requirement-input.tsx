@@ -34,6 +34,9 @@ export const renderRequirementInput = (
     watch: UseFormWatch<any>;
     setValue: UseFormSetValue<any>;
     errors: any;
+    fieldName?: string;
+    existingValue?: any;
+    existingDocumentUrl?: string;
   }
 ) => {
   // Set the requirement ID directly

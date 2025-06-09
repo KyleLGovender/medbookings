@@ -1,155 +1,170 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
-import { useFormContext } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+// Types and schemas
+import { RequirementsValidationStatus } from '@prisma/client';
+import { FormProvider, useForm } from 'react-hook-form';
+import { z } from 'zod';
 
+import CalendarLoader from '@/components/calendar-loader';
 import { Badge } from '@/components/ui/badge';
+// UI Components
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { useUpdateProviderRequirements } from '@/features/providers/hooks/use-provider-requirements';
-import { getRequirementsForProviderType } from '@/features/providers/lib/provider-types';
-import {
-  RequirementSubmission,
-  RequirementType,
-  RequirementValidationType,
-  RequirementsValidationStatus,
-} from '@/features/providers/types/types';
+// Toast notifications
 import { useToast } from '@/hooks/use-toast';
 
+// API hooks
+import { useProvider } from '../../hooks/use-provider';
+import {
+  useProviderRequirementTypes,
+  useUpdateProviderRequirements,
+} from '../../hooks/use-provider-requirements';
+import { regulatoryRequirementsSchema } from '../../types/types';
 // Helper function to render the appropriate input for each requirement type
 import { renderRequirementInput } from '../render-requirement-input';
+
+type RegulatoryRequirementsFormValues = z.infer<typeof regulatoryRequirementsSchema>;
 
 interface EditRegulatoryRequirementsProps {
   providerId: string;
   userId: string;
-  providerTypeId: string;
-  existingRequirements?: RequirementSubmission[];
 }
 
 export function EditRegulatoryRequirements({
   providerId,
   userId,
-  providerTypeId,
-  existingRequirements = [],
 }: EditRegulatoryRequirementsProps) {
-  const [requirements, setRequirements] = useState<RequirementType[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
   const { toast } = useToast();
 
+  // Fetch provider data
+  const { provider, isLoading: isProviderLoading, error: providerError } = useProvider(providerId);
+
+  // Fetch requirement types for this provider
   const {
-    control,
-    setValue,
-    watch,
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useFormContext();
+    data: requirementTypes,
+    isLoading: isRequirementsLoading,
+    error: requirementsError,
+  } = useProviderRequirementTypes(providerId);
 
-  const { mutate, isPending } = useUpdateProviderRequirements();
+  // Set up form with default values
+  const methods = useForm<RegulatoryRequirementsFormValues>({
+    resolver: zodResolver(regulatoryRequirementsSchema),
+    defaultValues: {
+      requirements: [],
+    },
+    mode: 'onBlur',
+  });
 
-  // Fetch requirements when provider type changes or component mounts
+  // Get mutation hook for updating requirements
+  const mutation = useUpdateProviderRequirements();
+
+  // Update form values when provider and requirement types data is loaded
   useEffect(() => {
-    async function fetchRequirements() {
-      if (!providerTypeId) {
-        setIsLoading(false);
-        return;
+    if (!provider || !requirementTypes) return;
+
+    // Get existing requirement submissions from provider data
+    const existingRequirements = provider.requirementSubmissions || [];
+
+    // Prepare form data by merging requirement types with existing submissions
+    const requirementsData = requirementTypes.map((req) => {
+      // Find existing submission for this requirement type
+      const existingSubmission = existingRequirements.find(
+        (sub) => sub.requirementTypeId === req.id
+      );
+
+      // Create form entry with proper values
+      const formEntry: any = {
+        requirementTypeId: req.id,
+        index: req.index,
+      };
+
+      // If there's an existing submission, pre-populate the value
+      if (existingSubmission) {
+        // Handle different types of values based on requirement type
+        if (existingSubmission.documentMetadata?.value !== undefined) {
+          formEntry.value = existingSubmission.documentMetadata.value;
+        } else if (existingSubmission.documentUrl) {
+          formEntry.value = existingSubmission.documentUrl;
+        }
       }
 
-      setIsLoading(true);
-      try {
-        const fetchedRequirements = await getRequirementsForProviderType(providerTypeId);
+      return formEntry;
+    });
 
-        // Transform the fetched requirements to match our component's expected format
-        // and merge with existing submissions
-        const transformedRequirements = fetchedRequirements.map((req, idx) => {
-          // Find existing submission for this requirement type
-          const existingSubmission = existingRequirements.find(
-            (sub) => sub.requirementTypeId === req.id
-          );
+    // Reset the form with the merged data
+    methods.reset({
+      requirements: requirementsData,
+    });
+  }, [provider, requirementTypes, methods]);
 
-          // Create a properly typed requirement object
-          return {
-            id: req.id,
-            name: req.name,
-            description: req.description || '',
-            validationType: req.validationType as RequirementValidationType,
-            isRequired: req.isRequired,
-            validationConfig: req.validationConfig,
-            index: idx,
-            existingSubmission: existingSubmission
-              ? {
-                  documentUrl: existingSubmission.documentUrl || null,
-                  documentMetadata: existingSubmission.documentMetadata || null,
-                  // Add these properties to the type for our component's use
-                  validationStatus: existingSubmission.status,
-                  validationMessage: existingSubmission.notes,
-                  value: existingSubmission.value,
-                }
-              : undefined,
-          };
-        });
-
-        setRequirements(transformedRequirements);
-
-        // Set the requirements array with proper indexes in the form
-        setValue(
-          'regulatoryRequirements.requirements',
-          transformedRequirements.map((req, idx) => ({
-            requirementTypeId: req.id,
-            index: idx,
-            // If there's an existing submission, pre-populate the value
-            ...(req.existingSubmission && {
-              value: req.existingSubmission.documentMetadata?.value || '',
-            }),
-          }))
-        );
-      } catch (error) {
-        console.error('Failed to fetch requirements:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load regulatory requirements. Please try again.',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-      }
+  // Check if current user is authorized to edit this provider
+  useEffect(() => {
+    if (provider && provider.userId !== userId) {
+      router.push('/dashboard');
     }
+  }, [provider, userId, router]);
 
-    fetchRequirements();
-  }, [providerTypeId, existingRequirements, setValue, toast]);
+  const onSubmit = async (data: RegulatoryRequirementsFormValues) => {
+    if (!provider) return;
 
-  const onSubmit = async (data: any) => {
     try {
+      // Create FormData object for the API
       const formData = new FormData();
       formData.append('id', providerId);
       formData.append('userId', userId);
 
       // Process each requirement
-      const requirementsData = data.regulatoryRequirements?.requirements || [];
+      const requirementsData = data.requirements || [];
 
-      requirementsData.forEach((req: any, index: number) => {
+      requirementsData.forEach((req, index) => {
         if (req) {
-          formData.append(`requirements[${index}].requirementTypeId`, req.requirementTypeId);
+          formData.append(`requirements[${index}][requirementTypeId]`, req.requirementTypeId);
 
           // Handle document files
           if (req.documentFile) {
-            formData.append(`requirements[${index}].documentFile`, req.documentFile);
+            formData.append(`requirements[${index}][documentFile]`, req.documentFile);
           }
 
           // Handle text/boolean values
           if (req.value !== undefined && req.value !== null) {
-            formData.append(`requirements[${index}].value`, req.value.toString());
+            formData.append(`requirements[${index}][value]`, req.value.toString());
+          }
+
+          // Handle other values for predefined lists
+          if (req.otherValue) {
+            formData.append(`requirements[${index}][otherValue]`, req.otherValue);
           }
         }
       });
 
-      await mutate(formData);
+      // Trigger the mutation
+      mutation.mutate(formData, {
+        onSuccess: (data) => {
+          toast({
+            title: 'Success',
+            description: 'Regulatory requirements updated successfully.',
+          });
 
-      toast({
-        title: 'Success',
-        description: 'Regulatory requirements updated successfully.',
+          // Navigate back to profile view or redirect
+          if (data.redirect) {
+            router.push(data.redirect);
+          } else {
+            router.push(`/providers/${providerId}/edit`);
+          }
+          router.refresh();
+        },
+        onError: (error) => {
+          toast({
+            title: 'Error',
+            description: error instanceof Error ? error.message : 'Failed to update requirements',
+            variant: 'destructive',
+          });
+        },
       });
     } catch (error) {
       console.error('Failed to update requirements:', error);
@@ -161,7 +176,7 @@ export function EditRegulatoryRequirements({
     }
   };
 
-  // Use a custom type that extends the base type for our component
+  // Helper type for displaying validation status
   type ExtendedRequirementSubmission = {
     documentUrl: string | null;
     documentMetadata: Record<string, any> | null;
@@ -185,103 +200,112 @@ export function EditRegulatoryRequirements({
     }
   };
 
-  const requiredRequirements = requirements.filter((req) => req.isRequired);
-
-  if (isLoading) {
-    return (
-      <div className="rounded-lg bg-muted/50 p-6 text-center">
-        <p className="text-muted-foreground">Loading requirements...</p>
-      </div>
-    );
+  // Show loading state
+  if (isProviderLoading || isRequirementsLoading) {
+    return <CalendarLoader message="Loading" submessage="Fetching regulatory requirements..." />;
   }
 
-  if (requirements.length === 0 && !isLoading) {
+  // Show error state
+  if (providerError || requirementsError || !provider || !requirementTypes) {
     return (
-      <div className="rounded-lg bg-muted/50 p-6 text-center">
-        <p className="text-muted-foreground">
-          No regulatory requirements found for this provider type.
-        </p>
+      <div className="p-4">
+        <h2 className="text-xl font-bold text-red-500">Error</h2>
+        <p>Failed to load regulatory requirements data. Please try again later.</p>
+        <button
+          onClick={() => router.back()}
+          className="mt-4 rounded bg-blue-500 px-4 py-2 text-white"
+        >
+          Go Back
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium">Regulatory Requirements</h3>
-        <p className="text-sm text-muted-foreground">
-          Manage your regulatory documentation and credentials.
-        </p>
-      </div>
-
-      <Separator />
-
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Complete all required regulatory documentation to verify your credentials.
-          </p>
-
-          <Badge variant="secondary">{requiredRequirements.length} Required</Badge>
-        </div>
-
-        <div className="space-y-4">
-          {requirements.map((requirement, index) => (
-            <Card key={requirement.id}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      {requirement.name}
-                      {requirement.isRequired && (
-                        <Badge variant="destructive" className="text-xs">
-                          Required
-                        </Badge>
-                      )}
-                    </CardTitle>
-                    <CardDescription className="mt-1">{requirement.description}</CardDescription>
-                  </div>
-                  {requirement.existingSubmission &&
-                    renderValidationStatus(
-                      (requirement.existingSubmission as ExtendedRequirementSubmission)
-                        .validationStatus
-                    )}
+    <>
+      {mutation.isPending && (
+        <CalendarLoader message="Saving Changes" submessage="Updating your requirements..." />
+      )}
+      <FormProvider {...methods}>
+        <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Regulatory Requirements</CardTitle>
+              <CardDescription>
+                Upload or provide the required regulatory documentation for your provider type.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {requirementTypes.length === 0 ? (
+                <div className="py-4 text-center text-muted-foreground">
+                  No regulatory requirements found for this provider type.
                 </div>
-              </CardHeader>
-              <CardContent>
-                {renderRequirementInput(requirement, {
-                  register,
-                  watch,
-                  setValue,
-                  errors,
-                })}
+              ) : (
+                <div className="space-y-6">
+                  {requirementTypes.map((requirement, index) => {
+                    // Find existing submission for this requirement
+                    const existingSubmission = provider.requirementSubmissions?.find(
+                      (sub) => sub.requirementTypeId === requirement.id
+                    );
 
-                {requirement.existingSubmission &&
-                  (requirement.existingSubmission as ExtendedRequirementSubmission)
-                    .validationStatus === RequirementsValidationStatus.REJECTED && (
-                    <div className="mt-2 rounded-md bg-red-50 p-3 text-sm text-red-800">
-                      <p className="font-medium">Rejection reason:</p>
-                      <p>
-                        {(requirement.existingSubmission as ExtendedRequirementSubmission)
-                          .validationMessage || 'No reason provided'}
-                      </p>
-                    </div>
-                  )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                    // Get the field name for this requirement
+                    const fieldName = `requirements.${index}`;
+                    const fieldError = methods.formState.errors?.requirements?.[index];
 
-        <div className="flex justify-end">
-          <Button
-            type="submit"
-            onClick={handleSubmit(onSubmit)}
-            disabled={isSubmitting || isPending}
-          >
-            {isPending ? 'Saving...' : 'Save Requirements'}
-          </Button>
-        </div>
-      </div>
-    </div>
+                    return (
+                      <div key={requirement.id} className="rounded-md border p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <h3 className="text-sm font-medium">
+                              {requirement.name}
+                              {requirement.isRequired && <span className="text-red-500">*</span>}
+                              {existingSubmission &&
+                                existingSubmission.status &&
+                                renderValidationStatus(existingSubmission.status)}
+                            </h3>
+                          </div>
+                        </div>
+
+                        {requirement.description && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {requirement.description}
+                          </p>
+                        )}
+
+                        <div className="mt-4">
+                          {renderRequirementInput(requirement, {
+                            register: methods.register,
+                            watch: methods.watch,
+                            setValue: methods.setValue,
+                            errors: methods.formState.errors,
+                            fieldName,
+                            existingValue: existingSubmission?.documentMetadata?.value,
+                            existingDocumentUrl: existingSubmission?.documentUrl ?? undefined,
+                          })}
+                          {fieldError && (
+                            <p className="mt-1 text-xs text-red-500">
+                              {fieldError.message?.toString() || 'This field is required'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="mt-6 flex justify-end space-x-4">
+                <Button type="button" variant="outline" onClick={() => router.back()}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={mutation.isPending}>
+                  {mutation.isPending ? 'Saving...' : 'Save Requirements'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </form>
+      </FormProvider>
+    </>
   );
 }

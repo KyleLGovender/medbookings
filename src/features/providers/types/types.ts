@@ -90,6 +90,7 @@ export interface SerializedServiceProvider {
     documentMetadata: Record<string, any> | null;
     createdAt: string;
     updatedAt: string;
+    status?: RequirementsValidationStatus;
     requirementType?: {
       id: string;
       name: string;
