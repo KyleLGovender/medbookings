@@ -161,20 +161,6 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
     formData.append('id', provider.id);
     formData.append('userId', provider.userId);
 
-    // Add required fields to prevent validation errors
-    formData.append('name', provider.name || '');
-    formData.append('bio', provider.bio || '');
-    formData.append('email', provider.email || '');
-    formData.append('whatsapp', provider.whatsapp || '');
-    if (provider.website) formData.append('website', provider.website);
-
-    // Add languages if available
-    if (provider.languages && Array.isArray(provider.languages)) {
-      provider.languages.forEach((lang: string) => {
-        formData.append('languages', lang);
-      });
-    }
-
     // Append services
     data.services.forEach((serviceId) => {
       formData.append('services', serviceId);

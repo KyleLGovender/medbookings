@@ -1,5 +1,6 @@
 import { UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
 
+import { DocumentUploader } from '@/components/document-uploader';
 import { DatePickerWithInput } from '@/components/ui/date-picker-with-input';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { DocumentUploader } from '@/features/providers/components/onboarding/document-uploader';
 import { RequirementType, RequirementValidationType } from '@/features/providers/types/types';
 
 // Define a specific type for our form structure to match how we're accessing requirements

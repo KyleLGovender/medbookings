@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getServerSession } from 'next-auth';
 
-import { registerServiceProvider } from '@/features/providers/lib/actions';
+import { registerServiceProvider } from '@/features/providers/lib/actions/register-provider';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {

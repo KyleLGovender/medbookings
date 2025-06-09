@@ -3,27 +3,13 @@
 import { revalidatePath } from 'next/cache';
 
 import { Languages, Prisma, RequirementsValidationStatus } from '@prisma/client';
-import { put } from '@vercel/blob';
 import { getServerSession } from 'next-auth/next';
 
 import { serializeServiceProvider } from '@/features/providers/lib/helper';
 import { sendServiceProviderWhatsappConfirmation } from '@/features/providers/lib/server-helper';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-
-async function uploadToBlob(file: File, userId: string) {
-  try {
-    const uniqueFilename = `${Date.now()}-${userId}`;
-    const blob = await put(`profile-images/${uniqueFilename}`, file, {
-      access: 'public',
-      addRandomSuffix: false,
-    });
-    return { url: blob.url, success: true };
-  } catch (error) {
-    console.error('Failed to upload image:', error);
-    return { success: false, error: 'Failed to upload image' };
-  }
-}
+import { uploadToBlob } from '@/lib/utils/utils-upload-to-blob';
 
 export async function registerServiceProvider(prevState: any, formData: FormData) {
   try {

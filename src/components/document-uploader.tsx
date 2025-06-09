@@ -11,15 +11,17 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 
 interface DocumentUploaderProps {
-  onUpload: (file: any) => void;
+  onUpload: (file: File | null) => void;
   acceptedFormats?: string[];
   currentFile?: any;
+  userId?: string;
 }
 
 export function DocumentUploader({
   onUpload,
   acceptedFormats = ['.pdf', '.jpg', '.png'],
   currentFile,
+  userId,
 }: DocumentUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -71,7 +73,7 @@ export function DocumentUploader({
     setUploadProgress(0);
 
     try {
-      // Simulate upload progress
+      // Start progress animation to show immediate feedback
       const interval = setInterval(() => {
         setUploadProgress((prev) => {
           if (prev >= 90) {
@@ -82,18 +84,34 @@ export function DocumentUploader({
         });
       }, 100);
 
-      // In a real app, you would upload to S3 here
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Create a FormData object to send the file
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('userId', userId || 'anonymous');
+
+      // Upload the file using our API route that uses the uploadToBlob server action
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
 
       clearInterval(interval);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const result = await response.json();
       setUploadProgress(100);
 
-      // Create the file data
+      // Create the file data with the actual blob URL
       const fileData = {
         name: file.name,
         size: file.size,
         type: file.type,
-        url: URL.createObjectURL(file), // In real app, this would be the S3 URL
+        file: file, // Store the actual file object for form submission
+        url: result.url, // Use the actual Blob URL from the server response
         uploadedAt: new Date().toISOString(),
       };
 
@@ -101,7 +119,7 @@ export function DocumentUploader({
       setUploadedFile(fileData);
 
       // Notify parent
-      onUpload(fileData);
+      onUpload(file);
 
       toast({
         title: 'File uploaded successfully',
@@ -192,59 +210,52 @@ export function DocumentUploader({
   return (
     <div className="space-y-4">
       <Card
-        className={`border-2 border-dashed transition-colors ${
-          dragActive
-            ? 'border-primary bg-primary/5'
-            : 'border-muted-foreground/25 hover:border-muted-foreground/50'
-        }`}
+        className={`border-2 ${
+          dragActive ? 'border-dashed border-primary bg-primary/5' : 'border-border'
+        } rounded-lg`}
         onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
         onDragOver={handleDrag}
+        onDragLeave={handleDrag}
         onDrop={handleDrop}
       >
-        <CardContent className="p-6">
-          <div className="text-center">
-            <Upload className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <div className="space-y-2">
-              <p className="text-sm font-medium">
-                Drag and drop your file here, or{' '}
-                <Button
-                  variant="link"
-                  className="h-auto p-0"
-                  onClick={() => {
-                    if (fileInputRef.current) {
-                      fileInputRef.current.click();
-                    }
-                  }}
-                >
-                  browse
-                </Button>
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Accepted formats: {displayFormats.join(', ')} • Max size: 10MB
-              </p>
-            </div>
+        <CardContent className="flex flex-col items-center justify-center gap-4 p-6 text-center">
+          <div className="rounded-full bg-primary/10 p-3">
+            <Upload className="h-6 w-6 text-primary" />
           </div>
+          <div>
+            <h3 className="text-lg font-semibold">Upload a file</h3>
+            <p className="text-sm text-muted-foreground">Drag and drop or click to upload</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Supported formats: {displayFormats.join(', ')}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+          >
+            Select File
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={acceptedFormats.join(',')}
+            onChange={handleFileSelect}
+            className="hidden"
+            disabled={isUploading}
+          />
         </CardContent>
       </Card>
 
       {isUploading && (
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span>Uploading...</span>
-            <span>{uploadProgress}%</span>
+          <div className="flex items-center justify-between">
+            <span className="text-sm">Uploading...</span>
+            <span className="text-sm">{uploadProgress}%</span>
           </div>
-          <Progress value={uploadProgress} />
+          <Progress value={uploadProgress} className="h-2" />
         </div>
       )}
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept={acceptedFormats.join(',')}
-        onChange={handleFileSelect}
-        className="hidden"
-      />
     </div>
   );
 }
