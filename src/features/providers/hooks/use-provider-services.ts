@@ -46,11 +46,11 @@ export function useProviderServices(providerId: string | undefined) {
         throw new Error('Provider ID is required');
       }
 
-      // Build the URL with query parameters
+      // providerId
       const url = new URL('/api/providers/services', window.location.origin);
       url.searchParams.append('providerId', providerId);
 
-      // If we have provider type ID, filter services by provider type
+      // providerTypeId
       if (providerQuery.data?.serviceProviderTypeId) {
         url.searchParams.append('providerTypeId', providerQuery.data.serviceProviderTypeId);
       }
@@ -61,7 +61,7 @@ export function useProviderServices(providerId: string | undefined) {
       }
       return response.json();
     },
-    enabled: !!providerId && !!providerQuery.data?.id,
+    enabled: !!providerId && !!providerQuery.data?.serviceProviderTypeId,
   });
 }
 
