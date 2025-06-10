@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DeleteProviderButton } from '@/features/providers/components/delete-provider-button';
 import { SerializedServiceProvider } from '@/features/providers/types/types';
 
 interface ProviderProfileViewProps {
@@ -162,12 +163,19 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
         </div>
 
         {isOwner && (
-          <Link href={`/providers/${provider.id}/edit`}>
-            <Button variant="outline" className="flex items-center gap-2">
-              <PenSquare className="h-4 w-4" />
-              Edit Profile
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href={`/providers/${provider.id}/edit`}>
+              <Button variant="outline" className="flex items-center gap-2">
+                <PenSquare className="h-4 w-4" />
+                Edit Profile
+              </Button>
+            </Link>
+            <DeleteProviderButton
+              providerId={provider.id}
+              providerName={provider.name}
+              redirectPath="/profile"
+            />
+          </div>
         )}
       </div>
 

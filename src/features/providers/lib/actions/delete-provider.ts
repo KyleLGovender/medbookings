@@ -69,10 +69,26 @@ export async function deleteServiceProvider(serviceProviderId: string) {
       where: { serviceProviderId },
     });
 
-    // 5. Delete bookings
-    await prisma.booking.deleteMany({
-      where: { serviceProviderId },
-    });
+    // 5. Find all slots associated with this provider's availability configs
+    const slotIds = [];
+
+    for (const config of serviceProvider.availabilityConfigs) {
+      const slots = await prisma.calculatedAvailabilitySlot.findMany({
+        where: { serviceConfigId: config.id },
+        select: { id: true },
+      });
+
+      slotIds.push(...slots.map((slot) => slot.id));
+    }
+
+    // 6. Delete bookings associated with those slots
+    if (slotIds.length > 0) {
+      await prisma.booking.deleteMany({
+        where: {
+          slotId: { in: slotIds },
+        },
+      });
+    }
 
     // 6. Disconnect services
     if (serviceProvider.services.length > 0) {
@@ -92,7 +108,6 @@ export async function deleteServiceProvider(serviceProviderId: string) {
     });
 
     // Revalidate paths to update UI
-    revalidatePath('/profile/service-provider');
     revalidatePath('/profile');
 
     return { success: true };
