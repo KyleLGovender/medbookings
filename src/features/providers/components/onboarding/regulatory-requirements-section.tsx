@@ -24,7 +24,7 @@ export function RegulatoryRequirementsSection() {
   // Watch the provider type to dynamically update requirements
   const providerType = useWatch({
     control,
-    name: 'providerType.providerType',
+    name: 'serviceProviderTypeId',
   });
 
   // Fetch requirements when provider type changes

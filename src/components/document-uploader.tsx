@@ -4,6 +4,7 @@ import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 import { CheckCircle, Upload, X } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,33 +12,47 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 
 interface DocumentUploaderProps {
-  onUpload: (file: File | null) => void;
+  onUpload: (fileUrl: string | null) => void;
   acceptedFormats?: string[];
-  currentFile?: any;
-  userId?: string;
+  currentFileUrl?: string | null;
+  directory?: string;
 }
 
 export function DocumentUploader({
   onUpload,
   acceptedFormats = ['.pdf', '.jpg', '.png'],
-  currentFile,
-  userId,
+  currentFileUrl,
+  directory = 'documents',
 }: DocumentUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<any>(null);
+  const [uploadedFile, setUploadedFile] = useState<{
+    name: string;
+    size: number;
+    type: string;
+    url: string;
+    uploadedAt: string;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const firstRenderRef = useRef(true);
   const { toast } = useToast();
+  const { data: session } = useSession();
 
-  // Initialize with currentFile on first render only
+  // Initialize with currentFileUrl on first render only
   useEffect(() => {
-    if (firstRenderRef.current && currentFile) {
-      setUploadedFile(currentFile);
+    if (firstRenderRef.current && currentFileUrl) {
+      // Create a placeholder file object with the URL
+      setUploadedFile({
+        name: 'Existing document',
+        size: 0,
+        type: '',
+        url: currentFileUrl,
+        uploadedAt: new Date().toISOString(),
+      });
       firstRenderRef.current = false;
     }
-  }, [currentFile]);
+  }, [currentFileUrl]);
 
   const validateFile = (file: File) => {
     // Get the file extension with dot
@@ -87,7 +102,8 @@ export function DocumentUploader({
       // Create a FormData object to send the file
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('userId', userId || 'anonymous');
+      formData.append('userId', session?.user?.id || 'anonymous');
+      formData.append('directory', directory);
 
       // Upload the file using our API route that uses the uploadToBlob server action
       const response = await fetch('/api/upload', {
@@ -105,12 +121,15 @@ export function DocumentUploader({
       const result = await response.json();
       setUploadProgress(100);
 
+      if (!result.success || !result.url) {
+        throw new Error(result.error || 'Failed to get upload URL');
+      }
+
       // Create the file data with the actual blob URL
       const fileData = {
         name: file.name,
         size: file.size,
         type: file.type,
-        file: file, // Store the actual file object for form submission
         url: result.url, // Use the actual Blob URL from the server response
         uploadedAt: new Date().toISOString(),
       };
@@ -118,8 +137,8 @@ export function DocumentUploader({
       // Update local state
       setUploadedFile(fileData);
 
-      // Notify parent
-      onUpload(file);
+      // Notify parent with the URL
+      onUpload(result.url);
 
       toast({
         title: 'File uploaded successfully',
@@ -128,7 +147,8 @@ export function DocumentUploader({
     } catch (error) {
       toast({
         title: 'Upload failed',
-        description: 'Failed to upload file. Please try again.',
+        description:
+          error instanceof Error ? error.message : 'Failed to upload file. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -166,7 +186,7 @@ export function DocumentUploader({
 
   const removeFile = () => {
     setUploadedFile(null);
-    onUpload(null);
+    onUpload(null); // Pass null to indicate file removal
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }

@@ -46,7 +46,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Add provider type
-    formData.append('serviceProviderTypeId', data.providerType.providerType);
+    if (data.serviceProviderTypeId) {
+      formData.append('serviceProviderTypeId', data.serviceProviderTypeId);
+    } else {
+      return NextResponse.json({ error: 'Provider type is required' }, { status: 400 });
+    }
 
     // Add languages
     if (data.basicInfo.languages && Array.isArray(data.basicInfo.languages)) {
@@ -83,11 +87,10 @@ export async function POST(request: NextRequest) {
         if (req.value) {
           formData.append(`requirements[${index}][value]`, req.value);
         }
-        // Note: For file uploads, this would be handled differently
-        if (req.documentFile && req.documentFile.url) {
-          // Here we're just storing the URL since we can't convert back to a File object
-          formData.append(`requirements[${index}][otherValue]`, req.documentFile.url);
-          formData.append(`requirements[${index}][value]`, 'other');
+        // Handle document URLs directly
+        if (req.documentUrl) {
+          // Pass the document URL directly to the server action
+          formData.append(`requirements[${index}][documentUrl]`, req.documentUrl);
         }
       });
     }

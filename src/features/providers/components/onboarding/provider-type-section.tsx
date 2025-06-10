@@ -37,7 +37,7 @@ export function ProviderTypeSection() {
   const [requirements, setRequirements] = useState<RequirementTypeData[]>([]);
   const [services, setServices] = useState<ServiceTypeData[]>([]);
 
-  const currentProviderType = watch('providerType.providerType');
+  const currentProviderType = watch('serviceProviderTypeId');
 
   // Fetch provider types on component mount
   useEffect(() => {
@@ -163,7 +163,7 @@ export function ProviderTypeSection() {
       ) : (
         <FormField
           control={control}
-          name="providerType.providerType"
+          name="serviceProviderTypeId"
           render={({ field }) => (
             <FormItem>
               <FormControl>
@@ -198,12 +198,16 @@ export function ProviderTypeSection() {
                                 variant="outline"
                                 size="sm"
                                 onClick={(e) => {
-                                  e.preventDefault(); // Prevent label click propagation
+                                  e.preventDefault();
                                   handleConfirmSelection(type.id);
                                 }}
                                 disabled={isLoadingData}
                               >
-                                {isLoadingData ? 'Loading...' : 'Confirm Selection'}
+                                {isLoadingData
+                                  ? 'Loading...'
+                                  : requirements.length > 0 || services.length > 0
+                                    ? 'Selected'
+                                    : 'Confirm Selection'}
                               </Button>
                             </CardFooter>
                           )}

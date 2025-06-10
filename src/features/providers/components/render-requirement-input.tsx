@@ -1,3 +1,4 @@
+import { ExternalLinkIcon, FileIcon } from 'lucide-react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
 
 import { DocumentUploader } from '@/components/document-uploader';
@@ -20,7 +21,7 @@ interface RequirementForm {
     requirements: Array<{
       requirementTypeId: string;
       value?: any;
-      documentFile?: File;
+      documentUrl?: string;
       otherValue?: string;
       index?: number;
     }>;
@@ -93,39 +94,53 @@ export const renderRequirementInput = (
       return (
         <div className="space-y-2">
           {requirement.existingSubmission?.documentUrl && (
-            <div className="flex items-center gap-2 text-sm">
-              <span>Current document:</span>
-              <a
-                href={requirement.existingSubmission.documentUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
-              >
-                View document
-              </a>
+            <div className="mb-4 rounded-md border bg-muted/40 p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileIcon className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">
+                      {requirement.existingSubmission.documentUrl.split('/').pop()?.split('?')[0] ||
+                        'Document'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Uploaded document</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <a
+                    href={requirement.existingSubmission.documentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-8 items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                  >
+                    <ExternalLinkIcon className="mr-1 h-3 w-3" />
+                    View
+                  </a>
+                </div>
+              </div>
             </div>
           )}
           <DocumentUploader
             acceptedFormats={acceptedFileTypes}
-            onUpload={(fileData) => {
+            onUpload={(fileUrl) => {
               // Only trigger validation when needed
               const shouldValidate = false;
 
-              if (fileData) {
+              if (fileUrl) {
                 form.setValue(
-                  `regulatoryRequirements.requirements.${requirement.index}.documentFile`,
-                  fileData,
+                  `regulatoryRequirements.requirements.${requirement.index}.documentUrl`,
+                  fileUrl,
                   { shouldValidate }
                 );
 
                 form.setValue(
                   `regulatoryRequirements.requirements.${requirement.index}.value`,
-                  fileData ? fileData.name : null,
+                  fileUrl,
                   { shouldValidate }
                 );
               } else {
                 form.setValue(
-                  `regulatoryRequirements.requirements.${requirement.index}.documentFile`,
+                  `regulatoryRequirements.requirements.${requirement.index}.documentUrl`,
                   null,
                   { shouldValidate }
                 );
@@ -136,8 +151,8 @@ export const renderRequirementInput = (
                 );
               }
             }}
-            currentFile={form.watch(
-              `regulatoryRequirements.requirements.${requirement.index}.documentFile`
+            currentFileUrl={form.watch(
+              `regulatoryRequirements.requirements.${requirement.index}.documentUrl`
             )}
           />
           {renderError()}

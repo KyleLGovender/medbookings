@@ -4,7 +4,6 @@ import { Languages, Prisma, RequirementsValidationStatus } from '@prisma/client'
 
 import { sendServiceProviderWhatsappConfirmation } from '@/features/providers/lib/server-helper';
 import { prisma } from '@/lib/prisma';
-import { uploadToBlob } from '@/lib/utils/utils-upload-to-blob';
 
 /**
  * Registers a new service provider
@@ -32,7 +31,7 @@ export async function registerServiceProvider(prevState: any, formData: FormData
       const requirements: {
         requirementTypeId: string;
         value?: string;
-        documentFile?: File;
+        documentUrl?: string;
         otherValue?: string;
       }[] = [];
 
@@ -48,14 +47,14 @@ export async function registerServiceProvider(prevState: any, formData: FormData
           const otherValueKey = `requirements[${index}][otherValue]`;
 
           const formValue = formData.get(valueKey) as string;
-          const formFile = formData.get(fileKey) as File;
+          const formDocumentUrl = formData.get(fileKey) as string;
           const formOtherValue = formData.get(otherValueKey) as string;
 
-          if (formFile?.size > 0 || formValue || (formValue === 'other' && formOtherValue)) {
+          if (formDocumentUrl || formValue || (formValue === 'other' && formOtherValue)) {
             requirements.push({
               requirementTypeId,
               value: formValue,
-              documentFile: formFile,
+              documentUrl: formDocumentUrl,
               otherValue: formOtherValue,
             });
           }
@@ -69,15 +68,9 @@ export async function registerServiceProvider(prevState: any, formData: FormData
             let documentUrl: string | null = null;
             let documentMetadata: { value: string } | undefined;
 
-            if (req.documentFile && req.documentFile.size > 0) {
-              const uploadResult = await uploadToBlob(
-                req.documentFile,
-                userId,
-                'requirement-documents'
-              );
-              if (uploadResult.success) {
-                documentUrl = uploadResult.url || null;
-              }
+            if (req.documentUrl) {
+              // Document URL is already provided from client-side upload
+              documentUrl = req.documentUrl;
             } else if (req.value === 'other' && req.otherValue) {
               documentUrl = req.otherValue;
               documentMetadata = { value: 'other' };

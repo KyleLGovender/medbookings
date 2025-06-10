@@ -186,7 +186,6 @@ export type RequirementSubmission = {
   status?: RequirementsValidationStatus;
   documentUrl?: string | null;
   documentMetadata?: Record<string, any> | null;
-  documentFile?: File; // For file uploads in forms
   expiresAt?: Date | null;
   notes?: string | null;
   validatedAt?: Date | null;
@@ -207,12 +206,10 @@ export const basicInfoSchema = z.object({
   website: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
   email: z.string().email('Please enter a valid email address'),
   whatsapp: z.string().min(10, 'Please enter a valid WhatsApp number'),
-  serviceProviderTypeId: z.string().min(1, 'Provider type is required'),
 });
 
-export const providerTypeSchema = z.object({
-  providerType: z.string().min(1, 'Please select a provider type'),
-});
+// No longer needed as we're validating serviceProviderTypeId directly at the root level
+export const providerTypeSchema = z.object({});
 
 export const regulatoryRequirementsSchema = z.object({
   requirements: z
@@ -220,7 +217,7 @@ export const regulatoryRequirementsSchema = z.object({
       z.object({
         requirementTypeId: z.string(),
         value: z.any().optional(),
-        documentFile: z.any().optional(),
+        documentUrl: z.string().optional(),
         otherValue: z.string().optional(),
       })
     )
@@ -244,6 +241,7 @@ export const servicesSchema = z.object({
 export const providerFormSchema = z.object({
   basicInfo: basicInfoSchema,
   providerType: providerTypeSchema,
+  serviceProviderTypeId: z.string().min(1, 'Please select a provider type'),
   regulatoryRequirements: regulatoryRequirementsSchema,
   services: servicesSchema,
   termsAccepted: z.boolean().refine((val) => val === true, {

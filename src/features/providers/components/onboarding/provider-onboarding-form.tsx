@@ -64,9 +64,8 @@ export function ProviderOnboardingForm() {
         email: '',
         whatsapp: '',
       },
-      providerType: {
-        providerType: '',
-      },
+      providerType: {}, // Empty object since we moved the field to root level
+      serviceProviderTypeId: '', // Added at root level to match our updated schema
       regulatoryRequirements: {
         requirements: [],
       },
