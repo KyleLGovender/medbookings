@@ -87,10 +87,13 @@ export async function POST(request: NextRequest) {
         if (req.value) {
           formData.append(`requirements[${index}][value]`, req.value);
         }
-        // Handle document URLs directly
-        if (req.documentUrl) {
-          // Pass the document URL directly to the server action
-          formData.append(`requirements[${index}][documentUrl]`, req.documentUrl);
+        // Handle document metadata
+        if (req.documentMetadata?.value) {
+          // Add document metadata to form data
+          formData.append(
+            `requirements[${index}][documentMetadata]`,
+            JSON.stringify(req.documentMetadata)
+          );
         }
       });
     }

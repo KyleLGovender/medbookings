@@ -93,33 +93,36 @@ export const renderRequirementInput = (
 
       return (
         <div className="space-y-2">
-          {requirement.existingSubmission?.documentUrl && (
-            <div className="mb-4 rounded-md border bg-muted/40 p-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileIcon className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-medium">
-                      {requirement.existingSubmission.documentUrl.split('/').pop()?.split('?')[0] ||
-                        'Document'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Uploaded document</p>
+          {requirement.existingSubmission?.documentMetadata?.value &&
+            typeof requirement.existingSubmission.documentMetadata.value === 'string' && (
+              <div className="mb-4 rounded-md border bg-muted/40 p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileIcon className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="font-medium">
+                        {requirement.existingSubmission.documentMetadata.value
+                          .split('/')
+                          .pop()
+                          ?.split('?')[0] || 'Document'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Uploaded document</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <a
+                      href={requirement.existingSubmission.documentMetadata.value}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-8 items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                    >
+                      <ExternalLinkIcon className="mr-1 h-3 w-3" />
+                      View
+                    </a>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <a
-                    href={requirement.existingSubmission.documentUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex h-8 items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                  >
-                    <ExternalLinkIcon className="mr-1 h-3 w-3" />
-                    View
-                  </a>
-                </div>
               </div>
-            </div>
-          )}
+            )}
           <DocumentUploader
             acceptedFormats={acceptedFileTypes}
             onUpload={(fileUrl) => {
@@ -128,8 +131,8 @@ export const renderRequirementInput = (
 
               if (fileUrl) {
                 form.setValue(
-                  `regulatoryRequirements.requirements.${requirement.index}.documentUrl`,
-                  fileUrl,
+                  `regulatoryRequirements.requirements.${requirement.index}.documentMetadata`,
+                  { value: fileUrl },
                   { shouldValidate }
                 );
 
@@ -140,7 +143,7 @@ export const renderRequirementInput = (
                 );
               } else {
                 form.setValue(
-                  `regulatoryRequirements.requirements.${requirement.index}.documentUrl`,
+                  `regulatoryRequirements.requirements.${requirement.index}.documentMetadata`,
                   null,
                   { shouldValidate }
                 );
@@ -151,9 +154,11 @@ export const renderRequirementInput = (
                 );
               }
             }}
-            currentFileUrl={form.watch(
-              `regulatoryRequirements.requirements.${requirement.index}.documentUrl`
-            )}
+            currentFileUrl={
+              form.watch(
+                `regulatoryRequirements.requirements.${requirement.index}.documentMetadata`
+              )?.value || null
+            }
           />
           {renderError()}
         </div>

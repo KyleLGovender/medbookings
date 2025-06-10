@@ -636,8 +636,7 @@ model RequirementSubmission {
   serviceProvider   ServiceProvider              @relation(fields: [serviceProviderId], references: [id])
   serviceProviderId String
   status            RequirementsValidationStatus @default(PENDING)
-  documentUrl       String? // URL to uploaded document in Vercel Blob
-  documentMetadata  Json? // Store actual metadata values
+  documentMetadata  Json? // Store actual metadata values including document URLs
   expiresAt         DateTime? // Generic expiration date
   notes             String? // Admin notes about validation/rejection
   validatedAt       DateTime?

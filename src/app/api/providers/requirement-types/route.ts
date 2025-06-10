@@ -58,7 +58,6 @@ export async function GET(request: NextRequest) {
           requirementSubmissions: {
             select: {
               requirementTypeId: true,
-              documentUrl: true,
               documentMetadata: true,
               status: true,
             },
@@ -84,8 +83,8 @@ export async function GET(request: NextRequest) {
         // Map submission data to existingSubmission if available
         existingSubmission: submission
           ? {
-              documentUrl: submission.documentUrl,
               documentMetadata: submission.documentMetadata,
+              status: submission.status,
             }
           : undefined,
       };

@@ -354,7 +354,7 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
     type RequirementUpdate = {
       requirementTypeId: string;
       value?: string;
-      documentFile?: File;
+      documentMetadata?: Record<string, any>;
       otherValue?: string;
     };
 
@@ -374,11 +374,11 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
 
           const requirementTypeId = value as string;
           const valueKey = `requirements[${index}][value]`;
-          const fileKey = `requirements[${index}][documentFile]`;
+          const metadataKey = `requirements[${index}][documentMetadata]`;
           const otherValueKey = `requirements[${index}][otherValue]`;
 
           const formValue = formData.get(valueKey) as string;
-          const formFile = formData.get(fileKey) as File;
+          const formMetadata = formData.get(metadataKey) as string;
           const formOtherValue = formData.get(otherValueKey) as string;
 
           // Find existing submission for this requirement type
@@ -386,21 +386,31 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
             (sub) => sub.requirementTypeId === requirementTypeId
           );
 
-          const existingValue = existingSubmission?.documentMetadata
-            ? (existingSubmission.documentMetadata as { value?: string })?.value
-            : null;
+          // Prepare the metadata - either from direct metadata field or from value
+          let newMetadata: Record<string, any> | undefined;
 
-          // Only include if there's a new file, new value, or it's different from existing
+          if (formMetadata) {
+            // If we have metadata directly, use it
+            newMetadata = JSON.parse(formMetadata);
+          } else if (formValue) {
+            // If we have a value, create metadata with it
+            newMetadata = { value: formValue };
+          }
+
+          // Compare with existing metadata to see if it changed
+          const existingMetadataValue = existingSubmission?.documentMetadata
+            ? (existingSubmission.documentMetadata as { value?: string })?.value
+            : undefined;
+          const newMetadataValue = newMetadata?.value;
+
+          // Only include if there's new metadata or the value changed
           if (
-            formFile?.size > 0 ||
-            (formValue && formValue !== existingValue) ||
-            (formValue === 'other' && formOtherValue !== existingSubmission?.documentUrl)
+            newMetadata &&
+            (!existingMetadataValue || newMetadataValue !== existingMetadataValue)
           ) {
             requirements.push({
               requirementTypeId,
-              value: formValue,
-              documentFile: formFile,
-              otherValue: formOtherValue,
+              documentMetadata: newMetadata,
             });
           }
         }
@@ -411,23 +421,10 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
         // Process and create/update submissions
         const requirementUpdates = await Promise.all(
           requirements.map(async (req) => {
-            let documentUrl: string | null = null;
-            let documentMetadata: { value: string } | undefined;
-
-            // If there's a file, upload it
-            if (req.documentFile && req.documentFile.size > 0) {
-              const uploadResult = await uploadToBlob(req.documentFile, userId);
-              if (uploadResult.success) {
-                documentUrl = uploadResult.url || null;
-              }
-            } else if (req.value === 'other' && req.otherValue) {
-              // Handle "other" option
-              documentUrl = req.otherValue;
-              documentMetadata = { value: 'other' };
-            } else if (req.value) {
-              // Store regular value in metadata
-              documentMetadata = { value: req.value };
-            }
+            // Just use the documentMetadata directly from the form
+            // This is already properly structured by the render-requirement-input component
+            const documentMetadata =
+              req.documentMetadata || (req.value ? { value: req.value } : undefined);
 
             // Update or create the submission
             return prisma.requirementSubmission.upsert({
@@ -440,12 +437,12 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
               create: {
                 requirementTypeId: req.requirementTypeId,
                 serviceProviderId: id,
-                documentUrl,
+                documentUrl: null,
                 documentMetadata: documentMetadata || Prisma.JsonNull,
                 status: RequirementsValidationStatus.PENDING,
               },
               update: {
-                documentUrl,
+                documentUrl: null,
                 documentMetadata: documentMetadata || Prisma.JsonNull,
                 status: RequirementsValidationStatus.PENDING,
               },

@@ -1,6 +1,6 @@
 'use server';
 
-import { Languages, Prisma, RequirementsValidationStatus } from '@prisma/client';
+import { Languages, RequirementsValidationStatus } from '@prisma/client';
 
 import { sendServiceProviderWhatsappConfirmation } from '@/features/providers/lib/server-helper';
 import { prisma } from '@/lib/prisma';
@@ -22,19 +22,16 @@ export async function registerServiceProvider(prevState: any, formData: FormData
     const website = (formData.get('website') as string) || null;
 
     // Process requirements first if any were submitted
-    const requirementSubmissions = [];
+    const requirementSubmissions: {
+      requirementTypeId: string;
+      documentMetadata: Record<string, any>;
+      status: RequirementsValidationStatus;
+    }[] = [];
     const hasRequirements = Array.from(formData.entries()).some(([key]) =>
       key.match(/requirements\[\d+\]\[requirementTypeId\]/)
     );
 
     if (hasRequirements) {
-      const requirements: {
-        requirementTypeId: string;
-        value?: string;
-        documentUrl?: string;
-        otherValue?: string;
-      }[] = [];
-
       // Collect all requirement entries from form data
       Array.from(formData.entries()).forEach(([key, value]) => {
         if (key.match(/requirements\[\d+\]\[requirementTypeId\]/)) {
@@ -43,52 +40,34 @@ export async function registerServiceProvider(prevState: any, formData: FormData
 
           const requirementTypeId = value as string;
           const valueKey = `requirements[${index}][value]`;
-          const fileKey = `requirements[${index}][documentFile]`;
+          const metadataKey = `requirements[${index}][documentMetadata]`;
           const otherValueKey = `requirements[${index}][otherValue]`;
 
           const formValue = formData.get(valueKey) as string;
-          const formDocumentUrl = formData.get(fileKey) as string;
+          const formMetadata = formData.get(metadataKey) as string;
           const formOtherValue = formData.get(otherValueKey) as string;
 
-          if (formDocumentUrl || formValue || (formValue === 'other' && formOtherValue)) {
-            requirements.push({
+          // Prepare the metadata - either from direct metadata field or from value
+          let newMetadata: Record<string, any> | undefined;
+
+          if (formMetadata) {
+            // If we have metadata directly, use it
+            newMetadata = JSON.parse(formMetadata);
+          } else if (formValue) {
+            // If we have a regular value
+            newMetadata = { value: formValue };
+          }
+
+          // Only add requirement if we have metadata
+          if (newMetadata) {
+            requirementSubmissions.push({
               requirementTypeId,
-              value: formValue,
-              documentUrl: formDocumentUrl,
-              otherValue: formOtherValue,
+              documentMetadata: newMetadata,
+              status: RequirementsValidationStatus.PENDING,
             });
           }
         }
       });
-
-      // Process and prepare submissions
-      if (requirements.length > 0) {
-        const processedRequirements = await Promise.all(
-          requirements.map(async (req) => {
-            let documentUrl: string | null = null;
-            let documentMetadata: { value: string } | undefined;
-
-            if (req.documentUrl) {
-              // Document URL is already provided from client-side upload
-              documentUrl = req.documentUrl;
-            } else if (req.value === 'other' && req.otherValue) {
-              documentUrl = req.otherValue;
-              documentMetadata = { value: 'other' };
-            } else if (req.value) {
-              documentMetadata = { value: req.value };
-            }
-
-            return {
-              requirementTypeId: req.requirementTypeId,
-              documentUrl,
-              documentMetadata: documentMetadata || Prisma.JsonNull,
-              status: RequirementsValidationStatus.PENDING,
-            };
-          })
-        );
-
-        requirementSubmissions.push(...processedRequirements);
-      }
     }
 
     // Save provider data with requirements

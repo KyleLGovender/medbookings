@@ -91,8 +91,11 @@ export function EditRegulatoryRequirements({
         // Handle different types of values based on requirement type
         if (existingSubmission.documentMetadata?.value !== undefined) {
           formEntry.value = existingSubmission.documentMetadata.value;
-        } else if (existingSubmission.documentUrl) {
-          formEntry.value = existingSubmission.documentUrl;
+        } else if (
+          existingSubmission.documentMetadata?.value &&
+          typeof existingSubmission.documentMetadata.value === 'string'
+        ) {
+          formEntry.value = existingSubmission.documentMetadata.value;
         }
       }
 
@@ -181,8 +184,7 @@ export function EditRegulatoryRequirements({
 
   // Helper type for displaying validation status
   type ExtendedRequirementSubmission = {
-    documentUrl: string | null;
-    documentMetadata: Record<string, any> | null;
+    documentMetadata?: Record<string, any> | null;
     validationStatus?: RequirementsValidationStatus;
     validationMessage?: string | null;
     value?: string | boolean | number | null;
@@ -283,7 +285,8 @@ export function EditRegulatoryRequirements({
                             errors: methods.formState.errors,
                             fieldName,
                             existingValue: existingSubmission?.documentMetadata?.value,
-                            existingDocumentUrl: existingSubmission?.documentUrl ?? undefined,
+                            existingDocumentUrl:
+                              existingSubmission?.documentMetadata?.value ?? undefined,
                           })}
                           {fieldError && (
                             <p className="mt-1 text-xs text-red-500">

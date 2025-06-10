@@ -184,8 +184,7 @@ export type RequirementSubmission = {
   requirementTypeId: string;
   serviceProviderId?: string;
   status?: RequirementsValidationStatus;
-  documentUrl?: string | null;
-  documentMetadata?: Record<string, any> | null;
+  documentMetadata?: Record<string, any> | null; // Includes document URLs in the value field
   expiresAt?: Date | null;
   notes?: string | null;
   validatedAt?: Date | null;
@@ -217,7 +216,7 @@ export const regulatoryRequirementsSchema = z.object({
       z.object({
         requirementTypeId: z.string(),
         value: z.any().optional(),
-        documentUrl: z.string().optional(),
+        documentMetadata: z.record(z.any()).optional(), // For storing document URLs and other metadata
         otherValue: z.string().optional(),
       })
     )
