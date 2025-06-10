@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { RequirementType, RequirementsValidationStatus } from '@/features/providers/types/types';
 import { prisma } from '@/lib/prisma';
 
 /**
@@ -13,16 +12,16 @@ import { prisma } from '@/lib/prisma';
 export async function GET(request: NextRequest) {
   try {
     // Get query parameters
-    const url = new URL(request.url);
-    const providerTypeId = url.searchParams.get('providerTypeId');
-    const providerId = url.searchParams.get('providerId');
+    const { searchParams } = new URL(request.url);
+    const providerTypeId = searchParams.get('providerTypeId');
+    const providerId = searchParams.get('providerId');
 
-    // If no providerTypeId is provided, return an error
+    // Validate required parameters
     if (!providerTypeId) {
       return NextResponse.json({ error: 'Provider type ID is required' }, { status: 400 });
     }
 
-    // Fetch the provider type with its requirements
+    // Fetch provider type with its requirements
     const providerType = await prisma.serviceProviderType.findUnique({
       where: { id: providerTypeId },
       include: {
@@ -36,7 +35,9 @@ export async function GET(request: NextRequest) {
             validationConfig: true,
             displayPriority: true,
           },
-          orderBy: [{ displayPriority: 'asc' }, { name: 'asc' }],
+          orderBy: {
+            displayPriority: 'asc',
+          },
         },
       },
     });
@@ -71,27 +72,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Map requirements and mark those that have been submitted
-    const requirements = providerType.requirements.map((requirement, index): RequirementType => {
+    const requirements = providerType.requirements.map((requirement, index) => {
       // Check if this requirement has been submitted by the provider
       const submission = requirementSubmissions?.find(
         (sub) => sub.requirementTypeId === requirement.id
       );
 
-      // Transform the requirement to match the RequirementType interface
       return {
-        id: requirement.id,
-        name: requirement.name,
-        description: requirement.description,
-        validationType: requirement.validationType,
-        isRequired: requirement.isRequired,
-        validationConfig: requirement.validationConfig as any, // Cast to ValidationConfig
-        displayPriority: requirement.displayPriority || 0,
+        ...requirement,
         index,
         // Map submission data to existingSubmission if available
         existingSubmission: submission
           ? {
               documentUrl: submission.documentUrl,
-              documentMetadata: submission.documentMetadata as any,
+              documentMetadata: submission.documentMetadata,
             }
           : undefined,
       };
