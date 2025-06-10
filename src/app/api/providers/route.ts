@@ -40,10 +40,9 @@ export async function POST(request: NextRequest) {
       formData.append('website', data.basicInfo.website);
     }
 
-    // Add image if exists (note: for actual file uploads, this would be handled differently)
+    // Add image URL if it exists (now we're receiving an actual URL from the client)
     if (data.basicInfo.image) {
-      // In a real implementation, you'd convert base64 to File or handle the image upload
-      // formData.append('image', data.basicInfo.image);
+      formData.append('imageUrl', data.basicInfo.image);
     }
 
     // Add provider type

@@ -4,8 +4,7 @@ import { Languages, Prisma, RequirementsValidationStatus } from '@prisma/client'
 
 import { sendServiceProviderWhatsappConfirmation } from '@/features/providers/lib/server-helper';
 import { prisma } from '@/lib/prisma';
-
-import { uploadToBlob } from '../../../../lib/utils/utils-upload-to-blob';
+import { uploadToBlob } from '@/lib/utils/utils-upload-to-blob';
 
 /**
  * Registers a new service provider
@@ -16,19 +15,12 @@ import { uploadToBlob } from '../../../../lib/utils/utils-upload-to-blob';
 export async function registerServiceProvider(prevState: any, formData: FormData) {
   try {
     const userId = formData.get('userId') as string;
-    const imageFile = formData.get('image') as File;
+    const imageUrl = formData.get('imageUrl') as string;
     const services = formData.getAll('services') as string[];
     const languages = formData.getAll('languages') as Languages[];
     const email = formData.get('email') as string;
     const whatsapp = formData.get('whatsapp') as string;
     const website = (formData.get('website') as string) || null;
-
-    // Handle image upload
-    const imageUrl = imageFile ? (await uploadToBlob(imageFile, userId)).url : undefined;
-
-    if (imageFile && !imageUrl) {
-      return { success: false, error: 'Failed to upload image' };
-    }
 
     // Process requirements first if any were submitted
     const requirementSubmissions = [];
@@ -78,7 +70,11 @@ export async function registerServiceProvider(prevState: any, formData: FormData
             let documentMetadata: { value: string } | undefined;
 
             if (req.documentFile && req.documentFile.size > 0) {
-              const uploadResult = await uploadToBlob(req.documentFile, userId);
+              const uploadResult = await uploadToBlob(
+                req.documentFile,
+                userId,
+                'requirement-documents'
+              );
               if (uploadResult.success) {
                 documentUrl = uploadResult.url || null;
               }

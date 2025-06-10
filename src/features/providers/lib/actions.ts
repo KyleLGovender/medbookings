@@ -22,7 +22,9 @@ export async function registerServiceProvider(prevState: any, formData: FormData
     const website = (formData.get('website') as string) || null;
 
     // Handle image upload
-    const imageUrl = imageFile ? (await uploadToBlob(imageFile, userId)).url : undefined;
+    const imageUrl = imageFile
+      ? (await uploadToBlob(imageFile, userId, 'provider-images')).url
+      : undefined;
 
     if (imageFile && !imageUrl) {
       return { success: false, error: 'Failed to upload image' };
@@ -239,7 +241,7 @@ export async function updateServiceProvider(prevState: any, formData: FormData) 
     let imageUrl: string | undefined;
 
     if (imageFile && imageFile.size > 0) {
-      const uploadResult = await uploadToBlob(imageFile, userId);
+      const uploadResult = await uploadToBlob(imageFile, userId, 'provider-images');
       if (!uploadResult.success) {
         return { success: false, error: 'Failed to upload image' };
       }

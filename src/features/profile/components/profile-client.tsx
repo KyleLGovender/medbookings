@@ -89,7 +89,7 @@ export function ProfileClient({
                         <Button variant="outline">Provider View</Button>
                       </Link>
                     ) : (
-                      <Link href="/providers/register" passHref>
+                      <Link href="/providers/new" passHref>
                         <Button variant="outline">Register Provider</Button>
                       </Link>
                     )}

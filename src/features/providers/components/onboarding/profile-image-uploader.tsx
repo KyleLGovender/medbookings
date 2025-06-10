@@ -4,6 +4,7 @@ import type React from 'react';
 import { useRef, useState } from 'react';
 
 import { Camera, Upload, X } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ export function ProfileImageUploader({ onImageChange, currentImage }: ProfileIma
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImage || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { data: session } = useSession();
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -47,15 +49,40 @@ export function ProfileImageUploader({ onImageChange, currentImage }: ProfileIma
     setIsUploading(true);
 
     try {
-      // Create preview URL
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+      // Create a local preview URL for immediate feedback
+      const localPreviewUrl = URL.createObjectURL(file);
+      setPreviewUrl(localPreviewUrl);
 
-      // In a real app, you would upload to S3 here
-      // For now, we'll simulate the upload
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Prepare form data for upload
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('userId', session?.user?.id || 'unknown-user');
+      formData.append('directory', 'provider-images');
 
-      onImageChange(url);
+      // Upload the file to the server
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const result = await response.json();
+
+      if (!result.success || !result.url) {
+        throw new Error(result.error || 'Failed to upload image');
+      }
+
+      // Pass the actual server URL to the parent component
+      onImageChange(result.url);
+
+      // Clean up the local object URL to prevent memory leaks
+      URL.revokeObjectURL(localPreviewUrl);
+
+      // Update the preview with the actual server URL
+      setPreviewUrl(result.url);
 
       toast({
         title: 'Image uploaded',
@@ -64,9 +91,13 @@ export function ProfileImageUploader({ onImageChange, currentImage }: ProfileIma
     } catch (error) {
       toast({
         title: 'Upload failed',
-        description: 'Failed to upload image. Please try again.',
+        description:
+          error instanceof Error ? error.message : 'Failed to upload image. Please try again.',
         variant: 'destructive',
       });
+
+      // Reset the preview if upload failed
+      setPreviewUrl(currentImage || null);
     } finally {
       setIsUploading(false);
     }

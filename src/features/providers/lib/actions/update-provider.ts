@@ -87,7 +87,7 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
     let imageUrl: string | undefined;
 
     if (imageFile && imageFile.size > 0) {
-      const uploadResult = await uploadToBlob(imageFile, userId);
+      const uploadResult = await uploadToBlob(imageFile, userId, 'provider-images');
       if (!uploadResult.success) {
         return { success: false, error: 'Failed to upload image' };
       }

@@ -7,6 +7,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const userId = formData.get('userId') as string;
+    const directory = (formData.get('directory') as string) || 'profile-images';
 
     if (!file) {
       return NextResponse.json({ success: false, error: 'No file provided' }, { status: 400 });
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'User ID is required' }, { status: 400 });
     }
 
-    const result = await uploadToBlob(file, userId);
+    const result = await uploadToBlob(file, userId, directory);
 
     if (!result.success) {
       return NextResponse.json({ success: false, error: result.error }, { status: 500 });
