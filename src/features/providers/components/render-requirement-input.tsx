@@ -125,6 +125,7 @@ export const renderRequirementInput = (
             )}
           <DocumentUploader
             acceptedFormats={acceptedFileTypes}
+            purpose={requirement.name || `requirement-${requirement.index}`}
             onUpload={(fileUrl) => {
               // Only trigger validation when needed
               const shouldValidate = false;

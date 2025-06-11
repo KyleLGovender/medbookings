@@ -16,6 +16,7 @@ interface DocumentUploaderProps {
   acceptedFormats?: string[];
   currentFileUrl?: string | null;
   directory?: string;
+  purpose: string; // Required parameter for file naming
 }
 
 export function DocumentUploader({
@@ -23,6 +24,7 @@ export function DocumentUploader({
   acceptedFormats = ['.pdf', '.jpg', '.png'],
   currentFileUrl,
   directory = 'documents',
+  purpose,
 }: DocumentUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -104,6 +106,7 @@ export function DocumentUploader({
       formData.append('file', file);
       formData.append('userId', session?.user?.id || 'anonymous');
       formData.append('directory', directory);
+      formData.append('purpose', purpose); // Add the purpose parameter
 
       // Upload the file using our API route that uses the uploadToBlob server action
       const response = await fetch('/api/upload', {

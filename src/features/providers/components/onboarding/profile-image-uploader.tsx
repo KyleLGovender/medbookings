@@ -63,6 +63,7 @@ export function ProfileImageUploader({ onImageChange, currentImage }: ProfileIma
       formData.append('file', file);
       formData.append('userId', session?.user?.id || 'unknown-user');
       formData.append('directory', 'provider-images');
+      formData.append('purpose', 'profile-image'); // Add the purpose parameter
 
       // Upload the file to the server
       const response = await fetch('/api/upload', {
