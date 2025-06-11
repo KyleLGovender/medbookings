@@ -3,7 +3,7 @@
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 
-import { CheckCircle, Upload, X } from 'lucide-react';
+import { CheckCircle, ExternalLink, Upload, X } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 
 import { Button } from '@/components/ui/button';
@@ -41,12 +41,65 @@ export function DocumentUploader({
   const { toast } = useToast();
   const { data: session } = useSession();
 
+  // Extract filename from URL
+  const extractFilenameFromUrl = (url: string): string => {
+    try {
+      // Get the last part of the URL path (after the last slash)
+      const urlPath = new URL(url).pathname;
+      const lastSegment = decodeURIComponent(urlPath.split('/').pop() || '');
+
+      // Log for debugging
+      console.log('Extracted URL segment:', lastSegment);
+
+      // Check if using our new naming convention with -|- separators
+      if (lastSegment.includes('-|-')) {
+        // Split by the -|- separator
+        const parts = lastSegment.split('-|-');
+        console.log('Parts after -|- split:', parts);
+
+        // The last part after the last -|- separator is the original filename
+        if (parts.length >= 4) {
+          return decodeURIComponent(parts[3]); // Original filename is the 4th part (index 3)
+        }
+      }
+      // Check for older naming convention (uuid-purpose-datetime-originalfilename)
+      else {
+        // Handle URL-encoded filenames with % characters
+        if (lastSegment.includes('%20') || lastSegment.includes('%')) {
+          // This might be a URL-encoded filename
+          // Try to extract a meaningful name from it
+          const cleanedName = lastSegment.replace(/^[\w-]+-[\w-]+-[\d-]+-(.*)/i, '$1');
+          if (cleanedName && cleanedName !== lastSegment) {
+            return decodeURIComponent(cleanedName);
+          }
+        }
+
+        const parts = lastSegment.split('-');
+        console.log('Parts after hyphen split:', parts);
+
+        if (parts.length >= 4) {
+          // The original filename might contain hyphens, so join all parts from the 4th onwards
+          return decodeURIComponent(parts.slice(3).join('-'));
+        }
+      }
+
+      // Fallback to the full last segment if we can't parse it
+      return decodeURIComponent(lastSegment);
+    } catch (e) {
+      console.error('Error extracting filename:', e);
+      // If URL parsing fails, return a generic name
+      return 'Existing document';
+    }
+  };
+
   // Initialize with currentFileUrl on first render only
   useEffect(() => {
     if (firstRenderRef.current && currentFileUrl) {
-      // Create a placeholder file object with the URL
+      // Create a file object with the URL and extracted filename
+      const filename = extractFilenameFromUrl(currentFileUrl);
+
       setUploadedFile({
-        name: 'Existing document',
+        name: filename,
         size: 0,
         type: '',
         url: currentFileUrl,
@@ -85,6 +138,12 @@ export function DocumentUploader({
 
   const handleFileUpload = async (file: File) => {
     if (!validateFile(file)) return;
+
+    // Prevent any form submission that might be triggered
+    if (window.event) {
+      window.event.preventDefault?.();
+      window.event.stopPropagation?.();
+    }
 
     setIsUploading(true);
     setUploadProgress(0);
@@ -174,6 +233,14 @@ export function DocumentUploader({
     e.stopPropagation();
     setDragActive(false);
 
+    // Prevent any potential form submission
+    if (e.target instanceof HTMLElement) {
+      const form = e.target.closest('form');
+      if (form) {
+        e.preventDefault();
+      }
+    }
+
     const files = e.dataTransfer.files;
     if (files && files[0]) {
       handleFileUpload(files[0]);
@@ -181,6 +248,10 @@ export function DocumentUploader({
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Prevent default form behavior
+    e.preventDefault();
+    e.stopPropagation();
+
     const files = e.target.files;
     if (files && files[0]) {
       handleFileUpload(files[0]);
@@ -209,11 +280,29 @@ export function DocumentUploader({
               <div className="rounded-lg bg-green-100 p-2">
                 <CheckCircle className="h-5 w-5 text-green-600" />
               </div>
-              <div>
-                <p className="font-medium">{uploadedFile.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+              <div className="max-w-[200px] sm:max-w-[300px]">
+                <p className="truncate font-medium" title={uploadedFile.name}>
+                  {uploadedFile.name}
                 </p>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  {uploadedFile.size > 0 ? (
+                    `${(uploadedFile.size / 1024 / 1024).toFixed(2)} MB`
+                  ) : (
+                    <>
+                      <span className="text-xs">Document uploaded</span>
+                      <a
+                        href={uploadedFile.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center text-xs text-primary hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        View
+                        <ExternalLink className="ml-1 h-3 w-3" />
+                      </a>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
             <Button
@@ -254,7 +343,13 @@ export function DocumentUploader({
           </div>
           <Button
             variant="outline"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={(e) => {
+              // Prevent button click from submitting the form
+              e.preventDefault();
+              e.stopPropagation();
+              fileInputRef.current?.click();
+            }}
+            type="button" // Explicitly set type to button to prevent form submission
             disabled={isUploading}
           >
             Select File

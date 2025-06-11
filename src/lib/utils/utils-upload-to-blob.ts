@@ -24,14 +24,14 @@ export async function uploadToBlob(
     const now = new Date();
     const datetime = now.toISOString().replace(/[-:]/g, '').replace(/\..+/, '').replace('T', '-');
 
-    // Sanitize purpose string (remove spaces, special chars)
-    const sanitizedPurpose = purpose.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    // Sanitize purpose string (only remove problematic characters for URLs)
+    const sanitizedPurpose = purpose.toLowerCase().replace(/[<>:"/\\|?*]/g, '-');
 
-    // Sanitize original filename (remove spaces, special chars)
-    const originalFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '-');
+    // Sanitize original filename (only remove problematic characters for URLs)
+    const originalFilename = file.name.replace(/[<>:"/\\|?*]/g, '-');
 
-    // Create the unique filename with the new convention
-    const uniqueFilename = `${uuid}-${sanitizedPurpose}-${datetime}-${originalFilename}`;
+    // Create the unique filename with the new convention using -|- as separators
+    const uniqueFilename = `${uuid}-|-${sanitizedPurpose}-|-${datetime}-|-${originalFilename}`;
 
     const blob = await put(`${directory}/${uniqueFilename}`, file, {
       access: 'public',
