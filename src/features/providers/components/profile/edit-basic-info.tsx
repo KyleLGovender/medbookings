@@ -28,6 +28,7 @@ import { useProviderTypes } from '@/features/providers/hooks/use-provider-types'
 import { useUpdateProviderBasicInfo } from '@/features/providers/hooks/use-provider-updates';
 import { SUPPORTED_LANGUAGES, basicInfoSchema } from '@/features/providers/types/types';
 import { useToast } from '@/hooks/use-toast';
+import { providerDebug } from '@/lib/debug';
 
 interface EditBasicInfoProps {
   providerId: string;
@@ -134,7 +135,9 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
 
   const handleProfileImageChange = (imageUrl: string | null) => {
     setProfileImage(imageUrl);
-    methods.setValue('image', imageUrl || '');
+    // If imageUrl is null, set to 'placeholder' instead of empty string
+    // This prevents sending empty strings that would clear the existing image
+    methods.setValue('image', imageUrl || 'placeholder');
   };
 
   const addLanguage = (language: string) => {
@@ -153,6 +156,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
 
   const onSubmit = async (data: Record<string, any>) => {
     if (!provider) {
+      providerDebug.error('editBasicInfo', 'No provider data available');
       return;
     }
 
@@ -165,6 +169,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
 
     // Add form fields
     formData.append('name', data.name);
+    formData.append('image', data.image);
     formData.append('bio', data.bio);
     formData.append('email', data.email);
     formData.append('whatsapp', data.whatsapp);
@@ -180,12 +185,24 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
       formData.append('languages', lang);
     });
 
-    // Add image if it exists and has changed
-    if (data.image instanceof File && data.image.size > 0) {
-      formData.append('image', data.image);
-    }
+    // // Add image URL if it exists and has changed
+    // if (typeof data.image === 'string' && data.image !== 'placeholder') {
+    //   if (data.image === '') {
+    //     // Don't send empty strings that would clear the existing image
+    //     providerDebug.log('editBasicInfo', 'Empty image string detected, not sending');
+    //   } else if (data.image !== profileImage) {
+    //     // Only send if the image URL has actually changed
+    //     providerDebug.log('editBasicInfo', 'Adding image URL:', data.image);
+    //     formData.append('image', data.image);
+    //   } else {
+    //     providerDebug.log('editBasicInfo', 'Image URL unchanged, not sending');
+    //   }
+    // } else {
+    //   providerDebug.log('editBasicInfo', 'No valid image URL to send');
+    // }
 
-    // Submit the form using our custom mutation hook
+    providerDebug.log('editBasicInfo', 'Form data:', { formData });
+
     mutate(formData);
   };
 

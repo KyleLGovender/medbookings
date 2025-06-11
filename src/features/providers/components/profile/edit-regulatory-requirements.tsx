@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-// Types and schemas
 import { RequirementsValidationStatus } from '@prisma/client';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -16,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 // Toast notifications
 import { useToast } from '@/hooks/use-toast';
+import { providerDebug } from '@/lib/debug';
 
 // API hooks
 import { useProvider } from '../../hooks/use-provider';
@@ -23,7 +23,7 @@ import {
   useProviderRequirementTypes,
   useUpdateProviderRequirements,
 } from '../../hooks/use-provider-requirements';
-import { regulatoryRequirementsSchema } from '../../types/types';
+import { RequirementType, regulatoryRequirementsSchema } from '../../types/types';
 // Helper function to render the appropriate input for each requirement type
 import { renderRequirementInput } from '../render-requirement-input';
 
@@ -52,7 +52,11 @@ export function EditRegulatoryRequirements({
     data: requirementTypes,
     isLoading: isRequirementsLoading,
     error: requirementsError,
-  } = useProviderRequirementTypes(providerId);
+  } = useProviderRequirementTypes(providerId) as {
+    data: RequirementType[];
+    isLoading: boolean;
+    error: Error | null;
+  };
 
   // Set up form with default values
   const methods = useForm<RegulatoryRequirementsFormValues>({
@@ -118,27 +122,40 @@ export function EditRegulatoryRequirements({
   const onSubmit = async (data: RegulatoryRequirementsFormValues) => {
     if (!provider) return;
 
+    providerDebug.log('editRegulatoryRequirements', 'Starting submission with data:', data);
+
     try {
       // Create FormData object for the API
       const formData = new FormData();
       formData.append('id', providerId);
       formData.append('userId', userId);
+      providerDebug.log('editRegulatoryRequirements', 'Provider ID:', providerId);
+      providerDebug.log('editRegulatoryRequirements', 'User ID:', userId);
 
       // Process each requirement
       const requirementsData = data.requirements || [];
+      providerDebug.log(
+        'editRegulatoryRequirements',
+        'Processing requirements data:',
+        requirementsData
+      );
 
       requirementsData.forEach((req, index) => {
         if (req) {
+          providerDebug.log('editRegulatoryRequirements', `Processing requirement ${index}:`, req);
           formData.append(`requirements[${index}][requirementTypeId]`, req.requirementTypeId);
 
-          // Handle document files
-          if (req.documentFile) {
-            formData.append(`requirements[${index}][documentFile]`, req.documentFile);
-          }
-
-          // Handle text/boolean values
+          // Handle text/boolean/document URL values
           if (req.value !== undefined && req.value !== null) {
             formData.append(`requirements[${index}][value]`, req.value.toString());
+          }
+
+          // Handle document metadata if present
+          if (req.documentMetadata) {
+            formData.append(
+              `requirements[${index}][documentMetadata]`,
+              JSON.stringify(req.documentMetadata)
+            );
           }
 
           // Handle other values for predefined lists
@@ -148,9 +165,16 @@ export function EditRegulatoryRequirements({
         }
       });
 
+      // Log FormData entries before submission
+      providerDebug.log('editRegulatoryRequirements', 'FormData entries:');
+      // Use Array.from to convert FormData entries to an array for iteration
+      providerDebug.logFormData('editRegulatoryRequirements', formData);
+
       // Trigger the mutation
+      providerDebug.log('editRegulatoryRequirements', 'Triggering mutation...');
       mutation.mutate(formData, {
         onSuccess: (data) => {
+          providerDebug.log('editRegulatoryRequirements', 'Mutation successful:', data);
           toast({
             title: 'Success',
             description: 'Regulatory requirements updated successfully.',
@@ -165,6 +189,12 @@ export function EditRegulatoryRequirements({
           router.refresh();
         },
         onError: (error) => {
+          providerDebug.error('editRegulatoryRequirements', 'Mutation error:', error);
+          providerDebug.log('editRegulatoryRequirements', 'Error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          });
           toast({
             title: 'Error',
             description: error instanceof Error ? error.message : 'Failed to update requirements',
@@ -173,7 +203,7 @@ export function EditRegulatoryRequirements({
         },
       });
     } catch (error) {
-      console.error('Failed to update requirements:', error);
+      providerDebug.error('editRegulatoryRequirements', 'Failed to update requirements:', error);
       toast({
         title: 'Error',
         description: 'Failed to update regulatory requirements. Please try again.',
@@ -247,7 +277,7 @@ export function EditRegulatoryRequirements({
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {requirementTypes.map((requirement, index) => {
+                  {requirementTypes.map((requirement: RequirementType, index) => {
                     // Find existing submission for this requirement
                     const existingSubmission = provider.requirementSubmissions?.find(
                       (sub) => sub.requirementTypeId === requirement.id

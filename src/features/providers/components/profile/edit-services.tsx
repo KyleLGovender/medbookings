@@ -21,6 +21,7 @@ import {
   useUpdateProviderServices,
 } from '@/features/providers/hooks/use-provider-services';
 import { useToast } from '@/hooks/use-toast';
+import { providerDebug } from '@/lib/debug';
 
 const servicesSchema = z.object({
   services: z.array(z.string()).min(1, 'Please select at least one service'),
@@ -154,26 +155,41 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
   });
 
   const onSubmit = async (data: ServicesFormValues) => {
-    if (!provider) return;
+    providerDebug.log('editServices', 'Starting form submission');
+    if (!provider) {
+      providerDebug.error('editServices', 'No provider data available');
+      return;
+    }
 
     // Create FormData object for the API
     const formData = new FormData();
     formData.append('id', provider.id);
     formData.append('userId', provider.userId);
+    providerDebug.log('editServices', 'Provider ID:', provider.id);
+    providerDebug.log('editServices', 'User ID:', provider.userId);
 
     // Append services
+    providerDebug.log('editServices', 'Selected services:', data.services);
     data.services.forEach((serviceId) => {
       formData.append('services', serviceId);
     });
 
     // Append service configurations
     const serviceConfigs = methods.getValues('serviceConfigs') || {};
+    providerDebug.log('editServices', 'Service configurations:', serviceConfigs);
     Object.entries(serviceConfigs).forEach(([serviceId, config]) => {
       formData.append(`serviceConfigs[${serviceId}][duration]`, config.duration.toString());
       formData.append(`serviceConfigs[${serviceId}][price]`, config.price.toString());
     });
 
+    // Log all form entries for debugging
+    providerDebug.log('editServices', 'Final FormData entries:');
+    Array.from(formData.entries()).forEach(([key, value]) => {
+      providerDebug.log('editServices', `${key}: ${value}`);
+    });
+
     // Trigger the mutation
+    providerDebug.log('editServices', 'Submitting form data...');
     mutation.mutate(formData);
   };
 

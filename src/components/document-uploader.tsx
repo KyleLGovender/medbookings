@@ -48,14 +48,10 @@ export function DocumentUploader({
       const urlPath = new URL(url).pathname;
       const lastSegment = decodeURIComponent(urlPath.split('/').pop() || '');
 
-      // Log for debugging
-      console.log('Extracted URL segment:', lastSegment);
-
       // Check if using our new naming convention with -|- separators
       if (lastSegment.includes('-|-')) {
         // Split by the -|- separator
         const parts = lastSegment.split('-|-');
-        console.log('Parts after -|- split:', parts);
 
         // The last part after the last -|- separator is the original filename
         if (parts.length >= 4) {
@@ -75,7 +71,6 @@ export function DocumentUploader({
         }
 
         const parts = lastSegment.split('-');
-        console.log('Parts after hyphen split:', parts);
 
         if (parts.length >= 4) {
           // The original filename might contain hyphens, so join all parts from the 4th onwards
@@ -86,7 +81,6 @@ export function DocumentUploader({
       // Fallback to the full last segment if we can't parse it
       return decodeURIComponent(lastSegment);
     } catch (e) {
-      console.error('Error extracting filename:', e);
       // If URL parsing fails, return a generic name
       return 'Existing document';
     }
