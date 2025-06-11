@@ -4,14 +4,11 @@ import { getServerSession } from 'next-auth';
 
 import { updateProviderRequirements } from '@/features/providers/lib/actions/update-provider';
 import { authOptions } from '@/lib/auth';
-import { providerDebug } from '@/lib/debug';
 
 /**
  * PUT handler for updating provider regulatory requirements
  */
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
-  providerDebug.log('api', 'PUT /api/providers/[id]/requirements - Starting request processing');
-  providerDebug.log('api', 'Provider ID:', params.id);
   try {
     // Check authentication
     const session = await getServerSession(authOptions);

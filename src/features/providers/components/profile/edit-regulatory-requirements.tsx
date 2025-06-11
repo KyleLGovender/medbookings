@@ -23,9 +23,23 @@ import {
   useProviderRequirementTypes,
   useUpdateProviderRequirements,
 } from '../../hooks/use-provider-requirements';
-import { RequirementType, regulatoryRequirementsSchema } from '../../types/types';
-// Helper function to render the appropriate input for each requirement type
+import { RequirementType } from '../../types/types';
 import { renderRequirementInput } from '../render-requirement-input';
+
+export const regulatoryRequirementsSchema = z.object({
+  regulatoryRequirements: z.object({
+    requirements: z
+      .array(
+        z.object({
+          requirementTypeId: z.string(),
+          value: z.any().optional(),
+          documentMetadata: z.record(z.any()).optional(), // For storing document URLs and other metadata
+          otherValue: z.string().optional(),
+        })
+      )
+      .min(1, 'Please complete all required regulatory requirements'),
+  }),
+});
 
 type RegulatoryRequirementsFormValues = z.infer<typeof regulatoryRequirementsSchema>;
 
@@ -62,7 +76,9 @@ export function EditRegulatoryRequirements({
   const methods = useForm<RegulatoryRequirementsFormValues>({
     resolver: zodResolver(regulatoryRequirementsSchema),
     defaultValues: {
-      requirements: [],
+      regulatoryRequirements: {
+        requirements: [],
+      },
     },
     mode: 'onBlur',
   });
@@ -108,7 +124,9 @@ export function EditRegulatoryRequirements({
 
     // Reset the form with the merged data
     methods.reset({
-      requirements: requirementsData,
+      regulatoryRequirements: {
+        requirements: requirementsData,
+      },
     });
   }, [provider, requirementTypes, methods]);
 
@@ -122,40 +140,36 @@ export function EditRegulatoryRequirements({
   const onSubmit = async (data: RegulatoryRequirementsFormValues) => {
     if (!provider) return;
 
-    providerDebug.log('editRegulatoryRequirements', 'Starting submission with data:', data);
-
     try {
       // Create FormData object for the API
       const formData = new FormData();
       formData.append('id', providerId);
       formData.append('userId', userId);
-      providerDebug.log('editRegulatoryRequirements', 'Provider ID:', providerId);
-      providerDebug.log('editRegulatoryRequirements', 'User ID:', userId);
 
       // Process each requirement
-      const requirementsData = data.requirements || [];
-      providerDebug.log(
-        'editRegulatoryRequirements',
-        'Processing requirements data:',
-        requirementsData
-      );
+      const requirementsData = data.regulatoryRequirements?.requirements || [];
 
       requirementsData.forEach((req, index) => {
         if (req) {
-          providerDebug.log('editRegulatoryRequirements', `Processing requirement ${index}:`, req);
           formData.append(`requirements[${index}][requirementTypeId]`, req.requirementTypeId);
 
-          // Handle text/boolean/document URL values
-          if (req.value !== undefined && req.value !== null) {
-            formData.append(`requirements[${index}][value]`, req.value.toString());
-          }
-
-          // Handle document metadata if present
-          if (req.documentMetadata) {
+          // For document type requirements, prioritize using the value as documentMetadata
+          if (
+            req.value !== undefined &&
+            req.value !== null &&
+            typeof req.value === 'string' &&
+            (req.value.startsWith('http://') || req.value.startsWith('https://'))
+          ) {
+            // This is likely a document URL, so create proper document metadata
             formData.append(
               `requirements[${index}][documentMetadata]`,
-              JSON.stringify(req.documentMetadata)
+              JSON.stringify({ value: req.value })
             );
+            formData.append(`requirements[${index}][value]`, req.value.toString());
+          }
+          // Handle regular text/boolean values
+          else if (req.value !== undefined && req.value !== null) {
+            formData.append(`requirements[${index}][value]`, req.value.toString());
           }
 
           // Handle other values for predefined lists
@@ -165,16 +179,9 @@ export function EditRegulatoryRequirements({
         }
       });
 
-      // Log FormData entries before submission
-      providerDebug.log('editRegulatoryRequirements', 'FormData entries:');
-      // Use Array.from to convert FormData entries to an array for iteration
       providerDebug.logFormData('editRegulatoryRequirements', formData);
-
-      // Trigger the mutation
-      providerDebug.log('editRegulatoryRequirements', 'Triggering mutation...');
       mutation.mutate(formData, {
         onSuccess: (data) => {
-          providerDebug.log('editRegulatoryRequirements', 'Mutation successful:', data);
           toast({
             title: 'Success',
             description: 'Regulatory requirements updated successfully.',
@@ -189,12 +196,6 @@ export function EditRegulatoryRequirements({
           router.refresh();
         },
         onError: (error) => {
-          providerDebug.error('editRegulatoryRequirements', 'Mutation error:', error);
-          providerDebug.log('editRegulatoryRequirements', 'Error details:', {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-          });
           toast({
             title: 'Error',
             description: error instanceof Error ? error.message : 'Failed to update requirements',
@@ -203,21 +204,12 @@ export function EditRegulatoryRequirements({
         },
       });
     } catch (error) {
-      providerDebug.error('editRegulatoryRequirements', 'Failed to update requirements:', error);
       toast({
         title: 'Error',
         description: 'Failed to update regulatory requirements. Please try again.',
         variant: 'destructive',
       });
     }
-  };
-
-  // Helper type for displaying validation status
-  type ExtendedRequirementSubmission = {
-    documentMetadata?: Record<string, any> | null;
-    validationStatus?: RequirementsValidationStatus;
-    validationMessage?: string | null;
-    value?: string | boolean | number | null;
   };
 
   const renderValidationStatus = (status?: RequirementsValidationStatus) => {
@@ -284,8 +276,9 @@ export function EditRegulatoryRequirements({
                     );
 
                     // Get the field name for this requirement
-                    const fieldName = `requirements.${index}`;
-                    const fieldError = methods.formState.errors?.requirements?.[index];
+                    const fieldName = `regulatoryRequirements.requirements.${index}`;
+                    const fieldError =
+                      methods.formState.errors?.regulatoryRequirements?.requirements?.[index];
 
                     return (
                       <div key={requirement.id} className="rounded-md border p-4">
@@ -317,8 +310,6 @@ export function EditRegulatoryRequirements({
                             errors: methods.formState.errors,
                             fieldName,
                             existingValue: existingSubmission?.documentMetadata?.value,
-                            existingDocumentUrl:
-                              existingSubmission?.documentMetadata?.value ?? undefined,
                           })}
                           {fieldError && (
                             <p className="mt-1 text-xs text-red-500">

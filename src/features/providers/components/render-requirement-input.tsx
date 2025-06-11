@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { RequirementType, RequirementValidationType } from '@/features/providers/types/types';
+import { extractFilenameFromUrl } from '@/lib/utils/document-utils';
 
 // Define a specific type for our form structure to match how we're accessing requirements
 interface RequirementForm {
@@ -37,7 +38,6 @@ export const renderRequirementInput = (
     errors: any;
     fieldName?: string;
     existingValue?: any;
-    existingDocumentUrl?: string;
   }
 ) => {
   // Set the requirement ID directly
@@ -101,7 +101,9 @@ export const renderRequirementInput = (
                     <FileIcon className="h-5 w-5 text-primary" />
                     <div>
                       <p className="font-medium">
-                        {requirement.existingSubmission.documentMetadata.value
+                        {extractFilenameFromUrl(
+                          requirement.existingSubmission.documentMetadata.value
+                        )
                           .split('/')
                           .pop()
                           ?.split('?')[0] || 'Document'}
@@ -155,11 +157,6 @@ export const renderRequirementInput = (
                 );
               }
             }}
-            currentFileUrl={
-              form.watch(
-                `regulatoryRequirements.requirements.${requirement.index}.documentMetadata`
-              )?.value || null
-            }
           />
           {renderError()}
         </div>
@@ -171,7 +168,7 @@ export const renderRequirementInput = (
           id={inputId}
           required={requirement.isRequired}
           type="text"
-          {...form.register(`requirements.${form.fieldName?.split('.')[1]}.value`, {
+          {...form.register(`regulatoryRequirements.requirements.${requirement.index}.value`, {
             value: form.existingValue || '',
           })}
           className={error ? 'border-destructive' : ''}

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { Languages } from '@prisma/client';
+import { Languages, RequirementsValidationStatus } from '@prisma/client';
 
 import { serializeServiceProvider } from '@/features/providers/lib/helper';
 import { sendServiceProviderWhatsappConfirmation } from '@/features/providers/lib/server-helper';
@@ -253,6 +253,190 @@ export async function updateProviderServices(prevState: any, formData: FormData)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update services',
+    };
+  }
+}
+
+/**
+ * Updates a provider's regulatory requirements
+ * @param prevState Previous state (for server actions)
+ * @param formData Form data containing requirement submissions
+ * @returns Result object with success status and data
+ */
+export async function updateProviderRequirements(prevState: any, formData: FormData) {
+  try {
+    const id = formData.get('id') as string;
+    const userId = formData.get('userId') as string;
+
+    if (!id) {
+      return { success: false, error: 'Service provider ID is required' };
+    }
+
+    // Get current provider data
+    const currentProvider = await prisma.serviceProvider.findUnique({
+      where: { id },
+      include: {
+        requirementSubmissions: true,
+      },
+    });
+
+    providerDebug.log('action', 'Current provider:', currentProvider);
+    providerDebug.log('action', 'formData:', formData);
+
+    if (!currentProvider) {
+      return { success: false, error: 'Service provider not found' };
+    }
+
+    // Check authorization
+    if (currentProvider.userId !== userId) {
+      return { success: false, error: 'Unauthorized to update this provider' };
+    }
+
+    // Extract requirements data from form
+    const requirementsData: Array<{
+      requirementTypeId: string;
+      value?: string | boolean | number;
+      documentMetadata?: Record<string, any>;
+      otherValue?: string;
+    }> = [];
+
+    // Process all form entries to find requirements data
+    Array.from(formData.entries()).forEach(([key, value]) => {
+      // Match keys like requirements[0][requirementTypeId]
+      const reqIdMatch = key.match(/requirements\[(\d+)\]\[requirementTypeId\]/);
+      if (reqIdMatch) {
+        const index = parseInt(reqIdMatch[1], 10);
+        const requirementTypeId = value as string;
+
+        if (!requirementsData[index]) {
+          requirementsData[index] = { requirementTypeId };
+        } else {
+          requirementsData[index].requirementTypeId = requirementTypeId;
+        }
+      }
+
+      // Match keys like requirements[0][value]
+      const valueMatch = key.match(/requirements\[(\d+)\]\[value\]/);
+      if (valueMatch) {
+        const index = parseInt(valueMatch[1], 10);
+        if (!requirementsData[index]) {
+          requirementsData[index] = { requirementTypeId: '' };
+        }
+        requirementsData[index].value = value as string;
+      }
+
+      // Match keys like requirements[0][documentMetadata]
+      const metadataMatch = key.match(/requirements\[(\d+)\]\[documentMetadata\]/);
+      if (metadataMatch) {
+        const index = parseInt(metadataMatch[1], 10);
+        if (!requirementsData[index]) {
+          requirementsData[index] = { requirementTypeId: '' };
+        }
+        try {
+          requirementsData[index].documentMetadata = JSON.parse(value as string);
+        } catch (e) {
+          // If parsing fails, store as string
+          requirementsData[index].documentMetadata = { value: value as string };
+        }
+      }
+
+      // Match keys like requirements[0][otherValue]
+      const otherValueMatch = key.match(/requirements\[(\d+)\]\[otherValue\]/);
+      if (otherValueMatch) {
+        const index = parseInt(otherValueMatch[1], 10);
+        if (!requirementsData[index]) {
+          requirementsData[index] = { requirementTypeId: '' };
+        }
+        requirementsData[index].otherValue = value as string;
+      }
+    });
+
+    // Filter out any empty entries
+    const validRequirements = requirementsData.filter(
+      (req) => req && req.requirementTypeId && (req.value !== undefined || req.documentMetadata)
+    );
+
+    // Process each requirement submission
+    for (const req of validRequirements) {
+      // Check if a submission already exists for this requirement type
+      const existingSubmission = currentProvider.requirementSubmissions.find(
+        (sub) => sub.requirementTypeId === req.requirementTypeId
+      );
+
+      // Prepare the document metadata
+      let documentMetadata = req.documentMetadata || {};
+      if (req.value !== undefined && !documentMetadata.value) {
+        documentMetadata.value = req.value;
+      }
+
+      if (existingSubmission) {
+        // Update existing submission
+        await prisma.requirementSubmission.update({
+          where: { id: existingSubmission.id },
+          data: {
+            documentMetadata,
+            // Reset to pending if the document was updated
+            status:
+              documentMetadata !== existingSubmission.documentMetadata
+                ? RequirementsValidationStatus.PENDING
+                : undefined,
+            notes: documentMetadata !== existingSubmission.documentMetadata ? null : undefined,
+          },
+        });
+      } else {
+        // Create new submission
+        await prisma.requirementSubmission.create({
+          data: {
+            requirementTypeId: req.requirementTypeId,
+            serviceProviderId: id,
+            documentMetadata,
+            status: RequirementsValidationStatus.PENDING,
+          },
+        });
+      }
+    }
+
+    // Revalidate paths to update UI
+    revalidatePath(`/providers/${id}`);
+    revalidatePath(`/providers/${id}/edit`);
+
+    // Get updated provider data
+    const updatedProvider = await prisma.serviceProvider.findUnique({
+      where: { id },
+      include: {
+        services: true,
+        user: {
+          select: {
+            email: true,
+          },
+        },
+        serviceProviderType: {
+          select: {
+            name: true,
+            description: true,
+          },
+        },
+        requirementSubmissions: {
+          include: {
+            requirementType: true,
+          },
+        },
+      },
+    });
+
+    if (!updatedProvider) {
+      return { success: false, error: 'Failed to retrieve updated provider data' };
+    }
+
+    return {
+      success: true,
+      data: serializeServiceProvider(updatedProvider),
+      redirect: `/providers/${id}/edit`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update requirements',
     };
   }
 }

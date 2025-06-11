@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { extractFilenameFromUrl } from '@/lib/utils/document-utils';
 
 interface DocumentUploaderProps {
   onUpload: (fileUrl: string | null) => void;
@@ -21,7 +22,7 @@ interface DocumentUploaderProps {
 
 export function DocumentUploader({
   onUpload,
-  acceptedFormats = ['.pdf', '.jpg', '.png'],
+  acceptedFormats = ['.pdf', '.jpg', '.png'], // Default to PDF, JPG, and PNG
   currentFileUrl,
   directory = 'documents',
   purpose,
@@ -40,51 +41,6 @@ export function DocumentUploader({
   const firstRenderRef = useRef(true);
   const { toast } = useToast();
   const { data: session } = useSession();
-
-  // Extract filename from URL
-  const extractFilenameFromUrl = (url: string): string => {
-    try {
-      // Get the last part of the URL path (after the last slash)
-      const urlPath = new URL(url).pathname;
-      const lastSegment = decodeURIComponent(urlPath.split('/').pop() || '');
-
-      // Check if using our new naming convention with -|- separators
-      if (lastSegment.includes('-|-')) {
-        // Split by the -|- separator
-        const parts = lastSegment.split('-|-');
-
-        // The last part after the last -|- separator is the original filename
-        if (parts.length >= 4) {
-          return decodeURIComponent(parts[3]); // Original filename is the 4th part (index 3)
-        }
-      }
-      // Check for older naming convention (uuid-purpose-datetime-originalfilename)
-      else {
-        // Handle URL-encoded filenames with % characters
-        if (lastSegment.includes('%20') || lastSegment.includes('%')) {
-          // This might be a URL-encoded filename
-          // Try to extract a meaningful name from it
-          const cleanedName = lastSegment.replace(/^[\w-]+-[\w-]+-[\d-]+-(.*)/i, '$1');
-          if (cleanedName && cleanedName !== lastSegment) {
-            return decodeURIComponent(cleanedName);
-          }
-        }
-
-        const parts = lastSegment.split('-');
-
-        if (parts.length >= 4) {
-          // The original filename might contain hyphens, so join all parts from the 4th onwards
-          return decodeURIComponent(parts.slice(3).join('-'));
-        }
-      }
-
-      // Fallback to the full last segment if we can't parse it
-      return decodeURIComponent(lastSegment);
-    } catch (e) {
-      // If URL parsing fails, return a generic name
-      return 'Existing document';
-    }
-  };
 
   // Initialize with currentFileUrl on first render only
   useEffect(() => {
