@@ -1,7 +1,7 @@
 'use client';
 
 import type React from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Camera, Upload, X } from 'lucide-react';
 import { useSession } from 'next-auth/react';
@@ -18,6 +18,11 @@ interface ProfileImageUploaderProps {
 export function ProfileImageUploader({ onImageChange, currentImage }: ProfileImageUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImage || null);
+
+  // Update previewUrl when currentImage prop changes
+  useEffect(() => {
+    setPreviewUrl(currentImage || null);
+  }, [currentImage]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { data: session } = useSession();

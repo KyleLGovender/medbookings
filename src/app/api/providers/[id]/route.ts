@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getServerSession } from 'next-auth';
 
-import { updateServiceProvider } from '@/features/providers/lib/actions';
 import { deleteServiceProvider } from '@/features/providers/lib/actions/delete-provider';
+import { updateProviderBasicInfo } from '@/features/providers/lib/actions/update-provider';
 import { serializeServiceProvider } from '@/features/providers/lib/helper';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -77,7 +77,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     formData.append('id', id);
 
     // Call the server action to update the provider
-    const result = await updateServiceProvider({}, formData);
+    const result = await updateProviderBasicInfo({}, formData);
 
     if (!result.success) {
       return NextResponse.json(

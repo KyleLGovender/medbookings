@@ -264,9 +264,11 @@ export function EditRegulatoryRequirements({
                             <h3 className="text-sm font-medium">
                               {requirement.name}
                               {requirement.isRequired && <span className="text-red-500">*</span>}
-                              {existingSubmission &&
-                                existingSubmission.status &&
-                                renderValidationStatus(existingSubmission.status)}
+                              {existingSubmission && existingSubmission.status && (
+                                <span className="ml-2">
+                                  {renderValidationStatus(existingSubmission.status)}
+                                </span>
+                              )}
                             </h3>
                           </div>
                         </div>

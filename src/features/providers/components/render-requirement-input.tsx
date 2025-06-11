@@ -164,18 +164,16 @@ export const renderRequirementInput = (
         </div>
       );
     case RequirementValidationType.TEXT:
+      // For TEXT type, we need to register with a default value
       return (
         <Input
           id={inputId}
           required={requirement.isRequired}
           type="text"
-          {...form.register(`regulatoryRequirements.requirements.${requirement.index}.value`)}
+          {...form.register(`requirements.${form.fieldName?.split('.')[1]}.value`, {
+            value: form.existingValue || '',
+          })}
           className={error ? 'border-destructive' : ''}
-          defaultValue={
-            requirement.existingSubmission?.documentMetadata?.value ||
-            requirement.existingSubmission?.documentUrl ||
-            ''
-          }
         />
       );
     case RequirementValidationType.FUTURE_DATE:
