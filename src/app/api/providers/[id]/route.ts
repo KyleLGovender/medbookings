@@ -6,6 +6,7 @@ import { deleteServiceProvider } from '@/features/providers/lib/actions/delete-p
 import { updateProviderBasicInfo } from '@/features/providers/lib/actions/update-provider';
 import { serializeServiceProvider } from '@/features/providers/lib/helper';
 import { authOptions } from '@/lib/auth';
+import { providerDebug } from '@/lib/debug';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
@@ -75,6 +76,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     // Add the ID to the form data
     formData.append('id', id);
+
+    providerDebug.logFormData('editServices', formData);
 
     // Call the server action to update the provider
     const result = await updateProviderBasicInfo({}, formData);

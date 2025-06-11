@@ -155,9 +155,7 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
   });
 
   const onSubmit = async (data: ServicesFormValues) => {
-    providerDebug.log('editServices', 'Starting form submission');
     if (!provider) {
-      providerDebug.error('editServices', 'No provider data available');
       return;
     }
 
@@ -165,31 +163,21 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
     const formData = new FormData();
     formData.append('id', provider.id);
     formData.append('userId', provider.userId);
-    providerDebug.log('editServices', 'Provider ID:', provider.id);
-    providerDebug.log('editServices', 'User ID:', provider.userId);
 
     // Append services
-    providerDebug.log('editServices', 'Selected services:', data.services);
     data.services.forEach((serviceId) => {
       formData.append('services', serviceId);
     });
 
     // Append service configurations
     const serviceConfigs = methods.getValues('serviceConfigs') || {};
-    providerDebug.log('editServices', 'Service configurations:', serviceConfigs);
     Object.entries(serviceConfigs).forEach(([serviceId, config]) => {
       formData.append(`serviceConfigs[${serviceId}][duration]`, config.duration.toString());
       formData.append(`serviceConfigs[${serviceId}][price]`, config.price.toString());
     });
 
-    // Log all form entries for debugging
-    providerDebug.log('editServices', 'Final FormData entries:');
-    Array.from(formData.entries()).forEach(([key, value]) => {
-      providerDebug.log('editServices', `${key}: ${value}`);
-    });
-
     // Trigger the mutation
-    providerDebug.log('editServices', 'Submitting form data...');
+    providerDebug.logFormData('editServices', formData);
     mutation.mutate(formData);
   };
 

@@ -133,3 +133,126 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
     };
   }
 }
+
+export async function updateProviderServices(prevState: any, formData: FormData) {
+  try {
+    const id = formData.get('id') as string;
+
+    if (!id) {
+      return { success: false, error: 'Service provider ID is required' };
+    }
+
+    // Extract service IDs
+    const serviceIds = formData.getAll('services') as string[];
+
+    // Extract service configurations
+    const serviceConfigs: Record<string, { duration: number; price: number }> = {};
+
+    // Process all form entries to find service configurations
+    Array.from(formData.entries()).forEach(([key, value]) => {
+      // Match keys like serviceConfigs[serviceId][duration] and serviceConfigs[serviceId][price]
+      const match = key.match(/serviceConfigs\[(.*?)\]\[(.*?)\]/);
+      if (match) {
+        const [, serviceId, field] = match;
+
+        if (!serviceConfigs[serviceId]) {
+          serviceConfigs[serviceId] = { duration: 0, price: 0 };
+        }
+
+        if (field === 'duration') {
+          serviceConfigs[serviceId].duration = parseInt(value as string, 10) || 0;
+        } else if (field === 'price') {
+          serviceConfigs[serviceId].price = parseInt(value as string, 10) || 0;
+        }
+      }
+    });
+
+    // Get current provider data
+    const currentProvider = await prisma.serviceProvider.findUnique({
+      where: { id },
+      include: {
+        services: true,
+      },
+    });
+
+    if (!currentProvider) {
+      return { success: false, error: 'Service provider not found' };
+    }
+
+    // Update the provider's services
+    // First, disconnect all existing services
+    await prisma.serviceProvider.update({
+      where: { id },
+      data: {
+        services: {
+          set: [], // Remove all existing connections
+        },
+      },
+    });
+
+    // Then connect the new services
+    await prisma.serviceProvider.update({
+      where: { id },
+      data: {
+        services: {
+          connect: serviceIds.map((serviceId) => ({ id: serviceId })),
+        },
+      },
+    });
+
+    // Update or create service configurations
+    for (const serviceId of serviceIds) {
+      if (serviceConfigs[serviceId]) {
+        const config = serviceConfigs[serviceId];
+
+        // Check if configuration already exists
+        const existingConfig = await prisma.serviceAvailabilityConfig.findUnique({
+          where: {
+            serviceId_serviceProviderId: {
+              serviceId,
+              serviceProviderId: id,
+            },
+          },
+        });
+
+        if (existingConfig) {
+          // Update existing configuration
+          await prisma.serviceAvailabilityConfig.update({
+            where: { id: existingConfig.id },
+            data: {
+              duration: config.duration,
+              price: config.price,
+            },
+          });
+        } else {
+          // Create new configuration
+          await prisma.serviceAvailabilityConfig.create({
+            data: {
+              serviceId,
+              serviceProviderId: id,
+              duration: config.duration,
+              price: config.price,
+              isOnlineAvailable: false,
+              isInPerson: true,
+            },
+          });
+        }
+      }
+    }
+
+    // Revalidate paths to update UI
+    revalidatePath(`/providers/${id}`);
+    revalidatePath(`/providers/${id}/edit`);
+
+    return {
+      success: true,
+      message: 'Services updated successfully',
+      redirect: `/providers/${id}/edit`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update services',
+    };
+  }
+}
