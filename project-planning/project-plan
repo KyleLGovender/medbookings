@@ -22,12 +22,12 @@
 - [x] Create provider registration flow
 - [x] Edit basic info provider profile
 - [x] Edit services in provider profile
-- [ ] Edit regulatory submission in provider profile
+- [x] Edit regulatory submission in provider profile
 - [x] Create a Cancel button on top right of Provider Edit Form
 - [ ] Implement Google Calendar connection during provider registration
 - [ ] Add Google Meet integration for virtual appointments
 - [ ] Set up email sync permissions for notifications
-- [ ] Design provider profile edit interface
+- [x] Design provider profile edit interface
 - [ ] Implement provider specialization and services selection
 - [ ] Build provider approval workflow for admins
 - [ ] Create provider dashboard

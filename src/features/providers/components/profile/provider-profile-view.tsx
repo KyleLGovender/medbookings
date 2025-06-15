@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { useQuery } from '@tanstack/react-query';
-import { PenSquare } from 'lucide-react';
+import { Calendar, Check, FileText, PenSquare, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DeleteProviderButton } from '@/features/providers/components/delete-provider-button';
 import { SerializedServiceProvider } from '@/features/providers/types/types';
+import { extractFilenameFromUrl } from '@/lib/utils/document-utils';
 
 interface ProviderProfileViewProps {
   providerId: string;
@@ -322,15 +323,129 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
           <div className="space-y-4">
             {provider.requirementSubmissions.map((submission) => (
               <div key={submission.id} className="rounded-md border p-4">
-                <h3 className="font-medium">{submission.requirementType?.name || 'Requirement'}</h3>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <h3 className="text-sm font-medium">
+                      {submission.requirementType?.name || 'Requirement'}
+                      {submission.status && (
+                        <span className="ml-2">
+                          {submission.status === 'APPROVED' && (
+                            <span className="inline-flex items-center rounded-md bg-green-500 px-2 py-1 text-xs font-medium text-white">
+                              Approved
+                            </span>
+                          )}
+                          {submission.status === 'REJECTED' && (
+                            <span className="inline-flex items-center rounded-md bg-red-500 px-2 py-1 text-xs font-medium text-white">
+                              Rejected
+                            </span>
+                          )}
+                          {submission.status === 'PENDING' && (
+                            <span className="inline-flex items-center rounded-md bg-gray-200 px-2 py-1 text-xs font-medium text-gray-800">
+                              Pending Review
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </h3>
+                  </div>
+                </div>
+
                 {submission.requirementType?.description && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {submission.requirementType.description}
                   </p>
                 )}
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Submitted: {new Date(submission.createdAt).toLocaleDateString()}
-                </p>
+
+                {/* Display appropriate content based on validation type */}
+                <div className="mt-4 rounded-md border bg-muted/40 p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {submission.requirementType?.validationType === 'DOCUMENT' ? (
+                        <>
+                          <FileText className="h-5 w-5 text-primary" />
+                          <div>
+                            {submission.documentMetadata?.value ? (
+                              <>
+                                <p className="font-medium">
+                                  {extractFilenameFromUrl(submission.documentMetadata.value)}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Submitted: {new Date(submission.createdAt).toLocaleDateString()}
+                                </p>
+                              </>
+                            ) : (
+                              <p className="font-medium">No document uploaded</p>
+                            )}
+                          </div>
+                        </>
+                      ) : submission.requirementType?.validationType === 'BOOLEAN' ? (
+                        <>
+                          {submission.documentMetadata?.value === 'true' ||
+                          submission.documentMetadata?.value === true ? (
+                            <Check className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <X className="h-5 w-5 text-red-500" />
+                          )}
+                          <div>
+                            <p className="font-medium">
+                              {submission.documentMetadata?.value === 'true' ||
+                              submission.documentMetadata?.value === true
+                                ? 'Yes'
+                                : 'No'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Submitted: {new Date(submission.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </>
+                      ) : submission.requirementType?.validationType?.includes('DATE') ? (
+                        <>
+                          <Calendar className="h-5 w-5 text-primary" />
+                          <div>
+                            <p className="font-medium">
+                              {submission.documentMetadata?.value
+                                ? new Date(
+                                    submission.documentMetadata.value.toString()
+                                  ).toLocaleDateString()
+                                : 'No date provided'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Submitted: {new Date(submission.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="h-5 w-5 text-primary" />
+                          <div>
+                            <p className="font-medium">
+                              {submission.documentMetadata?.value?.toString() ||
+                                'No value provided'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Submitted: {new Date(submission.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Show view document link only for document type */}
+                    {submission.requirementType?.validationType === 'DOCUMENT' &&
+                      submission.documentMetadata?.value && (
+                        <div className="flex gap-2">
+                          <a
+                            href={submission.documentMetadata.value}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-8 items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                          >
+                            View Document
+                          </a>
+                        </div>
+                      )}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
