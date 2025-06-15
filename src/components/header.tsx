@@ -21,6 +21,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import AuthButton from '@/features/auth/components/auth-button';
+import { useOrganizationByUserId } from '@/features/organizations/hooks/use-organization-by-user-id';
 import { useProviderByUserId } from '@/features/providers/hooks/use-provider-by-user-id';
 import { cn } from '@/lib/utils';
 
@@ -76,10 +77,16 @@ export default function Header() {
 
   const navigationItems = getNavigationItems(isSignedIn, isAdmin);
 
+  // Fetch organization data for the current user
+  const { data: organization } = useOrganizationByUserId(session?.user?.id);
+
   const profileMenuItems = [
     ...(isAdmin ? [{ label: 'Admin', href: '/admin' }] : []),
     { label: 'Profile', href: '/profile' },
     ...(provider?.id ? [{ label: 'Provider', href: `/providers/${provider.id}` }] : []),
+    ...(organization?.id
+      ? [{ label: 'My Organization', href: `/organizations/${organization.id}` }]
+      : []),
     { label: 'Organizations', href: '/organizations' },
     { label: 'Calendar', href: '/calendar' },
     { label: 'Settings', href: '/settings' },

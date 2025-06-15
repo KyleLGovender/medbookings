@@ -1,0 +1,421 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+
+import { AlertCircle, Building, Info, MapPin, Plus, Trash2 } from 'lucide-react';
+import { useFieldArray, useFormContext } from 'react-hook-form';
+
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { OrganizationRegistrationData } from '@/features/organizations/types/types';
+import { isDevelopment } from '@/lib/constants';
+
+import { GoogleMapsLocationPicker } from './google-maps-location-picker';
+
+export function LocationSetupStep() {
+  const form = useFormContext<OrganizationRegistrationData>();
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'locations',
+  });
+
+  const [formErrors, setFormErrors] = useState<string[]>([]);
+
+  // Watch for validation errors and update when form state changes
+  useEffect(() => {
+    if (form.formState.isSubmitted) {
+      updateFormErrors();
+    }
+  }, [form.formState.isSubmitted, form.formState.errors]);
+
+  const updateFormErrors = () => {
+    // Collect location errors
+    const locationErrors = form.formState.errors.locations
+      ? (form.formState.errors.locations as any[]).flatMap((locationError, index) => {
+          if (!locationError) return [];
+
+          return Object.entries(locationError).map(([field, error]) => {
+            const errorMessage =
+              typeof error === 'object' && error && 'message' in error
+                ? error.message
+                : String(error);
+            return `Location ${index + 1} - ${field}: ${errorMessage}`;
+          });
+        })
+      : [];
+
+    setFormErrors(locationErrors);
+  };
+
+  const addLocation = () => {
+    append({
+      name: '',
+      googlePlaceId: '',
+      formattedAddress: '',
+      coordinates: { lat: 0, lng: 0 },
+      addressComponents: {},
+      city: '',
+      country: 'South Africa',
+      phone: '',
+      email: '',
+    });
+  };
+
+  const handleLocationSelect = async (locationIndex: number, locationData: any) => {
+    console.log('Setting location data for index:', locationIndex, locationData);
+
+    form.setValue(`locations.${locationIndex}.googlePlaceId`, locationData.googlePlaceId);
+    form.setValue(`locations.${locationIndex}.formattedAddress`, locationData.formattedAddress);
+    form.setValue(`locations.${locationIndex}.coordinates`, locationData.coordinates);
+    form.setValue(`locations.${locationIndex}.addressComponents`, locationData.addressComponents);
+    form.setValue(`locations.${locationIndex}.city`, locationData.city);
+    form.setValue(`locations.${locationIndex}.country`, locationData.country);
+
+    // Trigger validation for the updated fields
+    await form.trigger([
+      `locations.${locationIndex}.googlePlaceId`,
+      `locations.${locationIndex}.formattedAddress`,
+      `locations.${locationIndex}.city`,
+      `locations.${locationIndex}.country`,
+    ]);
+
+    console.log('Form values after location select:', form.getValues(`locations.${locationIndex}`));
+    console.log(
+      'Form errors after location select:',
+      form.formState.errors.locations?.[locationIndex]
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Display form errors at the top */}
+      {formErrors.length > 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Form Errors</AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc pl-5">
+              {formErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+      <div>
+        <h2 className="text-2xl font-semibold tracking-tight">Location Setup</h2>
+        <p className="text-muted-foreground">
+          Add your practice locations where patients will visit. Use the interactive map to pinpoint
+          exact locations.
+        </p>
+      </div>
+
+      {/* Information Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Info className="h-5 w-5" />
+            About Locations
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 text-sm">
+            <div className="flex items-start gap-3">
+              <div className="mt-2 h-2 w-2 rounded-full bg-primary"></div>
+              <div>
+                <div className="font-medium">Interactive Map Selection</div>
+                <div className="text-muted-foreground">
+                  Search for locations or click directly on the map to place pins
+                </div>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="mt-2 h-2 w-2 rounded-full bg-primary"></div>
+              <div>
+                <div className="font-medium">Automatic Address Detection</div>
+                <div className="text-muted-foreground">
+                  Address details are automatically populated from Google Maps data
+                </div>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="mt-2 h-2 w-2 rounded-full bg-primary"></div>
+              <div>
+                <div className="font-medium">Optional Setup</div>
+                <div className="text-muted-foreground">
+                  You can skip this step and add locations later from your dashboard
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Locations List */}
+      <div className="space-y-4">
+        {fields.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Building className="mb-4 h-12 w-12 text-muted-foreground" />
+              <h3 className="mb-2 text-lg font-medium">No locations added yet</h3>
+              <p className="mb-4 text-center text-muted-foreground">
+                Add your practice locations to help patients find you, or skip this step to
+                configure later.
+              </p>
+              <Button onClick={addLocation} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Your First Location
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {fields.map((field, index) => (
+              <Card key={field.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5" />
+                      Location {index + 1}
+                    </CardTitle>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => remove(index)}
+                      className="flex items-center gap-2 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Remove
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name={`locations.${index}.name`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Main Branch, Downtown Clinic" {...field} />
+                        </FormControl>
+                        <FormDescription>A friendly name to identify this location</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Google Maps Location Picker */}
+                  <GoogleMapsLocationPicker
+                    onLocationSelect={(locationData) => handleLocationSelect(index, locationData)}
+                    initialLocation={
+                      form.getValues(`locations.${index}.coordinates.lat`)
+                        ? {
+                            coordinates: form.getValues(`locations.${index}.coordinates`),
+                            formattedAddress: form.getValues(`locations.${index}.formattedAddress`),
+                          }
+                        : undefined
+                    }
+                  />
+
+                  {/* Display selected address */}
+                  <FormField
+                    control={form.control}
+                    name={`locations.${index}.formattedAddress`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Selected Address *</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            readOnly
+                            placeholder="Select a location using the map above"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Hidden fields for Google data */}
+                  <FormField
+                    control={form.control}
+                    name={`locations.${index}.googlePlaceId`}
+                    render={({ field }) => (
+                      <FormItem className="hidden">
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name={`locations.${index}.city`}
+                    render={({ field }) => (
+                      <FormItem className="hidden">
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name={`locations.${index}.country`}
+                    render={({ field }) => (
+                      <FormItem className="hidden">
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Show validation errors for this location */}
+                  {form.formState.errors.locations?.[index] && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Location {index + 1} Errors</AlertTitle>
+                      <AlertDescription>
+                        <ul className="list-disc space-y-1 pl-5">
+                          {Object.entries(form.formState.errors.locations[index] || {}).map(
+                            ([field, error]) => (
+                              <li key={field} className="text-sm">
+                                <strong>{field}:</strong>{' '}
+                                {typeof error === 'object' && error && 'message' in error
+                                  ? String(error.message)
+                                  : String(error)}
+                              </li>
+                            )
+                          )}
+                        </ul>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <Separator />
+
+                  {/* Contact Information */}
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name={`locations.${index}.phone`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="+27 21 123 4567" {...field} />
+                          </FormControl>
+                          <FormDescription>Direct line for this location</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`locations.${index}.email`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email Address</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="email"
+                              placeholder="location@yourorganization.com"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>Email for this specific location</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Debug info for development */}
+                  {isDevelopment && (
+                    <div className="rounded bg-muted/50 p-2 text-xs text-muted-foreground">
+                      <div>Location {index + 1} Debug:</div>
+                      <div>Name: {form.getValues(`locations.${index}.name`) || 'Not set'}</div>
+                      <div>
+                        Place ID: {form.getValues(`locations.${index}.googlePlaceId`) || 'Not set'}
+                      </div>
+                      <div>
+                        Address:{' '}
+                        {form.getValues(`locations.${index}.formattedAddress`) || 'Not set'}
+                      </div>
+                      <div>City: {form.getValues(`locations.${index}.city`) || 'Not set'}</div>
+                      <div>
+                        Country: {form.getValues(`locations.${index}.country`) || 'Not set'}
+                      </div>
+                      <div>
+                        Errors:{' '}
+                        {JSON.stringify(form.formState.errors.locations?.[index] || {}, null, 2)}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addLocation}
+              className="flex w-full items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Another Location
+            </Button>
+          </>
+        )}
+      </div>
+
+      {/* Skip Option */}
+      {fields.length === 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Info className="h-5 w-5 text-blue-600" />
+              <div className="text-sm">
+                <div className="font-medium">Skip for now?</div>
+                <div className="text-muted-foreground">
+                  You can continue without adding locations and set them up later from your
+                  organization dashboard.
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Overall form debug info */}
+      {isDevelopment && (
+        <div className="rounded bg-muted/50 p-2 text-xs text-muted-foreground">
+          <div>Form Debug Info:</div>
+          <div>Form Valid: {form.formState.isValid ? '✓' : '✗'}</div>
+          <div>Locations Count: {fields.length}</div>
+          <div>All Errors: {JSON.stringify(form.formState.errors, null, 2)}</div>
+        </div>
+      )}
+    </div>
+  );
+}

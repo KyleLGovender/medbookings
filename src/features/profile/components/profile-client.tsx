@@ -95,6 +95,18 @@ export function ProfileClient({
                     )}
                   </div>
                 </div>
+
+                {/* Organization Section */}
+                <div className="flex w-full flex-col gap-3 pt-4 text-center">
+                  <p className="text-sm text-muted-foreground dark:text-muted-foreground">
+                    Organization Status: Not Registered
+                  </p>
+                  <div>
+                    <Link href="/organizations/new" passHref>
+                      <Button variant="outline">Register Organization</Button>
+                    </Link>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
