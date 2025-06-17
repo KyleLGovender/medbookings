@@ -7,7 +7,6 @@ const env = createEnv({
     DATABASE_URL: z.string().url(),
     GOOGLE_CLIENT_ID: z.string(),
     GOOGLE_CLIENT_SECRET: z.string(),
-    GOOGLE_MAPS_API_KEY: z.string(),
     AUTH_SECRET: z.string(),
     NEXTAUTH_URL: z.string(),
     BLOB_READ_WRITE_TOKEN: z.string(),

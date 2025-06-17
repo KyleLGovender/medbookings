@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import env from '@/config/env/client';
 import { isDevelopment } from '@/lib/constants';
 
 interface GoogleMapsLocationPickerProps {
@@ -18,12 +17,12 @@ interface GoogleMapsLocationPickerProps {
     formattedAddress: string;
     coordinates: { lat: number; lng: number };
     addressComponents: Record<string, any>;
-    city: string;
-    country: string;
+    searchTerms?: string[];
   }) => void;
   initialLocation?: {
     coordinates: { lat: number; lng: number };
     formattedAddress: string;
+    searchTerms?: string[];
   };
   className?: string;
 }
@@ -50,58 +49,20 @@ export function GoogleMapsLocationPicker({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchTermsInput, setSearchTermsInput] = useState('');
+
+  // Convert comma-separated search terms to array
+  const getSearchTermsArray = (input: string): string[] => {
+    if (!input || !input.trim()) return [];
+    return input
+      .split(',')
+      .map((term) => term.trim())
+      .filter((term) => term.length > 0);
+  };
 
   // Check if we have the API key
-  const apiKey = env.GOOGLE_MAPS_API_KEY;
-
-  // Helper function to extract city from address components
-  const extractCityFromComponents = (addressComponents: any[]) => {
-    if (!addressComponents || !Array.isArray(addressComponents)) {
-      console.warn('Invalid address components provided');
-      return 'Unknown City';
-    }
-
-    // Try different component types in order of preference
-    const cityTypes = [
-      'locality', // City/town
-      'sublocality_level_1', // Neighborhood/suburb
-      'administrative_area_level_2', // County/district
-      'administrative_area_level_1', // State/province
-      'postal_town', // Postal town
-    ];
-
-    for (const cityType of cityTypes) {
-      const component = addressComponents.find(
-        (comp: any) => comp.types && Array.isArray(comp.types) && comp.types.includes(cityType)
-      );
-      if (component && component.long_name && component.long_name.trim()) {
-        console.log(`Found city using type ${cityType}:`, component.long_name);
-        return component.long_name.trim();
-      }
-    }
-
-    // Fallback: try to extract from formatted address
-    console.warn('Could not find city in address components, using fallback');
-    return 'Unknown City';
-  };
-
-  // Helper function to extract country from address components
-  const extractCountryFromComponents = (addressComponents: any[]) => {
-    if (!addressComponents || !Array.isArray(addressComponents)) {
-      console.warn('Invalid address components provided for country');
-      return 'South Africa';
-    }
-
-    const countryComponent = addressComponents.find(
-      (comp: any) => comp.types && Array.isArray(comp.types) && comp.types.includes('country')
-    );
-
-    if (countryComponent && countryComponent.long_name && countryComponent.long_name.trim()) {
-      return countryComponent.long_name.trim();
-    }
-
-    return 'South Africa';
-  };
+  // eslint-disable-next-line no-process-env
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   // Initialize the map with retry logic
   const initializeMap = useCallback(async () => {
@@ -387,22 +348,14 @@ export function GoogleMapsLocationPicker({
     }
   };
 
-  const processLocationResult = (result: any) => {
+  const processLocationResult = async (result: any) => {
     try {
       console.log('Processing location result:', result);
 
-      if (!result || !result.place_id || !result.formatted_address || !result.geometry) {
+      if (!result || !result.place_id) {
         console.error('Invalid location result:', result);
         return;
       }
-
-      console.log('Address components:', result.address_components);
-
-      const city = extractCityFromComponents(result.address_components || []);
-      const country = extractCountryFromComponents(result.address_components || []);
-
-      console.log('Extracted city:', city);
-      console.log('Extracted country:', country);
 
       // Ensure we have valid coordinates
       let coordinates;
@@ -421,6 +374,9 @@ export function GoogleMapsLocationPicker({
         return;
       }
 
+      // Get search terms from input if available
+      const searchTerms = getSearchTermsArray(searchTermsInput);
+
       const locationData = {
         googlePlaceId: result.place_id,
         formattedAddress: result.formatted_address,
@@ -432,8 +388,7 @@ export function GoogleMapsLocationPicker({
             }
             return acc;
           }, {}) || {},
-        city,
-        country,
+        searchTerms, // Add search terms to location data
       };
 
       console.log('Final location data:', locationData);
@@ -667,12 +622,15 @@ export function GoogleMapsLocationPicker({
                 </div>
                 <div className="text-sm font-medium">{selectedLocation.formattedAddress}</div>
                 <div className="text-xs text-muted-foreground">
-                  {selectedLocation.city}, {selectedLocation.country}
-                </div>
-                <div className="text-xs text-muted-foreground">
                   Coordinates: {selectedLocation.coordinates.lat.toFixed(6)},{' '}
                   {selectedLocation.coordinates.lng.toFixed(6)}
                 </div>
+                {selectedLocation.searchTerms && selectedLocation.searchTerms.length > 0 && (
+                  <div className="text-xs">
+                    <span className="text-muted-foreground">Search Terms: </span>
+                    <span>{selectedLocation.searchTerms.join(', ')}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -690,8 +648,7 @@ export function GoogleMapsLocationPicker({
             {selectedLocation && (
               <div className="mt-2">
                 <div>Selected Location Debug:</div>
-                <div>City: &quot;{selectedLocation.city}&quot;</div>
-                <div>Country: &quot;{selectedLocation.country}&quot;</div>
+                <div>Search Terms: {JSON.stringify(selectedLocation.searchTerms)}</div>
               </div>
             )}
           </div>

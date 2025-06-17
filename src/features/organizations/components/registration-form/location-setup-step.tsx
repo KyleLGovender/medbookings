@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { AlertCircle, Building, Info, MapPin, Plus, Trash2 } from 'lucide-react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
+import { InputTags } from '@/components/input-tags';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,8 +66,7 @@ export function LocationSetupStep() {
       formattedAddress: '',
       coordinates: { lat: 0, lng: 0 },
       addressComponents: {},
-      city: '',
-      country: 'South Africa',
+      searchTerms: [],
       phone: '',
       email: '',
     });
@@ -79,15 +79,16 @@ export function LocationSetupStep() {
     form.setValue(`locations.${locationIndex}.formattedAddress`, locationData.formattedAddress);
     form.setValue(`locations.${locationIndex}.coordinates`, locationData.coordinates);
     form.setValue(`locations.${locationIndex}.addressComponents`, locationData.addressComponents);
-    form.setValue(`locations.${locationIndex}.city`, locationData.city);
-    form.setValue(`locations.${locationIndex}.country`, locationData.country);
+
+    // Set search terms if available
+    if (locationData.searchTerms && locationData.searchTerms.length > 0) {
+      form.setValue(`locations.${locationIndex}.searchTerms`, locationData.searchTerms);
+    }
 
     // Trigger validation for the updated fields
     await form.trigger([
       `locations.${locationIndex}.googlePlaceId`,
       `locations.${locationIndex}.formattedAddress`,
-      `locations.${locationIndex}.city`,
-      `locations.${locationIndex}.country`,
     ]);
 
     console.log('Form values after location select:', form.getValues(`locations.${locationIndex}`));
@@ -120,47 +121,6 @@ export function LocationSetupStep() {
           exact locations.
         </p>
       </div>
-
-      {/* Information Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Info className="h-5 w-5" />
-            About Locations
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 text-sm">
-            <div className="flex items-start gap-3">
-              <div className="mt-2 h-2 w-2 rounded-full bg-primary"></div>
-              <div>
-                <div className="font-medium">Interactive Map Selection</div>
-                <div className="text-muted-foreground">
-                  Search for locations or click directly on the map to place pins
-                </div>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="mt-2 h-2 w-2 rounded-full bg-primary"></div>
-              <div>
-                <div className="font-medium">Automatic Address Detection</div>
-                <div className="text-muted-foreground">
-                  Address details are automatically populated from Google Maps data
-                </div>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="mt-2 h-2 w-2 rounded-full bg-primary"></div>
-              <div>
-                <div className="font-medium">Optional Setup</div>
-                <div className="text-muted-foreground">
-                  You can skip this step and add locations later from your dashboard
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Locations List */}
       <div className="space-y-4">
@@ -202,20 +162,54 @@ export function LocationSetupStep() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name={`locations.${index}.name`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location Name *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Main Branch, Downtown Clinic" {...field} />
-                        </FormControl>
-                        <FormDescription>A friendly name to identify this location</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name={`locations.${index}.name`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Location Name *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., Main Branch, Downtown Clinic" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            A friendly name to identify this location
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`locations.${index}.searchTerms`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Search Terms</FormLabel>
+                          <FormControl>
+                            <InputTags
+                              value={field.value || []}
+                              onChange={(newValue) => {
+                                field.onChange(newValue);
+                                // Explicitly trigger form update
+                                form.setValue(`locations.${index}.searchTerms`, newValue, {
+                                  shouldDirty: true,
+                                  shouldTouch: true,
+                                  shouldValidate: true,
+                                });
+                              }}
+                              placeholder="Type term and press Enter"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Add terms to help patients find this location (e.g., neighborhoods,
+                            areas)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   {/* Google Maps Location Picker */}
                   <GoogleMapsLocationPicker
@@ -253,32 +247,6 @@ export function LocationSetupStep() {
                   <FormField
                     control={form.control}
                     name={`locations.${index}.googlePlaceId`}
-                    render={({ field }) => (
-                      <FormItem className="hidden">
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`locations.${index}.city`}
-                    render={({ field }) => (
-                      <FormItem className="hidden">
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`locations.${index}.country`}
                     render={({ field }) => (
                       <FormItem className="hidden">
                         <FormControl>
@@ -362,9 +330,9 @@ export function LocationSetupStep() {
                         Address:{' '}
                         {form.getValues(`locations.${index}.formattedAddress`) || 'Not set'}
                       </div>
-                      <div>City: {form.getValues(`locations.${index}.city`) || 'Not set'}</div>
                       <div>
-                        Country: {form.getValues(`locations.${index}.country`) || 'Not set'}
+                        Search Terms:{' '}
+                        {form.getValues(`locations.${index}.searchTerms`)?.join(', ') || 'Not set'}
                       </div>
                       <div>
                         Errors:{' '}

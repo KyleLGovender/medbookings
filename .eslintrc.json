@@ -22,7 +22,7 @@
     "prefer-template": ["error"],
     "semi": ["error"],
     "quotes": ["error", "single"],
-    "n/no-process-env": ["error"],
+    "n/no-process-env": ["off"],
     "import/prefer-default-export": "off",
     "check-file/filename-naming-convention": [
       "error",

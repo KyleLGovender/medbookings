@@ -20,9 +20,8 @@ export const organizationRegistrationSchema = z.object({
           lat: z.number(),
           lng: z.number(),
         }),
-        addressComponents: z.record(z.any()), // Store Google address components
-        city: z.string().min(1, 'City is required'),
-        country: z.string().min(1, 'Country is required'),
+        addressComponents: z.record(z.any()),
+        searchTerms: z.array(z.string()).optional(),
         phone: z.string().optional(),
         email: z.string().email('Invalid email address').optional().or(z.literal('')),
       })

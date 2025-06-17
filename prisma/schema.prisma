@@ -388,6 +388,9 @@ model Location {
   city           String
   country        String       @default("South Africa")
   
+  // Custom search terms added by the provider
+  searchTerms    String[]     // Array of terms patients can search for to find this location
+  
   // Contact information
   phone          String?
   email          String?
@@ -1131,5 +1134,3 @@ enum ReviewStatus {
   FLAGGED // Flagged for review
   SYNCED // Synced with Google
 }
-
-
