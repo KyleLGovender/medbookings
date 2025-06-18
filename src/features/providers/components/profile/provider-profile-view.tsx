@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import { useQuery } from '@tanstack/react-query';
 import { Calendar, Check, FileText, PenSquare, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DeleteProviderButton } from '@/features/providers/components/delete-provider-button';
-import { SerializedServiceProvider } from '@/features/providers/types/types';
+import { useProvider } from '@/features/providers/hooks/use-provider';
 import { extractFilenameFromUrl } from '@/lib/utils/document-utils';
 
 interface ProviderProfileViewProps {
@@ -21,26 +20,7 @@ interface ProviderProfileViewProps {
 
 export function ProviderProfileView({ providerId, userId }: ProviderProfileViewProps) {
   const router = useRouter();
-
-  // Fetch service provider data using Tanstack Query
-  const {
-    data: provider,
-    isLoading,
-    error,
-  } = useQuery<SerializedServiceProvider>({
-    queryKey: ['serviceProvider', providerId],
-    queryFn: async () => {
-      const response = await fetch(`/api/providers/${providerId}`);
-      if (!response.ok) {
-        if (response.status === 404) {
-          router.push('/404');
-          return null;
-        }
-        throw new Error('Failed to fetch service provider');
-      }
-      return response.json();
-    },
-  });
+  const { data: provider, isLoading, error } = useProvider(providerId);
 
   if (isLoading) {
     return (
