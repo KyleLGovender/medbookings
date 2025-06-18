@@ -16,13 +16,10 @@ interface GoogleMapsLocationPickerProps {
     googlePlaceId: string;
     formattedAddress: string;
     coordinates: { lat: number; lng: number };
-    addressComponents: Record<string, any>;
-    searchTerms?: string[];
   }) => void;
   initialLocation?: {
     coordinates: { lat: number; lng: number };
     formattedAddress: string;
-    searchTerms?: string[];
   };
   className?: string;
 }
@@ -49,16 +46,6 @@ export function GoogleMapsLocationPicker({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchTermsInput, setSearchTermsInput] = useState('');
-
-  // Convert comma-separated search terms to array
-  const getSearchTermsArray = (input: string): string[] => {
-    if (!input || !input.trim()) return [];
-    return input
-      .split(',')
-      .map((term) => term.trim())
-      .filter((term) => term.length > 0);
-  };
 
   // Check if we have the API key
   // eslint-disable-next-line no-process-env
@@ -374,21 +361,10 @@ export function GoogleMapsLocationPicker({
         return;
       }
 
-      // Get search terms from input if available
-      const searchTerms = getSearchTermsArray(searchTermsInput);
-
       const locationData = {
         googlePlaceId: result.place_id,
         formattedAddress: result.formatted_address,
         coordinates,
-        addressComponents:
-          result.address_components?.reduce((acc: any, comp: any) => {
-            if (comp.types && comp.types[0]) {
-              acc[comp.types[0]] = comp;
-            }
-            return acc;
-          }, {}) || {},
-        searchTerms, // Add search terms to location data
       };
 
       console.log('Final location data:', locationData);
@@ -648,7 +624,7 @@ export function GoogleMapsLocationPicker({
             {selectedLocation && (
               <div className="mt-2">
                 <div>Selected Location Debug:</div>
-                <div>Search Terms: {JSON.stringify(selectedLocation.searchTerms)}</div>
+                <div>{JSON.stringify(selectedLocation)}</div>
               </div>
             )}
           </div>
