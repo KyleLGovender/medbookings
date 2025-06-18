@@ -140,8 +140,10 @@ export function OrganizationRegistrationForm() {
   };
 
   const onSubmit = async (data: OrganizationRegistrationData) => {
+    console.log('onSubmit called with data:', data); // Add this line
     try {
       const organization = await registerOrganizationMutation.mutateAsync(data);
+      console.log('Mutation successful:', organization); // Add this line
       toast({
         title: 'Organization registered successfully',
         description: 'Your organization has been created.',
