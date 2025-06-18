@@ -23,10 +23,10 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { ProfileImageUploader } from '@/features/providers/components/onboarding/profile-image-uploader';
+import { SUPPORTED_LANGUAGES, basicInfoSchema } from '@/features/providers/hooks/types';
 import { useProvider } from '@/features/providers/hooks/use-provider';
 import { useProviderTypes } from '@/features/providers/hooks/use-provider-types';
 import { useUpdateProviderBasicInfo } from '@/features/providers/hooks/use-provider-updates';
-import { SUPPORTED_LANGUAGES, basicInfoSchema } from '@/features/providers/types/types';
 import { useToast } from '@/hooks/use-toast';
 import { providerDebug } from '@/lib/debug';
 

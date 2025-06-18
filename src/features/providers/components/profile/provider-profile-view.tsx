@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 
 import { Calendar, Check, FileText, PenSquare, X } from 'lucide-react';
 
+import { ProviderProfileSkeleton } from '@/components/skeletons/provider-profile-skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
 import { DeleteProviderButton } from '@/features/providers/components/delete-provider-button';
 import { useProvider } from '@/features/providers/hooks/use-provider';
 import { extractFilenameFromUrl } from '@/lib/utils/document-utils';
@@ -25,91 +25,7 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
   if (isLoading) {
     return (
       <div className="space-y-8">
-        {/* Header Skeleton */}
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <Skeleton className="h-10 w-64" />
-          </div>
-          <Skeleton className="h-10 w-32" />
-        </div>
-
-        {/* Provider Type Card Skeleton */}
-        <Card className="p-6">
-          <Skeleton className="mb-2 h-8 w-40" />
-          <Skeleton className="mb-4 h-4 w-64" />
-          <Separator className="my-4" />
-          <div>
-            <Skeleton className="mb-2 h-5 w-20" />
-            <Skeleton className="h-6 w-48" />
-          </div>
-        </Card>
-
-        {/* Basic Information Card Skeleton */}
-        <Card className="p-6">
-          <Skeleton className="mb-2 h-8 w-48" />
-          <Skeleton className="mb-4 h-4 w-64" />
-          <Separator className="my-4" />
-
-          <div className="space-y-6">
-            <div className="flex justify-start">
-              <Skeleton className="h-40 w-40 rounded-full" />
-            </div>
-
-            <div>
-              <Skeleton className="mb-2 h-5 w-20" />
-              <Skeleton className="h-6 w-48" />
-            </div>
-
-            <div>
-              <Skeleton className="mb-2 h-5 w-20" />
-              <Skeleton className="h-6 w-64" />
-            </div>
-
-            <div>
-              <Skeleton className="mb-2 h-5 w-20" />
-              <Skeleton className="h-6 w-48" />
-            </div>
-
-            <div>
-              <Skeleton className="mb-2 h-5 w-20" />
-              <Skeleton className="h-6 w-64" />
-            </div>
-
-            <div>
-              <Skeleton className="mb-2 h-5 w-20" />
-              <div className="flex flex-wrap gap-1">
-                <Skeleton className="h-6 w-16 rounded-full" />
-                <Skeleton className="h-6 w-16 rounded-full" />
-                <Skeleton className="h-6 w-16 rounded-full" />
-              </div>
-            </div>
-
-            <div>
-              <Skeleton className="mb-2 h-5 w-20" />
-              <Skeleton className="h-24 w-full" />
-            </div>
-          </div>
-        </Card>
-
-        {/* Services Card Skeleton */}
-        <Card className="p-6">
-          <Skeleton className="mb-2 h-8 w-32" />
-          <Skeleton className="mb-4 h-4 w-64" />
-          <Separator className="my-4" />
-
-          <div className="space-y-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="rounded-md border p-4">
-                <Skeleton className="mb-2 h-6 w-48" />
-                <Skeleton className="mb-2 h-4 w-full" />
-                <div className="mt-4 flex items-center justify-between">
-                  <Skeleton className="h-6 w-24" />
-                  <Skeleton className="h-6 w-20" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
+        <ProviderProfileSkeleton />
       </div>
     );
   }
@@ -122,8 +38,8 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
           <p className="mt-2 text-muted-foreground">
             {error instanceof Error ? error.message : 'Unable to load provider details'}
           </p>
-          <Button className="mt-4" onClick={() => router.push('/providers')}>
-            View All Providers
+          <Button className="mt-4" onClick={() => router.push('/profile')}>
+            View Profile
           </Button>
         </CardContent>
       </Card>
@@ -159,20 +75,6 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
           </div>
         )}
       </div>
-
-      {/* Provider Type Section */}
-      <Card className="p-6">
-        <h2 className="text-2xl font-bold">Provider Type</h2>
-        <p className="text-sm text-muted-foreground">
-          Specialization and category of the provider.
-        </p>
-        <Separator className="my-4" />
-
-        <div>
-          <h3 className="font-medium">Type</h3>
-          <p>{providerTypeName}</p>
-        </div>
-      </Card>
 
       {/* Basic Information Section */}
       <Card className="p-6">

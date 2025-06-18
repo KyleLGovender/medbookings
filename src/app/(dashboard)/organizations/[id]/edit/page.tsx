@@ -39,9 +39,9 @@ export default async function EditOrganizationPage({ params }: EditOrganizationP
     >
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Edit Profile</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Edit Organization</h1>
           <p className="mt-2 text-muted-foreground">
-            Update your profile information and services.
+            Update your organization information and services.
           </p>
         </div>
         <CancelButton cancelTo={`/organizations/${params.id}`}>Cancel</CancelButton>

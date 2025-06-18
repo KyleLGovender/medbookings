@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { SUPPORTED_LANGUAGES } from '@/features/providers/types/types';
+import { SUPPORTED_LANGUAGES } from '@/features/providers/hooks/types';
 
 import { ProfileImageUploader } from './profile-image-uploader';
 

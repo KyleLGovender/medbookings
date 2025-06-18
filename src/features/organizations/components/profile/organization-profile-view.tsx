@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 
 import { Building2, Globe, Mail, MapPin, PenSquare, Phone } from 'lucide-react';
 
+import { OrganizationProfileSkeleton } from '@/components/skeletons/organization-profile-skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
 import { DeleteOrganizationButton } from '@/features/organizations/components/delete-organization-button';
 import { useOrganization } from '@/features/organizations/hooks/use-organization';
 
@@ -24,66 +24,7 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
   if (isLoading) {
     return (
       <div className="space-y-8">
-        {/* Header Skeleton */}
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <Skeleton className="h-10 w-64" />
-          </div>
-          <Skeleton className="h-10 w-32" />
-        </div>
-
-        {/* Organization Details Card Skeleton */}
-        <Card className="p-6">
-          <Skeleton className="mb-2 h-8 w-48" />
-          <Skeleton className="mb-4 h-4 w-64" />
-          <Separator className="my-4" />
-
-          <div className="space-y-6">
-            <div className="flex justify-start">
-              <Skeleton className="h-32 w-32 rounded-lg" />
-            </div>
-
-            <div>
-              <Skeleton className="mb-2 h-5 w-20" />
-              <Skeleton className="h-6 w-48" />
-            </div>
-
-            <div>
-              <Skeleton className="mb-2 h-5 w-20" />
-              <Skeleton className="h-6 w-64" />
-            </div>
-
-            <div>
-              <Skeleton className="mb-2 h-5 w-20" />
-              <Skeleton className="h-6 w-48" />
-            </div>
-
-            <div>
-              <Skeleton className="mb-2 h-5 w-20" />
-              <Skeleton className="h-24 w-full" />
-            </div>
-          </div>
-        </Card>
-
-        {/* Locations Card Skeleton */}
-        <Card className="p-6">
-          <Skeleton className="mb-2 h-8 w-32" />
-          <Skeleton className="mb-4 h-4 w-64" />
-          <Separator className="my-4" />
-
-          <div className="space-y-4">
-            {[1, 2].map((i) => (
-              <div key={i} className="rounded-md border p-4">
-                <Skeleton className="mb-2 h-6 w-48" />
-                <Skeleton className="mb-2 h-4 w-full" />
-                <div className="mt-4 flex items-center gap-4">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-4 w-32" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
+        <OrganizationProfileSkeleton />
       </div>
     );
   }
@@ -96,8 +37,8 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
           <p className="mt-2 text-muted-foreground">
             {error instanceof Error ? error.message : 'Unable to load organization details'}
           </p>
-          <Button className="mt-4" onClick={() => router.push('/organizations')}>
-            View All Organizations
+          <Button className="mt-4" onClick={() => router.push('/profile')}>
+            View Profile
           </Button>
         </CardContent>
       </Card>
@@ -307,6 +248,35 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
         ) : (
           <div className="py-8 text-center">
             <p className="text-muted-foreground">No team members found</p>
+          </div>
+        )}
+      </Card>
+
+      {/* Providers Section */}
+      <Card className="p-6">
+        <h2 className="text-2xl font-bold">Providers</h2>
+        <p className="text-sm text-muted-foreground">
+          Providers associated with this organization.
+        </p>
+        <Separator className="my-4" />
+
+        {organization.providers && organization.providers.length > 0 ? (
+          <div className="space-y-4">
+            {organization.providers.map((provider: any) => (
+              <div key={provider.id} className="rounded-md border p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">{provider.name}</h3>
+                    <p className="text-sm text-muted-foreground">Role: {provider.role}</p>
+                    <p className="text-sm text-muted-foreground">Status: {provider.status}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-8 text-center">
+            <p className="text-muted-foreground">No providers found</p>
           </div>
         )}
       </Card>

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useOrganizationByUserId } from '@/features/organizations/hooks/use-organization-by-user-id';
 import { UserProfile } from '@/features/profile/types/types';
-import { SerializedServiceProvider } from '@/features/providers/types/types';
+import { SerializedServiceProvider } from '@/features/providers/hooks/types';
 
 import { DeleteAccountButton } from './delete-account-button';
 

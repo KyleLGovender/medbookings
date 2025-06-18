@@ -4,13 +4,11 @@ import { useEffect } from 'react';
 
 import { FormProvider, useForm } from 'react-hook-form';
 
+import { ProviderProfileSkeleton } from '@/components/skeletons/provider-profile-skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { EditBasicInfo } from '@/features/providers/components/profile/edit-basic-info';
 import { EditRegulatoryRequirements } from '@/features/providers/components/profile/edit-regulatory-requirements';
 import { EditServices } from '@/features/providers/components/profile/edit-services';
-import { BasicInformationCardSkeleton } from '@/features/providers/components/skeletons/basic-information-card-skeleton';
-import { ProviderTypeCardSkeleton } from '@/features/providers/components/skeletons/provider-type-card-skeleton';
-import { ServicesCardSkeleton } from '@/features/providers/components/skeletons/services-card-skeleton';
 import { useProvider } from '@/features/providers/hooks/use-provider';
 
 // Import useForm and FormProvider
@@ -21,10 +19,10 @@ interface EditProviderClientProps {
 }
 
 export function EditProviderClient({ providerId, userId }: EditProviderClientProps) {
-  const { provider, isLoading } = useProvider(providerId);
+  const { data: provider, isLoading } = useProvider(providerId);
   const methods = useForm({
-    defaultValues: provider, // provider can be undefined initially
-  }); // Initialize the form
+    defaultValues: provider,
+  });
 
   // Effect to reset the form when provider data changes, ensuring the form's
   // default values are updated to reflect the latest state from the backend.
@@ -39,10 +37,7 @@ export function EditProviderClient({ providerId, userId }: EditProviderClientPro
   if (isLoading) {
     return (
       <div className="space-y-8">
-        {/* Provider Type Card Skeleton */}
-        <ProviderTypeCardSkeleton />
-        <BasicInformationCardSkeleton />
-        <ServicesCardSkeleton />
+        <ProviderProfileSkeleton />
       </div>
     );
   }

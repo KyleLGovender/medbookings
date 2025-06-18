@@ -13,7 +13,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { TimePicker } from '@/components/ui/time-picker';
 import { roundToNearestMinute } from '@/features/calendar/lib/helper';
 import { getServiceProviderServices } from '@/features/calendar/lib/queries';
-import { Service } from '@/features/providers/types/types';
+import { Service } from '@/features/providers/hooks/types';
 import { useToast } from '@/hooks/use-toast';
 
 import { createAvailability, updateAvailability } from '../../lib/actions';

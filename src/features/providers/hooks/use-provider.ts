@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { SerializedServiceProvider } from '../types/types';
+import { SerializedServiceProvider } from './types';
 
 /**
  * Hook to fetch provider data

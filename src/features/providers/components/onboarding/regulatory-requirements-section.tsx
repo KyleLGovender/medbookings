@@ -7,8 +7,8 @@ import { useFormContext, useWatch } from 'react-hook-form';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { renderRequirementInput } from '@/features/providers/components/render-requirement-input';
+import { RequirementType, RequirementValidationType } from '@/features/providers/hooks/types';
 import { getRequirementsForProviderType } from '@/features/providers/lib/provider-types';
-import { RequirementType, RequirementValidationType } from '@/features/providers/types/types';
 
 export function RegulatoryRequirementsSection() {
   const {

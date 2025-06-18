@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RequirementType, RequirementValidationType } from '@/features/providers/types/types';
+import { RequirementType, RequirementValidationType } from '@/features/providers/hooks/types';
 import { extractFilenameFromUrl } from '@/lib/utils/document-utils';
 
 // Define a specific type for our form structure to match how we're accessing requirements

@@ -32,6 +32,20 @@ export const organizationRegistrationSchema = z.object({
 
 export type OrganizationRegistrationData = z.infer<typeof organizationRegistrationSchema>;
 
+/**
+ * Schema for organization basic information updates
+ */
+export const organizationBasicInfoSchema = z.object({
+  name: z.string().min(1, 'Organization name is required'),
+  description: z.string().optional(),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+  phone: z.string().optional(),
+  website: z.string().url('Invalid website URL').optional().or(z.literal('')),
+  billingModel: z.enum(['CONSOLIDATED', 'PER_LOCATION', 'HYBRID']),
+});
+
+export type OrganizationBasicInfoData = z.infer<typeof organizationBasicInfoSchema>;
+
 export interface GooglePlaceResult {
   place_id: string;
   formatted_address: string;

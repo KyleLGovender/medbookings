@@ -18,12 +18,12 @@ import { useToast } from '@/hooks/use-toast';
 import { providerDebug } from '@/lib/debug';
 
 // API hooks
+import { RequirementType } from '../../hooks/types';
 import { useProvider } from '../../hooks/use-provider';
 import {
   useProviderRequirementTypes,
   useUpdateProviderRequirements,
 } from '../../hooks/use-provider-requirements';
-import { RequirementType } from '../../types/types';
 import { renderRequirementInput } from '../render-requirement-input';
 
 export const regulatoryRequirementsSchema = z.object({

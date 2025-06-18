@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Service } from '@/features/providers/types/types';
+import { Service } from '@/features/providers/hooks/types';
 import { toast } from '@/hooks/use-toast';
 
 import { AvailabilityFormValues, ServiceConfigFormSchema } from '../../lib/types';

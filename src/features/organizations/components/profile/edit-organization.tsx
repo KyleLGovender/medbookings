@@ -4,8 +4,8 @@ import { useEffect } from 'react';
 
 import { FormProvider, useForm } from 'react-hook-form';
 
+import { OrganizationProfileSkeleton } from '@/components/skeletons/organization-profile-skeleton';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { EditOrganizationBasicInfo } from '@/features/organizations/components/profile/edit-organization-basic-info';
 import { EditOrganizationLocations } from '@/features/organizations/components/profile/edit-organization-locations';
 import { useOrganization } from '@/features/organizations/hooks/use-organization';
@@ -34,53 +34,7 @@ export function EditOrganization({ organizationId, userId }: EditOrganizationPro
   if (isLoading) {
     return (
       <div className="space-y-8">
-        {/* Organization Basic Info Card Skeleton */}
-        <Card>
-          <CardContent className="p-6">
-            <Skeleton className="mb-2 h-8 w-48" />
-            <Skeleton className="mb-4 h-4 w-64" />
-            <div className="space-y-4">
-              <div>
-                <Skeleton className="mb-2 h-5 w-32" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-              <div>
-                <Skeleton className="mb-2 h-5 w-32" />
-                <Skeleton className="h-24 w-full" />
-              </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <Skeleton className="mb-2 h-5 w-20" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-                <div>
-                  <Skeleton className="mb-2 h-5 w-20" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Organization Locations Card Skeleton */}
-        <Card>
-          <CardContent className="p-6">
-            <Skeleton className="mb-2 h-8 w-32" />
-            <Skeleton className="mb-4 h-4 w-64" />
-            <div className="space-y-4">
-              {[1, 2].map((i) => (
-                <div key={i} className="rounded-md border p-4">
-                  <Skeleton className="mb-2 h-6 w-48" />
-                  <Skeleton className="mb-2 h-4 w-full" />
-                  <div className="mt-4 flex items-center gap-4">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-32" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <OrganizationProfileSkeleton />
       </div>
     );
   }
