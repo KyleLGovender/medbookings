@@ -5,7 +5,7 @@ import { getServerSession } from 'next-auth';
 import { deleteServiceProvider } from '@/features/providers/lib/actions/delete-provider';
 import { updateProviderBasicInfo } from '@/features/providers/lib/actions/update-provider';
 import { serializeServiceProvider } from '@/features/providers/lib/helper';
-import { authOptions } from '@/lib/auth';
+import { authOptions, getCurrentUser } from '@/lib/auth';
 import { providerDebug } from '@/lib/debug';
 import { prisma } from '@/lib/prisma';
 
@@ -61,11 +61,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
+    const currentUser = await getCurrentUser();
 
-    if (!session || !session.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!currentUser) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     // Get the provider ID from the URL

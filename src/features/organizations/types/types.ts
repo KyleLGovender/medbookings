@@ -41,7 +41,7 @@ export const organizationBasicInfoSchema = z.object({
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
   website: z.string().url('Invalid website URL').optional().or(z.literal('')),
-  billingModel: z.enum(['CONSOLIDATED', 'PER_LOCATION', 'HYBRID']),
+  logo: z.string().optional(), // URL to logo in Vercel Blob
 });
 
 export type OrganizationBasicInfoData = z.infer<typeof organizationBasicInfoSchema>;

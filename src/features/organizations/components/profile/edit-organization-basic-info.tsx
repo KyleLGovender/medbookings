@@ -1,12 +1,15 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { Building2, Globe, Mail, Phone, Save } from 'lucide-react';
-import { useFormContext } from 'react-hook-form';
+import { Building2, Globe, ImageIcon, Mail, Phone, Save, Upload } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -17,12 +20,13 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useOrganization } from '@/features/organizations/hooks/use-organization';
 import { useUpdateOrganizationBasicInfo } from '@/features/organizations/hooks/use-organization-updates';
-import { OrganizationBasicInfoData } from '@/features/organizations/types/types';
+import {
+  OrganizationBasicInfoData,
+  organizationBasicInfoSchema,
+} from '@/features/organizations/types/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface EditOrganizationBasicInfoProps {
@@ -34,29 +38,27 @@ export function EditOrganizationBasicInfo({
   organizationId,
   userId,
 }: EditOrganizationBasicInfoProps) {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: organization, isLoading, error } = useOrganization(organizationId);
+  const { data: organization, isLoading, error, refetch } = useOrganization(organizationId);
 
-  const form = useFormContext<OrganizationBasicInfoData>();
-
-  const updateOrganizationMutation = useUpdateOrganizationBasicInfo({
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to update organization',
-        variant: 'destructive',
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Organization updated successfully',
-      });
+  const form = useForm<OrganizationBasicInfoData>({
+    resolver: zodResolver(organizationBasicInfoSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      email: '',
+      phone: '',
+      website: '',
+      logo: '',
     },
   });
+
+  // Use the simplified mutation hook without callbacks
+  const updateOrganizationMutation = useUpdateOrganizationBasicInfo();
 
   useEffect(() => {
     if (organization) {
@@ -66,6 +68,7 @@ export function EditOrganizationBasicInfo({
         phone: organization.phone || '',
         website: organization.website || '',
         email: organization.email || '',
+        logo: organization.logo || '',
       });
     }
   }, [organization, form]);
@@ -119,154 +122,213 @@ export function EditOrganizationBasicInfo({
   async function onSubmit(data: OrganizationBasicInfoData) {
     setIsSubmitting(true);
     try {
-      await updateOrganizationMutation.mutate({ organizationId, data });
-    } catch (err) {
-      // Error handled by useUpdateOrganizationBasicInfo hook's onError
+      // Use mutateAsync instead of mutate to properly await the result
+      await updateOrganizationMutation.mutateAsync({ organizationId, data });
+
+      // Manually update the local state to reflect the change immediately
+      if (organization) {
+        // Create a new organization object with the updated basic info
+        const updatedOrganization = { ...organization, ...data };
+
+        // Force update the query cache with the new data
+        queryClient.setQueryData(['organization', organizationId], updatedOrganization);
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Organization details updated successfully',
+      });
+
+      // Force a hard refetch to ensure we have the latest data
+      refetch();
+
+      // Also refresh the router to update any server components
+      router.refresh();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update organization',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  const handleLogoUpload = () => {
+    // TODO: Implement logo upload to Vercel Blob
+    console.log('Logo upload functionality to be implemented');
+  };
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Basic Information</h2>
-        <p className="text-sm text-muted-foreground">
-          Update your organization's basic details and contact information.
+        <h2 className="text-2xl font-semibold tracking-tight">Organization Details</h2>
+        <p className="text-muted-foreground">
+          Update your healthcare organization or medical practice information.
         </p>
       </div>
-      <Separator />
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4" />
-                  Organization Name
-                </FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter organization name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid gap-6">
+            {/* Basic Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Basic Information
+                </CardTitle>
+                <CardDescription>Essential details about your organization</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Organization Name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., City Medical Center" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Tell us about your organization..."
-                    className="min-h-[100px]"
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Provide a brief description of your organization and services.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Brief description of your organization and services..."
+                          className="min-h-[100px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        This will be visible to patients when they search for providers
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    Email
-                  </FormLabel>
-                  <FormControl>
-                    <Input placeholder="contact@organization.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-2">
-                    <Phone className="h-4 w-4" />
-                    Phone Number
-                  </FormLabel>
-                  <FormControl>
-                    <Input placeholder="+27 11 123 4567" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <FormField
-            control={form.control}
-            name="website"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  Website
-                </FormLabel>
-                <FormControl>
-                  <Input placeholder="https://www.organization.com" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="billingModel"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel>Billing Model</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="grid grid-cols-1 gap-4"
-                  >
-                    {['CONSOLIDATED', 'PER_LOCATION', 'HYBRID'].map((model) => (
-                      <div
-                        key={model}
-                        className="flex items-center space-x-2 rounded-md border p-4"
-                      >
-                        <RadioGroupItem value={model} id={model} />
-                        <div className="grid gap-1.5 leading-none">
-                          <label
-                            htmlFor={model}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                {/* Logo Upload */}
+                <FormField
+                  control={form.control}
+                  name="logo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4" />
+                        Organization Logo
+                      </FormLabel>
+                      <FormControl>
+                        <div className="flex items-center gap-4">
+                          <Input
+                            placeholder="Logo URL (will be uploaded to secure storage)"
+                            {...field}
+                            readOnly
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleLogoUpload}
+                            className="flex items-center gap-2"
                           >
-                            {getBillingModelLabel(model)}
-                          </label>
-                          <p className="text-xs text-muted-foreground">
-                            {getBillingModelDescription(model)}
-                          </p>
+                            <Upload className="h-4 w-4" />
+                            Upload Logo
+                          </Button>
                         </div>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                      </FormControl>
+                      <FormDescription>
+                        Upload your organization&apos;s logo (optional). Recommended size: 200x200px
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Contact Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Phone className="h-5 w-5" />
+                  Contact Information
+                </CardTitle>
+                <CardDescription>How patients and providers can reach you</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <Mail className="h-4 w-4" />
+                          Email Address
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="contact@yourorganization.com"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <Phone className="h-4 w-4" />
+                          Phone Number
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="+27 11 123 4567" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="website"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Globe className="h-4 w-4" />
+                        Website
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="url"
+                          placeholder="https://www.yourorganization.com"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>Your organization&apos;s website (optional)</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          </div>
 
           <div className="flex justify-end">
             <Button
@@ -283,29 +345,3 @@ export function EditOrganizationBasicInfo({
     </div>
   );
 }
-
-const getBillingModelLabel = (model: string) => {
-  switch (model) {
-    case 'CONSOLIDATED':
-      return 'Consolidated Billing';
-    case 'PER_LOCATION':
-      return 'Per-Location Billing';
-    case 'HYBRID':
-      return 'Hybrid Billing';
-    default:
-      return model;
-  }
-};
-
-const getBillingModelDescription = (model: string) => {
-  switch (model) {
-    case 'CONSOLIDATED':
-      return 'All locations share a single subscription and billing account.';
-    case 'PER_LOCATION':
-      return 'Each location has its own separate subscription and billing.';
-    case 'HYBRID':
-      return 'Mix of consolidated and per-location billing for different locations.';
-    default:
-      return '';
-  }
-};

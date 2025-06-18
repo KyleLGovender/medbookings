@@ -16,10 +16,8 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useProvider } from '@/features/providers/hooks/use-provider';
-import {
-  useProviderServices,
-  useUpdateProviderServices,
-} from '@/features/providers/hooks/use-provider-services';
+import { useProviderServices } from '@/features/providers/hooks/use-provider-services';
+import { useUpdateProviderServices } from '@/features/providers/hooks/use-provider-updates';
 import { useToast } from '@/hooks/use-toast';
 import { providerDebug } from '@/lib/debug';
 

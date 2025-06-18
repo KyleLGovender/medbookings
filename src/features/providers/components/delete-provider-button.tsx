@@ -16,7 +16,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { useDeleteProvider } from '@/features/providers/hooks/use-delete-provider';
+import { useDeleteProvider } from '@/features/providers/hooks/use-provider-delete';
 import { useToast } from '@/hooks/use-toast';
 
 interface DeleteProviderButtonProps {

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { FormProvider, useForm } from 'react-hook-form';
 
@@ -38,9 +39,11 @@ interface EditBasicInfoProps {
 export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
 
   // Fetch provider data
-  const { data: provider, isLoading, error } = useProvider(providerId);
+  const { data: provider, isLoading, error, refetch } = useProvider(providerId);
 
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -106,32 +109,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
   const bio = methods.watch('bio') || '';
 
   // Use our custom mutation hook
-  const { mutate, isPending } = useUpdateProviderBasicInfo({
-    onSuccess: (data) => {
-      toast({
-        title: 'Profile updated',
-        description: 'Your profile information has been updated successfully.',
-      });
-
-      // Navigate back to profile view
-      if (data.redirect) {
-        router.push(data.redirect);
-      } else if (provider) {
-        router.push(`/providers/${provider.id}/edit`);
-      } else {
-        // Fallback if provider is not yet loaded
-        router.push('/dashboard');
-      }
-      router.refresh();
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error updating profile',
-        description: error.message || 'There was an error updating your profile.',
-        variant: 'destructive',
-      });
-    },
-  });
+  const updateProviderMutation = useUpdateProviderBasicInfo();
 
   const handleProfileImageChange = (imageUrl: string | null) => {
     setProfileImage(imageUrl);
@@ -160,50 +138,77 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
       return;
     }
 
-    // Create FormData object
-    const formData = new FormData();
+    setIsSubmitting(true);
 
-    // Add provider ID
-    formData.append('id', provider.id);
-    formData.append('userId', provider.userId);
+    try {
+      // Create FormData object
+      const formData = new FormData();
 
-    // Add form fields
-    formData.append('name', data.name);
-    formData.append('image', data.image);
-    formData.append('bio', data.bio);
-    formData.append('email', data.email);
-    formData.append('whatsapp', data.whatsapp);
-    formData.append('website', data.website || '');
+      // Add provider ID
+      formData.append('id', provider.id);
+      formData.append('userId', provider.userId);
 
-    // Use the selected provider type from the form data
-    const selectedProviderTypeId =
-      data.serviceProviderTypeId || provider.serviceProviderTypeId || '';
-    formData.append('serviceProviderTypeId', selectedProviderTypeId);
+      // Add form fields
+      formData.append('name', data.name);
+      formData.append('image', data.image);
+      formData.append('bio', data.bio);
+      formData.append('email', data.email);
+      formData.append('whatsapp', data.whatsapp);
+      formData.append('website', data.website || '');
 
-    // Add languages
-    selectedLanguages.forEach((lang) => {
-      formData.append('languages', lang);
-    });
+      // Use the selected provider type from the form data
+      const selectedProviderTypeId =
+        data.serviceProviderTypeId || provider.serviceProviderTypeId || '';
+      formData.append('serviceProviderTypeId', selectedProviderTypeId);
 
-    // // Add image URL if it exists and has changed
-    // if (typeof data.image === 'string' && data.image !== 'placeholder') {
-    //   if (data.image === '') {
-    //     // Don't send empty strings that would clear the existing image
-    //     providerDebug.log('editBasicInfo', 'Empty image string detected, not sending');
-    //   } else if (data.image !== profileImage) {
-    //     // Only send if the image URL has actually changed
-    //     providerDebug.log('editBasicInfo', 'Adding image URL:', data.image);
-    //     formData.append('image', data.image);
-    //   } else {
-    //     providerDebug.log('editBasicInfo', 'Image URL unchanged, not sending');
-    //   }
-    // } else {
-    //   providerDebug.log('editBasicInfo', 'No valid image URL to send');
-    // }
+      // Add languages
+      selectedLanguages.forEach((lang) => {
+        formData.append('languages', lang);
+      });
 
-    providerDebug.log('editBasicInfo', 'Form data:', { formData });
+      providerDebug.log('editBasicInfo', 'Form data:', { formData });
 
-    mutate(formData);
+      // Use mutateAsync to properly await the result
+      await updateProviderMutation.mutateAsync(formData);
+
+      // Manually update the local state to reflect the change immediately
+      if (provider) {
+        // Create a new provider object with the updated basic info
+        const updatedProvider = {
+          ...provider,
+          name: data.name,
+          bio: data.bio,
+          image: data.image !== 'placeholder' ? data.image : provider.image,
+          languages: selectedLanguages,
+          website: data.website || '',
+          email: data.email,
+          whatsapp: data.whatsapp,
+          serviceProviderTypeId: selectedProviderTypeId,
+        };
+
+        // Force update the query cache with the new data
+        queryClient.setQueryData(['provider', providerId], updatedProvider);
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Provider profile updated successfully',
+      });
+
+      // Force a hard refetch to ensure we have the latest data
+      refetch();
+
+      // Also refresh the router to update any server components
+      router.refresh();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update provider profile',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Show loading state
@@ -229,7 +234,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
 
   return (
     <div className="space-y-8">
-      {isPending && (
+      {isSubmitting && (
         <CalendarLoader message="Saving Changes" submessage="Updating your provider profile..." />
       )}
       <FormProvider {...methods}>
@@ -459,7 +464,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
             <Button
               type="submit"
               className="w-full md:w-auto"
-              disabled={isPending}
+              disabled={isSubmitting}
               onClick={() => {
                 console.log('Save Changes button clicked');
                 console.log('Form is valid:', methods.formState.isValid);
@@ -467,7 +472,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
                 console.log('Current form values:', methods.getValues());
               }}
             >
-              {isPending ? 'Saving...' : 'Save Changes'}
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </form>

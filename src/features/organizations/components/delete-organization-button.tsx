@@ -16,7 +16,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { useDeleteOrganization } from '@/features/organizations/hooks/use-delete-organization';
+import { useDeleteOrganization } from '@/features/organizations/hooks/use-organization-delete';
 import { useToast } from '@/hooks/use-toast';
 
 interface DeleteOrganizationButtonProps {

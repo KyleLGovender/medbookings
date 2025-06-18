@@ -9,8 +9,6 @@ export function useUpdateProviderBasicInfo(options?: {
   onSuccess?: (data: any) => void;
   onError?: (error: Error) => void;
 }) {
-  const queryClient = useQueryClient();
-
   return useMutation<any, Error, FormData>({
     mutationFn: async (formData: FormData) => {
       const providerId = formData.get('id') as string;
@@ -31,11 +29,48 @@ export function useUpdateProviderBasicInfo(options?: {
 
       return response.json();
     },
+    onSuccess: options?.onSuccess,
+    onError: options?.onError,
+  });
+}
+
+/**
+ * Hook for updating a provider's services
+ * @param options Optional mutation options including onSuccess and onError callbacks
+ * @returns Mutation object for updating provider services
+ */
+export function useUpdateProviderServices(options?: {
+  onSuccess?: (data: any) => void;
+  onError?: (error: Error) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (formData: FormData) => {
+      const providerId = formData.get('id') as string;
+
+      if (!providerId) {
+        throw new Error('Provider ID is required');
+      }
+
+      const response = await fetch(`/api/providers/${providerId}/services`, {
+        method: 'PUT',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update services');
+      }
+
+      return response.json();
+    },
     onSuccess: (data, variables) => {
       const providerId = variables.get('id') as string;
 
       // Invalidate and refetch provider data
       queryClient.invalidateQueries({ queryKey: ['provider', providerId] });
+      queryClient.invalidateQueries({ queryKey: ['provider-services', providerId] });
 
       // Call the user-provided onSuccess callback if it exists
       if (options?.onSuccess) {
@@ -49,6 +84,46 @@ export function useUpdateProviderBasicInfo(options?: {
       if (options?.onError) {
         options.onError(error);
       }
+    },
+  });
+}
+
+/**
+ * Hook for updating a provider's regulatory requirements
+ * @returns Mutation object for updating provider requirements
+ */
+export function useUpdateProviderRequirements() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (formData: FormData) => {
+      const providerId = formData.get('id') as string;
+
+      if (!providerId) {
+        throw new Error('Provider ID is required');
+      }
+
+      const response = await fetch(`/api/providers/${providerId}/requirements`, {
+        method: 'PUT',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update requirements');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      const providerId = variables.get('id') as string;
+
+      // Invalidate and refetch provider data
+      queryClient.invalidateQueries({ queryKey: ['provider', providerId] });
+      queryClient.invalidateQueries({ queryKey: ['providerRequirementTypes'] });
+
+      // Return any additional data or redirect info
+      return data;
     },
   });
 }

@@ -13,18 +13,16 @@ import { Badge } from '@/components/ui/badge';
 // UI Components
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { renderRequirementInput } from '@/features/providers/components/render-requirement-input';
+import { RequirementType } from '@/features/providers/hooks/types';
+import { useProvider } from '@/features/providers/hooks/use-provider';
+import { useProviderRequirementTypes } from '@/features/providers/hooks/use-provider-requirements';
+import { useUpdateProviderRequirements } from '@/features/providers/hooks/use-provider-updates';
 // Toast notifications
 import { useToast } from '@/hooks/use-toast';
 import { providerDebug } from '@/lib/debug';
 
 // API hooks
-import { RequirementType } from '../../hooks/types';
-import { useProvider } from '../../hooks/use-provider';
-import {
-  useProviderRequirementTypes,
-  useUpdateProviderRequirements,
-} from '../../hooks/use-provider-requirements';
-import { renderRequirementInput } from '../render-requirement-input';
 
 export const regulatoryRequirementsSchema = z.object({
   regulatoryRequirements: z.object({

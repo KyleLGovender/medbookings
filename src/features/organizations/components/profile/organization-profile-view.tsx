@@ -159,11 +159,6 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
               </div>
             </div>
           )}
-
-          <div>
-            <h3 className="font-medium">Billing Model</h3>
-            <p>{getBillingModelLabel(organization.billingModel)}</p>
-          </div>
         </div>
       </Card>
 
@@ -219,6 +214,18 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
             </p>
           </div>
         )}
+      </Card>
+
+      {/* Organization Details Section */}
+      <Card className="p-6">
+        <h2 className="text-2xl font-bold">Billing Model</h2>
+        <Separator className="my-4" />
+        <div className="space-y-6">
+          <div>
+            <h3 className="font-medium">Billing Model</h3>
+            <p>{getBillingModelLabel(organization.billingModel)}</p>
+          </div>
+        </div>
       </Card>
 
       {/* Team Members Section */}
