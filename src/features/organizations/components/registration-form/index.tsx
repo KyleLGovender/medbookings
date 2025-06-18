@@ -73,8 +73,6 @@ export function OrganizationRegistrationForm() {
           `locations.${i}.name`,
           `locations.${i}.googlePlaceId`,
           `locations.${i}.formattedAddress`,
-          `locations.${i}.city`,
-          `locations.${i}.country`,
         ]);
         if (!isLocationValid) {
           console.log(`Location ${i} validation failed:`, form.formState.errors.locations?.[i]);

@@ -384,10 +384,6 @@ model Location {
   coordinates    Json         // Store lat/lng coordinates as {lat: number, lng: number}
   addressComponents Json       // Store all address components from Google
   
-  // Cached address components for search/filtering (derived from Google data)
-  city           String
-  country        String       @default("South Africa")
-  
   // Custom search terms added by the provider
   searchTerms    String[]     // Array of terms patients can search for to find this location
   
@@ -403,7 +399,7 @@ model Location {
   updatedAt      DateTime @updatedAt
   
   @@index([organizationId])
-  @@index([city, country])
+  @@index([searchTerms])
 }
 
 // ORGANIZATION-PROVIDER CONNECTIONS

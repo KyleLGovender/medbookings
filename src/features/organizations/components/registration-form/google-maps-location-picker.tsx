@@ -94,16 +94,10 @@ export function GoogleMapsLocationPicker({
       const mapInstance = new window.google.maps.Map(mapRef.current, {
         center: defaultCenter,
         zoom: 13,
+        mapId: '545f6767a9ed78ab9792513f', // Use the provided Map ID
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false,
-        styles: [
-          {
-            featureType: 'poi',
-            elementType: 'labels',
-            stylers: [{ visibility: 'off' }],
-          },
-        ],
       });
 
       console.log('Map instance created successfully');
@@ -121,7 +115,7 @@ export function GoogleMapsLocationPicker({
 
       // If there's an initial location, place a marker
       if (initialLocation && initialLocation.coordinates) {
-        placeMarker(mapInstance, initialLocation.coordinates);
+        placeMarker(mapInstance, initialLocation.coordinates).catch(console.error);
       }
 
       console.log('Map initialized successfully');
@@ -188,7 +182,7 @@ export function GoogleMapsLocationPicker({
 
     // Load the Google Maps JavaScript API
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=${callbackName}`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker&v=weekly&callback=${callbackName}&loading=async`;
     script.async = true;
     script.defer = true;
     script.onerror = (error) => {
@@ -227,28 +221,30 @@ export function GoogleMapsLocationPicker({
         return;
       }
 
-      placeMarker(map, { lat, lng });
+      placeMarker(map, { lat, lng }).catch(console.error);
       reverseGeocode(lat, lng);
     } catch (error) {
       console.error('Error handling map click:', error);
     }
   };
 
-  const placeMarker = (mapInstance: any, position: { lat: number; lng: number }) => {
+  const placeMarker = async (mapInstance: any, position: { lat: number; lng: number }) => {
     if (!mapInstance || !window.google || !position) return;
 
     try {
       // Remove existing marker
       if (marker) {
-        marker.setMap(null);
+        marker.map = null;
       }
 
-      // Create new marker
-      const newMarker = new window.google.maps.Marker({
+      // Import the marker library
+      const { AdvancedMarkerElement } = (await window.google.maps.importLibrary('marker')) as any;
+
+      // Create new advanced marker
+      const newMarker = new AdvancedMarkerElement({
         position,
         map: mapInstance,
-        draggable: true,
-        animation: window.google.maps.Animation.DROP,
+        gmpDraggable: true,
       });
 
       // Add drag listener
@@ -262,7 +258,7 @@ export function GoogleMapsLocationPicker({
             }
           }
         } catch (error) {
-          console.error('Error handling marker drag:', error);
+          console.error('Error handling advanced marker drag:', error);
         }
       });
 
@@ -303,30 +299,42 @@ export function GoogleMapsLocationPicker({
     setIsSearching(true);
 
     try {
-      const service = new window.google.maps.places.PlacesService(map);
+      // Use the new Places API SearchNearby
+      const { Place, SearchNearbyRankPreference } = (await window.google.maps.importLibrary(
+        'places'
+      )) as any;
 
-      const results = await new Promise((resolve, reject) => {
-        service.textSearch(
-          {
-            query: query.trim(),
-            location: map.getCenter(),
-            radius: 50000, // 50km radius
+      // Create the request
+      const request = {
+        textQuery: query.trim(),
+        fields: ['id', 'displayName', 'formattedAddress', 'location', 'addressComponents'],
+        locationBias: map.getCenter(),
+        maxResultCount: 5,
+        rankPreference: SearchNearbyRankPreference.DISTANCE,
+      };
+
+      // Perform the search
+      const { places } = await Place.searchByText(request);
+
+      if (places && places.length > 0) {
+        // Convert new API results to the format expected by the component
+        const convertedResults = places.map((place: any) => ({
+          place_id: place.id,
+          name: place.displayName?.text || place.displayName || '', // Map displayName to name
+          formatted_address: place.formattedAddress,
+          geometry: {
+            location: {
+              lat: () => place.location.lat(),
+              lng: () => place.location.lng(),
+            },
           },
-          (results: any, status: any) => {
-            if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-              resolve(results);
-            } else {
-              reject(new Error(`Places search failed: ${status}`));
-            }
-          }
-        );
-      });
+          address_components: place.addressComponents || [],
+        }));
 
-      const validResults = (results as any[]).filter(
-        (result) => result && result.place_id && result.formatted_address && result.geometry
-      );
-
-      setSearchResults(validResults.slice(0, 5)); // Limit to 5 results
+        setSearchResults(convertedResults);
+      } else {
+        setSearchResults([]);
+      }
     } catch (error) {
       console.error('Places search error:', error);
       setSearchResults([]);
@@ -399,7 +407,7 @@ export function GoogleMapsLocationPicker({
       // Center map on selected location and add marker
       map.setCenter(location);
       map.setZoom(16);
-      placeMarker(map, location);
+      placeMarker(map, location).catch(console.error);
 
       processLocationResult(result);
       setSearchResults([]);
@@ -424,7 +432,7 @@ export function GoogleMapsLocationPicker({
 
           map.setCenter(location);
           map.setZoom(16);
-          placeMarker(map, location);
+          placeMarker(map, location).catch(console.error);
           reverseGeocode(lat, lng);
         } catch (error) {
           console.error('Error processing current location:', error);
@@ -445,7 +453,7 @@ export function GoogleMapsLocationPicker({
   const clearSelection = () => {
     setSelectedLocation(null);
     if (marker) {
-      marker.setMap(null);
+      marker.map = null;
       setMarker(null);
     }
   };
