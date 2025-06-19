@@ -1,18 +1,20 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RequirementsValidationStatus } from '@prisma/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+// UI Components
 import CalendarLoader from '@/components/calendar-loader';
 import { Badge } from '@/components/ui/badge';
-// UI Components
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+// Feature components
 import { renderRequirementInput } from '@/features/providers/components/render-requirement-input';
 import { RequirementType } from '@/features/providers/hooks/types';
 import { useProvider } from '@/features/providers/hooks/use-provider';
@@ -20,9 +22,6 @@ import { useProviderRequirementTypes } from '@/features/providers/hooks/use-prov
 import { useUpdateProviderRequirements } from '@/features/providers/hooks/use-provider-updates';
 // Toast notifications
 import { useToast } from '@/hooks/use-toast';
-import { providerDebug } from '@/lib/debug';
-
-// API hooks
 
 export const regulatoryRequirementsSchema = z.object({
   regulatoryRequirements: z.object({
@@ -52,12 +51,16 @@ export function EditRegulatoryRequirements({
 }: EditRegulatoryRequirementsProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch provider data
-  const providerQuery = useProvider(providerId);
-  const provider = providerQuery.data;
-  const isProviderLoading = providerQuery.isLoading;
-  const providerError = providerQuery.error;
+  const {
+    data: provider,
+    isLoading: isProviderLoading,
+    error: providerError,
+    refetch,
+  } = useProvider(providerId);
 
   // Fetch requirement types for this provider
   const {
@@ -82,7 +85,7 @@ export function EditRegulatoryRequirements({
   });
 
   // Get mutation hook for updating requirements
-  const mutation = useUpdateProviderRequirements();
+  const updateRequirementsMutation = useUpdateProviderRequirements();
 
   // Update form values when provider and requirement types data is loaded
   useEffect(() => {
@@ -138,6 +141,8 @@ export function EditRegulatoryRequirements({
   const onSubmit = async (data: RegulatoryRequirementsFormValues) => {
     if (!provider) return;
 
+    setIsSubmitting(true);
+
     try {
       // Create FormData object for the API
       const formData = new FormData();
@@ -177,36 +182,31 @@ export function EditRegulatoryRequirements({
         }
       });
 
-      providerDebug.logFormData('editRegulatoryRequirements', formData);
-      mutation.mutate(formData, {
-        onSuccess: (data) => {
-          toast({
-            title: 'Success',
-            description: 'Regulatory requirements updated successfully.',
-          });
+      // Use mutateAsync to properly await the result
+      await updateRequirementsMutation.mutateAsync(formData);
 
-          // Navigate back to profile view or redirect
-          if (data.redirect) {
-            router.push(data.redirect);
-          } else {
-            router.push(`/providers/${providerId}/edit`);
-          }
-          router.refresh();
-        },
-        onError: (error) => {
-          toast({
-            title: 'Error',
-            description: error instanceof Error ? error.message : 'Failed to update requirements',
-            variant: 'destructive',
-          });
-        },
+      // Invalidate and refetch provider data
+      queryClient.invalidateQueries({ queryKey: ['provider', providerId] });
+      queryClient.invalidateQueries({ queryKey: ['providerRequirementTypes'] });
+
+      toast({
+        title: 'Success',
+        description: 'Regulatory requirements updated successfully.',
       });
+
+      // Force a hard refetch to ensure we have the latest data
+      refetch();
+
+      // Also refresh the router to update any server components
+      router.refresh();
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to update regulatory requirements. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to update requirements',
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -248,7 +248,7 @@ export function EditRegulatoryRequirements({
 
   return (
     <>
-      {mutation.isPending && (
+      {isSubmitting && (
         <CalendarLoader message="Saving Changes" submessage="Updating your requirements..." />
       )}
       <FormProvider {...methods}>
@@ -325,8 +325,8 @@ export function EditRegulatoryRequirements({
                 <Button type="button" variant="outline" onClick={() => router.back()}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={mutation.isPending}>
-                  {mutation.isPending ? 'Saving...' : 'Save Requirements'}
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Saving...' : 'Save Requirements'}
                 </Button>
               </div>
             </CardContent>

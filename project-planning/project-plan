@@ -28,7 +28,7 @@
 - [ ] Add Google Meet integration for virtual appointments
 - [ ] Set up email sync permissions for notifications
 - [x] Design provider profile edit interface
-- [ ] Implement provider specialization and services selection
+- [x] Implement provider specialization and services selection
 - [ ] Build provider approval workflow for admins
 - [ ] Create provider dashboard
 - [ ] Design provider public profile page for guests/users to view
@@ -36,8 +36,8 @@
 
 ## Organization Management
 
-- [ ] Build organization creation interface
-- [ ] Implement organization profile management
+- [x] Build organization creation interface
+- [x] Implement organization profile management
 - [ ] Create organization manager role assignment
 - [ ] Design organization approval workflow for admins
 - [ ] Build organization dashboard
@@ -46,9 +46,8 @@
 
 ## Location Management
 
-- [ ] Design location creation interface for organizations
-- [ ] Implement location details management (address, contact info, services)
-- [ ] Build location operation hours configuration
+- [x] Design location creation interface for organizations
+- [x] Implement location details management (address, contact info, services)
 - [ ] Create location service assignment functionality
 - [ ] Implement location search with geolocation support
 

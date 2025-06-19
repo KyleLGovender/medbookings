@@ -29,7 +29,6 @@ import { useProvider } from '@/features/providers/hooks/use-provider';
 import { useProviderTypes } from '@/features/providers/hooks/use-provider-types';
 import { useUpdateProviderBasicInfo } from '@/features/providers/hooks/use-provider-updates';
 import { useToast } from '@/hooks/use-toast';
-import { providerDebug } from '@/lib/debug';
 
 interface EditBasicInfoProps {
   providerId: string;
@@ -134,7 +133,6 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
 
   const onSubmit = async (data: Record<string, any>) => {
     if (!provider) {
-      providerDebug.error('editBasicInfo', 'No provider data available');
       return;
     }
 
@@ -165,8 +163,6 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
       selectedLanguages.forEach((lang) => {
         formData.append('languages', lang);
       });
-
-      providerDebug.log('editBasicInfo', 'Form data:', { formData });
 
       // Use mutateAsync to properly await the result
       await updateProviderMutation.mutateAsync(formData);
@@ -461,17 +457,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
             <Button type="button" variant="outline" onClick={() => router.back()}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              className="w-full md:w-auto"
-              disabled={isSubmitting}
-              onClick={() => {
-                console.log('Save Changes button clicked');
-                console.log('Form is valid:', methods.formState.isValid);
-                console.log('Form errors:', methods.formState.errors);
-                console.log('Current form values:', methods.getValues());
-              }}
-            >
+            <Button type="submit" className="w-full md:w-auto" disabled={isSubmitting}>
               {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>

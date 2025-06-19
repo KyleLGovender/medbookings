@@ -1,11 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { FormProvider, useForm } from 'react-hook-form';
+import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import CalendarLoader from '@/components/calendar-loader';
@@ -19,29 +19,20 @@ import { useProvider } from '@/features/providers/hooks/use-provider';
 import { useProviderServices } from '@/features/providers/hooks/use-provider-services';
 import { useUpdateProviderServices } from '@/features/providers/hooks/use-provider-updates';
 import { useToast } from '@/hooks/use-toast';
-import { providerDebug } from '@/lib/debug';
 
-const servicesSchema = z.object({
-  services: z.array(z.string()).min(1, 'Please select at least one service'),
-  serviceConfigs: z.record(
-    z.object({
-      duration: z.number().min(5, 'Duration must be at least 5 minutes'),
-      price: z.number().min(0, 'Price must be a positive number'),
-    })
-  ),
+// Zod schema for a single service
+const serviceSchema = z.object({
+  id: z.string().min(1, 'Service is required'),
+  price: z.coerce.number().min(0, 'Price must be a positive number'),
+  duration: z.coerce.number().min(1, 'Duration must be a positive number'),
 });
 
-type ServicesFormValues = z.infer<typeof servicesSchema>;
+// Zod schema for the form
+const editServicesSchema = z.object({
+  services: z.array(serviceSchema),
+});
 
-interface Service {
-  id: string;
-  name: string;
-  description?: string;
-  defaultDuration?: number | null;
-  defaultPrice?: number | null;
-  isSelected?: boolean;
-  displayPriority?: number;
-}
+type EditServicesFormValues = z.infer<typeof editServicesSchema>;
 
 interface EditServicesProps {
   providerId: string;
@@ -51,6 +42,7 @@ interface EditServicesProps {
 export function EditServices({ providerId, userId }: EditServicesProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch provider data
@@ -58,6 +50,7 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
     data: provider,
     isLoading: isProviderLoading,
     error: providerError,
+    refetch,
   } = useProvider(providerId);
 
   // Fetch available services
@@ -70,55 +63,104 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
   // Get provider's current services
   const providerServiceIds = provider?.services?.map((s: any) => s.id) || [];
 
-  // Set up form with default values
-  const methods = useForm<ServicesFormValues>({
-    resolver: zodResolver(servicesSchema),
-    defaultValues: {
-      services: [],
-      serviceConfigs: {},
+  const updateProviderServicesMutation = useUpdateProviderServices({
+    onSuccess: (data) => {
+      // Invalidate queries to ensure data consistency with the server
+      queryClient.invalidateQueries({ queryKey: ['provider', providerId] });
+      queryClient.invalidateQueries({ queryKey: ['provider-services', providerId] });
+
+      toast({
+        title: 'Success',
+        description: 'Services updated successfully',
+      });
+
+      // Force a hard refetch to ensure we have the latest data
+      refetch();
+
+      // Also refresh the router to update any server components
+      router.refresh();
     },
-    mode: 'onBlur',
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update services',
+        variant: 'destructive',
+      });
+    },
   });
 
-  // Update form values when provider data is loaded
-  useEffect(() => {
-    if (provider && provider.services) {
-      const serviceIds = provider.services.map((s: any) => s.id);
-      const serviceConfigs = provider.services.reduce((acc: any, service: any) => {
-        acc[service.id] = {
-          duration: service.duration || service.defaultDuration || 30,
-          price: service.price || service.defaultPrice || 0,
-        };
-        return acc;
-      }, {});
+  const form = useForm<EditServicesFormValues>({
+    resolver: zodResolver(editServicesSchema),
+    defaultValues: {
+      services: providerServiceIds.map((id) => ({
+        id,
+        price: 0,
+        duration: 30,
+      })),
+    },
+  });
 
-      methods.reset({
-        services: serviceIds,
-        serviceConfigs: serviceConfigs,
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'services',
+  });
+
+  const onSubmit = async (data: EditServicesFormValues) => {
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('id', providerId);
+
+      data.services.forEach((service, index) => {
+        formData.append(`services[${index}][id]`, service.id);
+        formData.append(`services[${index}][price]`, service.price.toString());
+        formData.append(`services[${index}][duration]`, service.duration.toString());
       });
-    }
-  }, [provider, methods]);
 
-  // Initialize form with pre-selected services when available
-  useEffect(() => {
-    if (availableServices) {
-      // If we have services with isSelected property, use that to pre-select services
-      const selectedServices = availableServices
-        .filter((service) => service.isSelected)
-        .map((service) => service.id);
+      // Call the mutation with the formData
+      await updateProviderServicesMutation.mutateAsync(formData);
 
-      if (selectedServices.length > 0) {
-        // Only update if we have pre-selected services and they differ from current selection
-        const currentSelection = methods.getValues('services') || [];
-        if (
-          selectedServices.length !== currentSelection.length ||
-          !selectedServices.every((id) => currentSelection.includes(id))
-        ) {
-          methods.setValue('services', selectedServices);
-        }
+      // Manually update the local state to reflect the changes immediately
+      if (provider) {
+        // Create a new provider object with the updated services
+        const updatedProvider = {
+          ...provider,
+          services: data.services.map((service) => ({
+            serviceId: service.id,
+            price: service.price,
+            duration: service.duration,
+            // Preserve other fields that might be in the original services
+            ...(provider.services.find((s) => s.id === service.id) || {}),
+          })),
+        };
+
+        // Force update the query cache with the new data
+        queryClient.setQueryData(['provider', providerId], updatedProvider);
+
+        // Also update the provider-services cache if it exists
+        queryClient.setQueryData(['provider-services', providerId], data.services);
       }
+
+      toast({
+        title: 'Success',
+        description: 'Services updated successfully',
+      });
+
+      // Force a hard refetch to ensure we have the latest data
+      refetch();
+
+      // Also refresh the router to update any server components
+      router.refresh();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update services',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [availableServices, methods]);
+  };
 
   // Check if current user is authorized to edit this provider
   useEffect(() => {
@@ -126,82 +168,6 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
       router.push('/dashboard');
     }
   }, [provider, userId, router]);
-
-  // Use our custom mutation hook
-  const mutation = useUpdateProviderServices({
-    onSuccess: (data) => {
-      toast({
-        title: 'Services updated',
-        description: 'Your services have been updated successfully.',
-      });
-
-      // Navigate back to profile view
-      if (data.redirect) {
-        router.push(data.redirect);
-      } else if (provider) {
-        router.push(`/providers/${provider.id}/edit`);
-      }
-      router.refresh();
-    },
-    onError: (error) => {
-      toast({
-        title: 'Update failed',
-        description: error.message || 'There was an error updating your services.',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const onSubmit = async (data: ServicesFormValues) => {
-    if (!provider) {
-      return;
-    }
-
-    // Create FormData object for the API
-    const formData = new FormData();
-    formData.append('id', provider.id);
-    formData.append('userId', provider.userId);
-
-    // Append services
-    data.services.forEach((serviceId) => {
-      formData.append('services', serviceId);
-    });
-
-    // Append service configurations
-    const serviceConfigs = methods.getValues('serviceConfigs') || {};
-    Object.entries(serviceConfigs).forEach(([serviceId, config]) => {
-      formData.append(`serviceConfigs[${serviceId}][duration]`, config.duration.toString());
-      formData.append(`serviceConfigs[${serviceId}][price]`, config.price.toString());
-    });
-
-    // Trigger the mutation
-    providerDebug.logFormData('editServices', formData);
-    mutation.mutate(formData);
-  };
-
-  const watchedServices = methods.watch('services');
-  useEffect(() => {
-    if (!watchedServices || !availableServices) return;
-
-    // Get current service configs
-    const currentConfigs = methods.getValues('serviceConfigs') || {};
-
-    // Add any missing service configs
-    watchedServices.forEach((serviceId) => {
-      if (!currentConfigs[serviceId]) {
-        const service = availableServices.find((s) => s.id === serviceId);
-        if (service) {
-          currentConfigs[serviceId] = {
-            duration: service.defaultDuration || 30,
-            price: service.defaultPrice || 0,
-          };
-        }
-      }
-    });
-
-    // Update the form
-    methods.setValue('serviceConfigs', currentConfigs);
-  }, [watchedServices, availableServices, methods]);
 
   // Show loading state
   if (isProviderLoading || isServicesLoading) {
@@ -226,155 +192,116 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
 
   return (
     <>
-      {mutation.isPending && (
+      {isSubmitting && (
         <CalendarLoader message="Saving Changes" submessage="Updating your services..." />
       )}
-      <FormProvider {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
-          <Card className="p-6">
-            <h2 className="mb-6 text-2xl font-semibold">Services</h2>
-            <p className="text-sm text-muted-foreground">
-              Select the services you offer to patients.
-            </p>
-            <Separator className="my-4" />
+      <form id="edit-services-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Card className="p-6">
+          <h2 className="mb-6 text-2xl font-semibold">Services</h2>
+          <p className="text-sm text-muted-foreground">
+            Select the services you offer to patients.
+          </p>
+          <Separator className="my-4" />
 
-            <div className="space-y-6">
-              <FormField
-                control={methods.control}
-                name="services"
-                render={({ field }) => {
-                  // Force field value to be an array
-                  const fieldValue = Array.isArray(field.value) ? field.value : [];
-                  return (
-                    <FormItem>
-                      <FormLabel>Select services you provide *</FormLabel>
-                      <FormMessage />
-                      <div className="mt-2 space-y-4">
-                        {availableServices ? (
-                          [...availableServices]
-                            .sort((a, b) => (a.displayPriority || 0) - (b.displayPriority || 0))
-                            .map((service) => {
-                              const isChecked = fieldValue.includes(service.id);
-                              return (
-                                <div key={service.id} className="rounded-md border p-4">
-                                  <div className="flex items-start space-x-3">
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={isChecked}
-                                        onCheckedChange={(checked) => {
-                                          if (checked) {
-                                            field.onChange([...fieldValue, service.id]);
-                                          } else {
-                                            field.onChange(
-                                              fieldValue.filter(
-                                                (value: string) => value !== service.id
-                                              )
-                                            );
-                                          }
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <div className="flex-1">
-                                      <div className="space-y-1">
-                                        <span className="text-sm font-medium">{service.name}</span>
-                                        {service.description && (
-                                          <p className="text-xs text-muted-foreground">
-                                            {service.description}
-                                          </p>
-                                        )}
-                                      </div>
+          <div className="space-y-6">
+            {fields.map((field, index) => (
+              <div key={field.id} className="rounded-md border p-4">
+                <div className="flex items-start space-x-3">
+                  <FormControl>
+                    <Checkbox
+                      checked={availableServices.some((s) => s.id === field.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          append({ id: field.id, price: 0, duration: 30 });
+                        } else {
+                          remove(index);
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  <div className="flex-1">
+                    <div className="space-y-1">
+                      <span className="text-sm font-medium">
+                        {availableServices.find((s) => s.id === field.id)?.name}
+                      </span>
+                    </div>
 
-                                      {isChecked && (
-                                        <div className="mt-3 flex flex-col space-y-3">
-                                          <FormField
-                                            control={methods.control}
-                                            name={`serviceConfigs.${service.id}.price`}
-                                            defaultValue={Number(service.defaultPrice) || 0}
-                                            render={({ field }) => (
-                                              <FormItem className="w-1/2">
-                                                <FormLabel className="text-xs">Price (R)</FormLabel>
-                                                <FormControl>
-                                                  <div className="relative">
-                                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 transform text-xs text-muted-foreground">
-                                                      R
-                                                    </span>
-                                                    <Input
-                                                      type="number"
-                                                      className="h-8 pl-4"
-                                                      value={field.value}
-                                                      onChange={(e) => {
-                                                        // Simple conversion to number
-                                                        const value =
-                                                          e.target.value === ''
-                                                            ? 0
-                                                            : Number(e.target.value);
-                                                        field.onChange(value);
-                                                      }}
-                                                      onBlur={field.onBlur}
-                                                    />
-                                                  </div>
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          <FormField
-                                            control={methods.control}
-                                            name={`serviceConfigs.${service.id}.duration`}
-                                            defaultValue={Number(service.defaultDuration) || 30}
-                                            render={({ field }) => (
-                                              <FormItem className="w-1/2">
-                                                <FormLabel className="text-xs">
-                                                  Duration (min)
-                                                </FormLabel>
-                                                <FormControl>
-                                                  <Input
-                                                    type="number"
-                                                    className="h-8"
-                                                    value={field.value}
-                                                    onChange={(e) => {
-                                                      // Simple conversion to number
-                                                      const value =
-                                                        e.target.value === ''
-                                                          ? 0
-                                                          : Number(e.target.value);
-                                                      field.onChange(value);
-                                                    }}
-                                                    onBlur={field.onBlur}
-                                                  />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })
-                        ) : (
-                          <p>No services available</p>
+                    <div className="mt-3 flex flex-col space-y-3">
+                      <FormField
+                        control={form.control}
+                        name={`services.${index}.price`}
+                        render={({ field }) => (
+                          <FormItem className="w-1/2">
+                            <FormLabel className="text-xs">Price (R)</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 transform text-xs text-muted-foreground">
+                                  R
+                                </span>
+                                <Input
+                                  type="number"
+                                  className="h-8 pl-4"
+                                  value={field.value}
+                                  onChange={(e) => {
+                                    // Simple conversion to number
+                                    const value =
+                                      e.target.value === '' ? 0 : Number(e.target.value);
+                                    field.onChange(value);
+                                  }}
+                                  onBlur={field.onBlur}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                      </div>
-                    </FormItem>
-                  );
-                }}
-              />
-            </div>
-          </Card>
-
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={() => router.back()}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Saving...' : 'Save Changes'}
-            </Button>
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`services.${index}.duration`}
+                        render={({ field }) => (
+                          <FormItem className="w-1/2">
+                            <FormLabel className="text-xs">Duration (min)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                className="h-8"
+                                value={field.value}
+                                onChange={(e) => {
+                                  // Simple conversion to number
+                                  const value = e.target.value === '' ? 0 : Number(e.target.value);
+                                  field.onChange(value);
+                                }}
+                                onBlur={field.onBlur}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </form>
-      </FormProvider>
+        </Card>
+
+        <div className="flex justify-end space-x-4">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            onClick={() => append({ id: '', price: 0, duration: 30 })}
+          >
+            Add Service
+          </Button>
+          <Button type="submit" disabled={isSubmitting} form="edit-services-form">
+            {isSubmitting ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
+      </form>
     </>
   );
 }
