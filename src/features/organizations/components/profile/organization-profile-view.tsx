@@ -3,13 +3,15 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import { Building2, Globe, Mail, MapPin, PenSquare, Phone } from 'lucide-react';
+import { Building2, Globe, Mail, MapPin, PenSquare, Phone, Tag } from 'lucide-react';
 
 import { OrganizationProfileSkeleton } from '@/components/skeletons/organization-profile-skeleton';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { DeleteOrganizationButton } from '@/features/organizations/components/delete-organization-button';
+import { StaticLocationMap } from '@/features/organizations/components/static-location-map';
 import { useOrganization } from '@/features/organizations/hooks/use-organization';
 
 interface OrganizationProfileViewProps {
@@ -171,38 +173,86 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
         <Separator className="my-4" />
 
         {organization.locations && organization.locations.length > 0 ? (
-          <div className="space-y-4">
-            {organization.locations.map((location: any) => (
-              <div key={location.id} className="rounded-md border p-4">
-                <div className="flex flex-col">
-                  <h3 className="flex items-center gap-2 font-medium">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
+          <div className="space-y-6">
+            {organization.locations.map((location: any, index: number) => (
+              <Card key={location.id}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
                     {location.name}
-                  </h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{location.formattedAddress}</p>
-                  <div className="mt-3 flex items-center gap-4 text-sm">
-                    {location.phone && (
-                      <div className="flex items-center gap-1">
-                        <Phone className="h-3 w-3 text-muted-foreground" />
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        <Tag className="h-4 w-4" />
+                        Search Terms
+                      </h3>
+                      {location.searchTerms && location.searchTerms.length > 0 ? (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {location.searchTerms.map((term: string) => (
+                            <Badge key={term} variant="secondary">
+                              {term}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No search terms provided.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-center py-4">
+                    {location.coordinates &&
+                    typeof location.coordinates === 'object' &&
+                    'lat' in location.coordinates &&
+                    'lng' in location.coordinates ? (
+                      <StaticLocationMap
+                        coordinates={location.coordinates as { lat: number; lng: number }}
+                        locationName={location.name}
+                      />
+                    ) : null}
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Address</h3>
+                    <p>{location.formattedAddress}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        <Phone className="h-4 w-4" />
+                        Phone Number
+                      </h3>
+                      {location.phone ? (
                         <a href={`tel:${location.phone}`} className="text-primary hover:underline">
                           {location.phone}
                         </a>
-                      </div>
-                    )}
-                    {location.email && (
-                      <div className="flex items-center gap-1">
-                        <Mail className="h-3 w-3 text-muted-foreground" />
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Not provided.</p>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        <Mail className="h-4 w-4" />
+                        Email Address
+                      </h3>
+                      {location.email ? (
                         <a
                           href={`mailto:${location.email}`}
                           className="text-primary hover:underline"
                         >
                           {location.email}
                         </a>
-                      </div>
-                    )}
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Not provided.</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         ) : (
