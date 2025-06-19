@@ -609,12 +609,6 @@ export function GoogleMapsLocationPicker({
                   Coordinates: {selectedLocation.coordinates.lat.toFixed(6)},{' '}
                   {selectedLocation.coordinates.lng.toFixed(6)}
                 </div>
-                {selectedLocation.searchTerms && selectedLocation.searchTerms.length > 0 && (
-                  <div className="text-xs">
-                    <span className="text-muted-foreground">Search Terms: </span>
-                    <span>{selectedLocation.searchTerms.join(', ')}</span>
-                  </div>
-                )}
               </div>
             </div>
           </div>

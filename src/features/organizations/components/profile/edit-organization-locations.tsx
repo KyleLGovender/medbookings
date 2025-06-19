@@ -90,12 +90,6 @@ export function EditOrganizationLocations({
                 lng: (loc.coordinates as any).lng as number,
               }
             : { lat: 0, lng: 0 }; // Default or error handling
-        const addressComponents =
-          loc.addressComponents &&
-          typeof loc.addressComponents === 'object' &&
-          loc.addressComponents !== null
-            ? loc.addressComponents
-            : {}; // Default or error handling
 
         return {
           ...loc,
@@ -104,7 +98,6 @@ export function EditOrganizationLocations({
           googlePlaceId: loc.googlePlaceId || '',
           formattedAddress: loc.formattedAddress || '',
           coordinates,
-          addressComponents,
           searchTerms: loc.searchTerms || [],
           phone: loc.phone || '',
           email: loc.email || '',
@@ -134,7 +127,6 @@ export function EditOrganizationLocations({
       googlePlaceId: string;
       formattedAddress: string;
       coordinates: { lat: number; lng: number };
-      searchTerms?: string[];
     }
   ) => {
     update(locationIndex, {
@@ -142,7 +134,6 @@ export function EditOrganizationLocations({
       googlePlaceId: locationData.googlePlaceId,
       formattedAddress: locationData.formattedAddress,
       coordinates: locationData.coordinates,
-      searchTerms: locationData.searchTerms || [],
     });
 
     // Trigger validation for the updated fields

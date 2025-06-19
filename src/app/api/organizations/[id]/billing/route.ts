@@ -52,7 +52,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     // Update the organization's billing model
     const updatedOrganization = await prisma.organization.update({
-      where: { id: organizationId },
+      where: { id: id },
       data: { billingModel },
     });
 
