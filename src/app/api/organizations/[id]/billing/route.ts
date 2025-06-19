@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function PATCH(req: NextRequest, { params }: { params: { organizationId: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const currentUser = await getCurrentUser();
 
@@ -11,12 +11,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { organizati
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { organizationId } = params;
+    const { id } = params;
     const userId = currentUser.id;
 
     // Check if organization exists
     const organization = await prisma.organization.findUnique({
-      where: { id: organizationId },
+      where: { id: id },
       include: {
         memberships: {
           where: { userId },

@@ -382,7 +382,6 @@ model Location {
   googlePlaceId  String       @unique // Google Places API ID (required)
   formattedAddress String      @db.Text // Full formatted address from Google
   coordinates    Json         // Store lat/lng coordinates as {lat: number, lng: number}
-  addressComponents Json       // Store all address components from Google
   
   // Custom search terms added by the provider
   searchTerms    String[]     // Array of terms patients can search for to find this location

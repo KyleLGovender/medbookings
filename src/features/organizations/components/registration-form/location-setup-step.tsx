@@ -22,7 +22,7 @@ import { Separator } from '@/components/ui/separator';
 import { OrganizationRegistrationData } from '@/features/organizations/types/types';
 import { isDevelopment } from '@/lib/constants';
 
-import { GoogleMapsLocationPicker } from './google-maps-location-picker';
+import { GoogleMapsLocationPicker } from '../google-maps-location-picker';
 
 export function LocationSetupStep() {
   const form = useFormContext<OrganizationRegistrationData>();
@@ -65,7 +65,6 @@ export function LocationSetupStep() {
       googlePlaceId: '',
       formattedAddress: '',
       coordinates: { lat: 0, lng: 0 },
-      addressComponents: {},
       searchTerms: [],
       phone: '',
       email: '',
@@ -78,7 +77,6 @@ export function LocationSetupStep() {
     form.setValue(`locations.${locationIndex}.googlePlaceId`, locationData.googlePlaceId);
     form.setValue(`locations.${locationIndex}.formattedAddress`, locationData.formattedAddress);
     form.setValue(`locations.${locationIndex}.coordinates`, locationData.coordinates);
-    form.setValue(`locations.${locationIndex}.addressComponents`, locationData.addressComponents);
 
     // Set search terms if available
     if (locationData.searchTerms && locationData.searchTerms.length > 0) {

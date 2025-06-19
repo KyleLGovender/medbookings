@@ -232,7 +232,7 @@ export function EditOrganizationBilling({ organizationId, userId }: EditOrganiza
           <div className="flex justify-end">
             <Button type="submit" disabled={isSubmitting}>
               <Save className="mr-2 h-4 w-4" />
-              {isSubmitting ? 'Saving...' : 'Save Billing Settings'}
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </form>

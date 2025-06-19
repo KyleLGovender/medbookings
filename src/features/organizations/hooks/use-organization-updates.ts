@@ -86,3 +86,52 @@ export function useUpdateOrganizationBilling(options?: {
     onError: options?.onError,
   });
 }
+
+interface UpdateOrganizationLocationsParams {
+  organizationId: string;
+  locations: Array<{
+    id?: string;
+    name: string;
+    googlePlaceId: string;
+    formattedAddress: string;
+    coordinates: { lat: number; lng: number };
+    searchTerms?: string[];
+    phone?: string;
+    email?: string;
+  }>;
+}
+
+/**
+ * Hook for updating an organization's locations
+ * @param options Optional mutation options including onSuccess and onError callbacks
+ * @returns Mutation object for updating organization locations
+ */
+export function useUpdateOrganizationLocations(options?: {
+  onSuccess?: (data: any) => void;
+  onError?: (error: Error) => void;
+}) {
+  return useMutation<any, Error, UpdateOrganizationLocationsParams>({
+    mutationFn: async ({ organizationId, locations }) => {
+      if (!organizationId) {
+        throw new Error('Organization ID is required');
+      }
+
+      const response = await fetch(`/api/organizations/${organizationId}/locations`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ locations }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update organization locations');
+      }
+
+      return response.json();
+    },
+    onSuccess: options?.onSuccess,
+    onError: options?.onError,
+  });
+}

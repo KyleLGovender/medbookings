@@ -3,6 +3,7 @@
 import { OrganizationProfileSkeleton } from '@/components/skeletons/organization-profile-skeleton';
 import { EditOrganizationBasicInfo } from '@/features/organizations/components/profile/edit-organization-basic-info';
 import { EditOrganizationBilling } from '@/features/organizations/components/profile/edit-organization-billing';
+import { EditOrganizationLocations } from '@/features/organizations/components/profile/edit-organization-locations';
 import { useOrganization } from '@/features/organizations/hooks/use-organization';
 
 interface EditOrganizationProps {
@@ -25,7 +26,7 @@ export function EditOrganization({ organizationId, userId }: EditOrganizationPro
     <div className="space-y-8">
       <EditOrganizationBasicInfo organizationId={organizationId} userId={userId} />
       <EditOrganizationBilling organizationId={organizationId} userId={userId} />
-      {/* <EditOrganizationLocations organizationId={organizationId} userId={userId} /> */}
+      <EditOrganizationLocations organizationId={organizationId} userId={userId} />
     </div>
   );
 }

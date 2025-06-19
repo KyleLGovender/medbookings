@@ -3,17 +3,17 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(request: Request, { params }: { params: { organizationId: string } }) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { organizationId } = params;
+    const { id } = params;
 
-    if (!organizationId) {
+    if (!id) {
       return NextResponse.json({ message: 'Organization ID is required' }, { status: 400 });
     }
 
     const organization = await prisma.organization.findUnique({
       where: {
-        id: organizationId,
+        id: id,
       },
       include: {
         locations: true,

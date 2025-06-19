@@ -20,7 +20,6 @@ export const organizationRegistrationSchema = z.object({
           lat: z.number(),
           lng: z.number(),
         }),
-        addressComponents: z.record(z.any()),
         searchTerms: z.array(z.string()).optional(),
         phone: z.string().optional(),
         email: z.string().email('Invalid email address').optional().or(z.literal('')),
@@ -62,3 +61,23 @@ export interface GooglePlaceResult {
   }>;
   name?: string;
 }
+
+export const locationSchema = z.object({
+  id: z.string().optional(), // Existing locations will have an ID
+  name: z.string().min(1, 'Location name is required'),
+  googlePlaceId: z.string().min(1, 'Please select a location from Google Maps'),
+  formattedAddress: z.string().min(1, 'Address is required'),
+  coordinates: z.object({
+    lat: z.number(),
+    lng: z.number(),
+  }),
+  searchTerms: z.array(z.string()).optional(),
+  phone: z.string().optional(),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+});
+
+export const organizationLocationsSchema = z.object({
+  locations: z.array(locationSchema).optional().default([]),
+});
+
+export type OrganizationLocationsData = z.infer<typeof organizationLocationsSchema>;
