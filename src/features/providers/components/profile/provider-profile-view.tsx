@@ -61,12 +61,6 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
 
         {isOwner && (
           <div className="flex items-center gap-2">
-            <Link href={`/providers/${provider.id}/edit`}>
-              <Button variant="outline" className="flex items-center gap-2">
-                <PenSquare className="h-4 w-4" />
-                Edit Profile
-              </Button>
-            </Link>
             <DeleteProviderButton
               providerId={provider.id}
               providerName={provider.name}
@@ -78,11 +72,48 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
 
       {/* Basic Information Section */}
       <Card className="p-6">
-        <h2 className="text-2xl font-bold">Basic Information</h2>
-        <p className="text-sm text-muted-foreground">Provider details and contact information.</p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Basic Information</h2>
+            <p className="text-sm text-muted-foreground">
+              Provider details and contact information.
+            </p>
+          </div>
+
+          {isOwner && (
+            <div className="flex items-center gap-2">
+              <Link href={`/providers/${provider.id}/edit/basic-info`}>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <PenSquare className="h-4 w-4" />
+                  Edit Profile
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
+
+        <Separator className="my-4" />
+
+        <div>
+          <h3 className="font-medium">Provider Type</h3>
+          <p>{providerTypeName}</p>
+
+          {provider.serviceProviderType?.description && (
+            <div className="mt-4">
+              <h3 className="font-medium">Description</h3>
+              <p className="text-muted-foreground">{provider.serviceProviderType.description}</p>
+            </div>
+          )}
+        </div>
+
         <Separator className="my-4" />
 
         <div className="space-y-6">
+          <div>
+            <h3 className="font-medium">Name</h3>
+            <p>{provider.name}</p>
+          </div>
+
           {provider.image && (
             <div className="flex justify-start">
               <img
@@ -92,11 +123,6 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
               />
             </div>
           )}
-
-          <div>
-            <h3 className="font-medium">Name</h3>
-            <p>{provider.name}</p>
-          </div>
 
           <div>
             <h3 className="font-medium">Email</h3>
@@ -140,29 +166,26 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
         </div>
       </Card>
 
-      {/* Provider Type Section */}
+      {/* Services Section */}
       <Card className="p-6">
-        <h2 className="text-2xl font-bold">Provider Type</h2>
-        <p className="text-sm text-muted-foreground">Medical profession or specialty.</p>
-        <Separator className="my-4" />
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Services</h2>
+            <p className="text-sm text-muted-foreground">Services offered and fee structure.</p>
+          </div>
 
-        <div>
-          <h3 className="font-medium">Provider Type</h3>
-          <p>{providerTypeName}</p>
-
-          {provider.serviceProviderType?.description && (
-            <div className="mt-4">
-              <h3 className="font-medium">Description</h3>
-              <p className="text-muted-foreground">{provider.serviceProviderType.description}</p>
+          {isOwner && (
+            <div className="flex items-center gap-2">
+              <Link href={`/providers/${provider.id}/edit/services`}>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <PenSquare className="h-4 w-4" />
+                  Edit Services
+                </Button>
+              </Link>
             </div>
           )}
         </div>
-      </Card>
 
-      {/* Services Section */}
-      <Card className="p-6">
-        <h2 className="text-2xl font-bold">Services</h2>
-        <p className="text-sm text-muted-foreground">Services offered and fee structure.</p>
         <Separator className="my-4" />
 
         {provider.services && provider.services.length > 0 ? (
@@ -197,8 +220,24 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
 
       {/* Regulatory Requirements Section */}
       <Card className="p-6">
-        <h2 className="text-2xl font-bold">Regulatory Requirements</h2>
-        <p className="text-sm text-muted-foreground">Regulatory information and documents.</p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Regulatory Requirements</h2>
+            <p className="text-sm text-muted-foreground">Regulatory information and documents.</p>
+          </div>
+
+          {isOwner && (
+            <div className="flex items-center gap-2">
+              <Link href={`/providers/${provider.id}/edit/regulatory-requirements`}>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <PenSquare className="h-4 w-4" />
+                  Edit Requirements
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
+
         <Separator className="my-4" />
 
         {provider.requirementSubmissions && provider.requirementSubmissions.length > 0 ? (

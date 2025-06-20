@@ -75,12 +75,6 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
 
         {isOwner && (
           <div className="flex items-center gap-2">
-            <Link href={`/organizations/${organization.id}/edit`}>
-              <Button variant="outline" className="flex items-center gap-2">
-                <PenSquare className="h-4 w-4" />
-                Edit Organization
-              </Button>
-            </Link>
             <DeleteOrganizationButton
               organizationId={organization.id}
               organizationName={organization.name}
@@ -92,10 +86,25 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
 
       {/* Organization Details Section */}
       <Card className="p-6">
-        <h2 className="text-2xl font-bold">Organization Details</h2>
-        <p className="text-sm text-muted-foreground">
-          Basic information and contact details for your organization.
-        </p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Organization Details</h2>
+            <p className="text-sm text-muted-foreground">
+              Basic information and contact details for your organization.
+            </p>
+          </div>
+
+          {isOwner && (
+            <div className="flex items-center gap-2">
+              <Link href={`/organizations/${organization.id}/edit/basic-info`}>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <PenSquare className="h-4 w-4" />
+                  Edit Basic Info
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
         <Separator className="my-4" />
 
         <div className="space-y-6">
@@ -166,10 +175,25 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
 
       {/* Locations Section */}
       <Card className="p-6">
-        <h2 className="text-2xl font-bold">Locations</h2>
-        <p className="text-sm text-muted-foreground">
-          Physical locations associated with this organization.
-        </p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Locations</h2>
+            <p className="text-sm text-muted-foreground">
+              Physical locations associated with this organization.
+            </p>
+          </div>
+
+          {isOwner && (
+            <div className="flex items-center gap-2">
+              <Link href={`/organizations/${organization.id}/edit/locations`}>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <PenSquare className="h-4 w-4" />
+                  Edit Locations
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
         <Separator className="my-4" />
 
         {organization.locations && organization.locations.length > 0 ? (
@@ -266,9 +290,24 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
         )}
       </Card>
 
-      {/* Organization Details Section */}
+      {/* Billing */}
       <Card className="p-6">
-        <h2 className="text-2xl font-bold">Billing Model</h2>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Billing Model</h2>
+          </div>
+
+          {isOwner && (
+            <div className="flex items-center gap-2">
+              <Link href={`/organizations/${organization.id}/edit/billing`}>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <PenSquare className="h-4 w-4" />
+                  Edit Billing Model
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
         <Separator className="my-4" />
         <div className="space-y-6">
           <div>

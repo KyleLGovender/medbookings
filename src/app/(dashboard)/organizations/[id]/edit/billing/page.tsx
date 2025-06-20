@@ -5,7 +5,7 @@ import { getServerSession } from 'next-auth';
 
 import CalendarLoader from '@/components/calendar-loader';
 import { CancelButton } from '@/components/cancel-button';
-import { EditOrganization } from '@/features/organizations/components/profile/edit-organization';
+import { EditOrganizationBilling } from '@/features/organizations/components/profile/edit-organization-billing';
 import { authOptions } from '@/lib/auth';
 
 interface EditOrganizationPageProps {
@@ -46,7 +46,7 @@ export default async function EditOrganizationPage({ params }: EditOrganizationP
         </div>
         <CancelButton cancelTo={`/organizations/${params.id}`}>Cancel</CancelButton>
       </div>
-      <EditOrganization organizationId={params.id} userId={userId} />
+      <EditOrganizationBilling organizationId={params.id} userId={userId} />
     </Suspense>
   );
 }

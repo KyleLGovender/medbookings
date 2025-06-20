@@ -331,13 +331,9 @@ export function EditOrganizationBasicInfo({
           </div>
 
           <div className="flex justify-end">
-            <Button
-              type="submit"
-              disabled={isSubmitting || updateOrganizationMutation.isLoading}
-              className="flex items-center gap-2"
-            >
+            <Button type="submit" disabled={isSubmitting} className="flex items-center gap-2">
               <Save className="h-4 w-4" />
-              {isSubmitting || updateOrganizationMutation.isLoading ? 'Saving...' : 'Save Changes'}
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </form>
