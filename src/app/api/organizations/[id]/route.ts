@@ -32,23 +32,23 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { organizationId: string } }) {
+export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { organizationId } = params;
+    const { id } = params;
     const currentUser = await getCurrentUser();
 
     if (!currentUser) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!organizationId) {
+    if (!id) {
       return NextResponse.json({ message: 'Organization ID is required' }, { status: 400 });
     }
 
     // Check if user is an admin of the organization
     const membership = await prisma.organizationMembership.findFirst({
       where: {
-        organizationId,
+        organizationId: id,
         userId: currentUser.id,
         role: 'ADMIN',
         status: 'ACTIVE',
@@ -64,7 +64,7 @@ export async function PATCH(request: Request, { params }: { params: { organizati
 
     const updatedOrganization = await prisma.organization.update({
       where: {
-        id: organizationId,
+        id: id,
       },
       data: {
         ...(name && { name }),
@@ -83,6 +83,48 @@ export async function PATCH(request: Request, { params }: { params: { organizati
     return NextResponse.json(updatedOrganization);
   } catch (error) {
     console.error('Error updating organization:', error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  try {
+    const { id } = params;
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!id) {
+      return NextResponse.json({ message: 'Organization ID is required' }, { status: 400 });
+    }
+
+    // Check if user is an admin of the organization
+    const membership = await prisma.organizationMembership.findFirst({
+      where: {
+        organizationId: id,
+        userId: currentUser.id,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      },
+    });
+
+    if (!membership) {
+      return NextResponse.json({ message: 'Forbidden: Admin access required' }, { status: 403 });
+    }
+
+    // Delete organization
+    await prisma.organization.delete({
+      where: {
+        id: id,
+      },
+    });
+
+    // Return a successful response
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting organization:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
