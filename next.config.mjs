@@ -44,6 +44,10 @@ const nextConfig = {
       net: false,
       tls: false,
     };
+
+    // Suppress webpack warnings for jiti dynamic imports
+    config.ignoreWarnings = [{ module: /node_modules\/jiti/ }, ...(config.ignoreWarnings || [])];
+
     return config;
   },
   eslint: {
