@@ -205,38 +205,14 @@ export async function updateProviderServices(prevState: any, formData: FormData)
       if (serviceConfigs[serviceId]) {
         const config = serviceConfigs[serviceId];
 
-        // Check if configuration already exists
-        const existingConfig = await prisma.serviceAvailabilityConfig.findUnique({
-          where: {
-            serviceId_serviceProviderId: {
-              serviceId,
-              serviceProviderId: id,
-            },
+        // Update the service's default price and duration
+        await prisma.service.update({
+          where: { id: serviceId },
+          data: {
+            defaultPrice: config.price,
+            defaultDuration: config.duration,
           },
         });
-
-        if (existingConfig) {
-          // Update existing configuration
-          await prisma.serviceAvailabilityConfig.update({
-            where: { id: existingConfig.id },
-            data: {
-              duration: config.duration,
-              price: config.price,
-            },
-          });
-        } else {
-          // Create new configuration
-          await prisma.serviceAvailabilityConfig.create({
-            data: {
-              serviceId,
-              serviceProviderId: id,
-              duration: config.duration,
-              price: config.price,
-              isOnlineAvailable: false,
-              isInPerson: true,
-            },
-          });
-        }
       }
     }
 

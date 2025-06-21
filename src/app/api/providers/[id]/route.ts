@@ -23,11 +23,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       },
       include: {
         services: true,
-        availabilityConfigs: {
-          include: {
-            service: true,
-          },
-        },
         user: {
           select: {
             email: true,

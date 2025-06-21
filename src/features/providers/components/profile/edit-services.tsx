@@ -94,15 +94,10 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
           (ps: any) => ps.serviceId === service.id || ps.id === service.id
         );
 
-        // Get configured values from availabilityConfigs if they exist
-        const availabilityConfig = provider.availabilityConfigs?.find(
-          (config) => config.serviceId === service.id
-        );
-
         selectedServices[service.id] = {
           selected: !!providerService,
-          price: availabilityConfig?.price || service.defaultPrice || 0,
-          duration: availabilityConfig?.duration || service.defaultDuration || 30,
+          price: service.defaultPrice || 0,
+          duration: service.defaultDuration || 30,
         };
       });
 

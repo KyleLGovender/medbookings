@@ -22,14 +22,6 @@ export function serializeServiceProvider(provider: any): any {
             : service.defaultPrice,
       })),
     }),
-    // Serialize availability configs
-    ...(provider.availabilityConfigs && {
-      availabilityConfigs: provider.availabilityConfigs.map((config: any) => ({
-        ...config,
-        price: config.price instanceof Decimal ? Number(config.price) : config.price,
-        duration: config.duration instanceof Decimal ? Number(config.duration) : config.duration,
-      })),
-    }),
     // Make sure requirementSubmissions is serializable
     ...(provider.requirementSubmissions && {
       requirementSubmissions: provider.requirementSubmissions.map((submission: any) => ({
