@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
         createdAt,
         updatedAt,
         description,
+        displayPriority,
         providers, // This may be undefined if not included in the query
         ...rest
       } = service;
@@ -63,6 +64,7 @@ export async function GET(request: NextRequest) {
         description: description ?? undefined,
         createdAt: createdAt ? createdAt.toISOString() : new Date().toISOString(),
         updatedAt: updatedAt ? updatedAt.toISOString() : new Date().toISOString(),
+        displayPriority,
         isSelected,
       };
     });

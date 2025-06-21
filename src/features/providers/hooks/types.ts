@@ -56,6 +56,7 @@ export interface SerializedService {
   description?: string | null;
   defaultDuration: number | null;
   defaultPrice: number | null;
+  displayPriority: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -79,6 +80,16 @@ export interface SerializedServiceProvider {
   createdAt: string;
   updatedAt: string;
   services: SerializedService[];
+  availabilityConfigs?: Array<{
+    id: string;
+    serviceId: string;
+    price: number;
+    duration: number;
+    service: {
+      id: string;
+      name: string;
+    };
+  }>;
   serviceProviderType: {
     name: string;
     description: string | null;

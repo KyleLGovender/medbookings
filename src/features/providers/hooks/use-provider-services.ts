@@ -1,14 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-interface Service {
-  id: string;
-  name: string;
-  description?: string;
-  defaultDuration?: number | null;
-  defaultPrice?: number | null;
-  isSelected?: boolean;
-  displayPriority?: number;
-}
+import { SerializedService } from '@/features/providers/hooks/types';
 
 /**
  * Hook to fetch available services for a provider
@@ -39,7 +31,7 @@ export function useProviderServices(providerId: string | undefined) {
   });
 
   // Then fetch services based on the provider type ID
-  return useQuery<Service[]>({
+  return useQuery<SerializedService[]>({
     queryKey: ['provider-services', providerId, providerQuery.data?.serviceProviderTypeId],
     queryFn: async () => {
       if (!providerId) {
