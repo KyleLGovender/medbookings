@@ -73,15 +73,16 @@ Based on the PRD: `prd-admin-approval-workflow.md`
   - [x] 3.4 Create custom hooks for organization approval mutations (`useApproveOrganization`)
   - [x] 3.5 Create custom hooks for fetching admin organization data (`useAdminOrganizations`)
 
-- [ ] 4.0 Build Admin Dashboard UI
+- [x] 4.0 Build Admin Dashboard UI
 
-  - [ ] 4.1 Create main admin dashboard with summary cards (pending/approved/rejected counts)
-  - [ ] 4.2 Build provider list component with status indicators and approval buttons
-  - [ ] 4.3 Build provider detail component with individual requirement approval interface
-  - [ ] 4.4 Build organization list component with status indicators and approval buttons
-  - [ ] 4.5 Build organization detail component with approval interface
-  - [ ] 4.6 Create reusable UI components (approval buttons, status badges, rejection modal)
-  - [ ] 4.7 Implement rejection modal with feedback text input
+  - [x] 4.1 Create main admin dashboard with summary cards (pending/approved/rejected counts)
+  - [x] 4.2 Build provider list component with status indicators and approval buttons
+  - [x] 4.3 Build provider detail component with individual requirement approval interface
+  - [x] 4.4 Build organization list component with status indicators and approval buttons
+  - [x] 4.5 Build organization detail component with approval interface
+  - [x] 4.6 Create reusable UI components (approval buttons, status badges, rejection modal)
+  - [x] 4.7 Implement rejection modal with feedback text input
+  - [x] 4.8 Integrate all admin components into `/src/app/(dashboard)/admin` page routes
 
 - [ ] 5.0 Integration, Testing, and Access Control
   - [ ] 5.1 Implement admin role-based access control (ADMIN/SUPER_ADMIN only)
