@@ -3,8 +3,7 @@
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
-
-import { suspendServiceProvider } from '../../../providers/lib/actions';
+import { suspendServiceProvider } from '@/features/providers/lib/actions/administer-provider';
 
 interface SuspendServiceProviderButtonProps {
   serviceProviderId: string;

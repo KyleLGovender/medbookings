@@ -3,8 +3,7 @@
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
-
-import { approveServiceProvider } from '../../../providers/lib/actions';
+import { approveServiceProvider } from '@/features/providers/lib/actions/administer-provider';
 
 interface ApproveServiceProviderButtonProps {
   serviceProviderId: string;

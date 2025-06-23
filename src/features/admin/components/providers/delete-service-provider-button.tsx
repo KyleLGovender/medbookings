@@ -16,8 +16,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-
-import { deleteServiceProvider } from '../../../providers/lib/actions';
+import { deleteServiceProvider } from '@/features/providers/lib/actions/delete-provider';
 
 interface DeleteServiceProviderButtonProps {
   serviceProviderId: string;
