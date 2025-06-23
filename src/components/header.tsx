@@ -57,6 +57,7 @@ const getNavigationItems = (isSignedIn: boolean, isAdmin: boolean): NavigationIt
 export default function Header() {
   const pathname = usePathname();
   const { data: session } = useSession();
+
   const { data: provider } = useProviderByUserId(session?.user?.id);
   const [open, setOpen] = useState(false);
 
@@ -73,7 +74,7 @@ export default function Header() {
 
   // Check if user is signed in and has ADMIN role
   const isSignedIn = !!session;
-  const isAdmin = session?.user?.role === 'ADMIN';
+  const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPER_ADMIN';
 
   const navigationItems = getNavigationItems(isSignedIn, isAdmin);
 

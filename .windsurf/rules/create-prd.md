@@ -60,4 +60,4 @@ Assume the primary reader of the PRD is a **junior developer**. Therefore, requi
 2. Make sure to ask the user clarifying questions
 3. Take the user's answers to the clarifying questions and improve the PRD
 
-Once the prd is generated list the open questions and ask the user if it is correct. Tell the user to "Respond with 'Complete PRD' to complete the PRD generatio."
+Once the prd is generated list the open questions and ask the user if it is correct. Tell the user to "Respond with 'Complete PRD' to complete the PRD generation."
