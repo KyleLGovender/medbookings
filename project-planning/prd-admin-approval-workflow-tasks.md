@@ -56,14 +56,14 @@ Based on the PRD: `prd-admin-approval-workflow.md`
   - [x] 1.5 Create organization approval API endpoints (`approve`, `reject`)
   - [x] 1.6 Create admin dashboard page routes (`/admin`, `/admin/providers`, `/admin/organizations`)
 
-- [ ] 2.0 Implement Provider Approval Workflow
+- [x] 2.0 Implement Provider Approval Workflow
 
-  - [ ] 2.1 Extend existing `administer-provider.ts` with requirement-specific approval functions
-  - [ ] 2.2 Create server actions for individual requirement approval/rejection
-  - [ ] 2.3 Implement overall provider approval logic (requires all requirements approved)
-  - [ ] 2.4 Add console logging for all provider approval communications
-  - [ ] 2.5 Create custom hooks for provider approval mutations (`useApproveProvider`)
-  - [ ] 2.6 Create custom hooks for fetching admin provider data (`useAdminProviders`)
+  - [x] 2.1 Extend existing `administer-provider.ts` with requirement-specific approval functions
+  - [x] 2.2 Create server actions for individual requirement approval/rejection
+  - [x] 2.3 Implement overall provider approval logic (requires all requirements approved)
+  - [x] 2.4 Add console logging for all provider approval communications
+  - [x] 2.5 Create custom hooks for provider approval mutations (`useApproveProvider`)
+  - [x] 2.6 Create custom hooks for fetching admin provider data (`useAdminProviders`)
 
 - [ ] 3.0 Implement Organization Approval Workflow
 
