@@ -65,13 +65,13 @@ Based on the PRD: `prd-admin-approval-workflow.md`
   - [x] 2.5 Create custom hooks for provider approval mutations (`useApproveProvider`)
   - [x] 2.6 Create custom hooks for fetching admin provider data (`useAdminProviders`)
 
-- [ ] 3.0 Implement Organization Approval Workflow
+- [x] 3.0 Implement Organization Approval Workflow
 
-  - [ ] 3.1 Create server actions for organization approval/rejection workflow
-  - [ ] 3.2 Implement organization approval logic with rejection feedback
-  - [ ] 3.3 Add console logging for all organization approval communications
-  - [ ] 3.4 Create custom hooks for organization approval mutations (`useApproveOrganization`)
-  - [ ] 3.5 Create custom hooks for fetching admin organization data (`useAdminOrganizations`)
+  - [x] 3.1 Create server actions for organization approval/rejection workflow
+  - [x] 3.2 Implement organization approval logic with rejection feedback
+  - [x] 3.3 Add console logging for all organization approval communications
+  - [x] 3.4 Create custom hooks for organization approval mutations (`useApproveOrganization`)
+  - [x] 3.5 Create custom hooks for fetching admin organization data (`useAdminOrganizations`)
 
 - [ ] 4.0 Build Admin Dashboard UI
 
