@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Building2, Globe, Mail, MapPin, PenSquare, Phone, Tag } from 'lucide-react';
 
 import { OrganizationProfileSkeleton } from '@/components/skeletons/organization-profile-skeleton';
+import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,9 +69,11 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
   return (
     <div className="space-y-8">
       <div className="mb-6 flex items-center justify-between">
-        <div>
+        <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">{organization.name}</h1>
-          <p className="text-muted-foreground">Status: {organization.status}</p>
+          <StatusBadge
+            status={organization.status as 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'}
+          />
         </div>
 
         {isOwner && (

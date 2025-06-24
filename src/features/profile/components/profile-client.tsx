@@ -3,6 +3,7 @@
 import Link from 'next/link';
 
 import QueryLoader from '@/components/query-loader';
+import { StatusBadge } from '@/components/status-badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -103,14 +104,20 @@ export function ProfileClient({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="flex flex-col items-center space-y-4">
-                    <p className="text-sm text-muted-foreground dark:text-muted-foreground">
-                      Provider Status: {provider?.status ?? 'Not Registered'}
-                    </p>
                     {provider?.serviceProviderType?.name && (
-                      <p className="text-sm text-muted-foreground dark:text-muted-foreground">
-                        Type: {provider.serviceProviderType.name}
-                      </p>
+                      <p className="text-lg font-semibold">{provider.serviceProviderType.name}</p>
                     )}
+                    <p className="text-sm text-muted-foreground">
+                      {provider?.status ? (
+                        <StatusBadge
+                          status={
+                            provider.status as 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'
+                          }
+                        />
+                      ) : (
+                        'Not Registered'
+                      )}
+                    </p>
                     <div>
                       {hasServiceProvider ? (
                         <Link href={`/providers/${provider?.id}`} passHref>
@@ -133,40 +140,43 @@ export function ProfileClient({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="flex flex-col items-center space-y-4">
-                    {isOrganizationsLoading ? (
-                      <p className="text-sm text-muted-foreground dark:text-muted-foreground">
-                        Loading organizations...
-                      </p>
-                    ) : organizationsError ? (
-                      <p className="text-sm text-destructive dark:text-destructive">
-                        Error loading organizations: {organizationsError.message}
-                      </p>
-                    ) : organizations && organizations.length > 0 ? (
-                      <div className="w-full space-y-4">
-                        {organizations.map((org: any) => (
-                          <div key={org.id} className="space-y-2 text-center">
-                            <p className="text-lg font-semibold">{org.name}</p>
-                            <p className="text-sm text-muted-foreground dark:text-muted-foreground">
-                              Status: {org.status}
-                            </p>
-                            <Link href={`/organizations/${org.id}`} passHref>
-                              <Button variant="outline">View Organization</Button>
-                            </Link>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-sm text-muted-foreground dark:text-muted-foreground">
-                          Organization Status: Not Registered
+                    <div className="flex justify-center">
+                      <Link href="/organizations/new" passHref>
+                        <Button variant="outline">Add Another Organization</Button>
+                      </Link>
+                    </div>
+                    <div className="flex flex-col items-center space-y-4">
+                      {organizations && organizations.length > 0 ? (
+                        <p>
+                          {organizations.map((org: any) => (
+                            <div key={org.id}>
+                              <p className="text-sm text-muted-foreground">{org.name}</p>
+                              {org?.status ? (
+                                <StatusBadge
+                                  status={
+                                    org.status as 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'
+                                  }
+                                />
+                              ) : (
+                                <p className="text-sm text-muted-foreground">Not Registered</p>
+                              )}
+                              <Link href={`/organizations/${org.id}`} passHref>
+                                <Button variant="outline">View Organization</Button>
+                              </Link>
+                            </div>
+                          ))}
                         </p>
-                        <div>
-                          <Link href="/organizations/new" passHref>
-                            <Button variant="outline">Register Organization</Button>
-                          </Link>
-                        </div>
-                      </>
-                    )}
+                      ) : (
+                        <>
+                          <p className="text-sm text-muted-foreground">Not Registered</p>
+                          <p>
+                            <Link href="/organizations/new" passHref>
+                              <Button variant="outline">Register Organization</Button>
+                            </Link>
+                          </p>
+                        </>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </div>

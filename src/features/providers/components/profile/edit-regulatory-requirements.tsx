@@ -4,14 +4,13 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { RequirementsValidationStatus } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 // UI Components
 import CalendarLoader from '@/components/calendar-loader';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 // Feature components
@@ -210,21 +209,6 @@ export function EditRegulatoryRequirements({
     }
   };
 
-  const renderValidationStatus = (status?: RequirementsValidationStatus) => {
-    if (!status) return null;
-
-    switch (status) {
-      case RequirementsValidationStatus.APPROVED:
-        return <Badge className="bg-green-500">Approved</Badge>;
-      case RequirementsValidationStatus.REJECTED:
-        return <Badge variant="destructive">Rejected</Badge>;
-      case RequirementsValidationStatus.PENDING:
-        return <Badge variant="secondary">Pending Review</Badge>;
-      default:
-        return null;
-    }
-  };
-
   // Show loading state
   if (isProviderLoading || isRequirementsLoading) {
     return <CalendarLoader message="Loading" submessage="Fetching regulatory requirements..." />;
@@ -287,7 +271,15 @@ export function EditRegulatoryRequirements({
                               {requirement.isRequired && <span className="text-red-500">*</span>}
                               {existingSubmission && existingSubmission.status && (
                                 <span className="ml-2">
-                                  {renderValidationStatus(existingSubmission.status)}
+                                  <StatusBadge
+                                    status={
+                                      existingSubmission.status as
+                                        | 'PENDING'
+                                        | 'APPROVED'
+                                        | 'REJECTED'
+                                        | 'SUSPENDED'
+                                    }
+                                  />
                                 </span>
                               )}
                             </h3>

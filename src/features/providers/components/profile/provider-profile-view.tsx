@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Calendar, Check, FileText, PenSquare, X } from 'lucide-react';
 
 import { ProviderProfileSkeleton } from '@/components/skeletons/provider-profile-skeleton';
+import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -250,21 +251,7 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
                       {submission.requirementType?.name || 'Requirement'}
                       {submission.status && (
                         <span className="ml-2">
-                          {submission.status === 'APPROVED' && (
-                            <span className="inline-flex items-center rounded-md bg-green-500 px-2 py-1 text-xs font-medium text-white">
-                              Approved
-                            </span>
-                          )}
-                          {submission.status === 'REJECTED' && (
-                            <span className="inline-flex items-center rounded-md bg-red-500 px-2 py-1 text-xs font-medium text-white">
-                              Rejected
-                            </span>
-                          )}
-                          {submission.status === 'PENDING' && (
-                            <span className="inline-flex items-center rounded-md bg-gray-200 px-2 py-1 text-xs font-medium text-gray-800">
-                              Pending Review
-                            </span>
-                          )}
+                          <StatusBadge status={submission.status} />
                         </span>
                       )}
                     </h3>
