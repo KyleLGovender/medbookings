@@ -1,5 +1,3 @@
-'use client';
-
 import { ArrowRight, ArrowRightIcon, Bell, Calendar, CheckCircle, Users } from 'lucide-react';
 
 import LandingBookingQuery from '@/components/landing-booking-query';
