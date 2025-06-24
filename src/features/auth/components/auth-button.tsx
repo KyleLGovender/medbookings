@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { signIn, signOut, useSession } from 'next-auth/react';
@@ -21,11 +21,17 @@ interface MenuItemType {
 
 interface AuthButtonProps {
   profileMenuItems?: MenuItemType[];
+  className?: string;
 }
 
-export default function AuthButton({ profileMenuItems = [] }: AuthButtonProps) {
+export default function AuthButton({ profileMenuItems = [], className }: AuthButtonProps) {
   const { data, status } = useSession();
   const [imageLoaded, setImageLoaded] = useState(false);
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: '/' });
+  };
 
   // Preload the image when session data is available
   useEffect(() => {
@@ -74,11 +80,7 @@ export default function AuthButton({ profileMenuItems = [] }: AuthButtonProps) {
     <div className="relative ml-3">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="relative h-8 w-8 rounded-full p-0"
-            aria-label="Open user menu"
-          >
+          <Button variant="ghost" className={className} aria-label="Open user menu">
             <Avatar className="h-8 w-8">
               {status === 'authenticated' && data?.user?.image && imageLoaded ? (
                 <AvatarImage
@@ -97,16 +99,11 @@ export default function AuthButton({ profileMenuItems = [] }: AuthButtonProps) {
         {status === 'authenticated' && (
           <DropdownMenuContent align="end" className="w-48">
             {profileMenuItems.map((item) => (
-              <DropdownMenuItem key={item.label} asChild>
-                <Link href={item.href}>{item.label}</Link>
+              <DropdownMenuItem key={item.label} onClick={() => router.push(item.href)}>
+                {item.label}
               </DropdownMenuItem>
             ))}
-            <DropdownMenuItem
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className="cursor-pointer"
-            >
-              Sign out
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
           </DropdownMenuContent>
         )}
       </DropdownMenu>

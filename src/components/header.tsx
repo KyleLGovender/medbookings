@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { Menu } from 'lucide-react';
@@ -61,6 +60,8 @@ export default function Header() {
   const { data: provider } = useProviderByUserId(session?.user?.id);
   const [open, setOpen] = useState(false);
 
+  const router = useRouter();
+
   // Helper function to check if a path matches the current pathname
   const isActivePath = (itemHref: string) => {
     // For the home page, exact match
@@ -99,10 +100,13 @@ export default function Header() {
         <div className="relative flex h-16 items-center px-6 md:px-24">
           {/* Logo - Left */}
           <div className="flex shrink-0 items-center">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
+            <button
+              className="flex cursor-pointer items-center gap-2 font-semibold"
+              onClick={() => router.push('/')}
+            >
               <Logo />
               <span className="hidden text-xl sm:inline">Medbookings</span>
-            </Link>
+            </button>
           </div>
 
           {/* Navigation - Center */}
@@ -112,15 +116,19 @@ export default function Header() {
                 {navigationItems.map((item) =>
                   item.children ? (
                     <NavigationMenuItem key={item.title}>
-                      <NavigationMenuTrigger>{item.title}</NavigationMenuTrigger>
+                      <NavigationMenuTrigger className="cursor-pointer">
+                        {item.title}
+                      </NavigationMenuTrigger>
                       <NavigationMenuContent>
                         <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
                           {item.children.map((child) => (
                             <li key={child.title}>
                               <NavigationMenuLink asChild>
-                                <Link
-                                  href={child.href}
-                                  className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                <a
+                                  className={cn(
+                                    'block cursor-pointer select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground'
+                                  )}
+                                  onClick={() => router.push(child.href)}
                                 >
                                   <div className="text-sm font-medium leading-none">
                                     {child.title}
@@ -128,7 +136,7 @@ export default function Header() {
                                   <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                                     {child.description}
                                   </p>
-                                </Link>
+                                </a>
                               </NavigationMenuLink>
                             </li>
                           ))}
@@ -138,11 +146,12 @@ export default function Header() {
                   ) : (
                     <NavigationMenuItem key={item.title}>
                       <NavigationMenuLink
-                        href={item.href}
                         className={cn(
                           navigationMenuTriggerStyle(),
-                          isActivePath(item.href) && 'text-primary'
+                          isActivePath(item.href) && 'cursor-pointer text-primary',
+                          'cursor-pointer'
                         )}
+                        onClick={() => router.push(item.href)}
                       >
                         {item.title}
                       </NavigationMenuLink>
@@ -163,7 +172,7 @@ export default function Header() {
               <AuthButton profileMenuItems={profileMenuItems} />
               {/* Mobile Navigation */}
               <Sheet open={open} onOpenChange={setOpen}>
-                <SheetTrigger asChild className="md:hidden">
+                <SheetTrigger asChild className="cursor-pointer md:hidden">
                   <Button variant="ghost" size="icon">
                     <Menu className="h-5 w-5" />
                     <span className="sr-only">Toggle menu</span>
@@ -175,17 +184,19 @@ export default function Header() {
                   </SheetHeader>
                   <nav className="flex flex-col gap-4 p-6">
                     {navigationItems.map((item) => (
-                      <Link
+                      <button
                         key={item.title}
-                        href={item.href}
                         className={cn(
-                          'text-lg font-medium transition-colors hover:text-foreground/80',
+                          'cursor-pointer text-lg font-medium transition-colors hover:text-foreground/80',
                           isActivePath(item.href) ? 'text-primary' : 'text-foreground/60'
                         )}
-                        onClick={() => setOpen(false)}
+                        onClick={() => {
+                          router.push(item.href);
+                          setOpen(false);
+                        }}
                       >
                         {item.title}
-                      </Link>
+                      </button>
                     ))}
                   </nav>
                   <Separator className="mx-6" />
