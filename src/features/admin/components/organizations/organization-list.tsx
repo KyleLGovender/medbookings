@@ -29,9 +29,9 @@ import {
 } from '@/features/organizations/hooks/use-admin-organization-approval';
 import { useAdminOrganizations } from '@/features/organizations/hooks/use-admin-organizations';
 
+import { StatusBadge } from '../../../../components/status-badge';
 import { ApprovalButtons } from '../ui/approval-buttons';
 import { RejectionModal } from '../ui/rejection-modal';
-import { StatusBadge } from '../ui/status-badge';
 
 interface OrganizationListProps {
   initialStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';

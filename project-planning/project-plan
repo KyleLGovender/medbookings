@@ -2,9 +2,9 @@
 
 ## Clean up from previous code
 
-- [ ] Remove all types built on Prisma/Zod
-- [ ] Remove all references for headless UI
-- [ ] Implement side bar dashboard layout
+- [x] Remove all types built on Prisma/Zod
+- [x] Remove all references for headless UI
+- [x] Implement side bar dashboard layout
 - [x] Implement loading page throughout app
 - [x] Implement TanStack Query as the default pattern for interacting with the database
 
@@ -155,3 +155,17 @@
 ## Nice to haves
 
 - [ ] Change the database structure of provider type to include an icon. Drive all provider type fields such as landing page search from database. Make it so that it displays the top provider types by availability. All provider types throughout app will be driven from database.
+- [ ] Implement ability for a provider to configure their min availability slot and all availability slots must be multiples of this min availability slot. Enable the ability to manage multiple services in a single calendar.
+
+- ## Ad hoc tasks
+
+- [ ] Implement status labels throughout the entire project
+- [ ] Improve Navigation within Admin Dashboard
+- [ ] Implement breadcrumbs in Dashboard
+- [ ] Update information shown in provider and organization admin views
+- [ ] Figure out why there is no loading when a button is clicked sometimes.
+- [ ] Figure out top margin or padding in Dashboard layout views.
+- [ ] Make side bar in view by default.
+- [ ] Resolve sidebar mobile view.
+- [ ] Update sidebar navigation.
+- [ ] URL parameters not filtering into Admin providers and organizations pages. <http://localhost:3000/admin/providers?status=PENDING>

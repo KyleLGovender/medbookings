@@ -29,9 +29,9 @@ import {
 } from '@/features/providers/hooks/use-admin-provider-approval';
 import { useAdminProviders } from '@/features/providers/hooks/use-admin-providers';
 
+import { StatusBadge } from '../../../../components/status-badge';
 import { ApprovalButtons } from '../ui/approval-buttons';
 import { RejectionModal } from '../ui/rejection-modal';
-import { StatusBadge } from '../ui/status-badge';
 
 interface ProviderListProps {
   initialStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
