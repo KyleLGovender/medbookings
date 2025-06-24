@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { signIn, signOut, useSession } from 'next-auth/react';
@@ -27,7 +27,6 @@ interface AuthButtonProps {
 export default function AuthButton({ profileMenuItems = [], className }: AuthButtonProps) {
   const { data, status } = useSession();
   const [imageLoaded, setImageLoaded] = useState(false);
-  const router = useRouter();
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/' });
@@ -99,8 +98,8 @@ export default function AuthButton({ profileMenuItems = [], className }: AuthBut
         {status === 'authenticated' && (
           <DropdownMenuContent align="end" className="w-48">
             {profileMenuItems.map((item) => (
-              <DropdownMenuItem key={item.label} onClick={() => router.push(item.href)}>
-                {item.label}
+              <DropdownMenuItem asChild key={item.label}>
+                <Link href={item.href}>{item.label}</Link>
               </DropdownMenuItem>
             ))}
             <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>

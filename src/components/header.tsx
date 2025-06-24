@@ -1,6 +1,7 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 import { Menu } from 'lucide-react';
@@ -60,8 +61,6 @@ export default function Header() {
   const { data: provider } = useProviderByUserId(session?.user?.id);
   const [open, setOpen] = useState(false);
 
-  const router = useRouter();
-
   // Helper function to check if a path matches the current pathname
   const isActivePath = (itemHref: string) => {
     // For the home page, exact match
@@ -100,13 +99,10 @@ export default function Header() {
         <div className="relative flex h-16 items-center px-6 md:px-24">
           {/* Logo - Left */}
           <div className="flex shrink-0 items-center">
-            <button
-              className="flex cursor-pointer items-center gap-2 font-semibold"
-              onClick={() => router.push('/')}
-            >
+            <Link href="/" className="flex cursor-pointer items-center gap-2 font-semibold">
               <Logo />
               <span className="hidden text-xl sm:inline">Medbookings</span>
-            </button>
+            </Link>
           </div>
 
           {/* Navigation - Center */}
@@ -124,11 +120,11 @@ export default function Header() {
                           {item.children.map((child) => (
                             <li key={child.title}>
                               <NavigationMenuLink asChild>
-                                <a
+                                <Link
+                                  href={child.href}
                                   className={cn(
                                     'block cursor-pointer select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground'
                                   )}
-                                  onClick={() => router.push(child.href)}
                                 >
                                   <div className="text-sm font-medium leading-none">
                                     {child.title}
@@ -136,7 +132,7 @@ export default function Header() {
                                   <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                                     {child.description}
                                   </p>
-                                </a>
+                                </Link>
                               </NavigationMenuLink>
                             </li>
                           ))}
@@ -148,10 +144,9 @@ export default function Header() {
                       <NavigationMenuLink
                         className={cn(
                           navigationMenuTriggerStyle(),
-                          isActivePath(item.href) && 'cursor-pointer text-primary',
-                          'cursor-pointer'
+                          isActivePath(item.href) && 'text-primary'
                         )}
-                        onClick={() => router.push(item.href)}
+                        href={item.href}
                       >
                         {item.title}
                       </NavigationMenuLink>
@@ -184,19 +179,17 @@ export default function Header() {
                   </SheetHeader>
                   <nav className="flex flex-col gap-4 p-6">
                     {navigationItems.map((item) => (
-                      <button
+                      <Link
                         key={item.title}
+                        href={item.href}
                         className={cn(
                           'cursor-pointer text-lg font-medium transition-colors hover:text-foreground/80',
                           isActivePath(item.href) ? 'text-primary' : 'text-foreground/60'
                         )}
-                        onClick={() => {
-                          router.push(item.href);
-                          setOpen(false);
-                        }}
+                        onClick={() => setOpen(false)}
                       >
                         {item.title}
-                      </button>
+                      </Link>
                     ))}
                   </nav>
                   <Separator className="mx-6" />

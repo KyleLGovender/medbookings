@@ -1,5 +1,3 @@
-import { Calendar, Home, Inbox, Search, Settings } from 'lucide-react';
-
 import { AppSidebar } from '@/components/app-sidebar';
 import {
   Breadcrumb,
@@ -12,46 +10,85 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 
-// This would be your actual navigation data
 const data = {
   title: 'MedBookings',
-  url: '#',
+  url: '/',
   navMain: [
     {
-      title: 'Dashboard',
-      url: '/dashboard',
-      icon: <Home className="h-4 w-4" />,
-      isActive: true,
-    },
-    {
       title: 'Admin',
-      url: '/dashboard/admin',
-      icon: <Search className="h-4 w-4" />,
+      url: '/admin',
+      items: [
+        {
+          title: 'Admin',
+          url: '/admin',
+        },
+      ],
     },
     {
       title: 'Profile',
-      url: '/dashboard/profile',
-      icon: <Calendar className="h-4 w-4" />,
+      url: '/profile',
+      items: [
+        {
+          title: 'Profile',
+          url: '/profile',
+        },
+      ],
     },
     {
       title: 'Providers',
       url: '/dashboard/providers',
-      icon: <Inbox className="h-4 w-4" />,
+      items: [
+        {
+          title: 'Accessibility',
+          url: '#',
+        },
+        {
+          title: 'Fast Refresh',
+          url: '#',
+        },
+        {
+          title: 'Next.js Compiler',
+          url: '#',
+        },
+        {
+          title: 'Supported Browsers',
+          url: '#',
+        },
+        {
+          title: 'Turbopack',
+          url: '#',
+        },
+      ],
     },
     {
       title: 'Calendar',
       url: '/dashboard/calendar',
-      icon: <Inbox className="h-4 w-4" />,
+      items: [
+        {
+          title: 'Contribution Guide',
+          url: '#',
+        },
+      ],
     },
     {
       title: 'Organizations',
       url: '/dashboard/organizations',
-      icon: <Settings className="h-4 w-4" />,
+      items: [
+        {
+          title: 'Contribution Guide',
+          url: '#',
+        },
+      ],
     },
     {
       title: 'Settings',
       url: '/dashboard/settings',
-      icon: <Settings className="h-4 w-4" />,
+      items: [
+        {
+          title: 'Contribution Guide',
+          url: '#',
+        },
+      ],
     },
   ],
 };
