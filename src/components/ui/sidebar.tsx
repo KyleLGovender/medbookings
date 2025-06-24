@@ -28,15 +28,18 @@ const SIDEBAR_WIDTH_MOBILE = '18rem';
 const SIDEBAR_WIDTH_ICON = '3rem';
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
 
-type SidebarContextProps = {
-  state: 'expanded' | 'collapsed';
+type SidebarState = 'expanded' | 'collapsed';
+
+interface SidebarContextProps {
+  state: SidebarState;
   open: boolean;
   setOpen: (open: boolean) => void;
+  isMobile: boolean;
   openMobile: boolean;
   setOpenMobile: (open: boolean) => void;
-  isMobile: boolean;
   toggleSidebar: () => void;
-};
+  collapsible: 'offcanvas' | 'icon' | 'none';
+}
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null);
 
@@ -55,6 +58,7 @@ const SidebarProvider = React.forwardRef<
     defaultOpen?: boolean;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
+    collapsible?: 'offcanvas' | 'icon' | 'none';
   }
 >(
   (
@@ -65,6 +69,7 @@ const SidebarProvider = React.forwardRef<
       className,
       style,
       children,
+      collapsible,
       ...props
     },
     ref
@@ -122,8 +127,9 @@ const SidebarProvider = React.forwardRef<
         openMobile,
         setOpenMobile,
         toggleSidebar,
+        collapsible: collapsible || 'offcanvas',
       }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar, collapsible]
     );
 
     return (
@@ -316,11 +322,25 @@ SidebarRail.displayName = 'SidebarRail';
 
 const SidebarInset = React.forwardRef<HTMLDivElement, React.ComponentProps<'main'>>(
   ({ className, ...props }, ref) => {
+    const { isMobile, open, state, openMobile, collapsible } = useSidebar();
+
     return (
       <main
         ref={ref}
+        data-state={state}
+        data-mobile={isMobile}
+        data-open={open}
+        data-open-mobile={openMobile}
         className={cn(
-          'relative flex w-full flex-1 flex-col bg-background',
+          'relative flex flex-1 flex-col transition-[width]',
+          {
+            'w-[calc(100%-var(--sidebar-width))]':
+              !isMobile && state === 'expanded' && collapsible !== 'offcanvas',
+            'w-[calc(100%-var(--sidebar-width-icon))]':
+              !isMobile && state === 'collapsed' && collapsible !== 'offcanvas',
+            'w-full':
+              (isMobile && !openMobile) || (collapsible === 'offcanvas' && state === 'collapsed'),
+          },
           'md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow',
           className
         )}

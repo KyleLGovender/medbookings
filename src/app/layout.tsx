@@ -1,8 +1,5 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 
-import Footer from '@/components/footer';
-import Header from '@/components/header';
 import Providers from '@/components/providers';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -25,13 +22,7 @@ export default function RootLayout({
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📅</text></svg>"
       />
       <body className="flex h-full flex-col">
-        <Providers>
-          <Header />
-          <main className="flex-1 bg-background">
-            <Suspense>{children}</Suspense>
-          </main>
-          <Footer />
-        </Providers>
+        <Providers>{children}</Providers>
         <Toaster />
       </body>
     </html>
