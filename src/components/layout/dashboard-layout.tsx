@@ -1,3 +1,7 @@
+'use client';
+
+import { useSession } from 'next-auth/react';
+
 import { AppSidebar } from '@/components/app-sidebar';
 import {
   Breadcrumb,
@@ -10,7 +14,8 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 
-const data = {
+// We'll create this as a function to make it dynamic
+const createNavData = (providerId?: string) => ({
   title: 'MedBookings',
   url: '/',
   navMain: [
@@ -75,16 +80,20 @@ const data = {
       ],
     },
   ],
-};
+});
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { data: session } = useSession();
+
+  const navData = createNavData();
+
   return (
     <SidebarProvider collapsible="offcanvas">
-      <AppSidebar data={data} collapsible="offcanvas" />
+      <AppSidebar data={navData} collapsible="offcanvas" />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
