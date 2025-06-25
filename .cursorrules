@@ -1,9 +1,3 @@
-For every response, start by displaying which rules are currently applied like this:
-[Rules applied]
 
-- windows
-- confidence interval
-
-Always give me commands that can be implemented in PowerShell on windows.
 
 The user wants me to only start implementing code when I'm 95% confident that it's the right approach and aligns with their needs. If I'm not at that confidence level, I should ask clarifying questions until I reach 95% confidence. This applies to all implementation tasks throughout our work together.

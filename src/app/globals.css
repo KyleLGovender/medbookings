@@ -40,6 +40,16 @@
     --chart-5: 220 6% 70%; /* neutral-300 */
 
     --radius: 0.5rem;
+
+    /* Sidebar variables for light mode - fully opaque */
+    --sidebar-background: 0 0% 100%; /* Pure white background */
+    --sidebar-foreground: 220 6% 10%; /* Dark gray text */
+    --sidebar-primary: 199 89% 48%; /* Sky blue primary */
+    --sidebar-primary-foreground: 0 0% 100%; /* White text on primary */
+    --sidebar-accent: 220 6% 96%; /* Very light gray accent */
+    --sidebar-accent-foreground: 220 6% 10%; /* Dark text on accent */
+    --sidebar-border: 220 6% 85%; /* Light gray border */
+    --sidebar-ring: 199 89% 48%; /* Sky blue ring */
   }
 
   .dark {
@@ -78,6 +88,16 @@
     --chart-3: 199 89% 55%; /* sky-400 */
     --chart-4: 220 6% 80%; /* lighter neutral */
     --chart-5: 220 6% 60%; /* neutral */
+
+    /* Sidebar variables for dark mode - fully opaque */
+    --sidebar-background: 220 6% 6%; /* Very dark background, fully opaque */
+    --sidebar-foreground: 220 6% 98%; /* Light text */
+    --sidebar-primary: 199 89% 65%; /* Light sky blue primary */
+    --sidebar-primary-foreground: 0 0% 0%; /* Black text on primary */
+    --sidebar-accent: 220 6% 12%; /* Dark accent */
+    --sidebar-accent-foreground: 220 6% 98%; /* Light text on accent */
+    --sidebar-border: 220 6% 18%; /* Dark border */
+    --sidebar-ring: 199 89% 65%; /* Light sky blue ring */
   }
 }
 

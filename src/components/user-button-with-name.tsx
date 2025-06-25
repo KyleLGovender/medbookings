@@ -2,15 +2,17 @@
 
 import { useSession } from 'next-auth/react';
 
+import { ModeToggle } from '@/components/mode-toggle';
 import AuthButton from '@/features/auth/components/auth-button';
 
-export function UserButtonWithName() {
+export function DashboardUserButton() {
   const { data: session } = useSession();
 
   return (
-    <div className="flex items-center gap-2">
-      <AuthButton />
-      {session?.user?.name && <span className="font-medium">{session.user.name}</span>}
+    <div className="flex w-full items-center justify-between gap-2">
+      {session?.user?.name && <span className="flex-none font-medium">{session.user.name}</span>}
+      <ModeToggle />
+      <AuthButton className="flex-none" />
     </div>
   );
 }

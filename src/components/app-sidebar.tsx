@@ -17,7 +17,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
-import { UserButtonWithName } from '@/components/user-button-with-name';
+import { DashboardUserButton } from '@/components/user-button-with-name';
 
 // Define the type structure for `data`
 export interface NavItem {
@@ -46,8 +46,8 @@ export function AppSidebar({ data, ...props }: AppSidebarProps) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <div className="flex items-center gap-2">
-                <UserButtonWithName />
+              <div className="flex gap-2">
+                <DashboardUserButton />
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
