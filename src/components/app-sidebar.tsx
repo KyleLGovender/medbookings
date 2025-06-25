@@ -60,21 +60,33 @@ export function AppSidebar({ data, ...props }: AppSidebarProps) {
             {data.navMain.map((item, index) => (
               <Collapsible key={item.title} defaultOpen={index === 1} className="group/collapsible">
                 <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton>
-                      {item.icon}
-                      {item.title}{' '}
-                      <Plus className="ml-auto group-data-[state=open]/collapsible:hidden" />
-                      <Minus className="ml-auto group-data-[state=closed]/collapsible:hidden" />
+                  <div className="flex w-full items-center">
+                    {/* Clickable main item */}
+                    <SidebarMenuButton asChild className="flex-1">
+                      <a href={item.url} className="flex items-center gap-2">
+                        {item.icon}
+                        {item.title}
+                      </a>
                     </SidebarMenuButton>
-                  </CollapsibleTrigger>
+                    
+                    {/* Separate expand/collapse trigger */}
+                    {item.items?.length ? (
+                      <CollapsibleTrigger asChild>
+                        <button className="flex h-8 w-8 items-center justify-center rounded-sm hover:bg-accent hover:text-accent-foreground">
+                          <Plus className="h-4 w-4 group-data-[state=open]/collapsible:hidden" />
+                          <Minus className="h-4 w-4 group-data-[state=closed]/collapsible:hidden" />
+                        </button>
+                      </CollapsibleTrigger>
+                    ) : null}
+                  </div>
+                  
                   {item.items?.length ? (
                     <CollapsibleContent>
                       <SidebarMenuSub>
-                        {item.items.map((item) => (
-                          <SidebarMenuSubItem key={item.title}>
-                            <SidebarMenuSubButton asChild isActive={item.isActive}>
-                              <a href={item.url}>{item.title}</a>
+                        {item.items.map((subItem) => (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton asChild isActive={subItem.isActive}>
+                              <a href={subItem.url}>{subItem.title}</a>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
                         ))}
