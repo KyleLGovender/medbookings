@@ -91,6 +91,8 @@ export function useApproveRequirement(options?: {
         queryKey: ['admin', 'required-requirements-status', data.serviceProviderId],
       });
       queryClient.invalidateQueries({ queryKey: ['admin', 'providers'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'provider', data.serviceProviderId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'provider-counts'] });
 
       // Call the user-provided onSuccess callback if it exists
       if (options?.onSuccess) {
@@ -136,6 +138,8 @@ export function useRejectRequirement(options?: {
         queryKey: ['admin', 'required-requirements-status', data.serviceProviderId],
       });
       queryClient.invalidateQueries({ queryKey: ['admin', 'providers'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'provider', data.serviceProviderId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'provider-counts'] });
 
       // Call the user-provided onSuccess callback if it exists
       if (options?.onSuccess) {
@@ -179,6 +183,10 @@ export function useApproveServiceProvider(options?: {
       queryClient.invalidateQueries({
         queryKey: ['admin', 'required-requirements-status', serviceProviderId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ['admin', 'provider-requirement-submissions', serviceProviderId],
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'provider-counts'] });
 
       // Call the user-provided onSuccess callback if it exists
       if (options?.onSuccess) {
@@ -224,6 +232,10 @@ export function useRejectServiceProvider(options?: {
       queryClient.invalidateQueries({
         queryKey: ['admin', 'required-requirements-status', variables.serviceProviderId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ['admin', 'provider-requirement-submissions', variables.serviceProviderId],
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'provider-counts'] });
 
       // Call the user-provided onSuccess callback if it exists
       if (options?.onSuccess) {

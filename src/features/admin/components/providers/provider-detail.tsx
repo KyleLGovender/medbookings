@@ -25,6 +25,7 @@ import { useAdminProvider } from '@/features/providers/hooks/use-admin-providers
 
 import { StatusBadge } from '../../../../components/status-badge';
 import { ApprovalButtons } from '../ui/approval-buttons';
+import { ProviderDetailSkeleton } from '../ui/admin-loading-states';
 import { RejectionModal } from '../ui/rejection-modal';
 
 interface ProviderDetailProps {
@@ -114,23 +115,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
   }
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-8 w-[300px]" />
-            <Skeleton className="h-4 w-[200px]" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <ProviderDetailSkeleton />;
   }
 
   const approvedRequirements =
@@ -177,7 +162,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Name</label>
-                  <p className="text-sm">{provider?.user?.name || 'N/A'}</p>
+                  <p className="text-sm font-semibold">{provider?.user?.name || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Email</label>
@@ -186,6 +171,10 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Phone</label>
                   <p className="text-sm">{provider?.user?.phone || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">WhatsApp</label>
+                  <p className="text-sm">{provider?.user?.whatsapp || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Provider Type</label>
@@ -209,7 +198,37 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                       : 'N/A'}
                   </p>
                 </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
+                  <p className="text-sm">
+                    {provider?.updatedAt
+                      ? new Date(provider.updatedAt).toLocaleDateString()
+                      : 'N/A'}
+                  </p>
+                </div>
               </div>
+
+              {/* Services Offered */}
+              {provider?.services && provider.services.length > 0 && (
+                <div className="mt-6">
+                  <label className="text-sm font-medium text-muted-foreground">Services Offered</label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {provider.services.map((service: any) => (
+                      <Badge key={service.id} variant="secondary">
+                        {service.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Bio/Description */}
+              {provider?.bio && (
+                <div className="mt-4">
+                  <label className="text-sm font-medium text-muted-foreground">Bio</label>
+                  <p className="mt-1 text-sm">{provider.bio}</p>
+                </div>
+              )}
 
               {provider?.rejectionReason && (
                 <div className="mt-4 rounded-lg bg-red-50 p-4 dark:bg-red-900/20">
@@ -230,24 +249,54 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
               <CardTitle>Requirements Summary</CardTitle>
               <CardDescription>
                 {approvedRequirements} of {totalRequirements} requirements approved
+                {totalRequirements > 0 && (
+                  <span className="ml-2">
+                    ({Math.round((approvedRequirements / totalRequirements) * 100)}% complete)
+                  </span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {provider?.requirementSubmissions?.map((requirement: any) => (
-                  <div
-                    key={requirement.id}
-                    className="flex items-center justify-between rounded-lg border p-3"
-                  >
-                    <div>
-                      <p className="font-medium">{requirement.requirement?.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {requirement.requirement?.description}
-                      </p>
-                    </div>
-                    <StatusBadge status={requirement.status} />
+              <div className="space-y-3">
+                {provider?.requirementSubmissions?.length === 0 ? (
+                  <div className="py-8 text-center text-muted-foreground">
+                    No requirements submitted
                   </div>
-                ))}
+                ) : (
+                  provider?.requirementSubmissions?.map((requirement: any) => (
+                    <div
+                      key={requirement.id}
+                      className="flex items-center justify-between rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium">{requirement.requirement?.name}</p>
+                          {requirement.requirement?.required && (
+                            <Badge variant="destructive" className="text-xs">
+                              Required
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {requirement.requirement?.description}
+                        </p>
+                        {requirement.submittedAt && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Submitted: {new Date(requirement.submittedAt).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {requirement.documents?.length > 0 && (
+                          <Badge variant="outline" className="text-xs">
+                            {requirement.documents.length} doc{requirement.documents.length !== 1 ? 's' : ''}
+                          </Badge>
+                        )}
+                        <StatusBadge status={requirement.status} />
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -276,10 +325,22 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                       <TableRow key={requirement.id}>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{requirement.requirement?.name}</p>
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium">{requirement.requirement?.name}</p>
+                              {requirement.requirement?.required && (
+                                <Badge variant="destructive" className="text-xs">
+                                  Required
+                                </Badge>
+                              )}
+                            </div>
                             <p className="text-sm text-muted-foreground">
                               {requirement.requirement?.description}
                             </p>
+                            {requirement.adminNotes && (
+                              <p className="text-xs text-blue-600 mt-1">
+                                Admin notes: {requirement.adminNotes}
+                              </p>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -287,7 +348,12 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm text-muted-foreground">
-                            {new Date(requirement.createdAt).toLocaleDateString()}
+                            <div>{new Date(requirement.createdAt).toLocaleDateString()}</div>
+                            {requirement.submittedAt && (
+                              <div className="text-xs">
+                                Submitted: {new Date(requirement.submittedAt).toLocaleDateString()}
+                              </div>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>

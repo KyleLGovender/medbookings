@@ -36,57 +36,41 @@ const data = {
     },
     {
       title: 'Providers',
-      url: '/dashboard/providers',
+      url: '/providers',
       items: [
         {
-          title: 'Accessibility',
-          url: '#',
-        },
-        {
-          title: 'Fast Refresh',
-          url: '#',
-        },
-        {
-          title: 'Next.js Compiler',
-          url: '#',
-        },
-        {
-          title: 'Supported Browsers',
-          url: '#',
-        },
-        {
-          title: 'Turbopack',
-          url: '#',
+          title: 'Providers',
+          url: '/providers',
         },
       ],
     },
     {
       title: 'Calendar',
-      url: '/dashboard/calendar',
+      url: '/calendar',
       items: [
         {
-          title: 'Contribution Guide',
-          url: '#',
+          title: 'Calendar',
+          url: '/calendar',
         },
       ],
     },
     {
       title: 'Organizations',
-      url: '/dashboard/organizations',
+      url: '/organizations',
       items: [
         {
-          title: 'Contribution Guide',
-          url: '#',
+          title: 'Organizations',
+          url: '/organizations',
         },
       ],
     },
     {
       title: 'Settings',
-      url: '/dashboard/settings',
+      url: '/settings',
       items: [
         {
-          title: 'Contribution Guide',
-          url: '#',
+          title: 'Settings',
+          url: '/settings',
         },
       ],
     },

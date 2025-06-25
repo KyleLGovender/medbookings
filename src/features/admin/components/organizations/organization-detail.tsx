@@ -23,6 +23,7 @@ import { useAdminOrganization } from '@/features/organizations/hooks/use-admin-o
 
 import { StatusBadge } from '../../../../components/status-badge';
 import { ApprovalButtons } from '../ui/approval-buttons';
+import { OrganizationDetailSkeleton } from '../ui/admin-loading-states';
 import { RejectionModal } from '../ui/rejection-modal';
 
 interface OrganizationDetailProps {
@@ -85,23 +86,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
   }
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-8 w-[300px]" />
-            <Skeleton className="h-4 w-[200px]" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <OrganizationDetailSkeleton />;
   }
 
   return (
@@ -143,8 +128,8 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Name</label>
-                  <p className="text-sm">{organization?.name || 'N/A'}</p>
+                  <label className="text-sm font-medium text-muted-foreground">Organization Name</label>
+                  <p className="text-sm font-semibold">{organization?.name || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Email</label>
@@ -188,7 +173,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                   <label className="text-sm font-medium text-muted-foreground">Submitted</label>
                   <p className="text-sm">
                     {organization?.createdAt
-                      ? new Date(organization.createdAt).toLocaleDateString()
+                      ? new Date(organization.createdAt).toLocaleString()
                       : 'N/A'}
                   </p>
                 </div>
@@ -196,11 +181,26 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                   <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
                   <p className="text-sm">
                     {organization?.updatedAt
-                      ? new Date(organization.updatedAt).toLocaleDateString()
+                      ? new Date(organization.updatedAt).toLocaleString()
                       : 'N/A'}
                   </p>
                 </div>
               </div>
+
+              {/* Organization Owner/Creator Info */}
+              {organization?.ownerId && (
+                <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <label className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                    Organization Owner
+                  </label>
+                  <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
+                    <div>
+                      <span className="text-xs text-muted-foreground">Owner ID:</span>
+                      <p className="text-sm">{organization.ownerId}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {organization?.description && (
                 <div className="mt-4">
@@ -223,14 +223,19 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
           </Card>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">Members</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{organization?.memberships?.length || 0}</div>
-                <p className="text-xs text-muted-foreground">Active members</p>
+                <p className="text-xs text-muted-foreground">Total members</p>
+                {organization?.memberships && organization.memberships.length > 0 && (
+                  <p className="text-xs text-green-600">
+                    {organization.memberships.filter((m: any) => m.status === 'ACTIVE').length} active
+                  </p>
+                )}
               </CardContent>
             </Card>
             <Card>
@@ -251,6 +256,24 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                   {organization?.providerConnections?.length || 0}
                 </div>
                 <p className="text-xs text-muted-foreground">Connected providers</p>
+                {organization?.providerConnections && organization.providerConnections.length > 0 && (
+                  <p className="text-xs text-green-600">
+                    {organization.providerConnections.filter((p: any) => p.serviceProvider?.status === 'APPROVED').length} approved
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Since Registration</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {organization?.createdAt
+                    ? Math.floor((Date.now() - new Date(organization.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+                    : 0}
+                </div>
+                <p className="text-xs text-muted-foreground">Days ago</p>
               </CardContent>
             </Card>
           </div>
@@ -322,16 +345,26 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
               ) : (
                 <div className="space-y-4">
                   {organization?.locations?.map((location: any) => (
-                    <div key={location.id} className="rounded-lg border p-4">
+                    <div key={location.id} className="rounded-lg border p-4 hover:bg-muted/50 transition-colors">
                       <div className="flex items-start justify-between">
-                        <div>
+                        <div className="flex-1">
                           <h4 className="font-medium">{location.name}</h4>
                           <p className="mt-1 text-sm text-muted-foreground">
                             {location.formattedAddress}
                           </p>
+                          {location.phone && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Phone: {location.phone}
+                            </p>
+                          )}
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          Added {new Date(location.createdAt).toLocaleDateString()}
+                        <div className="text-sm text-muted-foreground text-right">
+                          <div>Added {new Date(location.createdAt).toLocaleDateString()}</div>
+                          {location.googlePlaceId && (
+                            <Badge variant="outline" className="text-xs mt-1">
+                              Verified
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -373,6 +406,11 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                               <p className="text-sm text-muted-foreground">
                                 {connection.serviceProvider?.user?.email}
                               </p>
+                              {connection.serviceProvider?.user?.phone && (
+                                <p className="text-xs text-muted-foreground">
+                                  {connection.serviceProvider.user.phone}
+                                </p>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell>
