@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { NavigationLink } from '@/components/ui/navigation-link';
+import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
@@ -181,12 +181,12 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                       <TableRow key={organization.id}>
                         <TableCell>
                           <div className="flex flex-col">
-                            <Link
+                            <NavigationLink
                               href={`/admin/organizations/${organization.id}`}
                               className="font-medium hover:underline"
                             >
                               {organization.name || 'Unknown'}
-                            </Link>
+                            </NavigationLink>
                             <div className="text-sm text-muted-foreground">
                               {organization.email}
                             </div>
@@ -235,11 +235,9 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                               size="sm"
                             />
                           ) : (
-                            <Button variant="outline" size="sm" asChild>
-                              <Link href={`/admin/organizations/${organization.id}`}>
-                                View Details
-                              </Link>
-                            </Button>
+                            <NavigationOutlineButton href={`/admin/organizations/${organization.id}`} size="sm">
+                              View Details
+                            </NavigationOutlineButton>
                           )}
                         </TableCell>
                       </TableRow>

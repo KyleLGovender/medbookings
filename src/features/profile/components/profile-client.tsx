@@ -1,11 +1,9 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-
 import { StatusBadge } from '@/components/status-badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { useOrganizationByUserId } from '@/features/organizations/hooks/use-organization-by-user-id';
 import { UserProfile } from '@/features/profile/types/types';
 import { SerializedServiceProvider } from '@/features/providers/hooks/types';
@@ -33,7 +31,6 @@ export function ProfileClient({
     error: organizationsError,
   } = useOrganizationByUserId(profile.id);
 
-  const router = useRouter();
 
   return (
     <div className="space-y-6">
@@ -78,9 +75,9 @@ export function ProfileClient({
                   )}
                 </div>
                 <div className="flex w-full justify-center gap-3 pt-4">
-                  <Button variant="outline" onClick={() => router.push('/profile/edit')}>
+                  <NavigationOutlineButton href="/profile/edit">
                     Edit Profile
-                  </Button>
+                  </NavigationOutlineButton>
 
                   <DeleteAccountButton hasServiceProvider={hasServiceProvider} />
                 </div>
@@ -109,16 +106,13 @@ export function ProfileClient({
                 </p>
                 <div>
                   {hasServiceProvider ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => router.push(`/providers/${provider?.id}`)}
-                    >
+                    <NavigationOutlineButton href={`/providers/${provider?.id}`}>
                       Provider View
-                    </Button>
+                    </NavigationOutlineButton>
                   ) : (
-                    <Button variant="outline" onClick={() => router.push('/providers/new')}>
+                    <NavigationOutlineButton href="/providers/new">
                       Register Provider
-                    </Button>
+                    </NavigationOutlineButton>
                   )}
                 </div>
               </CardContent>
@@ -133,9 +127,9 @@ export function ProfileClient({
               </CardHeader>
               <CardContent className="flex flex-col items-center space-y-4">
                 <div className="flex justify-center">
-                  <Button variant="outline" onClick={() => router.push('/organizations/new')}>
+                  <NavigationOutlineButton href="/organizations/new">
                     Add Another Organization
-                  </Button>
+                  </NavigationOutlineButton>
                 </div>
                 <div className="flex flex-col items-center space-y-4">
                   {organizations && organizations.length > 0 ? (
@@ -152,21 +146,18 @@ export function ProfileClient({
                           ) : (
                             <p className="text-sm text-muted-foreground">Not Registered</p>
                           )}
-                          <Button
-                            variant="outline"
-                            onClick={() => router.push(`/organizations/${org.id}`)}
-                          >
+                          <NavigationOutlineButton href={`/organizations/${org.id}`}>
                             View Organization
-                          </Button>
+                          </NavigationOutlineButton>
                         </div>
                       ))}
                     </p>
                   ) : (
                     <>
                       <p className="text-sm text-muted-foreground">Not Registered</p>
-                      <Button variant="outline" onClick={() => router.push('/organizations/new')}>
+                      <NavigationOutlineButton href="/organizations/new">
                         Register Organization
-                      </Button>
+                      </NavigationOutlineButton>
                     </>
                   )}
                 </div>

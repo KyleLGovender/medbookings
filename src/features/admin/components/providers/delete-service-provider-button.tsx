@@ -1,7 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+
+import { useNavigation } from '@/hooks/use-navigation';
 
 import {
   AlertDialog,
@@ -26,7 +27,7 @@ export function DeleteServiceProviderButton({
   serviceProviderId,
 }: DeleteServiceProviderButtonProps) {
   const [isDeleting, setIsDeleting] = useState(false);
-  const router = useRouter();
+  const { navigate } = useNavigation();
 
   const handleDelete = async () => {
     try {
@@ -34,7 +35,7 @@ export function DeleteServiceProviderButton({
       const result = await deleteServiceProvider(serviceProviderId);
 
       if (result.success) {
-        router.push('/profile');
+        await navigate('/profile');
       } else {
         // You might want to show an error toast here
         console.error('Failed to delete service provider:', result.error);

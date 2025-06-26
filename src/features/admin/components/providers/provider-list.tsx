@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { NavigationLink } from '@/components/ui/navigation-link';
+import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
@@ -178,12 +178,12 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                       <TableRow key={provider.id}>
                         <TableCell>
                           <div className="flex flex-col">
-                            <Link
+                            <NavigationLink
                               href={`/admin/providers/${provider.id}`}
                               className="font-medium hover:underline"
                             >
                               {provider.user?.name || 'Unknown'}
-                            </Link>
+                            </NavigationLink>
                             <div className="text-sm text-muted-foreground">
                               {provider.user?.email}
                             </div>
@@ -222,9 +222,9 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                               size="sm"
                             />
                           ) : (
-                            <Button variant="outline" size="sm" asChild>
-                              <Link href={`/admin/providers/${provider.id}`}>View Details</Link>
-                            </Button>
+                            <NavigationOutlineButton href={`/admin/providers/${provider.id}`} size="sm">
+                              View Details
+                            </NavigationOutlineButton>
                           )}
                         </TableCell>
                       </TableRow>

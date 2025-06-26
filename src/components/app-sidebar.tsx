@@ -4,6 +4,7 @@ import { Minus, Plus } from 'lucide-react';
 
 import { SearchForm } from '@/components/search-form';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { NavigationLink } from '@/components/ui/navigation-link';
 import {
   Sidebar,
   SidebarContent,
@@ -63,10 +64,10 @@ export function AppSidebar({ data, ...props }: AppSidebarProps) {
                   <div className="flex w-full items-center">
                     {/* Clickable main item */}
                     <SidebarMenuButton asChild className="flex-1">
-                      <a href={item.url} className="flex items-center gap-2">
+                      <NavigationLink href={item.url} className="flex items-center gap-2">
                         {item.icon}
                         {item.title}
-                      </a>
+                      </NavigationLink>
                     </SidebarMenuButton>
                     
                     {/* Separate expand/collapse trigger */}
@@ -86,7 +87,7 @@ export function AppSidebar({ data, ...props }: AppSidebarProps) {
                         {item.items.map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton asChild isActive={subItem.isActive}>
-                              <a href={subItem.url}>{subItem.title}</a>
+                              <NavigationLink href={subItem.url}>{subItem.title}</NavigationLink>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
                         ))}
