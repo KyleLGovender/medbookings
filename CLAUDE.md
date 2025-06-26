@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Core Development
+
 - `npm run dev` - Start development server
 - `npm run build` - Build for production (includes Prisma generate)
 - `npm run start` - Start production server
@@ -13,6 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm test` - Run Jest tests
 
 ### Database Operations
+
 - `npx prisma generate` - Generate Prisma client
 - `npx prisma db push` - Push schema to database (development)
 - `npx prisma migrate deploy` - Deploy migrations (production)
@@ -20,11 +22,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npx prisma db seed` - Seed database with sample data
 
 ### Docker Development
+
 - `docker compose up` - Start PostgreSQL database locally
 
 ## Architecture Overview
 
 ### Tech Stack
+
 - **Framework**: Next.js 14 with App Router
 - **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: NextAuth.js with Google OAuth
@@ -61,6 +65,7 @@ src/
 ### Feature Module Pattern
 
 Each feature follows a consistent structure:
+
 ```
 feature/
 ├── components/     # Feature-specific components
