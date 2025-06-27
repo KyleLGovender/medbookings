@@ -30,25 +30,38 @@ function DynamicBreadcrumb() {
   // Split pathname and filter out empty strings
   const pathSegments = pathname.split('/').filter(Boolean);
 
-  // Check if this is a provider detail page
-  const isProviderPage =
+  // Check if this is a provider detail page (admin or regular)
+  const isAdminProviderPage =
     pathSegments.length >= 3 &&
     pathSegments[0] === 'admin' &&
     pathSegments[1] === 'providers' &&
     pathSegments[2].length > 10; // Likely a UUID
 
-  // Check if this is an organization detail page
-  const isOrganizationPage =
+  const isRegularProviderPage =
+    pathSegments.length >= 2 &&
+    pathSegments[0] === 'providers' &&
+    pathSegments[1].length > 10; // Likely a UUID
+
+  // Check if this is an organization detail page (admin or regular)
+  const isAdminOrganizationPage =
     pathSegments.length >= 3 &&
     pathSegments[0] === 'admin' &&
     pathSegments[1] === 'organizations' &&
     pathSegments[2].length > 10; // Likely a UUID
 
-  const providerId = isProviderPage ? pathSegments[2] : undefined;
-  const organizationId = isOrganizationPage ? pathSegments[2] : undefined;
+  const isRegularOrganizationPage =
+    pathSegments.length >= 2 &&
+    pathSegments[0] === 'organizations' &&
+    pathSegments[1].length > 10; // Likely a UUID
 
-  const { data: provider } = useProvider(providerId);
-  const { data: organization } = useAdminOrganization(organizationId);
+  const providerId = (isAdminProviderPage ? pathSegments[2] : 
+                      isRegularProviderPage ? pathSegments[1] : undefined);
+  const organizationId = (isAdminOrganizationPage ? pathSegments[2] : 
+                          isRegularOrganizationPage ? pathSegments[1] : undefined);
+
+  const { data: provider, isLoading: isProviderLoading } = useProvider(providerId);
+  const { data: organization, isLoading: isOrganizationLoading } =
+    useAdminOrganization(organizationId);
 
   // Create breadcrumb items
   const breadcrumbItems = [];
@@ -68,13 +81,45 @@ function DynamicBreadcrumb() {
 
     let label;
 
-    // Special handling for provider UUID
-    if (isProviderPage && index === 2 && provider) {
-      label = provider.name;
+    // Special handling for provider UUID (admin routes)
+    if (isAdminProviderPage && index === 2) {
+      if (provider) {
+        label = provider.name;
+      } else if (isProviderLoading) {
+        label = 'Loading...';
+      } else {
+        label = 'Provider';
+      }
     }
-    // Special handling for organization UUID
-    else if (isOrganizationPage && index === 2 && organization) {
-      label = organization.name;
+    // Special handling for provider UUID (regular routes)
+    else if (isRegularProviderPage && index === 1) {
+      if (provider) {
+        label = provider.name;
+      } else if (isProviderLoading) {
+        label = 'Loading...';
+      } else {
+        label = 'Provider';
+      }
+    }
+    // Special handling for organization UUID (admin routes)
+    else if (isAdminOrganizationPage && index === 2) {
+      if (organization) {
+        label = organization.name;
+      } else if (isOrganizationLoading) {
+        label = 'Loading...';
+      } else {
+        label = 'Organization';
+      }
+    }
+    // Special handling for organization UUID (regular routes)
+    else if (isRegularOrganizationPage && index === 1) {
+      if (organization) {
+        label = organization.name;
+      } else if (isOrganizationLoading) {
+        label = 'Loading...';
+      } else {
+        label = 'Organization';
+      }
     } else {
       // Convert segment to readable label
       label = segment
@@ -159,17 +204,17 @@ const createNavData = (providers: any[] = [], organizations: any[] = []) => ({
     },
     {
       title: 'Providers',
-      url: '/admin/providers',
+      url: '/providers',
       items: [
         {
           title: 'All Providers',
-          url: '/admin/providers',
+          url: '/providers',
         },
         ...providers
           .sort((a: any, b: any) => a.name.localeCompare(b.name))
           .map((provider: any) => ({
             title: provider.name,
-            url: `/admin/providers/${provider.id}`,
+            url: `/providers/${provider.id}`,
           })),
       ],
     },
@@ -185,17 +230,17 @@ const createNavData = (providers: any[] = [], organizations: any[] = []) => ({
     },
     {
       title: 'Organizations',
-      url: '/admin/organizations',
+      url: '/organizations',
       items: [
         {
           title: 'All Organizations',
-          url: '/admin/organizations',
+          url: '/organizations',
         },
         ...organizations
           .sort((a: any, b: any) => a.name.localeCompare(b.name))
           .map((organization: any) => ({
             title: organization.name,
-            url: `/admin/organizations/${organization.id}`,
+            url: `/organizations/${organization.id}`,
           })),
       ],
     },
