@@ -2,11 +2,9 @@
 
 import { useState } from 'react';
 
-import { NavigationLink } from '@/components/ui/navigation-link';
-
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { NavigationLink } from '@/components/ui/navigation-link';
 import {
   Table,
   TableBody,
@@ -23,8 +21,8 @@ import {
 import { useAdminOrganization } from '@/features/organizations/hooks/use-admin-organizations';
 
 import { StatusBadge } from '../../../../components/status-badge';
-import { ApprovalButtons } from '../ui/approval-buttons';
 import { OrganizationDetailSkeleton } from '../ui/admin-loading-states';
+import { ApprovalButtons } from '../ui/approval-buttons';
 import { RejectionModal } from '../ui/rejection-modal';
 
 interface OrganizationDetailProps {
@@ -100,7 +98,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
         </div>
         <div className="flex items-center gap-4">
           <StatusBadge status={organization?.status} />
-          {organization?.status === 'PENDING' && (
+          {organization?.status === 'PENDING_APPROVAL' && (
             <ApprovalButtons
               onApprove={handleApproveOrganization}
               onReject={handleRejectOrganizationClick}
@@ -129,7 +127,9 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Organization Name</label>
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Organization Name
+                  </label>
                   <p className="text-sm font-semibold">{organization?.name || 'N/A'}</p>
                 </div>
                 <div>
@@ -189,7 +189,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
 
               {/* Organization Owner/Creator Info */}
               {organization?.ownerId && (
-                <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div className="mt-6 rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
                   <label className="text-sm font-medium text-blue-800 dark:text-blue-300">
                     Organization Owner
                   </label>
@@ -233,7 +233,8 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                 <p className="text-xs text-muted-foreground">Total members</p>
                 {organization?.memberships && organization.memberships.length > 0 && (
                   <p className="text-xs text-green-600">
-                    {organization.memberships.filter((m: any) => m.status === 'ACTIVE').length} active
+                    {organization.memberships.filter((m: any) => m.status === 'ACTIVE').length}{' '}
+                    active
                   </p>
                 )}
               </CardContent>
@@ -256,11 +257,17 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                   {organization?.providerConnections?.length || 0}
                 </div>
                 <p className="text-xs text-muted-foreground">Connected providers</p>
-                {organization?.providerConnections && organization.providerConnections.length > 0 && (
-                  <p className="text-xs text-green-600">
-                    {organization.providerConnections.filter((p: any) => p.serviceProvider?.status === 'APPROVED').length} approved
-                  </p>
-                )}
+                {organization?.providerConnections &&
+                  organization.providerConnections.length > 0 && (
+                    <p className="text-xs text-green-600">
+                      {
+                        organization.providerConnections.filter(
+                          (p: any) => p.serviceProvider?.status === 'APPROVED'
+                        ).length
+                      }{' '}
+                      approved
+                    </p>
+                  )}
               </CardContent>
             </Card>
             <Card>
@@ -270,7 +277,10 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
               <CardContent>
                 <div className="text-2xl font-bold">
                   {organization?.createdAt
-                    ? Math.floor((Date.now() - new Date(organization.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+                    ? Math.floor(
+                        (Date.now() - new Date(organization.createdAt).getTime()) /
+                          (1000 * 60 * 60 * 24)
+                      )
                     : 0}
                 </div>
                 <p className="text-xs text-muted-foreground">Days ago</p>
@@ -345,7 +355,10 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
               ) : (
                 <div className="space-y-4">
                   {organization?.locations?.map((location: any) => (
-                    <div key={location.id} className="rounded-lg border p-4 hover:bg-muted/50 transition-colors">
+                    <div
+                      key={location.id}
+                      className="rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                    >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h4 className="font-medium">{location.name}</h4>
@@ -358,10 +371,10 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                             </p>
                           )}
                         </div>
-                        <div className="text-sm text-muted-foreground text-right">
+                        <div className="text-right text-sm text-muted-foreground">
                           <div>Added {new Date(location.createdAt).toLocaleDateString()}</div>
                           {location.googlePlaceId && (
-                            <Badge variant="outline" className="text-xs mt-1">
+                            <Badge variant="outline" className="mt-1 text-xs">
                               Verified
                             </Badge>
                           )}

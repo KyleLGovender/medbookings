@@ -242,9 +242,17 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
 
         {provider.requirementSubmissions && provider.requirementSubmissions.length > 0 ? (
           <div className="space-y-4">
-            {provider.requirementSubmissions.map((submission) => (
-              <RequirementSubmissionCard key={submission.id} submission={submission} />
-            ))}
+            {provider.requirementSubmissions
+              .slice()
+              .sort((a: any, b: any) => {
+                // Sort by requirementType displayPriority to maintain consistent order
+                const priorityA = a.requirementType?.displayPriority ?? 999;
+                const priorityB = b.requirementType?.displayPriority ?? 999;
+                return priorityA - priorityB;
+              })
+              .map((submission) => (
+                <RequirementSubmissionCard key={submission.id} submission={submission} />
+              ))}
           </div>
         ) : (
           <p className="text-muted-foreground">No regulatory requirements submitted</p>

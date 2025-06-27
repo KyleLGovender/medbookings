@@ -4,16 +4,6 @@ import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { NavigationLink } from '@/components/ui/navigation-link';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RequirementSubmissionCard } from '@/features/providers/components/requirement-submission-card';
 import {
   useApproveRequirement,
@@ -134,7 +124,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
         </div>
         <div className="flex items-center gap-4">
           <StatusBadge status={provider?.status} />
-          {provider?.status === 'PENDING' && allRequirementsApproved && (
+          {provider?.status === 'PENDING_APPROVAL' && allRequirementsApproved && (
             <ApprovalButtons
               onApprove={handleApproveProvider}
               onReject={handleRejectProviderClick}
@@ -145,423 +135,304 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="requirements">Requirements</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          {/* Provider Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Provider Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Name</label>
-                  <p className="text-sm font-semibold">{provider?.user?.name || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Email</label>
-                  <p className="text-sm">{provider?.user?.email || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Phone</label>
-                  <p className="text-sm">{provider?.user?.phone || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">WhatsApp</label>
-                  <p className="text-sm">{provider?.user?.whatsapp || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Provider Type</label>
-                  <p className="text-sm">
-                    <Badge variant="outline">
-                      {provider?.serviceProviderType?.name || 'Unknown'}
-                    </Badge>
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Status</label>
-                  <p className="text-sm">
-                    <StatusBadge status={provider?.status} />
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Submitted</label>
-                  <p className="text-sm">
-                    {provider?.createdAt
-                      ? new Date(provider.createdAt).toLocaleDateString()
-                      : 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
-                  <p className="text-sm">
-                    {provider?.updatedAt
-                      ? new Date(provider.updatedAt).toLocaleDateString()
-                      : 'N/A'}
-                  </p>
-                </div>
+      <div className="space-y-6">
+        {/* Provider Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Provider Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Provider Image */}
+            {provider?.image && (
+              <div className="mb-6 flex justify-start">
+                <img
+                  src={provider.image}
+                  alt={provider.user?.name || 'Provider'}
+                  className="h-32 w-32 rounded-full border-2 border-gray-200 object-cover dark:border-gray-700"
+                />
               </div>
+            )}
 
-              {/* Services Offered */}
-              {provider?.services && provider.services.length > 0 && (
-                <div className="mt-6">
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Services Offered
-                  </label>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {provider.services.map((service: any) => (
-                      <Badge key={service.id} variant="secondary">
-                        {service.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Bio/Description */}
-              {provider?.bio && (
-                <div className="mt-4">
-                  <label className="text-sm font-medium text-muted-foreground">Bio</label>
-                  <p className="mt-1 text-sm">{provider.bio}</p>
-                </div>
-              )}
-
-              {provider?.rejectionReason && (
-                <div className="mt-4 rounded-lg bg-red-50 p-4 dark:bg-red-900/20">
-                  <label className="text-sm font-medium text-red-800 dark:text-red-300">
-                    Rejection Reason
-                  </label>
-                  <p className="mt-1 text-sm text-red-700 dark:text-red-400">
-                    {provider.rejectionReason}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Requirements Summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                Requirements Summary
-                {allRequirementsApproved && (
-                  <Badge
-                    variant="default"
-                    className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                  >
-                    All Requirements Met
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Name</label>
+                <p className="text-sm font-semibold">{provider?.user?.name || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Email</label>
+                <p className="text-sm">{provider?.user?.email || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Phone</label>
+                <p className="text-sm">{provider?.user?.phone || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">WhatsApp</label>
+                <p className="text-sm">{provider?.user?.whatsapp || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Provider Type</label>
+                <div className="text-sm">
+                  <Badge variant="outline">
+                    {provider?.serviceProviderType?.name || 'Unknown'}
                   </Badge>
-                )}
-              </CardTitle>
-              <CardDescription>
-                {approvedRequirements} of {totalRequirements} requirements approved
-                {totalRequirements > 0 && (
-                  <span className="ml-2">
-                    ({Math.round((approvedRequirements / totalRequirements) * 100)}% complete)
-                  </span>
-                )}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Progress Overview */}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Status</label>
+                <div className="text-sm">
+                  <StatusBadge status={provider?.status} />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Submitted</label>
+                <p className="text-sm">
+                  {provider?.createdAt ? new Date(provider.createdAt).toLocaleDateString() : 'N/A'}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
+                <p className="text-sm">
+                  {provider?.updatedAt ? new Date(provider.updatedAt).toLocaleDateString() : 'N/A'}
+                </p>
+              </div>
+            </div>
+
+            {/* Services Offered */}
+            {provider?.services && provider.services.length > 0 && (
+              <div className="mt-6">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Services Offered
+                </label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {provider.services.map((service: any) => (
+                    <Badge key={service.id} variant="secondary">
+                      {service.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Bio/Description */}
+            {provider?.bio && (
+              <div className="mt-4">
+                <label className="text-sm font-medium text-muted-foreground">Bio</label>
+                <p className="mt-1 text-sm">{provider.bio}</p>
+              </div>
+            )}
+
+            {provider?.rejectionReason && (
+              <div className="mt-4 rounded-lg bg-red-50 p-4 dark:bg-red-900/20">
+                <label className="text-sm font-medium text-red-800 dark:text-red-300">
+                  Rejection Reason
+                </label>
+                <p className="mt-1 text-sm text-red-700 dark:text-red-400">
+                  {provider.rejectionReason}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Requirements Summary */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Requirements Summary
+              {allRequirementsApproved && (
+                <Badge
+                  variant="default"
+                  className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                >
+                  All Requirements Met
+                </Badge>
+              )}
+            </CardTitle>
+            <CardDescription>
+              {approvedRequirements} of {totalRequirements} requirements approved
               {totalRequirements > 0 && (
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium">Completion Progress</span>
-                    <span className="text-muted-foreground">
-                      {Math.round((approvedRequirements / totalRequirements) * 100)}%
-                    </span>
+                <span className="ml-2">
+                  ({Math.round((approvedRequirements / totalRequirements) * 100)}% complete)
+                </span>
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Progress Overview */}
+            {totalRequirements > 0 && (
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium">Completion Progress</span>
+                  <span className="text-muted-foreground">
+                    {Math.round((approvedRequirements / totalRequirements) * 100)}%
+                  </span>
+                </div>
+                <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+                  <div
+                    className="h-2 rounded-full bg-blue-600 transition-all duration-300"
+                    style={{
+                      width: `${Math.round((approvedRequirements / totalRequirements) * 100)}%`,
+                    }}
+                  ></div>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="rounded-lg bg-green-50 p-2 text-center dark:bg-green-900/20">
+                    <div className="font-semibold text-green-700 dark:text-green-300">
+                      {provider?.requirementSubmissions?.filter(
+                        (req: any) => req.status === 'APPROVED'
+                      ).length || 0}
+                    </div>
+                    <div className="text-green-600 dark:text-green-400">Approved</div>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700">
-                    <div
-                      className="h-2 rounded-full bg-blue-600 transition-all duration-300"
-                      style={{
-                        width: `${Math.round((approvedRequirements / totalRequirements) * 100)}%`,
-                      }}
-                    ></div>
+                  <div className="rounded-lg bg-yellow-50 p-2 text-center dark:bg-yellow-900/20">
+                    <div className="font-semibold text-yellow-700 dark:text-yellow-300">
+                      {provider?.requirementSubmissions?.filter(
+                        (req: any) => req.status === 'PENDING'
+                      ).length || 0}
+                    </div>
+                    <div className="text-yellow-600 dark:text-yellow-400">Pending</div>
                   </div>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div className="rounded-lg bg-green-50 p-2 text-center dark:bg-green-900/20">
-                      <div className="font-semibold text-green-700 dark:text-green-300">
-                        {provider?.requirementSubmissions?.filter(
-                          (req: any) => req.status === 'APPROVED'
-                        ).length || 0}
-                      </div>
-                      <div className="text-green-600 dark:text-green-400">Approved</div>
+                  <div className="rounded-lg bg-red-50 p-2 text-center dark:bg-red-900/20">
+                    <div className="font-semibold text-red-700 dark:text-red-300">
+                      {provider?.requirementSubmissions?.filter(
+                        (req: any) => req.status === 'REJECTED'
+                      ).length || 0}
                     </div>
-                    <div className="rounded-lg bg-yellow-50 p-2 text-center dark:bg-yellow-900/20">
-                      <div className="font-semibold text-yellow-700 dark:text-yellow-300">
-                        {provider?.requirementSubmissions?.filter(
-                          (req: any) => req.status === 'PENDING'
-                        ).length || 0}
-                      </div>
-                      <div className="text-yellow-600 dark:text-yellow-400">Pending</div>
-                    </div>
-                    <div className="rounded-lg bg-red-50 p-2 text-center dark:bg-red-900/20">
-                      <div className="font-semibold text-red-700 dark:text-red-300">
-                        {provider?.requirementSubmissions?.filter(
-                          (req: any) => req.status === 'REJECTED'
-                        ).length || 0}
-                      </div>
-                      <div className="text-red-600 dark:text-red-400">Rejected</div>
-                    </div>
+                    <div className="text-red-600 dark:text-red-400">Rejected</div>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Requirements List */}
-              <div className="space-y-4">
-                {provider?.requirementSubmissions?.length === 0 ? (
-                  <div className="py-8 text-center text-muted-foreground">
-                    <div className="mb-2">📋</div>
-                    <h3 className="font-medium">No requirements submitted</h3>
-                    <p className="text-sm">This provider has not submitted any requirements yet.</p>
-                  </div>
-                ) : (
-                  provider?.requirementSubmissions?.map((submission: any) => (
-                    <RequirementSubmissionCard key={submission.id} submission={submission} />
+            {/* Requirements List */}
+            <div className="space-y-4">
+              {provider?.requirementSubmissions?.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground">
+                  <div className="mb-2">📋</div>
+                  <h3 className="font-medium">No requirements submitted</h3>
+                  <p className="text-sm">This provider has not submitted any requirements yet.</p>
+                </div>
+              ) : (
+                provider?.requirementSubmissions
+                  ?.slice()
+                  .sort((a: any, b: any) => {
+                    // Sort by requirementType displayPriority to maintain consistent order
+                    const priorityA = a.requirementType?.displayPriority ?? 999;
+                    const priorityB = b.requirementType?.displayPriority ?? 999;
+                    return priorityA - priorityB;
+                  })
+                  .map((submission: any) => (
+                    <RequirementSubmissionCard
+                      key={submission.id}
+                      submission={submission}
+                      isAdminView={true}
+                      onApprove={() => handleApproveRequirement(submission.id)}
+                      onReject={() =>
+                        handleRejectRequirementClick(
+                          submission.id,
+                          submission.requirementType?.name || 'Requirement'
+                        )
+                      }
+                      isApproving={approveRequirementMutation.isPending}
+                      isRejecting={rejectRequirementMutation.isPending}
+                    />
                   ))
-                )}
-              </div>
-
-              {/* Action Note */}
-              {totalRequirements > 0 && !allRequirementsApproved && (
-                <div className="rounded-lg bg-amber-50 p-4 dark:bg-amber-900/20">
-                  <div className="flex items-start gap-2">
-                    <div className="text-amber-600 dark:text-amber-400">⚠️</div>
-                    <div>
-                      <h4 className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                        Approval Pending
-                      </h4>
-                      <p className="text-xs text-amber-700 dark:text-amber-400">
-                        All requirements must be approved before this provider can be activated.
-                        Review the requirements in the Requirements tab for detailed approval
-                        actions.
-                      </p>
-                    </div>
-                  </div>
-                </div>
               )}
+            </div>
 
-              {allRequirementsApproved && provider?.status === 'PENDING' && (
-                <div className="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
-                  <div className="flex items-start gap-2">
-                    <div className="text-green-600 dark:text-green-400">✅</div>
-                    <div>
-                      <h4 className="text-sm font-medium text-green-800 dark:text-green-300">
-                        Ready for Approval
-                      </h4>
-                      <p className="text-xs text-green-700 dark:text-green-400">
-                        All requirements have been approved. This provider is ready for final
-                        approval.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="requirements" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Requirement Submissions</CardTitle>
-              <CardDescription>Review and approve individual requirements</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Requirement</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Submitted</TableHead>
-                      <TableHead>Documents</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {provider?.requirementSubmissions?.map((requirement: any) => (
-                      <TableRow key={requirement.id}>
-                        <TableCell>
-                          <div>
-                            <div className="mb-1 flex items-center gap-2">
-                              <p className="font-medium">{requirement.requirementType?.name}</p>
-                              {requirement.requirementType?.required && (
-                                <Badge variant="destructive" className="text-xs">
-                                  Required
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {requirement.requirementType?.description}
-                            </p>
-
-                            {/* Provider's Answer */}
-                            {requirement.documentMetadata?.value && (
-                              <div className="mt-2 rounded-md bg-blue-50 p-2 dark:bg-blue-900/20">
-                                <div className="flex items-center gap-1 text-xs font-medium text-blue-800 dark:text-blue-300">
-                                  <span>💬</span>
-                                  Response:
-                                </div>
-                                <div className="mt-1 text-xs text-blue-700 dark:text-blue-400">
-                                  {requirement.requirementType?.type === 'DOCUMENT' &&
-                                  typeof requirement.documentMetadata.value === 'string' &&
-                                  (requirement.documentMetadata.value.startsWith('http://') ||
-                                    requirement.documentMetadata.value.startsWith('https://')) ? (
-                                    <NavigationLink
-                                      href={requirement.documentMetadata.value}
-                                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline dark:text-blue-400 dark:hover:text-blue-200"
-                                    >
-                                      <span>📎</span>
-                                      View Document
-                                    </NavigationLink>
-                                  ) : (
-                                    <span>{String(requirement.documentMetadata.value)}</span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {requirement.adminNotes && (
-                              <div className="mt-2 rounded-md bg-green-50 p-2 dark:bg-green-900/20">
-                                <div className="flex items-center gap-1 text-xs font-medium text-green-800 dark:text-green-300">
-                                  <span>📝</span>
-                                  Admin Notes:
-                                </div>
-                                <p className="mt-1 text-xs text-green-700 dark:text-green-400">
-                                  {requirement.adminNotes}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge status={requirement.status} />
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm text-muted-foreground">
-                            <div>{new Date(requirement.createdAt).toLocaleDateString()}</div>
-                            {requirement.submittedAt && (
-                              <div className="text-xs">
-                                Submitted: {new Date(requirement.submittedAt).toLocaleDateString()}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {requirement.requirementType?.type === 'DOCUMENT' &&
-                          requirement.documentMetadata?.value &&
-                          typeof requirement.documentMetadata.value === 'string' &&
-                          (requirement.documentMetadata.value.startsWith('http://') ||
-                            requirement.documentMetadata.value.startsWith('https://')) ? (
-                            <NavigationLink
-                              href={requirement.documentMetadata.value}
-                              className="inline-flex items-center gap-1 text-blue-600 hover:underline"
-                            >
-                              <span>📎</span>
-                              View Document
-                            </NavigationLink>
-                          ) : requirement.documentMetadata?.value ? (
-                            <span className="text-sm text-muted-foreground">Text Response</span>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">No response</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {requirement.status === 'PENDING' ? (
-                            <ApprovalButtons
-                              onApprove={() => handleApproveRequirement(requirement.id)}
-                              onReject={() =>
-                                handleRejectRequirementClick(
-                                  requirement.id,
-                                  requirement.requirementType?.name || 'Requirement'
-                                )
-                              }
-                              isApproving={approveRequirementMutation.isPending}
-                              isRejecting={rejectRequirementMutation.isPending}
-                              size="sm"
-                            />
-                          ) : (
-                            <Badge variant="outline" className="text-xs">
-                              {requirement.status.toLowerCase()}
-                            </Badge>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="history" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Approval History</CardTitle>
-              <CardDescription>Timeline of approval actions and status changes</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {provider?.approvedAt && (
-                  <div className="flex items-center space-x-4 rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
-                    <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                    <div>
-                      <p className="font-medium text-green-800 dark:text-green-300">
-                        Provider Approved
-                      </p>
-                      <p className="text-sm text-green-600 dark:text-green-400">
-                        {new Date(provider.approvedAt).toLocaleString()}
-                        {provider.approvedBy && ` by ${provider.approvedBy.name}`}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {provider?.rejectedAt && (
-                  <div className="flex items-center space-x-4 rounded-lg bg-red-50 p-4 dark:bg-red-900/20">
-                    <div className="h-2 w-2 rounded-full bg-red-500"></div>
-                    <div>
-                      <p className="font-medium text-red-800 dark:text-red-300">
-                        Provider Rejected
-                      </p>
-                      <p className="text-sm text-red-600 dark:text-red-400">
-                        {new Date(provider.rejectedAt).toLocaleString()}
-                      </p>
-                      {provider.rejectionReason && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                          Reason: {provider.rejectionReason}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center space-x-4 rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
-                  <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+            {/* Action Note */}
+            {totalRequirements > 0 && !allRequirementsApproved && (
+              <div className="rounded-lg bg-amber-50 p-4 dark:bg-amber-900/20">
+                <div className="flex items-start gap-2">
+                  <div className="text-amber-600 dark:text-amber-400">⚠️</div>
                   <div>
-                    <p className="font-medium text-blue-800 dark:text-blue-300">
-                      Application Submitted
-                    </p>
-                    <p className="text-sm text-blue-600 dark:text-blue-400">
-                      {new Date(provider?.createdAt).toLocaleString()}
+                    <h4 className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                      Approval Pending
+                    </h4>
+                    <p className="text-xs text-amber-700 dark:text-amber-400">
+                      All requirements must be approved before this provider can be activated.
+                      Review each requirement below and approve or reject them individually.
                     </p>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            )}
+
+            {allRequirementsApproved && provider?.status === 'PENDING_APPROVAL' && (
+              <div className="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
+                <div className="flex items-start gap-2">
+                  <div className="text-green-600 dark:text-green-400">✅</div>
+                  <div>
+                    <h4 className="text-sm font-medium text-green-800 dark:text-green-300">
+                      Ready for Approval
+                    </h4>
+                    <p className="text-xs text-green-700 dark:text-green-400">
+                      All requirements have been approved. This provider is ready for final
+                      approval.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* History */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Approval History</CardTitle>
+            <CardDescription>Timeline of approval actions and status changes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {provider?.approvedAt && (
+                <div className="flex items-center space-x-4 rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
+                  <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                  <div>
+                    <p className="font-medium text-green-800 dark:text-green-300">
+                      Provider Approved
+                    </p>
+                    <p className="text-sm text-green-600 dark:text-green-400">
+                      {new Date(provider.approvedAt).toLocaleString()}
+                      {provider.approvedBy && ` by ${provider.approvedBy.name}`}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {provider?.rejectedAt && (
+                <div className="flex items-center space-x-4 rounded-lg bg-red-50 p-4 dark:bg-red-900/20">
+                  <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                  <div>
+                    <p className="font-medium text-red-800 dark:text-red-300">Provider Rejected</p>
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      {new Date(provider.rejectedAt).toLocaleString()}
+                    </p>
+                    {provider.rejectionReason && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        Reason: {provider.rejectionReason}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center space-x-4 rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                <div>
+                  <p className="font-medium text-blue-800 dark:text-blue-300">
+                    Application Submitted
+                  </p>
+                  <p className="text-sm text-blue-600 dark:text-blue-400">
+                    {new Date(provider?.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Rejection Modal */}
       <RejectionModal

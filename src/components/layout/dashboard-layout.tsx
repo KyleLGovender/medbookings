@@ -38,9 +38,7 @@ function DynamicBreadcrumb() {
     pathSegments[2].length > 10; // Likely a UUID
 
   const isRegularProviderPage =
-    pathSegments.length >= 2 &&
-    pathSegments[0] === 'providers' &&
-    pathSegments[1].length > 10; // Likely a UUID
+    pathSegments.length >= 2 && pathSegments[0] === 'providers' && pathSegments[1].length > 10; // Likely a UUID
 
   // Check if this is an organization detail page (admin or regular)
   const isAdminOrganizationPage =
@@ -50,14 +48,18 @@ function DynamicBreadcrumb() {
     pathSegments[2].length > 10; // Likely a UUID
 
   const isRegularOrganizationPage =
-    pathSegments.length >= 2 &&
-    pathSegments[0] === 'organizations' &&
-    pathSegments[1].length > 10; // Likely a UUID
+    pathSegments.length >= 2 && pathSegments[0] === 'organizations' && pathSegments[1].length > 10; // Likely a UUID
 
-  const providerId = (isAdminProviderPage ? pathSegments[2] : 
-                      isRegularProviderPage ? pathSegments[1] : undefined);
-  const organizationId = (isAdminOrganizationPage ? pathSegments[2] : 
-                          isRegularOrganizationPage ? pathSegments[1] : undefined);
+  const providerId = isAdminProviderPage
+    ? pathSegments[2]
+    : isRegularProviderPage
+      ? pathSegments[1]
+      : undefined;
+  const organizationId = isAdminOrganizationPage
+    ? pathSegments[2]
+    : isRegularOrganizationPage
+      ? pathSegments[1]
+      : undefined;
 
   const { data: provider, isLoading: isProviderLoading } = useProvider(providerId);
   const { data: organization, isLoading: isOrganizationLoading } =

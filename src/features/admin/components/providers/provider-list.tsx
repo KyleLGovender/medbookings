@@ -3,10 +3,11 @@
 import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
-import { NavigationLink } from '@/components/ui/navigation-link';
-import { NavigationOutlineButton } from '@/components/ui/navigation-button';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { NavigationOutlineButton } from '@/components/ui/navigation-button';
+import { NavigationLink } from '@/components/ui/navigation-link';
 import {
   Select,
   SelectContent,
@@ -30,11 +31,10 @@ import {
 import { useAdminProviders } from '@/features/providers/hooks/use-admin-providers';
 
 import { StatusBadge } from '../../../../components/status-badge';
-import { ApprovalButtons } from '../ui/approval-buttons';
 import { RejectionModal } from '../ui/rejection-modal';
 
 interface ProviderListProps {
-  initialStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  initialStatus?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
 }
 
 export function ProviderList({ initialStatus }: ProviderListProps) {
@@ -123,7 +123,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="PENDING_APPROVAL">Pending</SelectItem>
                   <SelectItem value="APPROVED">Approved</SelectItem>
                   <SelectItem value="REJECTED">Rejected</SelectItem>
                 </SelectContent>
@@ -211,18 +211,59 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          {provider.status === 'PENDING' ? (
-                            <ApprovalButtons
-                              onApprove={() => handleApprove(provider.id)}
-                              onReject={() =>
-                                handleRejectClick(provider.id, provider.user?.name || 'Provider')
-                              }
-                              isApproving={approveProviderMutation.isPending}
-                              isRejecting={rejectProviderMutation.isPending}
-                              size="sm"
-                            />
+                          {provider.status === 'PENDING_APPROVAL' ? (
+                            (() => {
+                              const approvedRequirements =
+                                provider.requirementSubmissions?.filter(
+                                  (req: any) => req.status === 'APPROVED'
+                                ).length || 0;
+                              const totalRequirements =
+                                provider.requirementSubmissions?.length || 0;
+                              const allRequirementsApproved =
+                                totalRequirements > 0 && approvedRequirements === totalRequirements;
+
+                              return (
+                                <div className="flex justify-end gap-2">
+                                  <NavigationOutlineButton
+                                    href={`/admin/providers/${provider.id}`}
+                                    size="sm"
+                                  >
+                                    View Details
+                                  </NavigationOutlineButton>
+                                  <Button
+                                    onClick={() =>
+                                      handleRejectClick(
+                                        provider.id,
+                                        provider.user?.name || 'Provider'
+                                      )
+                                    }
+                                    disabled={rejectProviderMutation.isPending}
+                                    variant="destructive"
+                                    size="sm"
+                                    className="disabled:opacity-50"
+                                  >
+                                    {rejectProviderMutation.isPending ? 'Rejecting...' : 'Reject'}
+                                  </Button>
+                                  {allRequirementsApproved && (
+                                    <Button
+                                      onClick={() => handleApprove(provider.id)}
+                                      disabled={approveProviderMutation.isPending}
+                                      size="sm"
+                                      className="bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                                    >
+                                      {approveProviderMutation.isPending
+                                        ? 'Approving...'
+                                        : 'Approve'}
+                                    </Button>
+                                  )}
+                                </div>
+                              );
+                            })()
                           ) : (
-                            <NavigationOutlineButton href={`/admin/providers/${provider.id}`} size="sm">
+                            <NavigationOutlineButton
+                              href={`/admin/providers/${provider.id}`}
+                              size="sm"
+                            >
                               View Details
                             </NavigationOutlineButton>
                           )}

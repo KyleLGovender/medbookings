@@ -83,3 +83,10 @@ Based on the PRD: `prd-admin-approval-workflow.md`
   - [x] 4.6 Create reusable UI components (approval buttons, status badges, rejection modal)
   - [x] 4.7 Implement rejection modal with feedback text input
   - [x] 4.8 Integrate all admin components into `/src/app/(dashboard)/admin` page routes
+
+- [] 5.0 Cleanup
+
+  - [ ] 5.1 Providers and organizations list views don't look good on mobile
+  - [ ] 5.2 Suspend needs to be brough in
+  - [ ] 5.3 When provider is overall approved... but one of the requirement is rejected... the overall provider should go into a new state? Suspended? Not sure
+  - [ ] 5.4 No typing throughput the approval workflow

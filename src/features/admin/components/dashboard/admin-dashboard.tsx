@@ -63,9 +63,9 @@ export function AdminDashboard() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Pending Providers"
-            value={providerCounts?.PENDING || 0}
+            value={providerCounts?.PENDING_APPROVAL || 0}
             description="Awaiting approval"
-            href="/admin/providers?status=PENDING"
+            href="/admin/providers?status=PENDING_APPROVAL"
             isLoading={isLoadingProviders}
             icon={
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,9 +140,9 @@ export function AdminDashboard() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Pending Organizations"
-            value={organizationCounts?.PENDING || 0}
+            value={organizationCounts?.PENDING_APPROVAL || 0}
             description="Awaiting approval"
-            href="/admin/organizations?status=PENDING"
+            href="/admin/organizations?status=PENDING_APPROVAL"
             isLoading={isLoadingOrganizations}
             icon={
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,7 +220,7 @@ export function AdminDashboard() {
             </CardHeader>
             <CardContent className="space-y-2">
               <NavigationButton
-                href="/admin/providers?status=PENDING"
+                href="/admin/providers?status=PENDING_APPROVAL"
                 className="w-full bg-blue-600 hover:bg-blue-700"
                 loadingText="Loading providers..."
               >
@@ -244,7 +244,7 @@ export function AdminDashboard() {
             </CardHeader>
             <CardContent className="space-y-2">
               <NavigationButton
-                href="/admin/organizations?status=PENDING"
+                href="/admin/organizations?status=PENDING_APPROVAL"
                 className="w-full bg-green-600 hover:bg-green-700"
                 loadingText="Loading organizations..."
               >

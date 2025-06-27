@@ -221,19 +221,27 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          {organization.status === 'PENDING' ? (
-                            <ApprovalButtons
-                              onApprove={() => handleApprove(organization.id)}
-                              onReject={() =>
-                                handleRejectClick(
-                                  organization.id,
-                                  organization.name || 'Organization'
-                                )
-                              }
-                              isApproving={approveOrganizationMutation.isPending}
-                              isRejecting={rejectOrganizationMutation.isPending}
-                              size="sm"
-                            />
+                          {organization.status === 'PENDING_APPROVAL' ? (
+                            <div className="flex justify-end gap-2">
+                              <NavigationOutlineButton
+                                href={`/admin/organizations/${organization.id}`}
+                                size="sm"
+                              >
+                                View Details
+                              </NavigationOutlineButton>
+                              <ApprovalButtons
+                                onApprove={() => handleApprove(organization.id)}
+                                onReject={() =>
+                                  handleRejectClick(
+                                    organization.id,
+                                    organization.name || 'Organization'
+                                  )
+                                }
+                                isApproving={approveOrganizationMutation.isPending}
+                                isRejecting={rejectOrganizationMutation.isPending}
+                                size="sm"
+                              />
+                            </div>
                           ) : (
                             <NavigationOutlineButton
                               href={`/admin/organizations/${organization.id}`}
