@@ -16,6 +16,12 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import {
+  useAdminOrganization,
+  useAdminOrganizations,
+} from '@/features/organizations/hooks/use-admin-organizations';
+import { useAdminProviders } from '@/features/providers/hooks/use-admin-providers';
+import { useProvider } from '@/features/providers/hooks/use-provider';
 
 // Dynamic breadcrumb component
 function DynamicBreadcrumb() {
@@ -23,6 +29,26 @@ function DynamicBreadcrumb() {
 
   // Split pathname and filter out empty strings
   const pathSegments = pathname.split('/').filter(Boolean);
+
+  // Check if this is a provider detail page
+  const isProviderPage =
+    pathSegments.length >= 3 &&
+    pathSegments[0] === 'admin' &&
+    pathSegments[1] === 'providers' &&
+    pathSegments[2].length > 10; // Likely a UUID
+
+  // Check if this is an organization detail page
+  const isOrganizationPage =
+    pathSegments.length >= 3 &&
+    pathSegments[0] === 'admin' &&
+    pathSegments[1] === 'organizations' &&
+    pathSegments[2].length > 10; // Likely a UUID
+
+  const providerId = isProviderPage ? pathSegments[2] : undefined;
+  const organizationId = isOrganizationPage ? pathSegments[2] : undefined;
+
+  const { data: provider } = useProvider(providerId);
+  const { data: organization } = useAdminOrganization(organizationId);
 
   // Create breadcrumb items
   const breadcrumbItems = [];
@@ -40,11 +66,22 @@ function DynamicBreadcrumb() {
     currentPath += `/${segment}`;
     const isLast = index === pathSegments.length - 1;
 
-    // Convert segment to readable label
-    const label = segment
-      .split('-')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    let label;
+
+    // Special handling for provider UUID
+    if (isProviderPage && index === 2 && provider) {
+      label = provider.name;
+    }
+    // Special handling for organization UUID
+    else if (isOrganizationPage && index === 2 && organization) {
+      label = organization.name;
+    } else {
+      // Convert segment to readable label
+      label = segment
+        .split('-')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
 
     breadcrumbItems.push({
       label,
@@ -74,7 +111,7 @@ function DynamicBreadcrumb() {
 }
 
 // We'll create this as a function to make it dynamic
-const createNavData = (providerId?: string) => ({
+const createNavData = (providers: any[] = [], organizations: any[] = []) => ({
   title: 'MedBookings',
   url: '/',
   navMain: [
@@ -101,8 +138,12 @@ const createNavData = (providerId?: string) => ({
       url: '/admin',
       items: [
         {
-          title: 'Admin',
-          url: '/admin',
+          title: 'Providers',
+          url: '/admin/providers',
+        },
+        {
+          title: 'Organizations',
+          url: '/admin/organizations',
         },
       ],
     },
@@ -118,12 +159,18 @@ const createNavData = (providerId?: string) => ({
     },
     {
       title: 'Providers',
-      url: '/providers',
+      url: '/admin/providers',
       items: [
         {
-          title: 'Providers',
-          url: '/providers',
+          title: 'All Providers',
+          url: '/admin/providers',
         },
+        ...providers
+          .sort((a: any, b: any) => a.name.localeCompare(b.name))
+          .map((provider: any) => ({
+            title: provider.name,
+            url: `/admin/providers/${provider.id}`,
+          })),
       ],
     },
     {
@@ -138,12 +185,18 @@ const createNavData = (providerId?: string) => ({
     },
     {
       title: 'Organizations',
-      url: '/organizations',
+      url: '/admin/organizations',
       items: [
         {
-          title: 'Organizations',
-          url: '/organizations',
+          title: 'All Organizations',
+          url: '/admin/organizations',
         },
+        ...organizations
+          .sort((a: any, b: any) => a.name.localeCompare(b.name))
+          .map((organization: any) => ({
+            title: organization.name,
+            url: `/admin/organizations/${organization.id}`,
+          })),
       ],
     },
     {
@@ -165,8 +218,10 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { data: session } = useSession();
+  const { data: providers = [] } = useAdminProviders();
+  const { data: organizations = [] } = useAdminOrganizations();
 
-  const navData = createNavData();
+  const navData = createNavData(providers, organizations);
 
   return (
     <SidebarProvider collapsible="offcanvas">
