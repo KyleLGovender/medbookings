@@ -3,7 +3,17 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import { Building2, Globe, Mail, MapPin, PenSquare, Phone, Tag } from 'lucide-react';
+import {
+  Building2,
+  ExternalLink,
+  Globe,
+  Mail,
+  MapPin,
+  Navigation,
+  PenSquare,
+  Phone,
+  Tag,
+} from 'lucide-react';
 
 import { OrganizationProfileSkeleton } from '@/components/skeletons/organization-profile-skeleton';
 import { StatusBadge } from '@/components/status-badge';
@@ -202,80 +212,158 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
         {organization.locations && organization.locations.length > 0 ? (
           <div className="space-y-6">
             {organization.locations.map((location: any, index: number) => (
-              <Card key={location.id}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5" />
-                    {location.name}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                        <Tag className="h-4 w-4" />
-                        Search Terms
-                      </h3>
-                      {location.searchTerms && location.searchTerms.length > 0 ? (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {location.searchTerms.map((term: string) => (
-                            <Badge key={term} variant="secondary">
-                              {term}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No search terms provided.</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex justify-center py-4">
+              <Card key={location.id} className="overflow-hidden">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-primary" />
+                      {location.name}
+                    </CardTitle>
                     {location.coordinates &&
-                    typeof location.coordinates === 'object' &&
-                    'lat' in location.coordinates &&
-                    'lng' in location.coordinates ? (
-                      <StaticLocationMap
-                        coordinates={location.coordinates as { lat: number; lng: number }}
-                        locationName={location.name}
-                      />
-                    ) : null}
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Address</h3>
-                    <p>{location.formattedAddress}</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                      <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                        <Phone className="h-4 w-4" />
-                        Phone Number
-                      </h3>
-                      {location.phone ? (
-                        <a href={`tel:${location.phone}`} className="text-primary hover:underline">
-                          {location.phone}
-                        </a>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Not provided.</p>
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                        <Mail className="h-4 w-4" />
-                        Email Address
-                      </h3>
-                      {location.email ? (
-                        <a
-                          href={`mailto:${location.email}`}
-                          className="text-primary hover:underline"
+                      typeof location.coordinates === 'object' &&
+                      'lat' in location.coordinates &&
+                      'lng' in location.coordinates && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-2"
+                          onClick={() => {
+                            const { lat, lng } = location.coordinates;
+                            window.open(
+                              `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
+                              '_blank'
+                            );
+                          }}
                         >
-                          {location.email}
-                        </a>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Not provided.</p>
+                          <Navigation className="h-4 w-4" />
+                          Directions
+                        </Button>
                       )}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Location Information Grid */}
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    {/* Left Column - Details */}
+                    <div className="space-y-4">
+                      {/* Address */}
+                      <div className="space-y-2">
+                        <h3 className="flex items-center gap-2 font-medium text-foreground">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          Address
+                        </h3>
+                        <p className="pl-6 text-sm text-muted-foreground">
+                          {location.formattedAddress}
+                        </p>
+                        {location.coordinates &&
+                          typeof location.coordinates === 'object' &&
+                          'lat' in location.coordinates &&
+                          'lng' in location.coordinates && (
+                            <div className="pl-6">
+                              <Button
+                                variant="link"
+                                size="sm"
+                                className="h-auto p-0 text-primary hover:underline"
+                                onClick={() => {
+                                  const { lat, lng } = location.coordinates;
+                                  window.open(
+                                    `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
+                                    '_blank'
+                                  );
+                                }}
+                              >
+                                <ExternalLink className="mr-1 h-3 w-3" />
+                                View on Google Maps
+                              </Button>
+                            </div>
+                          )}
+                      </div>
+
+                      {/* Contact Information */}
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="space-y-2">
+                          <h3 className="flex items-center gap-2 font-medium text-foreground">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            Phone Number
+                          </h3>
+                          {location.phone ? (
+                            <a
+                              href={`tel:${location.phone}`}
+                              className="pl-6 text-sm text-primary hover:underline"
+                            >
+                              {location.phone}
+                            </a>
+                          ) : (
+                            <p className="pl-6 text-sm text-muted-foreground">Not provided</p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <h3 className="flex items-center gap-2 font-medium text-foreground">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            Email Address
+                          </h3>
+                          {location.email ? (
+                            <a
+                              href={`mailto:${location.email}`}
+                              className="pl-6 text-sm text-primary hover:underline"
+                            >
+                              {location.email}
+                            </a>
+                          ) : (
+                            <p className="pl-6 text-sm text-muted-foreground">Not provided</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Search Terms */}
+                      <div className="space-y-2">
+                        <h3 className="flex items-center gap-2 font-medium text-foreground">
+                          <Tag className="h-4 w-4 text-muted-foreground" />
+                          Search Terms
+                        </h3>
+                        {location.searchTerms && location.searchTerms.length > 0 ? (
+                          <div className="flex flex-wrap gap-2 pl-6">
+                            {location.searchTerms.map((term: string) => (
+                              <Badge key={term} variant="secondary" className="text-xs">
+                                {term}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="pl-6 text-sm text-muted-foreground">
+                            No search terms provided
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right Column - Map */}
+                    <div className="space-y-2">
+                      <h3 className="font-medium text-foreground">Location Map</h3>
+                      <div className="rounded-lg border bg-muted/50 p-1">
+                        {location.coordinates &&
+                        typeof location.coordinates === 'object' &&
+                        'lat' in location.coordinates &&
+                        'lng' in location.coordinates ? (
+                          <StaticLocationMap
+                            coordinates={location.coordinates as { lat: number; lng: number }}
+                            locationName={location.name}
+                          />
+                        ) : (
+                          <div className="flex h-[250px] items-center justify-center rounded-lg bg-muted">
+                            <div className="text-center">
+                              <MapPin className="mx-auto h-8 w-8 text-muted-foreground" />
+                              <p className="mt-2 text-sm font-medium text-muted-foreground">
+                                No coordinates available
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Map cannot be displayed
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>

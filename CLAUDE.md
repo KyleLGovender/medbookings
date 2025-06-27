@@ -210,6 +210,7 @@ feature/
 - **Error Handling**: Consistent error handling with proper HTTP status codes
 - **Debugging**: Use comprehensive console logging for troubleshooting
 - **Linting**: Always run `npm run lint` after code changes
+- **Auto-Linting on Save**: The project has linting that runs automatically on file save. When encountering linting errors, prompt the user to save the file to see if auto-linting resolves the issues before running manual lint commands
 
 ### Key Implementation Notes
 
