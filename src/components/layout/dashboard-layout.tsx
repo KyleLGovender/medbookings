@@ -271,8 +271,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <SidebarProvider collapsible="offcanvas">
       <AppSidebar data={navData} collapsible="offcanvas" />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+      <SidebarInset className="flex h-screen flex-col">
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
           <DynamicBreadcrumb />
@@ -295,7 +295,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </a>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4">{children}</div>
+        <div className="flex-1 overflow-auto">
+          <div className="flex flex-col gap-4 p-4">{children}</div>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

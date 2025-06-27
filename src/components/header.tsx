@@ -91,7 +91,7 @@ export default function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="fixed left-0 right-0 top-0 z-50 w-full border-b border-border bg-background">
       <div className="mx-auto max-w-7xl">
         <div className="relative flex h-16 items-center px-6 md:px-24">
           {/* Logo - Left */}
