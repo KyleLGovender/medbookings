@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { NavigationButton } from '@/components/ui/navigation-button';
+import { NavigationLink } from '@/components/ui/navigation-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAdminOrganizationCounts } from '@/features/organizations/hooks/use-admin-organizations';
 import { useAdminProviderCounts } from '@/features/providers/hooks/use-admin-providers';
@@ -33,9 +33,9 @@ function StatCard({ title, value, description, icon, href, isLoading }: StatCard
   );
 
   return href ? (
-    <Link href={href} className="block">
+    <NavigationLink href={href} className="block">
       {content}
-    </Link>
+    </NavigationLink>
   ) : (
     content
   );
@@ -219,18 +219,21 @@ export function AdminDashboard() {
               <CardDescription>Review and approve provider applications</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Link
+              <NavigationButton
                 href="/admin/providers?status=PENDING"
-                className="block w-full rounded-md bg-blue-600 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-700"
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                loadingText="Loading providers..."
               >
                 Review Pending Providers
-              </Link>
-              <Link
+              </NavigationButton>
+              <NavigationButton
                 href="/admin/providers"
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-center text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                variant="outline"
+                className="w-full"
+                loadingText="Loading providers..."
               >
                 View All Providers
-              </Link>
+              </NavigationButton>
             </CardContent>
           </Card>
 
@@ -240,18 +243,21 @@ export function AdminDashboard() {
               <CardDescription>Review and approve organization applications</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Link
+              <NavigationButton
                 href="/admin/organizations?status=PENDING"
-                className="block w-full rounded-md bg-green-600 px-3 py-2 text-center text-sm font-medium text-white hover:bg-green-700"
+                className="w-full bg-green-600 hover:bg-green-700"
+                loadingText="Loading organizations..."
               >
                 Review Pending Organizations
-              </Link>
-              <Link
+              </NavigationButton>
+              <NavigationButton
                 href="/admin/organizations"
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-center text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                variant="outline"
+                className="w-full"
+                loadingText="Loading organizations..."
               >
                 View All Organizations
-              </Link>
+              </NavigationButton>
             </CardContent>
           </Card>
         </div>

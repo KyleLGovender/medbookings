@@ -1,7 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
+
+import { NavigationLink } from '@/components/ui/navigation-link';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -361,13 +362,12 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                             <div className="space-y-1">
                               {requirement.documents.map((doc: any) => (
                                 <div key={doc.id} className="text-sm">
-                                  <Link
+                                  <NavigationLink
                                     href={doc.url}
-                                    target="_blank"
                                     className="text-blue-600 hover:underline"
                                   >
                                     {doc.fileName}
-                                  </Link>
+                                  </NavigationLink>
                                 </div>
                               ))}
                             </div>

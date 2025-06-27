@@ -3,10 +3,10 @@
 import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
-import { NavigationLink } from '@/components/ui/navigation-link';
-import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { NavigationOutlineButton } from '@/components/ui/navigation-button';
+import { NavigationLink } from '@/components/ui/navigation-link';
 import {
   Select,
   SelectContent,
@@ -235,7 +235,10 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                               size="sm"
                             />
                           ) : (
-                            <NavigationOutlineButton href={`/admin/organizations/${organization.id}`} size="sm">
+                            <NavigationOutlineButton
+                              href={`/admin/organizations/${organization.id}`}
+                              size="sm"
+                            >
                               View Details
                             </NavigationOutlineButton>
                           )}

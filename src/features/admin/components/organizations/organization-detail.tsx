@@ -1,7 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
+
+import { NavigationLink } from '@/components/ui/navigation-link';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -143,13 +144,12 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                   <label className="text-sm font-medium text-muted-foreground">Website</label>
                   <p className="text-sm">
                     {organization?.website ? (
-                      <Link
+                      <NavigationLink
                         href={organization.website}
-                        target="_blank"
                         className="text-blue-600 hover:underline"
                       >
                         {organization.website}
-                      </Link>
+                      </NavigationLink>
                     ) : (
                       'N/A'
                     )}

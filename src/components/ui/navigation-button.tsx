@@ -30,8 +30,12 @@ export function NavigationButton({
   ...buttonProps
 }: NavigationButtonProps) {
   const { toast } = useToast();
-  
-  const { navigate, replace: navigateReplace, isNavigatingTo } = useNavigation({
+
+  const {
+    navigate,
+    replace: navigateReplace,
+    isNavigatingTo,
+  } = useNavigation({
     onStart: onNavigationStart,
     onComplete: onNavigationComplete,
     onError: (error) => {
@@ -55,11 +59,7 @@ export function NavigationButton({
   };
 
   return (
-    <Button
-      {...buttonProps}
-      onClick={handleClick}
-      disabled={disabled || isLoading}
-    >
+    <Button {...buttonProps} onClick={handleClick} disabled={disabled || isLoading}>
       {isLoading ? (
         <>
           {showLoadingIcon && (

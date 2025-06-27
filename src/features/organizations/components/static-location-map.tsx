@@ -30,7 +30,7 @@ const defaultMapOptions = {
   streetViewControl: false,
   rotateControl: false,
   fullscreenControl: true,
-  gestureHandling: 'cooperative' as google.maps.GestureHandling,
+  gestureHandling: 'cooperative' as const,
   styles: [
     {
       featureType: 'poi',
