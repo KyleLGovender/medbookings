@@ -31,7 +31,6 @@ export function ProfileClient({
     error: organizationsError,
   } = useOrganizationByUserId(profile.id);
 
-
   return (
     <div className="space-y-6">
       <div className="mb-6 flex items-center justify-between">
@@ -126,41 +125,46 @@ export function ProfileClient({
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center space-y-4">
-                <div className="flex justify-center">
-                  <NavigationOutlineButton href="/organizations/new">
-                    Add Another Organization
-                  </NavigationOutlineButton>
-                </div>
-                <div className="flex flex-col items-center space-y-4">
-                  {organizations && organizations.length > 0 ? (
-                    <p>
-                      {organizations.map((org: any) => (
-                        <div key={org.id}>
-                          <p className="text-sm text-muted-foreground">{org.name}</p>
-                          {org?.status ? (
-                            <StatusBadge
-                              status={
-                                org.status as 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'
-                              }
-                            />
-                          ) : (
-                            <p className="text-sm text-muted-foreground">Not Registered</p>
+                {organizations && organizations.length > 0 ? (
+                  <div className="w-full space-y-4">
+                    {organizations.map((org: any) => (
+                      <div
+                        key={org.id}
+                        className="flex flex-col items-center space-y-3 rounded-lg border p-4"
+                      >
+                        <div className="text-center">
+                          <h3 className="text-lg font-semibold text-foreground">{org.name}</h3>
+                          {org.email && (
+                            <p className="text-sm text-muted-foreground">{org.email}</p>
                           )}
-                          <NavigationOutlineButton href={`/organizations/${org.id}`}>
-                            View Organization
-                          </NavigationOutlineButton>
+                          {org.description && (
+                            <p className="mt-1 text-sm text-muted-foreground">{org.description}</p>
+                          )}
                         </div>
-                      ))}
-                    </p>
-                  ) : (
-                    <>
-                      <p className="text-sm text-muted-foreground">Not Registered</p>
+                        <div className="flex items-center gap-2">
+                          <StatusBadge
+                            status={org.status as 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'}
+                          />
+                        </div>
+                        <NavigationOutlineButton href={`/organizations/${org.id}`}>
+                          View Organization
+                        </NavigationOutlineButton>
+                      </div>
+                    ))}
+                    <div className="flex justify-center pt-2">
                       <NavigationOutlineButton href="/organizations/new">
-                        Register Organization
+                        Add Another Organization
                       </NavigationOutlineButton>
-                    </>
-                  )}
-                </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center space-y-4">
+                    <p className="text-sm text-muted-foreground">No organizations registered</p>
+                    <NavigationOutlineButton href="/organizations/new">
+                      Register Organization
+                    </NavigationOutlineButton>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
