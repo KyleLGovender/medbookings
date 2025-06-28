@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import type { AdminApiResponse, AdminRequirementRouteParams } from '@/features/admin/types';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; requirementId: string } }
-) {
+  { params }: { params: AdminRequirementRouteParams }
+): Promise<NextResponse<AdminApiResponse>> {
   try {
     const currentUser = await getCurrentUser();
 

@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import type { AdminApprovalStatus, AdminProviderListSelect } from '@/features/admin/types';
 import {
   useApproveServiceProvider,
   useRejectServiceProvider,
@@ -34,7 +35,7 @@ import { StatusBadge } from '../../../../components/status-badge';
 import { RejectionModal } from '../ui/rejection-modal';
 
 interface ProviderListProps {
-  initialStatus?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+  initialStatus?: AdminApprovalStatus;
 }
 
 export function ProviderList({ initialStatus }: ProviderListProps) {
@@ -54,12 +55,12 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
     data: providers,
     isLoading,
     error,
-  } = useAdminProviders(statusFilter === 'all' ? undefined : (statusFilter as any));
+  } = useAdminProviders(statusFilter === 'all' ? undefined : (statusFilter as AdminApprovalStatus));
 
   const approveProviderMutation = useApproveServiceProvider();
   const rejectProviderMutation = useRejectServiceProvider();
 
-  const filteredProviders = providers?.filter((provider: any) => {
+  const filteredProviders = providers?.filter((provider: AdminProviderListSelect) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -174,7 +175,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredProviders?.map((provider: any) => (
+                    filteredProviders?.map((provider: AdminProviderListSelect) => (
                       <TableRow key={provider.id}>
                         <TableCell>
                           <div className="flex flex-col">
@@ -200,7 +201,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                         <TableCell>
                           <div className="text-sm">
                             {provider.requirementSubmissions?.filter(
-                              (req: any) => req.status === 'APPROVED'
+                              (req) => req.status === 'APPROVED'
                             ).length || 0}{' '}
                             / {provider.requirementSubmissions?.length || 0} approved
                           </div>
@@ -215,7 +216,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                             (() => {
                               const approvedRequirements =
                                 provider.requirementSubmissions?.filter(
-                                  (req: any) => req.status === 'APPROVED'
+                                  (req) => req.status === 'APPROVED'
                                 ).length || 0;
                               const totalRequirements =
                                 provider.requirementSubmissions?.length || 0;

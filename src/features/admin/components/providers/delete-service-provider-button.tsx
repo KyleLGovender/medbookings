@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 
-import { useNavigation } from '@/hooks/use-navigation';
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { deleteServiceProvider } from '@/features/providers/lib/actions/delete-provider';
+import { useNavigation } from '@/hooks/use-navigation';
 
 interface DeleteServiceProviderButtonProps {
   serviceProviderId: string;

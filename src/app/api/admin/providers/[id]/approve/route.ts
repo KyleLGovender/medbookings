@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import type { AdminApiResponse, AdminApiErrorResponse, AdminRouteParams } from '@/features/admin/types';
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: AdminRouteParams }
+): Promise<NextResponse<AdminApiResponse | AdminApiErrorResponse>> {
   try {
     const currentUser = await getCurrentUser();
 

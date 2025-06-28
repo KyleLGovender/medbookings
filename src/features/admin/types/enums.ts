@@ -1,4 +1,50 @@
-// Admin-specific enums will be defined here
+export enum AdminAction {
+  APPROVE = 'APPROVE',
+  REJECT = 'REJECT',
+  SUSPEND = 'SUSPEND',
+}
+
+export enum ApprovalEntityType {
+  PROVIDER = 'PROVIDER',
+  ORGANIZATION = 'ORGANIZATION',
+  REQUIREMENT = 'REQUIREMENT',
+}
+
+export enum AdminApprovalStatus {
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
+export enum AdminProviderStatus {
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  TRIAL = 'TRIAL',
+  TRIAL_EXPIRED = 'TRIAL_EXPIRED',
+  ACTIVE = 'ACTIVE',
+  PAYMENT_OVERDUE = 'PAYMENT_OVERDUE',
+  SUSPENDED = 'SUSPENDED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum AdminOrganizationStatus {
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  TRIAL = 'TRIAL',
+  TRIAL_EXPIRED = 'TRIAL_EXPIRED',
+  ACTIVE = 'ACTIVE',
+  PAYMENT_OVERDUE = 'PAYMENT_OVERDUE',
+  SUSPENDED = 'SUSPENDED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum RequirementValidationStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
 // export enum AdminAction {
 //   APPROVE = 'APPROVE',
 //   REJECT = 'REJECT',

@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import type { AdminApiResponse, AdminRouteParams, RejectProviderRequest } from '@/features/admin/types';
+import { rejectProviderRequestSchema } from '@/features/admin/types';
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: AdminRouteParams }
+): Promise<NextResponse<AdminApiResponse>> {
   try {
     const currentUser = await getCurrentUser();
 
@@ -13,11 +18,14 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const providerId = params.id;
     const body = await request.json();
-    const { reason } = body;
-
-    if (!reason || typeof reason !== 'string' || reason.trim().length === 0) {
+    
+    // Validate request body
+    const validation = rejectProviderRequestSchema.safeParse(body);
+    if (!validation.success) {
       return NextResponse.json({ error: 'Rejection reason is required' }, { status: 400 });
     }
+    
+    const { reason } = validation.data;
 
     // Check if provider exists
     const provider = await prisma.serviceProvider.findUnique({

@@ -4,8 +4,9 @@ import { ServiceProviderStatus } from '@prisma/client';
 
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import type { AdminApiResponse, AdminProviderListSelect } from '@/features/admin/types';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse<AdminApiResponse<AdminProviderListSelect[]>>> {
   try {
     const currentUser = await getCurrentUser();
 
@@ -27,16 +28,14 @@ export async function GET(request: NextRequest) {
       where: whereClause,
       include: {
         user: {
-          select: { email: true, name: true },
+          select: { id: true, email: true, name: true },
         },
         serviceProviderType: {
           select: { name: true },
         },
         requirementSubmissions: {
-          include: {
-            requirementType: {
-              select: { name: true, isRequired: true },
-            },
+          select: {
+            status: true,
           },
         },
       },
