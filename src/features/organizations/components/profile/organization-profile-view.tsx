@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { DeleteOrganizationButton } from '@/features/organizations/components/delete-organization-button';
+import { ProviderInvitationManager } from '@/features/organizations/components/ProviderInvitationManager';
 import { StaticLocationMap } from '@/features/organizations/components/static-location-map';
 import { useOrganization } from '@/features/organizations/hooks/use-organization';
 
@@ -58,9 +59,12 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
     );
   }
 
-  // Check if current user is a member of this organization
+  // Check if current user is a member of this organization with admin privileges
   const isOwner = organization.memberships?.some(
-    (membership: any) => membership.userId === userId && membership.role === 'ADMIN'
+    (membership: any) => 
+      membership.userId === userId && 
+      ['OWNER', 'ADMIN'].includes(membership.role) &&
+      membership.status === 'ACTIVE'
   );
 
   const getBillingModelLabel = (model: string) => {
@@ -439,34 +443,10 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
         )}
       </Card>
 
-      {/* Providers Section */}
-      <Card className="p-6">
-        <h2 className="text-2xl font-bold">Providers</h2>
-        <p className="text-sm text-muted-foreground">
-          Providers associated with this organization.
-        </p>
-        <Separator className="my-4" />
-
-        {organization.providers && organization.providers.length > 0 ? (
-          <div className="space-y-4">
-            {organization.providers.map((provider: any) => (
-              <div key={provider.id} className="rounded-md border p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">{provider.name}</h3>
-                    <p className="text-sm text-muted-foreground">Role: {provider.role}</p>
-                    <p className="text-sm text-muted-foreground">Status: {provider.status}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="py-8 text-center">
-            <p className="text-muted-foreground">No providers found</p>
-          </div>
-        )}
-      </Card>
+      {/* Provider Network Section */}
+      {isOwner && (
+        <ProviderInvitationManager organizationId={organization.id} />
+      )}
     </div>
   );
 }
