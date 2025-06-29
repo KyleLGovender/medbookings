@@ -1,3 +1,4 @@
+import { PostRegistrationInvitationHandler } from '@/features/invitations/components/post-registration-invitation-handler';
 import { ProviderOnboardingForm } from '@/features/providers/components/onboarding/provider-onboarding-form';
 
 export default function NewProviderPage() {
@@ -9,6 +10,12 @@ export default function NewProviderPage() {
           Complete your registration to start offering services on MedBookings
         </p>
       </div>
+
+      {/* Handle pending invitations after registration */}
+      <div className="mb-6">
+        <PostRegistrationInvitationHandler />
+      </div>
+
       <ProviderOnboardingForm />
     </>
   );

@@ -177,3 +177,5 @@
 - [ ] Implement button loading spinner throughout app
 - [ ] Provider onboarding layout... long form... some weird issue with two vertical scrolling windows. Quite annoying.
 - [ ] Admin organization doesn't display location well.
+- [ ] Dashboard navigation when not ADMIN. Can't get a list of providers or see yourself in sidebar menu
+- [ ] Personal Profile should reflect Role

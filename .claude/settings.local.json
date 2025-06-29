@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:docs.anthropic.com)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run lint)",
+      "Bash(npx eslint:*)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }
