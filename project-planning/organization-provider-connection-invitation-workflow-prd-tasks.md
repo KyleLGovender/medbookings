@@ -27,14 +27,14 @@
 
 ## Tasks
 
-- [ ] 1.0 Database Schema Updates and Models
+- [x] 1.0 Database Schema Updates and Models
 
-  - [ ] 1.1 Add ProviderInvitation model to schema.prisma with fields for email, token, status, custom message, organization reference, expiry date
-  - [ ] 1.2 Add ProviderInvitationStatus Enum (PENDING, ACCEPTED, REJECTED, CANCELLED, EXPIRED, DELIVERY_FAILED)
-  - [ ] 1.3 Update ConnectionStatus Enum if needed for invitation-based connections
-  - [ ] 1.4 Add database indexes for efficient querying (email, token, organizationId, status)
-  - [ ] 1.5 Run Prisma migration and generate updated client
-  - [ ] 1.6 Create TypeScript types based on updated Prisma schema
+  - [x] 1.1 Add ProviderInvitation model to schema.prisma with fields for email, token, status, custom message, organization reference, expiry date
+  - [x] 1.2 Add ProviderInvitationStatus Enum (PENDING, ACCEPTED, REJECTED, CANCELLED, EXPIRED, DELIVERY_FAILED)
+  - [x] 1.3 Update ConnectionStatus Enum if needed for invitation-based connections
+  - [x] 1.4 Add database indexes for efficient querying (email, token, organizationId, status)
+  - [x] 1.5 Run Prisma migration and generate updated client
+  - [x] 1.6 Create TypeScript types based on updated Prisma schema
 
 - [ ] 2.0 Backend API Development
 
