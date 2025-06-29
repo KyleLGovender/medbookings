@@ -36,20 +36,20 @@
   - [x] 1.5 Run Prisma migration and generate updated client
   - [x] 1.6 Create TypeScript types based on updated Prisma schema
 
-- [ ] 2.0 Backend API Development
+- [x] 2.0 Backend API Development
 
-  - [ ] 2.1 Create API route for organizations to send provider invitations (POST /api/organizations/[id]/provider-invitations)
-  - [ ] 2.2 Create API route for organizations to list their sent invitations (GET /api/organizations/[id]/provider-invitations)
-  - [ ] 2.3 Create API route for organizations to cancel invitations (DELETE /api/organizations/[id]/provider-invitations/[invitationId])
-  - [ ] 2.4 Create API route for organizations to resend invitations (POST /api/organizations/[id]/provider-invitations/[invitationId]/resend)
-  - [ ] 2.5 Create API route for providers to list their received invitations (GET /api/providers/invitations)
-  - [ ] 2.6 Create API route for invitation acceptance/rejection (POST /api/providers/invitations/[token]/respond)
-  - [ ] 2.7 Create API route for providers to list their organization connections (GET /api/providers/connections)
-  - [ ] 2.8 Create API route for providers to manage connections (PUT /api/providers/connections/[connectionId])
-  - [ ] 2.9 Implement secure token generation and validation logic
-  - [ ] 2.10 Add permission checks for organization roles (OWNER and ADMIN only)
-  - [ ] 2.11 Implement duplicate connection prevention logic
-  - [ ] 2.12 Add email logging functionality for all invitation communications
+  - [x] 2.1 Create API route for organizations to send provider invitations (POST /api/organizations/[id]/provider-invitations)
+  - [x] 2.2 Create API route for organizations to list their sent invitations (GET /api/organizations/[id]/provider-invitations)
+  - [x] 2.3 Create API route for organizations to cancel invitations (DELETE /api/organizations/[id]/provider-invitations/[invitationId])
+  - [x] 2.4 Create API route for organizations to resend invitations (POST /api/organizations/[id]/provider-invitations/[invitationId]/resend)
+  - [x] 2.5 Create API route for providers to list their received invitations (GET /api/providers/invitations)
+  - [x] 2.6 Create API route for invitation acceptance/rejection (POST /api/providers/invitations/[token]/respond)
+  - [x] 2.7 Create API route for providers to list their organization connections (GET /api/providers/connections)
+  - [x] 2.8 Create API route for providers to manage connections (PUT /api/providers/connections/[connectionId])
+  - [x] 2.9 Implement secure token generation and validation logic
+  - [x] 2.10 Add permission checks for organization roles (OWNER and ADMIN only)
+  - [x] 2.11 Implement duplicate connection prevention logic
+  - [x] 2.12 Add email logging functionality for all invitation communications
 
 - [ ] 3.0 Organization Dashboard Integration
 
