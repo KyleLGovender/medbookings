@@ -3,29 +3,29 @@
 import { useState } from 'react';
 
 import { format, formatDistanceToNow } from 'date-fns';
-import { 
-  Building2, 
-  Check, 
-  Clock, 
-  Mail, 
-  MessageSquare, 
-  User, 
-  X,
+import {
   AlertTriangle,
+  Building2,
+  Check,
+  Clock,
   Globe,
-  Phone
+  Mail,
+  MessageSquare,
+  Phone,
+  User,
+  X,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
@@ -84,11 +84,10 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
   const { toast } = useToast();
 
   const respondToInvitationMutation = useRespondToInvitation({
-    onSuccess: (data, variables) => {
-      const action = variables.response.action === 'accept' ? 'accepted' : 'declined';
+    onSuccess: () => {
       toast({
-        title: `Invitation ${action}`,
-        description: `You have ${action} the invitation from ${invitation.organization.name}.`,
+        title: 'Invitation responded',
+        description: `You have successfully responded to the invitation from ${invitation.organization.name}.`,
       });
       setIsRejectDialogOpen(false);
       setRejectionReason('');
@@ -105,17 +104,17 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
   const handleAccept = () => {
     respondToInvitationMutation.mutate({
       token: invitation.token,
-      response: { action: 'accept' }
+      response: { action: 'accept' },
     });
   };
 
   const handleReject = () => {
     respondToInvitationMutation.mutate({
       token: invitation.token,
-      response: { 
+      response: {
         action: 'reject',
-        rejectionReason: rejectionReason || undefined
-      }
+        rejectionReason: rejectionReason || undefined,
+      },
     });
   };
 
@@ -136,7 +135,9 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
 
   return (
     <>
-      <Card className={`transition-all duration-200 ${isPending ? 'border-primary/50 bg-primary/5' : ''}`}>
+      <Card
+        className={`transition-all duration-200 ${isPending ? 'border-primary/50 bg-primary/5' : ''}`}
+      >
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
@@ -144,21 +145,19 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
                 <img
                   src={invitation.organization.logo}
                   alt={invitation.organization.name}
-                  className="h-12 w-12 rounded-lg object-cover border"
+                  className="h-12 w-12 rounded-lg border object-cover"
                 />
               ) : (
-                <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
                   <Building2 className="h-6 w-6 text-muted-foreground" />
                 </div>
               )}
               <div className="flex-1">
                 <CardTitle className="text-lg">{invitation.organization.name}</CardTitle>
-                <CardDescription className="flex items-center gap-2 mt-1">
+                <CardDescription className="mt-1 flex items-center gap-2">
                   <StatusBadge status={invitation.status} />
                   {isPending && (
-                    <span className="text-sm text-primary font-medium">
-                      Action Required
-                    </span>
+                    <span className="text-sm font-medium text-primary">Action Required</span>
                   )}
                 </CardDescription>
               </div>
@@ -170,7 +169,7 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
           {/* Organization Description */}
           {invitation.organization.description && (
             <div>
-              <p className="text-sm text-muted-foreground line-clamp-2">
+              <p className="line-clamp-2 text-sm text-muted-foreground">
                 {invitation.organization.description}
               </p>
             </div>
@@ -180,10 +179,10 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
           {invitation.customMessage && (
             <div className="rounded-md bg-muted/50 p-3">
               <div className="flex items-start gap-2">
-                <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <MessageSquare className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
                 <div>
-                  <p className="text-sm font-medium mb-1">Personal Message:</p>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  <p className="mb-1 text-sm font-medium">Personal Message:</p>
+                  <p className="whitespace-pre-wrap text-sm text-muted-foreground">
                     {invitation.customMessage}
                   </p>
                 </div>
@@ -192,13 +191,13 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
           )}
 
           {/* Organization Contact Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
             {invitation.organization.email && (
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <a 
+                <a
                   href={`mailto:${invitation.organization.email}`}
-                  className="text-primary hover:underline truncate"
+                  className="truncate text-primary hover:underline"
                 >
                   {invitation.organization.email}
                 </a>
@@ -207,7 +206,7 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
             {invitation.organization.phone && (
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-muted-foreground" />
-                <a 
+                <a
                   href={`tel:${invitation.organization.phone}`}
                   className="text-primary hover:underline"
                 >
@@ -220,26 +219,24 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
           <Separator />
 
           {/* Invitation Details */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="mb-1 flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">Invited by:</span>
               </div>
-              <p className="text-muted-foreground ml-6">
+              <p className="ml-6 text-muted-foreground">
                 {invitation.invitedBy?.name || 'Unknown'}
               </p>
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="mb-1 flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">
-                  {isExpired ? 'Expired:' : 'Expires:'}
-                </span>
+                <span className="font-medium">{isExpired ? 'Expired:' : 'Expires:'}</span>
               </div>
               <p className={`ml-6 ${isExpired ? 'text-destructive' : 'text-muted-foreground'}`}>
                 {format(new Date(invitation.expiresAt), 'MMM d, yyyy')}
-                <span className="text-xs ml-2">
+                <span className="ml-2 text-xs">
                   ({formatDistanceToNow(new Date(invitation.expiresAt), { addSuffix: true })})
                 </span>
               </p>
@@ -248,20 +245,20 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
 
           {/* Action Buttons */}
           {showActions && isPending && (
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <Button 
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+              <Button
                 onClick={handleAccept}
                 disabled={respondToInvitationMutation.isPending}
-                className="flex items-center gap-2 flex-1"
+                className="flex flex-1 items-center gap-2"
               >
                 <Check className="h-4 w-4" />
                 Accept Invitation
               </Button>
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => setIsRejectDialogOpen(true)}
                 disabled={respondToInvitationMutation.isPending}
-                className="flex items-center gap-2 flex-1"
+                className="flex flex-1 items-center gap-2"
               >
                 <X className="h-4 w-4" />
                 Decline
@@ -271,30 +268,30 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
 
           {/* Status Messages */}
           {invitation.status === 'ACCEPTED' && invitation.connection && (
-            <div className="rounded-md bg-green-50 dark:bg-green-950/30 p-3">
+            <div className="rounded-md bg-green-50 p-3 dark:bg-green-950/30">
               <p className="text-sm text-green-800 dark:text-green-200">
-                ✅ You are connected to this organization and can now schedule availability with them.
+                ✅ You are connected to this organization and can now schedule availability with
+                them.
               </p>
             </div>
           )}
 
           {invitation.status === 'REJECTED' && (
-            <div className="rounded-md bg-red-50 dark:bg-red-950/30 p-3">
+            <div className="rounded-md bg-red-50 p-3 dark:bg-red-950/30">
               <p className="text-sm text-red-800 dark:text-red-200">
                 You declined this invitation.
                 {invitation.rejectionReason && (
-                  <span className="block mt-1 text-xs">
-                    Reason: {invitation.rejectionReason}
-                  </span>
+                  <span className="mt-1 block text-xs">Reason: {invitation.rejectionReason}</span>
                 )}
               </p>
             </div>
           )}
 
           {isExpired && invitation.status === 'PENDING' && (
-            <div className="rounded-md bg-orange-50 dark:bg-orange-950/30 p-3">
+            <div className="rounded-md bg-orange-50 p-3 dark:bg-orange-950/30">
               <p className="text-sm text-orange-800 dark:text-orange-200">
-                ⏰ This invitation has expired. Contact the organization if you're still interested.
+                ⏰ This invitation has expired. Contact the organization if you&apos;re still
+                interested.
               </p>
             </div>
           )}
@@ -311,12 +308,10 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
               You can optionally provide a reason.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div>
-              <label className="text-sm font-medium">
-                Reason (Optional)
-              </label>
+              <label className="text-sm font-medium">Reason (Optional)</label>
               <Textarea
                 placeholder="Let them know why you're declining..."
                 value={rejectionReason}
@@ -327,14 +322,14 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
           </div>
 
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setIsRejectDialogOpen(false)}
               disabled={respondToInvitationMutation.isPending}
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               variant="destructive"
               onClick={handleReject}
               disabled={respondToInvitationMutation.isPending}

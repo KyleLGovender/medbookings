@@ -15,13 +15,13 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
+import {
+  useOrganizationConnections,
   useProviderInvitations,
-  useOrganizationConnections
 } from '@/features/providers/hooks/use-organization-connections';
 
-import { ConnectionCard } from './ConnectionCard';
-import { InvitationCard } from './InvitationCard';
+import { ConnectionCard } from './connection-card';
+import { InvitationCard } from './invitation-card';
 
 export function OrganizationConnectionsManager() {
   const [invitationsStatusFilter, setInvitationsStatusFilter] = useState<string>('all');
@@ -69,7 +69,7 @@ export function OrganizationConnectionsManager() {
 
   // Count pending invitations for tab badge
   const pendingInvitationsCount = invitations.filter(
-    inv => inv.status === 'PENDING' && new Date(inv.expiresAt) > new Date()
+    (inv) => inv.status === 'PENDING' && new Date(inv.expiresAt) > new Date()
   ).length;
 
   const LoadingCards = () => (
@@ -100,23 +100,21 @@ export function OrganizationConnectionsManager() {
     </div>
   );
 
-  const EmptyState = ({ 
-    icon: Icon, 
-    title, 
-    description 
-  }: { 
-    icon: any, 
-    title: string, 
-    description: string 
+  const EmptyState = ({
+    icon: Icon,
+    title,
+    description,
+  }: {
+    icon: any;
+    title: string;
+    description: string;
   }) => (
     <Card>
       <CardContent className="py-12">
         <div className="text-center">
-          <Icon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">{title}</h3>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            {description}
-          </p>
+          <Icon className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+          <h3 className="mb-2 text-lg font-medium">{title}</h3>
+          <p className="mx-auto max-w-md text-muted-foreground">{description}</p>
         </div>
       </CardContent>
     </Card>
@@ -150,22 +148,64 @@ export function OrganizationConnectionsManager() {
         />
       </div>
 
-      <Tabs defaultValue="invitations" className="space-y-6">
+      <Tabs defaultValue="connections" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="connections">Connections</TabsTrigger>
           <TabsTrigger value="invitations" className="relative">
             Invitations
             {pendingInvitationsCount > 0 && (
-              <span className="ml-2 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
+              <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
                 {pendingInvitationsCount}
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="connections">Connections</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="connections" className="space-y-6">
+          {/* Connections Filters */}
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <Select value={connectionsStatusFilter} onValueChange={setConnectionsStatusFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Connections</SelectItem>
+                <SelectItem value="ACCEPTED">Active</SelectItem>
+                <SelectItem value="SUSPENDED">Suspended</SelectItem>
+                <SelectItem value="PENDING">Pending</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Connections List */}
+          {connectionsError ? (
+            <ErrorState message={connectionsError.message} />
+          ) : isLoadingConnections ? (
+            <LoadingCards />
+          ) : filteredConnections.length === 0 ? (
+            <EmptyState
+              icon={Building2}
+              title={
+                searchQuery ? 'No connections match your search' : 'No organization connections'
+              }
+              description={
+                searchQuery
+                  ? 'Try adjusting your search terms or filters.'
+                  : 'Accept invitations to establish connections with organizations and start scheduling availability.'
+              }
+            />
+          ) : (
+            <div className="space-y-4">
+              {filteredConnections.map((connection) => (
+                <ConnectionCard key={connection.id} connection={connection} showActions={true} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
         <TabsContent value="invitations" className="space-y-6">
           {/* Invitations Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row">
             <Select value={invitationsStatusFilter} onValueChange={setInvitationsStatusFilter}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by status" />
@@ -201,51 +241,9 @@ export function OrganizationConnectionsManager() {
                 <InvitationCard
                   key={invitation.id}
                   invitation={invitation}
-                  showActions={invitation.status === 'PENDING' && new Date(invitation.expiresAt) > new Date()}
-                />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="connections" className="space-y-6">
-          {/* Connections Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Select value={connectionsStatusFilter} onValueChange={setConnectionsStatusFilter}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Connections</SelectItem>
-                <SelectItem value="ACCEPTED">Active</SelectItem>
-                <SelectItem value="SUSPENDED">Suspended</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Connections List */}
-          {connectionsError ? (
-            <ErrorState message={connectionsError.message} />
-          ) : isLoadingConnections ? (
-            <LoadingCards />
-          ) : filteredConnections.length === 0 ? (
-            <EmptyState
-              icon={Building2}
-              title={searchQuery ? 'No connections match your search' : 'No organization connections'}
-              description={
-                searchQuery
-                  ? 'Try adjusting your search terms or filters.'
-                  : 'Accept invitations to establish connections with organizations and start scheduling availability.'
-              }
-            />
-          ) : (
-            <div className="space-y-4">
-              {filteredConnections.map((connection) => (
-                <ConnectionCard
-                  key={connection.id}
-                  connection={connection}
-                  showActions={true}
+                  showActions={
+                    invitation.status === 'PENDING' && new Date(invitation.expiresAt) > new Date()
+                  }
                 />
               ))}
             </div>

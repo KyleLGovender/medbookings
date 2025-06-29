@@ -5,7 +5,13 @@
       "Bash(grep:*)",
       "Bash(npm run lint)",
       "Bash(npx eslint:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(npm run format:*)",
+      "Bash(npx tsc:*)",
+      "Bash(ls:*)",
+      "Bash(npx prettier:*)"
     ],
     "deny": []
   }

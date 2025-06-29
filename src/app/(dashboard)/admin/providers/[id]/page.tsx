@@ -1,9 +1,8 @@
 import { notFound, redirect } from 'next/navigation';
 
 import { ProviderDetail } from '@/features/admin/components/providers';
-import { getCurrentUser } from '@/lib/auth';
 import type { AdminProviderDetailPageProps } from '@/features/admin/types';
-
+import { getCurrentUser } from '@/lib/auth';
 
 export default async function AdminProviderDetailPage({ params }: AdminProviderDetailPageProps) {
   const currentUser = await getCurrentUser();

@@ -36,7 +36,7 @@ export function NavigationLink({
     if (pathname !== href) {
       setIsLoading(true);
       onNavigationStart?.();
-      
+
       // Fallback reset in case pathname doesn't change (e.g., same page navigation)
       setTimeout(() => {
         setIsLoading(false);

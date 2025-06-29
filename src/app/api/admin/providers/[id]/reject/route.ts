@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import type {
+  AdminApiResponse,
+  AdminRouteParams,
+  RejectProviderRequest,
+} from '@/features/admin/types';
+import { rejectProviderRequestSchema } from '@/features/admin/types';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import type { AdminApiResponse, AdminRouteParams, RejectProviderRequest } from '@/features/admin/types';
-import { rejectProviderRequestSchema } from '@/features/admin/types';
 
 export async function POST(
   request: NextRequest,
@@ -18,13 +22,13 @@ export async function POST(
 
     const providerId = params.id;
     const body = await request.json();
-    
+
     // Validate request body
     const validation = rejectProviderRequestSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json({ error: 'Rejection reason is required' }, { status: 400 });
     }
-    
+
     const { reason } = validation.data;
 
     // Check if provider exists

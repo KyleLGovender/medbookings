@@ -5,10 +5,10 @@ export { useRegisterOrganization } from './use-register-organization';
 export { useOrganizationDelete } from './use-organization-delete';
 
 // Organization update hooks
-export { 
+export {
   useUpdateOrganizationBasicInfo,
   useUpdateOrganizationBilling,
-  useUpdateOrganizationLocations
+  useUpdateOrganizationLocations,
 } from './use-organization-updates';
 
 // Admin hooks
@@ -16,8 +16,14 @@ export { useAdminOrganizations } from './use-admin-organizations';
 export { useAdminOrganizationApproval } from './use-admin-organization-approval';
 
 // Provider invitation hooks
-export { 
+export {
   useSendProviderInvitation,
   useProviderInvitations,
-  useManageProviderInvitation
+  useManageProviderInvitation,
 } from './use-provider-invitations';
+
+// Provider connection hooks
+export {
+  useOrganizationProviderConnections,
+  useManageOrganizationProviderConnection,
+} from './use-provider-connections';

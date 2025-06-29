@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { DeleteOrganizationButton } from '@/features/organizations/components/delete-organization-button';
-import { ProviderInvitationManager } from '@/features/organizations/components/ProviderInvitationManager';
+import { ProviderNetworkManager } from '@/features/organizations/components/provider-network-manager';
 import { StaticLocationMap } from '@/features/organizations/components/static-location-map';
 import { useOrganization } from '@/features/organizations/hooks/use-organization';
 
@@ -61,8 +61,8 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
 
   // Check if current user is a member of this organization with admin privileges
   const isOwner = organization.memberships?.some(
-    (membership: any) => 
-      membership.userId === userId && 
+    (membership: any) =>
+      membership.userId === userId &&
       ['OWNER', 'ADMIN'].includes(membership.role) &&
       membership.status === 'ACTIVE'
   );
@@ -444,9 +444,7 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
       </Card>
 
       {/* Provider Network Section */}
-      {isOwner && (
-        <ProviderInvitationManager organizationId={organization.id} />
-      )}
+      {isOwner && <ProviderNetworkManager organizationId={organization.id} />}
     </div>
   );
 }

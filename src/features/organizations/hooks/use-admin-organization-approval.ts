@@ -50,14 +50,11 @@ export function useApproveOrganization(callbacks?: MutationCallbacks) {
       ]);
 
       // Optimistically update to the new value
-      queryClient.setQueryData(
-        ['admin', 'organization', variables.organizationId],
-        (old: any) => ({
-          ...old,
-          status: 'APPROVED',
-          approvedAt: new Date().toISOString(),
-        })
-      );
+      queryClient.setQueryData(['admin', 'organization', variables.organizationId], (old: any) => ({
+        ...old,
+        status: 'APPROVED',
+        approvedAt: new Date().toISOString(),
+      }));
 
       // Return a context object with the snapshotted value
       return { previousOrganization, organizationId: variables.organizationId };
@@ -125,15 +122,12 @@ export function useRejectOrganization(callbacks?: MutationCallbacks) {
       ]);
 
       // Optimistically update to the new value
-      queryClient.setQueryData(
-        ['admin', 'organization', variables.organizationId],
-        (old: any) => ({
-          ...old,
-          status: 'REJECTED',
-          rejectedAt: new Date().toISOString(),
-          rejectionReason: variables.rejectionReason,
-        })
-      );
+      queryClient.setQueryData(['admin', 'organization', variables.organizationId], (old: any) => ({
+        ...old,
+        status: 'REJECTED',
+        rejectedAt: new Date().toISOString(),
+        rejectionReason: variables.rejectionReason,
+      }));
 
       // Return a context object with the snapshotted value
       return { previousOrganization, organizationId: variables.organizationId };

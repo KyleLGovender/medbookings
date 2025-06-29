@@ -14,13 +14,16 @@ export async function GET(request: Request) {
 
     // Find the service provider for the current user
     const serviceProvider = await prisma.serviceProvider.findUnique({
-      where: { userId: currentUser.id }
+      where: { userId: currentUser.id },
     });
 
     if (!serviceProvider) {
-      return NextResponse.json({ 
-        message: 'Service provider profile not found' 
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          message: 'Service provider profile not found',
+        },
+        { status: 404 }
+      );
     }
 
     // Get URL search params for filtering
@@ -41,15 +44,15 @@ export async function GET(request: Request) {
       where: whereClause,
       include: {
         organization: {
-          select: { 
+          select: {
             id: true,
-            name: true, 
+            name: true,
             description: true,
             logo: true,
             email: true,
             phone: true,
-            website: true
-          }
+            website: true,
+          },
         },
         invitation: {
           select: {
@@ -57,16 +60,15 @@ export async function GET(request: Request) {
             customMessage: true,
             createdAt: true,
             invitedBy: {
-              select: { name: true, email: true }
-            }
-          }
-        }
+              select: { name: true, email: true },
+            },
+          },
+        },
       },
-      orderBy: { requestedAt: 'desc' }
+      orderBy: { requestedAt: 'desc' },
     });
 
     return NextResponse.json({ connections });
-
   } catch (error) {
     console.error('Error fetching provider connections:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

@@ -5,9 +5,9 @@ export { ProviderProfileView } from './profile/provider-profile-view';
 export { ProviderOnboardingForm } from './onboarding/provider-onboarding-form';
 
 // Organization connections and invitations
-export { OrganizationConnectionsManager } from './OrganizationConnectionsManager';
-export { InvitationCard } from './InvitationCard';
-export { ConnectionCard } from './ConnectionCard';
+export { OrganizationConnectionsManager } from './organization-connections-manager';
+export { InvitationCard } from './invitation-card';
+export { ConnectionCard } from './connection-card';
 
 // Other provider components
 export { DeleteProviderButton } from './delete-provider-button';

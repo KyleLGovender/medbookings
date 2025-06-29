@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { ServiceProviderStatus } from '@prisma/client';
 
+import type { AdminApiResponse, AdminProviderListSelect } from '@/features/admin/types';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import type { AdminApiResponse, AdminProviderListSelect } from '@/features/admin/types';
 
-export async function GET(request: NextRequest): Promise<NextResponse<AdminApiResponse<AdminProviderListSelect[]>>> {
+export async function GET(
+  request: NextRequest
+): Promise<NextResponse<AdminApiResponse<AdminProviderListSelect[]>>> {
   try {
     const currentUser = await getCurrentUser();
 

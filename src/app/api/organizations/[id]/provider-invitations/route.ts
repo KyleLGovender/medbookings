@@ -1,21 +1,19 @@
 import { NextResponse } from 'next/server';
+
 import { z } from 'zod';
 
-import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { 
-  generateInvitationToken, 
-  getInvitationExpiryDate, 
-  generateInvitationEmail, 
-  logEmail 
-} from '@/lib/invitation-utils';
 import { ProviderInvitationSchema } from '@/features/organizations/types/types';
+import { getCurrentUser } from '@/lib/auth';
+import {
+  generateInvitationEmail,
+  generateInvitationToken,
+  getInvitationExpiryDate,
+  logEmail,
+} from '@/lib/invitation-utils';
+import { prisma } from '@/lib/prisma';
 
 // POST /api/organizations/[id]/provider-invitations
-export async function POST(
-  request: Request, 
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
     const { id: organizationId } = params;
     const currentUser = await getCurrentUser();
@@ -39,20 +37,26 @@ export async function POST(
     });
 
     if (!membership) {
-      return NextResponse.json({ 
-        message: 'Forbidden: Only organization owners and admins can send invitations' 
-      }, { status: 403 });
+      return NextResponse.json(
+        {
+          message: 'Forbidden: Only organization owners and admins can send invitations',
+        },
+        { status: 403 }
+      );
     }
 
     // Validate request body
     const body = await request.json();
     const validationResult = ProviderInvitationSchema.safeParse(body);
-    
+
     if (!validationResult.success) {
-      return NextResponse.json({ 
-        message: 'Invalid request data',
-        errors: validationResult.error.errors
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          message: 'Invalid request data',
+          errors: validationResult.error.errors,
+        },
+        { status: 400 }
+      );
     }
 
     const { email, customMessage } = validationResult.data;
@@ -67,9 +71,12 @@ export async function POST(
     });
 
     if (existingInvitation) {
-      return NextResponse.json({ 
-        message: 'An invitation has already been sent to this email address' 
-      }, { status: 409 });
+      return NextResponse.json(
+        {
+          message: 'An invitation has already been sent to this email address',
+        },
+        { status: 409 }
+      );
     }
 
     // Check if there's already an established connection
@@ -81,24 +88,27 @@ export async function POST(
             providerConnections: {
               where: {
                 organizationId,
-                status: { in: ['ACCEPTED', 'PENDING'] }
-              }
-            }
-          }
-        }
-      }
+                status: { in: ['ACCEPTED', 'PENDING'] },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (existingUser?.serviceProvider?.providerConnections.length > 0) {
-      return NextResponse.json({ 
-        message: 'This provider is already connected to your organization' 
-      }, { status: 409 });
+      return NextResponse.json(
+        {
+          message: 'This provider is already connected to your organization',
+        },
+        { status: 409 }
+      );
     }
 
     // Get organization details for email
     const organization = await prisma.organization.findUnique({
       where: { id: organizationId },
-      select: { name: true }
+      select: { name: true },
     });
 
     if (!organization) {
@@ -124,12 +134,12 @@ export async function POST(
       },
       include: {
         organization: {
-          select: { name: true }
+          select: { name: true },
         },
         invitedBy: {
-          select: { name: true }
-        }
-      }
+          select: { name: true },
+        },
+      },
     });
 
     // Generate and log email
@@ -146,26 +156,28 @@ export async function POST(
       subject: emailContent.subject,
       htmlContent: emailContent.htmlContent,
       textContent: emailContent.textContent,
-      type: 'invitation'
+      type: 'invitation',
     });
 
     // Update email delivery status to "DELIVERED" for console logging
     await prisma.providerInvitation.update({
       where: { id: invitation.id },
-      data: { emailDeliveryStatus: 'DELIVERED' }
+      data: { emailDeliveryStatus: 'DELIVERED' },
     });
 
-    return NextResponse.json({
-      message: 'Invitation sent successfully',
-      invitation: {
-        id: invitation.id,
-        email: invitation.email,
-        status: invitation.status,
-        createdAt: invitation.createdAt,
-        expiresAt: invitation.expiresAt,
-      }
-    }, { status: 201 });
-
+    return NextResponse.json(
+      {
+        message: 'Invitation sent successfully',
+        invitation: {
+          id: invitation.id,
+          email: invitation.email,
+          status: invitation.status,
+          createdAt: invitation.createdAt,
+          expiresAt: invitation.expiresAt,
+        },
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Error sending provider invitation:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
@@ -173,10 +185,7 @@ export async function POST(
 }
 
 // GET /api/organizations/[id]/provider-invitations
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     const { id: organizationId } = params;
     const currentUser = await getCurrentUser();
@@ -200,9 +209,12 @@ export async function GET(
     });
 
     if (!membership) {
-      return NextResponse.json({ 
-        message: 'Forbidden: Insufficient permissions' 
-      }, { status: 403 });
+      return NextResponse.json(
+        {
+          message: 'Forbidden: Insufficient permissions',
+        },
+        { status: 403 }
+      );
     }
 
     // Get URL search params for filtering
@@ -223,24 +235,23 @@ export async function GET(
       where: whereClause,
       include: {
         invitedBy: {
-          select: { name: true, email: true }
+          select: { name: true, email: true },
         },
         connection: {
-          select: { 
-            id: true, 
-            status: true, 
+          select: {
+            id: true,
+            status: true,
             acceptedAt: true,
             serviceProvider: {
-              select: { name: true, id: true }
-            }
-          }
-        }
+              select: { name: true, id: true },
+            },
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
 
     return NextResponse.json({ invitations });
-
   } catch (error) {
     console.error('Error fetching provider invitations:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

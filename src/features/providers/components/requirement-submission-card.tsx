@@ -5,11 +5,7 @@ import { Calendar, Check, FileText, Info, X } from 'lucide-react';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { NavigationLink } from '@/components/ui/navigation-link';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { extractFilenameFromUrl } from '@/lib/utils/document-utils';
 
 interface RequirementSubmission {
@@ -131,21 +127,21 @@ export function RequirementSubmissionCard({
     submission.requirementType?.validationType === 'DOCUMENT' &&
     submission.documentMetadata?.value;
 
-  const shouldShowPendingButtons = 
-    isAdminView && 
-    submission.status === 'PENDING' && 
-    onApprove && 
-    onReject;
+  const shouldShowPendingButtons =
+    isAdminView && submission.status === 'PENDING' && onApprove && onReject;
 
-  const shouldShowReapproveButton = 
-    isAdminView && 
-    (submission.status === 'REJECTED' || submission.status?.includes('REJECT')) && 
+  const shouldShowReapproveButton =
+    isAdminView &&
+    (submission.status === 'REJECTED' || submission.status?.includes('REJECT')) &&
     onApprove;
 
-  const shouldShowStatusBadge = 
-    submission.status && 
-    (submission.status === 'APPROVED' || submission.status === 'REJECTED' || submission.status?.includes('REJECT') || submission.status?.includes('APPROV') || submission.status === 'PENDING');
-
+  const shouldShowStatusBadge =
+    submission.status &&
+    (submission.status === 'APPROVED' ||
+      submission.status === 'REJECTED' ||
+      submission.status?.includes('REJECT') ||
+      submission.status?.includes('APPROV') ||
+      submission.status === 'PENDING');
 
   return (
     <div className={`rounded-md border p-4 ${className}`}>
@@ -170,9 +166,7 @@ export function RequirementSubmissionCard({
             <span>📝</span>
             Admin Notes:
           </div>
-          <p className="mt-1 text-xs text-green-700 dark:text-green-400">
-            {submission.adminNotes}
-          </p>
+          <p className="mt-1 text-xs text-green-700 dark:text-green-400">{submission.adminNotes}</p>
         </div>
       )}
 
@@ -182,7 +176,10 @@ export function RequirementSubmissionCard({
           <div className="flex items-center gap-2">{renderContent()}</div>
 
           {/* Show action buttons and status */}
-          {(shouldShowViewButton || shouldShowPendingButtons || shouldShowReapproveButton || shouldShowStatusBadge) && (
+          {(shouldShowViewButton ||
+            shouldShowPendingButtons ||
+            shouldShowReapproveButton ||
+            shouldShowStatusBadge) && (
             <div className="flex items-center gap-2">
               {/* Approved/Rejected requirements: Show status badge first */}
               {shouldShowStatusBadge && (
@@ -214,8 +211,13 @@ export function RequirementSubmissionCard({
                             <p className="text-sm text-red-700">{submission.adminNotes}</p>
                           ) : (
                             <div className="space-y-2">
-                              <p className="text-sm text-red-700">No rejection reason was provided when this requirement was rejected.</p>
-                              <p className="text-xs text-red-600">This requirement can be re-approved by clicking the Re-approve button.</p>
+                              <p className="text-sm text-red-700">
+                                No rejection reason was provided when this requirement was rejected.
+                              </p>
+                              <p className="text-xs text-red-600">
+                                This requirement can be re-approved by clicking the Re-approve
+                                button.
+                              </p>
                             </div>
                           )}
                         </div>
@@ -233,7 +235,7 @@ export function RequirementSubmissionCard({
                   View Document
                 </NavigationLink>
               )}
-              
+
               {/* Pending requirements: Show both Approve and Reject buttons */}
               {shouldShowPendingButtons && (
                 <>

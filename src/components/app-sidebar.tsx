@@ -69,7 +69,7 @@ export function AppSidebar({ data, ...props }: AppSidebarProps) {
                         {item.title}
                       </NavigationLink>
                     </SidebarMenuButton>
-                    
+
                     {/* Separate expand/collapse trigger */}
                     {item.items?.length ? (
                       <CollapsibleTrigger asChild>
@@ -80,7 +80,7 @@ export function AppSidebar({ data, ...props }: AppSidebarProps) {
                       </CollapsibleTrigger>
                     ) : null}
                   </div>
-                  
+
                   {item.items?.length ? (
                     <CollapsibleContent>
                       <SidebarMenuSub>

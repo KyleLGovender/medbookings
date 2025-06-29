@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { 
-  generateInvitationToken, 
-  getInvitationExpiryDate, 
-  generateInvitationEmail, 
-  logEmail 
+import {
+  generateInvitationEmail,
+  generateInvitationToken,
+  getInvitationExpiryDate,
+  logEmail,
 } from '@/lib/invitation-utils';
+import { prisma } from '@/lib/prisma';
 
 // POST /api/organizations/[id]/provider-invitations/[invitationId]/resend
 export async function POST(
@@ -23,9 +23,12 @@ export async function POST(
     }
 
     if (!organizationId || !invitationId) {
-      return NextResponse.json({ 
-        message: 'Organization ID and invitation ID are required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          message: 'Organization ID and invitation ID are required',
+        },
+        { status: 400 }
+      );
     }
 
     // Check if user has permission to resend invitations
@@ -39,9 +42,12 @@ export async function POST(
     });
 
     if (!membership) {
-      return NextResponse.json({ 
-        message: 'Forbidden: Only organization owners and admins can resend invitations' 
-      }, { status: 403 });
+      return NextResponse.json(
+        {
+          message: 'Forbidden: Only organization owners and admins can resend invitations',
+        },
+        { status: 403 }
+      );
     }
 
     // Find the invitation
@@ -52,8 +58,8 @@ export async function POST(
       },
       include: {
         organization: { select: { name: true } },
-        invitedBy: { select: { name: true } }
-      }
+        invitedBy: { select: { name: true } },
+      },
     });
 
     if (!invitation) {
@@ -62,17 +68,23 @@ export async function POST(
 
     // Check if invitation can be resent
     if (invitation.status !== 'PENDING') {
-      return NextResponse.json({ 
-        message: 'Only pending invitations can be resent' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          message: 'Only pending invitations can be resent',
+        },
+        { status: 400 }
+      );
     }
 
     // Check rate limiting (no more than 1 resend per hour)
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     if (invitation.lastEmailSentAt && invitation.lastEmailSentAt > oneHourAgo) {
-      return NextResponse.json({ 
-        message: 'Invitation can only be resent once per hour' 
-      }, { status: 429 });
+      return NextResponse.json(
+        {
+          message: 'Invitation can only be resent once per hour',
+        },
+        { status: 429 }
+      );
     }
 
     // Generate new token and extend expiry
@@ -82,7 +94,7 @@ export async function POST(
     // Check if user exists to determine email type
     const existingUser = await prisma.user.findUnique({
       where: { email: invitation.email },
-      select: { id: true }
+      select: { id: true },
     });
 
     // Update invitation with new token and reset expiry
@@ -94,7 +106,7 @@ export async function POST(
         emailAttempts: { increment: 1 },
         lastEmailSentAt: new Date(),
         emailDeliveryStatus: 'PENDING',
-      }
+      },
     });
 
     // Generate and log email
@@ -111,13 +123,13 @@ export async function POST(
       subject: `[REMINDER] ${emailContent.subject}`,
       htmlContent: emailContent.htmlContent,
       textContent: emailContent.textContent,
-      type: 'reminder'
+      type: 'reminder',
     });
 
     // Update email delivery status to "DELIVERED" for console logging
     await prisma.providerInvitation.update({
       where: { id: invitationId },
-      data: { emailDeliveryStatus: 'DELIVERED' }
+      data: { emailDeliveryStatus: 'DELIVERED' },
     });
 
     return NextResponse.json({
@@ -127,9 +139,8 @@ export async function POST(
         emailAttempts: updatedInvitation.emailAttempts,
         lastEmailSentAt: updatedInvitation.lastEmailSentAt,
         expiresAt: updatedInvitation.expiresAt,
-      }
+      },
     });
-
   } catch (error) {
     console.error('Error resending provider invitation:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server';
 
+import { ConnectionUpdateSchema } from '@/features/providers/types';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { ConnectionUpdateSchema } from '@/features/providers/types';
 
 // PUT /api/providers/connections/[connectionId]
-export async function PUT(
-  request: Request,
-  { params }: { params: { connectionId: string } }
-) {
+export async function PUT(request: Request, { params }: { params: { connectionId: string } }) {
   try {
     const { connectionId } = params;
     const currentUser = await getCurrentUser();
@@ -23,24 +20,30 @@ export async function PUT(
 
     // Find the service provider for the current user
     const serviceProvider = await prisma.serviceProvider.findUnique({
-      where: { userId: currentUser.id }
+      where: { userId: currentUser.id },
     });
 
     if (!serviceProvider) {
-      return NextResponse.json({ 
-        message: 'Service provider profile not found' 
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          message: 'Service provider profile not found',
+        },
+        { status: 404 }
+      );
     }
 
     // Validate request body
     const body = await request.json();
     const validationResult = ConnectionUpdateSchema.safeParse(body);
-    
+
     if (!validationResult.success) {
-      return NextResponse.json({ 
-        message: 'Invalid request data',
-        errors: validationResult.error.errors
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          message: 'Invalid request data',
+          errors: validationResult.error.errors,
+        },
+        { status: 400 }
+      );
     }
 
     const { status } = validationResult.data;
@@ -53,9 +56,9 @@ export async function PUT(
       },
       include: {
         organization: {
-          select: { name: true }
-        }
-      }
+          select: { name: true },
+        },
+      },
     });
 
     if (!connection) {
@@ -64,21 +67,30 @@ export async function PUT(
 
     // Validate status transition
     if (connection.status === 'REJECTED') {
-      return NextResponse.json({ 
-        message: 'Cannot modify a rejected connection' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          message: 'Cannot modify a rejected connection',
+        },
+        { status: 400 }
+      );
     }
 
     if (status === 'SUSPENDED' && connection.status !== 'ACCEPTED') {
-      return NextResponse.json({ 
-        message: 'Only active connections can be suspended' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          message: 'Only active connections can be suspended',
+        },
+        { status: 400 }
+      );
     }
 
     if (status === 'ACCEPTED' && connection.status !== 'SUSPENDED') {
-      return NextResponse.json({ 
-        message: 'Only suspended connections can be reactivated' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          message: 'Only suspended connections can be reactivated',
+        },
+        { status: 400 }
+      );
     }
 
     // Update connection status
@@ -90,21 +102,22 @@ export async function PUT(
       },
       include: {
         organization: {
-          select: { 
+          select: {
             id: true,
-            name: true, 
+            name: true,
             description: true,
             logo: true,
             email: true,
-            phone: true 
-          }
-        }
-      }
+            phone: true,
+          },
+        },
+      },
     });
 
-    const actionMessage = status === 'SUSPENDED' 
-      ? 'Connection suspended successfully' 
-      : 'Connection reactivated successfully';
+    const actionMessage =
+      status === 'SUSPENDED'
+        ? 'Connection suspended successfully'
+        : 'Connection reactivated successfully';
 
     return NextResponse.json({
       message: actionMessage,
@@ -113,9 +126,8 @@ export async function PUT(
         status: updatedConnection.status,
         organizationName: updatedConnection.organization.name,
         acceptedAt: updatedConnection.acceptedAt,
-      }
+      },
     });
-
   } catch (error) {
     console.error('Error updating provider connection:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
@@ -123,10 +135,7 @@ export async function PUT(
 }
 
 // DELETE /api/providers/connections/[connectionId]
-export async function DELETE(
-  request: Request,
-  { params }: { params: { connectionId: string } }
-) {
+export async function DELETE(request: Request, { params }: { params: { connectionId: string } }) {
   try {
     const { connectionId } = params;
     const currentUser = await getCurrentUser();
@@ -141,13 +150,16 @@ export async function DELETE(
 
     // Find the service provider for the current user
     const serviceProvider = await prisma.serviceProvider.findUnique({
-      where: { userId: currentUser.id }
+      where: { userId: currentUser.id },
     });
 
     if (!serviceProvider) {
-      return NextResponse.json({ 
-        message: 'Service provider profile not found' 
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          message: 'Service provider profile not found',
+        },
+        { status: 404 }
+      );
     }
 
     // Find the connection
@@ -158,9 +170,9 @@ export async function DELETE(
       },
       include: {
         organization: {
-          select: { name: true }
-        }
-      }
+          select: { name: true },
+        },
+      },
     });
 
     if (!connection) {
@@ -172,18 +184,22 @@ export async function DELETE(
       where: {
         connectionId: connectionId,
         endTime: { gte: new Date() }, // Future availabilities
-      }
+      },
     });
 
     if (activeAvailabilities > 0) {
-      return NextResponse.json({ 
-        message: 'Cannot delete connection with active future availabilities. Please remove or transfer them first.' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          message:
+            'Cannot delete connection with active future availabilities. Please remove or transfer them first.',
+        },
+        { status: 400 }
+      );
     }
 
     // Delete the connection
     await prisma.organizationProviderConnection.delete({
-      where: { id: connectionId }
+      where: { id: connectionId },
     });
 
     return NextResponse.json({
@@ -191,9 +207,8 @@ export async function DELETE(
       deletedConnection: {
         id: connectionId,
         organizationName: connection.organization.name,
-      }
+      },
     });
-
   } catch (error) {
     console.error('Error deleting provider connection:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

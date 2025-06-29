@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { 
-  InvitationResponse,
+import {
   ConnectionUpdate,
+  InvitationResponse,
+  OrganizationConnectionWithDetails,
   ProviderInvitationWithOrganization,
-  OrganizationConnectionWithDetails
 } from '@/features/providers/types';
 
 /**

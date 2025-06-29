@@ -31,10 +31,7 @@ interface ProviderInvitationFormProps {
   onSuccess?: () => void;
 }
 
-export function ProviderInvitationForm({
-  organizationId,
-  onSuccess,
-}: ProviderInvitationFormProps) {
+export function ProviderInvitationForm({ organizationId, onSuccess }: ProviderInvitationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -139,11 +136,7 @@ export function ProviderInvitationForm({
             />
 
             <div className="flex justify-end">
-              <Button 
-                type="submit" 
-                disabled={isSubmitting}
-                className="flex items-center gap-2"
-              >
+              <Button type="submit" disabled={isSubmitting} className="flex items-center gap-2">
                 <Send className="h-4 w-4" />
                 {isSubmitting ? 'Sending Invitation...' : 'Send Invitation'}
               </Button>

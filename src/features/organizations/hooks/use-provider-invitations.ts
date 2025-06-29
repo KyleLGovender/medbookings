@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { 
-  ProviderInvitationData, 
+import {
+  InvitationAction,
+  ProviderInvitationData,
   ProviderInvitationWithDetails,
-  InvitationAction 
 } from '@/features/organizations/types/types';
 
 interface SendProviderInvitationParams {
@@ -45,8 +45,8 @@ export function useSendProviderInvitation(options?: {
     },
     onSuccess: (data, variables) => {
       // Invalidate the invitations list to refresh it
-      queryClient.invalidateQueries({ 
-        queryKey: ['providerInvitations', variables.organizationId] 
+      queryClient.invalidateQueries({
+        queryKey: ['providerInvitations', variables.organizationId],
       });
       options?.onSuccess?.(data);
     },
@@ -60,10 +60,7 @@ export function useSendProviderInvitation(options?: {
  * @param status Optional status filter
  * @returns Query object with provider invitations data
  */
-export function useProviderInvitations(
-  organizationId: string,
-  status?: string
-) {
+export function useProviderInvitations(organizationId: string, status?: string) {
   return useQuery<{ invitations: ProviderInvitationWithDetails[] }, Error>({
     queryKey: ['providerInvitations', organizationId, status],
     queryFn: async () => {
@@ -139,8 +136,8 @@ export function useManageProviderInvitation(options?: {
     },
     onSuccess: (data, variables) => {
       // Invalidate the invitations list to refresh it
-      queryClient.invalidateQueries({ 
-        queryKey: ['providerInvitations', variables.organizationId] 
+      queryClient.invalidateQueries({
+        queryKey: ['providerInvitations', variables.organizationId],
       });
       options?.onSuccess?.(data);
     },

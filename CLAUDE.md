@@ -211,6 +211,70 @@ feature/
 - **Debugging**: Use comprehensive console logging for troubleshooting
 - **Linting**: Always run `npm run lint` after code changes
 - **Auto-Linting on Save**: The project has linting that runs automatically on file save. When encountering linting errors, prompt the user to save the file to see if auto-linting resolves the issues before running manual lint commands
+- **File Naming**: All files and folders use kebab-case naming convention
+- **Code Style**: Follow ESLint rules - single quotes, semicolons, arrow functions, template literals
+
+#### Post-Development Workflow
+
+When development is complete request user to run `npm run fix` from their IDE terminal to resolve linting issues
+
+#### Alternative Workflows
+
+- **Auto-Linting on Save**: When working in your code editor, linting runs automatically on file save
+- **Pre-commit**: Consider setting up pre-commit hooks to automatically format/lint
+
+### File & Code Conventions
+
+#### File Naming
+
+- **All TypeScript files**: Use kebab-case (e.g., `user-profile.tsx`, `service-provider-type.ts`)
+- **Folders**: Use kebab-case (e.g., `service-provider/`, `organization-management/`)
+- **Ignores**: Middle extensions are ignored (e.g., `user.types.ts` is valid)
+
+#### Code Style
+
+- **Quotes**: Single quotes for strings (`'hello'` not `"hello"`)
+- **Semicolons**: Required at end of statements
+- **Functions**: Prefer arrow functions (`const fn = () => {}`)
+- **Templates**: Use template literals over concatenation (`` `Hello ${name}` ``)
+- **Imports**: Named exports preferred over default exports
+- **JSX**: React import not required (Next.js auto-imports)
+- **Props Spreading**: JSX prop spreading is allowed
+- **Images**: Regular `<img>` elements allowed (Next.js Image not enforced)
+
+#### Formatting Standards
+
+- **Line Width**: Maximum 100 characters per line
+- **Indentation**: 2 spaces (no tabs)
+- **Line Endings**: Unix-style (LF)
+- **Trailing Commas**: ES5 style (objects, arrays, but not function parameters)
+
+#### Import Organization
+
+Imports are automatically sorted in this order:
+
+1. **React/Next.js imports**: `react`, `next/*` modules first
+2. **Third-party modules**: External npm packages
+3. **Internal modules**: `@/` aliased imports (absolute paths)
+4. **Relative imports**: `./` and `../` imports last
+
+**Import Features**:
+
+- Automatic separation between import groups (blank lines)
+- Alphabetical sorting within each group
+- Specifier sorting within import statements
+
+#### Tailwind CSS
+
+- **Class Sorting**: Tailwind classes are automatically sorted
+- **Consistent Ordering**: Ensures consistent class order across components
+
+#### Prettier Integration
+
+- **Auto-formatting**: Prettier runs automatically on save
+- **ESLint Integration**: ESLint enforces Prettier formatting rules
+- **Error Resolution**: When encountering linting errors, save the file first to trigger auto-formatting
+- **Plugin-Enhanced**: Import sorting and Tailwind class sorting happen automatically
 
 ### Key Implementation Notes
 

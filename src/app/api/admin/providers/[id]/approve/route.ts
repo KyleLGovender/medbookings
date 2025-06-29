@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import type {
+  AdminApiErrorResponse,
+  AdminApiResponse,
+  AdminRouteParams,
+} from '@/features/admin/types';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import type { AdminApiResponse, AdminApiErrorResponse, AdminRouteParams } from '@/features/admin/types';
 
 export async function POST(
   request: NextRequest,

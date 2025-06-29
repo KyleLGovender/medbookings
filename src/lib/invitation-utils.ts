@@ -64,9 +64,9 @@ export function generateInvitationEmail(params: {
 }) {
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
   const invitationUrl = `${baseUrl}/invitation/${params.invitationToken}`;
-  
+
   const subject = `Invitation to join ${params.organizationName} on MedBookings`;
-  
+
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2>You're invited to join ${params.organizationName}</h2>
@@ -75,16 +75,24 @@ export function generateInvitationEmail(params: {
       
       <p>${params.inviterName} from ${params.organizationName} has invited you to join their organization on MedBookings.</p>
       
-      ${params.customMessage ? `
+      ${
+        params.customMessage
+          ? `
         <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
           <p><strong>Personal message:</strong></p>
           <p>${params.customMessage}</p>
         </div>
-      ` : ''}
+      `
+          : ''
+      }
       
-      ${!params.isExistingUser ? `
+      ${
+        !params.isExistingUser
+          ? `
         <p>MedBookings is a platform that helps healthcare providers manage their practice, schedule appointments, and connect with patients.</p>
-      ` : ''}
+      `
+          : ''
+      }
       
       <div style="text-align: center; margin: 30px 0;">
         <a href="${invitationUrl}" 
@@ -107,7 +115,7 @@ export function generateInvitationEmail(params: {
       </p>
     </div>
   `;
-  
+
   const textContent = `
 You're invited to join ${params.organizationName}
 
@@ -126,6 +134,6 @@ This invitation will expire in 30 days. If you don't want to join ${params.organ
 ---
 This email was sent by MedBookings on behalf of ${params.organizationName}.
   `;
-  
+
   return { subject, htmlContent, textContent };
 }

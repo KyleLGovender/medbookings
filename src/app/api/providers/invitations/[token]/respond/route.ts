@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server';
 
-import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { isInvitationExpired } from '@/lib/invitation-utils';
 import { InvitationResponseSchema } from '@/features/providers/types';
+import { getCurrentUser } from '@/lib/auth';
+import { isInvitationExpired } from '@/lib/invitation-utils';
+import { prisma } from '@/lib/prisma';
 
 // POST /api/providers/invitations/[token]/respond
-export async function POST(
-  request: Request,
-  { params }: { params: { token: string } }
-) {
+export async function POST(request: Request, { params }: { params: { token: string } }) {
   try {
     const { token } = params;
     const currentUser = await getCurrentUser();
@@ -25,12 +22,15 @@ export async function POST(
     // Validate request body
     const body = await request.json();
     const validationResult = InvitationResponseSchema.safeParse(body);
-    
+
     if (!validationResult.success) {
-      return NextResponse.json({ 
-        message: 'Invalid request data',
-        errors: validationResult.error.errors
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          message: 'Invalid request data',
+          errors: validationResult.error.errors,
+        },
+        { status: 400 }
+      );
     }
 
     const { action, rejectionReason } = validationResult.data;
@@ -40,55 +40,71 @@ export async function POST(
       where: { token },
       include: {
         organization: {
-          select: { 
+          select: {
             id: true,
-            name: true 
-          }
-        }
-      }
+            name: true,
+          },
+        },
+      },
     });
 
     if (!invitation) {
-      return NextResponse.json({ 
-        message: 'Invalid or expired invitation token' 
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          message: 'Invalid or expired invitation token',
+        },
+        { status: 404 }
+      );
     }
 
     // Check if invitation has expired
     if (isInvitationExpired(invitation.expiresAt)) {
       await prisma.providerInvitation.update({
         where: { id: invitation.id },
-        data: { status: 'EXPIRED' }
+        data: { status: 'EXPIRED' },
       });
-      
-      return NextResponse.json({ 
-        message: 'This invitation has expired' 
-      }, { status: 410 });
+
+      return NextResponse.json(
+        {
+          message: 'This invitation has expired',
+        },
+        { status: 410 }
+      );
     }
 
     // Check if invitation is still pending
     if (invitation.status !== 'PENDING') {
-      return NextResponse.json({ 
-        message: 'This invitation has already been responded to' 
-      }, { status: 409 });
+      return NextResponse.json(
+        {
+          message: 'This invitation has already been responded to',
+        },
+        { status: 409 }
+      );
     }
 
     // Verify the invitation is for the current user's email
     if (invitation.email !== currentUser.email) {
-      return NextResponse.json({ 
-        message: 'This invitation is not for your email address' 
-      }, { status: 403 });
+      return NextResponse.json(
+        {
+          message: 'This invitation is not for your email address',
+        },
+        { status: 403 }
+      );
     }
 
     // Find or create service provider for the current user
     let serviceProvider = await prisma.serviceProvider.findUnique({
-      where: { userId: currentUser.id }
+      where: { userId: currentUser.id },
     });
 
     if (!serviceProvider) {
-      return NextResponse.json({ 
-        message: 'You must complete your service provider registration before accepting invitations' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          message:
+            'You must complete your service provider registration before accepting invitations',
+        },
+        { status: 400 }
+      );
     }
 
     if (action === 'reject') {
@@ -99,7 +115,7 @@ export async function POST(
           status: 'REJECTED',
           rejectedAt: new Date(),
           rejectionReason: rejectionReason || null,
-        }
+        },
       });
 
       return NextResponse.json({
@@ -108,7 +124,7 @@ export async function POST(
           id: updatedInvitation.id,
           status: updatedInvitation.status,
           rejectedAt: updatedInvitation.rejectedAt,
-        }
+        },
       });
     }
 
@@ -119,14 +135,17 @@ export async function POST(
           organizationId_serviceProviderId: {
             organizationId: invitation.organizationId,
             serviceProviderId: serviceProvider.id,
-          }
-        }
+          },
+        },
       });
 
       if (existingConnection) {
-        return NextResponse.json({ 
-          message: 'You are already connected to this organization' 
-        }, { status: 409 });
+        return NextResponse.json(
+          {
+            message: 'You are already connected to this organization',
+          },
+          { status: 409 }
+        );
       }
 
       // Start transaction to create connection and update invitation
@@ -141,9 +160,9 @@ export async function POST(
           },
           include: {
             organization: {
-              select: { name: true }
-            }
-          }
+              select: { name: true },
+            },
+          },
         });
 
         // Update invitation status and link to connection
@@ -153,30 +172,32 @@ export async function POST(
             status: 'ACCEPTED',
             acceptedAt: new Date(),
             connectionId: connection.id,
-          }
+          },
         });
 
         return { connection, invitation: updatedInvitation };
       });
 
-      return NextResponse.json({
-        message: 'Invitation accepted successfully',
-        connection: {
-          id: result.connection.id,
-          organizationName: result.connection.organization.name,
-          status: result.connection.status,
-          acceptedAt: result.connection.acceptedAt,
+      return NextResponse.json(
+        {
+          message: 'Invitation accepted successfully',
+          connection: {
+            id: result.connection.id,
+            organizationName: result.connection.organization.name,
+            status: result.connection.status,
+            acceptedAt: result.connection.acceptedAt,
+          },
+          invitation: {
+            id: result.invitation.id,
+            status: result.invitation.status,
+            acceptedAt: result.invitation.acceptedAt,
+          },
         },
-        invitation: {
-          id: result.invitation.id,
-          status: result.invitation.status,
-          acceptedAt: result.invitation.acceptedAt,
-        }
-      }, { status: 201 });
+        { status: 201 }
+      );
     }
 
     return NextResponse.json({ message: 'Invalid action' }, { status: 400 });
-
   } catch (error) {
     console.error('Error responding to provider invitation:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

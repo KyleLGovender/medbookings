@@ -13,15 +13,12 @@ export { useProviderTypes } from './use-provider-types';
 
 // Admin hooks
 export { useAdminProviders } from './use-admin-providers';
-export { 
-  useApproveServiceProvider,
-  useRejectServiceProvider 
-} from './use-admin-provider-approval';
+export { useApproveServiceProvider, useRejectServiceProvider } from './use-admin-provider-approval';
 
 // Organization connections and invitations
-export { 
+export {
   useProviderInvitations,
   useRespondToInvitation,
   useOrganizationConnections,
-  useManageConnection
+  useManageConnection,
 } from './use-organization-connections';

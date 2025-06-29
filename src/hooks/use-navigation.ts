@@ -21,9 +21,9 @@ export function useNavigation(options?: UseNavigationOptions) {
       setIsNavigating(true);
       setNavigatingTo(url);
       options?.onStart?.();
-      
+
       await router.push(url);
-      
+
       options?.onComplete?.();
     } catch (error) {
       setIsNavigating(false);
@@ -39,9 +39,9 @@ export function useNavigation(options?: UseNavigationOptions) {
       setIsNavigating(true);
       setNavigatingTo(url);
       options?.onStart?.();
-      
+
       await router.replace(url);
-      
+
       options?.onComplete?.();
     } catch (error) {
       setIsNavigating(false);
@@ -52,13 +52,13 @@ export function useNavigation(options?: UseNavigationOptions) {
 
   const back = () => {
     if (isNavigating) return;
-    
+
     setIsNavigating(true);
     setNavigatingTo('back');
     options?.onStart?.();
-    
+
     router.back();
-    
+
     // Reset after a short delay since back() doesn't return a promise
     setTimeout(() => {
       setIsNavigating(false);

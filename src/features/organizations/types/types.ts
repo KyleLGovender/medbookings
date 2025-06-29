@@ -1,11 +1,11 @@
-import { z } from 'zod';
-import type { 
-  ProviderInvitation, 
-  ProviderInvitationStatus,
+import type {
   Organization,
+  OrganizationProviderConnection,
+  ProviderInvitation,
+  ProviderInvitationStatus,
   User,
-  OrganizationProviderConnection
 } from '@prisma/client';
+import { z } from 'zod';
 
 export const organizationRegistrationSchema = z.object({
   organization: z.object({
@@ -112,7 +112,4 @@ export const InvitationActionSchema = z.object({
 export type InvitationAction = z.infer<typeof InvitationActionSchema>;
 
 // Export Prisma types for convenience
-export type {
-  ProviderInvitation,
-  ProviderInvitationStatus,
-};
+export type { ProviderInvitation, ProviderInvitationStatus };

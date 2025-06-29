@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
 import { isInvitationExpired } from '@/lib/invitation-utils';
+import { prisma } from '@/lib/prisma';
 
 // GET /api/providers/invitations
 export async function GET(request: Request) {
@@ -14,9 +14,12 @@ export async function GET(request: Request) {
     }
 
     if (!currentUser.email) {
-      return NextResponse.json({ 
-        message: 'User email is required to check for invitations' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          message: 'User email is required to check for invitations',
+        },
+        { status: 400 }
+      );
     }
 
     // Get URL search params for filtering
@@ -37,51 +40,50 @@ export async function GET(request: Request) {
       where: whereClause,
       include: {
         organization: {
-          select: { 
+          select: {
             id: true,
-            name: true, 
+            name: true,
             description: true,
             logo: true,
             email: true,
-            phone: true 
-          }
+            phone: true,
+          },
         },
         invitedBy: {
-          select: { name: true, email: true }
+          select: { name: true, email: true },
         },
         connection: {
-          select: { 
-            id: true, 
-            status: true, 
-            acceptedAt: true 
-          }
-        }
+          select: {
+            id: true,
+            status: true,
+            acceptedAt: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
 
     // Check for expired invitations and update them
-    const expiredInvitations = invitations.filter(invitation => 
-      invitation.status === 'PENDING' && isInvitationExpired(invitation.expiresAt)
+    const expiredInvitations = invitations.filter(
+      (invitation) => invitation.status === 'PENDING' && isInvitationExpired(invitation.expiresAt)
     );
 
     if (expiredInvitations.length > 0) {
       await prisma.providerInvitation.updateMany({
         where: {
-          id: { in: expiredInvitations.map(inv => inv.id) },
-          status: 'PENDING'
+          id: { in: expiredInvitations.map((inv) => inv.id) },
+          status: 'PENDING',
         },
-        data: { status: 'EXPIRED' }
+        data: { status: 'EXPIRED' },
       });
 
       // Update the status in our response
-      expiredInvitations.forEach(inv => {
+      expiredInvitations.forEach((inv) => {
         inv.status = 'EXPIRED';
       });
     }
 
     return NextResponse.json({ invitations });
-
   } catch (error) {
     console.error('Error fetching provider invitations:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

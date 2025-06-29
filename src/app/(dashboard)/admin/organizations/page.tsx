@@ -7,7 +7,9 @@ interface AdminOrganizationsPageProps {
   searchParams: { status?: string };
 }
 
-export default async function AdminOrganizationsPage({ searchParams }: AdminOrganizationsPageProps) {
+export default async function AdminOrganizationsPage({
+  searchParams,
+}: AdminOrganizationsPageProps) {
   const currentUser = await getCurrentUser();
 
   // Check if user has admin privileges

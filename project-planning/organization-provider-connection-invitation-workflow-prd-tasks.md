@@ -73,23 +73,23 @@
   - [x] 4.7 Display multiple organization connections with clear status indicators
   - [x] 4.8 Add confirmation dialogs for destructive actions (reject, cancel connections)
 
-- [ ] 5.0 Invitation Acceptance Flow and Landing Pages
+- [x] 5.0 Invitation Acceptance Flow and Landing Pages
 
-  - [ ] 5.1 Create invitation landing page (/invitation/[token]) that detects user authentication status
-  - [ ] 5.2 Implement existing user flow - direct invitation acceptance interface
-  - [ ] 5.3 Implement new user flow - MedBookings introduction and registration guidance
-  - [ ] 5.4 Add invitation context preservation throughout registration process
-  - [ ] 5.5 Create post-registration invitation acceptance flow
-  - [ ] 5.6 Add error handling for expired, invalid, or already-used tokens
-  - [ ] 5.7 Implement responsive design for mobile and desktop
-  - [ ] 5.8 Add success/failure feedback after invitation actions
-  - [ ] 5.9 Create automatic OrganizationProviderConnection creation upon acceptance
-  - [ ] 5.10 Add redirect logic to appropriate dashboards after successful acceptance
+  - [x] 5.1 Create invitation landing page (/invitation/[token]) that detects user authentication status
+  - [x] 5.2 Implement existing user flow - direct invitation acceptance interface
+  - [x] 5.3 Implement new user flow - MedBookings introduction and registration guidance
+  - [x] 5.4 Add invitation context preservation throughout registration process
+  - [x] 5.5 Create post-registration invitation acceptance flow
+  - [x] 5.6 Add error handling for expired, invalid, or already-used tokens
+  - [x] 5.7 Implement responsive design for mobile and desktop
+  - [x] 5.8 Add success/failure feedback after invitation actions
+  - [x] 5.9 Create automatic OrganizationProviderConnection creation upon acceptance
+  - [x] 5.10 Add redirect logic to appropriate dashboards after successful acceptance
 
 - [ ] 6.0 Cleanup
   - [ ] 6.1 At the invitation link logged in but provider profile not configured it says Accept Invitation but should say complete provider sign up
   - [ ] 6.2 Trying to decline invitation when provider sign up is not complete is also not possible
   - [ ] 6.3 As an organization Actions buttons in a provider relationship not showing. Can't suspend relationship
   - [ ] 6.4 As a provider i see a suspend and delete connection button but its on the 3 dots on the right hand. Think it would be better as buttons in the connection card
-  - [ ] 6.5 As a provider the Organization Network should be Connections | Invitations
+  - [x] 6.5 As a provider the Organization Network should be Connections | Invitations
   - [ ] 6.6 As a organization the provider network should be Connections | Invitations. The send invitation should be a button that brings up a modal or new form or something.
