@@ -42,7 +42,7 @@ The feature addresses the need for organizations to proactively build their prov
 **As a doctor who has never heard of MedBookings**, I want to accept an invitation from an organization so I can join the platform and work with them.
 
 - I receive an email with invitation details and a secure link
-- I can click the link... the page i land on should recognize that i am not a user and should give me some information on medbookings and direct me to the process to onboard
+- I can click the link... the page i land on should recognize that i am not a user and should give me some information on Med Bookings and direct me to the process to onboard
 - I complete user account creation and service provider registration
 - After registration, I can accept the pending invitation. I would simply look at the part of my dashboard where i manage organization connections and accept it the same way any provider would
 - The connection is established upon invitation acceptance
@@ -135,7 +135,7 @@ The feature addresses the need for organizations to proactively build their prov
 ### Database Schema Updates
 
 - Add `ProviderInvitation` model with fields for email, token, status, custom message
-- Extend existing enums as needed for invitation and connection status tracking
+- Extend existing Enums as needed for invitation and connection status tracking
 - Maintain referential integrity between invitations and resulting connections
 
 ### Integration Points

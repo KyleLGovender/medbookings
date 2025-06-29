@@ -34,6 +34,7 @@ model User {
   organizationsApproved    Organization[]                  @relation("OrganizationApprovals") // Organizations approved by this admin
   providersApproved        ServiceProvider[]               @relation("ProviderApprovals") // Service providers approved by this admin
   sentInvitations          OrganizationInvitation[]        @relation("SentInvitations") // Invitations sent by this user
+  sentProviderInvitations  ProviderInvitation[]            @relation("ProviderInvitationsSent") // Provider invitations sent by this user
   createdAt                DateTime                        @default(now())
   updatedAt                DateTime                        @updatedAt
   reviews                  Review[]
@@ -211,6 +212,7 @@ model Organization {
 
   // Relations
   invitations         OrganizationInvitation[]
+  providerInvitations ProviderInvitation[]
   memberships         OrganizationMembership[]
   providerConnections OrganizationProviderConnection[]
   locations           Location[]
@@ -239,7 +241,6 @@ enum OrganizationStatus {
   CANCELLED        // Organization account cancelled
 }
 
-// Separate model for invitations
 model OrganizationInvitation {
   id             String                   @id @default(cuid())
   organization   Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -275,6 +276,53 @@ enum InvitationStatus {
   DECLINED
   EXPIRED
   CANCELLED
+}
+
+enum ProviderInvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EXPIRED
+  DELIVERY_FAILED
+}
+
+model ProviderInvitation {
+  id             String                    @id @default(cuid())
+  organization   Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  email          String                    // Email address of the invited provider
+  customMessage  String?                   @db.Text // Optional custom message from organization
+  token          String                    @unique // Unique token for accepting invitation
+  expiresAt      DateTime                  // When the invitation expires (30 days from creation)
+  
+  // Who sent the invitation
+  invitedBy      User                      @relation("ProviderInvitationsSent", fields: [invitedById], references: [id])
+  invitedById    String
+  
+  // Status tracking
+  status         ProviderInvitationStatus  @default(PENDING)
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  acceptedAt     DateTime?
+  rejectedAt     DateTime?
+  cancelledAt    DateTime?
+  rejectionReason String?                  @db.Text // Optional reason for rejection
+  
+  // If accepted, the resulting connection
+  connection     OrganizationProviderConnection? @relation(fields: [connectionId], references: [id])
+  connectionId   String?                   @unique
+  
+  // Email delivery tracking
+  emailDeliveryStatus String?             @default("PENDING") // PENDING, DELIVERED, BOUNCED, FAILED
+  lastEmailSentAt     DateTime?           // When the last email was sent
+  emailAttempts       Int                 @default(0) // Number of email delivery attempts
+  
+  @@index([organizationId])
+  @@index([email])
+  @@index([token])
+  @@index([status])
+  @@index([expiresAt])
 }
 
 model OrganizationMembership {
@@ -369,7 +417,6 @@ enum MembershipChangeType {
   INVITATION_REJECTED // User rejected invitation
 }
 
-// LOCATION MODEL
 model Location {
   id             String       @id @default(cuid())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -401,8 +448,6 @@ model Location {
   @@index([searchTerms])
 }
 
-// ORGANIZATION-PROVIDER CONNECTIONS
-// Simple connection model to establish relationships between organizations and providers
 model OrganizationProviderConnection {
   id                String          @id @default(cuid())
   organization      Organization    @relation(fields: [organizationId], references: [id])
@@ -417,6 +462,7 @@ model OrganizationProviderConnection {
 
   // Relations
   availabilities Availability[] // Availabilities created through this connection
+  invitation     ProviderInvitation? // The invitation that created this connection
 
   requestedAt DateTime  @default(now())
   acceptedAt  DateTime?

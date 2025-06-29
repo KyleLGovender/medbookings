@@ -1,4 +1,11 @@
 import { z } from 'zod';
+import type { 
+  ProviderInvitation, 
+  ProviderInvitationStatus,
+  Organization,
+  User,
+  OrganizationProviderConnection
+} from '@prisma/client';
 
 export const organizationRegistrationSchema = z.object({
   organization: z.object({
@@ -81,3 +88,31 @@ export const organizationLocationsSchema = z.object({
 });
 
 export type OrganizationLocationsData = z.infer<typeof organizationLocationsSchema>;
+
+// Provider invitation schemas
+export const ProviderInvitationSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  customMessage: z.string().optional(),
+});
+
+export type ProviderInvitationData = z.infer<typeof ProviderInvitationSchema>;
+
+// Extended invitation type with relations
+export type ProviderInvitationWithDetails = ProviderInvitation & {
+  organization: Organization;
+  invitedBy: User;
+  connection?: OrganizationProviderConnection | null;
+};
+
+// Schema for managing invitations (cancel, resend)
+export const InvitationActionSchema = z.object({
+  action: z.enum(['cancel', 'resend']),
+});
+
+export type InvitationAction = z.infer<typeof InvitationActionSchema>;
+
+// Export Prisma types for convenience
+export type {
+  ProviderInvitation,
+  ProviderInvitationStatus,
+};
