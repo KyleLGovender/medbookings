@@ -40,3 +40,11 @@ export type {
   OrganizationProviderConnection,
   ConnectionStatus,
 }
+
+// Export all types for external use
+export type {
+  ProviderInvitationWithOrganization,
+  OrganizationConnectionWithDetails,
+  InvitationResponse,
+  ConnectionUpdate,
+}

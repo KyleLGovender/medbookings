@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { DeleteProviderButton } from '@/features/providers/components/delete-provider-button';
+import { OrganizationConnectionsManager } from '@/features/providers/components/OrganizationConnectionsManager';
 import { RequirementSubmissionCard } from '@/features/providers/components/requirement-submission-card';
 import { useProvider } from '@/features/providers/hooks/use-provider';
 
@@ -258,6 +259,11 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
           <p className="text-muted-foreground">No regulatory requirements submitted</p>
         )}
       </Card>
+
+      {/* Organization Connections Section */}
+      {isOwner && (
+        <OrganizationConnectionsManager />
+      )}
     </div>
   );
 }
