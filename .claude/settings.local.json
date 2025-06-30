@@ -11,8 +11,13 @@
       "Bash(npm run format:*)",
       "Bash(npx tsc:*)",
       "Bash(ls:*)",
-      "Bash(npx prettier:*)"
+      "Bash(npx prettier:*)",
+      "Bash(npm install:*)"
     ],
     "deny": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "filesystem-server",
+    "postgres-server"
+  ]
 }

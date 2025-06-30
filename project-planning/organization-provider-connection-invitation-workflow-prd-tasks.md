@@ -92,4 +92,5 @@
   - [ ] 6.3 As an organization Actions buttons in a provider relationship not showing. Can't suspend relationship
   - [ ] 6.4 As a provider i see a suspend and delete connection button but its on the 3 dots on the right hand. Think it would be better as buttons in the connection card
   - [x] 6.5 As a provider the Organization Network should be Connections | Invitations
-  - [ ] 6.6 As a organization the provider network should be Connections | Invitations. The send invitation should be a button that brings up a modal or new form or something.
+  - [x] 6.6 As a organization the provider network should be Connections | Invitations. The send invitation should be a button that brings up a modal or new form or something.
+  - [ ] 6.7 Admin for providers doesn't show connected organizations

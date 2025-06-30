@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "filesystem-server": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-filesystem", "/tmp"]
+    },
+    "postgres-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://nextstarter:supersecret@127.0.0.1:5432/nextstarter"
+      ]
+    }
+  }
+}
