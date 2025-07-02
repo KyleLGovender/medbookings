@@ -33,5 +33,9 @@
   "typescript.updateImportsOnFileMove.enabled": "always",
   "files.eol": "\n",
   "files.insertFinalNewline": true,
-  "prettier.requireConfig": true
+  "prettier.requireConfig": true,
+  "markdownlint.config": {
+    "MD029": false,
+    "MD013": false
+  }
 }

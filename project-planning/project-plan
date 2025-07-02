@@ -54,12 +54,21 @@
 
 ## Availability Management
 
-- [ ] Design provider availability interface
-- [ ] Implement recurring availability patterns
-- [ ] Build one-time availability exceptions
+- [ ] Design provider availability interface. Ability for provider to schedule availability.
+- [ ] Design organization availability interface. Ability for an organization to generate an availability request which will be sent to a provider to accept.
+- [ ] Implement recurring availability patterns. This should be done by specifying the recurrence schedule (weekly, daily, custom) and then generating individual availability occurrences but with a availability series id so that individual availabilities can be changed and the series of availabilities can also be changed or deleted.
 - [ ] Create organization-level availability management for providers
 - [ ] Implement location-specific availability settings
-- [ ] Design availability visualization calendar
+- [ ] Design availability visualization calendar for providers.
+- [ ] Design availability visualization calendar for organizations to see availability of multiple providers and make sure that all required hours are covered by sufficient providers.
+- [ ] Availability should essentially be defined by
+      -- [ ] start time
+      -- [ ] end time
+      -- [ ] service types (along with price and duration values)
+      -- [ ] location and/or online
+      -- [ ] automated confirmation or confirmation required
+      -- [ ] billing entity defined by rules (availability at organizations changed by organization billing and provider alone billing charged to provider billing)
+- [ ] Once an availability is created it should result in the appropriate Availability slots which are calculated once and then managed. There needs to be rules relating how availability slots interact with each other but essentially any availability slot which gets books and overlaps at any time with other availability slots will result in both slots being BOOKED or INVALID
 
 ## Booking System
 
