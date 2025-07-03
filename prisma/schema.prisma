@@ -438,8 +438,9 @@ model Location {
   email          String?
   
   // Relations
-  subscriptions    Subscription[] // For per-location billing
-  availabilities   Availability[] // Availabilities at this location
+  subscriptions         Subscription[] // For per-location billing
+  availabilities        Availability[] // Availabilities at this location
+  serviceConfigurations ServiceAvailabilityConfig[] // Service configurations offered at this location
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -726,9 +727,11 @@ model ServiceAvailabilityConfig {
   serviceProviderId String
   duration          Int // Duration in minutes
   price             Decimal                      @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
+  showPrice         Boolean                      @default(true) // Whether to display price for this service configuration
   isOnlineAvailable Boolean                      @default(false)
   isInPerson        Boolean                      @default(false)
-  location          String?
+  location          Location?                    @relation(fields: [locationId], references: [id])
+  locationId        String? // Physical location where this service is offered
   availabilities    Availability[]
   calculatedSlots   CalculatedAvailabilitySlot[]
   createdAt         DateTime                     @default(now())
@@ -736,6 +739,7 @@ model ServiceAvailabilityConfig {
 
   @@unique([serviceId, serviceProviderId])
   @@index([serviceProviderId])
+  @@index([locationId])
 }
 
 // Modified Availability model
@@ -778,6 +782,14 @@ model Availability {
   // Booking configuration
   requiresConfirmation Boolean          @default(true)  // Whether bookings for this availability require confirmation
 
+  // Recurrence and scheduling configuration
+  recurrencePattern     Json?           // JSON configuration for recurring availability patterns
+  seriesId              String?         // Groups recurring availability instances together
+  isRecurring           Boolean         @default(false) // Whether this availability is part of a recurring series
+  schedulingRule        SchedulingRule  @default(CONTINUOUS) // How appointments should be scheduled within this availability
+  schedulingInterval    Int?            // Custom interval in minutes (only used with CUSTOM_INTERVAL scheduling rule)
+  isOnlineAvailable     Boolean         @default(false) // Whether online consultations are available during this period
+
   // Billing context - determines who pays for slots from this availability
   billingEntity         BillingEntity? // Who is responsible for billing slots from this availability
   defaultSubscription   Subscription?  @relation(fields: [defaultSubscriptionId], references: [id])
@@ -792,12 +804,19 @@ model Availability {
   @@index([organizationId, status])
   @@index([connectionId])
   @@index([billingEntity, organizationId])
+  @@index([seriesId]) // For efficient querying of recurring availability series
 }
 
 enum AvailabilityStatus {
   PENDING
   ACCEPTED
   REJECTED
+}
+
+enum SchedulingRule {
+  CONTINUOUS // Appointments start immediately after the previous appointment ends
+  FIXED_INTERVAL // Appointments start only at specified intervals (e.g., on the hour, half-hour, quarter-hour)
+  CUSTOM_INTERVAL // Appointments start at provider-defined intervals (e.g., every 20 minutes)
 }
 
 // Modified CalculatedAvailabilitySlot model

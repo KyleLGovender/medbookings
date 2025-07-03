@@ -378,6 +378,58 @@ async function main() {
     console.error('Error during seeding:', error);
     throw error;
   }
+
+  // Create sample availability data demonstrating new scheduling features
+  try {
+    console.log('Creating sample availability data...');
+    
+    // Note: This creates sample data structure only - actual users/providers would be created by the application
+    // This demonstrates the schema structure for the new availability fields
+    
+    const sampleAvailabilityData = [
+      {
+        // Single availability with continuous scheduling
+        description: 'Standard morning availability - continuous scheduling',
+        schedulingRule: 'CONTINUOUS',
+        isRecurring: false,
+        isOnlineAvailable: true,
+        requiresConfirmation: false,
+      },
+      {
+        // Recurring availability with fixed interval scheduling
+        description: 'Weekly recurring availability - fixed intervals on the hour',
+        schedulingRule: 'FIXED_INTERVAL',
+        isRecurring: true,
+        seriesId: 'weekly-morning-slots',
+        recurrencePattern: {
+          type: 'weekly',
+          daysOfWeek: [1, 2, 3, 4, 5], // Monday to Friday
+          startTime: '09:00',
+          endTime: '17:00',
+          endDate: '2024-12-31'
+        },
+        isOnlineAvailable: false,
+        requiresConfirmation: true,
+      },
+      {
+        // Custom interval scheduling example
+        description: 'Custom 20-minute interval scheduling for consultations',
+        schedulingRule: 'CUSTOM_INTERVAL',
+        schedulingInterval: 20,
+        isRecurring: false,
+        isOnlineAvailable: true,
+        requiresConfirmation: false,
+      }
+    ];
+
+    console.log('Sample availability configurations:', sampleAvailabilityData);
+    console.log('Sample availability data structure created for reference');
+    
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Error creating sample availability data:', error);
+    throw error;
+  }
 }
 
 main()
