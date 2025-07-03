@@ -1,5 +1,3 @@
-'use server';
-
 import { prisma } from '@/lib/prisma';
 import { SlotGenerationService } from './slot-generation-service';
 import { 

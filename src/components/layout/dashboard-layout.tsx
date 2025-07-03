@@ -225,8 +225,12 @@ const createNavData = (providers: any[] = [], organizations: any[] = []) => ({
       url: '/calendar',
       items: [
         {
-          title: 'Calendar',
+          title: 'Calendar Overview',
           url: '/calendar',
+        },
+        {
+          title: 'Availability Management',
+          url: '/calendar/availability',
         },
       ],
     },

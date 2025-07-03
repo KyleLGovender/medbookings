@@ -1,5 +1,3 @@
-'use server';
-
 import { prisma } from '@/lib/prisma';
 import { isSlotValidForSchedulingRule } from './scheduling-rules';
 import { detectSlotConflicts } from './conflict-management';

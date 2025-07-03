@@ -1,5 +1,3 @@
-'use server';
-
 import { prisma } from '@/lib/prisma';
 import { AvailabilityStatus, SlotStatus } from '../types';
 import { optimizedProviderSearch } from './search-performance-service';

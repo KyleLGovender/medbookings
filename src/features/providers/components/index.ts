@@ -1,6 +1,9 @@
 // Provider profile components
 export { ProviderProfileView } from './profile/provider-profile-view';
 
+// Provider calendar management
+export { ServiceProviderCalendar } from './service-provider-calendar';
+
 // Provider onboarding
 export { ProviderOnboardingForm } from './onboarding/provider-onboarding-form';
 

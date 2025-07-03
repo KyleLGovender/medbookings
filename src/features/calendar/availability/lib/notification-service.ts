@@ -1,5 +1,3 @@
-'use server';
-
 import { AvailabilityWithRelations, AvailabilityStatus } from '../types';
 
 export interface NotificationPayload {

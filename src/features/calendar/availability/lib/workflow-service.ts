@@ -1,5 +1,3 @@
-'use server';
-
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/features/auth/lib/actions';
 import { 

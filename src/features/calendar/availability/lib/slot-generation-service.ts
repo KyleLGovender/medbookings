@@ -1,5 +1,3 @@
-'use server';
-
 import { prisma } from '@/lib/prisma';
 import { generateTimeSlots, SchedulingOptions } from './scheduling-rules';
 import { generateRecurrenceOccurrences } from './recurrence-patterns';
