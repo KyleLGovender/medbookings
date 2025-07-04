@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Users, Settings, Filter, Download, Eye, Plus, MoreVertical } from 'lucide-react';
+import { useOrganization } from '@/features/organizations/hooks';
+import { useOrganizationProviderConnections } from '@/features/organizations/hooks';
+import { useOrganizationAvailability } from '../hooks';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,10 +15,47 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { CalendarEvent, ProviderCalendarData } from './provider-calendar-view';
-import { CoverageGapsPanel } from './coverage-gaps-panel';
-import { CoverageGap } from '../lib/coverage-gap-analyzer';
-import { AvailabilityStatus, SlotStatus } from '../types';
+// import { CalendarEvent, ProviderCalendarData } from './provider-calendar-view';
+// import { CoverageGapsPanel } from './coverage-gaps-panel';
+// import { CoverageGap } from '../lib/coverage-gap-analyzer';
+// import { AvailabilityStatus, SlotStatus } from '../types';
+
+// Temporary local types to avoid server imports
+interface CalendarEvent {
+  id: string;
+  type: 'availability' | 'booking' | 'blocked';
+  title: string;
+  startTime: Date;
+  endTime: Date;
+  status: string;
+  schedulingRule?: string;
+  isRecurring?: boolean;
+  seriesId?: string;
+  location?: {
+    id: string;
+    name: string;
+    isOnline: boolean;
+  };
+  service?: {
+    id: string;
+    name: string;
+    duration: number;
+    price: number;
+  };
+  customer?: {
+    id: string;
+    name: string;
+  };
+}
+
+interface CoverageGap {
+  id: string;
+  type: string;
+  startTime: Date;
+  endTime: Date;
+  severity: string;
+  description: string;
+}
 
 export interface OrganizationProvider {
   id: string;
@@ -83,8 +123,6 @@ export function OrganizationCalendarView({
 }: OrganizationCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(initialDate);
   const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode);
-  const [calendarData, setCalendarData] = useState<OrganizationCalendarData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
   const [filters, setFilters] = useState({
     showOnlyActive: true,
@@ -94,131 +132,161 @@ export function OrganizationCalendarView({
   });
   const [showUtilizationOnly, setShowUtilizationOnly] = useState(false);
 
-  // Load organization calendar data
-  useEffect(() => {
-    const loadCalendarData = async () => {
-      setIsLoading(true);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const mockData: OrganizationCalendarData = {
-        organizationId,
-        organizationName: 'Downtown Medical Center',
-        providers: generateMockProviders(currentDate),
-        locations: [
-          { id: 'main', name: 'Main Building', address: '123 Health St', providerCount: 8 },
-          { id: 'annex', name: 'Annex Building', address: '456 Care Ave', providerCount: 4 },
-          { id: 'online', name: 'Online Services', address: 'Virtual', providerCount: 12 },
-        ],
-        stats: {
-          totalProviders: 12,
-          activeProviders: 10,
-          totalAvailableHours: 320,
-          totalBookedHours: 224,
-          averageUtilization: 70,
-          totalPendingBookings: 18,
-          coverageGaps: 3,
-        },
-      };
-      
-      setCalendarData(mockData);
-      // Initialize with all providers selected
-      setSelectedProviders(mockData.providers.map(p => p.id));
-      setIsLoading(false);
-    };
-
-    loadCalendarData();
-  }, [organizationId, currentDate]);
-
-  const generateMockProviders = (baseDate: Date): OrganizationProvider[] => {
-    const providerTypes = [
-      { name: 'Dr. Sarah Johnson', type: 'General Practitioner', specialization: 'Family Medicine' },
-      { name: 'Dr. Michael Chen', type: 'Cardiologist', specialization: 'Heart Disease' },
-      { name: 'Dr. Emily Rodriguez', type: 'Pediatrician', specialization: 'Child Health' },
-      { name: 'Dr. James Wilson', type: 'Orthopedist', specialization: 'Sports Medicine' },
-      { name: 'Dr. Lisa Thompson', type: 'Dermatologist', specialization: 'Skin Care' },
-      { name: 'Dr. David Kim', type: 'Neurologist', specialization: 'Brain Health' },
-      { name: 'Dr. Maria Garcia', type: 'Psychiatrist', specialization: 'Mental Health' },
-      { name: 'Dr. Robert Davis', type: 'Radiologist', specialization: 'Medical Imaging' },
-    ];
-
-    return providerTypes.map((providerType, index) => ({
-      id: `provider-${index + 1}`,
-      name: providerType.name,
-      type: providerType.type,
-      specialization: providerType.specialization,
-      isActive: index < 6 || Math.random() > 0.3,
-      workingHours: { start: '09:00', end: index % 2 === 0 ? '17:00' : '16:00' },
-      utilizationRate: 50 + Math.random() * 40,
-      totalBookings: Math.floor(Math.random() * 20) + 5,
-      pendingBookings: Math.floor(Math.random() * 5),
-      events: generateProviderEvents(baseDate, index),
-    }));
-  };
-
-  const generateProviderEvents = (baseDate: Date, providerIndex: number): CalendarEvent[] => {
-    const events: CalendarEvent[] = [];
-    const startOfWeek = new Date(baseDate);
-    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-
-    for (let day = 0; day < 7; day++) {
-      const currentDay = new Date(startOfWeek);
-      currentDay.setDate(startOfWeek.getDate() + day);
-      
-      // Skip weekends for most providers
-      if ((currentDay.getDay() === 0 || currentDay.getDay() === 6) && providerIndex % 3 !== 0) continue;
-
-      // Availability blocks
-      if (Math.random() > 0.2) { // 80% chance of having availability
-        events.push({
-          id: `avail-${providerIndex}-${day}`,
-          type: 'availability',
-          title: 'Available for Appointments',
-          startTime: new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate(), 9, 0),
-          endTime: new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate(), 17, 0),
-          status: AvailabilityStatus.ACTIVE,
-          location: { 
-            id: providerIndex % 2 === 0 ? 'main' : 'annex', 
-            name: providerIndex % 2 === 0 ? 'Main Building' : 'Annex Building',
-            isOnline: false 
-          },
-        });
-      }
-
-      // Bookings
-      const bookingCount = Math.floor(Math.random() * 4) + 1;
-      for (let i = 0; i < bookingCount; i++) {
-        const bookingHour = 10 + (i * 2);
-        if (bookingHour < 16) {
-          events.push({
-            id: `booking-${providerIndex}-${day}-${i}`,
-            type: 'booking',
-            title: `Patient ${String.fromCharCode(65 + i)} - Consultation`,
-            startTime: new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate(), bookingHour, 0),
-            endTime: new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate(), bookingHour, 30),
-            status: Math.random() > 0.8 ? SlotStatus.PENDING : SlotStatus.BOOKED,
-            customer: { name: `Patient ${String.fromCharCode(65 + i)}`, email: `patient${i}@example.com` },
-            service: { id: 'svc-1', name: 'Consultation', duration: 30, price: 150 },
-          });
-        }
-      }
-
-      // Blocked time
-      if (Math.random() > 0.7) {
-        events.push({
-          id: `blocked-${providerIndex}-${day}`,
-          type: 'blocked',
-          title: 'Administrative Time',
-          startTime: new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate(), 12, 0),
-          endTime: new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate(), 13, 0),
-          status: 'blocked',
-        });
-      }
+  // Fetch real data from APIs
+  const { data: organization, isLoading: isOrgLoading } = useOrganization(organizationId);
+  const { data: providerConnections, isLoading: isConnectionsLoading } = useOrganizationProviderConnections(organizationId);
+  
+  // Calculate date range for current view
+  const dateRange = useMemo(() => {
+    const start = new Date(currentDate);
+    const end = new Date(currentDate);
+    
+    switch (viewMode) {
+      case 'day':
+        end.setDate(start.getDate() + 1);
+        break;
+      case 'week':
+        start.setDate(currentDate.getDate() - currentDate.getDay());
+        end.setDate(start.getDate() + 7);
+        break;
+      case 'month':
+        start.setDate(1);
+        end.setMonth(start.getMonth() + 1);
+        end.setDate(0);
+        break;
     }
+    
+    return { start, end };
+  }, [currentDate, viewMode]);
 
-    return events;
-  };
+  const { data: availabilityData, isLoading: isAvailabilityLoading } = useOrganizationAvailability(organizationId);
+
+  const isLoading = isOrgLoading || isConnectionsLoading || isAvailabilityLoading;
+
+  // Transform real data into calendar format
+  const calendarData: OrganizationCalendarData | null = useMemo(() => {
+    if (!organization || !providerConnections || !availabilityData) return null;
+
+    // Transform provider connections into organization providers
+    const providers: OrganizationProvider[] = providerConnections.map((connection) => {
+      const provider = connection.serviceProvider;
+      
+      // Get availability for this provider from organization availability data
+      const providerAvailability = availabilityData.filter(
+        availability => availability.serviceProviderId === provider.id
+      );
+
+      // Transform availability into calendar events
+      const events: CalendarEvent[] = [];
+      
+      providerAvailability.forEach((availability) => {
+        events.push({
+          id: availability.id,
+          type: 'availability',
+          title: `Available - ${availability.serviceAvailabilityConfigs?.[0]?.service?.name || 'General'}`,
+          startTime: new Date(availability.startTime),
+          endTime: new Date(availability.endTime),
+          status: availability.status,
+          schedulingRule: availability.schedulingRule,
+          isRecurring: availability.isRecurring,
+          seriesId: availability.seriesId || undefined,
+          location: availability.location ? {
+            id: availability.location.id,
+            name: availability.location.name,
+            isOnline: !availability.locationId,
+          } : undefined,
+          service: availability.serviceAvailabilityConfigs?.[0] ? {
+            id: availability.serviceAvailabilityConfigs[0].service.id,
+            name: availability.serviceAvailabilityConfigs[0].service.name,
+            duration: availability.serviceAvailabilityConfigs[0].duration || 30,
+            price: availability.serviceAvailabilityConfigs[0].price || 0,
+          } : undefined,
+        });
+
+        // Add booked slots
+        availability.calculatedSlots?.filter(slot => slot.status === 'BOOKED').forEach((slot) => {
+          events.push({
+            id: slot.id,
+            type: 'booking',
+            title: `Booking - ${slot.service?.name || 'Service'}`,
+            startTime: new Date(slot.startTime),
+            endTime: new Date(slot.endTime),
+            status: slot.status,
+            location: slot.location ? {
+              id: slot.location.id,
+              name: slot.location.name,
+              isOnline: slot.isOnlineAvailable,
+            } : undefined,
+            service: slot.service ? {
+              id: slot.service.id,
+              name: slot.service.name,
+              duration: slot.duration,
+              price: slot.price,
+            } : undefined,
+          });
+        });
+      });
+
+      // Calculate stats for this provider
+      const allSlots = providerAvailability.flatMap(availability => availability.calculatedSlots || []);
+      const bookedSlots = allSlots.filter(slot => slot.status === 'BOOKED').length;
+      const availableSlots = allSlots.filter(slot => slot.status === 'AVAILABLE').length;
+
+      return {
+        id: provider.id,
+        name: provider.name,
+        type: provider.serviceProviderType?.name || 'Healthcare Provider',
+        specialization: provider.serviceProviderType?.name,
+        isActive: provider.status === 'ACTIVE',
+        workingHours: { start: '09:00', end: '17:00' }, // TODO: Get from provider settings
+        utilizationRate: allSlots.length > 0 ? Math.round((bookedSlots / allSlots.length) * 100) : 0,
+        totalBookings: bookedSlots,
+        pendingBookings: 0, // No pending status in SlotStatus
+        events,
+      };
+    });
+
+    // Calculate organization stats
+    const totalSlots = providers.reduce((acc, provider) => 
+      acc + provider.events.filter(e => e.type === 'booking').length, 0
+    );
+    const totalBookings = providers.reduce((acc, provider) => acc + provider.totalBookings, 0);
+    const totalPending = 0; // No pending bookings in current schema
+    const activeProviders = providers.filter(p => p.isActive).length;
+
+    return {
+      organizationId,
+      organizationName: organization.name,
+      providers,
+      locations: organization.locations?.map(location => ({
+        id: location.id,
+        name: location.name,
+        address: location.address || '',
+        providerCount: providers.filter(p => 
+          p.events.some(e => e.location?.id === location.id)
+        ).length,
+      })) || [],
+      stats: {
+        totalProviders: providers.length,
+        activeProviders,
+        totalAvailableHours: providers.reduce((acc, provider) => 
+          acc + provider.events.filter(e => e.type === 'availability').length, 0
+        ),
+        totalBookedHours: totalBookings,
+        averageUtilization: providers.length > 0 ? 
+          Math.round(providers.reduce((acc, p) => acc + p.utilizationRate, 0) / providers.length) : 0,
+        totalPendingBookings: totalPending,
+        coverageGaps: 0, // TODO: Calculate coverage gaps
+      },
+    };
+  }, [organization, providerConnections, availabilityData, organizationId]);
+
+  // Initialize selected providers when data loads
+  useMemo(() => {
+    if (calendarData && selectedProviders.length === 0) {
+      setSelectedProviders(calendarData.providers.map(p => p.id));
+    }
+  }, [calendarData, selectedProviders.length]);
 
   const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
@@ -293,9 +361,9 @@ export function OrganizationCalendarView({
         return 'bg-green-100 border-green-300 text-green-800';
       case 'booking':
         switch (event.status) {
-          case SlotStatus.BOOKED:
+          case 'BOOKED':
             return 'bg-blue-100 border-blue-300 text-blue-800';
-          case SlotStatus.PENDING:
+          case 'PENDING':
             return 'bg-orange-100 border-orange-300 text-orange-800';
           default:
             return 'bg-purple-100 border-purple-300 text-purple-800';
@@ -581,8 +649,8 @@ export function OrganizationCalendarView({
         </CardContent>
       </Card>
 
-      {/* Coverage Gaps Analysis */}
-      {showCoverageGaps && (
+      {/* Coverage Gaps Analysis - Temporarily disabled to avoid server imports */}
+      {/* {showCoverageGaps && (
         <CoverageGapsPanel
           providers={displayedProviders}
           startDate={(() => {
@@ -607,7 +675,7 @@ export function OrganizationCalendarView({
           onGapClick={onGapClick}
           onRecommendationClick={onRecommendationClick}
         />
-      )}
+      )} */}
     </div>
   );
 }

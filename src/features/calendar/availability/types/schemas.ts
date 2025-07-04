@@ -114,16 +114,16 @@ export const updateAvailabilityDataSchema = baseAvailabilitySchema.partial().ext
 // Availability search parameters schema
 export const availabilitySearchParamsSchema = z
   .object({
-    serviceProviderId: z.string().uuid().optional(),
-    organizationId: z.string().uuid().optional(),
-    locationId: z.string().uuid().optional(),
-    serviceId: z.string().uuid().optional(),
+    serviceProviderId: z.string().min(1).optional(),
+    organizationId: z.string().min(1).optional(),
+    locationId: z.string().min(1).optional(),
+    serviceId: z.string().min(1).optional(),
     startDate: z.date().optional(),
     endDate: z.date().optional(),
     isOnlineAvailable: z.boolean().optional(),
     status: availabilityStatusSchema.optional(),
     schedulingRule: schedulingRuleSchema.optional(),
-    seriesId: z.string().uuid().optional(),
+    seriesId: z.string().min(1).optional(),
   })
   .refine((data) => !data.startDate || !data.endDate || data.endDate >= data.startDate, {
     message: 'End date must be after or equal to start date',

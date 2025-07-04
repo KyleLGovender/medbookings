@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Calendar, Plus, Users, BarChart, Settings, Clock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { EnhancedCalendarView } from '@/features/calendar/availability/components';
 
 export default function CalendarOverviewPage() {
   return (
@@ -10,8 +11,26 @@ export default function CalendarOverviewPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Calendar Management</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Manage your availability, bookings, and schedule from one central location
+            Unified view of your availability, bookings, and schedule across all contexts
           </p>
+        </div>
+
+        {/* Unified Calendar View */}
+        <div className="mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Your Calendar
+              </CardTitle>
+              <CardDescription>
+                View and manage your schedule across all providers and organizations
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EnhancedCalendarView />
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

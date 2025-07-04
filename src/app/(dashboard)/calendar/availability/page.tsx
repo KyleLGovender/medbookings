@@ -1,6 +1,6 @@
-import { ServiceProviderCalendar } from '@/features/providers/components/service-provider-calendar';
+import { EnhancedCalendarView } from '@/features/calendar/availability/components';
 
-export default async function ServiceProviderProfilePage({
+export default async function GlobalAvailabilityPage({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
@@ -11,11 +11,11 @@ export default async function ServiceProviderProfilePage({
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Manage Your Calendar</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Set your available time slots and manage your schedule
+            Set your available time slots and manage your schedule across all contexts
           </p>
         </div>
 
-        <ServiceProviderCalendar searchParams={searchParams} />
+        <EnhancedCalendarView searchParams={searchParams} />
       </div>
     </div>
   );

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Calendar, Clock, Repeat, Send, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,11 +20,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { 
   CreateAvailabilityData,
-  createAvailabilityDataSchema,
   SchedulingRule,
   RecurrenceType,
   BillingEntity,
 } from '../types';
+import { recurrencePatternSchema, serviceConfigSchema, schedulingRuleSchema, billingEntitySchema } from '../types/schemas';
 import { useCreateAvailability } from '../hooks';
 import { ServiceSelectionSection } from './service-selection-section';
 
@@ -41,8 +42,24 @@ interface ProposalFormData extends CreateAvailabilityData {
   proposalNote?: string;
 }
 
-const proposalFormSchema = createAvailabilityDataSchema.extend({
-  proposalNote: createAvailabilityDataSchema.shape.proposalNote?.optional(),
+const proposalFormSchema = z.object({
+  serviceProviderId: z.string().uuid(),
+  organizationId: z.string().uuid().optional(),
+  locationId: z.string().uuid().optional(),
+  connectionId: z.string().uuid().optional(),
+  startTime: z.date(),
+  endTime: z.date(),
+  isRecurring: z.boolean(),
+  recurrencePattern: recurrencePatternSchema.optional(),
+  seriesId: z.string().uuid().optional(),
+  schedulingRule: schedulingRuleSchema,
+  schedulingInterval: z.number().int().positive().optional(),
+  isOnlineAvailable: z.boolean(),
+  requiresConfirmation: z.boolean(),
+  billingEntity: billingEntitySchema.optional(),
+  defaultSubscriptionId: z.string().uuid().optional(),
+  services: z.array(serviceConfigSchema).min(1),
+  proposalNote: z.string().optional(),
 });
 
 type FormValues = ProposalFormData;

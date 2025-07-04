@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import {
   Calendar as CalendarIcon,
@@ -22,7 +22,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useProvider } from '@/features/providers/hooks';
 
+import { useAvailabilitySearch } from '../hooks';
 import { AvailabilityStatus, SchedulingRule, SlotStatus } from '../types';
 
 export interface CalendarEvent {
@@ -96,184 +98,130 @@ export function ProviderCalendarView({
 }: ProviderCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(initialDate);
   const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode);
-  const [calendarData, setCalendarData] = useState<ProviderCalendarData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
 
-  // Mock data - in real implementation, this would come from API
-  useEffect(() => {
-    const loadCalendarData = async () => {
-      setIsLoading(true);
+  // Fetch real data from API
+  const { data: provider, isLoading: isProviderLoading } = useProvider(providerId);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
+  // Calculate date range for current view
+  const dateRange = useMemo(() => {
+    const start = new Date(currentDate);
+    const end = new Date(currentDate);
 
-      const mockData: ProviderCalendarData = {
-        providerId,
-        providerName: 'Dr. Sarah Johnson',
-        providerType: 'General Practitioner',
-        workingHours: { start: '09:00', end: '17:00' },
-        events: generateMockEvents(currentDate),
-        stats: {
-          totalAvailabilityHours: 40,
-          bookedHours: 28,
-          utilizationRate: 70,
-          pendingBookings: 3,
-          completedBookings: 12,
-        },
-      };
-
-      setCalendarData(mockData);
-      setIsLoading(false);
-    };
-
-    loadCalendarData();
-  }, [providerId, currentDate]);
-
-  const generateMockEvents = (baseDate: Date): CalendarEvent[] => {
-    const events: CalendarEvent[] = [];
-    const startOfWeek = new Date(baseDate);
-    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-
-    for (let day = 0; day < 7; day++) {
-      const currentDay = new Date(startOfWeek);
-      currentDay.setDate(startOfWeek.getDate() + day);
-
-      // Skip weekends for this example
-      if (currentDay.getDay() === 0 || currentDay.getDay() === 6) continue;
-
-      // Morning availability block
-      events.push({
-        id: `avail-${day}-morning`,
-        type: 'availability',
-        title: 'Available - General Consultation',
-        startTime: new Date(
-          currentDay.getFullYear(),
-          currentDay.getMonth(),
-          currentDay.getDate(),
-          9,
-          0
-        ),
-        endTime: new Date(
-          currentDay.getFullYear(),
-          currentDay.getMonth(),
-          currentDay.getDate(),
-          12,
-          0
-        ),
-        status: AvailabilityStatus.ACTIVE,
-        schedulingRule: SchedulingRule.FIXED_INTERVAL,
-        isRecurring: true,
-        seriesId: 'series-1',
-        location: { id: 'loc-1', name: 'Main Clinic', isOnline: false },
-        service: { id: 'svc-1', name: 'General Consultation', duration: 30, price: 150 },
-      });
-
-      // Afternoon availability block
-      events.push({
-        id: `avail-${day}-afternoon`,
-        type: 'availability',
-        title: 'Available - Follow-up Appointments',
-        startTime: new Date(
-          currentDay.getFullYear(),
-          currentDay.getMonth(),
-          currentDay.getDate(),
-          14,
-          0
-        ),
-        endTime: new Date(
-          currentDay.getFullYear(),
-          currentDay.getMonth(),
-          currentDay.getDate(),
-          17,
-          0
-        ),
-        status: AvailabilityStatus.ACTIVE,
-        schedulingRule: SchedulingRule.CONTINUOUS,
-        location: { id: 'loc-1', name: 'Main Clinic', isOnline: false },
-        service: { id: 'svc-2', name: 'Follow-up Appointment', duration: 15, price: 75 },
-      });
-
-      // Some bookings
-      if (day < 4) {
-        events.push({
-          id: `booking-${day}-1`,
-          type: 'booking',
-          title: 'John Smith - General Consultation',
-          startTime: new Date(
-            currentDay.getFullYear(),
-            currentDay.getMonth(),
-            currentDay.getDate(),
-            10,
-            0
-          ),
-          endTime: new Date(
-            currentDay.getFullYear(),
-            currentDay.getMonth(),
-            currentDay.getDate(),
-            10,
-            30
-          ),
-          status: SlotStatus.BOOKED,
-          location: { id: 'loc-1', name: 'Main Clinic', isOnline: false },
-          service: { id: 'svc-1', name: 'General Consultation', duration: 30, price: 150 },
-          customer: { name: 'John Smith', email: 'john@example.com', phone: '+1234567890' },
-          requiresConfirmation: false,
-        });
-
-        if (day < 2) {
-          events.push({
-            id: `booking-${day}-2`,
-            type: 'booking',
-            title: 'Online Consultation - Maria Garcia',
-            startTime: new Date(
-              currentDay.getFullYear(),
-              currentDay.getMonth(),
-              currentDay.getDate(),
-              15,
-              0
-            ),
-            endTime: new Date(
-              currentDay.getFullYear(),
-              currentDay.getMonth(),
-              currentDay.getDate(),
-              15,
-              30
-            ),
-            status: SlotStatus.BOOKED,
-            location: { id: 'online', name: 'Online', isOnline: true },
-            service: { id: 'svc-1', name: 'General Consultation', duration: 30, price: 150 },
-            customer: { name: 'Maria Garcia', email: 'maria@example.com' },
-            requiresConfirmation: true,
-          });
-        }
-      }
-
-      // Blocked time for lunch
-      events.push({
-        id: `blocked-${day}-lunch`,
-        type: 'blocked',
-        title: 'Lunch Break',
-        startTime: new Date(
-          currentDay.getFullYear(),
-          currentDay.getMonth(),
-          currentDay.getDate(),
-          12,
-          0
-        ),
-        endTime: new Date(
-          currentDay.getFullYear(),
-          currentDay.getMonth(),
-          currentDay.getDate(),
-          14,
-          0
-        ),
-        status: 'blocked',
-      });
+    switch (viewMode) {
+      case 'day':
+        end.setDate(start.getDate() + 1);
+        break;
+      case 'week':
+        start.setDate(currentDate.getDate() - currentDate.getDay());
+        end.setDate(start.getDate() + 7);
+        break;
+      case 'month':
+        start.setDate(1);
+        end.setMonth(start.getMonth() + 1);
+        end.setDate(0);
+        break;
     }
 
-    return events;
-  };
+    return { start, end };
+  }, [currentDate, viewMode]);
+
+  const { data: availabilityData, isLoading: isAvailabilityLoading } = useAvailabilitySearch({
+    serviceProviderId: providerId,
+    startDate: dateRange.start,
+    endDate: dateRange.end,
+  });
+
+  const isLoading = isProviderLoading || isAvailabilityLoading;
+
+  // Transform availability data into calendar events
+  const calendarData: ProviderCalendarData | null = useMemo(() => {
+    if (!provider || !availabilityData) return null;
+
+    // Transform availability records into calendar events
+    const events: CalendarEvent[] = [];
+
+    // Add availability blocks
+    availabilityData.forEach((availability) => {
+      events.push({
+        id: availability.id,
+        type: 'availability',
+        title: `Available - ${availability.serviceAvailabilityConfigs?.[0]?.service?.name || 'General'}`,
+        startTime: new Date(availability.startTime),
+        endTime: new Date(availability.endTime),
+        status: availability.status,
+        schedulingRule: availability.schedulingRule,
+        isRecurring: availability.isRecurring,
+        seriesId: availability.seriesId || undefined,
+        location: availability.location
+          ? {
+              id: availability.location.id,
+              name: availability.location.name,
+              isOnline: !availability.locationId,
+            }
+          : undefined,
+        service: availability.serviceAvailabilityConfigs?.[0]
+          ? {
+              id: availability.serviceAvailabilityConfigs[0].service.id,
+              name: availability.serviceAvailabilityConfigs[0].service.name,
+              duration: availability.serviceAvailabilityConfigs[0].duration || 30,
+              price: availability.serviceAvailabilityConfigs[0].price || 0,
+            }
+          : undefined,
+      });
+
+      // Add booked slots from this availability's calculated slots
+      availability.calculatedSlots
+        ?.filter((slot) => slot.status === SlotStatus.BOOKED)
+        .forEach((slot) => {
+          events.push({
+            id: slot.id,
+            type: 'booking',
+            title: `Booking - ${slot.service?.name || 'Service'}`,
+            startTime: new Date(slot.startTime),
+            endTime: new Date(slot.endTime),
+            status: slot.status,
+            location: slot.location
+              ? {
+                  id: slot.location.id,
+                  name: slot.location.name,
+                  isOnline: slot.isOnlineAvailable,
+                }
+              : undefined,
+            service: slot.service
+              ? {
+                  id: slot.service.id,
+                  name: slot.service.name,
+                  duration: slot.duration,
+                  price: slot.price,
+                }
+              : undefined,
+            // TODO: Add customer data when booking relationship is available
+          });
+        });
+    });
+
+    // Calculate stats from all calculated slots
+    const allSlots = availabilityData.flatMap((availability) => availability.calculatedSlots || []);
+    const bookedSlots = allSlots.filter((slot) => slot.status === SlotStatus.BOOKED).length;
+    const pendingSlots = allSlots.filter((slot) => slot.status === SlotStatus.PENDING).length;
+
+    return {
+      providerId,
+      providerName: provider.name,
+      providerType: provider.serviceProviderType?.name || 'Healthcare Provider',
+      workingHours: { start: '09:00', end: '17:00' }, // TODO: Get from provider settings
+      events,
+      stats: {
+        totalAvailabilityHours: availabilityData.length,
+        bookedHours: bookedSlots,
+        utilizationRate:
+          allSlots.length > 0 ? Math.round((bookedSlots / allSlots.length) * 100) : 0,
+        pendingBookings: pendingSlots,
+        completedBookings: bookedSlots,
+      },
+    };
+  }, [provider, availabilityData, providerId]);
 
   const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);

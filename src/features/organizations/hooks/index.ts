@@ -1,6 +1,7 @@
 // Organization CRUD hooks
 export { useOrganization } from './use-organization';
 export { useOrganizationByUserId } from './use-organization-by-user-id';
+export { useCurrentUserOrganizations } from './use-current-user-organizations';
 export { useRegisterOrganization } from './use-register-organization';
 export { useOrganizationDelete } from './use-organization-delete';
 

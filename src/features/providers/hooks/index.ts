@@ -1,6 +1,7 @@
 // Provider CRUD hooks
 export { useProvider } from './use-provider';
 export { useProviderByUserId } from './use-provider-by-user-id';
+export { useCurrentUserProvider } from './use-current-user-provider';
 export { useProviderDelete } from './use-provider-delete';
 
 // Provider update hooks

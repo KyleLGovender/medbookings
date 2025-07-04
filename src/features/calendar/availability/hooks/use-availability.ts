@@ -7,15 +7,6 @@ import {
   AvailabilitySearchParams,
   AvailabilityWithRelations,
 } from '../types';
-import {
-  createAvailability,
-  getAvailabilityById,
-  searchAvailability,
-  updateAvailability,
-  deleteAvailability,
-  acceptAvailabilityProposal,
-  rejectAvailabilityProposal,
-} from '../lib/actions';
 
 // Query hooks
 export function useAvailabilityById(availabilityId: string | undefined) {
@@ -26,13 +17,14 @@ export function useAvailabilityById(availabilityId: string | undefined) {
         throw new Error('Availability ID is required');
       }
       
-      const result = await getAvailabilityById(availabilityId);
+      const response = await fetch(`/api/calendar/availability/${availabilityId}`);
       
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch availability');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch availability');
       }
       
-      return result.data;
+      return response.json();
     },
     enabled: !!availabilityId,
   });
@@ -42,13 +34,25 @@ export function useAvailabilitySearch(params: AvailabilitySearchParams) {
   return useQuery({
     queryKey: ['availability', 'search', params],
     queryFn: async () => {
-      const result = await searchAvailability(params);
+      const searchParams = new URLSearchParams();
       
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to search availability');
+      if (params.serviceProviderId) searchParams.set('serviceProviderId', params.serviceProviderId);
+      if (params.organizationId) searchParams.set('organizationId', params.organizationId);
+      if (params.locationId) searchParams.set('locationId', params.locationId);
+      if (params.serviceId) searchParams.set('serviceId', params.serviceId);
+      if (params.startDate) searchParams.set('startDate', params.startDate.toISOString());
+      if (params.endDate) searchParams.set('endDate', params.endDate.toISOString());
+      if (params.status) searchParams.set('status', params.status);
+      if (params.seriesId) searchParams.set('seriesId', params.seriesId);
+
+      const response = await fetch(`/api/calendar/availability?${searchParams.toString()}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to search availability');
       }
       
-      return result.data || [];
+      return response.json();
     },
   });
 }
@@ -61,13 +65,14 @@ export function useProviderAvailability(serviceProviderId: string | undefined) {
         throw new Error('Service provider ID is required');
       }
       
-      const result = await searchAvailability({ serviceProviderId });
+      const response = await fetch(`/api/calendar/availability?serviceProviderId=${serviceProviderId}`);
       
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch provider availability');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch provider availability');
       }
       
-      return result.data || [];
+      return response.json();
     },
     enabled: !!serviceProviderId,
   });
@@ -81,13 +86,14 @@ export function useOrganizationAvailability(organizationId: string | undefined) 
         throw new Error('Organization ID is required');
       }
       
-      const result = await searchAvailability({ organizationId });
+      const response = await fetch(`/api/calendar/availability?organizationId=${organizationId}`);
       
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch organization availability');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch organization availability');
       }
       
-      return result.data || [];
+      return response.json();
     },
     enabled: !!organizationId,
   });
@@ -101,13 +107,14 @@ export function useAvailabilitySeries(seriesId: string | undefined) {
         throw new Error('Series ID is required');
       }
       
-      const result = await searchAvailability({ seriesId });
+      const response = await fetch(`/api/calendar/availability?seriesId=${seriesId}`);
       
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch availability series');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch availability series');
       }
       
-      return result.data || [];
+      return response.json();
     },
     enabled: !!seriesId,
   });
@@ -122,13 +129,20 @@ export function useCreateAvailability(options?: {
 
   return useMutation<AvailabilityWithRelations, Error, CreateAvailabilityData>({
     mutationFn: async (data) => {
-      const result = await createAvailability(data);
-      
-      if (!result.success || !result.data) {
-        throw new Error(result.error || 'Failed to create availability');
+      const response = await fetch('/api/calendar/availability/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create availability');
       }
-      
-      return result.data;
+
+      return response.json();
     },
     onSuccess: (data, variables) => {
       // Invalidate relevant queries
@@ -161,13 +175,20 @@ export function useUpdateAvailability(options?: {
 
   return useMutation<AvailabilityWithRelations, Error, UpdateAvailabilityData>({
     mutationFn: async (data) => {
-      const result = await updateAvailability(data);
-      
-      if (!result.success || !result.data) {
-        throw new Error(result.error || 'Failed to update availability');
+      const response = await fetch('/api/calendar/availability/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update availability');
       }
-      
-      return result.data;
+
+      return response.json();
     },
     onMutate: async (variables) => {
       // Cancel any outgoing refetches for this specific availability
@@ -227,10 +248,13 @@ export function useDeleteAvailability(options?: {
 
   return useMutation<void, Error, { id: string }>({
     mutationFn: async ({ id }) => {
-      const result = await deleteAvailability(id);
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to delete availability');
+      const response = await fetch(`/api/calendar/availability/delete?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete availability');
       }
     },
     onSuccess: (_, variables) => {
@@ -254,13 +278,20 @@ export function useAcceptAvailabilityProposal(options?: {
 
   return useMutation<AvailabilityWithRelations, Error, { id: string }>({
     mutationFn: async ({ id }) => {
-      const result = await acceptAvailabilityProposal(id);
-      
-      if (!result.success || !result.data) {
-        throw new Error(result.error || 'Failed to accept availability proposal');
+      const response = await fetch('/api/calendar/availability/accept', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to accept availability proposal');
       }
-      
-      return result.data;
+
+      return response.json();
     },
     onMutate: async (variables) => {
       // Cancel any outgoing refetches for this specific availability
@@ -315,10 +346,17 @@ export function useRejectAvailabilityProposal(options?: {
 
   return useMutation<void, Error, { id: string; reason?: string }>({
     mutationFn: async ({ id, reason }) => {
-      const result = await rejectAvailabilityProposal(id, reason);
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to reject availability proposal');
+      const response = await fetch('/api/calendar/availability/reject', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, reason }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to reject availability proposal');
       }
     },
     onMutate: async (variables) => {

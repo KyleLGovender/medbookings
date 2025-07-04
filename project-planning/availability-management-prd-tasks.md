@@ -148,6 +148,7 @@ Based on detailed analysis of existing Prisma schema against PRD requirements:
   - [x] 6.6 Optimize search queries for performance (leverage existing database indexes)
 
 - [x] 7.0 Calendar Visualization and Management Views
+
   - [x] 7.1 Create provider calendar view showing individual availability and bookings
   - [x] 7.2 Build organization calendar view displaying multiple provider schedules
   - [x] 7.3 Add coverage gap identification for organization managers
@@ -155,3 +156,8 @@ Based on detailed analysis of existing Prisma schema against PRD requirements:
   - [x] 7.5 Create visual indicators for different availability types, statuses, and scheduling rules
   - [x] 7.6 Add drag-and-drop functionality for availability management with recurring series support
   - [x] 7.7 Build calendar export functionality leveraging existing CalendarIntegration infrastructure
+
+- [ ] 8.0 Cleanup
+  - [ ] 7.1 Figure out pages routing and where to display various calendars
+  - [ ] 7.2 Get rid of mock availability data and make sure everything is driven from database configuration
+  - [ ] 7.3 Update customer recurring pattern to match Google calendar

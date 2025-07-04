@@ -207,8 +207,8 @@ export async function getAvailabilityById(
     const canView =
       currentUser.id === availability.serviceProviderId ||
       currentUser.id === availability.createdById ||
-      currentUser.roles.includes('ADMIN') ||
-      currentUser.roles.includes('SUPER_ADMIN');
+      currentUser.role === 'ADMIN' ||
+      currentUser.role === 'SUPER_ADMIN';
 
     if (!canView && availability.organizationId) {
       // Check organization membership
@@ -307,7 +307,7 @@ export async function searchAvailability(
     }
 
     // Add permission filters
-    if (!currentUser.roles.includes('ADMIN') && !currentUser.roles.includes('SUPER_ADMIN')) {
+    if (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
       // Get user's organizations
       const userOrganizations = await prisma.organizationMembership.findMany({
         where: { userId: currentUser.id },
@@ -374,8 +374,8 @@ export async function updateAvailability(
     const canUpdate =
       currentUser.id === existingAvailability.serviceProviderId ||
       currentUser.id === existingAvailability.createdById ||
-      currentUser.roles.includes('ADMIN') ||
-      currentUser.roles.includes('SUPER_ADMIN');
+      currentUser.role === 'ADMIN' ||
+      currentUser.role === 'SUPER_ADMIN';
 
     if (!canUpdate && existingAvailability.organizationId) {
       const membership = await prisma.organizationMembership.findFirst({
@@ -508,8 +508,8 @@ export async function deleteAvailability(
     const canDelete =
       currentUser.id === existingAvailability.serviceProviderId ||
       currentUser.id === existingAvailability.createdById ||
-      currentUser.roles.includes('ADMIN') ||
-      currentUser.roles.includes('SUPER_ADMIN');
+      currentUser.role === 'ADMIN' ||
+      currentUser.role === 'SUPER_ADMIN';
 
     if (!canDelete && existingAvailability.organizationId) {
       const membership = await prisma.organizationMembership.findFirst({

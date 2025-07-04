@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+
 import { AvailabilityStatus, SlotStatus } from '../types';
 import { optimizedSlotSearch } from './search-performance-service';
 
@@ -10,7 +11,7 @@ export interface TimeSearchParams {
   specificDate?: Date;
   timeRange?: {
     startTime: string; // Format: "HH:MM" (24-hour)
-    endTime: string;   // Format: "HH:MM" (24-hour)
+    endTime: string; // Format: "HH:MM" (24-hour)
   };
   preferredTimes?: string[]; // Array of preferred times ["09:00", "14:30"]
   timeFlexibility?: number; // Minutes of flexibility around preferred times
@@ -59,7 +60,6 @@ export interface TimeSearchResult {
  * Service for time-based filtering and search of availability slots
  */
 export class TimeSearchService {
-  
   /**
    * Convert time string (HH:MM) to minutes since midnight
    */
@@ -106,7 +106,7 @@ export class TimeSearchService {
     if (startMinutes > endMinutes) {
       return slotTimeMinutes >= startMinutes || slotTimeMinutes <= endMinutes;
     }
-    
+
     return slotTimeMinutes >= startMinutes && slotTimeMinutes <= endMinutes;
   }
 
@@ -120,13 +120,13 @@ export class TimeSearchService {
   ): boolean {
     const slotTimeMinutes = slotTime.getHours() * 60 + slotTime.getMinutes();
 
-    return preferredTimes.some(preferredTime => {
+    return preferredTimes.some((preferredTime) => {
       const preferredMinutes = this.timeToMinutes(preferredTime);
       const diff = Math.abs(slotTimeMinutes - preferredMinutes);
-      
+
       // Handle day boundary (e.g., comparing 23:30 with 00:30)
       const dayBoundaryDiff = Math.min(diff, 1440 - diff); // 1440 = minutes in a day
-      
+
       return dayBoundaryDiff <= flexibilityMinutes;
     });
   }
@@ -184,7 +184,7 @@ export class TimeSearchService {
       });
 
       // Convert optimized results and apply additional filters
-      let slots = optimizedResults.slots.map(slot => ({
+      let slots = optimizedResults.slots.map((slot) => ({
         slotId: slot.id,
         startTime: slot.startTime,
         endTime: slot.endTime,
@@ -204,132 +204,133 @@ export class TimeSearchService {
       if (slots.length === 0 && !searchDateRange) {
         // Fallback to original implementation for complex queries
 
-      // Build date filter
-      let dateFilter: any = {};
-      
-      if (specificDate) {
-        const startOfDay = new Date(specificDate);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(specificDate);
-        endOfDay.setHours(23, 59, 59, 999);
-        
-        dateFilter = {
-          startTime: { gte: startOfDay, lte: endOfDay }
-        };
-      } else if (dateRange) {
-        const startOfRange = new Date(dateRange.startDate);
-        startOfRange.setHours(0, 0, 0, 0);
-        const endOfRange = new Date(dateRange.endDate);
-        endOfRange.setHours(23, 59, 59, 999);
-        
-        dateFilter = {
-          startTime: { gte: startOfRange, lte: endOfRange }
-        };
-      } else {
-        // Default to next 30 days if no date filter specified
-        const today = new Date();
-        const futureDate = new Date();
-        futureDate.setDate(today.getDate() + 30);
-        
-        dateFilter = {
-          startTime: { gte: today, lte: futureDate }
-        };
-      }
+        // Build date filter
+        let dateFilter: any = {};
 
-      // Build duration filter
-      const durationFilter: any = {};
-      if (minDuration) durationFilter.gte = minDuration;
-      if (maxDuration) durationFilter.lte = maxDuration;
+        if (specificDate) {
+          const startOfDay = new Date(specificDate);
+          startOfDay.setHours(0, 0, 0, 0);
+          const endOfDay = new Date(specificDate);
+          endOfDay.setHours(23, 59, 59, 999);
 
-      // Get slots from database
-      const slots = await prisma.calculatedAvailabilitySlot.findMany({
-        where: {
-          status: SlotStatus.AVAILABLE,
-          ...dateFilter,
-          ...(Object.keys(durationFilter).length > 0 ? { duration: durationFilter } : {}),
-          ...(additionalFilters?.serviceProviderId ? {
-            availability: { serviceProviderId: additionalFilters.serviceProviderId }
-          } : {}),
-          ...(additionalFilters?.serviceId ? { serviceId: additionalFilters.serviceId } : {}),
-          ...(additionalFilters?.locationId ? { locationId: additionalFilters.locationId } : {}),
-          ...(additionalFilters?.isOnlineAvailable !== undefined ? {
-            isOnlineAvailable: additionalFilters.isOnlineAvailable
-          } : {}),
-          availability: {
-            status: AvailabilityStatus.ACTIVE,
-            ...(additionalFilters?.serviceProviderId ? {
-              serviceProviderId: additionalFilters.serviceProviderId
-            } : {}),
-          },
-        },
-        include: {
-          availability: {
-            include: {
-              serviceProvider: true,
+          dateFilter = {
+            startTime: { gte: startOfDay, lte: endOfDay },
+          };
+        } else if (dateRange) {
+          const startOfRange = new Date(dateRange.startDate);
+          startOfRange.setHours(0, 0, 0, 0);
+          const endOfRange = new Date(dateRange.endDate);
+          endOfRange.setHours(23, 59, 59, 999);
+
+          dateFilter = {
+            startTime: { gte: startOfRange, lte: endOfRange },
+          };
+        } else {
+          // Default to next 30 days if no date filter specified
+          const today = new Date();
+          const futureDate = new Date();
+          futureDate.setDate(today.getDate() + 30);
+
+          dateFilter = {
+            startTime: { gte: today, lte: futureDate },
+          };
+        }
+
+        // Build duration filter
+        const durationFilter: any = {};
+        if (minDuration) durationFilter.gte = minDuration;
+        if (maxDuration) durationFilter.lte = maxDuration;
+
+        // Get slots from database
+        const slots = await prisma.calculatedAvailabilitySlot.findMany({
+          where: {
+            status: SlotStatus.AVAILABLE,
+            ...dateFilter,
+            ...(Object.keys(durationFilter).length > 0 ? { duration: durationFilter } : {}),
+            ...(additionalFilters?.serviceProviderId
+              ? {
+                  availability: { serviceProviderId: additionalFilters.serviceProviderId },
+                }
+              : {}),
+            ...(additionalFilters?.serviceId ? { serviceId: additionalFilters.serviceId } : {}),
+            ...(additionalFilters?.locationId ? { locationId: additionalFilters.locationId } : {}),
+            ...(additionalFilters?.isOnlineAvailable !== undefined
+              ? {
+                  isOnlineAvailable: additionalFilters.isOnlineAvailable,
+                }
+              : {}),
+            availability: {
+              status: AvailabilityStatus.ACTIVE,
+              ...(additionalFilters?.serviceProviderId
+                ? {
+                    serviceProviderId: additionalFilters.serviceProviderId,
+                  }
+                : {}),
             },
           },
-          service: true,
-        },
-        orderBy: {
-          startTime: 'asc',
-        },
-      });
+          include: {
+            availability: {
+              include: {
+                serviceProvider: true,
+              },
+            },
+            service: true,
+          },
+          orderBy: {
+            startTime: 'asc',
+          },
+        });
 
-      // Apply time-based filters
-      let filteredSlots = slots.map(slot => ({
-        slotId: slot.id,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        duration: slot.duration,
-        dayOfWeek: slot.startTime.getDay(),
-        timeOfDay: this.dateToTimeString(slot.startTime),
-        isWeekend: this.isWeekend(slot.startTime),
-        providerId: slot.availability.serviceProviderId,
-        serviceId: slot.serviceId,
-        locationId: slot.locationId,
-        price: slot.price,
-        isOnlineAvailable: slot.isOnlineAvailable,
-        status: slot.status,
-      }));
+        // Apply time-based filters
+        let filteredSlots = slots.map((slot) => ({
+          slotId: slot.id,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          duration: slot.duration,
+          dayOfWeek: slot.startTime.getDay(),
+          timeOfDay: this.dateToTimeString(slot.startTime),
+          isWeekend: this.isWeekend(slot.startTime),
+          providerId: slot.availability.serviceProviderId,
+          serviceId: slot.serviceId,
+          locationId: slot.locationId,
+          price: slot.price,
+          isOnlineAvailable: slot.isOnlineAvailable,
+          status: slot.status,
+        }));
+      }
 
       // Filter by time range
       if (timeRange) {
-        filteredSlots = filteredSlots.filter(slot =>
+        filteredSlots = filteredSlots.filter((slot) =>
           this.isTimeInRange(slot.startTime, timeRange)
         );
       }
 
       // Filter by preferred times with flexibility
       if (preferredTimes && preferredTimes.length > 0) {
-        filteredSlots = filteredSlots.filter(slot =>
+        filteredSlots = filteredSlots.filter((slot) =>
           this.isTimeNearPreferred(slot.startTime, preferredTimes, timeFlexibility)
         );
       }
 
       // Filter by day of week
       if (dayOfWeek && dayOfWeek.length > 0) {
-        filteredSlots = filteredSlots.filter(slot =>
-          dayOfWeek.includes(slot.dayOfWeek)
-        );
+        filteredSlots = filteredSlots.filter((slot) => dayOfWeek.includes(slot.dayOfWeek));
       }
 
       // Exclude weekends if requested
       if (excludeWeekends) {
-        filteredSlots = filteredSlots.filter(slot => !slot.isWeekend);
+        filteredSlots = filteredSlots.filter((slot) => !slot.isWeekend);
       }
 
       // Calculate statistics
       const availableDates = Array.from(
-        new Set(
-          filteredSlots.map(slot =>
-            slot.startTime.toISOString().split('T')[0]
-          )
-        )
-      ).map(dateStr => new Date(dateStr));
+        new Set(filteredSlots.map((slot) => slot.startTime.toISOString().split('T')[0]))
+      ).map((dateStr) => new Date(dateStr));
 
       // Group by time slots
       const timeSlotMap = new Map<string, { count: number; totalPrice: number }>();
-      filteredSlots.forEach(slot => {
+      filteredSlots.forEach((slot) => {
         const timeKey = slot.timeOfDay;
         const existing = timeSlotMap.get(timeKey) || { count: 0, totalPrice: 0 };
         timeSlotMap.set(timeKey, {
@@ -348,7 +349,7 @@ export class TimeSearchService {
 
       // Calculate day of week statistics
       const dayStatsMap = new Map<number, { count: number; times: string[] }>();
-      filteredSlots.forEach(slot => {
+      filteredSlots.forEach((slot) => {
         const existing = dayStatsMap.get(slot.dayOfWeek) || { count: 0, times: [] };
         dayStatsMap.set(slot.dayOfWeek, {
           count: existing.count + 1,
@@ -376,7 +377,6 @@ export class TimeSearchService {
         availableTimeSlots,
         dayOfWeekStats,
       };
-
     } catch (error) {
       console.error('Error searching slots by time:', error);
       return {
@@ -399,13 +399,15 @@ export class TimeSearchService {
       requiredDuration: number;
       maxResults?: number;
     }
-  ): Promise<Array<{
-    slotId: string;
-    startTime: Date;
-    endTime: Date;
-    score: number; // Higher is better match
-    reasons: string[];
-  }>> {
+  ): Promise<
+    Array<{
+      slotId: string;
+      startTime: Date;
+      endTime: Date;
+      score: number; // Higher is better match
+      reasons: string[];
+    }>
+  > {
     try {
       const { requiredDuration, maxResults = 10, ...timeParams } = params;
 
@@ -416,8 +418,8 @@ export class TimeSearchService {
 
       // Score each slot based on preferences
       const scoredSlots = searchResult.slotsInTimeRange
-        .filter(slot => slot.duration >= requiredDuration)
-        .map(slot => {
+        .filter((slot) => slot.duration >= requiredDuration)
+        .map((slot) => {
           let score = 0;
           const reasons: string[] = [];
 
@@ -481,7 +483,6 @@ export class TimeSearchService {
         .slice(0, maxResults);
 
       return scoredSlots;
-
     } catch (error) {
       console.error('Error finding optimal time slots:', error);
       return [];
@@ -498,24 +499,23 @@ export class TimeSearchService {
       serviceId?: string;
       locationId?: string;
     }
-  ): Promise<Array<{
-    date: string; // YYYY-MM-DD format
-    dayOfWeek: number;
-    slotCount: number;
-    timeSlots: Array<{
-      hour: number;
+  ): Promise<
+    Array<{
+      date: string; // YYYY-MM-DD format
+      dayOfWeek: number;
       slotCount: number;
-    }>;
-  }>> {
+      timeSlots: Array<{
+        hour: number;
+        slotCount: number;
+      }>;
+    }>
+  > {
     try {
-      const searchResult = await this.searchSlotsByTime(
-        { dateRange },
-        filters
-      );
+      const searchResult = await this.searchSlotsByTime({ dateRange }, filters);
 
       // Group by date
       const dateMap = new Map<string, TimeFilteredSlot[]>();
-      searchResult.slotsInTimeRange.forEach(slot => {
+      searchResult.slotsInTimeRange.forEach((slot) => {
         const dateKey = slot.startTime.toISOString().split('T')[0];
         const existing = dateMap.get(dateKey) || [];
         dateMap.set(dateKey, [...existing, slot]);
@@ -524,10 +524,10 @@ export class TimeSearchService {
       // Build heatmap data
       const heatmapData = Array.from(dateMap.entries()).map(([dateStr, slots]) => {
         const date = new Date(dateStr);
-        
+
         // Group by hour
         const hourMap = new Map<number, number>();
-        slots.forEach(slot => {
+        slots.forEach((slot) => {
           const hour = slot.startTime.getHours();
           hourMap.set(hour, (hourMap.get(hour) || 0) + 1);
         });
@@ -546,7 +546,6 @@ export class TimeSearchService {
       });
 
       return heatmapData.sort((a, b) => a.date.localeCompare(b.date));
-
     } catch (error) {
       console.error('Error generating availability heatmap:', error);
       return [];
@@ -580,13 +579,15 @@ export async function findOptimalTimeSlots(
     requiredDuration: number;
     maxResults?: number;
   }
-): Promise<Array<{
-  slotId: string;
-  startTime: Date;
-  endTime: Date;
-  score: number;
-  reasons: string[];
-}>> {
+): Promise<
+  Array<{
+    slotId: string;
+    startTime: Date;
+    endTime: Date;
+    score: number;
+    reasons: string[];
+  }>
+> {
   const service = new TimeSearchService();
   return await service.findOptimalTimeSlots(params);
 }
@@ -601,15 +602,17 @@ export async function getAvailabilityHeatmap(
     serviceId?: string;
     locationId?: string;
   }
-): Promise<Array<{
-  date: string;
-  dayOfWeek: number;
-  slotCount: number;
-  timeSlots: Array<{
-    hour: number;
+): Promise<
+  Array<{
+    date: string;
+    dayOfWeek: number;
     slotCount: number;
-  }>;
-}>> {
+    timeSlots: Array<{
+      hour: number;
+      slotCount: number;
+    }>;
+  }>
+> {
   const service = new TimeSearchService();
   return await service.getAvailabilityHeatmap(dateRange, filters);
 }

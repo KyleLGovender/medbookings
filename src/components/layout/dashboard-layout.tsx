@@ -16,11 +16,9 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import {
-  useAdminOrganization,
-  useAdminOrganizations,
-} from '@/features/organizations/hooks/use-admin-organizations';
-import { useAdminProviders } from '@/features/providers/hooks/use-admin-providers';
+import { useCurrentUserOrganizations } from '@/features/organizations/hooks';
+import { useAdminOrganization } from '@/features/organizations/hooks/use-admin-organizations';
+import { useCurrentUserProvider } from '@/features/providers/hooks';
 import { useProvider } from '@/features/providers/hooks/use-provider';
 
 // Dynamic breadcrumb component
@@ -204,22 +202,50 @@ const createNavData = (providers: any[] = [], organizations: any[] = []) => ({
         },
       ],
     },
-    {
-      title: 'Providers',
-      url: '/providers',
-      items: [
-        {
-          title: 'All Providers',
-          url: '/providers',
-        },
-        ...providers
+    ...(providers.length > 0
+      ? [
+          {
+            title: 'My Provider Profile',
+            url: `/providers/${providers[0].id}`,
+            items: [
+              {
+                title: 'Profile',
+                url: `/providers/${providers[0].id}`,
+              },
+              {
+                title: 'Calendar',
+                url: `/providers/${providers[0].id}/calendar`,
+              },
+              {
+                title: 'Availability',
+                url: `/providers/${providers[0].id}/availability`,
+              },
+            ],
+          },
+        ]
+      : []),
+    ...(organizations.length > 0
+      ? organizations
           .sort((a: any, b: any) => a.name.localeCompare(b.name))
-          .map((provider: any) => ({
-            title: provider.name,
-            url: `/providers/${provider.id}`,
-          })),
-      ],
-    },
+          .map((organization: any) => ({
+            title: organization.name,
+            url: `/organizations/${organization.id}`,
+            items: [
+              {
+                title: 'Profile',
+                url: `/organizations/${organization.id}`,
+              },
+              {
+                title: 'Calendar',
+                url: `/organizations/${organization.id}/calendar`,
+              },
+              {
+                title: 'Availability',
+                url: `/organizations/${organization.id}/availability`,
+              },
+            ],
+          }))
+      : []),
     {
       title: 'Calendar',
       url: '/calendar',
@@ -232,22 +258,6 @@ const createNavData = (providers: any[] = [], organizations: any[] = []) => ({
           title: 'Availability Management',
           url: '/calendar/availability',
         },
-      ],
-    },
-    {
-      title: 'Organizations',
-      url: '/organizations',
-      items: [
-        {
-          title: 'All Organizations',
-          url: '/organizations',
-        },
-        ...organizations
-          .sort((a: any, b: any) => a.name.localeCompare(b.name))
-          .map((organization: any) => ({
-            title: organization.name,
-            url: `/organizations/${organization.id}`,
-          })),
       ],
     },
     {
@@ -269,8 +279,12 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { data: session } = useSession();
-  const { data: providers = [] } = useAdminProviders();
-  const { data: organizations = [] } = useAdminOrganizations();
+  const { data: userProvider } = useCurrentUserProvider();
+  const { data: userOrganizations = [] } = useCurrentUserOrganizations();
+
+  // Convert single provider to array format for navigation
+  const providers = userProvider ? [userProvider] : [];
+  const organizations = userOrganizations || [];
 
   const navData = createNavData(providers, organizations);
 

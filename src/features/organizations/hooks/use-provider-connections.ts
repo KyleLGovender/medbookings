@@ -68,10 +68,9 @@ export function useOrganizationProviderConnections(
         throw new Error(errorData.error || 'Failed to fetch provider connections');
       }
 
-      return response.json();
+      const data = await response.json();
+      return data.connections || [];
     },
-    onSuccess: options.onSuccess,
-    onError: options.onError,
   });
 }
 
