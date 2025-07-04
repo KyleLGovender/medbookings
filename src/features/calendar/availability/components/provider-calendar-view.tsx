@@ -1,15 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Plus, Filter, Settings, Download, Users, MapPin } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  MapPin,
+  Plus,
+} from 'lucide-react';
+
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { AvailabilityStatus, SlotStatus, SchedulingRule } from '../types';
+
+import { AvailabilityStatus, SchedulingRule, SlotStatus } from '../types';
 
 export interface CalendarEvent {
   id: string;
@@ -47,7 +61,7 @@ export interface ProviderCalendarData {
   providerType: string;
   workingHours: {
     start: string; // "09:00"
-    end: string;   // "17:00"
+    end: string; // "17:00"
   };
   events: CalendarEvent[];
   stats: {
@@ -90,10 +104,10 @@ export function ProviderCalendarView({
   useEffect(() => {
     const loadCalendarData = async () => {
       setIsLoading(true);
-      
+
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       const mockData: ProviderCalendarData = {
         providerId,
         providerName: 'Dr. Sarah Johnson',
@@ -108,7 +122,7 @@ export function ProviderCalendarView({
           completedBookings: 12,
         },
       };
-      
+
       setCalendarData(mockData);
       setIsLoading(false);
     };
@@ -124,7 +138,7 @@ export function ProviderCalendarView({
     for (let day = 0; day < 7; day++) {
       const currentDay = new Date(startOfWeek);
       currentDay.setDate(startOfWeek.getDate() + day);
-      
+
       // Skip weekends for this example
       if (currentDay.getDay() === 0 || currentDay.getDay() === 6) continue;
 
@@ -133,8 +147,20 @@ export function ProviderCalendarView({
         id: `avail-${day}-morning`,
         type: 'availability',
         title: 'Available - General Consultation',
-        startTime: new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate(), 9, 0),
-        endTime: new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate(), 12, 0),
+        startTime: new Date(
+          currentDay.getFullYear(),
+          currentDay.getMonth(),
+          currentDay.getDate(),
+          9,
+          0
+        ),
+        endTime: new Date(
+          currentDay.getFullYear(),
+          currentDay.getMonth(),
+          currentDay.getDate(),
+          12,
+          0
+        ),
         status: AvailabilityStatus.ACTIVE,
         schedulingRule: SchedulingRule.FIXED_INTERVAL,
         isRecurring: true,
@@ -148,8 +174,20 @@ export function ProviderCalendarView({
         id: `avail-${day}-afternoon`,
         type: 'availability',
         title: 'Available - Follow-up Appointments',
-        startTime: new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate(), 14, 0),
-        endTime: new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate(), 17, 0),
+        startTime: new Date(
+          currentDay.getFullYear(),
+          currentDay.getMonth(),
+          currentDay.getDate(),
+          14,
+          0
+        ),
+        endTime: new Date(
+          currentDay.getFullYear(),
+          currentDay.getMonth(),
+          currentDay.getDate(),
+          17,
+          0
+        ),
         status: AvailabilityStatus.ACTIVE,
         schedulingRule: SchedulingRule.CONTINUOUS,
         location: { id: 'loc-1', name: 'Main Clinic', isOnline: false },
@@ -162,8 +200,20 @@ export function ProviderCalendarView({
           id: `booking-${day}-1`,
           type: 'booking',
           title: 'John Smith - General Consultation',
-          startTime: new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate(), 10, 0),
-          endTime: new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate(), 10, 30),
+          startTime: new Date(
+            currentDay.getFullYear(),
+            currentDay.getMonth(),
+            currentDay.getDate(),
+            10,
+            0
+          ),
+          endTime: new Date(
+            currentDay.getFullYear(),
+            currentDay.getMonth(),
+            currentDay.getDate(),
+            10,
+            30
+          ),
           status: SlotStatus.BOOKED,
           location: { id: 'loc-1', name: 'Main Clinic', isOnline: false },
           service: { id: 'svc-1', name: 'General Consultation', duration: 30, price: 150 },
@@ -176,8 +226,20 @@ export function ProviderCalendarView({
             id: `booking-${day}-2`,
             type: 'booking',
             title: 'Online Consultation - Maria Garcia',
-            startTime: new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate(), 15, 0),
-            endTime: new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate(), 15, 30),
+            startTime: new Date(
+              currentDay.getFullYear(),
+              currentDay.getMonth(),
+              currentDay.getDate(),
+              15,
+              0
+            ),
+            endTime: new Date(
+              currentDay.getFullYear(),
+              currentDay.getMonth(),
+              currentDay.getDate(),
+              15,
+              30
+            ),
             status: SlotStatus.BOOKED,
             location: { id: 'online', name: 'Online', isOnline: true },
             service: { id: 'svc-1', name: 'General Consultation', duration: 30, price: 150 },
@@ -192,8 +254,20 @@ export function ProviderCalendarView({
         id: `blocked-${day}-lunch`,
         type: 'blocked',
         title: 'Lunch Break',
-        startTime: new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate(), 12, 0),
-        endTime: new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate(), 14, 0),
+        startTime: new Date(
+          currentDay.getFullYear(),
+          currentDay.getMonth(),
+          currentDay.getDate(),
+          12,
+          0
+        ),
+        endTime: new Date(
+          currentDay.getFullYear(),
+          currentDay.getMonth(),
+          currentDay.getDate(),
+          14,
+          0
+        ),
         status: 'blocked',
       });
     }
@@ -203,7 +277,7 @@ export function ProviderCalendarView({
 
   const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
-    
+
     switch (viewMode) {
       case 'day':
         newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
@@ -215,18 +289,18 @@ export function ProviderCalendarView({
         newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
         break;
     }
-    
+
     setCurrentDate(newDate);
   };
 
   const getViewTitle = (): string => {
     switch (viewMode) {
       case 'day':
-        return currentDate.toLocaleDateString([], { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+        return currentDate.toLocaleDateString([], {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
         });
       case 'week':
         const startOfWeek = new Date(currentDate);
@@ -271,8 +345,8 @@ export function ProviderCalendarView({
       <Card>
         <CardContent className="pt-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-8 w-1/3 rounded bg-gray-200"></div>
+            <div className="h-64 rounded bg-gray-200"></div>
           </div>
         </CardContent>
       </Card>
@@ -283,8 +357,8 @@ export function ProviderCalendarView({
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center py-8 text-muted-foreground">
-            <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <div className="py-8 text-center text-muted-foreground">
+            <CalendarIcon className="mx-auto mb-4 h-12 w-12 opacity-50" />
             <p>No calendar data available</p>
           </div>
         </CardContent>
@@ -301,7 +375,10 @@ export function ProviderCalendarView({
             <div className="flex items-center space-x-3">
               <Avatar className="h-12 w-12">
                 <AvatarFallback>
-                  {calendarData.providerName.split(' ').map(n => n[0]).join('')}
+                  {calendarData.providerName
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')}
                 </AvatarFallback>
               </Avatar>
               <div>
@@ -309,23 +386,31 @@ export function ProviderCalendarView({
                 <p className="text-sm text-muted-foreground">{calendarData.providerType}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="grid grid-cols-4 gap-4 text-center">
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">{calendarData.stats.utilizationRate}%</div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {calendarData.stats.utilizationRate}%
+                  </div>
                   <div className="text-xs text-muted-foreground">Utilization</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-green-600">{calendarData.stats.bookedHours}</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {calendarData.stats.bookedHours}
+                  </div>
                   <div className="text-xs text-muted-foreground">Booked Hours</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-orange-600">{calendarData.stats.pendingBookings}</div>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {calendarData.stats.pendingBookings}
+                  </div>
                   <div className="text-xs text-muted-foreground">Pending</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-purple-600">{calendarData.stats.completedBookings}</div>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {calendarData.stats.completedBookings}
+                  </div>
                   <div className="text-xs text-muted-foreground">Completed</div>
                 </div>
               </div>
@@ -343,14 +428,14 @@ export function ProviderCalendarView({
                 <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <h2 className="text-lg font-semibold min-w-[200px] text-center">
+                <h2 className="min-w-[200px] text-center text-lg font-semibold">
                   {getViewTitle()}
                 </h2>
                 <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
-              
+
               <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
                 Today
               </Button>
@@ -369,13 +454,13 @@ export function ProviderCalendarView({
               </Select>
 
               <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" />
+                <Filter className="mr-2 h-4 w-4" />
                 Filter
               </Button>
 
               {onCreateAvailability && (
                 <Button size="sm" onClick={onCreateAvailability}>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Add Availability
                 </Button>
               )}
@@ -394,7 +479,7 @@ export function ProviderCalendarView({
               getEventStyle={getEventStyle}
             />
           )}
-          
+
           {viewMode === 'day' && (
             <DayView
               currentDate={currentDate}
@@ -405,7 +490,7 @@ export function ProviderCalendarView({
               getEventStyle={getEventStyle}
             />
           )}
-          
+
           {viewMode === 'month' && (
             <MonthView
               currentDate={currentDate}
@@ -423,21 +508,21 @@ export function ProviderCalendarView({
           <CardTitle className="text-sm">Legend</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 rounded bg-green-100 border border-green-300"></div>
+              <div className="h-4 w-4 rounded border border-green-300 bg-green-100"></div>
               <span>Available</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300"></div>
+              <div className="h-4 w-4 rounded border border-blue-300 bg-blue-100"></div>
               <span>Booked</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 rounded bg-orange-100 border border-orange-300"></div>
+              <div className="h-4 w-4 rounded border border-orange-300 bg-orange-100"></div>
               <span>Pending</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 rounded bg-red-100 border border-red-300"></div>
+              <div className="h-4 w-4 rounded border border-red-300 bg-red-100"></div>
               <span>Blocked</span>
             </div>
           </div>
@@ -457,10 +542,17 @@ interface WeekViewProps {
   getEventStyle: (event: CalendarEvent) => string;
 }
 
-function WeekView({ currentDate, events, workingHours, onEventClick, onTimeSlotClick, getEventStyle }: WeekViewProps) {
+function WeekView({
+  currentDate,
+  events,
+  workingHours,
+  onEventClick,
+  onTimeSlotClick,
+  getEventStyle,
+}: WeekViewProps) {
   const startOfWeek = new Date(currentDate);
   startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-  
+
   const days = Array.from({ length: 7 }, (_, i) => {
     const day = new Date(startOfWeek);
     day.setDate(startOfWeek.getDate() + i);
@@ -472,68 +564,64 @@ function WeekView({ currentDate, events, workingHours, onEventClick, onTimeSlotC
   const workingEndHour = parseInt(workingHours.end.split(':')[0]);
 
   const getEventsForDateAndHour = (date: Date, hour: number) => {
-    return events.filter(event => {
+    return events.filter((event) => {
       const eventDate = new Date(event.startTime);
-      return eventDate.toDateString() === date.toDateString() &&
-             eventDate.getHours() <= hour &&
-             new Date(event.endTime).getHours() > hour;
+      return (
+        eventDate.toDateString() === date.toDateString() &&
+        eventDate.getHours() <= hour &&
+        new Date(event.endTime).getHours() > hour
+      );
     });
   };
 
   return (
     <div className="overflow-auto">
-      <div className="grid grid-cols-8 gap-1 min-w-[800px]">
+      <div className="grid min-w-[800px] grid-cols-8 gap-1">
         {/* Header */}
         <div className="p-2 text-center font-medium">Time</div>
         {days.map((day, index) => (
-          <div key={index} className="p-2 text-center font-medium border-b">
+          <div key={index} className="border-b p-2 text-center font-medium">
             <div className="text-sm">{day.toLocaleDateString([], { weekday: 'short' })}</div>
             <div className="text-xs text-muted-foreground">{day.getDate()}</div>
           </div>
         ))}
 
         {/* Time slots */}
-        {hours.map(hour => (
+        {hours.map((hour) => (
           <React.Fragment key={hour}>
-            <div className="p-2 text-xs text-muted-foreground text-right border-r">
+            <div className="border-r p-2 text-right text-xs text-muted-foreground">
               {hour.toString().padStart(2, '0')}:00
             </div>
             {days.map((day, dayIndex) => {
               const dayEvents = getEventsForDateAndHour(day, hour);
               const isWorkingHour = hour >= workingStartHour && hour < workingEndHour;
               const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-              
+
               return (
                 <div
                   key={`${dayIndex}-${hour}`}
-                  className={`
-                    min-h-[60px] p-1 border border-gray-200 cursor-pointer hover:bg-gray-50
-                    ${!isWorkingHour || isWeekend ? 'bg-gray-50' : ''}
-                  `}
+                  className={`min-h-[60px] cursor-pointer border border-gray-200 p-1 hover:bg-gray-50 ${!isWorkingHour || isWeekend ? 'bg-gray-50' : ''} `}
                   onClick={() => onTimeSlotClick?.(day, hour)}
                 >
-                  {dayEvents.map(event => (
+                  {dayEvents.map((event) => (
                     <TooltipProvider key={event.id}>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div
-                            className={`
-                              p-1 mb-1 rounded text-xs border cursor-pointer
-                              ${getEventStyle(event)}
-                            `}
+                            className={`mb-1 cursor-pointer rounded border p-1 text-xs ${getEventStyle(event)} `}
                             onClick={(e) => {
                               e.stopPropagation();
                               onEventClick?.(event);
                             }}
                           >
-                            <div className="font-medium truncate">{event.title}</div>
+                            <div className="truncate font-medium">{event.title}</div>
                             {event.location && (
                               <div className="flex items-center text-xs opacity-75">
                                 {event.location.isOnline ? (
                                   <span>Online</span>
                                 ) : (
                                   <>
-                                    <MapPin className="h-3 w-3 mr-1" />
+                                    <MapPin className="mr-1 h-3 w-3" />
                                     {event.location.name}
                                   </>
                                 )}
@@ -545,8 +633,15 @@ function WeekView({ currentDate, events, workingHours, onEventClick, onTimeSlotC
                           <div className="space-y-1">
                             <div className="font-medium">{event.title}</div>
                             <div className="text-sm">
-                              {event.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
-                              {event.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {event.startTime.toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}{' '}
+                              -
+                              {event.endTime.toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
                             </div>
                             {event.customer && (
                               <div className="text-sm">Customer: {event.customer.name}</div>
@@ -570,46 +665,49 @@ function WeekView({ currentDate, events, workingHours, onEventClick, onTimeSlotC
 }
 
 // Day View Component
-function DayView({ currentDate, events, workingHours, onEventClick, onTimeSlotClick, getEventStyle }: WeekViewProps) {
+function DayView({
+  currentDate,
+  events,
+  workingHours,
+  onEventClick,
+  onTimeSlotClick,
+  getEventStyle,
+}: WeekViewProps) {
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const workingStartHour = parseInt(workingHours.start.split(':')[0]);
   const workingEndHour = parseInt(workingHours.end.split(':')[0]);
 
   const getEventsForHour = (hour: number) => {
-    return events.filter(event => {
+    return events.filter((event) => {
       const eventDate = new Date(event.startTime);
-      return eventDate.toDateString() === currentDate.toDateString() &&
-             eventDate.getHours() <= hour &&
-             new Date(event.endTime).getHours() > hour;
+      return (
+        eventDate.toDateString() === currentDate.toDateString() &&
+        eventDate.getHours() <= hour &&
+        new Date(event.endTime).getHours() > hour
+      );
     });
   };
 
   return (
     <div className="space-y-1">
-      {hours.map(hour => {
+      {hours.map((hour) => {
         const hourEvents = getEventsForHour(hour);
         const isWorkingHour = hour >= workingStartHour && hour < workingEndHour;
-        
+
         return (
           <div
             key={hour}
-            className={`
-              flex min-h-[80px] border border-gray-200 cursor-pointer hover:bg-gray-50
-              ${!isWorkingHour ? 'bg-gray-50' : ''}
-            `}
+            className={`flex min-h-[80px] cursor-pointer border border-gray-200 hover:bg-gray-50 ${!isWorkingHour ? 'bg-gray-50' : ''} `}
             onClick={() => onTimeSlotClick?.(currentDate, hour)}
           >
-            <div className="w-20 p-2 text-sm text-muted-foreground border-r">
+            <div className="w-20 border-r p-2 text-sm text-muted-foreground">
               {hour.toString().padStart(2, '0')}:00
             </div>
             <div className="flex-1 p-2">
-              {hourEvents.map(event => (
+              {hourEvents.map((event) => (
                 <div
                   key={event.id}
-                  className={`
-                    p-2 mb-2 rounded border cursor-pointer
-                    ${getEventStyle(event)}
-                  `}
+                  className={`mb-2 cursor-pointer rounded border p-2 ${getEventStyle(event)} `}
                   onClick={(e) => {
                     e.stopPropagation();
                     onEventClick?.(event);
@@ -617,12 +715,10 @@ function DayView({ currentDate, events, workingHours, onEventClick, onTimeSlotCl
                 >
                   <div className="font-medium">{event.title}</div>
                   <div className="text-sm opacity-75">
-                    {event.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
-                    {event.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {event.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}{' '}
+                    -{event.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
-                  {event.customer && (
-                    <div className="text-sm">Customer: {event.customer.name}</div>
-                  )}
+                  {event.customer && <div className="text-sm">Customer: {event.customer.name}</div>}
                 </div>
               ))}
             </div>
@@ -654,16 +750,16 @@ function MonthView({ currentDate, events, onEventClick, getEventStyle }: MonthVi
   });
 
   const getEventsForDay = (date: Date) => {
-    return events.filter(event => 
-      new Date(event.startTime).toDateString() === date.toDateString()
+    return events.filter(
+      (event) => new Date(event.startTime).toDateString() === date.toDateString()
     );
   };
 
   return (
     <div className="grid grid-cols-7 gap-1">
       {/* Day headers */}
-      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-        <div key={day} className="p-2 text-center font-medium text-sm">
+      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+        <div key={day} className="p-2 text-center text-sm font-medium">
           {day}
         </div>
       ))}
@@ -673,25 +769,18 @@ function MonthView({ currentDate, events, onEventClick, getEventStyle }: MonthVi
         const dayEvents = getEventsForDay(day);
         const isCurrentMonth = day.getMonth() === currentDate.getMonth();
         const isToday = day.toDateString() === new Date().toDateString();
-        
+
         return (
           <div
             key={index}
-            className={`
-              min-h-[120px] p-1 border border-gray-200 cursor-pointer hover:bg-gray-50
-              ${!isCurrentMonth ? 'bg-gray-50 text-muted-foreground' : ''}
-              ${isToday ? 'bg-blue-50 border-blue-300' : ''}
-            `}
+            className={`min-h-[120px] cursor-pointer border border-gray-200 p-1 hover:bg-gray-50 ${!isCurrentMonth ? 'bg-gray-50 text-muted-foreground' : ''} ${isToday ? 'border-blue-300 bg-blue-50' : ''} `}
           >
-            <div className="text-sm font-medium mb-1">{day.getDate()}</div>
+            <div className="mb-1 text-sm font-medium">{day.getDate()}</div>
             <div className="space-y-1">
-              {dayEvents.slice(0, 3).map(event => (
+              {dayEvents.slice(0, 3).map((event) => (
                 <div
                   key={event.id}
-                  className={`
-                    p-1 rounded text-xs border cursor-pointer truncate
-                    ${getEventStyle(event)}
-                  `}
+                  className={`cursor-pointer truncate rounded border p-1 text-xs ${getEventStyle(event)} `}
                   onClick={(e) => {
                     e.stopPropagation();
                     onEventClick?.(event);
@@ -701,9 +790,7 @@ function MonthView({ currentDate, events, onEventClick, getEventStyle }: MonthVi
                 </div>
               ))}
               {dayEvents.length > 3 && (
-                <div className="text-xs text-muted-foreground">
-                  +{dayEvents.length - 3} more
-                </div>
+                <div className="text-xs text-muted-foreground">+{dayEvents.length - 3} more</div>
               )}
             </div>
           </div>

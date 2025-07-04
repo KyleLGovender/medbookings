@@ -1,17 +1,13 @@
+import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/features/auth/lib/actions';
-import { 
-  AvailabilityWithRelations, 
-  AvailabilityStatus,
-  SlotGenerationRequest,
-  SlotGenerationResult,
-} from '../types';
-import { generateSlotsForAvailability } from './slot-generator';
-import { 
-  notifyAvailabilityAccepted, 
-  notifyAvailabilityRejected, 
-  notifyAvailabilityCancelled 
+
+import { AvailabilityStatus, AvailabilityWithRelations } from '../types';
+import {
+  notifyAvailabilityAccepted,
+  notifyAvailabilityCancelled,
+  notifyAvailabilityRejected,
 } from './notification-service';
+import { generateSlotsForAvailability } from './slot-generator';
 
 export interface WorkflowResult {
   success: boolean;
@@ -103,14 +99,11 @@ export async function processAvailabilityAcceptance(
 
     // Send acceptance notifications
     try {
-      await notifyAvailabilityAccepted(
-        updatedAvailability as AvailabilityWithRelations,
-        {
-          id: currentUser.id,
-          name: currentUser.name || 'Provider',
-          role: 'PROVIDER',
-        }
-      );
+      await notifyAvailabilityAccepted(updatedAvailability as AvailabilityWithRelations, {
+        id: currentUser.id,
+        name: currentUser.name || 'Provider',
+        role: 'PROVIDER',
+      });
     } catch (notificationError) {
       console.error('Failed to send acceptance notifications:', notificationError);
       // Don't fail the entire workflow for notification errors
@@ -268,7 +261,7 @@ export async function processAvailabilityCancellation(
     }
 
     // Check permissions
-    const canCancel = 
+    const canCancel =
       currentUser.id === availability.serviceProviderId ||
       currentUser.id === availability.createdById ||
       currentUser.roles.includes('ADMIN') ||
@@ -283,7 +276,7 @@ export async function processAvailabilityCancellation(
           role: { in: ['OWNER', 'ADMIN', 'MANAGER'] },
         },
       });
-      
+
       if (!membership) {
         return { success: false, error: 'Insufficient permissions to cancel this availability' };
       }
@@ -292,12 +285,12 @@ export async function processAvailabilityCancellation(
     }
 
     // Check for existing bookings
-    const bookedSlots = availability.calculatedSlots?.filter(slot => slot.booking) || [];
-    
+    const bookedSlots = availability.calculatedSlots?.filter((slot) => slot.booking) || [];
+
     if (bookedSlots.length > 0) {
-      return { 
-        success: false, 
-        error: `Cannot cancel availability with ${bookedSlots.length} existing booking(s). Cancel the bookings first.` 
+      return {
+        success: false,
+        error: `Cannot cancel availability with ${bookedSlots.length} existing booking(s). Cancel the bookings first.`,
       };
     }
 
@@ -331,14 +324,11 @@ export async function processAvailabilityCancellation(
 
     // Send cancellation notifications
     try {
-      await notifyAvailabilityCancelled(
-        updatedAvailability as AvailabilityWithRelations,
-        {
-          id: currentUser.id,
-          name: currentUser.name || 'User',
-          role: currentUser.id === availability.serviceProviderId ? 'PROVIDER' : 'ORGANIZATION',
-        }
-      );
+      await notifyAvailabilityCancelled(updatedAvailability as AvailabilityWithRelations, {
+        id: currentUser.id,
+        name: currentUser.name || 'User',
+        role: currentUser.id === availability.serviceProviderId ? 'PROVIDER' : 'ORGANIZATION',
+      });
     } catch (notificationError) {
       console.error('Failed to send cancellation notifications:', notificationError);
       // Don't fail the entire workflow for notification errors
@@ -433,14 +423,11 @@ export async function processRecurringSeriesAcceptance(
 
     // Send notifications for series acceptance
     try {
-      await notifyAvailabilityAccepted(
-        masterAvailability as AvailabilityWithRelations,
-        {
-          id: currentUser.id,
-          name: currentUser.name || 'Provider',
-          role: 'PROVIDER',
-        }
-      );
+      await notifyAvailabilityAccepted(masterAvailability as AvailabilityWithRelations, {
+        id: currentUser.id,
+        name: currentUser.name || 'Provider',
+        role: 'PROVIDER',
+      });
     } catch (notificationError) {
       console.error('Failed to send series acceptance notifications:', notificationError);
     }
@@ -475,9 +462,10 @@ export async function getWorkflowStatistics(
   utilizationRate: number;
 }> {
   try {
-    const whereClause = entityType === 'organization' 
-      ? { organizationId: entityId }
-      : { serviceProviderId: entityId };
+    const whereClause =
+      entityType === 'organization'
+        ? { organizationId: entityId }
+        : { serviceProviderId: entityId };
 
     const [
       totalProposals,
@@ -491,7 +479,9 @@ export async function getWorkflowStatistics(
       prisma.availability.count({ where: { ...whereClause, status: AvailabilityStatus.PENDING } }),
       prisma.availability.count({ where: { ...whereClause, status: AvailabilityStatus.ACTIVE } }),
       prisma.availability.count({ where: { ...whereClause, status: AvailabilityStatus.REJECTED } }),
-      prisma.availability.count({ where: { ...whereClause, status: AvailabilityStatus.CANCELLED } }),
+      prisma.availability.count({
+        where: { ...whereClause, status: AvailabilityStatus.CANCELLED },
+      }),
       prisma.calculatedAvailabilitySlot.aggregate({
         where: {
           availability: whereClause,
@@ -508,7 +498,7 @@ export async function getWorkflowStatistics(
     });
 
     const totalSlotsGenerated = slotStats._count.id || 0;
-    const utilizationRate = totalSlotsGenerated > 0 ? (bookedSlots / totalSlotsGenerated) : 0;
+    const utilizationRate = totalSlotsGenerated > 0 ? bookedSlots / totalSlotsGenerated : 0;
 
     return {
       totalProposals,

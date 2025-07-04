@@ -1,12 +1,13 @@
 import { z } from 'zod';
-import { 
-  SchedulingRule, 
-  AvailabilityStatus, 
-  SlotStatus, 
-  BillingEntity,
-  RecurrenceType,
-  DayOfWeek,
+
+import {
   AvailabilityContext,
+  AvailabilityStatus,
+  BillingEntity,
+  DayOfWeek,
+  RecurrenceType,
+  SchedulingRule,
+  SlotStatus,
 } from './enums';
 
 // Base Zod schemas for enums
@@ -25,9 +26,18 @@ export const recurrencePatternSchema = z.object({
   daysOfWeek: z.array(dayOfWeekSchema).optional(),
   dayOfMonth: z.number().int().min(1).max(31).optional(),
   weekOfMonth: z.number().int().min(-1).max(4).optional(),
-  startTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-  endTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  startTime: z
+    .string()
+    .regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+    .optional(),
+  endTime: z
+    .string()
+    .regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+    .optional(),
+  endDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   count: z.number().int().positive().optional(),
   exceptions: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
 });
@@ -55,8 +65,8 @@ export const serviceConfigSchema = z.object({
   locationId: z.string().uuid().optional(),
 });
 
-// Create availability data schema
-export const createAvailabilityDataSchema = z.object({
+// Base availability object schema (without refinements)
+const baseAvailabilitySchema = z.object({
   serviceProviderId: z.string().uuid(),
   organizationId: z.string().uuid().optional(),
   locationId: z.string().uuid().optional(),
@@ -73,81 +83,107 @@ export const createAvailabilityDataSchema = z.object({
   billingEntity: billingEntitySchema.optional(),
   defaultSubscriptionId: z.string().uuid().optional(),
   services: z.array(serviceConfigSchema).min(1),
-}).refine(
-  (data) => data.endTime > data.startTime,
-  { message: 'End time must be after start time', path: ['endTime'] }
-).refine(
-  (data) => !data.isRecurring || data.recurrencePattern,
-  { message: 'Recurrence pattern required for recurring availability', path: ['recurrencePattern'] }
-).refine(
-  (data) => data.schedulingRule !== SchedulingRule.CUSTOM_INTERVAL || data.schedulingInterval,
-  { message: 'Scheduling interval required for custom interval rule', path: ['schedulingInterval'] }
-);
+});
+
+type BaseAvailabilityData = z.infer<typeof baseAvailabilitySchema>;
+
+// Create availability data schema
+export const createAvailabilityDataSchema = baseAvailabilitySchema
+  .refine((data: BaseAvailabilityData) => data.endTime > data.startTime, {
+    message: 'End time must be after start time',
+    path: ['endTime'],
+  })
+  .refine((data: BaseAvailabilityData) => !data.isRecurring || data.recurrencePattern, {
+    message: 'Recurrence pattern required for recurring availability',
+    path: ['recurrencePattern'],
+  })
+  .refine(
+    (data: BaseAvailabilityData) =>
+      data.schedulingRule !== SchedulingRule.CUSTOM_INTERVAL || data.schedulingInterval,
+    {
+      message: 'Scheduling interval required for custom interval rule',
+      path: ['schedulingInterval'],
+    }
+  );
 
 // Update availability data schema
-export const updateAvailabilityDataSchema = createAvailabilityDataSchema
-  .partial()
-  .extend({
-    id: z.string().uuid(),
-  });
+export const updateAvailabilityDataSchema = baseAvailabilitySchema.partial().extend({
+  id: z.string().uuid(),
+});
 
 // Availability search parameters schema
-export const availabilitySearchParamsSchema = z.object({
-  serviceProviderId: z.string().uuid().optional(),
-  organizationId: z.string().uuid().optional(),
-  locationId: z.string().uuid().optional(),
-  serviceId: z.string().uuid().optional(),
-  startDate: z.date().optional(),
-  endDate: z.date().optional(),
-  isOnlineAvailable: z.boolean().optional(),
-  status: availabilityStatusSchema.optional(),
-  schedulingRule: schedulingRuleSchema.optional(),
-  seriesId: z.string().uuid().optional(),
-}).refine(
-  (data) => !data.startDate || !data.endDate || data.endDate >= data.startDate,
-  { message: 'End date must be after or equal to start date', path: ['endDate'] }
-);
+export const availabilitySearchParamsSchema = z
+  .object({
+    serviceProviderId: z.string().uuid().optional(),
+    organizationId: z.string().uuid().optional(),
+    locationId: z.string().uuid().optional(),
+    serviceId: z.string().uuid().optional(),
+    startDate: z.date().optional(),
+    endDate: z.date().optional(),
+    isOnlineAvailable: z.boolean().optional(),
+    status: availabilityStatusSchema.optional(),
+    schedulingRule: schedulingRuleSchema.optional(),
+    seriesId: z.string().uuid().optional(),
+  })
+  .refine((data) => !data.startDate || !data.endDate || data.endDate >= data.startDate, {
+    message: 'End date must be after or equal to start date',
+    path: ['endDate'],
+  });
 
 // Slot search parameters schema
-export const slotSearchParamsSchema = z.object({
-  serviceProviderId: z.string().uuid().optional(),
-  organizationId: z.string().uuid().optional(),
-  locationId: z.string().uuid().optional(),
-  serviceId: z.string().uuid().optional(),
-  startDate: z.date().optional(),
-  endDate: z.date().optional(),
-  isOnlineAvailable: z.boolean().optional(),
-  status: slotStatusSchema.optional(),
-  minDuration: z.number().int().positive().optional(),
-  maxDuration: z.number().int().positive().optional(),
-  maxDistance: z.number().positive().optional(),
-  coordinates: z.object({
-    lat: z.number().min(-90).max(90),
-    lng: z.number().min(-180).max(180),
-  }).optional(),
-}).refine(
-  (data) => !data.startDate || !data.endDate || data.endDate >= data.startDate,
-  { message: 'End date must be after or equal to start date', path: ['endDate'] }
-).refine(
-  (data) => !data.minDuration || !data.maxDuration || data.maxDuration >= data.minDuration,
-  { message: 'Max duration must be greater than or equal to min duration', path: ['maxDuration'] }
-);
+export const slotSearchParamsSchema = z
+  .object({
+    serviceProviderId: z.string().uuid().optional(),
+    organizationId: z.string().uuid().optional(),
+    locationId: z.string().uuid().optional(),
+    serviceId: z.string().uuid().optional(),
+    startDate: z.date().optional(),
+    endDate: z.date().optional(),
+    isOnlineAvailable: z.boolean().optional(),
+    status: slotStatusSchema.optional(),
+    minDuration: z.number().int().positive().optional(),
+    maxDuration: z.number().int().positive().optional(),
+    maxDistance: z.number().positive().optional(),
+    coordinates: z
+      .object({
+        lat: z.number().min(-90).max(90),
+        lng: z.number().min(-180).max(180),
+      })
+      .optional(),
+  })
+  .refine((data) => !data.startDate || !data.endDate || data.endDate >= data.startDate, {
+    message: 'End date must be after or equal to start date',
+    path: ['endDate'],
+  })
+  .refine(
+    (data) => !data.minDuration || !data.maxDuration || data.maxDuration >= data.minDuration,
+    { message: 'Max duration must be greater than or equal to min duration', path: ['maxDuration'] }
+  );
 
 // Scheduling rule configuration schema
-export const schedulingRuleConfigSchema = z.object({
-  rule: schedulingRuleSchema,
-  interval: z.number().int().positive().optional(),
-  alignToHour: z.boolean().optional(),
-  alignToHalfHour: z.boolean().optional(),
-  alignToQuarterHour: z.boolean().optional(),
-}).refine(
-  (data) => data.rule !== SchedulingRule.CUSTOM_INTERVAL || data.interval,
-  { message: 'Interval required for custom interval rule', path: ['interval'] }
-).refine(
-  (data) => data.rule !== SchedulingRule.FIXED_INTERVAL || 
-    data.alignToHour || data.alignToHalfHour || data.alignToQuarterHour,
-  { message: 'At least one alignment option required for fixed interval rule', path: ['alignToHour'] }
-);
+export const schedulingRuleConfigSchema = z
+  .object({
+    rule: schedulingRuleSchema,
+    interval: z.number().int().positive().optional(),
+    alignToHour: z.boolean().optional(),
+    alignToHalfHour: z.boolean().optional(),
+    alignToQuarterHour: z.boolean().optional(),
+  })
+  .refine((data) => data.rule !== SchedulingRule.CUSTOM_INTERVAL || data.interval, {
+    message: 'Interval required for custom interval rule',
+    path: ['interval'],
+  })
+  .refine(
+    (data) =>
+      data.rule !== SchedulingRule.FIXED_INTERVAL ||
+      data.alignToHour ||
+      data.alignToHalfHour ||
+      data.alignToQuarterHour,
+    {
+      message: 'At least one alignment option required for fixed interval rule',
+      path: ['alignToHour'],
+    }
+  );
 
 // Slot generation request schema
 export const slotGenerationRequestSchema = z.object({
@@ -161,7 +197,7 @@ export const availabilityConflictSchema = z.object({
     'OVERLAPPING_AVAILABILITY',
     'PROVIDER_UNAVAILABLE',
     'LOCATION_UNAVAILABLE',
-    'CALENDAR_CONFLICT'
+    'CALENDAR_CONFLICT',
   ]),
   conflictingAvailabilityId: z.string().uuid().optional(),
   conflictingEventId: z.string().uuid().optional(),
@@ -183,7 +219,9 @@ export const availabilityBillingContextSchema = z.object({
 
 // Form schemas for UI components
 export const availabilityFormSchema = createAvailabilityDataSchema;
-export const availabilityUpdateFormSchema = updateAvailabilityDataSchema;
+export const availabilityUpdateFormSchema = baseAvailabilitySchema.partial().extend({
+  id: z.string().uuid(),
+});
 export const availabilitySearchFormSchema = availabilitySearchParamsSchema;
 export const slotSearchFormSchema = slotSearchParamsSchema;
 
