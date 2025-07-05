@@ -1,12 +1,29 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
 import {
-  CreateAvailabilityData,
-  UpdateAvailabilityData,
   AvailabilitySearchParams,
   AvailabilityWithRelations,
+  CreateAvailabilityData,
+  UpdateAvailabilityData,
 } from '../types';
+
+// Add context type definitions at the top of the file
+type UpdateAvailabilityContext = {
+  previousAvailability: any;
+  availabilityId: string;
+};
+
+type AcceptAvailabilityContext = {
+  previousAvailability: any;
+  availabilityId: string;
+};
+
+type RejectAvailabilityContext = {
+  previousAvailability: any;
+  availabilityId: string;
+};
 
 // Query hooks
 export function useAvailabilityById(availabilityId: string | undefined) {
@@ -16,14 +33,14 @@ export function useAvailabilityById(availabilityId: string | undefined) {
       if (!availabilityId) {
         throw new Error('Availability ID is required');
       }
-      
+
       const response = await fetch(`/api/calendar/availability/${availabilityId}`);
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to fetch availability');
       }
-      
+
       return response.json();
     },
     enabled: !!availabilityId,
@@ -35,7 +52,7 @@ export function useAvailabilitySearch(params: AvailabilitySearchParams) {
     queryKey: ['availability', 'search', params],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
-      
+
       if (params.serviceProviderId) searchParams.set('serviceProviderId', params.serviceProviderId);
       if (params.organizationId) searchParams.set('organizationId', params.organizationId);
       if (params.locationId) searchParams.set('locationId', params.locationId);
@@ -46,12 +63,12 @@ export function useAvailabilitySearch(params: AvailabilitySearchParams) {
       if (params.seriesId) searchParams.set('seriesId', params.seriesId);
 
       const response = await fetch(`/api/calendar/availability?${searchParams.toString()}`);
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to search availability');
       }
-      
+
       return response.json();
     },
   });
@@ -64,14 +81,16 @@ export function useProviderAvailability(serviceProviderId: string | undefined) {
       if (!serviceProviderId) {
         throw new Error('Service provider ID is required');
       }
-      
-      const response = await fetch(`/api/calendar/availability?serviceProviderId=${serviceProviderId}`);
-      
+
+      const response = await fetch(
+        `/api/calendar/availability?serviceProviderId=${serviceProviderId}`
+      );
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to fetch provider availability');
       }
-      
+
       return response.json();
     },
     enabled: !!serviceProviderId,
@@ -85,14 +104,14 @@ export function useOrganizationAvailability(organizationId: string | undefined) 
       if (!organizationId) {
         throw new Error('Organization ID is required');
       }
-      
+
       const response = await fetch(`/api/calendar/availability?organizationId=${organizationId}`);
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to fetch organization availability');
       }
-      
+
       return response.json();
     },
     enabled: !!organizationId,
@@ -106,14 +125,14 @@ export function useAvailabilitySeries(seriesId: string | undefined) {
       if (!seriesId) {
         throw new Error('Series ID is required');
       }
-      
+
       const response = await fetch(`/api/calendar/availability?seriesId=${seriesId}`);
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to fetch availability series');
       }
-      
+
       return response.json();
     },
     enabled: !!seriesId,
@@ -147,20 +166,22 @@ export function useCreateAvailability(options?: {
     onSuccess: (data, variables) => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['availability'] });
-      queryClient.invalidateQueries({ queryKey: ['availability', 'provider', variables.serviceProviderId] });
-      
+      queryClient.invalidateQueries({
+        queryKey: ['availability', 'provider', variables.serviceProviderId],
+      });
+
       if (variables.organizationId) {
-        queryClient.invalidateQueries({ 
-          queryKey: ['availability', 'organization', variables.organizationId] 
+        queryClient.invalidateQueries({
+          queryKey: ['availability', 'organization', variables.organizationId],
         });
       }
-      
+
       if (variables.seriesId) {
-        queryClient.invalidateQueries({ 
-          queryKey: ['availability', 'series', variables.seriesId] 
+        queryClient.invalidateQueries({
+          queryKey: ['availability', 'series', variables.seriesId],
         });
       }
-      
+
       options?.onSuccess?.(data, variables);
     },
     onError: options?.onError,
@@ -173,7 +194,12 @@ export function useUpdateAvailability(options?: {
 }) {
   const queryClient = useQueryClient();
 
-  return useMutation<AvailabilityWithRelations, Error, UpdateAvailabilityData>({
+  return useMutation<
+    AvailabilityWithRelations,
+    Error,
+    UpdateAvailabilityData,
+    UpdateAvailabilityContext
+  >({
     mutationFn: async (data) => {
       const response = await fetch('/api/calendar/availability/update', {
         method: 'PUT',
@@ -212,18 +238,18 @@ export function useUpdateAvailability(options?: {
     onSuccess: (data, variables) => {
       // Update the specific availability in cache
       queryClient.setQueryData(['availability', variables.id], data);
-      
+
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['availability', 'search'] });
       queryClient.invalidateQueries({ queryKey: ['availability', 'provider'] });
       queryClient.invalidateQueries({ queryKey: ['availability', 'organization'] });
-      
+
       if (data.seriesId) {
-        queryClient.invalidateQueries({ 
-          queryKey: ['availability', 'series', data.seriesId] 
+        queryClient.invalidateQueries({
+          queryKey: ['availability', 'series', data.seriesId],
         });
       }
-      
+
       options?.onSuccess?.(data, variables);
     },
     onError: (error, variables, context) => {
@@ -234,7 +260,7 @@ export function useUpdateAvailability(options?: {
           context.previousAvailability
         );
       }
-      
+
       options?.onError?.(error);
     },
   });
@@ -260,10 +286,10 @@ export function useDeleteAvailability(options?: {
     onSuccess: (_, variables) => {
       // Invalidate all availability queries
       queryClient.invalidateQueries({ queryKey: ['availability'] });
-      
+
       // Remove the specific availability from cache
       queryClient.removeQueries({ queryKey: ['availability', variables.id] });
-      
+
       options?.onSuccess?.(variables);
     },
     onError: options?.onError,
@@ -276,7 +302,7 @@ export function useAcceptAvailabilityProposal(options?: {
 }) {
   const queryClient = useQueryClient();
 
-  return useMutation<AvailabilityWithRelations, Error, { id: string }>({
+  return useMutation<AvailabilityWithRelations, Error, { id: string }, AcceptAvailabilityContext>({
     mutationFn: async ({ id }) => {
       const response = await fetch('/api/calendar/availability/accept', {
         method: 'POST',
@@ -316,12 +342,12 @@ export function useAcceptAvailabilityProposal(options?: {
     onSuccess: (data, variables) => {
       // Update the specific availability in cache
       queryClient.setQueryData(['availability', variables.id], data);
-      
+
       // Invalidate provider and organization availability lists
       queryClient.invalidateQueries({ queryKey: ['availability', 'provider'] });
       queryClient.invalidateQueries({ queryKey: ['availability', 'organization'] });
       queryClient.invalidateQueries({ queryKey: ['availability', 'search'] });
-      
+
       options?.onSuccess?.(data, variables);
     },
     onError: (error, variables, context) => {
@@ -332,7 +358,7 @@ export function useAcceptAvailabilityProposal(options?: {
           context.previousAvailability
         );
       }
-      
+
       options?.onError?.(error);
     },
   });
@@ -344,7 +370,7 @@ export function useRejectAvailabilityProposal(options?: {
 }) {
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, { id: string; reason?: string }>({
+  return useMutation<void, Error, { id: string; reason?: string }, RejectAvailabilityContext>({
     mutationFn: async ({ id, reason }) => {
       const response = await fetch('/api/calendar/availability/reject', {
         method: 'POST',
@@ -383,7 +409,7 @@ export function useRejectAvailabilityProposal(options?: {
       queryClient.invalidateQueries({ queryKey: ['availability', 'provider'] });
       queryClient.invalidateQueries({ queryKey: ['availability', 'organization'] });
       queryClient.invalidateQueries({ queryKey: ['availability', 'search'] });
-      
+
       options?.onSuccess?.(variables);
     },
     onError: (error, variables, context) => {
@@ -394,7 +420,7 @@ export function useRejectAvailabilityProposal(options?: {
           context.previousAvailability
         );
       }
-      
+
       options?.onError?.(error);
     },
   });

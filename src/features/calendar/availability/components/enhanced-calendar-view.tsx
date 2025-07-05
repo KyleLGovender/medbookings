@@ -1,24 +1,25 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { CalendarNavigation, CalendarViewMode, RecurringPatternView } from './calendar-navigation';
-import { CalendarFiltersPanel, CalendarFilters } from './calendar-filters-panel';
-import { OrganizationCalendarView, OrganizationProvider } from './organization-calendar-view';
-import { ProviderCalendarView } from './provider-calendar-view';
-import { CalendarEvent } from './provider-calendar-view';
-import { CoverageGap } from '../lib/coverage-gap-analyzer';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useMemo, useState } from 'react';
+
+import { Calendar as CalendarIcon, Eye, EyeOff, Filter } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Filter, Users, User, Eye, EyeOff, Calendar as CalendarIcon } from 'lucide-react';
-import { AvailabilityStatus, SlotStatus, SchedulingRule } from '../types';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+
+import { CoverageGap } from '../lib/coverage-gap-analyzer';
+import { AvailabilityStatus, SlotStatus } from '../types';
+import { CalendarFilters, CalendarFiltersPanel } from './calendar-filters-panel';
+import { CalendarNavigation, CalendarViewMode, RecurringPatternView } from './calendar-navigation';
+import { OrganizationCalendarView, OrganizationProvider } from './organization-calendar-view';
+import { CalendarEvent, ProviderCalendarView } from './provider-calendar-view';
 
 export interface EnhancedCalendarViewProps {
   mode: 'organization' | 'provider';
   organizationId?: string;
   providerId?: string;
-  
+
   // Event handlers
   onEventClick?: (event: CalendarEvent, provider?: OrganizationProvider) => void;
   onProviderClick?: (provider: OrganizationProvider) => void;
@@ -27,14 +28,14 @@ export interface EnhancedCalendarViewProps {
   onManageProvider?: (provider: OrganizationProvider) => void;
   onGapClick?: (gap: CoverageGap) => void;
   onRecommendationClick?: (recommendation: string) => void;
-  
+
   // Configuration
   initialViewMode?: CalendarViewMode;
   initialDate?: Date;
   showFilters?: boolean;
   showCoverageGaps?: boolean;
   enableRecurringPatterns?: boolean;
-  
+
   className?: string;
 }
 
@@ -60,7 +61,7 @@ export function EnhancedCalendarView({
   const [currentDate, setCurrentDate] = useState(initialDate);
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialViewMode);
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
-  
+
   // Filter state
   const [filters, setFilters] = useState<CalendarFilters>({
     selectedProviders: [],
@@ -100,10 +101,25 @@ export function EnhancedCalendarView({
 
   function generateMockProviders() {
     return [
-      { id: 'p1', name: 'Dr. Sarah Johnson', type: 'General Practitioner', specialization: 'Family Medicine' },
+      {
+        id: 'p1',
+        name: 'Dr. Sarah Johnson',
+        type: 'General Practitioner',
+        specialization: 'Family Medicine',
+      },
       { id: 'p2', name: 'Dr. Michael Chen', type: 'Cardiologist', specialization: 'Heart Disease' },
-      { id: 'p3', name: 'Dr. Emily Rodriguez', type: 'Pediatrician', specialization: 'Child Health' },
-      { id: 'p4', name: 'Dr. James Wilson', type: 'Orthopedist', specialization: 'Sports Medicine' },
+      {
+        id: 'p3',
+        name: 'Dr. Emily Rodriguez',
+        type: 'Pediatrician',
+        specialization: 'Child Health',
+      },
+      {
+        id: 'p4',
+        name: 'Dr. James Wilson',
+        type: 'Orthopedist',
+        specialization: 'Sports Medicine',
+      },
       { id: 'p5', name: 'Dr. Lisa Thompson', type: 'Dermatologist', specialization: 'Skin Care' },
     ];
   }
@@ -144,11 +160,11 @@ export function EnhancedCalendarView({
 
   // Filter events based on current filters
   const applyFilters = (events: CalendarEvent[], providers: OrganizationProvider[]) => {
-    return events.filter(event => {
+    return events.filter((event) => {
       // Text search
       if (filters.searchText) {
         const searchLower = filters.searchText.toLowerCase();
-        const matchesSearch = 
+        const matchesSearch =
           event.title.toLowerCase().includes(searchLower) ||
           event.notes?.toLowerCase().includes(searchLower) ||
           event.customer?.name.toLowerCase().includes(searchLower) ||
@@ -158,7 +174,8 @@ export function EnhancedCalendarView({
 
       // Availability status
       if (filters.availabilityStatuses.length > 0 && event.type === 'availability') {
-        if (!filters.availabilityStatuses.includes(event.status as AvailabilityStatus)) return false;
+        if (!filters.availabilityStatuses.includes(event.status as AvailabilityStatus))
+          return false;
       }
 
       // Booking status
@@ -179,7 +196,11 @@ export function EnhancedCalendarView({
       if (event.location) {
         if (filters.showOnlineOnly && !event.location.isOnline) return false;
         if (filters.showInPersonOnly && event.location.isOnline) return false;
-        if (filters.selectedLocations.length > 0 && !filters.selectedLocations.includes(event.location.id)) return false;
+        if (
+          filters.selectedLocations.length > 0 &&
+          !filters.selectedLocations.includes(event.location.id)
+        )
+          return false;
       }
 
       // Time filters
@@ -190,7 +211,8 @@ export function EnhancedCalendarView({
 
       const startTimeStr = event.startTime.toTimeString().slice(0, 5);
       const endTimeStr = event.endTime.toTimeString().slice(0, 5);
-      if (startTimeStr < filters.timeRange.start || endTimeStr > filters.timeRange.end) return false;
+      if (startTimeStr < filters.timeRange.start || endTimeStr > filters.timeRange.end)
+        return false;
 
       // Booking specific filters
       if (event.type === 'booking') {
@@ -224,11 +246,11 @@ export function EnhancedCalendarView({
   };
 
   const handleSeriesSelect = (seriesId: string) => {
-    setRecurringView(prev => ({
+    setRecurringView((prev) => ({
       ...prev,
       expandSeries: prev.expandSeries.includes(seriesId)
-        ? prev.expandSeries.filter(id => id !== seriesId)
-        : [...prev.expandSeries, seriesId]
+        ? prev.expandSeries.filter((id) => id !== seriesId)
+        : [...prev.expandSeries, seriesId],
     }));
   };
 
@@ -238,7 +260,7 @@ export function EnhancedCalendarView({
   };
 
   const handleShare = () => {
-    // TODO: Implement calendar sharing functionality  
+    // TODO: Implement calendar sharing functionality
     console.log('Share calendar');
   };
 
@@ -268,19 +290,19 @@ export function EnhancedCalendarView({
         showQuickNav={true}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
         {/* Filters Sidebar */}
         {showFilters && (
           <div className="lg:col-span-1">
             {/* Mobile filter toggle */}
-            <div className="lg:hidden mb-4">
+            <div className="mb-4 lg:hidden">
               <Button
                 variant="outline"
                 onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
                 className="w-full justify-between"
               >
                 <div className="flex items-center">
-                  <Filter className="h-4 w-4 mr-2" />
+                  <Filter className="mr-2 h-4 w-4" />
                   Filters
                   {activeFiltersCount > 0 && (
                     <Badge variant="secondary" className="ml-2">
@@ -321,27 +343,29 @@ export function EnhancedCalendarView({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setFilters({
-                      selectedProviders: [],
-                      providerTypes: [],
-                      availabilityStatuses: [],
-                      schedulingRules: [],
-                      showRecurring: true,
-                      showOneTime: true,
-                      bookingStatuses: [],
-                      showConfirmedOnly: false,
-                      showPendingOnly: false,
-                      selectedLocations: [],
-                      showOnlineOnly: false,
-                      showInPersonOnly: false,
-                      workingHoursOnly: false,
-                      dateRange: { start: null, end: null },
-                      timeRange: { start: '00:00', end: '23:59' },
-                      showSeriesOnly: false,
-                      showIndividualOnly: false,
-                      seriesIds: [],
-                      searchText: '',
-                    })}
+                    onClick={() =>
+                      setFilters({
+                        selectedProviders: [],
+                        providerTypes: [],
+                        availabilityStatuses: [],
+                        schedulingRules: [],
+                        showRecurring: true,
+                        showOneTime: true,
+                        bookingStatuses: [],
+                        showConfirmedOnly: false,
+                        showPendingOnly: false,
+                        selectedLocations: [],
+                        showOnlineOnly: false,
+                        showInPersonOnly: false,
+                        workingHoursOnly: false,
+                        dateRange: { start: null, end: null },
+                        timeRange: { start: '00:00', end: '23:59' },
+                        showSeriesOnly: false,
+                        showIndividualOnly: false,
+                        seriesIds: [],
+                        searchText: '',
+                      })
+                    }
                   >
                     Clear all
                   </Button>
@@ -377,7 +401,7 @@ export function EnhancedCalendarView({
           ) : (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
-                <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <CalendarIcon className="mx-auto mb-4 h-12 w-12 opacity-50" />
                 <p>Please provide either organizationId or providerId</p>
               </CardContent>
             </Card>

@@ -1,14 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, Settings, Palette, Info } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+
+import { EyeOff, Info, Palette, Settings } from 'lucide-react';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+
 import { VisualIndicatorConfig, VisualIndicatorLegend } from './calendar-visual-indicators';
 
 interface VisualIndicatorsConfigProps {
@@ -31,7 +34,7 @@ export function VisualIndicatorsConfig({
   };
 
   const getActiveIndicatorsCount = () => {
-    return Object.values(config).filter(value => value === true).length;
+    return Object.values(config).filter((value) => value === true).length;
   };
 
   const resetToDefaults = () => {
@@ -84,10 +87,10 @@ export function VisualIndicatorsConfig({
           onClick={() => setIsExpanded(true)}
           className="relative"
         >
-          <Palette className="h-4 w-4 mr-2" />
+          <Palette className="mr-2 h-4 w-4" />
           Visual Indicators
           {activeCount > 0 && (
-            <Badge variant="secondary" className="ml-2 px-1 py-0 text-xs h-5 w-5 rounded-full">
+            <Badge variant="secondary" className="ml-2 h-5 w-5 rounded-full px-1 py-0 text-xs">
               {activeCount}
             </Badge>
           )}
@@ -101,7 +104,7 @@ export function VisualIndicatorsConfig({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
               <Palette className="h-4 w-4" />
               Visual Indicators Configuration
               <Badge variant="secondary" className="ml-2">
@@ -110,7 +113,7 @@ export function VisualIndicatorsConfig({
             </CardTitle>
             <div className="flex items-center space-x-2">
               <Button variant="ghost" size="sm" onClick={() => setIsExpanded(false)}>
-                <EyeOff className="h-4 w-4 mr-1" />
+                <EyeOff className="mr-1 h-4 w-4" />
                 Collapse
               </Button>
             </div>
@@ -121,7 +124,7 @@ export function VisualIndicatorsConfig({
           {/* Quick Presets */}
           <div>
             <Label className="text-sm font-medium">Quick Presets</Label>
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="mt-2 flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={resetToDefaults}>
                 Default
               </Button>
@@ -139,8 +142,8 @@ export function VisualIndicatorsConfig({
           {/* Core Indicators */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">Core Indicators</Label>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="flex items-center justify-between">
                 <div>
                   <Label htmlFor="status-indicators" className="text-sm">
@@ -162,9 +165,7 @@ export function VisualIndicatorsConfig({
                   <Label htmlFor="scheduling-rules" className="text-sm">
                     Scheduling Rules
                   </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Show scheduling rule icons
-                  </p>
+                  <p className="text-xs text-muted-foreground">Show scheduling rule icons</p>
                 </div>
                 <Switch
                   id="scheduling-rules"
@@ -178,9 +179,7 @@ export function VisualIndicatorsConfig({
                   <Label htmlFor="recurring-patterns" className="text-sm">
                     Recurring Patterns
                   </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Show recurring series badges
-                  </p>
+                  <p className="text-xs text-muted-foreground">Show recurring series badges</p>
                 </div>
                 <Switch
                   id="recurring-patterns"
@@ -194,9 +193,7 @@ export function VisualIndicatorsConfig({
                   <Label htmlFor="location-icons" className="text-sm">
                     Location Icons
                   </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Show online/in-person indicators
-                  </p>
+                  <p className="text-xs text-muted-foreground">Show online/in-person indicators</p>
                 </div>
                 <Switch
                   id="location-icons"
@@ -212,16 +209,14 @@ export function VisualIndicatorsConfig({
           {/* Advanced Indicators */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">Advanced Indicators</Label>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="flex items-center justify-between">
                 <div>
                   <Label htmlFor="duration-badges" className="text-sm">
                     Duration Badges
                   </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Show appointment duration
-                  </p>
+                  <p className="text-xs text-muted-foreground">Show appointment duration</p>
                 </div>
                 <Switch
                   id="duration-badges"
@@ -235,9 +230,7 @@ export function VisualIndicatorsConfig({
                   <Label htmlFor="priority-indicators" className="text-sm">
                     Priority Indicators
                   </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Show priority levels with colors
-                  </p>
+                  <p className="text-xs text-muted-foreground">Show priority levels with colors</p>
                 </div>
                 <Switch
                   id="priority-indicators"
@@ -253,7 +246,7 @@ export function VisualIndicatorsConfig({
           {/* Display Options */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">Display Options</Label>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="compact-mode" className="text-sm">
@@ -275,17 +268,15 @@ export function VisualIndicatorsConfig({
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription className="text-sm">
-              Visual indicators help differentiate between availability types, statuses, and scheduling rules. 
-              Enable compact mode for mobile or dense calendar views.
+              Visual indicators help differentiate between availability types, statuses, and
+              scheduling rules. Enable compact mode for mobile or dense calendar views.
             </AlertDescription>
           </Alert>
         </CardContent>
       </Card>
 
       {/* Legend Preview */}
-      {showPreview && activeCount > 0 && (
-        <VisualIndicatorLegend config={config} />
-      )}
+      {showPreview && activeCount > 0 && <VisualIndicatorLegend config={config} />}
     </div>
   );
 }
@@ -299,22 +290,24 @@ interface IndicatorUsageStatsProps {
 export function IndicatorUsageStats({ events, config }: IndicatorUsageStatsProps) {
   const stats = {
     totalEvents: events.length,
-    withStatusIcons: events.filter(e => config.showStatusIndicators).length,
-    withSchedulingRules: events.filter(e => config.showSchedulingRuleIcons && e.schedulingRule).length,
-    withRecurringBadges: events.filter(e => config.showRecurringPatternBadges && e.isRecurring).length,
-    withLocationIcons: events.filter(e => config.showLocationIcons).length,
+    withStatusIcons: events.filter((e) => config.showStatusIndicators).length,
+    withSchedulingRules: events.filter((e) => config.showSchedulingRuleIcons && e.schedulingRule)
+      .length,
+    withRecurringBadges: events.filter((e) => config.showRecurringPatternBadges && e.isRecurring)
+      .length,
+    withLocationIcons: events.filter((e) => config.showLocationIcons).length,
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-sm">
           <Settings className="h-4 w-4" />
           Indicator Usage
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
           <div className="text-center">
             <div className="text-lg font-bold text-blue-600">{stats.totalEvents}</div>
             <div className="text-xs text-muted-foreground">Total Events</div>

@@ -1,20 +1,45 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Users, Settings, Filter, Download, Eye, Plus, MoreVertical } from 'lucide-react';
-import { useOrganization } from '@/features/organizations/hooks';
-import { useOrganizationProviderConnections } from '@/features/organizations/hooks';
-import { useOrganizationAvailability } from '../hooks';
+import { useMemo, useState } from 'react';
+
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Filter,
+  MoreVertical,
+  Plus,
+  Settings,
+  Users,
+} from 'lucide-react';
+
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  useOrganization,
+  useOrganizationProviderConnections,
+} from '@/features/organizations/hooks';
+
+import { useOrganizationAvailability } from '../hooks';
+
 // import { CalendarEvent, ProviderCalendarData } from './provider-calendar-view';
 // import { CoverageGapsPanel } from './coverage-gaps-panel';
 // import { CoverageGap } from '../lib/coverage-gap-analyzer';
@@ -134,13 +159,14 @@ export function OrganizationCalendarView({
 
   // Fetch real data from APIs
   const { data: organization, isLoading: isOrgLoading } = useOrganization(organizationId);
-  const { data: providerConnections, isLoading: isConnectionsLoading } = useOrganizationProviderConnections(organizationId);
-  
+  const { data: providerConnections, isLoading: isConnectionsLoading } =
+    useOrganizationProviderConnections(organizationId);
+
   // Calculate date range for current view
   const dateRange = useMemo(() => {
     const start = new Date(currentDate);
     const end = new Date(currentDate);
-    
+
     switch (viewMode) {
       case 'day':
         end.setDate(start.getDate() + 1);
@@ -155,11 +181,12 @@ export function OrganizationCalendarView({
         end.setDate(0);
         break;
     }
-    
+
     return { start, end };
   }, [currentDate, viewMode]);
 
-  const { data: availabilityData, isLoading: isAvailabilityLoading } = useOrganizationAvailability(organizationId);
+  const { data: availabilityData, isLoading: isAvailabilityLoading } =
+    useOrganizationAvailability(organizationId);
 
   const isLoading = isOrgLoading || isConnectionsLoading || isAvailabilityLoading;
 
@@ -170,15 +197,15 @@ export function OrganizationCalendarView({
     // Transform provider connections into organization providers
     const providers: OrganizationProvider[] = providerConnections.map((connection) => {
       const provider = connection.serviceProvider;
-      
+
       // Get availability for this provider from organization availability data
       const providerAvailability = availabilityData.filter(
-        availability => availability.serviceProviderId === provider.id
+        (availability) => availability.serviceProviderId === provider.id
       );
 
       // Transform availability into calendar events
       const events: CalendarEvent[] = [];
-      
+
       providerAvailability.forEach((availability) => {
         events.push({
           id: availability.id,
@@ -190,47 +217,59 @@ export function OrganizationCalendarView({
           schedulingRule: availability.schedulingRule,
           isRecurring: availability.isRecurring,
           seriesId: availability.seriesId || undefined,
-          location: availability.location ? {
-            id: availability.location.id,
-            name: availability.location.name,
-            isOnline: !availability.locationId,
-          } : undefined,
-          service: availability.serviceAvailabilityConfigs?.[0] ? {
-            id: availability.serviceAvailabilityConfigs[0].service.id,
-            name: availability.serviceAvailabilityConfigs[0].service.name,
-            duration: availability.serviceAvailabilityConfigs[0].duration || 30,
-            price: availability.serviceAvailabilityConfigs[0].price || 0,
-          } : undefined,
+          location: availability.location
+            ? {
+                id: availability.location.id,
+                name: availability.location.name,
+                isOnline: !availability.locationId,
+              }
+            : undefined,
+          service: availability.serviceAvailabilityConfigs?.[0]
+            ? {
+                id: availability.serviceAvailabilityConfigs[0].service.id,
+                name: availability.serviceAvailabilityConfigs[0].service.name,
+                duration: availability.serviceAvailabilityConfigs[0].duration || 30,
+                price: availability.serviceAvailabilityConfigs[0].price || 0,
+              }
+            : undefined,
         });
 
         // Add booked slots
-        availability.calculatedSlots?.filter(slot => slot.status === 'BOOKED').forEach((slot) => {
-          events.push({
-            id: slot.id,
-            type: 'booking',
-            title: `Booking - ${slot.service?.name || 'Service'}`,
-            startTime: new Date(slot.startTime),
-            endTime: new Date(slot.endTime),
-            status: slot.status,
-            location: slot.location ? {
-              id: slot.location.id,
-              name: slot.location.name,
-              isOnline: slot.isOnlineAvailable,
-            } : undefined,
-            service: slot.service ? {
-              id: slot.service.id,
-              name: slot.service.name,
-              duration: slot.duration,
-              price: slot.price,
-            } : undefined,
+        availability.calculatedSlots
+          ?.filter((slot) => slot.status === 'BOOKED')
+          .forEach((slot) => {
+            events.push({
+              id: slot.id,
+              type: 'booking',
+              title: `Booking - ${slot.service?.name || 'Service'}`,
+              startTime: new Date(slot.startTime),
+              endTime: new Date(slot.endTime),
+              status: slot.status,
+              location: slot.location
+                ? {
+                    id: slot.location.id,
+                    name: slot.location.name,
+                    isOnline: slot.isOnlineAvailable,
+                  }
+                : undefined,
+              service: slot.service
+                ? {
+                    id: slot.service.id,
+                    name: slot.service.name,
+                    duration: slot.duration,
+                    price: slot.price,
+                  }
+                : undefined,
+            });
           });
-        });
       });
 
       // Calculate stats for this provider
-      const allSlots = providerAvailability.flatMap(availability => availability.calculatedSlots || []);
-      const bookedSlots = allSlots.filter(slot => slot.status === 'BOOKED').length;
-      const availableSlots = allSlots.filter(slot => slot.status === 'AVAILABLE').length;
+      const allSlots = providerAvailability.flatMap(
+        (availability) => availability.calculatedSlots || []
+      );
+      const bookedSlots = allSlots.filter((slot) => slot.status === 'BOOKED').length;
+      const availableSlots = allSlots.filter((slot) => slot.status === 'AVAILABLE').length;
 
       return {
         id: provider.id,
@@ -239,7 +278,8 @@ export function OrganizationCalendarView({
         specialization: provider.serviceProviderType?.name,
         isActive: provider.status === 'ACTIVE',
         workingHours: { start: '09:00', end: '17:00' }, // TODO: Get from provider settings
-        utilizationRate: allSlots.length > 0 ? Math.round((bookedSlots / allSlots.length) * 100) : 0,
+        utilizationRate:
+          allSlots.length > 0 ? Math.round((bookedSlots / allSlots.length) * 100) : 0,
         totalBookings: bookedSlots,
         pendingBookings: 0, // No pending status in SlotStatus
         events,
@@ -247,34 +287,41 @@ export function OrganizationCalendarView({
     });
 
     // Calculate organization stats
-    const totalSlots = providers.reduce((acc, provider) => 
-      acc + provider.events.filter(e => e.type === 'booking').length, 0
+    const totalSlots = providers.reduce(
+      (acc, provider) => acc + provider.events.filter((e) => e.type === 'booking').length,
+      0
     );
     const totalBookings = providers.reduce((acc, provider) => acc + provider.totalBookings, 0);
     const totalPending = 0; // No pending bookings in current schema
-    const activeProviders = providers.filter(p => p.isActive).length;
+    const activeProviders = providers.filter((p) => p.isActive).length;
 
     return {
       organizationId,
       organizationName: organization.name,
       providers,
-      locations: organization.locations?.map(location => ({
-        id: location.id,
-        name: location.name,
-        address: location.address || '',
-        providerCount: providers.filter(p => 
-          p.events.some(e => e.location?.id === location.id)
-        ).length,
-      })) || [],
+      locations:
+        organization.locations?.map((location) => ({
+          id: location.id,
+          name: location.name,
+          address: location.address || '',
+          providerCount: providers.filter((p) =>
+            p.events.some((e) => e.location?.id === location.id)
+          ).length,
+        })) || [],
       stats: {
         totalProviders: providers.length,
         activeProviders,
-        totalAvailableHours: providers.reduce((acc, provider) => 
-          acc + provider.events.filter(e => e.type === 'availability').length, 0
+        totalAvailableHours: providers.reduce(
+          (acc, provider) => acc + provider.events.filter((e) => e.type === 'availability').length,
+          0
         ),
         totalBookedHours: totalBookings,
-        averageUtilization: providers.length > 0 ? 
-          Math.round(providers.reduce((acc, p) => acc + p.utilizationRate, 0) / providers.length) : 0,
+        averageUtilization:
+          providers.length > 0
+            ? Math.round(
+                providers.reduce((acc, p) => acc + p.utilizationRate, 0) / providers.length
+              )
+            : 0,
         totalPendingBookings: totalPending,
         coverageGaps: 0, // TODO: Calculate coverage gaps
       },
@@ -284,13 +331,13 @@ export function OrganizationCalendarView({
   // Initialize selected providers when data loads
   useMemo(() => {
     if (calendarData && selectedProviders.length === 0) {
-      setSelectedProviders(calendarData.providers.map(p => p.id));
+      setSelectedProviders(calendarData.providers.map((p) => p.id));
     }
   }, [calendarData, selectedProviders.length]);
 
   const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
-    
+
     switch (viewMode) {
       case 'day':
         newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
@@ -302,18 +349,18 @@ export function OrganizationCalendarView({
         newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
         break;
     }
-    
+
     setCurrentDate(newDate);
   };
 
   const getViewTitle = (): string => {
     switch (viewMode) {
       case 'day':
-        return currentDate.toLocaleDateString([], { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+        return currentDate.toLocaleDateString([], {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
         });
       case 'week':
         const startOfWeek = new Date(currentDate);
@@ -327,27 +374,25 @@ export function OrganizationCalendarView({
   };
 
   const toggleProvider = (providerId: string) => {
-    setSelectedProviders(prev => 
-      prev.includes(providerId) 
-        ? prev.filter(id => id !== providerId)
-        : [...prev, providerId]
+    setSelectedProviders((prev) =>
+      prev.includes(providerId) ? prev.filter((id) => id !== providerId) : [...prev, providerId]
     );
   };
 
   const toggleAllProviders = () => {
     if (!calendarData) return;
-    
+
     if (selectedProviders.length === calendarData.providers.length) {
       setSelectedProviders([]);
     } else {
-      setSelectedProviders(calendarData.providers.map(p => p.id));
+      setSelectedProviders(calendarData.providers.map((p) => p.id));
     }
   };
 
   const getFilteredProviders = () => {
     if (!calendarData) return [];
-    
-    return calendarData.providers.filter(provider => {
+
+    return calendarData.providers.filter((provider) => {
       if (filters.showOnlyActive && !provider.isActive) return false;
       if (filters.showOnlyWithBookings && provider.totalBookings === 0) return false;
       // Add more filters as needed
@@ -380,8 +425,8 @@ export function OrganizationCalendarView({
       <Card>
         <CardContent className="pt-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-8 w-1/3 rounded bg-gray-200"></div>
+            <div className="h-64 rounded bg-gray-200"></div>
           </div>
         </CardContent>
       </Card>
@@ -392,8 +437,8 @@ export function OrganizationCalendarView({
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center py-8 text-muted-foreground">
-            <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <div className="py-8 text-center text-muted-foreground">
+            <CalendarIcon className="mx-auto mb-4 h-12 w-12 opacity-50" />
             <p>No organization calendar data available</p>
           </div>
         </CardContent>
@@ -402,7 +447,7 @@ export function OrganizationCalendarView({
   }
 
   const filteredProviders = getFilteredProviders();
-  const displayedProviders = filteredProviders.filter(p => selectedProviders.includes(p.id));
+  const displayedProviders = filteredProviders.filter((p) => selectedProviders.includes(p.id));
 
   return (
     <div className="space-y-6">
@@ -411,7 +456,7 @@ export function OrganizationCalendarView({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="bg-blue-100 p-2 rounded-lg">
+              <div className="rounded-lg bg-blue-100 p-2">
                 <Users className="h-6 w-6 text-blue-600" />
               </div>
               <div>
@@ -419,26 +464,36 @@ export function OrganizationCalendarView({
                 <p className="text-sm text-muted-foreground">Healthcare Provider Calendar</p>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-5 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-blue-600">{calendarData.stats.averageUtilization}%</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {calendarData.stats.averageUtilization}%
+                </div>
                 <div className="text-xs text-muted-foreground">Avg Utilization</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-green-600">{calendarData.stats.activeProviders}</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {calendarData.stats.activeProviders}
+                </div>
                 <div className="text-xs text-muted-foreground">Active Providers</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-orange-600">{calendarData.stats.totalPendingBookings}</div>
+                <div className="text-2xl font-bold text-orange-600">
+                  {calendarData.stats.totalPendingBookings}
+                </div>
                 <div className="text-xs text-muted-foreground">Pending</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-purple-600">{Math.round(calendarData.stats.totalBookedHours)}</div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {Math.round(calendarData.stats.totalBookedHours)}
+                </div>
                 <div className="text-xs text-muted-foreground">Booked Hours</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-red-600">{calendarData.stats.coverageGaps}</div>
+                <div className="text-2xl font-bold text-red-600">
+                  {calendarData.stats.coverageGaps}
+                </div>
                 <div className="text-xs text-muted-foreground">Coverage Gaps</div>
               </div>
             </div>
@@ -455,14 +510,14 @@ export function OrganizationCalendarView({
                 <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <h2 className="text-lg font-semibold min-w-[200px] text-center">
+                <h2 className="min-w-[200px] text-center text-lg font-semibold">
                   {getViewTitle()}
                 </h2>
                 <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
-              
+
               <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
                 Today
               </Button>
@@ -471,10 +526,7 @@ export function OrganizationCalendarView({
             <div className="flex items-center space-x-2">
               <div className="flex items-center space-x-2">
                 <span className="text-sm">Utilization View</span>
-                <Switch
-                  checked={showUtilizationOnly}
-                  onCheckedChange={setShowUtilizationOnly}
-                />
+                <Switch checked={showUtilizationOnly} onCheckedChange={setShowUtilizationOnly} />
               </div>
 
               <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)}>
@@ -489,13 +541,13 @@ export function OrganizationCalendarView({
               </Select>
 
               <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" />
+                <Filter className="mr-2 h-4 w-4" />
                 Filter
               </Button>
 
               {onCreateAvailability && (
                 <Button size="sm" onClick={() => onCreateAvailability()}>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Add Availability
                 </Button>
               )}
@@ -507,53 +559,60 @@ export function OrganizationCalendarView({
           <div className="grid grid-cols-12 gap-4">
             {/* Provider Sidebar */}
             <div className="col-span-3 space-y-2">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex items-center justify-between">
                 <h4 className="text-sm font-medium">Providers ({displayedProviders.length})</h4>
                 <Button variant="ghost" size="sm" onClick={toggleAllProviders}>
                   {selectedProviders.length === filteredProviders.length ? 'None' : 'All'}
                 </Button>
               </div>
-              
-              <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                {filteredProviders.map(provider => (
+
+              <div className="max-h-[600px] space-y-2 overflow-y-auto">
+                {filteredProviders.map((provider) => (
                   <div
                     key={provider.id}
-                    className={`
-                      flex items-center space-x-3 p-2 rounded-lg border cursor-pointer transition-colors
-                      ${selectedProviders.includes(provider.id) 
-                        ? 'bg-blue-50 border-blue-200' 
-                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                      }
-                    `}
+                    className={`flex cursor-pointer items-center space-x-3 rounded-lg border p-2 transition-colors ${
+                      selectedProviders.includes(provider.id)
+                        ? 'border-blue-200 bg-blue-50'
+                        : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+                    } `}
                     onClick={() => toggleProvider(provider.id)}
                   >
                     <Checkbox
                       checked={selectedProviders.includes(provider.id)}
                       onChange={() => {}}
                     />
-                    
+
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="text-xs">
-                        {provider.name.split(' ').map(n => n[0]).join('')}
+                        {provider.name
+                          .split(' ')
+                          .map((n) => n[0])
+                          .join('')}
                       </AvatarFallback>
                     </Avatar>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{provider.name}</div>
-                      <div className="text-xs text-muted-foreground truncate">{provider.type}</div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{provider.name}</div>
+                      <div className="truncate text-xs text-muted-foreground">{provider.type}</div>
                       {showUtilizationOnly && (
-                        <div className="flex items-center space-x-1 mt-1">
-                          <div className="text-xs font-medium">{Math.round(provider.utilizationRate)}%</div>
-                          <div className={`
-                            text-xs px-1 py-0.5 rounded
-                            ${provider.utilizationRate > 80 
-                              ? 'bg-green-100 text-green-700' 
-                              : provider.utilizationRate > 60 
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-red-100 text-red-700'
-                            }
-                          `}>
-                            {provider.utilizationRate > 80 ? 'High' : provider.utilizationRate > 60 ? 'Med' : 'Low'}
+                        <div className="mt-1 flex items-center space-x-1">
+                          <div className="text-xs font-medium">
+                            {Math.round(provider.utilizationRate)}%
+                          </div>
+                          <div
+                            className={`rounded px-1 py-0.5 text-xs ${
+                              provider.utilizationRate > 80
+                                ? 'bg-green-100 text-green-700'
+                                : provider.utilizationRate > 60
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : 'bg-red-100 text-red-700'
+                            } `}
+                          >
+                            {provider.utilizationRate > 80
+                              ? 'High'
+                              : provider.utilizationRate > 60
+                                ? 'Med'
+                                : 'Low'}
                           </div>
                         </div>
                       )}
@@ -567,15 +626,15 @@ export function OrganizationCalendarView({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => onProviderClick?.(provider)}>
-                          <Eye className="h-3 w-3 mr-2" />
+                          <Eye className="mr-2 h-3 w-3" />
                           View Details
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onManageProvider?.(provider)}>
-                          <Settings className="h-3 w-3 mr-2" />
+                          <Settings className="mr-2 h-3 w-3" />
                           Manage
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onCreateAvailability?.(provider.id)}>
-                          <Plus className="h-3 w-3 mr-2" />
+                          <Plus className="mr-2 h-3 w-3" />
                           Add Availability
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -597,7 +656,7 @@ export function OrganizationCalendarView({
                   showUtilizationOnly={showUtilizationOnly}
                 />
               )}
-              
+
               {viewMode === 'day' && (
                 <OrganizationDayView
                   currentDate={currentDate}
@@ -608,7 +667,7 @@ export function OrganizationCalendarView({
                   showUtilizationOnly={showUtilizationOnly}
                 />
               )}
-              
+
               {viewMode === 'month' && (
                 <OrganizationMonthView
                   currentDate={currentDate}
@@ -628,21 +687,21 @@ export function OrganizationCalendarView({
           <CardTitle className="text-sm">Legend</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 rounded bg-green-100 border border-green-300"></div>
+              <div className="h-4 w-4 rounded border border-green-300 bg-green-100"></div>
               <span>Available</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300"></div>
+              <div className="h-4 w-4 rounded border border-blue-300 bg-blue-100"></div>
               <span>Booked</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 rounded bg-orange-100 border border-orange-300"></div>
+              <div className="h-4 w-4 rounded border border-orange-300 bg-orange-100"></div>
               <span>Pending</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 rounded bg-red-100 border border-red-300"></div>
+              <div className="h-4 w-4 rounded border border-red-300 bg-red-100"></div>
               <span>Blocked</span>
             </div>
           </div>
@@ -690,17 +749,17 @@ interface OrganizationWeekViewProps {
   showUtilizationOnly: boolean;
 }
 
-function OrganizationWeekView({ 
-  currentDate, 
-  providers, 
-  onEventClick, 
-  onTimeSlotClick, 
+function OrganizationWeekView({
+  currentDate,
+  providers,
+  onEventClick,
+  onTimeSlotClick,
   getEventStyle,
-  showUtilizationOnly 
+  showUtilizationOnly,
 }: OrganizationWeekViewProps) {
   const startOfWeek = new Date(currentDate);
   startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-  
+
   const days = Array.from({ length: 7 }, (_, i) => {
     const day = new Date(startOfWeek);
     day.setDate(startOfWeek.getDate() + i);
@@ -709,12 +768,18 @@ function OrganizationWeekView({
 
   const hours = Array.from({ length: 12 }, (_, i) => i + 8); // 8 AM to 7 PM
 
-  const getEventsForProviderDateAndHour = (provider: OrganizationProvider, date: Date, hour: number) => {
-    return provider.events.filter(event => {
+  const getEventsForProviderDateAndHour = (
+    provider: OrganizationProvider,
+    date: Date,
+    hour: number
+  ) => {
+    return provider.events.filter((event) => {
       const eventDate = new Date(event.startTime);
-      return eventDate.toDateString() === date.toDateString() &&
-             eventDate.getHours() <= hour &&
-             new Date(event.endTime).getHours() > hour;
+      return (
+        eventDate.toDateString() === date.toDateString() &&
+        eventDate.getHours() <= hour &&
+        new Date(event.endTime).getHours() > hour
+      );
     });
   };
 
@@ -723,47 +788,56 @@ function OrganizationWeekView({
       <div className="space-y-4">
         <h4 className="text-sm font-medium">Provider Utilization Overview</h4>
         <div className="grid gap-3">
-          {providers.map(provider => (
-            <div key={provider.id} className="flex items-center space-x-4 p-3 border rounded-lg">
+          {providers.map((provider) => (
+            <div key={provider.id} className="flex items-center space-x-4 rounded-lg border p-3">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="text-xs">
-                  {provider.name.split(' ').map(n => n[0]).join('')}
+                  {provider.name
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')}
                 </AvatarFallback>
               </Avatar>
-              
+
               <div className="flex-1">
                 <div className="text-sm font-medium">{provider.name}</div>
                 <div className="text-xs text-muted-foreground">{provider.type}</div>
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <div className="text-center">
                   <div className="text-lg font-bold">{Math.round(provider.utilizationRate)}%</div>
                   <div className="text-xs text-muted-foreground">Utilization</div>
                 </div>
-                
+
                 <div className="text-center">
                   <div className="text-lg font-bold">{provider.totalBookings}</div>
                   <div className="text-xs text-muted-foreground">Bookings</div>
                 </div>
-                
+
                 {provider.pendingBookings > 0 && (
                   <div className="text-center">
-                    <div className="text-lg font-bold text-orange-600">{provider.pendingBookings}</div>
+                    <div className="text-lg font-bold text-orange-600">
+                      {provider.pendingBookings}
+                    </div>
                     <div className="text-xs text-muted-foreground">Pending</div>
                   </div>
                 )}
-                
-                <div className={`
-                  px-2 py-1 rounded text-xs font-medium
-                  ${provider.utilizationRate > 80 
-                    ? 'bg-green-100 text-green-700' 
-                    : provider.utilizationRate > 60 
-                    ? 'bg-yellow-100 text-yellow-700'
-                    : 'bg-red-100 text-red-700'
-                  }
-                `}>
-                  {provider.utilizationRate > 80 ? 'High' : provider.utilizationRate > 60 ? 'Medium' : 'Low'}
+
+                <div
+                  className={`rounded px-2 py-1 text-xs font-medium ${
+                    provider.utilizationRate > 80
+                      ? 'bg-green-100 text-green-700'
+                      : provider.utilizationRate > 60
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-red-100 text-red-700'
+                  } `}
+                >
+                  {provider.utilizationRate > 80
+                    ? 'High'
+                    : provider.utilizationRate > 60
+                      ? 'Medium'
+                      : 'Low'}
                 </div>
               </div>
             </div>
@@ -777,10 +851,10 @@ function OrganizationWeekView({
     <div className="overflow-auto">
       <div className="min-w-[800px]">
         {/* Header */}
-        <div className="grid grid-cols-8 gap-1 mb-2">
-          <div className="p-2 text-center font-medium text-sm">Provider</div>
+        <div className="mb-2 grid grid-cols-8 gap-1">
+          <div className="p-2 text-center text-sm font-medium">Provider</div>
           {days.map((day, index) => (
-            <div key={index} className="p-2 text-center font-medium border-b text-sm">
+            <div key={index} className="border-b p-2 text-center text-sm font-medium">
               <div>{day.toLocaleDateString([], { weekday: 'short' })}</div>
               <div className="text-xs text-muted-foreground">{day.getDate()}</div>
             </div>
@@ -788,54 +862,63 @@ function OrganizationWeekView({
         </div>
 
         {/* Provider Rows */}
-        {providers.map(provider => (
-          <div key={provider.id} className="grid grid-cols-8 gap-1 mb-1">
-            <div className="p-2 border-r bg-gray-50 flex items-center space-x-2">
+        {providers.map((provider) => (
+          <div key={provider.id} className="mb-1 grid grid-cols-8 gap-1">
+            <div className="flex items-center space-x-2 border-r bg-gray-50 p-2">
               <Avatar className="h-6 w-6">
                 <AvatarFallback className="text-xs">
-                  {provider.name.split(' ').map(n => n[0]).join('')}
+                  {provider.name
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <div className="text-xs font-medium truncate">{provider.name}</div>
-                <div className="text-xs text-muted-foreground truncate">{provider.type}</div>
+                <div className="truncate text-xs font-medium">{provider.name}</div>
+                <div className="truncate text-xs text-muted-foreground">{provider.type}</div>
               </div>
             </div>
-            
+
             {days.map((day, dayIndex) => {
-              const dayEvents = provider.events.filter(event => 
-                new Date(event.startTime).toDateString() === day.toDateString()
+              const dayEvents = provider.events.filter(
+                (event) => new Date(event.startTime).toDateString() === day.toDateString()
               );
-              
+
               return (
                 <div
                   key={`${provider.id}-${dayIndex}`}
-                  className="min-h-[60px] p-1 border border-gray-200 cursor-pointer hover:bg-gray-50"
+                  className="min-h-[60px] cursor-pointer border border-gray-200 p-1 hover:bg-gray-50"
                   onClick={() => onTimeSlotClick?.(day, 9, provider)}
                 >
-                  {dayEvents.slice(0, 3).map(event => (
+                  {dayEvents.slice(0, 3).map((event) => (
                     <TooltipProvider key={event.id}>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div
-                            className={`
-                              p-1 mb-1 rounded text-xs border cursor-pointer truncate
-                              ${getEventStyle(event)}
-                            `}
+                            className={`mb-1 cursor-pointer truncate rounded border p-1 text-xs ${getEventStyle(event)} `}
                             onClick={(e) => {
                               e.stopPropagation();
                               onEventClick?.(event, provider);
                             }}
                           >
-                            {event.type === 'booking' ? event.customer?.name || 'Booking' : event.title}
+                            {event.type === 'booking'
+                              ? event.customer?.name || 'Booking'
+                              : event.title}
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <div className="space-y-1">
                             <div className="font-medium">{event.title}</div>
                             <div className="text-sm">
-                              {event.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
-                              {event.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {event.startTime.toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}{' '}
+                              -
+                              {event.endTime.toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
                             </div>
                           </div>
                         </TooltipContent>
@@ -856,23 +939,25 @@ function OrganizationWeekView({
 }
 
 // Organization Day View Component
-function OrganizationDayView({ 
-  currentDate, 
-  providers, 
-  onEventClick, 
-  onTimeSlotClick, 
+function OrganizationDayView({
+  currentDate,
+  providers,
+  onEventClick,
+  onTimeSlotClick,
   getEventStyle,
-  showUtilizationOnly 
+  showUtilizationOnly,
 }: OrganizationWeekViewProps) {
   if (showUtilizationOnly) {
-    return <OrganizationWeekView 
-      currentDate={currentDate} 
-      providers={providers} 
-      onEventClick={onEventClick} 
-      onTimeSlotClick={onTimeSlotClick} 
-      getEventStyle={getEventStyle}
-      showUtilizationOnly={true}
-    />;
+    return (
+      <OrganizationWeekView
+        currentDate={currentDate}
+        providers={providers}
+        onEventClick={onEventClick}
+        onTimeSlotClick={onTimeSlotClick}
+        getEventStyle={getEventStyle}
+        showUtilizationOnly={true}
+      />
+    );
   }
 
   const hours = Array.from({ length: 12 }, (_, i) => i + 8);
@@ -882,19 +967,22 @@ function OrganizationDayView({
       <h4 className="text-sm font-medium">
         {currentDate.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}
       </h4>
-      
-      {providers.map(provider => {
-        const dayEvents = provider.events.filter(event => 
-          new Date(event.startTime).toDateString() === currentDate.toDateString()
+
+      {providers.map((provider) => {
+        const dayEvents = provider.events.filter(
+          (event) => new Date(event.startTime).toDateString() === currentDate.toDateString()
         );
-        
+
         return (
-          <div key={provider.id} className="border rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
+          <div key={provider.id} className="rounded-lg border p-4">
+            <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="text-xs">
-                    {provider.name.split(' ').map(n => n[0]).join('')}
+                    {provider.name
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -902,7 +990,7 @@ function OrganizationDayView({
                   <div className="text-xs text-muted-foreground">{provider.type}</div>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Utilization: </span>
@@ -910,38 +998,42 @@ function OrganizationDayView({
                 </div>
                 <div>
                   <span className="text-muted-foreground">Bookings: </span>
-                  <span className="font-medium">{dayEvents.filter(e => e.type === 'booking').length}</span>
+                  <span className="font-medium">
+                    {dayEvents.filter((e) => e.type === 'booking').length}
+                  </span>
                 </div>
               </div>
             </div>
-            
+
             <div className="grid gap-1">
               {dayEvents.length > 0 ? (
-                dayEvents.map(event => (
+                dayEvents.map((event) => (
                   <div
                     key={event.id}
-                    className={`
-                      p-2 rounded border cursor-pointer
-                      ${getEventStyle(event)}
-                    `}
+                    className={`cursor-pointer rounded border p-2 ${getEventStyle(event)} `}
                     onClick={() => onEventClick?.(event, provider)}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-medium text-sm">{event.title}</div>
+                        <div className="text-sm font-medium">{event.title}</div>
                         <div className="text-xs opacity-75">
-                          {event.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
-                          {event.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {event.startTime.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}{' '}
+                          -
+                          {event.endTime.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
                         </div>
                       </div>
-                      {event.customer && (
-                        <div className="text-xs">{event.customer.name}</div>
-                      )}
+                      {event.customer && <div className="text-xs">{event.customer.name}</div>}
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-4 text-muted-foreground text-sm">
+                <div className="py-4 text-center text-sm text-muted-foreground">
                   No appointments scheduled
                 </div>
               )}
@@ -961,7 +1053,12 @@ interface OrganizationMonthViewProps {
   getEventStyle: (event: CalendarEvent) => string;
 }
 
-function OrganizationMonthView({ currentDate, providers, onEventClick, getEventStyle }: OrganizationMonthViewProps) {
+function OrganizationMonthView({
+  currentDate,
+  providers,
+  onEventClick,
+  getEventStyle,
+}: OrganizationMonthViewProps) {
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
   const firstDayOfCalendar = new Date(firstDayOfMonth);
@@ -975,8 +1072,8 @@ function OrganizationMonthView({ currentDate, providers, onEventClick, getEventS
 
   const getEventsForDay = (date: Date) => {
     const allEvents: Array<{ event: CalendarEvent; provider: OrganizationProvider }> = [];
-    providers.forEach(provider => {
-      provider.events.forEach(event => {
+    providers.forEach((provider) => {
+      provider.events.forEach((event) => {
         if (new Date(event.startTime).toDateString() === date.toDateString()) {
           allEvents.push({ event, provider });
         }
@@ -988,8 +1085,8 @@ function OrganizationMonthView({ currentDate, providers, onEventClick, getEventS
   return (
     <div className="grid grid-cols-7 gap-1">
       {/* Day headers */}
-      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-        <div key={day} className="p-2 text-center font-medium text-sm">
+      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+        <div key={day} className="p-2 text-center text-sm font-medium">
           {day}
         </div>
       ))}
@@ -999,38 +1096,30 @@ function OrganizationMonthView({ currentDate, providers, onEventClick, getEventS
         const dayEventData = getEventsForDay(day);
         const isCurrentMonth = day.getMonth() === currentDate.getMonth();
         const isToday = day.toDateString() === new Date().toDateString();
-        
+
         return (
           <div
             key={index}
-            className={`
-              min-h-[100px] p-1 border border-gray-200 cursor-pointer hover:bg-gray-50
-              ${!isCurrentMonth ? 'bg-gray-50 text-muted-foreground' : ''}
-              ${isToday ? 'bg-blue-50 border-blue-300' : ''}
-            `}
+            className={`min-h-[100px] cursor-pointer border border-gray-200 p-1 hover:bg-gray-50 ${!isCurrentMonth ? 'bg-gray-50 text-muted-foreground' : ''} ${isToday ? 'border-blue-300 bg-blue-50' : ''} `}
           >
-            <div className="text-sm font-medium mb-1">{day.getDate()}</div>
+            <div className="mb-1 text-sm font-medium">{day.getDate()}</div>
             <div className="space-y-1">
               {dayEventData.slice(0, 2).map(({ event, provider }, i) => (
                 <div
                   key={`${event.id}-${i}`}
-                  className={`
-                    p-1 rounded text-xs border cursor-pointer truncate
-                    ${getEventStyle(event)}
-                  `}
+                  className={`cursor-pointer truncate rounded border p-1 text-xs ${getEventStyle(event)} `}
                   onClick={(e) => {
                     e.stopPropagation();
                     onEventClick?.(event, provider);
                   }}
                   title={`${provider.name}: ${event.title}`}
                 >
-                  {provider.name.split(' ')[0]}: {event.type === 'booking' ? event.customer?.name || 'Booking' : 'Available'}
+                  {provider.name.split(' ')[0]}:{' '}
+                  {event.type === 'booking' ? event.customer?.name || 'Booking' : 'Available'}
                 </div>
               ))}
               {dayEventData.length > 2 && (
-                <div className="text-xs text-muted-foreground">
-                  +{dayEventData.length - 2} more
-                </div>
+                <div className="text-xs text-muted-foreground">+{dayEventData.length - 2} more</div>
               )}
             </div>
           </div>

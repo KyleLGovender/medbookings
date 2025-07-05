@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { useEffect, useState } from 'react';
+
+import { AlertTriangle, CheckCircle, Clock, Database, TrendingUp } from 'lucide-react';
+
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, Database, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
-import { getDatabasePerformanceRecommendations } from '../lib/search-performance-service';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 
 interface PerformanceMetrics {
   queryExecutionTime: number;
@@ -60,20 +61,20 @@ export function SearchPerformanceMonitor({
 
   const getPerformanceScore = (metrics?: PerformanceMetrics): number => {
     if (!metrics) return 0;
-    
+
     let score = 100;
-    
+
     // Deduct points for slow queries
     if (metrics.queryExecutionTime > 1000) score -= 30;
     else if (metrics.queryExecutionTime > 500) score -= 15;
     else if (metrics.queryExecutionTime > 200) score -= 5;
-    
+
     // Deduct points for optimization suggestions
     score -= metrics.optimizationSuggestions.length * 5;
-    
+
     // Add points for using indexes
     score += Math.min(metrics.indexesUsed.length * 2, 10);
-    
+
     return Math.max(0, Math.min(100, score));
   };
 
@@ -90,11 +91,11 @@ export function SearchPerformanceMonitor({
   const { level, color } = getPerformanceLevel(score);
 
   return (
-    <div className="fixed bottom-4 right-4 w-96 max-h-[80vh] overflow-y-auto z-50">
-      <Card className="shadow-lg border-2">
+    <div className="fixed bottom-4 right-4 z-50 max-h-[80vh] w-96 overflow-y-auto">
+      <Card className="border-2 shadow-lg">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
               <TrendingUp className="h-4 w-4" />
               Search Performance Monitor
             </CardTitle>
@@ -105,7 +106,7 @@ export function SearchPerformanceMonitor({
             )}
           </div>
         </CardHeader>
-        
+
         <CardContent className="space-y-4">
           {/* Performance Score */}
           {metrics && (
@@ -115,9 +116,7 @@ export function SearchPerformanceMonitor({
                 <span className={`text-sm font-bold ${color}`}>{level}</span>
               </div>
               <Progress value={score} className="h-2" />
-              <div className="text-xs text-muted-foreground text-right">
-                {score}/100
-              </div>
+              <div className="text-right text-xs text-muted-foreground">{score}/100</div>
             </div>
           )}
 
@@ -129,19 +128,15 @@ export function SearchPerformanceMonitor({
                   <Clock className="h-3 w-3" />
                   Execution Time
                 </div>
-                <div className="text-sm font-medium">
-                  {metrics.queryExecutionTime}ms
-                </div>
+                <div className="text-sm font-medium">{metrics.queryExecutionTime}ms</div>
               </div>
-              
+
               <div className="space-y-1">
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Database className="h-3 w-3" />
                   Results Found
                 </div>
-                <div className="text-sm font-medium">
-                  {metrics.totalResults}
-                </div>
+                <div className="text-sm font-medium">{metrics.totalResults}</div>
               </div>
             </div>
           )}
@@ -149,7 +144,7 @@ export function SearchPerformanceMonitor({
           {/* Indexes Used */}
           {metrics && metrics.indexesUsed.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-sm font-medium flex items-center gap-1">
+              <h4 className="flex items-center gap-1 text-sm font-medium">
                 <CheckCircle className="h-3 w-3 text-green-600" />
                 Indexes Used
               </h4>
@@ -169,7 +164,7 @@ export function SearchPerformanceMonitor({
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle className="text-sm">Optimization Suggestions</AlertTitle>
               <AlertDescription className="text-xs">
-                <ul className="list-disc list-inside space-y-1 mt-2">
+                <ul className="mt-2 list-inside list-disc space-y-1">
                   {metrics.optimizationSuggestions.map((suggestion, i) => (
                     <li key={i}>{suggestion}</li>
                   ))}
@@ -182,32 +177,26 @@ export function SearchPerformanceMonitor({
           {recommendations && (
             <div className="space-y-3">
               <h4 className="text-sm font-medium">Database Optimization</h4>
-              
+
               {/* High Priority Indexes */}
               {recommendations.recommendedIndexes
-                .filter(idx => idx.priority === 'high')
+                .filter((idx) => idx.priority === 'high')
                 .slice(0, 3)
                 .map((index, i) => (
-                <Alert key={i} className="py-2">
-                  <Database className="h-3 w-3" />
-                  <AlertDescription className="text-xs">
-                    <div className="font-medium">{index.table}</div>
-                    <div className="text-muted-foreground">
-                      Index: {index.columns.join(', ')}
-                    </div>
-                    <div className="text-muted-foreground mt-1">
-                      {index.reason}
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              ))}
+                  <Alert key={i} className="py-2">
+                    <Database className="h-3 w-3" />
+                    <AlertDescription className="text-xs">
+                      <div className="font-medium">{index.table}</div>
+                      <div className="text-muted-foreground">Index: {index.columns.join(', ')}</div>
+                      <div className="mt-1 text-muted-foreground">{index.reason}</div>
+                    </AlertDescription>
+                  </Alert>
+                ))}
 
               {/* Query Optimizations */}
               <div className="space-y-1">
-                <h5 className="text-xs font-medium text-muted-foreground">
-                  Query Optimizations
-                </h5>
-                <div className="text-xs space-y-1">
+                <h5 className="text-xs font-medium text-muted-foreground">Query Optimizations</h5>
+                <div className="space-y-1 text-xs">
                   {recommendations.queryOptimizations.slice(0, 3).map((opt, i) => (
                     <div key={i} className="flex items-start gap-1">
                       <span className="text-muted-foreground">•</span>
@@ -221,7 +210,7 @@ export function SearchPerformanceMonitor({
 
           {/* Loading State */}
           {isLoadingRecommendations && (
-            <div className="text-center py-4">
+            <div className="py-4 text-center">
               <div className="text-sm text-muted-foreground">
                 Loading performance recommendations...
               </div>
@@ -259,3 +248,10 @@ export function useSearchPerformanceMonitor() {
     hideMonitor,
   };
 }
+
+// Replace with API call
+const getDatabasePerformanceRecommendations = async () => {
+  const response = await fetch('/api/calendar/availability/performance/recommendations');
+  if (!response.ok) throw new Error('Failed to fetch performance recommendations');
+  return response.json();
+};

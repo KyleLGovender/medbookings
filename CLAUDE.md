@@ -282,3 +282,35 @@ Imports are automatically sorted in this order:
 - **Soft Dependencies**: Many relationships are optional to support various business models
 - **Version Control**: Use optimistic locking for entities synced with external calendars
 - **Role-Based Access**: Implement proper role checking for all protected operations
+
+## CRITICAL: NO MOCK DATA POLICY
+
+- **NEVER create, return, or use mock data anywhere in the application**
+- **ALWAYS use real data from APIs, database, or user input**
+- **If data is not available, show appropriate loading states or empty states**
+- **If APIs fail, show proper error messages with retry options**
+- **Use loading skeletons, spinners, or "No data available" messages instead of fake data**
+- **This applies to all components, hooks, services, and any part of the application**
+- **Mock data creates false user experiences and hides real issues**
+
+### Instead of Mock Data
+
+- ✅ Show loading states while fetching real data
+- ✅ Display "No data available" when real data is empty
+- ✅ Show error states when data fetching fails
+- ✅ Use skeleton loaders during loading
+- ✅ Implement proper error boundaries and retry mechanisms
+
+### Examples of What NOT to Do
+
+- ❌ `return { id: 'mock-1', name: 'Mock Provider' }`
+- ❌ `const mockData = [{ ... }]`
+- ❌ Hardcoded sample data for testing UI
+- ❌ Placeholder data that looks real but isn't from the database
+
+### Examples of What TO Do
+
+- ✅ `if (isLoading) return <LoadingSpinner />`
+- ✅ `if (error) return <ErrorMessage error={error} />`
+- ✅ `if (!data?.length) return <EmptyState message="No providers found" />`
+- ✅ Real API calls with proper error handling

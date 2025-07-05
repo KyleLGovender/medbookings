@@ -1,4 +1,4 @@
-import { ProviderCalendarView } from '@/features/calendar/availability/components';
+import { ProviderCalendarView } from '@/features/calendar/availability/components/provider-calendar-view';
 
 interface ProviderCalendarPageProps {
   params: {

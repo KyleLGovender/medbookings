@@ -1,26 +1,43 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Search, MapPin, Calendar, Clock, Filter, Star, Navigation } from 'lucide-react';
+import { Filter, Navigation, Search } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { DatePicker } from '@/components/ui/date-picker';
-import { TimePicker } from '@/components/ui/time-picker';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { z } from 'zod';
-import { searchProvidersByLocation, geocodeAddress } from '../lib/location-search-service';
-import { searchSlotsByTime, findOptimalTimeSlots } from '../lib/time-search-service';
-import { filterServices, getAvailableServiceTypes, searchServices } from '../lib/service-filter-service';
-import { ProviderSearchResults, ProviderSearchResult as EnhancedProviderSearchResult } from './provider-search-results';
-import { SearchPerformanceMonitor, useSearchPerformanceMonitor } from './search-performance-monitor';
+
+import {
+  ProviderSearchResult as EnhancedProviderSearchResult,
+  ProviderSearchResults,
+} from './provider-search-results';
+import {
+  SearchPerformanceMonitor,
+  useSearchPerformanceMonitor,
+} from './search-performance-monitor';
 
 // Search form schema
 const searchFormSchema = z.object({
@@ -38,17 +55,86 @@ const searchFormSchema = z.object({
   duration: z.number().min(15).max(480).default(30),
   maxDistance: z.number().min(1).max(100).default(25),
   isOnlineAvailable: z.boolean().optional(),
-  priceRange: z.object({
-    min: z.number().min(0).optional(),
-    max: z.number().min(0).optional(),
-  }).optional(),
-  coordinates: z.object({
-    lat: z.number(),
-    lng: z.number(),
-  }).optional(),
+  priceRange: z
+    .object({
+      min: z.number().min(0).optional(),
+      max: z.number().min(0).optional(),
+    })
+    .optional(),
+  coordinates: z
+    .object({
+      lat: z.number(),
+      lng: z.number(),
+    })
+    .optional(),
 });
 
 type SearchFormValues = z.infer<typeof searchFormSchema>;
+
+// API Response Types
+interface LocationSearchResult {
+  providerId: string;
+  providerName: string;
+  providerType: string;
+  distance: number;
+  location?: {
+    id: string;
+    name: string;
+    address: string;
+  };
+  availableServices: Array<{
+    serviceId: string;
+    serviceName: string;
+    duration: number;
+    price: number;
+    showPrice: boolean;
+  }>;
+  nearestAvailableSlot?: {
+    slotId: string;
+    startTime: Date;
+    endTime: Date;
+    isOnlineAvailable: boolean;
+    price: number;
+  };
+  totalAvailableSlots: number;
+}
+
+interface ServiceSearchResult {
+  services: Array<{
+    id: string;
+    name: string;
+    category: string;
+    duration: number;
+    price: number;
+    provider: {
+      id: string;
+      name: string;
+      type: string;
+    };
+    location?: {
+      id: string;
+      name: string;
+      address: string;
+    };
+  }>;
+  totalCount: number;
+}
+
+interface TimeSlotSearchResult {
+  slotsInTimeRange: Array<{
+    slotId: string;
+    startTime: Date;
+    endTime: Date;
+    serviceId: string;
+    serviceName: string;
+    providerId: string;
+    providerName: string;
+    price: number;
+    isOnlineAvailable: boolean;
+    requiresConfirmation: boolean;
+  }>;
+  totalSlots: number;
+}
 
 // Extend the enhanced provider search result type
 type ProviderSearchResult = EnhancedProviderSearchResult;
@@ -69,12 +155,14 @@ export function ProviderSearchInterface({
   const [showFilters, setShowFilters] = useState(false);
   const [isGeolocating, setIsGeolocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [availableServiceTypes, setAvailableServiceTypes] = useState<Array<{
-    id: string;
-    name: string;
-    category: string;
-    serviceCount: number;
-  }>>([]);
+  const [availableServiceTypes, setAvailableServiceTypes] = useState<
+    Array<{
+      id: string;
+      name: string;
+      category: string;
+      serviceCount: number;
+    }>
+  >([]);
   const [isLoadingServiceTypes, setIsLoadingServiceTypes] = useState(false);
   const performanceMonitor = useSearchPerformanceMonitor();
 
@@ -111,7 +199,7 @@ export function ProviderSearchInterface({
     setIsSearching(true);
     setLocationError(null);
     const searchStartTime = Date.now();
-    
+
     try {
       let searchCoordinates = data.coordinates;
 
@@ -153,7 +241,7 @@ export function ProviderSearchInterface({
       let serviceFilteredProviders: string[] = [];
       if (data.query) {
         try {
-          const serviceResults = await searchServices(data.query, {
+          const serviceResults: ServiceSearchResult = await searchServices(data.query, {
             serviceTypeIds: serviceTypes,
             priceRange: data.priceRange,
             durationRange: {
@@ -164,7 +252,7 @@ export function ProviderSearchInterface({
 
           // Extract unique provider IDs from service search results
           serviceFilteredProviders = Array.from(
-            new Set(serviceResults.services.map(service => service.provider.id))
+            new Set(serviceResults.services.map((service) => service.provider.id))
           );
         } catch (error) {
           console.error('Error filtering by services:', error);
@@ -181,8 +269,8 @@ export function ProviderSearchInterface({
               },
             }
           : data.preferredDate
-          ? { specificDate: data.preferredDate }
-          : {}),
+            ? { specificDate: data.preferredDate }
+            : {}),
         ...(data.preferredTime && data.endTime
           ? {
               timeRange: {
@@ -199,7 +287,7 @@ export function ProviderSearchInterface({
       };
 
       // Search using location-based service with enhanced time filtering
-      const locationResults = await searchProvidersByLocation({
+      const locationResults: LocationSearchResult[] = await searchProvidersByLocation({
         coordinates: searchCoordinates,
         maxDistance: data.maxDistance,
         serviceTypes,
@@ -212,7 +300,7 @@ export function ProviderSearchInterface({
 
       // Further filter results using time-based search if advanced time filters are used
       let filteredByTime = locationResults;
-      
+
       if (
         data.endDate ||
         data.endTime ||
@@ -220,16 +308,15 @@ export function ProviderSearchInterface({
         data.dayOfWeek ||
         data.excludeWeekends
       ) {
-        const timeSearchPromises = locationResults.map(async (provider) => {
+        const timeSearchPromises = locationResults.map(async (provider: LocationSearchResult) => {
           try {
-            const timeResults = await searchSlotsByTime(timeParams, {
-              serviceProviderId: provider.providerId,
-            });
+            const timeResults: TimeSlotSearchResult = await searchSlotsByTime(timeParams);
 
             // Update provider with time-filtered slots
             if (timeResults.slotsInTimeRange.length > 0) {
-              const nearestSlot = timeResults.slotsInTimeRange
-                .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())[0];
+              const nearestSlot = timeResults.slotsInTimeRange.sort(
+                (a, b) => a.startTime.getTime() - b.startTime.getTime()
+              )[0];
 
               return {
                 ...provider,
@@ -261,17 +348,17 @@ export function ProviderSearchInterface({
       // Further filter by service results if we have service-based filtering
       let finalResults = filteredByTime;
       if (serviceFilteredProviders.length > 0) {
-        finalResults = filteredByTime.filter(provider =>
+        finalResults = filteredByTime.filter((provider) =>
           serviceFilteredProviders.includes(provider.providerId)
         );
       }
 
       // Convert location results to provider search results format
-      const searchResults: ProviderSearchResult[] = finalResults.map(result => {
-        const serviceNames = result.availableServices.map(s => s.serviceName);
+      const searchResults: ProviderSearchResult[] = finalResults.map((result) => {
+        const serviceNames = result.availableServices.map((s) => s.serviceName);
         const upcomingSlots = generateMockUpcomingSlots(result, serviceNames);
         const providerInfo = generateMockProviderInfo(result.providerName, result.providerType);
-        
+
         return {
           providerId: result.providerId,
           providerName: result.providerName,
@@ -279,10 +366,12 @@ export function ProviderSearchInterface({
           rating: 4.5 + Math.random() * 0.5, // Mock rating - would come from database
           reviewCount: Math.floor(Math.random() * 200) + 10, // Mock review count
           distance: result.distance,
-          location: result.location ? {
-            name: result.location.name,
-            address: result.location.address,
-          } : undefined,
+          location: result.location
+            ? {
+                name: result.location.name,
+                address: result.location.address,
+              }
+            : undefined,
           availableServices: result.availableServices,
           nearestAvailableSlot: result.nearestAvailableSlot,
           totalAvailableSlots: result.totalAvailableSlots,
@@ -301,7 +390,7 @@ export function ProviderSearchInterface({
 
       if (data.query) {
         filteredResults = filteredResults.filter(
-          result =>
+          (result) =>
             result.providerName.toLowerCase().includes(data.query!.toLowerCase()) ||
             result.providerType.toLowerCase().includes(data.query!.toLowerCase())
         );
@@ -319,18 +408,18 @@ export function ProviderSearchInterface({
           'CalculatedAvailabilitySlot_status_time_service_idx',
           'Availability_provider_status_time_idx',
         ],
-        optimizationSuggestions: filteredResults.length === 0 
-          ? ['No results found - consider expanding search criteria']
-          : searchEndTime - searchStartTime > 2000
-          ? ['Search took longer than 2s - consider adding more specific filters']
-          : [],
+        optimizationSuggestions:
+          filteredResults.length === 0
+            ? ['No results found - consider expanding search criteria']
+            : searchEndTime - searchStartTime > 2000
+              ? ['Search took longer than 2s - consider adding more specific filters']
+              : [],
       });
-
     } catch (error) {
       console.error('Search error:', error);
       setLocationError('An error occurred while searching. Please try again.');
       setSearchResults([]);
-      
+
       // Track error performance
       performanceMonitor.trackPerformance({
         queryExecutionTime: Date.now() - searchStartTime,
@@ -348,15 +437,17 @@ export function ProviderSearchInterface({
   const watchTimeFlexibility = form.watch('timeFlexibility');
 
   // Generate mock upcoming slots for enhanced display
-  const generateMockUpcomingSlots = (provider: any, serviceNames: string[]) => {
+  const generateMockUpcomingSlots = (provider: LocationSearchResult, serviceNames: string[]) => {
     const slots = [];
     const now = new Date();
-    
+
     for (let i = 0; i < Math.min(8, provider.totalAvailableSlots); i++) {
-      const slotStart = new Date(now.getTime() + (i + 1) * 24 * 60 * 60 * 1000 + Math.random() * 12 * 60 * 60 * 1000);
+      const slotStart = new Date(
+        now.getTime() + (i + 1) * 24 * 60 * 60 * 1000 + Math.random() * 12 * 60 * 60 * 1000
+      );
       const serviceName = serviceNames[Math.floor(Math.random() * serviceNames.length)];
       const basePrice = 50 + Math.random() * 300;
-      
+
       slots.push({
         slotId: `slot-${provider.providerId}-${i}`,
         startTime: slotStart,
@@ -367,7 +458,7 @@ export function ProviderSearchInterface({
         requiresConfirmation: Math.random() > 0.7,
       });
     }
-    
+
     return slots.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
   };
 
@@ -375,14 +466,20 @@ export function ProviderSearchInterface({
   const generateMockProviderInfo = (providerName: string, providerType: string) => {
     const specializations = {
       'General Practitioner': ['Family Medicine', 'Preventive Care', 'Chronic Disease Management'],
-      'Physiotherapist': ['Sports Injuries', 'Post-Surgical Rehabilitation', 'Chronic Pain Management'],
-      'Cardiologist': ['Heart Disease', 'Hypertension', 'Arrhythmia'],
-      'Dermatologist': ['Skin Cancer', 'Acne Treatment', 'Cosmetic Dermatology'],
+      Physiotherapist: [
+        'Sports Injuries',
+        'Post-Surgical Rehabilitation',
+        'Chronic Pain Management',
+      ],
+      Cardiologist: ['Heart Disease', 'Hypertension', 'Arrhythmia'],
+      Dermatologist: ['Skin Cancer', 'Acne Treatment', 'Cosmetic Dermatology'],
     };
-    
+
     return {
       bio: `Dr. ${providerName.split(' ')[1] || providerName} is a dedicated ${providerType.toLowerCase()} with extensive experience in providing comprehensive healthcare services.`,
-      specializations: specializations[providerType as keyof typeof specializations] || ['General Healthcare'],
+      specializations: specializations[providerType as keyof typeof specializations] || [
+        'General Healthcare',
+      ],
       languages: ['English', 'French'].slice(0, Math.random() > 0.5 ? 2 : 1),
       experience: `${5 + Math.floor(Math.random() * 15)} years of experience`,
       education: ['Medical School Graduate', 'Board Certified'],
@@ -406,7 +503,7 @@ export function ProviderSearchInterface({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         };
-        
+
         form.setValue('coordinates', coordinates);
         form.setValue('location', `${coordinates.lat.toFixed(4)}, ${coordinates.lng.toFixed(4)}`);
         setIsGeolocating(false);
@@ -414,7 +511,7 @@ export function ProviderSearchInterface({
       (error) => {
         console.error('Geolocation error:', error);
         let errorMessage = 'Could not get your location.';
-        
+
         switch (error.code) {
           case error.PERMISSION_DENIED:
             errorMessage = 'Location access denied. Please allow location access and try again.';
@@ -426,7 +523,7 @@ export function ProviderSearchInterface({
             errorMessage = 'Location request timed out.';
             break;
         }
-        
+
         setLocationError(errorMessage);
         setIsGeolocating(false);
       },
@@ -452,7 +549,7 @@ export function ProviderSearchInterface({
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSearch)} className="space-y-4">
               {/* Main Search Row */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                 <FormField
                   control={form.control}
                   name="query"
@@ -460,10 +557,7 @@ export function ProviderSearchInterface({
                     <FormItem>
                       <FormLabel>Provider or Service</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Search providers, specialties..."
-                          {...field}
-                        />
+                        <Input placeholder="Search providers, specialties..." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -497,9 +591,7 @@ export function ProviderSearchInterface({
                         </div>
                       </FormControl>
                       {locationError && (
-                        <div className="text-sm text-red-600 mt-1">
-                          {locationError}
-                        </div>
+                        <div className="mt-1 text-sm text-red-600">{locationError}</div>
                       )}
                       <FormMessage />
                     </FormItem>
@@ -513,10 +605,7 @@ export function ProviderSearchInterface({
                     <FormItem>
                       <FormLabel>Preferred Date</FormLabel>
                       <FormControl>
-                        <DatePicker
-                          date={field.value}
-                          onChange={field.onChange}
-                        />
+                        <DatePicker date={field.value} onChange={field.onChange} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -524,12 +613,8 @@ export function ProviderSearchInterface({
                 />
 
                 <div className="flex items-end gap-2">
-                  <Button
-                    type="submit"
-                    disabled={isSearching}
-                    className="flex-1"
-                  >
-                    <Search className="h-4 w-4 mr-2" />
+                  <Button type="submit" disabled={isSearching} className="flex-1">
+                    <Search className="mr-2 h-4 w-4" />
                     {isSearching ? 'Searching...' : 'Search'}
                   </Button>
                   <Button
@@ -544,8 +629,8 @@ export function ProviderSearchInterface({
 
               {/* Advanced Filters */}
               {showFilters && (
-                <div className="space-y-4 pt-4 border-t">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-4 border-t pt-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <FormField
                       control={form.control}
                       name="serviceType"
@@ -555,11 +640,11 @@ export function ProviderSearchInterface({
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder={
-                                  isLoadingServiceTypes 
-                                    ? "Loading services..." 
-                                    : "Any service"
-                                } />
+                                <SelectValue
+                                  placeholder={
+                                    isLoadingServiceTypes ? 'Loading services...' : 'Any service'
+                                  }
+                                />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -572,9 +657,8 @@ export function ProviderSearchInterface({
                             </SelectContent>
                           </Select>
                           <FormDescription>
-                            {availableServiceTypes.length > 0 && 
-                              `${availableServiceTypes.length} service types available`
-                            }
+                            {availableServiceTypes.length > 0 &&
+                              `${availableServiceTypes.length} service types available`}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -588,14 +672,9 @@ export function ProviderSearchInterface({
                         <FormItem>
                           <FormLabel>Preferred Time</FormLabel>
                           <FormControl>
-                            <Input
-                              type="time"
-                              {...field}
-                            />
+                            <Input type="time" {...field} />
                           </FormControl>
-                          <FormDescription>
-                            Find appointments around this time
-                          </FormDescription>
+                          <FormDescription>Find appointments around this time</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -607,25 +686,18 @@ export function ProviderSearchInterface({
                       render={({ field }) => (
                         <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-6">
                           <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
+                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                           </FormControl>
                           <div className="space-y-1 leading-none">
-                            <FormLabel>
-                              Online consultations only
-                            </FormLabel>
-                            <FormDescription>
-                              Show only virtual appointments
-                            </FormDescription>
+                            <FormLabel>Online consultations only</FormLabel>
+                            <FormDescription>Show only virtual appointments</FormDescription>
                           </div>
                         </FormItem>
                       )}
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <FormField
                       control={form.control}
                       name="duration"
@@ -641,9 +713,7 @@ export function ProviderSearchInterface({
                               onValueChange={(value) => field.onChange(value[0])}
                             />
                           </FormControl>
-                          <FormDescription>
-                            Find appointments of this duration
-                          </FormDescription>
+                          <FormDescription>Find appointments of this duration</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -664,9 +734,7 @@ export function ProviderSearchInterface({
                               onValueChange={(value) => field.onChange(value[0])}
                             />
                           </FormControl>
-                          <FormDescription>
-                            Search within this radius
-                          </FormDescription>
+                          <FormDescription>Search within this radius</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -674,47 +742,52 @@ export function ProviderSearchInterface({
                   </div>
 
                   {/* Service Category Filters */}
-                  <div className="space-y-4 pt-4 border-t">
+                  <div className="space-y-4 border-t pt-4">
                     <h4 className="text-sm font-medium">Service Categories</h4>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {Array.from(
-                        new Set(availableServiceTypes.map(st => st.category))
-                      ).map((category) => {
-                        const categoryServices = availableServiceTypes.filter(st => st.category === category);
-                        const totalServices = categoryServices.reduce((sum, st) => sum + st.serviceCount, 0);
-                        
-                        return (
-                          <div key={category} className="text-center">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="w-full"
-                              onClick={() => {
-                                // Set the first service type from this category
-                                const firstServiceType = categoryServices[0];
-                                if (firstServiceType) {
-                                  form.setValue('serviceType', firstServiceType.name);
-                                }
-                              }}
-                            >
-                              {category}
-                            </Button>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {totalServices} services
-                            </p>
-                          </div>
-                        );
-                      })}
+
+                    <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                      {Array.from(new Set(availableServiceTypes.map((st) => st.category))).map(
+                        (category) => {
+                          const categoryServices = availableServiceTypes.filter(
+                            (st) => st.category === category
+                          );
+                          const totalServices = categoryServices.reduce(
+                            (sum, st) => sum + st.serviceCount,
+                            0
+                          );
+
+                          return (
+                            <div key={category} className="text-center">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="w-full"
+                                onClick={() => {
+                                  // Set the first service type from this category
+                                  const firstServiceType = categoryServices[0];
+                                  if (firstServiceType) {
+                                    form.setValue('serviceType', firstServiceType.name);
+                                  }
+                                }}
+                              >
+                                {category}
+                              </Button>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {totalServices} services
+                              </p>
+                            </div>
+                          );
+                        }
+                      )}
                     </div>
                   </div>
 
                   {/* Advanced Time Filters */}
-                  <div className="space-y-4 pt-4 border-t">
+                  <div className="space-y-4 border-t pt-4">
                     <h4 className="text-sm font-medium">Advanced Time Filters</h4>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <FormField
                         control={form.control}
                         name="endDate"
@@ -722,14 +795,9 @@ export function ProviderSearchInterface({
                           <FormItem>
                             <FormLabel>End Date (Date Range)</FormLabel>
                             <FormControl>
-                              <DatePicker
-                                date={field.value}
-                                onChange={field.onChange}
-                              />
+                              <DatePicker date={field.value} onChange={field.onChange} />
                             </FormControl>
-                            <FormDescription>
-                              Search within a date range
-                            </FormDescription>
+                            <FormDescription>Search within a date range</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -742,14 +810,9 @@ export function ProviderSearchInterface({
                           <FormItem>
                             <FormLabel>End Time (Time Range)</FormLabel>
                             <FormControl>
-                              <Input
-                                type="time"
-                                {...field}
-                              />
+                              <Input type="time" {...field} />
                             </FormControl>
-                            <FormDescription>
-                              Search within a time range
-                            </FormDescription>
+                            <FormDescription>Search within a time range</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -779,7 +842,7 @@ export function ProviderSearchInterface({
                       )}
                     />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <FormField
                         control={form.control}
                         name="dayOfWeek"
@@ -805,7 +868,7 @@ export function ProviderSearchInterface({
                                         if (checked) {
                                           field.onChange([...current, day.value]);
                                         } else {
-                                          field.onChange(current.filter(d => d !== day.value));
+                                          field.onChange(current.filter((d) => d !== day.value));
                                         }
                                       }}
                                     />
@@ -814,9 +877,7 @@ export function ProviderSearchInterface({
                                 ))}
                               </div>
                             </FormControl>
-                            <FormDescription>
-                              Select preferred days of the week
-                            </FormDescription>
+                            <FormDescription>Select preferred days of the week</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -828,18 +889,11 @@ export function ProviderSearchInterface({
                         render={({ field }) => (
                           <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-6">
                             <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
+                              <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                             </FormControl>
                             <div className="space-y-1 leading-none">
-                              <FormLabel>
-                                Exclude weekends
-                              </FormLabel>
-                              <FormDescription>
-                                Only show weekday appointments
-                              </FormDescription>
+                              <FormLabel>Exclude weekends</FormLabel>
+                              <FormDescription>Only show weekday appointments</FormDescription>
                             </div>
                           </FormItem>
                         )}
@@ -876,3 +930,47 @@ export function ProviderSearchInterface({
   );
 }
 
+// Replace with API calls
+const searchProvidersByLocation = async (params: any) => {
+  const response = await fetch('/api/calendar/availability/search/providers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!response.ok) throw new Error('Failed to search providers');
+  return response.json();
+};
+
+const geocodeAddress = async (address: string) => {
+  const response = await fetch(
+    `/api/calendar/availability/geocode?address=${encodeURIComponent(address)}`
+  );
+  if (!response.ok) throw new Error('Failed to geocode address');
+  return response.json();
+};
+
+const getAvailableServiceTypes = async () => {
+  const response = await fetch('/api/calendar/availability/service-types');
+  if (!response.ok) throw new Error('Failed to fetch service types');
+  return response.json();
+};
+
+const searchServices = async (query: string, params: any) => {
+  const response = await fetch('/api/calendar/availability/search/services', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, ...params }),
+  });
+  if (!response.ok) throw new Error('Failed to search services');
+  return response.json();
+};
+
+const searchSlotsByTime = async (params: any) => {
+  const response = await fetch('/api/calendar/availability/search/slots', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!response.ok) throw new Error('Failed to search slots');
+  return response.json();
+};

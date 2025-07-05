@@ -22,57 +22,23 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useProvider } from '@/features/providers/hooks';
+import { useProvider } from '@/features/providers/hooks/use-provider';
 
-import { useAvailabilitySearch } from '../hooks';
-import { AvailabilityStatus, SchedulingRule, SlotStatus } from '../types';
+import { useAvailabilitySearch } from '../hooks/use-availability';
+import { CalendarEvent, ProviderCalendarData, SchedulingRule } from '../types/client';
+import { AvailabilityStatus } from '../types/enums';
+import {
+  AvailabilityWithRelations,
+  CalculatedAvailabilitySlotWithRelations,
+} from '../types/interfaces';
 
-export interface CalendarEvent {
-  id: string;
-  type: 'availability' | 'booking' | 'blocked';
-  title: string;
-  startTime: Date;
-  endTime: Date;
-  status: AvailabilityStatus | SlotStatus | 'blocked';
-  schedulingRule?: SchedulingRule;
-  isRecurring?: boolean;
-  seriesId?: string;
-  location?: {
-    id: string;
-    name: string;
-    isOnline: boolean;
-  };
-  service?: {
-    id: string;
-    name: string;
-    duration: number;
-    price: number;
-  };
-  customer?: {
-    name: string;
-    email: string;
-    phone?: string;
-  };
-  requiresConfirmation?: boolean;
-  notes?: string;
-}
-
-export interface ProviderCalendarData {
-  providerId: string;
-  providerName: string;
-  providerType: string;
-  workingHours: {
-    start: string; // "09:00"
-    end: string; // "17:00"
-  };
-  events: CalendarEvent[];
-  stats: {
-    totalAvailabilityHours: number;
-    bookedHours: number;
-    utilizationRate: number;
-    pendingBookings: number;
-    completedBookings: number;
-  };
+// Client-safe enum (matches Prisma BookingStatus)
+enum BookingStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  CANCELLED = 'CANCELLED',
+  COMPLETED = 'COMPLETED',
+  NO_SHOW = 'NO_SHOW',
 }
 
 export interface ProviderCalendarViewProps {
@@ -142,15 +108,15 @@ export function ProviderCalendarView({
     const events: CalendarEvent[] = [];
 
     // Add availability blocks
-    availabilityData.forEach((availability) => {
+    availabilityData.forEach((availability: AvailabilityWithRelations) => {
       events.push({
         id: availability.id,
         type: 'availability',
-        title: `Available - ${availability.serviceAvailabilityConfigs?.[0]?.service?.name || 'General'}`,
+        title: `Available - ${availability.availableServices?.[0]?.service?.name || 'General'}`,
         startTime: new Date(availability.startTime),
         endTime: new Date(availability.endTime),
         status: availability.status,
-        schedulingRule: availability.schedulingRule,
+        schedulingRule: availability.schedulingRule as SchedulingRule,
         isRecurring: availability.isRecurring,
         seriesId: availability.seriesId || undefined,
         location: availability.location
@@ -160,19 +126,19 @@ export function ProviderCalendarView({
               isOnline: !availability.locationId,
             }
           : undefined,
-        service: availability.serviceAvailabilityConfigs?.[0]
+        service: availability.availableServices?.[0]
           ? {
-              id: availability.serviceAvailabilityConfigs[0].service.id,
-              name: availability.serviceAvailabilityConfigs[0].service.name,
-              duration: availability.serviceAvailabilityConfigs[0].duration || 30,
-              price: availability.serviceAvailabilityConfigs[0].price || 0,
+              id: availability.availableServices[0].service.id,
+              name: availability.availableServices[0].service.name,
+              duration: availability.availableServices[0].duration || 30,
+              price: Number(availability.availableServices[0].price) || 0,
             }
           : undefined,
       });
 
       // Add booked slots from this availability's calculated slots
       availability.calculatedSlots
-        ?.filter((slot) => slot.status === SlotStatus.BOOKED)
+        ?.filter((slot) => slot.status === 'BOOKED')
         .forEach((slot) => {
           events.push({
             id: slot.id,
@@ -181,19 +147,19 @@ export function ProviderCalendarView({
             startTime: new Date(slot.startTime),
             endTime: new Date(slot.endTime),
             status: slot.status,
-            location: slot.location
+            location: slot.serviceConfig?.location
               ? {
-                  id: slot.location.id,
-                  name: slot.location.name,
-                  isOnline: slot.isOnlineAvailable,
+                  id: slot.serviceConfig.location.id,
+                  name: slot.serviceConfig.location.name,
+                  isOnline: slot.serviceConfig.isOnlineAvailable,
                 }
               : undefined,
             service: slot.service
               ? {
                   id: slot.service.id,
                   name: slot.service.name,
-                  duration: slot.duration,
-                  price: slot.price,
+                  duration: slot.serviceConfig.duration,
+                  price: Number(slot.serviceConfig.price),
                 }
               : undefined,
             // TODO: Add customer data when booking relationship is available
@@ -202,9 +168,16 @@ export function ProviderCalendarView({
     });
 
     // Calculate stats from all calculated slots
-    const allSlots = availabilityData.flatMap((availability) => availability.calculatedSlots || []);
-    const bookedSlots = allSlots.filter((slot) => slot.status === SlotStatus.BOOKED).length;
-    const pendingSlots = allSlots.filter((slot) => slot.status === SlotStatus.PENDING).length;
+    const allSlots = availabilityData.flatMap(
+      (availability: AvailabilityWithRelations) => availability.calculatedSlots || []
+    );
+    const bookedSlots = allSlots.filter(
+      (slot: CalculatedAvailabilitySlotWithRelations) => slot.status === 'BOOKED'
+    ).length;
+    const pendingSlots = allSlots.filter(
+      (slot: CalculatedAvailabilitySlotWithRelations) =>
+        slot.booking?.status === BookingStatus.PENDING
+    ).length;
 
     return {
       providerId,
@@ -265,7 +238,7 @@ export function ProviderCalendarView({
     switch (event.type) {
       case 'availability':
         switch (event.status) {
-          case AvailabilityStatus.ACTIVE:
+          case AvailabilityStatus.ACCEPTED:
             return 'bg-green-100 border-green-300 text-green-800';
           case AvailabilityStatus.PENDING:
             return 'bg-yellow-100 border-yellow-300 text-yellow-800';
@@ -274,9 +247,9 @@ export function ProviderCalendarView({
         }
       case 'booking':
         switch (event.status) {
-          case SlotStatus.BOOKED:
+          case 'BOOKED':
             return 'bg-blue-100 border-blue-300 text-blue-800';
-          case SlotStatus.PENDING:
+          case 'PENDING':
             return 'bg-orange-100 border-orange-300 text-orange-800';
           default:
             return 'bg-purple-100 border-purple-300 text-purple-800';

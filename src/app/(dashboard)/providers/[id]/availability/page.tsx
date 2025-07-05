@@ -1,4 +1,4 @@
-import { ProviderCalendarView } from '@/features/calendar/availability/components';
+import { ProviderCalendarView } from '@/features/calendar/availability/components/provider-calendar-view';
 
 interface ProviderAvailabilityPageProps {
   params: {
@@ -7,5 +7,5 @@ interface ProviderAvailabilityPageProps {
 }
 
 export default function ProviderAvailabilityPage({ params }: ProviderAvailabilityPageProps) {
-  return <ProviderCalendarView providerId={params.id} mode="availability" />;
+  return <ProviderCalendarView providerId={params.id} />;
 }
