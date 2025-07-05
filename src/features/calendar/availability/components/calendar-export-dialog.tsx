@@ -1,32 +1,45 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  Download, 
-  Calendar,
-  FileText,
-  Database,
-  FileImage,
-  Settings,
-  Filter,
-  Shield,
-  Clock,
-  CheckCircle,
+
+import {
   AlertCircle,
-  Loader
+  Calendar,
+  CheckCircle,
+  Clock,
+  Database,
+  Download,
+  FileImage,
+  FileText,
+  Filter,
+  Loader,
+  Settings,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { CalendarExportService, ExportConfig, ExportResult, GoogleCalendarIntegration } from '../lib/calendar-export-service';
-import { CalendarEvent } from './provider-calendar-view';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+
+import { CalendarEvent } from '../types/client';
+import {
+  ExportConfig,
+  ExportResult,
+  GoogleCalendarIntegration,
+  getDefaultExportConfig,
+} from '../types/export';
 import { OrganizationProvider } from './organization-calendar-view';
 
 interface CalendarExportDialogProps {
@@ -48,44 +61,60 @@ export function CalendarExportDialog({
   googleIntegration,
   className = '',
 }: CalendarExportDialogProps) {
-  const [config, setConfig] = useState<ExportConfig>(CalendarExportService.getDefaultConfig());
+  const [config, setConfig] = useState<ExportConfig>(getDefaultExportConfig());
   const [isExporting, setIsExporting] = useState(false);
   const [lastExportResult, setLastExportResult] = useState<ExportResult | null>(null);
-  const [activeTab, setActiveTab] = useState<'format' | 'fields' | 'filters' | 'settings'>('format');
-
-  const exportService = new CalendarExportService();
+  const [activeTab, setActiveTab] = useState<'format' | 'fields' | 'filters' | 'settings'>(
+    'format'
+  );
 
   const updateConfig = (updates: Partial<ExportConfig>) => {
-    setConfig(prev => ({ ...prev, ...updates }));
+    setConfig((prev) => ({ ...prev, ...updates }));
   };
 
   const updateIncludeFields = (field: keyof ExportConfig['includeFields'], value: boolean) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
-      includeFields: { ...prev.includeFields, [field]: value }
+      includeFields: { ...prev.includeFields, [field]: value },
     }));
   };
 
   const updateFilters = (filterType: keyof ExportConfig['filters'], value: any) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
-      filters: { ...prev.filters, [filterType]: value }
+      filters: { ...prev.filters, [filterType]: value },
     }));
   };
 
   const updateCustomization = (field: keyof ExportConfig['customization'], value: any) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
-      customization: { ...prev.customization, [field]: value }
+      customization: { ...prev.customization, [field]: value },
     }));
   };
 
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const result = await exportService.exportCalendar(events, providers, config);
+      const response = await fetch('/api/calendar/availability/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          events,
+          providers,
+          config,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      const result: ExportResult = await response.json();
       setLastExportResult(result);
-      
+
       if (result.success && result.downloadUrl) {
         // Trigger download
         const link = document.createElement('a');
@@ -94,14 +123,27 @@ export function CalendarExportDialog({
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
+
         // Clean up URL
         URL.revokeObjectURL(result.downloadUrl);
       }
-      
+
       onExportComplete?.(result);
     } catch (error) {
       console.error('Export failed:', error);
+      setLastExportResult({
+        success: false,
+        format: config.format,
+        filename: '',
+        eventCount: 0,
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
+        metadata: {
+          exportedAt: new Date(),
+          timezone: config.customization.timezone,
+          totalEvents: events.length,
+          filteredEvents: 0,
+        },
+      });
     } finally {
       setIsExporting(false);
     }
@@ -109,26 +151,36 @@ export function CalendarExportDialog({
 
   const getFormatIcon = (format: string) => {
     switch (format) {
-      case 'ical': return <Calendar className="h-4 w-4" />;
-      case 'csv': return <FileText className="h-4 w-4" />;
-      case 'json': return <Database className="h-4 w-4" />;
-      case 'pdf': return <FileImage className="h-4 w-4" />;
-      default: return <Download className="h-4 w-4" />;
+      case 'ical':
+        return <Calendar className="h-4 w-4" />;
+      case 'csv':
+        return <FileText className="h-4 w-4" />;
+      case 'json':
+        return <Database className="h-4 w-4" />;
+      case 'pdf':
+        return <FileImage className="h-4 w-4" />;
+      default:
+        return <Download className="h-4 w-4" />;
     }
   };
 
   const getFormatDescription = (format: string) => {
     switch (format) {
-      case 'ical': return 'Standard calendar format, compatible with most calendar applications';
-      case 'csv': return 'Spreadsheet format, suitable for data analysis and reporting';
-      case 'json': return 'Structured data format, ideal for system integration';
-      case 'pdf': return 'Printable document format for sharing and archiving';
-      default: return '';
+      case 'ical':
+        return 'Standard calendar format, compatible with most calendar applications';
+      case 'csv':
+        return 'Spreadsheet format, suitable for data analysis and reporting';
+      case 'json':
+        return 'Structured data format, ideal for system integration';
+      case 'pdf':
+        return 'Printable document format for sharing and archiving';
+      default:
+        return '';
     }
   };
 
   const getFilteredEventCount = () => {
-    return events.filter(event => {
+    return events.filter((event) => {
       // Apply the same filtering logic as the export service
       if (event.startTime < config.dateRange.start || event.startTime > config.dateRange.end) {
         return false;
@@ -136,7 +188,10 @@ export function CalendarExportDialog({
       if (config.filters.eventTypes.length > 0 && !config.filters.eventTypes.includes(event.type)) {
         return false;
       }
-      if (config.filters.statuses.length > 0 && !config.filters.statuses.includes(event.status as string)) {
+      if (
+        config.filters.statuses.length > 0 &&
+        !config.filters.statuses.includes(event.status as string)
+      ) {
         return false;
       }
       return true;
@@ -146,8 +201,8 @@ export function CalendarExportDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className={`w-full max-w-4xl max-h-[90vh] overflow-hidden ${className}`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <Card className={`max-h-[90vh] w-full max-w-4xl overflow-hidden ${className}`}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
@@ -168,7 +223,7 @@ export function CalendarExportDialog({
         <CardContent className="overflow-y-auto">
           <div className="space-y-6">
             {/* Tab Navigation */}
-            <div className="flex space-x-1 bg-gray-100 rounded p-1">
+            <div className="flex space-x-1 rounded bg-gray-100 p-1">
               {[
                 { id: 'format', label: 'Format', icon: Download },
                 { id: 'fields', label: 'Fields', icon: CheckCircle },
@@ -196,14 +251,11 @@ export function CalendarExportDialog({
               <div className="space-y-4">
                 <div>
                   <Label className="text-base font-medium">Export Format</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
                     {['ical', 'csv', 'json', 'pdf'].map((format) => (
                       <div
                         key={format}
-                        className={`
-                          p-4 border-2 rounded-lg cursor-pointer transition-all
-                          ${config.format === format ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}
-                        `}
+                        className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${config.format === format ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'} `}
                         onClick={() => updateConfig({ format: format as any })}
                       >
                         <div className="flex items-center space-x-3">
@@ -223,15 +275,17 @@ export function CalendarExportDialog({
                 {/* Date Range */}
                 <div>
                   <Label className="text-base font-medium">Date Range</Label>
-                  <div className="grid grid-cols-2 gap-4 mt-3">
+                  <div className="mt-3 grid grid-cols-2 gap-4">
                     <div>
                       <Label className="text-sm">Start Date</Label>
                       <Input
                         type="date"
                         value={config.dateRange.start.toISOString().split('T')[0]}
-                        onChange={(e) => updateConfig({
-                          dateRange: { ...config.dateRange, start: new Date(e.target.value) }
-                        })}
+                        onChange={(e) =>
+                          updateConfig({
+                            dateRange: { ...config.dateRange, start: new Date(e.target.value) },
+                          })
+                        }
                         className="mt-1"
                       />
                     </div>
@@ -240,9 +294,11 @@ export function CalendarExportDialog({
                       <Input
                         type="date"
                         value={config.dateRange.end.toISOString().split('T')[0]}
-                        onChange={(e) => updateConfig({
-                          dateRange: { ...config.dateRange, end: new Date(e.target.value) }
-                        })}
+                        onChange={(e) =>
+                          updateConfig({
+                            dateRange: { ...config.dateRange, end: new Date(e.target.value) },
+                          })
+                        }
                         className="mt-1"
                       />
                     </div>
@@ -255,11 +311,11 @@ export function CalendarExportDialog({
             {activeTab === 'fields' && (
               <div className="space-y-4">
                 <Label className="text-base font-medium">Include Fields</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {Object.entries(config.includeFields).map(([field, enabled]) => (
                     <div key={field} className="flex items-center justify-between">
                       <Label htmlFor={field} className="text-sm">
-                        {field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                        {field.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
                       </Label>
                       <Switch
                         id={field}
@@ -276,11 +332,11 @@ export function CalendarExportDialog({
             {activeTab === 'filters' && (
               <div className="space-y-4">
                 <Label className="text-base font-medium">Filter Events</Label>
-                
+
                 {/* Event Types */}
                 <div>
                   <Label className="text-sm font-medium">Event Types</Label>
-                  <div className="grid grid-cols-3 gap-2 mt-2">
+                  <div className="mt-2 grid grid-cols-3 gap-2">
                     {['availability', 'booking', 'blocked'].map((type) => (
                       <div key={type} className="flex items-center space-x-2">
                         <Checkbox
@@ -289,7 +345,7 @@ export function CalendarExportDialog({
                           onCheckedChange={(checked) => {
                             const newTypes = checked
                               ? [...config.filters.eventTypes, type as any]
-                              : config.filters.eventTypes.filter(t => t !== type);
+                              : config.filters.eventTypes.filter((t) => t !== type);
                             updateFilters('eventTypes', newTypes);
                           }}
                         />
@@ -310,7 +366,7 @@ export function CalendarExportDialog({
                       onValueChange={(providerId) => {
                         if (providerId) {
                           const newProviders = config.filters.providers.includes(providerId)
-                            ? config.filters.providers.filter(p => p !== providerId)
+                            ? config.filters.providers.filter((p) => p !== providerId)
                             : [...config.filters.providers, providerId];
                           updateFilters('providers', newProviders);
                         }
@@ -320,25 +376,27 @@ export function CalendarExportDialog({
                         <SelectValue placeholder="Select providers to include..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {providers.map(provider => (
+                        {providers.map((provider) => (
                           <SelectItem key={provider.id} value={provider.id}>
                             {provider.name} - {provider.type}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    
+
                     {config.filters.providers.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
-                        {config.filters.providers.map(providerId => {
-                          const provider = providers.find(p => p.id === providerId);
+                        {config.filters.providers.map((providerId) => {
+                          const provider = providers.find((p) => p.id === providerId);
                           return provider ? (
                             <Badge
                               key={providerId}
                               variant="secondary"
                               className="cursor-pointer"
                               onClick={() => {
-                                const newProviders = config.filters.providers.filter(p => p !== providerId);
+                                const newProviders = config.filters.providers.filter(
+                                  (p) => p !== providerId
+                                );
                                 updateFilters('providers', newProviders);
                               }}
                             >
@@ -357,7 +415,7 @@ export function CalendarExportDialog({
             {activeTab === 'settings' && (
               <div className="space-y-4">
                 <Label className="text-base font-medium">Export Settings</Label>
-                
+
                 {/* Timezone */}
                 <div>
                   <Label className="text-sm font-medium">Timezone</Label>
@@ -381,7 +439,7 @@ export function CalendarExportDialog({
                 {/* Time Format */}
                 <div>
                   <Label className="text-sm font-medium">Time Format</Label>
-                  <div className="flex space-x-4 mt-2">
+                  <div className="mt-2 flex space-x-4">
                     <div className="flex items-center space-x-2">
                       <input
                         type="radio"
@@ -390,7 +448,9 @@ export function CalendarExportDialog({
                         checked={config.customization.timeFormat === '12h'}
                         onChange={() => updateCustomization('timeFormat', '12h')}
                       />
-                      <Label htmlFor="12h" className="text-sm">12-hour (AM/PM)</Label>
+                      <Label htmlFor="12h" className="text-sm">
+                        12-hour (AM/PM)
+                      </Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <input
@@ -400,7 +460,9 @@ export function CalendarExportDialog({
                         checked={config.customization.timeFormat === '24h'}
                         onChange={() => updateCustomization('timeFormat', '24h')}
                       />
-                      <Label htmlFor="24h" className="text-sm">24-hour</Label>
+                      <Label htmlFor="24h" className="text-sm">
+                        24-hour
+                      </Label>
                     </div>
                   </div>
                 </div>
@@ -416,7 +478,9 @@ export function CalendarExportDialog({
                       <Switch
                         id="include-private"
                         checked={config.customization.includePrivateEvents}
-                        onCheckedChange={(checked) => updateCustomization('includePrivateEvents', checked)}
+                        onCheckedChange={(checked) =>
+                          updateCustomization('includePrivateEvents', checked)
+                        }
                       />
                     </div>
                     <div className="flex items-center justify-between">
@@ -426,7 +490,9 @@ export function CalendarExportDialog({
                       <Switch
                         id="anonymize-customer"
                         checked={config.customization.anonymizeCustomerData}
-                        onCheckedChange={(checked) => updateCustomization('anonymizeCustomerData', checked)}
+                        onCheckedChange={(checked) =>
+                          updateCustomization('anonymizeCustomerData', checked)
+                        }
                       />
                     </div>
                   </div>
@@ -443,7 +509,8 @@ export function CalendarExportDialog({
                   <Alert>
                     <Calendar className="h-4 w-4" />
                     <AlertDescription>
-                      Export directly to your Google Calendar or download the file for manual import.
+                      Export directly to your Google Calendar or download the file for manual
+                      import.
                     </AlertDescription>
                   </Alert>
                   <div className="flex space-x-2">
@@ -460,7 +527,13 @@ export function CalendarExportDialog({
             {lastExportResult && (
               <>
                 <Separator />
-                <Alert className={lastExportResult.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
+                <Alert
+                  className={
+                    lastExportResult.success
+                      ? 'border-green-200 bg-green-50'
+                      : 'border-red-200 bg-red-50'
+                  }
+                >
                   <div className="flex items-center space-x-2">
                     {lastExportResult.success ? (
                       <CheckCircle className="h-4 w-4 text-green-600" />
@@ -470,7 +543,8 @@ export function CalendarExportDialog({
                     <AlertDescription>
                       {lastExportResult.success ? (
                         <>
-                          <strong>Export successful!</strong> {lastExportResult.eventCount} events exported to {lastExportResult.filename}
+                          <strong>Export successful!</strong> {lastExportResult.eventCount} events
+                          exported to {lastExportResult.filename}
                         </>
                       ) : (
                         <>
@@ -484,7 +558,7 @@ export function CalendarExportDialog({
             )}
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-between pt-4 border-t">
+            <div className="flex items-center justify-between border-t pt-4">
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4" />
                 <span>{getFilteredEventCount()} events will be exported</span>
@@ -493,8 +567,8 @@ export function CalendarExportDialog({
                 <Button variant="outline" onClick={onClose}>
                   Cancel
                 </Button>
-                <Button 
-                  onClick={handleExport} 
+                <Button
+                  onClick={handleExport}
                   disabled={isExporting}
                   className="flex items-center gap-2"
                 >

@@ -7,13 +7,14 @@ import { Calendar as CalendarIcon, Eye, EyeOff, Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { CalendarEvent } from '@/features/calendar/availability/types/client';
 
-import { CoverageGap } from '../lib/coverage-gap-analyzer';
-import { AvailabilityStatus, SlotStatus } from '../types';
+import { CoverageGap } from '../types/coverage';
+import { AvailabilityStatus, SlotStatus } from '../types/enums';
 import { CalendarFilters, CalendarFiltersPanel } from './calendar-filters-panel';
 import { CalendarNavigation, CalendarViewMode, RecurringPatternView } from './calendar-navigation';
 import { OrganizationCalendarView, OrganizationProvider } from './organization-calendar-view';
-import { CalendarEvent, ProviderCalendarView } from './provider-calendar-view';
+import { ProviderCalendarView } from './provider-calendar-view';
 
 export interface EnhancedCalendarViewProps {
   mode: 'organization' | 'provider';

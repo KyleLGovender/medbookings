@@ -1,33 +1,117 @@
-import type { 
-  Availability as PrismaAvailability,
-  ServiceAvailabilityConfig as PrismaServiceAvailabilityConfig,
-  CalculatedAvailabilitySlot as PrismaCalculatedAvailabilitySlot,
-  ServiceProvider,
-  Organization,
-  Location,
-  Service,
-  User,
-  OrganizationMembership,
-  OrganizationProviderConnection,
-  Subscription,
-  Booking,
-  CalendarEvent,
-} from '@prisma/client';
-import { 
-  SchedulingRule, 
-  AvailabilityStatus, 
-  SlotStatus, 
-  BillingEntity,
-  RecurrenceType,
-  DayOfWeek,
+// Client-safe interface definitions (no Prisma imports)
+import {
   AvailabilityContext,
+  AvailabilityStatus,
+  BillingEntity,
+  DayOfWeek,
+  RecurrenceType,
+  SchedulingRule,
+  SlotStatus,
 } from './enums';
 
-// Base availability interface extending Prisma type
-export interface Availability extends PrismaAvailability {}
+// Base types (client-safe versions of Prisma types)
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  image?: string | null;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  website?: string | null;
+}
+
+export interface ServiceProvider {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  serviceProviderTypeId?: string | null;
+}
+
+export interface Location {
+  id: string;
+  name: string;
+  address: string;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+export interface Service {
+  id: string;
+  name: string;
+  description?: string | null;
+  category?: string | null;
+}
+
+export interface Subscription {
+  id: string;
+  name: string;
+  status: string;
+}
+
+export interface OrganizationMembership {
+  id: string;
+  userId: string;
+  organizationId: string;
+  role: string;
+}
+
+export interface OrganizationProviderConnection {
+  id: string;
+  organizationId: string;
+  serviceProviderId: string;
+  status: string;
+  serviceProvider: ServiceProvider;
+}
+
+export interface Booking {
+  id: string;
+  status: string;
+  startTime: Date;
+  endTime: Date;
+}
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  startTime: Date;
+  endTime: Date;
+}
+
+// Base availability interface
+export interface Availability {
+  id: string;
+  serviceProviderId: string;
+  organizationId?: string | null;
+  locationId?: string | null;
+  connectionId?: string | null;
+  startTime: Date;
+  endTime: Date;
+  isRecurring: boolean;
+  recurrencePattern?: any; // JSON field
+  seriesId?: string | null;
+  status: AvailabilityStatus;
+  schedulingRule: SchedulingRule;
+  schedulingInterval?: number | null;
+  isOnlineAvailable: boolean;
+  requiresConfirmation: boolean;
+  billingEntity?: BillingEntity | null;
+  defaultSubscriptionId?: string | null;
+  createdById: string;
+  createdByMembershipId?: string | null;
+  acceptedById?: string | null;
+  acceptedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 // Availability with related data for UI components
-export interface AvailabilityWithRelations extends PrismaAvailability {
+export interface AvailabilityWithRelations extends Availability {
   serviceProvider: ServiceProvider;
   organization?: Organization | null;
   location?: Location | null;
@@ -41,9 +125,21 @@ export interface AvailabilityWithRelations extends PrismaAvailability {
 }
 
 // Service availability configuration interfaces
-export interface ServiceAvailabilityConfig extends PrismaServiceAvailabilityConfig {}
+export interface ServiceAvailabilityConfig {
+  id: string;
+  serviceId: string;
+  serviceProviderId: string;
+  locationId?: string | null;
+  duration: number;
+  price: number;
+  showPrice: boolean;
+  isOnlineAvailable: boolean;
+  isInPerson: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-export interface ServiceAvailabilityConfigWithRelations extends PrismaServiceAvailabilityConfig {
+export interface ServiceAvailabilityConfigWithRelations extends ServiceAvailabilityConfig {
   service: Service;
   serviceProvider: ServiceProvider;
   location?: Location | null;
@@ -52,9 +148,22 @@ export interface ServiceAvailabilityConfigWithRelations extends PrismaServiceAva
 }
 
 // Calculated availability slot interfaces
-export interface CalculatedAvailabilitySlot extends PrismaCalculatedAvailabilitySlot {}
+export interface CalculatedAvailabilitySlot {
+  id: string;
+  availabilityId: string;
+  serviceId: string;
+  serviceConfigId: string;
+  startTime: Date;
+  endTime: Date;
+  status: SlotStatus;
+  bookingId?: string | null;
+  billedToSubscriptionId?: string | null;
+  blockedByCalendarEventId?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-export interface CalculatedAvailabilitySlotWithRelations extends PrismaCalculatedAvailabilitySlot {
+export interface CalculatedAvailabilitySlotWithRelations extends CalculatedAvailabilitySlot {
   availability: AvailabilityWithRelations;
   service: Service;
   serviceConfig: ServiceAvailabilityConfigWithRelations;
@@ -178,7 +287,11 @@ export interface SlotGenerationResult {
 
 // Conflict detection interfaces
 export interface AvailabilityConflict {
-  conflictType: 'OVERLAPPING_AVAILABILITY' | 'PROVIDER_UNAVAILABLE' | 'LOCATION_UNAVAILABLE' | 'CALENDAR_CONFLICT';
+  conflictType:
+    | 'OVERLAPPING_AVAILABILITY'
+    | 'PROVIDER_UNAVAILABLE'
+    | 'LOCATION_UNAVAILABLE'
+    | 'CALENDAR_CONFLICT';
   conflictingAvailabilityId?: string;
   conflictingEventId?: string;
   message: string;
@@ -211,11 +324,11 @@ export interface AvailabilityBillingContext {
 
 // Export types for external use
 export type AvailabilityContextType = AvailabilityContext;
-export type { 
-  SchedulingRule as SchedulingRuleType,
+export type {
   AvailabilityStatus as AvailabilityStatusType,
-  SlotStatus as SlotStatusType,
   BillingEntity as BillingEntityType,
-  RecurrenceType as RecurrenceTypeType,
   DayOfWeek as DayOfWeekType,
+  RecurrenceType as RecurrenceTypeType,
+  SchedulingRule as SchedulingRuleType,
+  SlotStatus as SlotStatusType,
 };

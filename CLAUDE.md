@@ -225,6 +225,13 @@ When development is complete request user to run `npm run fix` from their IDE te
 
 ### File & Code Conventions
 
+#### Import & Export Patterns
+
+- **Explicit Imports**: Prefer direct imports from source files
+- **Index Files**: Avoid index files that simply re-export components
+- **Direct Paths**: Use explicit file paths rather than barrel exports
+- **Example**: `import { Button } from './components/button'` not `import { Button } from './components'`
+
 #### File Naming
 
 - **All TypeScript files**: Use kebab-case (e.g., `user-profile.tsx`, `service-provider-type.ts`)
@@ -241,6 +248,7 @@ When development is complete request user to run `npm run fix` from their IDE te
 - **JSX**: React import not required (Next.js auto-imports)
 - **Props Spreading**: JSX prop spreading is allowed
 - **Images**: Regular `<img>` elements allowed (Next.js Image not enforced)
+- **TypeScript**: Use proper type definitions, avoid `any` types
 
 #### Formatting Standards
 

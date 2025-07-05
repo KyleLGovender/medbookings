@@ -40,11 +40,6 @@ import {
 
 import { useOrganizationAvailability } from '../hooks';
 
-// import { CalendarEvent, ProviderCalendarData } from './provider-calendar-view';
-// import { CoverageGapsPanel } from './coverage-gaps-panel';
-// import { CoverageGap } from '../lib/coverage-gap-analyzer';
-// import { AvailabilityStatus, SlotStatus } from '../types';
-
 // Temporary local types to avoid server imports
 interface CalendarEvent {
   id: string;

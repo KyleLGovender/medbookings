@@ -1,14 +1,7 @@
 import { prisma } from '@/lib/prisma';
-import { generateTimeSlots, SchedulingOptions } from './scheduling-rules';
-import { generateRecurrenceOccurrences, GenerateRecurrenceOptions } from './recurrence-patterns';
-import { 
-  AvailabilityWithRelations, 
-  SlotGenerationRequest, 
-  SlotGenerationResult,
-  SchedulingRule,
-  RecurrenceType,
-  SlotStatus,
-} from '../types';
+
+import { generateRecurrenceOccurrences } from './recurrence-patterns';
+import { SchedulingOptions, generateTimeSlots } from './scheduling-rules';
 
 interface GeneratedSlot {
   availabilityId: string;
@@ -147,8 +140,8 @@ async function generateAvailabilityOccurrences(
 
     occurrences.push(
       ...recurrenceOccurrences
-        .filter(occ => !occ.isException)
-        .map(occ => ({
+        .filter((occ) => !occ.isException)
+        .map((occ) => ({
           startTime: occ.startTime,
           endTime: occ.endTime,
         }))
@@ -195,7 +188,7 @@ async function generateSlotsForOccurrenceAndService(
     }
 
     // Convert time slots to database slots
-    const generatedSlots: GeneratedSlot[] = timeSlotResult.slots.map(slot => ({
+    const generatedSlots: GeneratedSlot[] = timeSlotResult.slots.map((slot) => ({
       availabilityId: availability.id,
       serviceId: serviceConfig.serviceId,
       serviceConfigId: serviceConfig.id,
@@ -218,7 +211,7 @@ async function generateSlotsForOccurrenceAndService(
     // Insert valid slots into database
     if (validSlots.length > 0) {
       await prisma.calculatedAvailabilitySlot.createMany({
-        data: validSlots.map(slot => ({
+        data: validSlots.map((slot) => ({
           availabilityId: slot.availabilityId,
           serviceId: slot.serviceId,
           serviceConfigId: slot.serviceConfigId,
@@ -265,7 +258,7 @@ async function detectSlotConflicts(
 
   for (const newSlot of newSlots) {
     const hasConflict = await checkSlotConflict(newSlot, serviceProviderId);
-    
+
     if (hasConflict) {
       conflictedSlots.push(newSlot);
     } else {
@@ -279,10 +272,7 @@ async function detectSlotConflicts(
 /**
  * Check if a slot conflicts with existing bookings or calendar events
  */
-async function checkSlotConflict(
-  slot: GeneratedSlot,
-  serviceProviderId: string
-): Promise<boolean> {
+async function checkSlotConflict(slot: GeneratedSlot, serviceProviderId: string): Promise<boolean> {
   // Check for overlapping slots
   const overlappingSlots = await prisma.calculatedAvailabilitySlot.findMany({
     where: {
@@ -477,18 +467,18 @@ export async function getSlotGenerationStats(
 
     const [totalSlots, availableSlots, bookedSlots, unavailableSlots] = await Promise.all([
       prisma.calculatedAvailabilitySlot.count({ where: whereClause }),
-      prisma.calculatedAvailabilitySlot.count({ 
-        where: { ...whereClause, status: SlotStatus.AVAILABLE } 
+      prisma.calculatedAvailabilitySlot.count({
+        where: { ...whereClause, status: SlotStatus.AVAILABLE },
       }),
-      prisma.calculatedAvailabilitySlot.count({ 
-        where: { ...whereClause, status: SlotStatus.BOOKED } 
+      prisma.calculatedAvailabilitySlot.count({
+        where: { ...whereClause, status: SlotStatus.BOOKED },
       }),
-      prisma.calculatedAvailabilitySlot.count({ 
-        where: { ...whereClause, status: SlotStatus.UNAVAILABLE } 
+      prisma.calculatedAvailabilitySlot.count({
+        where: { ...whereClause, status: SlotStatus.UNAVAILABLE },
       }),
     ]);
 
-    const utilizationRate = totalSlots > 0 ? (bookedSlots / totalSlots) : 0;
+    const utilizationRate = totalSlots > 0 ? bookedSlots / totalSlots : 0;
 
     return {
       totalSlots,

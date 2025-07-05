@@ -2,31 +2,18 @@
 
 import { useEffect, useState } from 'react';
 
-import {
-  AlertTriangle,
-  ChevronRight,
-  Clock,
-  Lightbulb,
-  MapPin,
-  Minus,
-  TrendingDown,
-  TrendingUp,
-  Users,
-} from 'lucide-react';
+import { AlertTriangle, ChevronRight, Clock, Lightbulb, MapPin, Users } from 'lucide-react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-// Note: Progress component might need to be created if not available
-// import { Progress } from '@/components/ui/progress';
 // Note: Collapsible components might need to be created if not available
 // For now, we'll use a simple expandable pattern
 // import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-import { CoverageAnalysis, CoverageGap, CoverageGapAnalyzer } from '../lib/coverage-gap-analyzer';
+import { CoverageAnalysis, CoverageGap } from '../types/coverage';
 import { OrganizationProvider } from './organization-calendar-view';
 
 export interface CoverageGapsPanelProps {
@@ -61,12 +48,32 @@ export function CoverageGapsPanel({
     const analyzeGaps = async () => {
       setIsLoading(true);
 
-      // Use default requirements for healthcare organizations
-      const analyzer = new CoverageGapAnalyzer(CoverageGapAnalyzer.getDefaultRequirements());
-      const result = analyzer.analyzeCoverage(providers, startDate, endDate);
+      try {
+        const response = await fetch('/api/calendar/availability/coverage/analyze', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            providers,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            requirements: null, // Use default requirements
+          }),
+        });
 
-      setAnalysis(result);
-      setIsLoading(false);
+        if (!response.ok) {
+          throw new Error('Failed to analyze coverage gaps');
+        }
+
+        const result = await response.json();
+        setAnalysis(result);
+      } catch (error) {
+        console.error('Error analyzing coverage gaps:', error);
+        setAnalysis(null);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     analyzeGaps();

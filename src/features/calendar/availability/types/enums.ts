@@ -1,10 +1,30 @@
-// Re-export Prisma enums for availability management
-export { 
-  SchedulingRule, 
-  AvailabilityStatus,
-  SlotStatus,
-  BillingEntity 
-} from '@prisma/client';
+// Client-safe enum definitions (matching Prisma enums)
+export enum AvailabilityStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  REJECTED = 'REJECTED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum BillingEntity {
+  ORGANIZATION = 'ORGANIZATION',
+  PROVIDER = 'PROVIDER',
+  CUSTOMER = 'CUSTOMER',
+}
+
+export enum SchedulingRule {
+  FIRST_COME_FIRST_SERVED = 'FIRST_COME_FIRST_SERVED',
+  APPOINTMENT_REQUIRED = 'APPOINTMENT_REQUIRED',
+  WALK_IN_ONLY = 'WALK_IN_ONLY',
+  EMERGENCY_ONLY = 'EMERGENCY_ONLY',
+}
+
+export enum SlotStatus {
+  AVAILABLE = 'AVAILABLE',
+  BOOKED = 'BOOKED',
+  BLOCKED = 'BLOCKED',
+  INVALID = 'INVALID',
+}
 
 // Additional enums for availability management
 export enum RecurrenceType {
