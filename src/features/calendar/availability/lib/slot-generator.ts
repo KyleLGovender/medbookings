@@ -1,3 +1,9 @@
+import { SlotStatus } from '@/features/calendar/availability/types/enums';
+import {
+  AvailabilityWithRelations,
+  SlotGenerationRequest,
+  SlotGenerationResult,
+} from '@/features/calendar/availability/types/interfaces';
 import { prisma } from '@/lib/prisma';
 
 import { generateRecurrenceOccurrences } from './recurrence-patterns';
