@@ -811,6 +811,7 @@ enum AvailabilityStatus {
   PENDING
   ACCEPTED
   REJECTED
+  CANCELLED
 }
 
 enum SchedulingRule {

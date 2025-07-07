@@ -1,7 +1,10 @@
+import {
+  AvailabilityStatus,
+  AvailabilityWithRelations,
+} from '@/features/calendar/availability/types/types';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-import { AvailabilityStatus, AvailabilityWithRelations } from '../types';
 import {
   notifyAvailabilityAccepted,
   notifyAvailabilityCancelled,
@@ -65,11 +68,11 @@ export async function processAvailabilityAcceptance(
       return { success: false, error: 'Availability is not pending acceptance' };
     }
 
-    // Update availability status to ACTIVE
+    // Update availability status to ACCEPTED
     const updatedAvailability = await prisma.availability.update({
       where: { id: availabilityId },
       data: {
-        status: AvailabilityStatus.ACTIVE,
+        status: AvailabilityStatus.ACCEPTED,
         acceptedById: currentUser.id,
         acceptedAt: new Date(),
       },
@@ -264,8 +267,8 @@ export async function processAvailabilityCancellation(
     const canCancel =
       currentUser.id === availability.serviceProviderId ||
       currentUser.id === availability.createdById ||
-      currentUser.roles.includes('ADMIN') ||
-      currentUser.roles.includes('SUPER_ADMIN');
+      currentUser.role === 'ADMIN' ||
+      currentUser.role === 'SUPER_ADMIN';
 
     if (!canCancel && availability.organizationId) {
       // Check organization membership
@@ -318,7 +321,7 @@ export async function processAvailabilityCancellation(
     await prisma.calculatedAvailabilitySlot.updateMany({
       where: { availabilityId: availabilityId },
       data: {
-        status: 'UNAVAILABLE',
+        status: 'BLOCKED',
       },
     });
 
@@ -398,7 +401,7 @@ export async function processRecurringSeriesAcceptance(
     const updateResult = await prisma.availability.updateMany({
       where: whereClause,
       data: {
-        status: AvailabilityStatus.ACTIVE,
+        status: AvailabilityStatus.ACCEPTED,
         acceptedById: currentUser.id,
         acceptedAt: new Date(),
       },
@@ -408,7 +411,7 @@ export async function processRecurringSeriesAcceptance(
     const seriesAvailabilities = await prisma.availability.findMany({
       where: {
         seriesId: masterAvailability.seriesId,
-        status: AvailabilityStatus.ACTIVE,
+        status: AvailabilityStatus.ACCEPTED,
       },
     });
 
@@ -477,7 +480,7 @@ export async function getWorkflowStatistics(
     ] = await Promise.all([
       prisma.availability.count({ where: whereClause }),
       prisma.availability.count({ where: { ...whereClause, status: AvailabilityStatus.PENDING } }),
-      prisma.availability.count({ where: { ...whereClause, status: AvailabilityStatus.ACTIVE } }),
+      prisma.availability.count({ where: { ...whereClause, status: AvailabilityStatus.ACCEPTED } }),
       prisma.availability.count({ where: { ...whereClause, status: AvailabilityStatus.REJECTED } }),
       prisma.availability.count({
         where: { ...whereClause, status: AvailabilityStatus.CANCELLED },
@@ -493,7 +496,7 @@ export async function getWorkflowStatistics(
     const bookedSlots = await prisma.calculatedAvailabilitySlot.count({
       where: {
         availability: whereClause,
-        bookingId: { not: null },
+        booking: { isNot: null },
       },
     });
 
