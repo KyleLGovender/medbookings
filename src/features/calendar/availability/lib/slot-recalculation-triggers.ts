@@ -1,15 +1,15 @@
+import { RecurrencePattern, SchedulingRule } from '@/features/calendar/availability/types/types';
 import { prisma } from '@/lib/prisma';
+
 import { RecurringSlotManager } from './recurring-slot-manager';
 import { SlotGenerationService } from './slot-generation-service';
-import { 
-  AvailabilityWithRelations,
-  SlotGenerationResult,
-  RecurrencePattern,
-  SchedulingRule,
-} from '../types';
 
 export interface RecalculationTrigger {
-  triggerType: 'availability_modified' | 'service_modified' | 'schedule_modified' | 'location_modified';
+  triggerType:
+    | 'availability_modified'
+    | 'service_modified'
+    | 'schedule_modified'
+    | 'location_modified';
   entityId: string;
   changeType: 'create' | 'update' | 'delete';
   affectedFields: string[];
@@ -39,7 +39,7 @@ export class SlotRecalculationService {
       enableConflictDetection: true,
       generateFutureOnly: true,
     });
-    
+
     this.recurringManager = new RecurringSlotManager({
       generateFutureOnly: true,
       preserveExistingSlots: false,
@@ -84,7 +84,7 @@ export class SlotRecalculationService {
 
       // Determine if recalculation is needed
       const needsRecalculation = this.shouldTriggerRecalculation(modifiedFields, changeType);
-      
+
       if (!needsRecalculation) {
         return {
           triggered: false,
@@ -98,8 +98,8 @@ export class SlotRecalculationService {
       }
 
       // Check for existing bookings
-      const hasBookings = availability.calculatedSlots.some(slot => slot.booking);
-      
+      const hasBookings = availability.calculatedSlots.some((slot) => slot.booking);
+
       if (hasBookings && this.isDestructiveChange(modifiedFields)) {
         return {
           triggered: false,
@@ -114,7 +114,7 @@ export class SlotRecalculationService {
 
       // Determine recalculation scope
       const scope = this.determineRecalculationScope(availability, modifiedFields);
-      
+
       // Execute recalculation based on scope
       let result: RecalculationResult;
 
@@ -142,7 +142,6 @@ export class SlotRecalculationService {
 
       result.processingTimeMs = Date.now() - startTime;
       return result;
-
     } catch (error) {
       console.error('Error processing availability modification trigger:', error);
       return {
@@ -167,11 +166,11 @@ export class SlotRecalculationService {
     const startTime = Date.now();
 
     try {
-      // Get service config and related availability
+      // Get service config and related availabilities
       const serviceConfig = await prisma.serviceAvailabilityConfig.findUnique({
         where: { id: serviceConfigId },
         include: {
-          availability: {
+          availabilities: {
             include: {
               calculatedSlots: {
                 include: {
@@ -195,11 +194,11 @@ export class SlotRecalculationService {
         };
       }
 
-      // Check for existing bookings for this service
-      const serviceSlots = serviceConfig.availability.calculatedSlots.filter(
-        slot => slot.serviceId === serviceConfig.serviceId
+      // Check for existing bookings for this service across all availabilities
+      const allSlots = serviceConfig.availabilities.flatMap((availability) =>
+        availability.calculatedSlots.filter((slot) => slot.serviceId === serviceConfig.serviceId)
       );
-      const hasBookings = serviceSlots.some(slot => slot.booking);
+      const hasBookings = allSlots.some((slot: any) => slot.booking);
 
       if (hasBookings && changeType === 'delete') {
         return {
@@ -213,12 +212,25 @@ export class SlotRecalculationService {
         };
       }
 
-      // Recalculate slots for the affected availability
-      const result = await this.recalculateSingleAvailability(serviceConfig.availabilityId);
-      result.processingTimeMs = Date.now() - startTime;
-      
-      return result;
+      // Recalculate slots for all affected availabilities
+      const availabilityIds = serviceConfig.availabilities.map((availability) => availability.id);
+      const results = await Promise.all(
+        availabilityIds.map((id) => this.recalculateSingleAvailability(id))
+      );
 
+      // Combine results
+      const result: RecalculationResult = {
+        triggered: true,
+        scope: 'single',
+        totalAffectedAvailabilities: availabilityIds.length,
+        totalSlotsRecalculated: results.reduce((sum, r) => sum + r.totalSlotsRecalculated, 0),
+        totalSlotsConflicted: results.reduce((sum, r) => sum + r.totalSlotsConflicted, 0),
+        errors: results.flatMap((r) => r.errors),
+        processingTimeMs: Date.now() - startTime,
+      };
+      result.processingTimeMs = Date.now() - startTime;
+
+      return result;
     } catch (error) {
       console.error('Error processing service modification trigger:', error);
       return {
@@ -246,7 +258,7 @@ export class SlotRecalculationService {
     try {
       // Update recurrence pattern for all affected availabilities
       const whereClause: any = { seriesId };
-      
+
       if (modificationScope === 'future_only') {
         whereClause.startTime = { gte: new Date() };
       }
@@ -254,7 +266,7 @@ export class SlotRecalculationService {
       await prisma.availability.updateMany({
         where: whereClause,
         data: {
-          recurrencePattern: newPattern,
+          recurrencePattern: newPattern as any,
         },
       });
 
@@ -269,7 +281,6 @@ export class SlotRecalculationService {
 
       result.processingTimeMs = Date.now() - startTime;
       return result;
-
     } catch (error) {
       console.error('Error processing recurrence modification trigger:', error);
       return {
@@ -320,8 +331,8 @@ export class SlotRecalculationService {
       }
 
       // Check for existing bookings
-      const hasBookings = availability.calculatedSlots.some(slot => slot.booking);
-      
+      const hasBookings = availability.calculatedSlots.some((slot) => slot.booking);
+
       if (hasBookings) {
         return {
           triggered: false,
@@ -350,7 +361,7 @@ export class SlotRecalculationService {
         });
       } else if (availability.seriesId) {
         const whereClause: any = { seriesId: availability.seriesId };
-        
+
         if (modificationScope === 'future_only') {
           whereClause.startTime = { gte: new Date() };
         }
@@ -388,7 +399,6 @@ export class SlotRecalculationService {
 
       result.processingTimeMs = Date.now() - startTime;
       return result;
-
     } catch (error) {
       console.error('Error processing scheduling rule modification trigger:', error);
       return {
@@ -411,7 +421,7 @@ export class SlotRecalculationService {
   ): Promise<RecalculationResult> {
     try {
       const result = await this.slotService.generateSlotsForSingleAvailability(availabilityId);
-      
+
       return {
         triggered: true,
         scope: 'single',
@@ -440,7 +450,7 @@ export class SlotRecalculationService {
   private async recalculateEntireSeries(seriesId: string): Promise<RecalculationResult> {
     try {
       const result = await this.recurringManager.updateSeriesSlots(seriesId, 'all');
-      
+
       return {
         triggered: true,
         scope: 'series',
@@ -469,7 +479,7 @@ export class SlotRecalculationService {
   private async recalculateFutureSeries(seriesId: string): Promise<RecalculationResult> {
     try {
       const result = await this.recurringManager.updateSeriesSlots(seriesId, 'future');
-      
+
       return {
         triggered: true,
         scope: 'future_only',
@@ -513,21 +523,16 @@ export class SlotRecalculationService {
       'status',
     ];
 
-    return modifiedFields.some(field => triggerFields.includes(field));
+    return modifiedFields.some((field) => triggerFields.includes(field));
   }
 
   /**
    * Check if the change is destructive (affects existing slots significantly)
    */
   private isDestructiveChange(modifiedFields: string[]): boolean {
-    const destructiveFields = [
-      'startTime',
-      'endTime',
-      'schedulingRule',
-      'schedulingInterval',
-    ];
+    const destructiveFields = ['startTime', 'endTime', 'schedulingRule', 'schedulingInterval'];
 
-    return modifiedFields.some(field => destructiveFields.includes(field));
+    return modifiedFields.some((field) => destructiveFields.includes(field));
   }
 
   /**
@@ -541,14 +546,10 @@ export class SlotRecalculationService {
       return 'single';
     }
 
-    const seriesWideFields = [
-      'recurrencePattern',
-      'schedulingRule',
-      'schedulingInterval',
-    ];
+    const seriesWideFields = ['recurrencePattern', 'schedulingRule', 'schedulingInterval'];
 
-    const affectsEntireSeries = modifiedFields.some(field => seriesWideFields.includes(field));
-    
+    const affectsEntireSeries = modifiedFields.some((field) => seriesWideFields.includes(field));
+
     if (affectsEntireSeries) {
       // For now, we'll be conservative and only update future occurrences
       // to avoid disrupting past appointments
@@ -592,5 +593,10 @@ export async function triggerSchedulingRuleRecalculation(
   scope: 'single' | 'series' | 'future_only' = 'single'
 ): Promise<RecalculationResult> {
   const service = new SlotRecalculationService();
-  return await service.processSchedulingRuleModification(availabilityId, newRule, newInterval, scope);
+  return await service.processSchedulingRuleModification(
+    availabilityId,
+    newRule,
+    newInterval,
+    scope
+  );
 }

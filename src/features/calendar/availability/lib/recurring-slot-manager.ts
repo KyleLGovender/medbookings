@@ -1,12 +1,12 @@
-import { prisma } from '@/lib/prisma';
-import { SlotGenerationService } from './slot-generation-service';
-import { 
-  AvailabilityWithRelations, 
-  RecurrencePattern,
-  SlotGenerationResult,
+import {
   AvailabilityStatus,
-} from '../types';
+  AvailabilityWithRelations,
+  RecurrencePattern,
+} from '@/features/calendar/availability/types/types';
+import { prisma } from '@/lib/prisma';
+
 import { generateRecurrenceOccurrences } from './recurrence-patterns';
+import { SlotGenerationService } from './slot-generation-service';
 
 export interface RecurringSlotGenerationResult {
   seriesId: string;
@@ -76,6 +76,7 @@ export class RecurringSlotManager {
           organization: true,
           location: true,
           defaultSubscription: true,
+          createdBy: true,
         },
       });
 
@@ -93,19 +94,19 @@ export class RecurringSlotManager {
 
       // Generate all occurrences for the series
       const occurrences = this.generateSeriesOccurrences(
-        masterAvailability.recurrencePattern,
+        masterAvailability.recurrencePattern as unknown as RecurrencePattern,
         masterAvailability.startTime,
         masterAvailability.endTime
       );
 
       // Filter future occurrences if configured
       const filteredOccurrences = this.options.generateFutureOnly
-        ? occurrences.filter(occ => occ.startTime > new Date())
+        ? occurrences.filter((occ) => occ.startTime > new Date())
         : occurrences;
 
       // Create or update availability records for each occurrence
       const availabilityIds = await this.ensureAvailabilityOccurrences(
-        masterAvailability,
+        masterAvailability as unknown as AvailabilityWithRelations,
         filteredOccurrences
       );
 
@@ -125,15 +126,16 @@ export class RecurringSlotManager {
 
       // Process in batches to avoid overwhelming the database
       const batchSize = this.options.maxOccurrencesPerBatch || 100;
-      
+
       for (let i = 0; i < availabilityIds.length; i += batchSize) {
         const batch = availabilityIds.slice(i, i + batchSize);
-        
+
         const batchPromises = batch.map(async (availabilityId, index) => {
           try {
             const occurrence = filteredOccurrences[i + index];
-            const result = await this.slotService.generateSlotsForSingleAvailability(availabilityId);
-            
+            const result =
+              await this.slotService.generateSlotsForSingleAvailability(availabilityId);
+
             totalSlotsGenerated += result.slotsGenerated;
             totalSlotsConflicted += result.slotsConflicted;
             errors.push(...result.errors);
@@ -149,7 +151,7 @@ export class RecurringSlotManager {
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             errors.push(`Occurrence ${availabilityId}: ${errorMessage}`);
-            
+
             return {
               availabilityId,
               startTime: filteredOccurrences[i + index].startTime,
@@ -197,8 +199,8 @@ export class RecurringSlotManager {
     });
 
     return occurrences
-      .filter(occ => !occ.isException)
-      .map(occ => ({
+      .filter((occ) => !occ.isException)
+      .map((occ) => ({
         startTime: occ.startTime,
         endTime: occ.endTime,
       }));
@@ -247,15 +249,17 @@ export class RecurringSlotManager {
             defaultSubscriptionId: masterAvailability.defaultSubscriptionId,
             // Create service configurations for this occurrence
             availableServices: {
-              create: masterAvailability.availableServices.map(config => ({
-                serviceId: config.serviceId,
-                duration: config.duration,
-                price: config.price,
-                showPrice: config.showPrice,
-                isOnlineAvailable: config.isOnlineAvailable,
-                isInPerson: config.isInPerson,
-                locationId: config.locationId,
-              })),
+              create:
+                masterAvailability.availableServices?.map((config) => ({
+                  service: { connect: { id: config.serviceId } },
+                  serviceProvider: { connect: { id: masterAvailability.serviceProviderId } },
+                  duration: config.duration,
+                  price: config.price,
+                  showPrice: config.showPrice,
+                  isOnlineAvailable: config.isOnlineAvailable,
+                  isInPerson: config.isInPerson,
+                  locationId: config.locationId,
+                })) || [],
             },
           },
         });
@@ -278,7 +282,7 @@ export class RecurringSlotManager {
     try {
       // Get all availabilities in the series
       const whereClause: any = { seriesId };
-      
+
       if (updateType === 'future') {
         whereClause.startTime = { gte: new Date() };
       } else if (updateType === 'specific' && specificDate) {
@@ -315,7 +319,7 @@ export class RecurringSlotManager {
       for (const availability of seriesAvailabilities) {
         try {
           const result = await this.slotService.generateSlotsForSingleAvailability(availability.id);
-          
+
           totalSlotsGenerated += result.slotsGenerated;
           totalSlotsConflicted += result.slotsConflicted;
           errors.push(...result.errors);
@@ -331,7 +335,7 @@ export class RecurringSlotManager {
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           errors.push(`Availability ${availability.id}: ${errorMessage}`);
-          
+
           occurrenceResults.push({
             availabilityId: availability.id,
             startTime: availability.startTime,
@@ -401,9 +405,9 @@ export class RecurringSlotManager {
         throw new Error('No availabilities found in series');
       }
 
-      const occurrenceBreakdown = seriesAvailabilities.map(availability => {
+      const occurrenceBreakdown = seriesAvailabilities.map((availability) => {
         const totalSlots = availability.calculatedSlots.length;
-        const bookedSlots = availability.calculatedSlots.filter(slot => slot.booking).length;
+        const bookedSlots = availability.calculatedSlots.filter((slot) => slot.booking).length;
 
         return {
           availabilityId: availability.id,
@@ -421,7 +425,7 @@ export class RecurringSlotManager {
       const utilizationRate = totalSlots > 0 ? bookedSlots / totalSlots : 0;
 
       const activeOccurrences = seriesAvailabilities.filter(
-        av => av.status === AvailabilityStatus.ACTIVE
+        (av) => av.status === AvailabilityStatus.ACCEPTED
       ).length;
 
       return {

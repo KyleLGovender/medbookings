@@ -1,6 +1,8 @@
+import { Prisma } from '@prisma/client';
+
+import { AvailabilityStatus, SlotStatus } from '@/features/calendar/availability/types/types';
 import { prisma } from '@/lib/prisma';
 
-import { AvailabilityStatus, SlotStatus } from '../types';
 import { optimizedProviderSearch } from './search-performance-service';
 
 export interface LocationSearchParams {
@@ -159,13 +161,12 @@ export class LocationSearchService {
         include: {
           user: true,
           serviceProviderType: true,
-          serviceConfigs: {
+          availabilityConfigs: {
             include: {
               service: true,
               location: true,
             },
             where: {
-              isActive: true,
               ...(serviceTypes && serviceTypes.length > 0
                 ? {
                     service: {
@@ -206,7 +207,7 @@ export class LocationSearchService {
               },
             },
             where: {
-              status: AvailabilityStatus.ACTIVE,
+              status: AvailabilityStatus.ACCEPTED,
             },
           },
         },
@@ -219,7 +220,7 @@ export class LocationSearchService {
         const providerLocations = new Map<string, any>();
 
         // Add locations from service configs
-        provider.serviceConfigs.forEach((config) => {
+        provider.availabilityConfigs.forEach((config) => {
           if (config.location && config.location.coordinates) {
             providerLocations.set(config.location.id, config.location);
           }
@@ -233,7 +234,7 @@ export class LocationSearchService {
         });
 
         // Process each location separately
-        for (const [locationId, location] of providerLocations) {
+        for (const [locationId, location] of Array.from(providerLocations)) {
           const locationCoords = location.coordinates as {
             lat: number;
             lng: number;
@@ -253,13 +254,13 @@ export class LocationSearchService {
           }
 
           // Get available services at this location
-          const availableServices = provider.serviceConfigs
+          const availableServices = provider.availabilityConfigs
             .filter((config) => config.locationId === locationId)
             .map((config) => ({
               serviceId: config.service.id,
               serviceName: config.service.name,
-              duration: config.defaultDuration,
-              price: config.price,
+              duration: config.service.defaultDuration,
+              price: config.price.toNumber(),
               showPrice: config.showPrice,
             }));
 
@@ -308,8 +309,8 @@ export class LocationSearchService {
                     slotId: nearestSlot.id,
                     startTime: nearestSlot.startTime,
                     endTime: nearestSlot.endTime,
-                    isOnlineAvailable: nearestSlot.isOnlineAvailable,
-                    price: nearestSlot.price,
+                    isOnlineAvailable: false, // Default to false for location-based slots
+                    price: nearestSlot.service.defaultPrice.toNumber(),
                   }
                 : undefined,
               totalAvailableSlots: availableSlots.length,
@@ -338,13 +339,13 @@ export class LocationSearchService {
               return true;
             });
 
-          const onlineServices = provider.serviceConfigs
+          const onlineServices = provider.availabilityConfigs
             .filter((config) => !config.locationId)
             .map((config) => ({
               serviceId: config.service.id,
               serviceName: config.service.name,
-              duration: config.defaultDuration,
-              price: config.price,
+              duration: config.service.defaultDuration,
+              price: config.price.toNumber(),
               showPrice: config.showPrice,
             }));
 
@@ -367,7 +368,7 @@ export class LocationSearchService {
                     startTime: nearestOnlineSlot.startTime,
                     endTime: nearestOnlineSlot.endTime,
                     isOnlineAvailable: true,
-                    price: nearestOnlineSlot.price,
+                    price: nearestOnlineSlot.service.defaultPrice.toNumber(),
                   }
                 : undefined,
               totalAvailableSlots: onlineSlots.length,
@@ -404,21 +405,7 @@ export class LocationSearchService {
       const locations = await prisma.location.findMany({
         where: {
           coordinates: {
-            not: null,
-          },
-        },
-        include: {
-          _count: {
-            select: {
-              serviceConfigs: {
-                where: {
-                  isActive: true,
-                  serviceProvider: {
-                    status: 'ACTIVE',
-                  },
-                },
-              },
-            },
+            not: Prisma.DbNull,
           },
         },
       });
@@ -440,10 +427,10 @@ export class LocationSearchService {
           return {
             locationId: location.id,
             name: location.name,
-            address: location.address,
+            address: location.formattedAddress,
             coordinates: locationCoords,
             distance: Math.round(distance * 10) / 10,
-            providerCount: location._count.serviceConfigs,
+            providerCount: 0, // TODO: Implement proper count query
           };
         })
         .filter((location) => location.distance <= maxDistance)

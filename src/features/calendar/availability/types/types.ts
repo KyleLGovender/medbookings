@@ -74,15 +74,15 @@ export enum SlotGenerationStatus {
 
 export interface User {
   id: string;
-  email: string;
-  name: string;
+  email?: string | null;
+  name?: string | null;
   image?: string | null;
 }
 
 export interface Organization {
   id: string;
   name: string;
-  email: string;
+  email?: string | null;
   phone?: string | null;
   website?: string | null;
 }
@@ -163,9 +163,10 @@ export interface OrganizationMonthViewProps {
 export interface Location {
   id: string;
   name: string;
-  address: string;
-  latitude?: number | null;
-  longitude?: number | null;
+  formattedAddress: string;
+  coordinates?: any; // JSON field with lat/lng
+  phone?: string | null;
+  email?: string | null;
 }
 
 export interface Service {
@@ -177,8 +178,9 @@ export interface Service {
 
 export interface Subscription {
   id: string;
-  name: string;
   status: string;
+  type?: string;
+  isActive?: boolean;
 }
 
 export interface OrganizationMembership {

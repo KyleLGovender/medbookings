@@ -1,5 +1,5 @@
+import { AvailabilityStatus, SlotStatus } from '@/features/calendar/availability/types/types';
 import { prisma } from '@/lib/prisma';
-import { SlotStatus, AvailabilityStatus } from '../types';
 
 export interface CleanupOptions {
   preserveBookedSlots?: boolean;
@@ -60,7 +60,7 @@ export class SlotCleanupService {
         include: {
           booking: {
             include: {
-              customer: true,
+              client: true,
             },
           },
         },
@@ -69,14 +69,14 @@ export class SlotCleanupService {
       const totalSlotsProcessed = slots.length;
 
       // Separate booked and unbooked slots
-      const bookedSlots = slots.filter(slot => slot.booking);
-      const unbookedSlots = slots.filter(slot => !slot.booking);
+      const bookedSlots = slots.filter((slot) => slot.booking);
+      const unbookedSlots = slots.filter((slot) => !slot.booking);
 
       // Handle unbooked slots - delete them
       if (unbookedSlots.length > 0) {
         const deleteResult = await prisma.calculatedAvailabilitySlot.deleteMany({
           where: {
-            id: { in: unbookedSlots.map(slot => slot.id) },
+            id: { in: unbookedSlots.map((slot) => slot.id) },
           },
         });
         slotsDeleted = deleteResult.count;
@@ -88,10 +88,10 @@ export class SlotCleanupService {
           // Mark booked slots as unavailable instead of deleting
           const updateResult = await prisma.calculatedAvailabilitySlot.updateMany({
             where: {
-              id: { in: bookedSlots.map(slot => slot.id) },
+              id: { in: bookedSlots.map((slot) => slot.id) },
             },
             data: {
-              status: SlotStatus.UNAVAILABLE,
+              status: SlotStatus.BLOCKED,
             },
           });
           slotsMarkedUnavailable = updateResult.count;
@@ -102,7 +102,9 @@ export class SlotCleanupService {
             customersNotified = await this.notifyAffectedCustomers(bookedSlots);
           }
 
-          warnings.push(`${bookedSlots.length} booked slots marked as unavailable instead of deleted`);
+          warnings.push(
+            `${bookedSlots.length} booked slots marked as unavailable instead of deleted`
+          );
         } else {
           // This would be a more aggressive cleanup - cancel bookings
           // For now, we'll just warn about it
@@ -120,11 +122,10 @@ export class SlotCleanupService {
         warnings,
         processingTimeMs: Date.now() - startTime,
       };
-
     } catch (error) {
       console.error('Error cleaning up availability slots:', error);
       errors.push(error instanceof Error ? error.message : 'Unknown error');
-      
+
       return {
         totalSlotsProcessed: 0,
         slotsDeleted: 0,
@@ -159,7 +160,7 @@ export class SlotCleanupService {
     try {
       // Build where clause based on cleanup scope
       const whereClause: any = { seriesId };
-      
+
       switch (cleanupScope) {
         case 'future_only':
           whereClause.startTime = { gte: new Date() };
@@ -178,7 +179,7 @@ export class SlotCleanupService {
             include: {
               booking: {
                 include: {
-                  customer: true,
+                  client: true,
                 },
               },
             },
@@ -193,14 +194,14 @@ export class SlotCleanupService {
         const slots = availability.calculatedSlots;
         totalSlotsProcessed += slots.length;
 
-        const bookedSlots = slots.filter(slot => slot.booking);
-        const unbookedSlots = slots.filter(slot => !slot.booking);
+        const bookedSlots = slots.filter((slot) => slot.booking);
+        const unbookedSlots = slots.filter((slot) => !slot.booking);
 
         // Delete unbooked slots
         if (unbookedSlots.length > 0) {
           const deleteResult = await prisma.calculatedAvailabilitySlot.deleteMany({
             where: {
-              id: { in: unbookedSlots.map(slot => slot.id) },
+              id: { in: unbookedSlots.map((slot) => slot.id) },
             },
           });
           slotsDeleted += deleteResult.count;
@@ -211,10 +212,10 @@ export class SlotCleanupService {
           if (this.options.preserveBookedSlots) {
             const updateResult = await prisma.calculatedAvailabilitySlot.updateMany({
               where: {
-                id: { in: bookedSlots.map(slot => slot.id) },
+                id: { in: bookedSlots.map((slot) => slot.id) },
               },
               data: {
-                status: SlotStatus.UNAVAILABLE,
+                status: SlotStatus.BLOCKED,
               },
             });
             slotsMarkedUnavailable += updateResult.count;
@@ -235,7 +236,9 @@ export class SlotCleanupService {
             });
             availabilitiesDeleted++;
           } catch (deleteError) {
-            warnings.push(`Could not delete availability ${availability.id}: foreign key constraints`);
+            warnings.push(
+              `Could not delete availability ${availability.id}: foreign key constraints`
+            );
           }
         }
       }
@@ -253,11 +256,10 @@ export class SlotCleanupService {
         warnings,
         processingTimeMs: Date.now() - startTime,
       };
-
     } catch (error) {
       console.error('Error cleaning up recurring series slots:', error);
       errors.push(error instanceof Error ? error.message : 'Unknown error');
-      
+
       return {
         totalSlotsProcessed: 0,
         slotsDeleted: 0,
@@ -283,19 +285,12 @@ export class SlotCleanupService {
     const warnings: string[] = [];
 
     try {
-      // Find slots where availability doesn't exist or is inactive
+      // Find slots where availability is inactive
       const orphanedSlots = await prisma.calculatedAvailabilitySlot.findMany({
         where: {
-          OR: [
-            {
-              availability: null,
-            },
-            {
-              availability: {
-                status: { in: [AvailabilityStatus.CANCELLED, AvailabilityStatus.REJECTED] },
-              },
-            },
-          ],
+          availability: {
+            status: { in: [AvailabilityStatus.CANCELLED, AvailabilityStatus.REJECTED] },
+          },
         },
         include: {
           booking: true,
@@ -303,8 +298,8 @@ export class SlotCleanupService {
       });
 
       const totalSlotsProcessed = orphanedSlots.length;
-      const bookedOrphanedSlots = orphanedSlots.filter(slot => slot.booking);
-      const unbookedOrphanedSlots = orphanedSlots.filter(slot => !slot.booking);
+      const bookedOrphanedSlots = orphanedSlots.filter((slot) => slot.booking);
+      const unbookedOrphanedSlots = orphanedSlots.filter((slot) => !slot.booking);
 
       let slotsDeleted = 0;
       let slotsMarkedUnavailable = 0;
@@ -313,7 +308,7 @@ export class SlotCleanupService {
       if (unbookedOrphanedSlots.length > 0) {
         const deleteResult = await prisma.calculatedAvailabilitySlot.deleteMany({
           where: {
-            id: { in: unbookedOrphanedSlots.map(slot => slot.id) },
+            id: { in: unbookedOrphanedSlots.map((slot) => slot.id) },
           },
         });
         slotsDeleted = deleteResult.count;
@@ -323,14 +318,16 @@ export class SlotCleanupService {
       if (bookedOrphanedSlots.length > 0) {
         const updateResult = await prisma.calculatedAvailabilitySlot.updateMany({
           where: {
-            id: { in: bookedOrphanedSlots.map(slot => slot.id) },
+            id: { in: bookedOrphanedSlots.map((slot) => slot.id) },
           },
           data: {
-            status: SlotStatus.UNAVAILABLE,
+            status: SlotStatus.BLOCKED,
           },
         });
         slotsMarkedUnavailable = updateResult.count;
-        warnings.push(`${bookedOrphanedSlots.length} orphaned slots with bookings marked as unavailable`);
+        warnings.push(
+          `${bookedOrphanedSlots.length} orphaned slots with bookings marked as unavailable`
+        );
       }
 
       return {
@@ -343,11 +340,10 @@ export class SlotCleanupService {
         warnings,
         processingTimeMs: Date.now() - startTime,
       };
-
     } catch (error) {
       console.error('Error cleaning up orphaned slots:', error);
       errors.push(error instanceof Error ? error.message : 'Unknown error');
-      
+
       return {
         totalSlotsProcessed: 0,
         slotsDeleted: 0,
@@ -382,7 +378,7 @@ export class SlotCleanupService {
         'status',
       ];
 
-      const isDestructiveChange = modifiedFields.some(field => destructiveFields.includes(field));
+      const isDestructiveChange = modifiedFields.some((field) => destructiveFields.includes(field));
 
       if (!isDestructiveChange) {
         // No cleanup needed for non-destructive changes
@@ -429,7 +425,7 @@ export class SlotCleanupService {
             // Mark booked invalid slots as unavailable
             await prisma.calculatedAvailabilitySlot.update({
               where: { id: slot.id },
-              data: { status: SlotStatus.UNAVAILABLE },
+              data: { status: SlotStatus.BLOCKED },
             });
             slotsMarkedUnavailable++;
             bookingsAffected++;
@@ -453,11 +449,10 @@ export class SlotCleanupService {
         warnings,
         processingTimeMs: Date.now() - startTime,
       };
-
     } catch (error) {
       console.error('Error cleaning up modified availability slots:', error);
       errors.push(error instanceof Error ? error.message : 'Unknown error');
-      
+
       return {
         totalSlotsProcessed: 0,
         slotsDeleted: 0,
@@ -481,7 +476,7 @@ export class SlotCleanupService {
     }
 
     // Check if availability is still active
-    if (availability.status !== AvailabilityStatus.ACTIVE) {
+    if (availability.status !== AvailabilityStatus.ACCEPTED) {
       return false;
     }
 
@@ -499,12 +494,15 @@ export class SlotCleanupService {
         try {
           // Log notification that would be sent
           console.log('=== SLOT CLEANUP NOTIFICATION ===');
-          console.log('Customer:', slot.booking.customerEmail);
+          console.log('Customer:', slot.booking.guestEmail);
           console.log('Booking ID:', slot.booking.id);
           console.log('Original Time:', slot.startTime.toISOString());
           console.log('Service:', slot.service?.name || 'Unknown Service');
           console.log('Status:', 'Availability Cancelled - Slot Unavailable');
-          console.log('Message:', 'Your appointment availability has been cancelled. Please reschedule.');
+          console.log(
+            'Message:',
+            'Your appointment availability has been cancelled. Please reschedule.'
+          );
           console.log('=== END NOTIFICATION ===');
 
           notifiedCount++;
@@ -544,9 +542,7 @@ export async function cleanupDeletedRecurringSeries(
 /**
  * Clean up orphaned slots across the system
  */
-export async function cleanupOrphanedSlots(
-  options?: CleanupOptions
-): Promise<CleanupResult> {
+export async function cleanupOrphanedSlots(options?: CleanupOptions): Promise<CleanupResult> {
   const service = new SlotCleanupService(options);
   return await service.cleanupOrphanedSlots();
 }

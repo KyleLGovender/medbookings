@@ -124,7 +124,7 @@ function generateProposalNotifications(
       message:
         `${organizationName} has proposed new availability for you to review.\n\n` +
         `Date & Time: ${startTime} - ${endTime}\n` +
-        `Services: ${availability.availableServices.length} service(s) configured\n` +
+        `Services: ${availability.availableServices?.length || 0} service(s) configured\n` +
         `Recurring: ${availability.isRecurring ? 'Yes' : 'No'}\n\n` +
         'Please review this proposal and accept or reject it in your dashboard.',
       actionUrl: '/dashboard/availability/proposals',
@@ -179,7 +179,7 @@ function generateAcceptanceNotifications(
       message:
         `Great news! ${providerName} has accepted your availability proposal.\n\n` +
         `Date & Time: ${startTime}\n` +
-        `Services: ${availability.availableServices.length} service(s)\n` +
+        `Services: ${availability.availableServices?.length || 0} service(s)\n` +
         `Slots Generated: ${availability.calculatedSlots?.length || 0}\n\n` +
         'The availability is now active and patients can start booking appointments.',
       actionUrl: `/dashboard/organizations/${availability.organizationId}/availability`,
@@ -228,7 +228,7 @@ function generateRejectionNotifications(
     let message =
       `${providerName} has declined your availability proposal.\n\n` +
       `Date & Time: ${startTime}\n` +
-      `Services: ${availability.availableServices.length} service(s)\n\n`;
+      `Services: ${availability.availableServices?.length || 0} service(s)\n\n`;
 
     if (rejectionReason) {
       message += `Reason provided: "${rejectionReason}"\n\n`;

@@ -1,5 +1,5 @@
+import { AvailabilityStatus, SlotStatus } from '@/features/calendar/availability/types/types';
 import { prisma } from '@/lib/prisma';
-import { AvailabilityStatus, SlotStatus } from '../types';
 
 export interface SearchPerformanceOptions {
   enableCaching?: boolean;
@@ -25,7 +25,7 @@ export interface PerformanceMetrics {
 export class SearchPerformanceService {
   private readonly DEFAULT_LIMIT = 50;
   private readonly CACHE_TTL = 300; // 5 minutes in seconds
-  
+
   /**
    * Optimize provider search queries with proper indexing strategy
    */
@@ -48,24 +48,27 @@ export class SearchPerformanceService {
     try {
       // Step 1: Use compound index on ServiceAvailabilityConfig (serviceProviderId, isActive, price)
       indexesUsed.push('ServiceAvailabilityConfig_compound_idx');
-      
+
       const serviceConfigsQuery = prisma.serviceAvailabilityConfig.findMany({
         where: {
-          isActive: true, // Uses index on isActive
           serviceProvider: {
             status: 'ACTIVE', // Uses index on ServiceProvider.status
           },
-          ...(params.serviceTypeIds ? {
-            service: {
-              serviceTypeId: { in: params.serviceTypeIds }, // Uses index on Service.serviceTypeId
-            },
-          } : {}),
-          ...(params.priceRange ? {
-            price: {
-              ...(params.priceRange.min ? { gte: params.priceRange.min } : {}),
-              ...(params.priceRange.max ? { lte: params.priceRange.max } : {}),
-            }, // Uses index on price
-          } : {}),
+          ...(params.serviceTypeIds
+            ? {
+                service: {
+                  serviceProviderTypeId: { in: params.serviceTypeIds }, // Uses index on Service.serviceProviderTypeId
+                },
+              }
+            : {}),
+          ...(params.priceRange
+            ? {
+                price: {
+                  ...(params.priceRange.min ? { gte: params.priceRange.min } : {}),
+                  ...(params.priceRange.max ? { lte: params.priceRange.max } : {}),
+                }, // Uses index on price
+              }
+            : {}),
         },
         select: {
           id: true,
@@ -74,7 +77,7 @@ export class SearchPerformanceService {
           locationId: true,
           price: true,
           showPrice: true,
-          defaultDuration: true,
+          duration: true,
           serviceProvider: {
             select: {
               id: true,
@@ -96,19 +99,14 @@ export class SearchPerformanceService {
             select: {
               id: true,
               name: true,
-              serviceType: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
+              serviceProviderTypeId: true,
             },
           },
           location: {
             select: {
               id: true,
               name: true,
-              address: true,
+              formattedAddress: true,
               coordinates: true,
             },
           },
@@ -118,14 +116,16 @@ export class SearchPerformanceService {
 
       // Step 2: Use optimized availability query with compound index
       indexesUsed.push('Availability_compound_idx');
-      
+
       const availabilityQuery = prisma.availability.findMany({
         where: {
-          status: AvailabilityStatus.ACTIVE, // Uses index on status
-          ...(params.dateRange ? {
-            startTime: { gte: params.dateRange.startDate }, // Uses index on startTime
-            endTime: { lte: params.dateRange.endDate },
-          } : {}),
+          status: AvailabilityStatus.ACCEPTED, // Uses index on status
+          ...(params.dateRange
+            ? {
+                startTime: { gte: params.dateRange.startDate }, // Uses index on startTime
+                endTime: { lte: params.dateRange.endDate },
+              }
+            : {}),
         },
         select: {
           id: true,
@@ -137,19 +137,18 @@ export class SearchPerformanceService {
           calculatedSlots: {
             where: {
               status: SlotStatus.AVAILABLE, // Uses index on CalculatedAvailabilitySlot.status
-              ...(params.dateRange ? {
-                startTime: { gte: params.dateRange.startDate }, // Uses index on startTime
-                endTime: { lte: params.dateRange.endDate },
-              } : {}),
+              ...(params.dateRange
+                ? {
+                    startTime: { gte: params.dateRange.startDate }, // Uses index on startTime
+                    endTime: { lte: params.dateRange.endDate },
+                  }
+                : {}),
             },
             select: {
               id: true,
               startTime: true,
               endTime: true,
-              duration: true,
-              price: true,
               serviceId: true,
-              isOnlineAvailable: true,
             },
             orderBy: {
               startTime: 'asc', // Uses index on startTime for ordering
@@ -172,9 +171,9 @@ export class SearchPerformanceService {
       const serviceMap = new Map();
 
       // Build lookup maps for efficient joining
-      serviceConfigs.forEach(config => {
+      serviceConfigs.forEach((config) => {
         const providerId = config.serviceProviderId;
-        
+
         if (!providerMap.has(providerId)) {
           providerMap.set(providerId, {
             provider: config.serviceProvider,
@@ -182,12 +181,12 @@ export class SearchPerformanceService {
             locations: new Set(),
           });
         }
-        
+
         providerMap.get(providerId).services.push({
           serviceId: config.service.id,
           serviceName: config.service.name,
-          serviceType: config.service.serviceType,
-          duration: config.defaultDuration,
+          serviceProviderTypeId: config.service.serviceProviderTypeId,
+          duration: config.duration,
           price: config.price,
           showPrice: config.showPrice,
         });
@@ -200,9 +199,9 @@ export class SearchPerformanceService {
 
       // Step 4: Efficient slot aggregation
       const providerSlots = new Map();
-      availabilities.forEach(availability => {
+      availabilities.forEach((availability) => {
         const providerId = availability.serviceProviderId;
-        
+
         if (!providerSlots.has(providerId)) {
           providerSlots.set(providerId, {
             totalSlots: 0,
@@ -212,16 +211,19 @@ export class SearchPerformanceService {
         }
 
         const providerSlotData = providerSlots.get(providerId);
-        
-        availability.calculatedSlots.forEach(slot => {
+
+        availability.calculatedSlots.forEach((slot) => {
           providerSlotData.totalSlots++;
           providerSlotData.allSlots.push({
             ...slot,
             locationId: availability.locationId,
-            isOnlineAvailable: slot.isOnlineAvailable || availability.isOnlineAvailable,
+            isOnlineAvailable: availability.isOnlineAvailable,
           });
 
-          if (!providerSlotData.nearestSlot || slot.startTime < providerSlotData.nearestSlot.startTime) {
+          if (
+            !providerSlotData.nearestSlot ||
+            slot.startTime < providerSlotData.nearestSlot.startTime
+          ) {
             providerSlotData.nearestSlot = slot;
           }
         });
@@ -229,8 +231,8 @@ export class SearchPerformanceService {
 
       // Step 5: Combine results with distance calculation optimization
       const results = [];
-      
-      for (const [providerId, providerData] of providerMap.entries()) {
+
+      for (const [providerId, providerData] of Array.from(providerMap.entries())) {
         const slotData = providerSlots.get(providerId);
         if (!slotData || slotData.totalSlots === 0) continue;
 
@@ -240,7 +242,7 @@ export class SearchPerformanceService {
 
         if (params.coordinates && providerData.locations.size > 0) {
           let minDistance = Infinity;
-          
+
           for (const locationId of providerData.locations) {
             const location = locationMap.get(locationId);
             if (location?.coordinates) {
@@ -250,14 +252,14 @@ export class SearchPerformanceService {
                 location.coordinates.lat,
                 location.coordinates.lng
               );
-              
+
               if (locDistance < minDistance) {
                 minDistance = locDistance;
                 primaryLocation = location;
               }
             }
           }
-          
+
           distance = minDistance !== Infinity ? minDistance : undefined;
         }
 
@@ -271,18 +273,22 @@ export class SearchPerformanceService {
           providerName: providerData.provider.user.name || 'Unknown Provider',
           providerType: providerData.provider.serviceProviderType.name,
           distance,
-          location: primaryLocation ? {
-            name: primaryLocation.name,
-            address: primaryLocation.address,
-          } : undefined,
+          location: primaryLocation
+            ? {
+                name: primaryLocation.name,
+                address: primaryLocation.address,
+              }
+            : undefined,
           availableServices: providerData.services,
-          nearestAvailableSlot: slotData.nearestSlot ? {
-            slotId: slotData.nearestSlot.id,
-            startTime: slotData.nearestSlot.startTime,
-            endTime: slotData.nearestSlot.endTime,
-            isOnlineAvailable: slotData.nearestSlot.isOnlineAvailable,
-            price: slotData.nearestSlot.price,
-          } : undefined,
+          nearestAvailableSlot: slotData.nearestSlot
+            ? {
+                slotId: slotData.nearestSlot.id,
+                startTime: slotData.nearestSlot.startTime,
+                endTime: slotData.nearestSlot.endTime,
+                isOnlineAvailable: slotData.nearestSlot.isOnlineAvailable,
+                price: slotData.nearestSlot.price,
+              }
+            : undefined,
           totalAvailableSlots: slotData.totalSlots,
         });
       }
@@ -294,7 +300,7 @@ export class SearchPerformanceService {
           const distanceA = a.distance ?? 0;
           const distanceB = b.distance ?? 0;
           if (distanceA !== distanceB) return distanceA - distanceB;
-          
+
           // Then by availability count
           return b.totalAvailableSlots - a.totalAvailableSlots;
         })
@@ -304,15 +310,21 @@ export class SearchPerformanceService {
 
       // Generate optimization suggestions
       if (executionTime > 1000) {
-        optimizationSuggestions.push('Query execution time > 1s - consider adding more specific filters');
+        optimizationSuggestions.push(
+          'Query execution time > 1s - consider adding more specific filters'
+        );
       }
-      
+
       if (results.length > limit * 2) {
-        optimizationSuggestions.push('Large result set - consider adding location-based pre-filtering');
+        optimizationSuggestions.push(
+          'Large result set - consider adding location-based pre-filtering'
+        );
       }
-      
+
       if (params.coordinates && !params.maxDistance) {
-        optimizationSuggestions.push('Distance calculation without limit - consider adding maxDistance filter');
+        optimizationSuggestions.push(
+          'Distance calculation without limit - consider adding maxDistance filter'
+        );
       }
 
       return {
@@ -324,7 +336,6 @@ export class SearchPerformanceService {
           optimizationSuggestions,
         },
       };
-
     } catch (error) {
       console.error('Error in optimized provider search:', error);
       return {
@@ -383,7 +394,7 @@ export class SearchPerformanceService {
       if (params.serviceProviderId) {
         whereClause.availability = {
           serviceProviderId: params.serviceProviderId,
-          status: AvailabilityStatus.ACTIVE,
+          status: AvailabilityStatus.ACCEPTED,
         };
         indexesUsed.push('Availability_serviceProviderId_idx');
       }
@@ -394,19 +405,15 @@ export class SearchPerformanceService {
           id: true,
           startTime: true,
           endTime: true,
-          duration: true,
-          price: true,
           serviceId: true,
-          isOnlineAvailable: true,
-          locationId: true,
           availability: {
             select: {
               serviceProviderId: true,
-              requiresConfirmation: true,
             },
           },
           service: {
             select: {
+              id: true,
               name: true,
             },
           },
@@ -420,7 +427,7 @@ export class SearchPerformanceService {
       // Apply time-of-day filtering in application if needed (more efficient than DB for this)
       let filteredSlots = slots;
       if (params.timeRange) {
-        filteredSlots = slots.filter(slot => {
+        filteredSlots = slots.filter((slot) => {
           const hour = slot.startTime.getHours();
           return hour >= params.timeRange!.startHour && hour <= params.timeRange!.endHour;
         });
@@ -434,12 +441,10 @@ export class SearchPerformanceService {
           queryExecutionTime: executionTime,
           totalResults: filteredSlots.length,
           indexesUsed,
-          optimizationSuggestions: executionTime > 500 
-            ? ['Consider adding more specific time range filters']
-            : [],
+          optimizationSuggestions:
+            executionTime > 500 ? ['Consider adding more specific time range filters'] : [],
         },
       };
-
     } catch (error) {
       console.error('Error in optimized slot search:', error);
       return {

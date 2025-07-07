@@ -1,6 +1,10 @@
+import {
+  AvailabilityConflict,
+  SchedulingRule,
+  SlotStatus,
+} from '@/features/calendar/availability/types/types';
 import { prisma } from '@/lib/prisma';
 
-import { AvailabilityConflict, SchedulingRule, SlotStatus } from '../types';
 import { isSlotValidForSchedulingRule } from './scheduling-rules';
 
 export interface ConflictDetectionOptions {
@@ -241,7 +245,9 @@ export class ConflictManager {
   ): Promise<SlotConflictDetails[]> {
     const blockingEvents = await prisma.calendarEvent.findMany({
       where: {
-        userId: serviceProviderId,
+        calendarIntegration: {
+          serviceProviderId: serviceProviderId,
+        },
         startTime: {
           lt: endTime,
         },
@@ -325,7 +331,12 @@ export class ConflictManager {
   ): Promise<SlotConflictDetails[]> {
     const conflictingSlots = await prisma.calculatedAvailabilitySlot.findMany({
       where: {
-        locationId,
+        availability: {
+          locationId,
+          serviceProviderId: {
+            not: slot.serviceProviderId,
+          },
+        },
         startTime: {
           lt: endTime,
         },
@@ -334,11 +345,6 @@ export class ConflictManager {
         },
         status: {
           in: [SlotStatus.AVAILABLE, SlotStatus.BOOKED],
-        },
-        availability: {
-          serviceProviderId: {
-            not: slot.serviceProviderId,
-          },
         },
       },
       include: {
@@ -357,7 +363,7 @@ export class ConflictManager {
       conflictType: 'LOCATION_CONFLICT' as const,
       conflictingEntityId: conflictingSlot.id,
       conflictingEntityType: 'slot' as const,
-      description: `Location conflict with ${conflictingSlot.availability.serviceProvider?.firstName} ${conflictingSlot.availability.serviceProvider?.lastName}`,
+      description: `Location conflict with ${conflictingSlot.availability.serviceProvider?.name}`,
       severity: conflictingSlot.booking ? ('critical' as const) : ('medium' as const),
       canAutoResolve: false,
       suggestedResolution: 'Use different location or time',
@@ -383,7 +389,7 @@ export class ConflictManager {
         endTime: {
           gte: endTime,
         },
-        status: 'ACTIVE',
+        status: 'ACCEPTED',
       },
     });
 

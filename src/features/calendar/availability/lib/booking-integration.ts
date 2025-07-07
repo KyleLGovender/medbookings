@@ -1,11 +1,11 @@
-import { prisma } from '@/lib/prisma';
-import { isSlotValidForSchedulingRule } from './scheduling-rules';
-import { detectSlotConflicts } from './conflict-management';
-import { 
+import {
+  AvailabilityStatus,
   SchedulingRule,
   SlotStatus,
-  AvailabilityStatus,
-} from '../types';
+} from '@/features/calendar/availability/types/types';
+import { prisma } from '@/lib/prisma';
+
+import { isSlotValidForSchedulingRule } from './scheduling-rules';
 
 export interface BookingValidationResult {
   isValid: boolean;
@@ -45,13 +45,10 @@ export interface BookingCompatibilityCheck {
  * Service for integrating booking functionality with new scheduling rules
  */
 export class BookingIntegrationService {
-  
   /**
    * Validate a booking request against scheduling rules and availability
    */
-  async validateBookingRequest(
-    request: SlotBookingRequest
-  ): Promise<BookingValidationResult> {
+  async validateBookingRequest(request: SlotBookingRequest): Promise<BookingValidationResult> {
     try {
       // Get slot with all related data
       const slot = await prisma.calculatedAvailabilitySlot.findUnique({
@@ -102,8 +99,8 @@ export class BookingIntegrationService {
       }
 
       // Check availability status
-      if (slot.availability.status !== AvailabilityStatus.ACTIVE) {
-        conflicts.push('Availability is not active');
+      if (slot.availability.status !== AvailabilityStatus.ACCEPTED) {
+        conflicts.push('Availability is not accepted');
       }
 
       // Check if slot is in the past
@@ -137,10 +134,11 @@ export class BookingIntegrationService {
         warnings,
         schedulingRuleCompliant: schedulingRuleCompliant.isCompliant,
         requiresConfirmation,
-        estimatedDuration: slot.duration,
-        price: slot.price,
+        estimatedDuration: Math.round(
+          (slot.endTime.getTime() - slot.startTime.getTime()) / (1000 * 60)
+        ),
+        price: slot.serviceConfig?.price?.toNumber() || 0,
       };
-
     } catch (error) {
       console.error('Error validating booking request:', error);
       return {
@@ -187,20 +185,17 @@ export class BookingIntegrationService {
 
       // If no custom time requested, use slot default
       const startTime = requestedStartTime || slot.startTime;
-      const duration = requestedDuration || slot.duration;
+      const duration =
+        requestedDuration ||
+        Math.round((slot.endTime.getTime() - slot.startTime.getTime()) / (1000 * 60));
 
       // Check if requested time is valid for the scheduling rule
-      const isValidTime = isSlotValidForSchedulingRule(
-        startTime,
-        duration,
-        schedulingRule,
-        {
-          interval: schedulingInterval || undefined,
-          alignToHour: schedulingRule === SchedulingRule.FIXED_INTERVAL,
-          alignToHalfHour: false,
-          alignToQuarterHour: false,
-        }
-      );
+      const isValidTime = isSlotValidForSchedulingRule(startTime, duration, schedulingRule, {
+        interval: schedulingInterval || undefined,
+        alignToHour: schedulingRule === SchedulingRule.FIXED_INTERVAL,
+        alignToHalfHour: false,
+        alignToQuarterHour: false,
+      });
 
       if (isValidTime) {
         return {
@@ -208,7 +203,7 @@ export class BookingIntegrationService {
           requestedStartTime,
           requestedDuration,
           schedulingRule,
-          schedulingInterval,
+          schedulingInterval: schedulingInterval || undefined,
           isCompatible: true,
           adjustedStartTime: startTime,
           adjustedEndTime: new Date(startTime.getTime() + duration * 60 * 1000),
@@ -231,7 +226,7 @@ export class BookingIntegrationService {
           requestedStartTime,
           requestedDuration,
           schedulingRule,
-          schedulingInterval,
+          schedulingInterval: schedulingInterval || undefined,
           isCompatible: true,
           adjustedStartTime: adjustedTime.startTime,
           adjustedEndTime: adjustedTime.endTime,
@@ -244,11 +239,10 @@ export class BookingIntegrationService {
         requestedStartTime,
         requestedDuration,
         schedulingRule,
-        schedulingInterval,
+        schedulingInterval: schedulingInterval || undefined,
         isCompatible: false,
         reason: 'No compatible time found within availability window',
       };
-
     } catch (error) {
       console.error('Error checking booking compatibility:', error);
       return {
@@ -272,21 +266,23 @@ export class BookingIntegrationService {
     duration: number,
     locationId?: string,
     isOnline?: boolean
-  ): Promise<Array<{
-    slotId: string;
-    startTime: Date;
-    endTime: Date;
-    price: number;
-    location?: string;
-    isOnlineAvailable: boolean;
-    schedulingRule: SchedulingRule;
-    requiresConfirmation: boolean;
-  }>> {
+  ): Promise<
+    Array<{
+      slotId: string;
+      startTime: Date;
+      endTime: Date;
+      price: number;
+      location?: string;
+      isOnlineAvailable: boolean;
+      schedulingRule: SchedulingRule;
+      requiresConfirmation: boolean;
+    }>
+  > {
     try {
       // Get available slots for the criteria
       const startOfDay = new Date(preferredDate);
       startOfDay.setHours(0, 0, 0, 0);
-      
+
       const endOfDay = new Date(preferredDate);
       endOfDay.setHours(23, 59, 59, 999);
 
@@ -295,16 +291,13 @@ export class BookingIntegrationService {
           serviceId,
           availability: {
             serviceProviderId,
-            status: AvailabilityStatus.ACTIVE,
+            status: AvailabilityStatus.ACCEPTED,
           },
           startTime: {
             gte: startOfDay,
             lte: endOfDay,
           },
           status: SlotStatus.AVAILABLE,
-          duration: {
-            gte: duration,
-          },
           ...(locationId ? { locationId } : {}),
           ...(isOnline !== undefined ? { isOnlineAvailable: isOnline } : {}),
         },
@@ -326,7 +319,7 @@ export class BookingIntegrationService {
 
       for (const slot of slots) {
         const schedulingRule = slot.availability.schedulingRule as SchedulingRule;
-        
+
         // Check if the slot's timing is compatible with its scheduling rule
         const isCompatible = isSlotValidForSchedulingRule(
           slot.startTime,
@@ -345,9 +338,9 @@ export class BookingIntegrationService {
             slotId: slot.id,
             startTime: slot.startTime,
             endTime: new Date(slot.startTime.getTime() + duration * 60 * 1000),
-            price: slot.price,
+            price: slot.service?.defaultPrice?.toNumber() || 0,
             location: slot.availability.location?.name,
-            isOnlineAvailable: slot.isOnlineAvailable,
+            isOnlineAvailable: slot.availability.isOnlineAvailable,
             schedulingRule,
             requiresConfirmation: slot.availability.requiresConfirmation,
           });
@@ -355,7 +348,6 @@ export class BookingIntegrationService {
       }
 
       return compatibleSlots;
-
     } catch (error) {
       console.error('Error finding compatible slots:', error);
       return [];
@@ -365,9 +357,7 @@ export class BookingIntegrationService {
   /**
    * Create a booking with scheduling rule validation
    */
-  async createBookingWithValidation(
-    request: SlotBookingRequest
-  ): Promise<{
+  async createBookingWithValidation(request: SlotBookingRequest): Promise<{
     success: boolean;
     bookingId?: string;
     booking?: any;
@@ -395,26 +385,32 @@ export class BookingIntegrationService {
       // Create the booking
       const booking = await prisma.booking.create({
         data: {
-          customerId: request.customerId,
-          customerName: request.customerName,
-          customerEmail: request.customerEmail,
-          customerPhone: request.customerPhone,
+          clientId: request.customerId,
+          guestName: request.customerName,
+          guestEmail: request.customerEmail,
+          guestPhone: request.customerPhone,
           notes: request.notes,
           status: bookingStatus,
-          startTime: request.preferredStartTime || slot.startTime,
-          endTime: new Date((request.preferredStartTime || slot.startTime).getTime() + slot.duration * 60 * 1000),
-          price: slot.price,
-          serviceId: slot.serviceId,
-          serviceProviderId: availability.serviceProviderId,
-          organizationId: availability.organizationId,
-          locationId: slot.locationId,
+          price: slot.serviceConfig?.price?.toNumber() || 0,
+          isOnline: slot.availability.isOnlineAvailable,
+          isInPerson: slot.availability.isInPersonAvailable,
+          slotId: slot.id,
           // Additional booking fields would be added here
         },
         include: {
-          service: true,
-          serviceProvider: true,
-          organization: true,
-          location: true,
+          slot: {
+            include: {
+              service: true,
+              availability: {
+                include: {
+                  serviceProvider: true,
+                  organization: true,
+                  location: true,
+                },
+              },
+            },
+          },
+          client: true,
         },
       });
 
@@ -423,7 +419,11 @@ export class BookingIntegrationService {
         where: { id: request.slotId },
         data: {
           status: SlotStatus.BOOKED,
-          bookingId: booking.id,
+          booking: {
+            connect: {
+              id: booking.id,
+            },
+          },
         },
       });
 
@@ -434,7 +434,6 @@ export class BookingIntegrationService {
         conflicts: [],
         requiresConfirmation: availability.requiresConfirmation,
       };
-
     } catch (error) {
       console.error('Error creating booking:', error);
       return {
@@ -455,17 +454,12 @@ export class BookingIntegrationService {
     const schedulingRule = slot.availability.schedulingRule as SchedulingRule;
     const startTime = preferredStartTime || slot.startTime;
 
-    const isValid = isSlotValidForSchedulingRule(
-      startTime,
-      slot.duration,
-      schedulingRule,
-      {
-        interval: slot.availability.schedulingInterval || undefined,
-        alignToHour: schedulingRule === SchedulingRule.FIXED_INTERVAL,
-        alignToHalfHour: false,
-        alignToQuarterHour: false,
-      }
-    );
+    const isValid = isSlotValidForSchedulingRule(startTime, slot.duration, schedulingRule, {
+      interval: slot.availability.schedulingInterval || undefined,
+      alignToHour: schedulingRule === SchedulingRule.FIXED_INTERVAL,
+      alignToHalfHour: false,
+      alignToQuarterHour: false,
+    });
 
     if (!isValid) {
       return {
@@ -493,18 +487,18 @@ export class BookingIntegrationService {
 
     const overlappingBookings = await prisma.booking.findMany({
       where: {
-        serviceProviderId: slot.availability.serviceProviderId,
         status: { in: ['CONFIRMED', 'PENDING'] },
-        OR: [
-          {
-            startTime: {
-              lt: endTime,
-            },
-            endTime: {
-              gt: startTime,
-            },
+        slot: {
+          availability: {
+            serviceProviderId: slot.availability.serviceProviderId,
           },
-        ],
+          startTime: {
+            lt: endTime,
+          },
+          endTime: {
+            gt: startTime,
+          },
+        },
       },
     });
 
@@ -516,18 +510,16 @@ export class BookingIntegrationService {
     if (request.customerId) {
       const customerConflicts = await prisma.booking.findMany({
         where: {
-          customerId: request.customerId,
+          clientId: request.customerId,
           status: { in: ['CONFIRMED', 'PENDING'] },
-          OR: [
-            {
-              startTime: {
-                lt: endTime,
-              },
-              endTime: {
-                gt: startTime,
-              },
+          slot: {
+            startTime: {
+              lt: endTime,
             },
-          ],
+            endTime: {
+              gt: startTime,
+            },
+          },
         },
       });
 
@@ -598,16 +590,18 @@ export async function findAvailableSlots(
     locationId?: string;
     isOnline?: boolean;
   }
-): Promise<Array<{
-  slotId: string;
-  startTime: Date;
-  endTime: Date;
-  price: number;
-  location?: string;
-  isOnlineAvailable: boolean;
-  schedulingRule: SchedulingRule;
-  requiresConfirmation: boolean;
-}>> {
+): Promise<
+  Array<{
+    slotId: string;
+    startTime: Date;
+    endTime: Date;
+    price: number;
+    location?: string;
+    isOnlineAvailable: boolean;
+    schedulingRule: SchedulingRule;
+    requiresConfirmation: boolean;
+  }>
+> {
   const service = new BookingIntegrationService();
   return await service.findCompatibleSlots(
     serviceProviderId,
@@ -622,9 +616,7 @@ export async function findAvailableSlots(
 /**
  * Create a booking with full validation
  */
-export async function createValidatedBooking(
-  request: SlotBookingRequest
-): Promise<{
+export async function createValidatedBooking(request: SlotBookingRequest): Promise<{
   success: boolean;
   bookingId?: string;
   booking?: any;

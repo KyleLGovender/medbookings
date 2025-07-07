@@ -1,6 +1,6 @@
+import { AvailabilityStatus, SlotStatus } from '@/features/calendar/availability/types/types';
 import { prisma } from '@/lib/prisma';
 
-import { AvailabilityStatus, SlotStatus } from '../types';
 import { optimizedSlotSearch } from './search-performance-service';
 
 export interface TimeSearchParams {
@@ -201,6 +201,8 @@ export class TimeSearchService {
       }));
 
       // If optimized search returned results, use them; otherwise fallback to original implementation
+      let filteredSlots = slots;
+
       if (slots.length === 0 && !searchDateRange) {
         // Fallback to original implementation for complex queries
 
@@ -242,7 +244,7 @@ export class TimeSearchService {
         if (maxDuration) durationFilter.lte = maxDuration;
 
         // Get slots from database
-        const slots = await prisma.calculatedAvailabilitySlot.findMany({
+        const dbSlots = await prisma.calculatedAvailabilitySlot.findMany({
           where: {
             status: SlotStatus.AVAILABLE,
             ...dateFilter,
@@ -260,7 +262,7 @@ export class TimeSearchService {
                 }
               : {}),
             availability: {
-              status: AvailabilityStatus.ACTIVE,
+              status: AvailabilityStatus.ACCEPTED,
               ...(additionalFilters?.serviceProviderId
                 ? {
                     serviceProviderId: additionalFilters.serviceProviderId,
@@ -282,21 +284,26 @@ export class TimeSearchService {
         });
 
         // Apply time-based filters
-        let filteredSlots = slots.map((slot) => ({
-          slotId: slot.id,
-          startTime: slot.startTime,
-          endTime: slot.endTime,
-          duration: slot.duration,
-          dayOfWeek: slot.startTime.getDay(),
-          timeOfDay: this.dateToTimeString(slot.startTime),
-          isWeekend: this.isWeekend(slot.startTime),
-          providerId: slot.availability.serviceProviderId,
-          serviceId: slot.serviceId,
-          locationId: slot.locationId,
-          price: slot.price,
-          isOnlineAvailable: slot.isOnlineAvailable,
-          status: slot.status,
-        }));
+        filteredSlots = dbSlots.map((slot) => {
+          const duration = Math.round(
+            (slot.endTime.getTime() - slot.startTime.getTime()) / (1000 * 60)
+          );
+          return {
+            slotId: slot.id,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            duration,
+            dayOfWeek: slot.startTime.getDay(),
+            timeOfDay: this.dateToTimeString(slot.startTime),
+            isWeekend: this.isWeekend(slot.startTime),
+            providerId: slot.availability.serviceProviderId,
+            serviceId: slot.serviceId,
+            locationId: slot.availability.locationId || undefined,
+            price: 0, // Price not available on slot, would need to get from serviceConfig
+            isOnlineAvailable: slot.availability.isOnlineAvailable || false,
+            status: slot.status,
+          };
+        });
       }
 
       // Filter by time range

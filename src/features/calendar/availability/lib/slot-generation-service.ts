@@ -1,14 +1,15 @@
-import { prisma } from '@/lib/prisma';
-import { generateTimeSlots, SchedulingOptions } from './scheduling-rules';
-import { generateRecurrenceOccurrences } from './recurrence-patterns';
-import { 
-  AvailabilityWithRelations, 
-  SlotGenerationRequest, 
-  SlotGenerationResult,
+import {
+  AvailabilityStatus,
+  AvailabilityWithRelations,
+  SchedulingOptions,
   SchedulingRule,
+  SlotGenerationResult,
   SlotStatus,
-  BillingEntity,
-} from '../types';
+} from '@/features/calendar/availability/types/types';
+import { prisma } from '@/lib/prisma';
+
+import { generateRecurrenceOccurrences } from './recurrence-patterns';
+import { generateTimeSlots } from './scheduling-rules';
 
 export interface SlotGenerationConfig {
   batchSize?: number; // Process slots in batches to avoid memory issues
@@ -60,10 +61,10 @@ export class SlotGenerationService {
 
     // Process in batches to avoid overwhelming the database
     const batchSize = this.config.batchSize || 50;
-    
+
     for (let i = 0; i < availabilityIds.length; i += batchSize) {
       const batch = availabilityIds.slice(i, i + batchSize);
-      
+
       const batchPromises = batch.map(async (availabilityId) => {
         try {
           const result = await this.generateSlotsForSingleAvailability(availabilityId);
@@ -102,9 +103,7 @@ export class SlotGenerationService {
   /**
    * Generate slots for a single availability with enhanced features
    */
-  async generateSlotsForSingleAvailability(
-    availabilityId: string
-  ): Promise<SlotGenerationResult> {
+  async generateSlotsForSingleAvailability(availabilityId: string): Promise<SlotGenerationResult> {
     const startTime = Date.now();
     const errors: string[] = [];
     let totalSlotsGenerated = 0;
@@ -126,6 +125,7 @@ export class SlotGenerationService {
           location: true,
           defaultSubscription: true,
           calculatedSlots: true,
+          createdBy: true,
         },
       });
 
@@ -134,7 +134,7 @@ export class SlotGenerationService {
       }
 
       // Check if availability is active
-      if (availability.status !== 'ACTIVE') {
+      if (availability.status !== AvailabilityStatus.ACCEPTED) {
         throw new Error('Can only generate slots for active availability');
       }
 
@@ -142,18 +142,20 @@ export class SlotGenerationService {
       await this.cleanupExistingSlots(availabilityId);
 
       // Generate occurrence dates (including recurring patterns)
-      const occurrences = await this.generateAvailabilityOccurrences(availability);
+      const occurrences = await this.generateAvailabilityOccurrences(
+        availability as AvailabilityWithRelations
+      );
 
       // Filter future occurrences if configured
       const filteredOccurrences = this.config.generateFutureOnly
-        ? occurrences.filter(occ => occ.startTime > new Date())
+        ? occurrences.filter((occ) => occ.startTime > new Date())
         : occurrences;
 
       // Generate slots for each occurrence and service
       for (const occurrence of filteredOccurrences) {
         for (const serviceConfig of availability.availableServices) {
           const result = await this.generateSlotsForOccurrenceAndService(
-            availability,
+            availability as AvailabilityWithRelations,
             occurrence,
             serviceConfig
           );
@@ -218,8 +220,8 @@ export class SlotGenerationService {
 
       occurrences.push(
         ...recurrenceOccurrences
-          .filter(occ => !occ.isException)
-          .map(occ => ({
+          .filter((occ) => !occ.isException)
+          .map((occ) => ({
             startTime: occ.startTime,
             endTime: occ.endTime,
           }))
@@ -266,7 +268,7 @@ export class SlotGenerationService {
       }
 
       // Convert time slots to database slots
-      const generatedSlots = timeSlotResult.slots.map(slot => ({
+      const generatedSlots = timeSlotResult.slots.map((slot) => ({
         availabilityId: availability.id,
         serviceId: serviceConfig.serviceId,
         serviceConfigId: serviceConfig.id,
@@ -296,7 +298,7 @@ export class SlotGenerationService {
       // Insert valid slots into database
       if (validSlots.length > 0) {
         await prisma.calculatedAvailabilitySlot.createMany({
-          data: validSlots.map(slot => ({
+          data: validSlots.map((slot) => ({
             availabilityId: slot.availabilityId,
             serviceId: slot.serviceId,
             serviceConfigId: slot.serviceConfigId,
@@ -308,6 +310,7 @@ export class SlotGenerationService {
             status: slot.status,
             billedToSubscriptionId: slot.billedToSubscriptionId,
             locationId: slot.locationId,
+            lastCalculated: new Date(),
             version: 1, // Initial version for optimistic locking
           })),
         });
@@ -343,7 +346,7 @@ export class SlotGenerationService {
 
     for (const newSlot of newSlots) {
       const hasConflict = await this.checkSlotConflict(newSlot, serviceProviderId);
-      
+
       if (hasConflict) {
         conflictedSlots.push(newSlot);
       } else {
@@ -357,10 +360,7 @@ export class SlotGenerationService {
   /**
    * Check if a slot conflicts with existing bookings or calendar events
    */
-  private async checkSlotConflict(
-    slot: any,
-    serviceProviderId: string
-  ): Promise<boolean> {
+  private async checkSlotConflict(slot: any, serviceProviderId: string): Promise<boolean> {
     // Check for overlapping slots
     const overlappingSlots = await prisma.calculatedAvailabilitySlot.findMany({
       where: {
@@ -388,7 +388,9 @@ export class SlotGenerationService {
     if (this.config.enableCalendarSync) {
       const blockingEvents = await prisma.calendarEvent.findMany({
         where: {
-          userId: serviceProviderId,
+          calendarIntegration: {
+            serviceProviderId: serviceProviderId,
+          },
           OR: [
             {
               startTime: {
@@ -418,7 +420,7 @@ export class SlotGenerationService {
     await prisma.calculatedAvailabilitySlot.deleteMany({
       where: {
         availabilityId,
-        bookingId: null, // Only delete unbooked slots
+        booking: null, // Only delete unbooked slots
       },
     });
 
@@ -426,10 +428,10 @@ export class SlotGenerationService {
     await prisma.calculatedAvailabilitySlot.updateMany({
       where: {
         availabilityId,
-        bookingId: { not: null },
+        booking: { isNot: null },
       },
       data: {
-        status: SlotStatus.UNAVAILABLE,
+        status: SlotStatus.BLOCKED,
       },
     });
   }
@@ -438,7 +440,7 @@ export class SlotGenerationService {
    * Get alignment setting based on scheduling rule
    */
   private getAlignmentSetting(
-    rule: SchedulingRule, 
+    rule: SchedulingRule,
     type: 'hour' | 'halfHour' | 'quarterHour'
   ): boolean {
     if (rule !== SchedulingRule.FIXED_INTERVAL) {
@@ -484,15 +486,15 @@ export async function generateSlotsForProvider(
     const availabilities = await prisma.availability.findMany({
       where: {
         serviceProviderId,
-        status: 'ACTIVE',
+        status: AvailabilityStatus.ACCEPTED,
       },
       select: {
         id: true,
       },
     });
 
-    const availabilityIds = availabilities.map(a => a.id);
-    
+    const availabilityIds = availabilities.map((a) => a.id);
+
     return await batchGenerateSlots(availabilityIds, config);
   } catch (error) {
     console.error('Error generating slots for provider:', error);
@@ -520,15 +522,15 @@ export async function generateSlotsForOrganization(
     const availabilities = await prisma.availability.findMany({
       where: {
         organizationId,
-        status: 'ACTIVE',
+        status: AvailabilityStatus.ACCEPTED,
       },
       select: {
         id: true,
       },
     });
 
-    const availabilityIds = availabilities.map(a => a.id);
-    
+    const availabilityIds = availabilities.map((a) => a.id);
+
     return await batchGenerateSlots(availabilityIds, config);
   } catch (error) {
     console.error('Error generating slots for organization:', error);

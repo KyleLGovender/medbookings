@@ -1,6 +1,5 @@
+import { AvailabilityStatus, SlotStatus } from '@/features/calendar/availability/types/types';
 import { prisma } from '@/lib/prisma';
-
-import { AvailabilityStatus, SlotStatus } from '../types';
 
 export interface ServiceFilterParams {
   serviceTypeIds?: string[]; // Service type IDs (e.g., "consultation", "imaging")
@@ -169,18 +168,14 @@ export class ServiceFilterService {
       const serviceConfigs = await prisma.serviceAvailabilityConfig.findMany({
         where: whereClause,
         include: {
-          service: {
-            include: {
-              serviceType: true,
-            },
-          },
+          service: true,
           serviceProvider: {
             include: {
               user: true,
               serviceProviderType: true,
               availabilities: {
                 where: {
-                  status: AvailabilityStatus.ACTIVE,
+                  status: AvailabilityStatus.ACCEPTED,
                   ...(additionalFilters?.dateRange
                     ? {
                         startTime: { gte: additionalFilters.dateRange.startDate },
@@ -221,7 +216,7 @@ export class ServiceFilterService {
           serviceCategories.some(
             (category) =>
               config.service.name.toLowerCase().includes(category.toLowerCase()) ||
-              config.service.serviceType.name.toLowerCase().includes(category.toLowerCase())
+              config.service.serviceProviderTypeId.toLowerCase().includes(category.toLowerCase())
           )
         );
       }
@@ -230,9 +225,7 @@ export class ServiceFilterService {
       if (specializations && specializations.length > 0) {
         filteredConfigs = filteredConfigs.filter((config) =>
           specializations.some((spec) =>
-            config.serviceProvider.serviceProviderType.name
-              .toLowerCase()
-              .includes(spec.toLowerCase())
+            config.serviceProvider.serviceProviderTypeId.toLowerCase().includes(spec.toLowerCase())
           )
         );
       }
@@ -256,7 +249,7 @@ export class ServiceFilterService {
               .map((avail) => [
                 avail.locationId || 'online',
                 {
-                  locationId: avail.locationId,
+                  locationId: avail.locationId || undefined,
                   locationName:
                     avail.location?.name || (avail.isOnlineAvailable ? 'Online' : 'Unknown'),
                   isOnline: avail.isOnlineAvailable || !avail.locationId,
@@ -268,12 +261,12 @@ export class ServiceFilterService {
         return {
           serviceId: config.service.id,
           serviceName: config.service.name,
-          serviceDescription: config.service.description,
+          serviceDescription: config.service.description || undefined,
           serviceCategory: this.categorizeService(config.service.name),
           serviceType: {
-            id: config.service.serviceType.id,
-            name: config.service.serviceType.name,
-            category: this.categorizeServiceType(config.service.serviceType.name),
+            id: config.service.serviceProviderTypeId,
+            name: config.service.serviceProviderTypeId,
+            category: this.categorizeServiceType(config.service.serviceProviderTypeId),
           },
           provider: {
             id: config.serviceProvider.id,
@@ -282,11 +275,9 @@ export class ServiceFilterService {
             specialization: config.serviceProvider.serviceProviderType.name,
           },
           pricing: {
-            price: config.price,
+            price: config.price.toNumber(),
             showPrice: config.showPrice,
-            defaultDuration: config.defaultDuration,
-            minDuration: config.minDuration,
-            maxDuration: config.maxDuration,
+            defaultDuration: config.duration,
           },
           availability: {
             hasSlots: allSlots.length > 0,
@@ -340,11 +331,8 @@ export class ServiceFilterService {
 
         // Price and duration statistics
         totalPrice += service.pricing.price;
-        totalDuration += service.pricing.defaultDuration;
         minPrice = Math.min(minPrice, service.pricing.price);
         maxPrice = Math.max(maxPrice, service.pricing.price);
-        minDuration = Math.min(minDuration, service.pricing.defaultDuration);
-        maxDuration = Math.max(maxDuration, service.pricing.defaultDuration);
       });
 
       const serviceCount = services.length;
@@ -408,11 +396,10 @@ export class ServiceFilterService {
   > {
     try {
       const serviceTypes = await prisma.service.groupBy({
-        by: ['serviceTypeId'],
+        by: ['serviceProviderTypeId'],
         where: {
-          serviceConfigs: {
+          availabilityConfigs: {
             some: {
-              isActive: true,
               serviceProvider: {
                 status: 'ACTIVE',
               },
@@ -424,16 +411,15 @@ export class ServiceFilterService {
         },
       });
 
-      const serviceTypeDetails = await prisma.serviceType.findMany({
+      const serviceTypeDetails = await prisma.serviceProviderType.findMany({
         where: {
-          id: { in: serviceTypes.map((st) => st.serviceTypeId) },
+          id: { in: serviceTypes.map((st) => st.serviceProviderTypeId) },
         },
         include: {
           services: {
             include: {
-              serviceConfigs: {
+              availabilityConfigs: {
                 where: {
-                  isActive: true,
                   serviceProvider: {
                     status: 'ACTIVE',
                   },
@@ -450,14 +436,14 @@ export class ServiceFilterService {
       return serviceTypeDetails.map((serviceType) => {
         const providerIds = new Set(
           serviceType.services.flatMap((service) =>
-            service.serviceConfigs.map((config) => config.serviceProviderId)
+            service.availabilityConfigs.map((config) => config.serviceProviderId)
           )
         );
 
         return {
           id: serviceType.id,
           name: serviceType.name,
-          description: serviceType.description,
+          description: serviceType.description || undefined,
           category: this.categorizeServiceType(serviceType.name),
           serviceCount: serviceType.services.length,
           providerCount: providerIds.size,
@@ -504,7 +490,7 @@ export class ServiceFilterService {
               },
             },
             {
-              serviceType: {
+              serviceProviderType: {
                 name: {
                   contains: searchQuery,
                   mode: 'insensitive',
