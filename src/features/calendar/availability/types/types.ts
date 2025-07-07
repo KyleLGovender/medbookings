@@ -3,6 +3,7 @@
 // =============================================================================
 // All type definitions for the calendar availability feature in one place
 // Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
+import { Decimal } from '@prisma/client/runtime/library';
 
 // =============================================================================
 // ENUMS
@@ -270,8 +271,8 @@ export interface AvailabilityWithRelations extends Availability {
   createdByMembership?: OrganizationMembership | null;
   acceptedBy?: User | null;
   defaultSubscription?: Subscription | null;
-  availableServices: ServiceAvailabilityConfigWithRelations[];
-  calculatedSlots: CalculatedAvailabilitySlotWithRelations[];
+  availableServices?: ServiceAvailabilityConfigWithRelations[];
+  calculatedSlots?: CalculatedAvailabilitySlotWithRelations[];
 }
 
 export interface ServiceAvailabilityConfig {
@@ -280,7 +281,7 @@ export interface ServiceAvailabilityConfig {
   serviceProviderId: string;
   locationId?: string | null;
   duration: number;
-  price: number;
+  price: Decimal;
   showPrice: boolean;
   isOnlineAvailable: boolean;
   isInPerson: boolean;
@@ -290,10 +291,10 @@ export interface ServiceAvailabilityConfig {
 
 export interface ServiceAvailabilityConfigWithRelations extends ServiceAvailabilityConfig {
   service: Service;
-  serviceProvider: ServiceProvider;
+  serviceProvider?: ServiceProvider;
   location?: Location | null;
-  availabilities: Availability[];
-  calculatedSlots: CalculatedAvailabilitySlot[];
+  availabilities?: Availability[];
+  calculatedSlots?: CalculatedAvailabilitySlot[];
 }
 
 export interface CalculatedAvailabilitySlot {
@@ -312,9 +313,9 @@ export interface CalculatedAvailabilitySlot {
 }
 
 export interface CalculatedAvailabilitySlotWithRelations extends CalculatedAvailabilitySlot {
-  availability: AvailabilityWithRelations;
-  service: Service;
-  serviceConfig: ServiceAvailabilityConfigWithRelations;
+  availability?: AvailabilityWithRelations;
+  service?: Service;
+  serviceConfig?: ServiceAvailabilityConfigWithRelations;
   booking?: Booking | null;
   billedToSubscription?: Subscription | null;
   blockedByCalendarEvent?: CalendarEvent | null;

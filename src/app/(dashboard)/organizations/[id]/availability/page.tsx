@@ -1,4 +1,4 @@
-import { OrganizationCalendarView } from '@/features/calendar/availability/components';
+import { OrganizationCalendarView } from '@/features/calendar/availability/components/organization-calendar-view';
 
 interface OrganizationAvailabilityPageProps {
   params: {
@@ -9,5 +9,5 @@ interface OrganizationAvailabilityPageProps {
 export default function OrganizationAvailabilityPage({
   params,
 }: OrganizationAvailabilityPageProps) {
-  return <OrganizationCalendarView organizationId={params.id} mode="availability" />;
+  return <OrganizationCalendarView organizationId={params.id} />;
 }
