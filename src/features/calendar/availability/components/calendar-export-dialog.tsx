@@ -32,15 +32,15 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-
-import { CalendarEvent } from '../types/client';
 import {
+  CalendarEvent,
   ExportConfig,
   ExportResult,
   GoogleCalendarIntegration,
   getDefaultExportConfig,
-} from '../types/export';
-import { OrganizationProvider } from './organization-calendar-view';
+} from '@/features/calendar/availability/types/types';
+
+import { OrganizationProvider } from '../types/types';
 
 interface CalendarExportDialogProps {
   events: CalendarEvent[];

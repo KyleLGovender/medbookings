@@ -33,98 +33,18 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { CalendarEvent } from '@/features/calendar/availability/types/types';
+import { useOrganization } from '@/features/organizations/hooks/use-organization';
+import { useOrganizationProviderConnections } from '@/features/organizations/hooks/use-provider-connections';
+
+import { useOrganizationAvailability } from '../hooks/use-availability';
 import {
-  useOrganization,
-  useOrganizationProviderConnections,
-} from '@/features/organizations/hooks';
-
-import { useOrganizationAvailability } from '../hooks';
-
-// Temporary local types to avoid server imports
-interface CalendarEvent {
-  id: string;
-  type: 'availability' | 'booking' | 'blocked';
-  title: string;
-  startTime: Date;
-  endTime: Date;
-  status: string;
-  schedulingRule?: string;
-  isRecurring?: boolean;
-  seriesId?: string;
-  location?: {
-    id: string;
-    name: string;
-    isOnline: boolean;
-  };
-  service?: {
-    id: string;
-    name: string;
-    duration: number;
-    price: number;
-  };
-  customer?: {
-    id: string;
-    name: string;
-  };
-}
-
-interface CoverageGap {
-  id: string;
-  type: string;
-  startTime: Date;
-  endTime: Date;
-  severity: string;
-  description: string;
-}
-
-export interface OrganizationProvider {
-  id: string;
-  name: string;
-  type: string;
-  specialization?: string;
-  isActive: boolean;
-  workingHours: { start: string; end: string };
-  utilizationRate: number;
-  totalBookings: number;
-  pendingBookings: number;
-  avatar?: string;
-  events: CalendarEvent[];
-}
-
-export interface OrganizationCalendarData {
-  organizationId: string;
-  organizationName: string;
-  providers: OrganizationProvider[];
-  locations: Array<{
-    id: string;
-    name: string;
-    address: string;
-    providerCount: number;
-  }>;
-  stats: {
-    totalProviders: number;
-    activeProviders: number;
-    totalAvailableHours: number;
-    totalBookedHours: number;
-    averageUtilization: number;
-    totalPendingBookings: number;
-    coverageGaps: number;
-  };
-}
-
-export interface OrganizationCalendarViewProps {
-  organizationId: string;
-  onProviderClick?: (provider: OrganizationProvider) => void;
-  onEventClick?: (event: CalendarEvent, provider: OrganizationProvider) => void;
-  onTimeSlotClick?: (date: Date, hour: number, provider: OrganizationProvider) => void;
-  onCreateAvailability?: (providerId?: string) => void;
-  onManageProvider?: (provider: OrganizationProvider) => void;
-  onGapClick?: (gap: CoverageGap) => void;
-  onRecommendationClick?: (recommendation: string) => void;
-  viewMode?: 'day' | 'week' | 'month';
-  initialDate?: Date;
-  showCoverageGaps?: boolean;
-}
+  OrganizationCalendarData,
+  OrganizationCalendarViewProps,
+  OrganizationMonthViewProps,
+  OrganizationProvider,
+  OrganizationWeekViewProps,
+} from '../types/types';
 
 type ViewMode = 'day' | 'week' | 'month';
 
@@ -735,15 +655,6 @@ export function OrganizationCalendarView({
 }
 
 // Organization Week View Component
-interface OrganizationWeekViewProps {
-  currentDate: Date;
-  providers: OrganizationProvider[];
-  onEventClick?: (event: CalendarEvent, provider: OrganizationProvider) => void;
-  onTimeSlotClick?: (date: Date, hour: number, provider: OrganizationProvider) => void;
-  getEventStyle: (event: CalendarEvent) => string;
-  showUtilizationOnly: boolean;
-}
-
 function OrganizationWeekView({
   currentDate,
   providers,
@@ -1041,13 +952,6 @@ function OrganizationDayView({
 }
 
 // Organization Month View Component
-interface OrganizationMonthViewProps {
-  currentDate: Date;
-  providers: OrganizationProvider[];
-  onEventClick?: (event: CalendarEvent, provider: OrganizationProvider) => void;
-  getEventStyle: (event: CalendarEvent) => string;
-}
-
 function OrganizationMonthView({
   currentDate,
   providers,

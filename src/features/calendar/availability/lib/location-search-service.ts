@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+
 import { AvailabilityStatus, SlotStatus } from '../types';
 import { optimizedProviderSearch } from './search-performance-service';
 
@@ -66,12 +67,7 @@ export class LocationSearchService {
    * @param lng2 Longitude of second point
    * @returns Distance in kilometers
    */
-  private calculateDistance(
-    lat1: number,
-    lng1: number,
-    lat2: number,
-    lng2: number
-  ): number {
+  private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
     const R = 6371; // Earth's radius in kilometers
     const dLat = this.toRadians(lat2 - lat1);
     const dLng = this.toRadians(lng2 - lng1);
@@ -97,9 +93,7 @@ export class LocationSearchService {
   /**
    * Search for providers within a specified distance from given coordinates
    */
-  async searchProvidersByLocation(
-    params: LocationSearchParams
-  ): Promise<ProviderLocationResult[]> {
+  async searchProvidersByLocation(params: LocationSearchParams): Promise<ProviderLocationResult[]> {
     try {
       const {
         coordinates,
@@ -135,18 +129,20 @@ export class LocationSearchService {
 
       // Convert optimized results to the expected format
       if (optimizedResults.results.length > 0) {
-        return optimizedResults.results.map(result => ({
+        return optimizedResults.results.map((result) => ({
           providerId: result.providerId,
           providerName: result.providerName,
           providerType: result.providerType,
           distance: result.distance || 0,
           coordinates: result.location?.coordinates || coordinates,
-          location: result.location ? {
-            id: result.location.id || 'unknown',
-            name: result.location.name,
-            address: result.location.address,
-            coordinates: result.location.coordinates || coordinates,
-          } : undefined,
+          location: result.location
+            ? {
+                id: result.location.id || 'unknown',
+                name: result.location.name,
+                address: result.location.address,
+                coordinates: result.location.coordinates || coordinates,
+              }
+            : undefined,
           availableServices: result.availableServices,
           nearestAvailableSlot: result.nearestAvailableSlot,
           totalAvailableSlots: result.totalAvailableSlots,
@@ -205,9 +201,7 @@ export class LocationSearchService {
                       }
                     : {}),
                   ...(duration ? { duration: { gte: duration } } : {}),
-                  ...(isOnlineAvailable !== undefined
-                    ? { isOnlineAvailable }
-                    : {}),
+                  ...(isOnlineAvailable !== undefined ? { isOnlineAvailable } : {}),
                 },
               },
             },
@@ -279,9 +273,7 @@ export class LocationSearchService {
                 const slotTime = slot.startTime.toTimeString().substring(0, 5);
                 const preferredTimeObj = new Date(`2000-01-01T${preferredTime}:00`);
                 const slotTimeObj = new Date(`2000-01-01T${slotTime}:00`);
-                const timeDiff = Math.abs(
-                  slotTimeObj.getTime() - preferredTimeObj.getTime()
-                );
+                const timeDiff = Math.abs(slotTimeObj.getTime() - preferredTimeObj.getTime());
                 // Allow slots within 2 hours of preferred time
                 if (timeDiff > 2 * 60 * 60 * 1000) {
                   return false;
@@ -292,8 +284,9 @@ export class LocationSearchService {
             });
 
           // Find the nearest available slot
-          const nearestSlot = availableSlots
-            .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())[0];
+          const nearestSlot = availableSlots.sort(
+            (a, b) => a.startTime.getTime() - b.startTime.getTime()
+          )[0];
 
           // Only include providers with available services or slots
           if (availableServices.length > 0 || availableSlots.length > 0) {
@@ -329,7 +322,7 @@ export class LocationSearchService {
           (avail) => !avail.locationId && avail.isOnlineAvailable
         );
 
-        if (onlineAvailabilities.length > 0 && (isOnlineAvailable !== false)) {
+        if (onlineAvailabilities.length > 0 && isOnlineAvailable !== false) {
           const onlineSlots = onlineAvailabilities
             .flatMap((avail) => avail.calculatedSlots)
             .filter((slot) => {
@@ -337,9 +330,7 @@ export class LocationSearchService {
                 const slotTime = slot.startTime.toTimeString().substring(0, 5);
                 const preferredTimeObj = new Date(`2000-01-01T${preferredTime}:00`);
                 const slotTimeObj = new Date(`2000-01-01T${slotTime}:00`);
-                const timeDiff = Math.abs(
-                  slotTimeObj.getTime() - preferredTimeObj.getTime()
-                );
+                const timeDiff = Math.abs(slotTimeObj.getTime() - preferredTimeObj.getTime());
                 if (timeDiff > 2 * 60 * 60 * 1000) {
                   return false;
                 }
@@ -357,8 +348,9 @@ export class LocationSearchService {
               showPrice: config.showPrice,
             }));
 
-          const nearestOnlineSlot = onlineSlots
-            .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())[0];
+          const nearestOnlineSlot = onlineSlots.sort(
+            (a, b) => a.startTime.getTime() - b.startTime.getTime()
+          )[0];
 
           if (onlineServices.length > 0 || onlineSlots.length > 0) {
             results.push({
@@ -386,7 +378,6 @@ export class LocationSearchService {
 
       // Sort results by distance (online providers first with distance 0)
       return results.sort((a, b) => a.distance - b.distance);
-
     } catch (error) {
       console.error('Error searching providers by location:', error);
       return [];
@@ -459,7 +450,6 @@ export class LocationSearchService {
         .sort((a, b) => a.distance - b.distance);
 
       return nearbyLocations;
-
     } catch (error) {
       console.error('Error getting nearby locations:', error);
       return [];
@@ -467,43 +457,19 @@ export class LocationSearchService {
   }
 
   /**
-   * Geocode an address string to coordinates (mock implementation)
-   * In production, this would integrate with a geocoding service like Google Maps
+   * Geocode an address string to coordinates
+   * In production, this would integrate with Google Maps Geocoding API
    */
-  async geocodeAddress(address: string): Promise<{
-    lat: number;
-    lng: number;
-    formattedAddress: string;
-  } | null> {
+  async geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
     try {
-      // Mock geocoding - in production, integrate with Google Maps Geocoding API
-      // For now, return some example coordinates for common city names
-      const mockGeocode: Record<string, { lat: number; lng: number }> = {
-        'toronto': { lat: 43.6532, lng: -79.3832 },
-        'vancouver': { lat: 49.2827, lng: -123.1207 },
-        'montreal': { lat: 45.5017, lng: -73.5673 },
-        'calgary': { lat: 51.0447, lng: -114.0719 },
-        'ottawa': { lat: 45.4215, lng: -75.6972 },
-        'edmonton': { lat: 53.5461, lng: -113.4938 },
-      };
-
       const normalizedAddress = address.toLowerCase().trim();
-      const coords = mockGeocode[normalizedAddress];
 
-      if (coords) {
-        return {
-          ...coords,
-          formattedAddress: address,
-        };
-      }
-
-      // For unknown addresses, return null
-      // In production, this would call the actual geocoding service
-      console.log(`Geocoding not available for address: ${address}`);
+      // TODO: Implement actual geocoding service integration
+      // For now, return null to indicate geocoding is not available
+      console.warn('Geocoding not implemented - returning null');
       return null;
-
     } catch (error) {
-      console.error('Error geocoding address:', error);
+      console.error('Geocoding error:', error);
       return null;
     }
   }
@@ -542,11 +508,9 @@ export async function getNearbyLocations(
 /**
  * Geocode an address to coordinates
  */
-export async function geocodeAddress(address: string): Promise<{
-  lat: number;
-  lng: number;
-  formattedAddress: string;
-} | null> {
+export async function geocodeAddress(
+  address: string
+): Promise<{ lat: number; lng: number } | null> {
   const service = new LocationSearchService();
   return await service.geocodeAddress(address);
 }

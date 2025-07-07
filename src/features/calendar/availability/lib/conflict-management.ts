@@ -1,10 +1,7 @@
 import { prisma } from '@/lib/prisma';
+
+import { AvailabilityConflict, SchedulingRule, SlotStatus } from '../types';
 import { isSlotValidForSchedulingRule } from './scheduling-rules';
-import { 
-  SchedulingRule,
-  SlotStatus,
-  AvailabilityConflict,
-} from '../types';
 
 export interface ConflictDetectionOptions {
   checkOverlappingSlots?: boolean;
@@ -29,7 +26,12 @@ export interface SlotConflictDetails {
   slotId?: string;
   startTime: Date;
   endTime: Date;
-  conflictType: 'OVERLAPPING_SLOTS' | 'CALENDAR_EVENT' | 'SCHEDULING_RULE' | 'LOCATION_CONFLICT' | 'PROVIDER_UNAVAILABLE';
+  conflictType:
+    | 'OVERLAPPING_SLOTS'
+    | 'CALENDAR_EVENT'
+    | 'SCHEDULING_RULE'
+    | 'LOCATION_CONFLICT'
+    | 'PROVIDER_UNAVAILABLE';
   conflictingEntityId?: string;
   conflictingEntityType?: 'slot' | 'event' | 'availability' | 'location';
   description: string;
@@ -70,11 +72,7 @@ export class ConflictManager {
     let resolvedConflictsCount = 0;
 
     for (const slot of newSlots) {
-      const slotConflicts = await this.detectSlotConflicts(
-        slot,
-        serviceProviderId,
-        availabilityId
-      );
+      const slotConflicts = await this.detectSlotConflicts(slot, serviceProviderId, availabilityId);
 
       if (slotConflicts.length === 0) {
         validSlots.push(slot);
@@ -91,14 +89,19 @@ export class ConflictManager {
           resolvedConflictsCount++;
         } else {
           conflictedSlots.push(slot);
-          conflicts.push(...slotConflicts.map(conflict => ({
-            conflictType: conflict.conflictType as any,
-            conflictingAvailabilityId: conflict.conflictingEntityId,
-            conflictingEventId: conflict.conflictingEntityType === 'event' ? conflict.conflictingEntityId : undefined,
-            message: conflict.description,
-            startTime: conflict.startTime,
-            endTime: conflict.endTime,
-          })));
+          conflicts.push(
+            ...slotConflicts.map((conflict) => ({
+              conflictType: conflict.conflictType as any,
+              conflictingAvailabilityId: conflict.conflictingEntityId,
+              conflictingEventId:
+                conflict.conflictingEntityType === 'event'
+                  ? conflict.conflictingEntityId
+                  : undefined,
+              message: conflict.description,
+              startTime: conflict.startTime,
+              endTime: conflict.endTime,
+            }))
+          );
         }
       }
     }
@@ -153,10 +156,7 @@ export class ConflictManager {
 
     // Check scheduling rules
     if (this.options.checkSchedulingRules) {
-      const schedulingConflicts = await this.checkSchedulingRuleConflicts(
-        slot,
-        availabilityId
-      );
+      const schedulingConflicts = await this.checkSchedulingRuleConflicts(slot, availabilityId);
       conflicts.push(...schedulingConflicts);
     }
 
@@ -215,16 +215,16 @@ export class ConflictManager {
       },
     });
 
-    return overlappingSlots.map(overlappingSlot => ({
+    return overlappingSlots.map((overlappingSlot) => ({
       startTime: slot.startTime,
       endTime: slot.endTime,
       conflictType: 'OVERLAPPING_SLOTS' as const,
       conflictingEntityId: overlappingSlot.id,
       conflictingEntityType: 'slot' as const,
       description: `Overlaps with existing ${overlappingSlot.booking ? 'booked' : 'available'} slot`,
-      severity: overlappingSlot.booking ? 'critical' as const : 'high' as const,
+      severity: overlappingSlot.booking ? ('critical' as const) : ('high' as const),
       canAutoResolve: !overlappingSlot.booking,
-      suggestedResolution: overlappingSlot.booking 
+      suggestedResolution: overlappingSlot.booking
         ? 'Cannot resolve - slot is booked'
         : 'Adjust timing or merge slots',
     }));
@@ -251,7 +251,7 @@ export class ConflictManager {
       },
     });
 
-    return blockingEvents.map(event => ({
+    return blockingEvents.map((event) => ({
       startTime: slot.startTime,
       endTime: slot.endTime,
       conflictType: 'CALENDAR_EVENT' as const,
@@ -296,17 +296,19 @@ export class ConflictManager {
     );
 
     if (!isValidSlot) {
-      return [{
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        conflictType: 'SCHEDULING_RULE' as const,
-        conflictingEntityId: availabilityId,
-        conflictingEntityType: 'availability' as const,
-        description: `Violates ${availability.schedulingRule} scheduling rule`,
-        severity: 'medium' as const,
-        canAutoResolve: true,
-        suggestedResolution: 'Adjust start time to comply with scheduling rule',
-      }];
+      return [
+        {
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          conflictType: 'SCHEDULING_RULE' as const,
+          conflictingEntityId: availabilityId,
+          conflictingEntityType: 'availability' as const,
+          description: `Violates ${availability.schedulingRule} scheduling rule`,
+          severity: 'medium' as const,
+          canAutoResolve: true,
+          suggestedResolution: 'Adjust start time to comply with scheduling rule',
+        },
+      ];
     }
 
     return [];
@@ -349,14 +351,14 @@ export class ConflictManager {
       },
     });
 
-    return conflictingSlots.map(conflictingSlot => ({
+    return conflictingSlots.map((conflictingSlot) => ({
       startTime: slot.startTime,
       endTime: slot.endTime,
       conflictType: 'LOCATION_CONFLICT' as const,
       conflictingEntityId: conflictingSlot.id,
       conflictingEntityType: 'slot' as const,
       description: `Location conflict with ${conflictingSlot.availability.serviceProvider?.firstName} ${conflictingSlot.availability.serviceProvider?.lastName}`,
-      severity: conflictingSlot.booking ? 'critical' as const : 'medium' as const,
+      severity: conflictingSlot.booking ? ('critical' as const) : ('medium' as const),
       canAutoResolve: false,
       suggestedResolution: 'Use different location or time',
     }));
@@ -386,17 +388,19 @@ export class ConflictManager {
     });
 
     if (providerAvailability.length === 0) {
-      return [{
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        conflictType: 'PROVIDER_UNAVAILABLE' as const,
-        conflictingEntityId: serviceProviderId,
-        conflictingEntityType: 'availability' as const,
-        description: 'Provider has no availability during this time',
-        severity: 'critical' as const,
-        canAutoResolve: false,
-        suggestedResolution: 'Create availability for this time period first',
-      }];
+      return [
+        {
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          conflictType: 'PROVIDER_UNAVAILABLE' as const,
+          conflictingEntityId: serviceProviderId,
+          conflictingEntityType: 'availability' as const,
+          description: 'Provider has no availability during this time',
+          severity: 'critical' as const,
+          canAutoResolve: false,
+          suggestedResolution: 'Create availability for this time period first',
+        },
+      ];
     }
 
     return [];
@@ -415,15 +419,15 @@ export class ConflictManager {
     resolutionMethod?: string;
   }> {
     // Only attempt resolution for conflicts that can be auto-resolved
-    const resolvableConflicts = conflicts.filter(c => c.canAutoResolve);
-    
+    const resolvableConflicts = conflicts.filter((c) => c.canAutoResolve);
+
     if (resolvableConflicts.length === 0) {
       return { resolved: false };
     }
 
     // Try scheduling rule adjustments
     const schedulingRuleConflicts = resolvableConflicts.filter(
-      c => c.conflictType === 'SCHEDULING_RULE'
+      (c) => c.conflictType === 'SCHEDULING_RULE'
     );
 
     if (schedulingRuleConflicts.length > 0) {
@@ -431,7 +435,7 @@ export class ConflictManager {
         slot,
         schedulingRuleConflicts[0].conflictingEntityId!
       );
-      
+
       if (adjustedSlot) {
         return {
           resolved: true,
@@ -443,7 +447,7 @@ export class ConflictManager {
 
     // Try overlapping slot resolution (merge or adjust)
     const overlappingConflicts = resolvableConflicts.filter(
-      c => c.conflictType === 'OVERLAPPING_SLOTS'
+      (c) => c.conflictType === 'OVERLAPPING_SLOTS'
     );
 
     if (overlappingConflicts.length > 0) {
@@ -481,10 +485,10 @@ export class ConflictManager {
       // Adjust to nearest 15-minute boundary
       const minutes = slot.startTime.getMinutes();
       const adjustedMinutes = Math.round(minutes / 15) * 15;
-      
+
       const adjustedStartTime = new Date(slot.startTime);
       adjustedStartTime.setMinutes(adjustedMinutes, 0, 0);
-      
+
       const adjustedEndTime = new Date(adjustedStartTime.getTime() + slot.duration * 60 * 1000);
 
       // Ensure adjusted slot is within availability bounds
@@ -528,7 +532,7 @@ export async function analyzeTimeSlotConflicts(
   suggestions: string[];
 }> {
   const manager = new ConflictManager();
-  
+
   const mockSlot = {
     startTime,
     endTime,
@@ -543,7 +547,7 @@ export async function analyzeTimeSlotConflicts(
     'mock-availability-id'
   );
 
-  const suggestions = conflicts.map(c => c.suggestedResolution).filter(Boolean) as string[];
+  const suggestions = conflicts.map((c) => c.suggestedResolution).filter(Boolean) as string[];
 
   return {
     hasConflicts: conflicts.length > 0,

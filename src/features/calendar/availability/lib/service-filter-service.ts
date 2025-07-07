@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+
 import { AvailabilityStatus, SlotStatus } from '../types';
 
 export interface ServiceFilterParams {
@@ -93,7 +94,6 @@ export interface ServiceFilterResult {
  * Service for filtering and searching by service types and characteristics
  */
 export class ServiceFilterService {
-  
   /**
    * Filter services based on criteria
    */
@@ -211,38 +211,38 @@ export class ServiceFilterService {
           },
           location: true,
         },
-        orderBy: [
-          { service: { name: 'asc' } },
-          { serviceProvider: { user: { name: 'asc' } } },
-        ],
+        orderBy: [{ service: { name: 'asc' } }, { serviceProvider: { user: { name: 'asc' } } }],
       });
 
       // Filter by service categories if specified
       let filteredConfigs = serviceConfigs;
       if (serviceCategories && serviceCategories.length > 0) {
-        filteredConfigs = serviceConfigs.filter(config =>
-          serviceCategories.some(category =>
-            config.service.name.toLowerCase().includes(category.toLowerCase()) ||
-            config.service.serviceType.name.toLowerCase().includes(category.toLowerCase())
+        filteredConfigs = serviceConfigs.filter((config) =>
+          serviceCategories.some(
+            (category) =>
+              config.service.name.toLowerCase().includes(category.toLowerCase()) ||
+              config.service.serviceType.name.toLowerCase().includes(category.toLowerCase())
           )
         );
       }
 
       // Filter by specializations if specified
       if (specializations && specializations.length > 0) {
-        filteredConfigs = filteredConfigs.filter(config =>
-          specializations.some(spec =>
-            config.serviceProvider.serviceProviderType.name.toLowerCase().includes(spec.toLowerCase())
+        filteredConfigs = filteredConfigs.filter((config) =>
+          specializations.some((spec) =>
+            config.serviceProvider.serviceProviderType.name
+              .toLowerCase()
+              .includes(spec.toLowerCase())
           )
         );
       }
 
       // Convert to service results
-      const services: ServiceResult[] = filteredConfigs.map(config => {
+      const services: ServiceResult[] = filteredConfigs.map((config) => {
         // Get all slots for this service/provider combination
         const allSlots = config.serviceProvider.availabilities
-          .flatMap(avail => avail.calculatedSlots)
-          .filter(slot => slot.serviceId === config.serviceId);
+          .flatMap((avail) => avail.calculatedSlots)
+          .filter((slot) => slot.serviceId === config.serviceId);
 
         const nextSlot = allSlots[0];
 
@@ -250,12 +250,15 @@ export class ServiceFilterService {
         const locations = Array.from(
           new Map(
             config.serviceProvider.availabilities
-              .filter(avail => avail.calculatedSlots.some(slot => slot.serviceId === config.serviceId))
-              .map(avail => [
+              .filter((avail) =>
+                avail.calculatedSlots.some((slot) => slot.serviceId === config.serviceId)
+              )
+              .map((avail) => [
                 avail.locationId || 'online',
                 {
                   locationId: avail.locationId,
-                  locationName: avail.location?.name || (avail.isOnlineAvailable ? 'Online' : 'Unknown'),
+                  locationName:
+                    avail.location?.name || (avail.isOnlineAvailable ? 'Online' : 'Unknown'),
                   isOnline: avail.isOnlineAvailable || !avail.locationId,
                 },
               ])
@@ -291,8 +294,8 @@ export class ServiceFilterService {
             totalSlots: allSlots.length,
             locations,
           },
-          rating: 4.5 + Math.random() * 0.5, // Mock rating - would come from database
-          reviewCount: Math.floor(Math.random() * 200) + 10, // Mock review count
+          rating: 0, // Will come from database
+          reviewCount: 0, // Will come from database
         };
       });
 
@@ -308,7 +311,7 @@ export class ServiceFilterService {
       let minDuration = Infinity;
       let maxDuration = 0;
 
-      services.forEach(service => {
+      services.forEach((service) => {
         // Service types
         const serviceTypeKey = service.serviceType.id;
         const existingServiceType = serviceTypeMap.get(serviceTypeKey);
@@ -376,7 +379,6 @@ export class ServiceFilterService {
           services: Array.from(data.services),
         })),
       };
-
     } catch (error) {
       console.error('Error filtering services:', error);
       return {
@@ -394,14 +396,16 @@ export class ServiceFilterService {
   /**
    * Get all available service types
    */
-  async getAvailableServiceTypes(): Promise<Array<{
-    id: string;
-    name: string;
-    description?: string;
-    category: string;
-    serviceCount: number;
-    providerCount: number;
-  }>> {
+  async getAvailableServiceTypes(): Promise<
+    Array<{
+      id: string;
+      name: string;
+      description?: string;
+      category: string;
+      serviceCount: number;
+      providerCount: number;
+    }>
+  > {
     try {
       const serviceTypes = await prisma.service.groupBy({
         by: ['serviceTypeId'],
@@ -422,7 +426,7 @@ export class ServiceFilterService {
 
       const serviceTypeDetails = await prisma.serviceType.findMany({
         where: {
-          id: { in: serviceTypes.map(st => st.serviceTypeId) },
+          id: { in: serviceTypes.map((st) => st.serviceTypeId) },
         },
         include: {
           services: {
@@ -443,10 +447,10 @@ export class ServiceFilterService {
         },
       });
 
-      return serviceTypeDetails.map(serviceType => {
+      return serviceTypeDetails.map((serviceType) => {
         const providerIds = new Set(
-          serviceType.services.flatMap(service =>
-            service.serviceConfigs.map(config => config.serviceProviderId)
+          serviceType.services.flatMap((service) =>
+            service.serviceConfigs.map((config) => config.serviceProviderId)
           )
         );
 
@@ -459,7 +463,6 @@ export class ServiceFilterService {
           providerCount: providerIds.size,
         };
       });
-
     } catch (error) {
       console.error('Error getting available service types:', error);
       return [];
@@ -475,8 +478,11 @@ export class ServiceFilterService {
   ): Promise<ServiceFilterResult> {
     try {
       // Split search query into terms
-      const searchTerms = searchQuery.toLowerCase().split(' ').filter(term => term.length > 2);
-      
+      const searchTerms = searchQuery
+        .toLowerCase()
+        .split(' ')
+        .filter((term) => term.length > 2);
+
       if (searchTerms.length === 0) {
         return await this.filterServices(filters || {});
       }
@@ -510,13 +516,12 @@ export class ServiceFilterService {
         select: { id: true },
       });
 
-      const serviceIds = matchingServices.map(service => service.id);
+      const serviceIds = matchingServices.map((service) => service.id);
 
       return await this.filterServices({
         ...filters,
         serviceIds,
       });
-
     } catch (error) {
       console.error('Error searching services:', error);
       return {
@@ -536,17 +541,28 @@ export class ServiceFilterService {
    */
   private categorizeService(serviceName: string): string {
     const name = serviceName.toLowerCase();
-    
+
     if (name.includes('consultation') || name.includes('appointment') || name.includes('visit')) {
       return 'Consultations';
     }
     if (name.includes('therapy') || name.includes('treatment') || name.includes('session')) {
       return 'Therapy & Treatment';
     }
-    if (name.includes('test') || name.includes('lab') || name.includes('blood') || name.includes('urine')) {
+    if (
+      name.includes('test') ||
+      name.includes('lab') ||
+      name.includes('blood') ||
+      name.includes('urine')
+    ) {
       return 'Diagnostic Tests';
     }
-    if (name.includes('x-ray') || name.includes('scan') || name.includes('mri') || name.includes('ct') || name.includes('ultrasound')) {
+    if (
+      name.includes('x-ray') ||
+      name.includes('scan') ||
+      name.includes('mri') ||
+      name.includes('ct') ||
+      name.includes('ultrasound')
+    ) {
       return 'Medical Imaging';
     }
     if (name.includes('vaccination') || name.includes('vaccine') || name.includes('immunization')) {
@@ -558,7 +574,7 @@ export class ServiceFilterService {
     if (name.includes('check') || name.includes('screening') || name.includes('exam')) {
       return 'Health Screenings';
     }
-    
+
     return 'General Services';
   }
 
@@ -567,11 +583,16 @@ export class ServiceFilterService {
    */
   private categorizeServiceType(serviceTypeName: string): string {
     const name = serviceTypeName.toLowerCase();
-    
+
     if (name.includes('general') || name.includes('family') || name.includes('primary')) {
       return 'Primary Care';
     }
-    if (name.includes('specialist') || name.includes('cardio') || name.includes('neuro') || name.includes('ortho')) {
+    if (
+      name.includes('specialist') ||
+      name.includes('cardio') ||
+      name.includes('neuro') ||
+      name.includes('ortho')
+    ) {
       return 'Specialist Care';
     }
     if (name.includes('mental') || name.includes('psych') || name.includes('therapy')) {
@@ -586,7 +607,7 @@ export class ServiceFilterService {
     if (name.includes('diagnostic') || name.includes('imaging') || name.includes('radiology')) {
       return 'Diagnostics';
     }
-    
+
     return 'Healthcare Services';
   }
 }
@@ -612,14 +633,16 @@ export async function filterServices(
 /**
  * Get all available service types
  */
-export async function getAvailableServiceTypes(): Promise<Array<{
-  id: string;
-  name: string;
-  description?: string;
-  category: string;
-  serviceCount: number;
-  providerCount: number;
-}>> {
+export async function getAvailableServiceTypes(): Promise<
+  Array<{
+    id: string;
+    name: string;
+    description?: string;
+    category: string;
+    serviceCount: number;
+    providerCount: number;
+  }>
+> {
   const service = new ServiceFilterService();
   return await service.getAvailableServiceTypes();
 }

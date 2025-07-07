@@ -161,3 +161,4 @@ Based on detailed analysis of existing Prisma schema against PRD requirements:
   - [ ] 7.1 Figure out pages routing and where to display various calendars
   - [ ] 7.2 Get rid of mock availability data and make sure everything is driven from database configuration
   - [ ] 7.3 Update customer recurring pattern to match Google calendar
+  - [ ] 7.4 Add CANCELLED to prisma AvailabilityStatus

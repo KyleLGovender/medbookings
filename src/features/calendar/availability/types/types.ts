@@ -31,8 +31,8 @@ export enum SlotStatus {
 
 export enum BillingEntity {
   ORGANIZATION = 'ORGANIZATION',
+  LOCATION = 'LOCATION',
   PROVIDER = 'PROVIDER',
-  CUSTOMER = 'CUSTOMER',
 }
 
 // Recurrence and scheduling enums
@@ -92,6 +92,71 @@ export interface ServiceProvider {
   email: string;
   phone?: string | null;
   serviceProviderTypeId?: string | null;
+}
+
+export interface OrganizationProvider {
+  id: string;
+  name: string;
+  type: string;
+  specialization?: string;
+  isActive: boolean;
+  workingHours: { start: string; end: string };
+  utilizationRate: number;
+  totalBookings: number;
+  pendingBookings: number;
+  avatar?: string;
+  events: CalendarEvent[];
+}
+
+export interface OrganizationCalendarData {
+  organizationId: string;
+  organizationName: string;
+  providers: OrganizationProvider[];
+  locations: Array<{
+    id: string;
+    name: string;
+    address: string;
+    providerCount: number;
+  }>;
+  stats: {
+    totalProviders: number;
+    activeProviders: number;
+    totalAvailableHours: number;
+    totalBookedHours: number;
+    averageUtilization: number;
+    totalPendingBookings: number;
+    coverageGaps: number;
+  };
+}
+
+export interface OrganizationCalendarViewProps {
+  organizationId: string;
+  onProviderClick?: (provider: OrganizationProvider) => void;
+  onEventClick?: (event: CalendarEvent, provider: OrganizationProvider) => void;
+  onTimeSlotClick?: (date: Date, hour: number, provider: OrganizationProvider) => void;
+  onCreateAvailability?: (providerId?: string) => void;
+  onManageProvider?: (provider: OrganizationProvider) => void;
+  onGapClick?: (gap: CoverageGap) => void;
+  onRecommendationClick?: (recommendation: string) => void;
+  viewMode?: 'day' | 'week' | 'month';
+  initialDate?: Date;
+  showCoverageGaps?: boolean;
+}
+
+export interface OrganizationWeekViewProps {
+  currentDate: Date;
+  providers: OrganizationProvider[];
+  onEventClick?: (event: CalendarEvent, provider: OrganizationProvider) => void;
+  onTimeSlotClick?: (date: Date, hour: number, provider: OrganizationProvider) => void;
+  getEventStyle: (event: CalendarEvent) => string;
+  showUtilizationOnly: boolean;
+}
+
+export interface OrganizationMonthViewProps {
+  currentDate: Date;
+  providers: OrganizationProvider[];
+  onEventClick?: (event: CalendarEvent, provider: OrganizationProvider) => void;
+  getEventStyle: (event: CalendarEvent) => string;
 }
 
 export interface Location {
@@ -421,7 +486,19 @@ export interface SlotSearchParams {
   };
 }
 
+// =============================================================================
+// SCHEDULING AND SLOT GENERATION TYPES
+// =============================================================================
+
+// Simple time slot for scheduling rules
 export interface TimeSlot {
+  startTime: Date;
+  endTime: Date;
+  duration: number; // in minutes
+}
+
+// Comprehensive time slot for UI and business logic
+export interface TimeSlotWithDetails {
   startTime: Date;
   endTime: Date;
   duration: number; // in minutes
@@ -430,6 +507,40 @@ export interface TimeSlot {
   serviceId: string;
   serviceName: string;
   slotId?: string; // If slot exists in database
+}
+
+// Internal slot representation for generation
+export interface GeneratedSlot {
+  availabilityId: string;
+  serviceId: string;
+  serviceConfigId: string;
+  startTime: Date;
+  endTime: Date;
+  duration: number;
+  price: number;
+  isOnlineAvailable: boolean;
+  status: SlotStatus;
+  billedToSubscriptionId?: string;
+  locationId?: string;
+}
+
+// Options for scheduling rule generation
+export interface SchedulingOptions {
+  availabilityStart: Date;
+  availabilityEnd: Date;
+  serviceDuration: number; // in minutes
+  schedulingRule: SchedulingRule;
+  schedulingInterval?: number; // in minutes, for CUSTOM_INTERVAL
+  alignToHour?: boolean; // for FIXED_INTERVAL
+  alignToHalfHour?: boolean; // for FIXED_INTERVAL
+  alignToQuarterHour?: boolean; // for FIXED_INTERVAL
+}
+
+// Result from time slot generation
+export interface TimeSlotGenerationResult {
+  slots: TimeSlot[];
+  totalSlots: number;
+  errors: string[];
 }
 
 // =============================================================================

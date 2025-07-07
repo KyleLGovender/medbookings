@@ -1,7 +1,6 @@
 'use client';
 
-import { CalendarEvent, OrganizationProvider } from '../components/organization-calendar-view';
-import { AvailabilityStatus, SlotStatus } from '../types';
+import { AvailabilityStatus, OrganizationProvider, SlotStatus } from '../types/types';
 
 export interface CoverageGap {
   id: string;
@@ -144,7 +143,7 @@ export class CoverageGapAnalyzer {
     // Check if provider has availability at this time
     const hasAvailability = provider.events.some((event) => {
       if (event.type !== 'availability') return false;
-      if (event.status !== AvailabilityStatus.ACTIVE) return false;
+      if (event.status !== AvailabilityStatus.ACCEPTED) return false;
 
       return event.startTime <= targetTime && event.endTime > targetTime;
     });

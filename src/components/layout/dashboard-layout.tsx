@@ -16,9 +16,9 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { useCurrentUserOrganizations } from '@/features/organizations/hooks';
 import { useAdminOrganization } from '@/features/organizations/hooks/use-admin-organizations';
-import { useCurrentUserProvider } from '@/features/providers/hooks';
+import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
+import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useProvider } from '@/features/providers/hooks/use-provider';
 
 // Dynamic breadcrumb component

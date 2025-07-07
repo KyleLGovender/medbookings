@@ -1,4 +1,7 @@
-import { AvailabilityWithRelations, AvailabilityStatus } from '../types';
+import {
+  AvailabilityStatus,
+  AvailabilityWithRelations,
+} from '@/features/calendar/availability/types/types';
 
 export interface NotificationPayload {
   recipientId: string;
@@ -32,7 +35,7 @@ export async function sendAvailabilityStatusNotifications(
   context: AvailabilityNotificationContext
 ): Promise<void> {
   const notifications = generateNotifications(context);
-  
+
   // Log what would be sent
   console.log('=== AVAILABILITY NOTIFICATION SERVICE ===');
   console.log('Context:', {
@@ -42,7 +45,7 @@ export async function sendAvailabilityStatusNotifications(
     actionBy: context.actionBy.name,
     rejectionReason: context.rejectionReason,
   });
-  
+
   for (const notification of notifications) {
     console.log('--- Notification ---');
     console.log('To:', notification.recipientEmail, `(${notification.recipientName})`);
@@ -55,19 +58,17 @@ export async function sendAvailabilityStatusNotifications(
     console.log('Metadata:', notification.metadata);
     console.log('---');
   }
-  
+
   console.log(`Total notifications generated: ${notifications.length}`);
   console.log('=== END NOTIFICATIONS ===');
-  
+
   // In production, you would:
   // await sendEmailNotifications(notifications.filter(n => n.type === 'email'));
   // await sendSMSNotifications(notifications.filter(n => n.type === 'sms'));
   // await sendInAppNotifications(notifications.filter(n => n.type === 'in_app'));
 }
 
-function generateNotifications(
-  context: AvailabilityNotificationContext
-): NotificationPayload[] {
+function generateNotifications(context: AvailabilityNotificationContext): NotificationPayload[] {
   const { availability, newStatus, actionBy, rejectionReason } = context;
   const notifications: NotificationPayload[] = [];
 
@@ -76,17 +77,17 @@ function generateNotifications(
       // Notify provider about new proposal
       notifications.push(...generateProposalNotifications(context));
       break;
-      
-    case AvailabilityStatus.ACTIVE:
+
+    case AvailabilityStatus.ACCEPTED:
       // Notify organization about acceptance
       notifications.push(...generateAcceptanceNotifications(context));
       break;
-      
+
     case AvailabilityStatus.REJECTED:
       // Notify organization about rejection
       notifications.push(...generateRejectionNotifications(context));
       break;
-      
+
     case AvailabilityStatus.CANCELLED:
       // Notify relevant parties about cancellation
       notifications.push(...generateCancellationNotifications(context));
@@ -104,23 +105,29 @@ function generateProposalNotifications(
 
   // Notify the provider about the new proposal
   if (availability.serviceProvider) {
-    const startTime = availability.startTime.toLocaleDateString() + ' ' + 
-                     availability.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const endTime = availability.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const startTime = `${availability.startTime.toLocaleDateString()} ${availability.startTime.toLocaleTimeString(
+      [],
+      { hour: '2-digit', minute: '2-digit' }
+    )}`;
+    const endTime = availability.endTime.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
     const organizationName = availability.organization?.name || 'An organization';
 
     notifications.push({
-      recipientId: availability.serviceProvider.userId,
-      recipientEmail: availability.serviceProvider.contactEmail || 'provider@example.com',
-      recipientName: availability.serviceProvider.firstName + ' ' + availability.serviceProvider.lastName,
+      recipientId: availability.serviceProvider.id,
+      recipientEmail: availability.serviceProvider.email,
+      recipientName: availability.serviceProvider.name,
       type: 'email',
       subject: `New Availability Proposal from ${organizationName}`,
-      message: `${organizationName} has proposed new availability for you to review.\n\n` +
-               `Date & Time: ${startTime} - ${endTime}\n` +
-               `Services: ${availability.availableServices.length} service(s) configured\n` +
-               `Recurring: ${availability.isRecurring ? 'Yes' : 'No'}\n\n` +
-               `Please review this proposal and accept or reject it in your dashboard.`,
-      actionUrl: `/dashboard/availability/proposals`,
+      message:
+        `${organizationName} has proposed new availability for you to review.\n\n` +
+        `Date & Time: ${startTime} - ${endTime}\n` +
+        `Services: ${availability.availableServices.length} service(s) configured\n` +
+        `Recurring: ${availability.isRecurring ? 'Yes' : 'No'}\n\n` +
+        'Please review this proposal and accept or reject it in your dashboard.',
+      actionUrl: '/dashboard/availability/proposals',
       metadata: {
         availabilityId: availability.id,
         organizationId: availability.organizationId,
@@ -130,13 +137,13 @@ function generateProposalNotifications(
 
     // Also send in-app notification
     notifications.push({
-      recipientId: availability.serviceProvider.userId,
-      recipientEmail: availability.serviceProvider.contactEmail || 'provider@example.com',
-      recipientName: availability.serviceProvider.firstName + ' ' + availability.serviceProvider.lastName,
+      recipientId: availability.serviceProvider.id,
+      recipientEmail: availability.serviceProvider.email,
+      recipientName: availability.serviceProvider.name,
       type: 'in_app',
       subject: 'New Availability Proposal',
       message: `${organizationName} sent you an availability proposal for ${startTime}`,
-      actionUrl: `/dashboard/availability/proposals`,
+      actionUrl: '/dashboard/availability/proposals',
       metadata: {
         availabilityId: availability.id,
         organizationId: availability.organizationId,
@@ -157,9 +164,11 @@ function generateAcceptanceNotifications(
 
   // Notify organization members about acceptance
   if (availability.organization && availability.createdBy) {
-    const startTime = availability.startTime.toLocaleDateString() + ' ' + 
-                     availability.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const providerName = `${availability.serviceProvider?.firstName} ${availability.serviceProvider?.lastName}`;
+    const startTime = `${availability.startTime.toLocaleDateString()} ${availability.startTime.toLocaleTimeString(
+      [],
+      { hour: '2-digit', minute: '2-digit' }
+    )}`;
+    const providerName = availability.serviceProvider?.name;
 
     notifications.push({
       recipientId: availability.createdBy.id,
@@ -167,11 +176,12 @@ function generateAcceptanceNotifications(
       recipientName: availability.createdBy.name || 'Organization Member',
       type: 'email',
       subject: `Availability Proposal Accepted - ${providerName}`,
-      message: `Great news! ${providerName} has accepted your availability proposal.\n\n` +
-               `Date & Time: ${startTime}\n` +
-               `Services: ${availability.availableServices.length} service(s)\n` +
-               `Slots Generated: ${availability.calculatedSlots?.length || 0}\n\n` +
-               `The availability is now active and patients can start booking appointments.`,
+      message:
+        `Great news! ${providerName} has accepted your availability proposal.\n\n` +
+        `Date & Time: ${startTime}\n` +
+        `Services: ${availability.availableServices.length} service(s)\n` +
+        `Slots Generated: ${availability.calculatedSlots?.length || 0}\n\n` +
+        'The availability is now active and patients can start booking appointments.',
       actionUrl: `/dashboard/organizations/${availability.organizationId}/availability`,
       metadata: {
         availabilityId: availability.id,
@@ -209,19 +219,22 @@ function generateRejectionNotifications(
 
   // Notify organization members about rejection
   if (availability.organization && availability.createdBy) {
-    const startTime = availability.startTime.toLocaleDateString() + ' ' + 
-                     availability.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const providerName = `${availability.serviceProvider?.firstName} ${availability.serviceProvider?.lastName}`;
+    const startTime = `${availability.startTime.toLocaleDateString()} ${availability.startTime.toLocaleTimeString(
+      [],
+      { hour: '2-digit', minute: '2-digit' }
+    )}`;
+    const providerName = availability.serviceProvider?.name;
 
-    let message = `${providerName} has declined your availability proposal.\n\n` +
-                  `Date & Time: ${startTime}\n` +
-                  `Services: ${availability.availableServices.length} service(s)\n\n`;
+    let message =
+      `${providerName} has declined your availability proposal.\n\n` +
+      `Date & Time: ${startTime}\n` +
+      `Services: ${availability.availableServices.length} service(s)\n\n`;
 
     if (rejectionReason) {
       message += `Reason provided: "${rejectionReason}"\n\n`;
     }
 
-    message += `You can create a new proposal with different terms if needed.`;
+    message += 'You can create a new proposal with different terms if needed.';
 
     notifications.push({
       recipientId: availability.createdBy.id,
@@ -267,21 +280,24 @@ function generateCancellationNotifications(
   const { availability, actionBy } = context;
   const notifications: NotificationPayload[] = [];
 
-  const startTime = availability.startTime.toLocaleDateString() + ' ' + 
-                   availability.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const bookedSlots = availability.calculatedSlots?.filter(slot => slot.booking)?.length || 0;
+  const startTime = `${availability.startTime.toLocaleDateString()} ${availability.startTime.toLocaleTimeString(
+    [],
+    { hour: '2-digit', minute: '2-digit' }
+  )}`;
+  const bookedSlots = availability.calculatedSlots?.filter((slot) => slot.booking)?.length || 0;
 
   // Notify the provider if organization cancelled
-  if (availability.serviceProvider && actionBy.id !== availability.serviceProvider.userId) {
+  if (availability.serviceProvider && actionBy.id !== availability.serviceProvider.id) {
     notifications.push({
-      recipientId: availability.serviceProvider.userId,
-      recipientEmail: availability.serviceProvider.contactEmail || 'provider@example.com',
-      recipientName: availability.serviceProvider.firstName + ' ' + availability.serviceProvider.lastName,
+      recipientId: availability.serviceProvider.id,
+      recipientEmail: availability.serviceProvider.email,
+      recipientName: availability.serviceProvider.name,
       type: 'email',
       subject: `Availability Cancelled - ${availability.organization?.name}`,
-      message: `${availability.organization?.name} has cancelled the availability scheduled for ${startTime}.\n\n` +
-               `${bookedSlots > 0 ? `This affects ${bookedSlots} existing booking(s).` : 'No existing bookings were affected.'}\n\n` +
-               `If you have questions, please contact the organization directly.`,
+      message:
+        `${availability.organization?.name} has cancelled the availability scheduled for ${startTime}.\n\n` +
+        `${bookedSlots > 0 ? `This affects ${bookedSlots} existing booking(s).` : 'No existing bookings were affected.'}\n\n` +
+        'If you have questions, please contact the organization directly.',
       metadata: {
         availabilityId: availability.id,
         organizationId: availability.organizationId,
@@ -292,18 +308,23 @@ function generateCancellationNotifications(
   }
 
   // Notify organization if provider cancelled
-  if (availability.organization && availability.createdBy && actionBy.id !== availability.createdBy.id) {
-    const providerName = `${availability.serviceProvider?.firstName} ${availability.serviceProvider?.lastName}`;
-    
+  if (
+    availability.organization &&
+    availability.createdBy &&
+    actionBy.id !== availability.createdBy.id
+  ) {
+    const providerName = availability.serviceProvider?.name;
+
     notifications.push({
       recipientId: availability.createdBy.id,
       recipientEmail: availability.createdBy.email || 'member@example.com',
       recipientName: availability.createdBy.name || 'Organization Member',
       type: 'email',
       subject: `Availability Cancelled - ${providerName}`,
-      message: `${providerName} has cancelled the availability scheduled for ${startTime}.\n\n` +
-               `${bookedSlots > 0 ? `This affects ${bookedSlots} existing booking(s).` : 'No existing bookings were affected.'}\n\n` +
-               `You may need to contact affected patients directly.`,
+      message:
+        `${providerName} has cancelled the availability scheduled for ${startTime}.\n\n` +
+        `${bookedSlots > 0 ? `This affects ${bookedSlots} existing booking(s).` : 'No existing bookings were affected.'}\n\n` +
+        'You may need to contact affected patients directly.',
       metadata: {
         availabilityId: availability.id,
         serviceProviderId: availability.serviceProviderId,
@@ -340,7 +361,7 @@ export async function notifyAvailabilityAccepted(
   await sendAvailabilityStatusNotifications({
     availability,
     previousStatus: AvailabilityStatus.PENDING,
-    newStatus: AvailabilityStatus.ACTIVE,
+    newStatus: AvailabilityStatus.ACCEPTED,
     actionBy: acceptedBy,
   });
 }

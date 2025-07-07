@@ -22,15 +22,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  AvailabilityStatus,
+  AvailabilityWithRelations,
+  CalculatedAvailabilitySlotWithRelations,
+  CalendarEvent,
+  SchedulingRule,
+} from '@/features/calendar/availability/types/types';
 import { useProvider } from '@/features/providers/hooks/use-provider';
 
 import { useAvailabilitySearch } from '../hooks/use-availability';
-import { CalendarEvent, ProviderCalendarData, SchedulingRule } from '../types/client';
-import { AvailabilityStatus } from '../types/enums';
-import {
-  AvailabilityWithRelations,
-  CalculatedAvailabilitySlotWithRelations,
-} from '../types/interfaces';
 
 // Client-safe enum (matches Prisma BookingStatus)
 enum BookingStatus {

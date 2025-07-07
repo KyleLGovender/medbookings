@@ -1,16 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useFormContext, useFieldArray } from 'react-hook-form';
-import { Plus, Trash2, DollarSign, Clock, MapPin, Monitor } from 'lucide-react';
+import { useState } from 'react';
+
+import { Clock, DollarSign, MapPin, Monitor, Plus, Trash2 } from 'lucide-react';
+import { useFieldArray, useFormContext } from 'react-hook-form';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+
 import { CreateAvailabilityData } from '../types';
 
 interface ServiceSelectionSectionProps {
@@ -43,25 +59,12 @@ export function ServiceSelectionSection({
     name: 'services',
   });
 
-  // Mock services for now - in real implementation, these would come from props or be fetched
-  const mockServices = [
-    { id: '1', name: 'General Consultation', description: 'Standard consultation appointment', category: 'Consultation' },
-    { id: '2', name: 'Follow-up Appointment', description: 'Follow-up consultation', category: 'Consultation' },
-    { id: '3', name: 'X-Ray', description: 'Diagnostic X-ray imaging', category: 'Imaging' },
-    { id: '4', name: 'Blood Test', description: 'Laboratory blood work', category: 'Lab Work' },
-  ];
-
-  const mockLocations = [
-    { id: '1', name: 'Main Clinic', address: '123 Health St, Medical City' },
-    { id: '2', name: 'Downtown Office', address: '456 Center Ave, Downtown' },
-  ];
-
-  const services = availableServices.length > 0 ? availableServices : mockServices;
-  const locations = availableLocations.length > 0 ? availableLocations : mockLocations;
+  const services = availableServices.length > 0 ? availableServices : [];
+  const locations = availableLocations.length > 0 ? availableLocations : [];
 
   const addService = (serviceId: string) => {
     if (!selectedServiceIds.has(serviceId)) {
-      const service = services.find(s => s.id === serviceId);
+      const service = services.find((s) => s.id === serviceId);
       if (service) {
         append({
           serviceId,
@@ -71,14 +74,14 @@ export function ServiceSelectionSection({
           isOnlineAvailable: true,
           isInPerson: true,
         });
-        setSelectedServiceIds(prev => new Set([...prev, serviceId]));
+        setSelectedServiceIds((prev) => new Set([...prev, serviceId]));
       }
     }
   };
 
   const removeService = (index: number, serviceId: string) => {
     remove(index);
-    setSelectedServiceIds(prev => {
+    setSelectedServiceIds((prev) => {
       const newSet = new Set(prev);
       newSet.delete(serviceId);
       return newSet;
@@ -86,11 +89,11 @@ export function ServiceSelectionSection({
   };
 
   const getServiceName = (serviceId: string) => {
-    return services.find(s => s.id === serviceId)?.name || 'Unknown Service';
+    return services.find((s) => s.id === serviceId)?.name || 'Unknown Service';
   };
 
   const getLocationName = (locationId: string) => {
-    return locations.find(l => l.id === locationId)?.name || 'Unknown Location';
+    return locations.find((l) => l.id === locationId)?.name || 'Unknown Location';
   };
 
   return (
@@ -106,13 +109,13 @@ export function ServiceSelectionSection({
           <CardTitle className="text-base">Add Services</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             {services.map((service) => (
               <Button
                 key={service.id}
                 type="button"
-                variant={selectedServiceIds.has(service.id) ? "default" : "outline"}
-                className="justify-start h-auto p-3"
+                variant={selectedServiceIds.has(service.id) ? 'default' : 'outline'}
+                className="h-auto justify-start p-3"
                 onClick={() => addService(service.id)}
                 disabled={selectedServiceIds.has(service.id)}
               >
@@ -132,14 +135,12 @@ export function ServiceSelectionSection({
       {fields.length > 0 && (
         <div className="space-y-4">
           <h4 className="font-medium">Service Configuration</h4>
-          
+
           {fields.map((field, index) => (
             <Card key={field.id}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">
-                    {getServiceName(field.serviceId)}
-                  </CardTitle>
+                  <CardTitle className="text-base">{getServiceName(field.serviceId)}</CardTitle>
                   <Button
                     type="button"
                     variant="ghost"
@@ -152,7 +153,7 @@ export function ServiceSelectionSection({
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Duration and Price */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <FormField
                     control={form.control}
                     name={`services.${index}.duration`}
@@ -208,15 +209,10 @@ export function ServiceSelectionSection({
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Show price to patients
-                        </FormLabel>
+                        <FormLabel>Show price to patients</FormLabel>
                         <FormDescription>
                           Display the price when patients view available appointments
                         </FormDescription>
@@ -230,18 +226,15 @@ export function ServiceSelectionSection({
                 {/* Delivery Methods */}
                 <div className="space-y-3">
                   <FormLabel>Service Delivery</FormLabel>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <FormField
                       control={form.control}
                       name={`services.${index}.isOnlineAvailable`}
                       render={({ field }) => (
                         <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                           <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
+                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                           </FormControl>
                           <div className="space-y-1 leading-none">
                             <FormLabel className="flex items-center gap-1">
@@ -262,10 +255,7 @@ export function ServiceSelectionSection({
                       render={({ field }) => (
                         <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                           <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
+                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                           </FormControl>
                           <div className="space-y-1 leading-none">
                             <FormLabel className="flex items-center gap-1">
@@ -301,7 +291,9 @@ export function ServiceSelectionSection({
                               <SelectItem key={location.id} value={location.id}>
                                 <div>
                                   <div className="font-medium">{location.name}</div>
-                                  <div className="text-xs text-muted-foreground">{location.address}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {location.address}
+                                  </div>
                                 </div>
                               </SelectItem>
                             ))}
@@ -322,7 +314,7 @@ export function ServiceSelectionSection({
         <Card>
           <CardContent className="pt-6">
             <div className="text-center text-muted-foreground">
-              <Plus className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <Plus className="mx-auto mb-2 h-8 w-8 opacity-50" />
               <p>No services selected</p>
               <p className="text-sm">Add at least one service to create availability</p>
             </div>

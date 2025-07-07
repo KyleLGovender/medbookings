@@ -13,8 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 // import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-import { CoverageAnalysis, CoverageGap } from '../types/coverage';
-import { OrganizationProvider } from './organization-calendar-view';
+import { CoverageAnalysis, CoverageGap, OrganizationProvider } from '../types/types';
 
 export interface CoverageGapsPanelProps {
   providers: OrganizationProvider[];

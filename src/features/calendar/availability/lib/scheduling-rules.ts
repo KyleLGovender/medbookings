@@ -1,32 +1,17 @@
 import { addMinutes, setMinutes, startOfDay, startOfHour } from 'date-fns';
 
-import { SchedulingRule } from '@/features/calendar/availability/types/enums';
 import {
+  SchedulingOptions,
+  SchedulingRule,
   SchedulingRuleConfig,
-  SlotGenerationResult,
-} from '@/features/calendar/availability/types/interfaces';
-
-export interface TimeSlot {
-  startTime: Date;
-  endTime: Date;
-  duration: number; // in minutes
-}
-
-export interface SchedulingOptions {
-  availabilityStart: Date;
-  availabilityEnd: Date;
-  serviceDuration: number; // in minutes
-  schedulingRule: SchedulingRule;
-  schedulingInterval?: number; // in minutes, for CUSTOM_INTERVAL
-  alignToHour?: boolean; // for FIXED_INTERVAL
-  alignToHalfHour?: boolean; // for FIXED_INTERVAL
-  alignToQuarterHour?: boolean; // for FIXED_INTERVAL
-}
+  TimeSlot,
+  TimeSlotGenerationResult,
+} from '@/features/calendar/availability/types/types';
 
 /**
  * Generate time slots based on scheduling rules
  */
-export function generateTimeSlots(options: SchedulingOptions): SlotGenerationResult {
+export function generateTimeSlots(options: SchedulingOptions): TimeSlotGenerationResult {
   const errors: string[] = [];
 
   // Validate inputs

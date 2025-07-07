@@ -2,10 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { UserRole } from '@/features/profile/types/types';
-import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
+import {
+  availabilitySearchParamsSchema,
+  createAvailabilityDataSchema,
+  updateAvailabilityDataSchema,
+} from '@/features/calendar/availability/types/schemas';
 import {
   AvailabilitySearchParams,
   AvailabilityStatus,
@@ -13,10 +16,11 @@ import {
   BillingEntity,
   CreateAvailabilityData,
   UpdateAvailabilityData,
-  availabilitySearchParamsSchema,
-  createAvailabilityDataSchema,
-  updateAvailabilityDataSchema,
-} from '../types';
+} from '@/features/calendar/availability/types/types';
+import { UserRole } from '@/features/profile/types/types';
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+
 import { notifyAvailabilityProposed } from './notification-service';
 import { processAvailabilityAcceptance, processAvailabilityRejection } from './workflow-service';
 
@@ -92,7 +96,7 @@ export async function createAvailability(
     // Determine initial status based on context
     const isProviderCreated = currentUser.id === validatedData.serviceProviderId;
     const initialStatus = isProviderCreated
-      ? AvailabilityStatus.ACTIVE
+      ? AvailabilityStatus.ACCEPTED
       : AvailabilityStatus.PENDING;
 
     // Determine billing entity if not specified
@@ -125,13 +129,13 @@ export async function createAvailability(
         startTime: validatedData.startTime,
         endTime: validatedData.endTime,
         isRecurring: validatedData.isRecurring,
-        recurrencePattern: validatedData.recurrencePattern || null,
+        recurrencePattern: validatedData.recurrencePattern || Prisma.JsonNull,
         seriesId,
         schedulingRule: validatedData.schedulingRule,
         schedulingInterval: validatedData.schedulingInterval,
         isOnlineAvailable: validatedData.isOnlineAvailable,
         requiresConfirmation: validatedData.requiresConfirmation,
-        billingEntity,
+        billingEntity: billingEntity || null,
         status: initialStatus,
         createdById: currentUser.id,
         createdByMembershipId: createdByMembership?.id,
@@ -139,6 +143,7 @@ export async function createAvailability(
         availableServices: {
           create: validatedData.services.map((service) => ({
             serviceId: service.serviceId,
+            serviceProviderId: validatedData.serviceProviderId,
             duration: service.duration,
             price: service.price,
             showPrice: service.showPrice,
@@ -154,7 +159,7 @@ export async function createAvailability(
     // Send proposal notification if this is organization-created
     if (!isProviderCreated && availability.status === AvailabilityStatus.PENDING) {
       try {
-        await notifyAvailabilityProposed(availability as AvailabilityWithRelations, {
+        await notifyAvailabilityProposed(availability as unknown as AvailabilityWithRelations, {
           id: currentUser.id,
           name: currentUser.name || 'Organization Member',
           role: 'ORGANIZATION',
@@ -172,7 +177,7 @@ export async function createAvailability(
       revalidatePath(`/dashboard/organizations/${validatedData.organizationId}/availability`);
     }
 
-    return { success: true, data: availability as AvailabilityWithRelations };
+    return { success: true, data: availability as unknown as AvailabilityWithRelations };
   } catch (error) {
     console.error('Error creating availability:', error);
     return {
@@ -226,7 +231,7 @@ export async function getAvailabilityById(
       return { success: false, error: 'Access denied' };
     }
 
-    return { success: true, data: availability as AvailabilityWithRelations };
+    return { success: true, data: availability as unknown as AvailabilityWithRelations };
   } catch (error) {
     console.error('Error fetching availability:', error);
     return {
@@ -329,7 +334,7 @@ export async function searchAvailability(
       orderBy: [{ startTime: 'asc' }, { createdAt: 'desc' }],
     });
 
-    return { success: true, data: availabilities as AvailabilityWithRelations[] };
+    return { success: true, data: availabilities as unknown as AvailabilityWithRelations[] };
   } catch (error) {
     console.error('Error searching availability:', error);
     return {
@@ -433,14 +438,14 @@ export async function updateAvailability(
     if (validatedData.services) {
       // Delete existing service configs
       await prisma.serviceAvailabilityConfig.deleteMany({
-        where: { availabilityId: validatedData.id },
+        where: { availabilities: { some: { id: validatedData.id } } },
       });
 
       // Create new service configs
       await prisma.serviceAvailabilityConfig.createMany({
         data: validatedData.services.map((service) => ({
-          availabilityId: validatedData.id,
           serviceId: service.serviceId,
+          serviceProviderId: existingAvailability.serviceProviderId,
           duration: service.duration,
           price: service.price,
           showPrice: service.showPrice,
@@ -466,7 +471,7 @@ export async function updateAvailability(
       include: includeAvailabilityRelations,
     });
 
-    return { success: true, data: finalAvailability as AvailabilityWithRelations };
+    return { success: true, data: finalAvailability as unknown as AvailabilityWithRelations };
   } catch (error) {
     console.error('Error updating availability:', error);
     return {
@@ -537,11 +542,11 @@ export async function deleteAvailability(
       };
     }
 
-    // Soft delete by setting status to CANCELLED
+    // Soft delete by setting status to REJECTED
     await prisma.availability.update({
       where: { id },
       data: {
-        status: AvailabilityStatus.CANCELLED,
+        status: AvailabilityStatus.REJECTED,
       },
     });
 
@@ -549,7 +554,7 @@ export async function deleteAvailability(
     await prisma.calculatedAvailabilitySlot.updateMany({
       where: { availabilityId: id },
       data: {
-        status: 'UNAVAILABLE',
+        status: 'INVALID',
       },
     });
 

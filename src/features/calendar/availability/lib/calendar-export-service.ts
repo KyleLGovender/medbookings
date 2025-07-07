@@ -1,60 +1,12 @@
 'use client';
 
-import { CalendarEvent } from '../components/provider-calendar-view';
-import { OrganizationProvider } from '../components/organization-calendar-view';
-
-export interface ExportConfig {
-  format: 'ical' | 'csv' | 'json' | 'pdf';
-  dateRange: {
-    start: Date;
-    end: Date;
-  };
-  includeFields: {
-    eventDetails: boolean;
-    customerInfo: boolean;
-    serviceInfo: boolean;
-    locationInfo: boolean;
-    notes: boolean;
-    recurringInfo: boolean;
-  };
-  filters: {
-    eventTypes: ('availability' | 'booking' | 'blocked')[];
-    statuses: string[];
-    providers: string[];
-    locations: string[];
-  };
-  customization: {
-    timezone: string;
-    dateFormat: string;
-    timeFormat: '12h' | '24h';
-    includePrivateEvents: boolean;
-    anonymizeCustomerData: boolean;
-  };
-}
-
-export interface ExportResult {
-  success: boolean;
-  format: string;
-  filename: string;
-  data?: string | Blob;
-  downloadUrl?: string;
-  eventCount: number;
-  errors?: string[];
-  metadata: {
-    exportedAt: Date;
-    timezone: string;
-    totalEvents: number;
-    filteredEvents: number;
-  };
-}
-
-export interface GoogleCalendarIntegration {
-  enabled: boolean;
-  calendarId?: string;
-  syncDirection: 'import' | 'export' | 'bidirectional';
-  lastSync?: Date;
-  syncStatus: 'idle' | 'syncing' | 'error' | 'success';
-}
+import {
+  CalendarEvent,
+  ExportConfig,
+  ExportResult,
+  GoogleCalendarIntegration,
+  OrganizationProvider,
+} from '@/features/calendar/availability/types/types';
 
 export class CalendarExportService {
   private readonly timezone: string;
@@ -74,7 +26,7 @@ export class CalendarExportService {
     try {
       // Filter events based on config
       const filteredEvents = this.filterEvents(events, config);
-      
+
       // Generate export data based on format
       let exportData: string | Blob;
       let filename: string;
@@ -117,7 +69,6 @@ export class CalendarExportService {
           filteredEvents: filteredEvents.length,
         },
       };
-
     } catch (error) {
       return {
         success: false,
@@ -137,7 +88,7 @@ export class CalendarExportService {
 
   // Filter events based on export config
   private filterEvents(events: CalendarEvent[], config: ExportConfig): CalendarEvent[] {
-    return events.filter(event => {
+    return events.filter((event) => {
       // Date range filter
       if (event.startTime < config.dateRange.start || event.startTime > config.dateRange.end) {
         return false;
@@ -149,7 +100,10 @@ export class CalendarExportService {
       }
 
       // Status filter
-      if (config.filters.statuses.length > 0 && !config.filters.statuses.includes(event.status as string)) {
+      if (
+        config.filters.statuses.length > 0 &&
+        !config.filters.statuses.includes(event.status as string)
+      ) {
         return false;
       }
 
@@ -176,13 +130,13 @@ export class CalendarExportService {
       'METHOD:PUBLISH',
     ];
 
-    events.forEach(event => {
+    events.forEach((event) => {
       const uid = `${event.id}@medbookings.com`;
       const dtstart = this.formatDateTimeForICal(event.startTime);
       const dtend = this.formatDateTimeForICal(event.endTime);
       const created = this.formatDateTimeForICal(new Date());
       const summary = this.escapeICalValue(event.title);
-      
+
       let description = this.buildEventDescription(event, config);
       if (config.customization.anonymizeCustomerData && event.customer) {
         description = description.replace(event.customer.name, 'Customer');
@@ -197,7 +151,7 @@ export class CalendarExportService {
         `CREATED:${created}`,
         `SUMMARY:${summary}`,
         `DESCRIPTION:${this.escapeICalValue(description)}`,
-        `STATUS:${this.mapStatusToICalStatus(event.status as string)}`,
+        `STATUS:${this.mapStatusToICalStatus(event.status as string)}`
       );
 
       if (event.location) {
@@ -229,9 +183,9 @@ export class CalendarExportService {
     const headers = this.buildCSVHeaders(config);
     const rows: string[] = [headers.join(',')];
 
-    events.forEach(event => {
+    events.forEach((event) => {
       const row: string[] = [];
-      
+
       // Basic event info
       row.push(this.escapeCSVValue(event.title));
       row.push(this.escapeCSVValue(event.type));
@@ -244,7 +198,7 @@ export class CalendarExportService {
       row.push(Math.round(duration / (1000 * 60)).toString()); // Duration in minutes
 
       // Provider info
-      const provider = providers.find(p => event.id.includes(p.id)); // Simplified lookup
+      const provider = providers.find((p) => event.id.includes(p.id)); // Simplified lookup
       row.push(this.escapeCSVValue(provider?.name || ''));
 
       // Location info
@@ -256,9 +210,15 @@ export class CalendarExportService {
 
       // Customer info
       if (config.includeFields.customerInfo && event.customer) {
-        const customerName = config.customization.anonymizeCustomerData ? 'Customer' : event.customer.name;
+        const customerName = config.customization.anonymizeCustomerData
+          ? 'Customer'
+          : event.customer.name;
         row.push(this.escapeCSVValue(customerName));
-        row.push(this.escapeCSVValue(config.customization.anonymizeCustomerData ? '[hidden]' : (event.customer.email || '')));
+        row.push(
+          this.escapeCSVValue(
+            config.customization.anonymizeCustomerData ? '[hidden]' : event.customer.email || ''
+          )
+        );
       } else {
         row.push('', '');
       }
@@ -315,13 +275,13 @@ export class CalendarExportService {
         filters: config.filters,
         includeFields: config.includeFields,
       },
-      providers: providers.map(provider => ({
+      providers: providers.map((provider) => ({
         id: provider.id,
         name: provider.name,
         type: provider.type,
         specialization: provider.specialization,
       })),
-      events: events.map(event => {
+      events: events.map((event) => {
         const exportEvent: any = {
           id: event.id,
           title: event.title,
@@ -380,10 +340,10 @@ export class CalendarExportService {
   ): Promise<Blob> {
     // This is a placeholder. In a real implementation, you would use a PDF library like jsPDF
     const htmlContent = this.generateHTMLForPDF(events, providers, config);
-    
+
     // Convert HTML to PDF (placeholder)
     const pdfContent = `PDF placeholder for calendar export\n\nEvents: ${events.length}\nGenerated: ${new Date().toISOString()}`;
-    
+
     return new Blob([pdfContent], { type: 'application/pdf' });
   }
 
@@ -395,7 +355,7 @@ export class CalendarExportService {
     try {
       // This would integrate with Google Calendar API
       console.log('Syncing with Google Calendar:', integration);
-      
+
       // Placeholder implementation
       return {
         success: true,
@@ -451,7 +411,15 @@ export class CalendarExportService {
   }
 
   private buildCSVHeaders(config: ExportConfig): string[] {
-    const headers = ['Title', 'Type', 'Status', 'Start Time', 'End Time', 'Duration (min)', 'Provider'];
+    const headers = [
+      'Title',
+      'Type',
+      'Status',
+      'Start Time',
+      'End Time',
+      'Duration (min)',
+      'Provider',
+    ];
 
     if (config.includeFields.locationInfo) {
       headers.push('Location');
@@ -504,14 +472,13 @@ export class CalendarExportService {
   }
 
   private formatDateTimeForICal(date: Date): string {
-    return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    return `${date.toISOString().replace(/[-:]/g, '').split('.')[0]}Z`;
   }
 
   private formatDateTimeForCSV(date: Date, config: ExportConfig): string {
-    const timeFormat = config.customization.timeFormat === '12h' 
-      ? { hour12: true } 
-      : { hour12: false };
-    
+    const timeFormat =
+      config.customization.timeFormat === '12h' ? { hour12: true } : { hour12: false };
+
     return date.toLocaleString('en-US', {
       ...timeFormat,
       year: 'numeric',
@@ -529,11 +496,16 @@ export class CalendarExportService {
   private escapeICalValue(value: string): string {
     return value.replace(/[\\;,\n]/g, (match) => {
       switch (match) {
-        case '\\': return '\\\\';
-        case ';': return '\\;';
-        case ',': return '\\,';
-        case '\n': return '\\n';
-        default: return match;
+        case '\\':
+          return '\\\\';
+        case ';':
+          return '\\;';
+        case ',':
+          return '\\,';
+        case '\n':
+          return '\\n';
+        default:
+          return match;
       }
     });
   }
@@ -561,7 +533,7 @@ export class CalendarExportService {
 
   private createDownloadUrl(data: string | Blob, format: string): string {
     let blob: Blob;
-    
+
     if (typeof data === 'string') {
       const mimeType = this.getMimeType(format);
       blob = new Blob([data], { type: mimeType });
@@ -574,11 +546,16 @@ export class CalendarExportService {
 
   private getMimeType(format: string): string {
     switch (format) {
-      case 'ical': return 'text/calendar';
-      case 'csv': return 'text/csv';
-      case 'json': return 'application/json';
-      case 'pdf': return 'application/pdf';
-      default: return 'text/plain';
+      case 'ical':
+        return 'text/calendar';
+      case 'csv':
+        return 'text/csv';
+      case 'json':
+        return 'application/json';
+      case 'pdf':
+        return 'application/pdf';
+      default:
+        return 'text/plain';
     }
   }
 

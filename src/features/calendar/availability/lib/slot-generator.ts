@@ -1,27 +1,17 @@
-import { SlotStatus } from '@/features/calendar/availability/types/enums';
 import {
   AvailabilityWithRelations,
+  GeneratedSlot,
+  SchedulingOptions,
+  SchedulingRule,
   SlotGenerationRequest,
   SlotGenerationResult,
-} from '@/features/calendar/availability/types/interfaces';
+  SlotStatus,
+  TimeSlot,
+} from '@/features/calendar/availability/types/types';
 import { prisma } from '@/lib/prisma';
 
 import { generateRecurrenceOccurrences } from './recurrence-patterns';
-import { SchedulingOptions, generateTimeSlots } from './scheduling-rules';
-
-interface GeneratedSlot {
-  availabilityId: string;
-  serviceId: string;
-  serviceConfigId: string;
-  startTime: Date;
-  endTime: Date;
-  duration: number;
-  price: number;
-  isOnlineAvailable: boolean;
-  status: SlotStatus;
-  billedToSubscriptionId?: string;
-  locationId?: string;
-}
+import { generateTimeSlots } from './scheduling-rules';
 
 /**
  * Generate all slots for an availability period
@@ -49,6 +39,15 @@ export async function generateSlotsForAvailability(
         organization: true,
         location: true,
         defaultSubscription: true,
+        createdBy: true,
+        calculatedSlots: {
+          include: {
+            service: true,
+            booking: true,
+            billedToSubscription: true,
+            blockedByCalendarEvent: true,
+          },
+        },
       },
     });
 
@@ -85,13 +84,15 @@ export async function generateSlotsForAvailability(
     }
 
     // Generate occurrence dates (including recurring patterns)
-    const occurrences = await generateAvailabilityOccurrences(availability);
+    const occurrences = await generateAvailabilityOccurrences(
+      availability as unknown as AvailabilityWithRelations
+    );
 
     // Generate slots for each occurrence and service
     for (const occurrence of occurrences) {
       for (const serviceConfig of availability.availableServices) {
         const result = await generateSlotsForOccurrenceAndService(
-          availability,
+          availability as unknown as AvailabilityWithRelations,
           occurrence,
           serviceConfig
         );
@@ -194,7 +195,7 @@ async function generateSlotsForOccurrenceAndService(
     }
 
     // Convert time slots to database slots
-    const generatedSlots: GeneratedSlot[] = timeSlotResult.slots.map((slot) => ({
+    const generatedSlots: GeneratedSlot[] = timeSlotResult.slots.map((slot: TimeSlot) => ({
       availabilityId: availability.id,
       serviceId: serviceConfig.serviceId,
       serviceConfigId: serviceConfig.id,
@@ -230,6 +231,7 @@ async function generateSlotsForOccurrenceAndService(
           billedToSubscriptionId: slot.billedToSubscriptionId,
           locationId: slot.locationId,
           version: 1, // Initial version for optimistic locking
+          lastCalculated: new Date(),
         })),
       });
     }
@@ -305,7 +307,9 @@ async function checkSlotConflict(slot: GeneratedSlot, serviceProviderId: string)
   // Check for calendar events that would block this slot
   const blockingEvents = await prisma.calendarEvent.findMany({
     where: {
-      userId: serviceProviderId,
+      calendarIntegration: {
+        serviceProviderId,
+      },
       OR: [
         {
           startTime: {
@@ -374,7 +378,7 @@ export async function generateSlotsForDateRange(
             endTime: { gte: endDate },
           },
         ],
-        status: 'ACTIVE',
+        status: 'ACCEPTED',
       },
     });
 
@@ -422,7 +426,7 @@ export async function cleanupSlotsForAvailability(
     const deleteResult = await prisma.calculatedAvailabilitySlot.deleteMany({
       where: {
         availabilityId,
-        bookingId: null, // Only delete unbooked slots
+        booking: null, // Only delete unbooked slots
       },
     });
 
@@ -430,10 +434,12 @@ export async function cleanupSlotsForAvailability(
     await prisma.calculatedAvailabilitySlot.updateMany({
       where: {
         availabilityId,
-        bookingId: { not: null },
+        NOT: {
+          booking: null,
+        },
       },
       data: {
-        status: SlotStatus.UNAVAILABLE,
+        status: SlotStatus.INVALID,
       },
     });
 
@@ -480,7 +486,7 @@ export async function getSlotGenerationStats(
         where: { ...whereClause, status: SlotStatus.BOOKED },
       }),
       prisma.calculatedAvailabilitySlot.count({
-        where: { ...whereClause, status: SlotStatus.UNAVAILABLE },
+        where: { ...whereClause, status: SlotStatus.INVALID },
       }),
     ]);
 

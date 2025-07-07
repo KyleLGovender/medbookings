@@ -186,6 +186,54 @@ feature/
 - **Query Keys**: Use `[resource, id]` format for cache keys
 - **Hook Callbacks**: Hooks accept optional onSuccess/onError callbacks
 
+#### CRITICAL: Data Access Separation
+
+- **Client-side hooks NEVER import Prisma directly**
+- **Hooks ONLY call API routes or server actions**
+- **Database access ONLY in server actions or API routes**
+- **Pattern**: Hook → API Route → Server Action → Prisma
+
+#### Data Flow Examples
+
+```typescript
+// ✅ CORRECT: Hook calls API route
+export const useProviders = () => {
+  return useQuery({
+    queryKey: ['providers'],
+    queryFn: () => fetch('/api/providers').then(res => res.json())
+  })
+}
+
+// ✅ CORRECT: API route calls server action
+// /app/api/providers/route.ts
+export async function GET() {
+  const providers = await getProviders() // Server action
+  return Response.json(providers)
+}
+
+// ✅ CORRECT: Server action uses Prisma
+// /features/providers/lib/actions.ts
+export async function getProviders() {
+  return prisma.serviceProvider.findMany()
+}
+
+#### ❌ FORBIDDEN PATTERNS
+// ❌ NEVER: Hook importing Prisma directly
+import { prisma } from '@/lib/prisma'
+export const useProviders = () => {
+  return useQuery({
+    queryKey: ['providers'],
+    queryFn: () => prisma.serviceProvider.findMany() // WRONG!
+  })
+}
+
+// ❌ NEVER: Client component importing Prisma
+import { prisma } from '@/lib/prisma'
+export default function ProvidersPage() {
+  // This will cause build errors
+}
+```
+
 ### Form Implementation Patterns
 
 - **Validation**: React Hook Form with Zod schemas
@@ -205,7 +253,7 @@ feature/
 
 ### Code Quality Standards
 
-- **95% Confidence Rule**: Only implement when 95% confident of approach
+- **95% Confidence Rule**: Only implement when 95% confident of approach and alignment with user needs. Ask clarifying questions until reaching 95% confidence before any implementation.
 - **Clarifying Questions**: Ask questions if below 95% confidence threshold
 - **Error Handling**: Consistent error handling with proper HTTP status codes
 - **Debugging**: Use comprehensive console logging for troubleshooting
@@ -249,6 +297,7 @@ When development is complete request user to run `npm run fix` from their IDE te
 - **Props Spreading**: JSX prop spreading is allowed
 - **Images**: Regular `<img>` elements allowed (Next.js Image not enforced)
 - **TypeScript**: Use proper type definitions, avoid `any` types
+- **Explicit Imports**: Prefer explicit imports over index file re-exports
 
 #### Formatting Standards
 
@@ -290,6 +339,7 @@ Imports are automatically sorted in this order:
 - **Soft Dependencies**: Many relationships are optional to support various business models
 - **Version Control**: Use optimistic locking for entities synced with external calendars
 - **Role-Based Access**: Implement proper role checking for all protected operations
+- **Client/Server Separation**: Client hooks must never import Prisma - always use API routes or server actions
 
 ## CRITICAL: NO MOCK DATA POLICY
 
@@ -322,3 +372,25 @@ Imports are automatically sorted in this order:
 - ✅ `if (error) return <ErrorMessage error={error} />`
 - ✅ `if (!data?.length) return <EmptyState message="No providers found" />`
 - ✅ Real API calls with proper error handling
+
+## CRITICAL: CLIENT/SERVER SEPARATION
+
+### NEVER Import Prisma in Client Code
+
+- **Client hooks MUST NOT import Prisma directly**
+- **React components MUST NOT import Prisma**
+- **Any code that runs in the browser MUST NOT access the database directly**
+- **Database access ONLY in server actions (`/features/*/lib/actions.ts`) or API routes (`/app/api/`)**
+
+### Correct Data Flow
+
+1. **Client Hook** → calls API route or server action
+2. **API Route** → calls server action (if needed)
+3. **Server Action** → uses Prisma to access database
+4. **Never skip steps** - maintain the separation
+
+### Build Errors Indicate Wrong Pattern
+
+- **If you get Prisma build errors in client code, you're doing it wrong**
+- **Prisma should only be imported in server-side code**
+- **Client code should use fetch() or server actions, never Prisma directly**

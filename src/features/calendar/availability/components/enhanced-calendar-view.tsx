@@ -1,19 +1,23 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { Calendar as CalendarIcon, Eye, EyeOff, Filter } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CalendarEvent } from '@/features/calendar/availability/types/client';
+import {
+  AvailabilityStatus,
+  CalendarEvent,
+  CoverageGap,
+  SlotStatus,
+} from '@/features/calendar/availability/types/types';
 
-import { CoverageGap } from '../types/coverage';
-import { AvailabilityStatus, SlotStatus } from '../types/enums';
+import { OrganizationProvider } from '../types/types';
 import { CalendarFilters, CalendarFiltersPanel } from './calendar-filters-panel';
 import { CalendarNavigation, CalendarViewMode, RecurringPatternView } from './calendar-navigation';
-import { OrganizationCalendarView, OrganizationProvider } from './organization-calendar-view';
+import { OrganizationCalendarView } from './organization-calendar-view';
 import { ProviderCalendarView } from './provider-calendar-view';
 
 export interface EnhancedCalendarViewProps {
@@ -95,69 +99,35 @@ export function EnhancedCalendarView({
     expandSeries: [],
   });
 
-  // Mock data for demonstration
-  const mockProviders = useMemo(() => generateMockProviders(), []);
-  const mockLocations = useMemo(() => generateMockLocations(), []);
-  const mockActiveSeries = useMemo(() => generateMockActiveSeries(), []);
+  // Event handlers
+  const handleDateSelect = (date: Date) => {
+    setCurrentDate(date);
+  };
 
-  function generateMockProviders() {
-    return [
-      {
-        id: 'p1',
-        name: 'Dr. Sarah Johnson',
-        type: 'General Practitioner',
-        specialization: 'Family Medicine',
-      },
-      { id: 'p2', name: 'Dr. Michael Chen', type: 'Cardiologist', specialization: 'Heart Disease' },
-      {
-        id: 'p3',
-        name: 'Dr. Emily Rodriguez',
-        type: 'Pediatrician',
-        specialization: 'Child Health',
-      },
-      {
-        id: 'p4',
-        name: 'Dr. James Wilson',
-        type: 'Orthopedist',
-        specialization: 'Sports Medicine',
-      },
-      { id: 'p5', name: 'Dr. Lisa Thompson', type: 'Dermatologist', specialization: 'Skin Care' },
-    ];
-  }
+  const handleProviderSelect = (providerId: string | null) => {
+    // Handle provider selection
+    console.log('Provider selected:', providerId);
+  };
 
-  function generateMockLocations() {
-    return [
-      { id: 'main', name: 'Main Building', isOnline: false },
-      { id: 'annex', name: 'Annex Building', isOnline: false },
-      { id: 'online', name: 'Online Services', isOnline: true },
-    ];
-  }
+  const handleLocationSelect = (locationId: string | null) => {
+    // Handle location selection
+    console.log('Location selected:', locationId);
+  };
 
-  function generateMockActiveSeries() {
-    return [
-      {
-        id: 'series-1',
-        title: 'Weekly Team Meetings',
-        color: '#3b82f6',
-        occurrenceCount: 12,
-        nextOccurrence: new Date(Date.now() + 86400000), // Tomorrow
-      },
-      {
-        id: 'series-2',
-        title: 'Monthly Health Checks',
-        color: '#10b981',
-        occurrenceCount: 3,
-        nextOccurrence: new Date(Date.now() + 7 * 86400000), // Next week
-      },
-      {
-        id: 'series-3',
-        title: 'Emergency Coverage',
-        color: '#f59e0b',
-        occurrenceCount: 8,
-        nextOccurrence: new Date(Date.now() + 2 * 86400000), // Day after tomorrow
-      },
-    ];
-  }
+  const handleTimeSlotClick = (date: Date, hour: number, provider?: OrganizationProvider) => {
+    console.log('Time slot clicked:', { date, hour, provider });
+    onTimeSlotClick?.(date, hour, provider);
+  };
+
+  const handleAvailabilityClick = (availability: CalendarEvent) => {
+    console.log('Availability clicked:', availability);
+    onEventClick?.(availability);
+  };
+
+  const handleRecurringPatternChange = (enabled: boolean) => {
+    // Handle recurring pattern change
+    console.log('Recurring patterns enabled:', enabled);
+  };
 
   // Filter events based on current filters
   const applyFilters = (events: CalendarEvent[], providers: OrganizationProvider[]) => {
@@ -217,8 +187,8 @@ export function EnhancedCalendarView({
 
       // Booking specific filters
       if (event.type === 'booking') {
-        if (filters.showConfirmedOnly && event.status !== SlotStatus.BOOKED) return false;
-        if (filters.showPendingOnly && event.status !== SlotStatus.PENDING) return false;
+        if (filters.showConfirmedOnly && event.status !== 'CONFIRMED') return false;
+        if (filters.showPendingOnly && event.status !== 'PENDING') return false;
       }
 
       return true;
@@ -283,7 +253,7 @@ export function EnhancedCalendarView({
         onTodayClick={handleTodayClick}
         recurringView={recurringView}
         onRecurringViewChange={setRecurringView}
-        activeSeries={enableRecurringPatterns ? mockActiveSeries : []}
+        activeSeries={enableRecurringPatterns ? [] : []}
         onSeriesSelect={handleSeriesSelect}
         onExport={handleExport}
         onShare={handleShare}
@@ -320,8 +290,8 @@ export function EnhancedCalendarView({
               <CalendarFiltersPanel
                 filters={filters}
                 onFiltersChange={setFilters}
-                providers={mockProviders}
-                locations={mockLocations}
+                providers={[]}
+                locations={[]}
                 compact={false}
               />
             </div>

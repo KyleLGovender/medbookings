@@ -196,6 +196,11 @@ export function ProviderSearchInterface({
   }, []);
 
   const handleSearch = async (data: SearchFormValues) => {
+    if (!data.serviceProviderId || !data.serviceId) {
+      setLocationError('Please select both a provider and a service');
+      return;
+    }
+
     setIsSearching(true);
     setLocationError(null);
     const searchStartTime = Date.now();
@@ -356,15 +361,13 @@ export function ProviderSearchInterface({
       // Convert location results to provider search results format
       const searchResults: ProviderSearchResult[] = finalResults.map((result) => {
         const serviceNames = result.availableServices.map((s) => s.serviceName);
-        const upcomingSlots = generateMockUpcomingSlots(result, serviceNames);
-        const providerInfo = generateMockProviderInfo(result.providerName, result.providerType);
 
         return {
           providerId: result.providerId,
           providerName: result.providerName,
           providerType: result.providerType,
-          rating: 4.5 + Math.random() * 0.5, // Mock rating - would come from database
-          reviewCount: Math.floor(Math.random() * 200) + 10, // Mock review count
+          rating: 0, // Will come from database
+          reviewCount: 0, // Will come from database
           distance: result.distance,
           location: result.location
             ? {
@@ -375,12 +378,19 @@ export function ProviderSearchInterface({
           availableServices: result.availableServices,
           nearestAvailableSlot: result.nearestAvailableSlot,
           totalAvailableSlots: result.totalAvailableSlots,
-          upcomingSlots,
-          providerInfo,
+          upcomingSlots: [], // Will be populated from database
+          providerInfo: {
+            bio: '',
+            specializations: [],
+            languages: [],
+            experience: '',
+            education: [],
+            certifications: [],
+          },
           contactInfo: {
-            phone: `+1 (555) ${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-            email: `${result.providerName.toLowerCase().replace(/\s+/g, '.')}@healthcare.com`,
-            website: `www.${result.providerName.toLowerCase().replace(/\s+/g, '')}.com`,
+            phone: '',
+            email: '',
+            website: '',
           },
         };
       });
@@ -435,57 +445,6 @@ export function ProviderSearchInterface({
   const watchDuration = form.watch('duration');
   const watchMaxDistance = form.watch('maxDistance');
   const watchTimeFlexibility = form.watch('timeFlexibility');
-
-  // Generate mock upcoming slots for enhanced display
-  const generateMockUpcomingSlots = (provider: LocationSearchResult, serviceNames: string[]) => {
-    const slots = [];
-    const now = new Date();
-
-    for (let i = 0; i < Math.min(8, provider.totalAvailableSlots); i++) {
-      const slotStart = new Date(
-        now.getTime() + (i + 1) * 24 * 60 * 60 * 1000 + Math.random() * 12 * 60 * 60 * 1000
-      );
-      const serviceName = serviceNames[Math.floor(Math.random() * serviceNames.length)];
-      const basePrice = 50 + Math.random() * 300;
-
-      slots.push({
-        slotId: `slot-${provider.providerId}-${i}`,
-        startTime: slotStart,
-        endTime: new Date(slotStart.getTime() + (30 + Math.random() * 60) * 60 * 1000),
-        serviceName,
-        price: Math.round(basePrice),
-        isOnlineAvailable: Math.random() > 0.6,
-        requiresConfirmation: Math.random() > 0.7,
-      });
-    }
-
-    return slots.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
-  };
-
-  // Generate mock provider info
-  const generateMockProviderInfo = (providerName: string, providerType: string) => {
-    const specializations = {
-      'General Practitioner': ['Family Medicine', 'Preventive Care', 'Chronic Disease Management'],
-      Physiotherapist: [
-        'Sports Injuries',
-        'Post-Surgical Rehabilitation',
-        'Chronic Pain Management',
-      ],
-      Cardiologist: ['Heart Disease', 'Hypertension', 'Arrhythmia'],
-      Dermatologist: ['Skin Cancer', 'Acne Treatment', 'Cosmetic Dermatology'],
-    };
-
-    return {
-      bio: `Dr. ${providerName.split(' ')[1] || providerName} is a dedicated ${providerType.toLowerCase()} with extensive experience in providing comprehensive healthcare services.`,
-      specializations: specializations[providerType as keyof typeof specializations] || [
-        'General Healthcare',
-      ],
-      languages: ['English', 'French'].slice(0, Math.random() > 0.5 ? 2 : 1),
-      experience: `${5 + Math.floor(Math.random() * 15)} years of experience`,
-      education: ['Medical School Graduate', 'Board Certified'],
-      certifications: ['Licensed Healthcare Provider'],
-    };
-  };
 
   const handleGetCurrentLocation = () => {
     setIsGeolocating(true);
