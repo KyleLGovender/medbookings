@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { Clock, DollarSign, MapPin, Monitor, Plus, Trash2 } from 'lucide-react';
+import { Clock, Plus, Trash2 } from 'lucide-react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
 import { Badge } from '@/components/ui/badge';
@@ -18,25 +18,13 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { CreateAvailabilityData } from '@/features/calendar/availability/types/types';
+import { Service } from '@/features/providers/types';
 
 interface ServiceSelectionSectionProps {
   serviceProviderId: string;
   organizationId?: string;
-  availableServices?: Array<{
-    id: string;
-    name: string;
-    description?: string;
-    category?: string;
-  }>;
+  availableServices?: Service[];
   availableLocations?: Array<{
     id: string;
     name: string;
@@ -67,11 +55,9 @@ export function ServiceSelectionSection({
       if (service) {
         append({
           serviceId,
-          duration: 30, // Default 30 minutes
-          price: 100, // Default price
+          duration: service.duration || 15, // Use service default or 15 minutes
+          price: service.price || 600, // Use service default or 600
           showPrice: true,
-          isOnlineAvailable: true,
-          isInPerson: true,
         });
         setSelectedServiceIds((prev) => new Set(Array.from(prev).concat(serviceId)));
       }
@@ -114,15 +100,12 @@ export function ServiceSelectionSection({
                 key={service.id}
                 type="button"
                 variant={selectedServiceIds.has(service.id) ? 'default' : 'outline'}
-                className="h-auto justify-start p-3"
+                className="h-auto justify-start whitespace-normal text-wrap p-3"
                 onClick={() => addService(service.id)}
                 disabled={selectedServiceIds.has(service.id)}
               >
-                <div className="text-left">
-                  <div className="font-medium">{service.name}</div>
-                  {service.description && (
-                    <div className="text-xs text-muted-foreground">{service.description}</div>
-                  )}
+                <div className="w-full text-left">
+                  <div className="font-medium leading-tight">{service.name}</div>
                 </div>
               </Button>
             ))}
@@ -182,10 +165,7 @@ export function ServiceSelectionSection({
                     name={`services.${index}.price`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" />
-                          Price
-                        </FormLabel>
+                        <FormLabel className="flex items-center gap-1">Price (R)</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -219,90 +199,6 @@ export function ServiceSelectionSection({
                     </FormItem>
                   )}
                 />
-
-                <Separator />
-
-                {/* Delivery Methods */}
-                <div className="space-y-3">
-                  <FormLabel>Service Delivery</FormLabel>
-
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <FormField
-                      control={form.control}
-                      name={`services.${index}.isOnlineAvailable`}
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl>
-                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel className="flex items-center gap-1">
-                              <Monitor className="h-3 w-3" />
-                              Online/Virtual
-                            </FormLabel>
-                            <FormDescription>
-                              Allow virtual appointments via video call
-                            </FormDescription>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`services.${index}.isInPerson`}
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl>
-                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              In-Person
-                            </FormLabel>
-                            <FormDescription>
-                              Allow appointments at physical location
-                            </FormDescription>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* Location Selection for In-Person */}
-                {form.watch(`services.${index}.isInPerson`) && (
-                  <FormField
-                    control={form.control}
-                    name={`services.${index}.locationId`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select location for in-person appointments" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {locations.map((location) => (
-                              <SelectItem key={location.id} value={location.id}>
-                                <div>
-                                  <div className="font-medium">{location.name}</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {location.address}
-                                  </div>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
               </CardContent>
             </Card>
           ))}

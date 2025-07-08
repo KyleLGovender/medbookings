@@ -49,39 +49,36 @@ export const timeSlotSchema = z.object({
   duration: z.number().int().positive(),
   isAvailable: z.boolean(),
   price: z.number().positive().optional(),
-  serviceId: z.string().uuid(),
+  serviceId: z.string().cuid(),
   serviceName: z.string(),
-  slotId: z.string().uuid().optional(),
+  slotId: z.string().cuid().optional(),
 });
 
 // Service configuration for availability creation
 export const serviceConfigSchema = z.object({
-  serviceId: z.string().uuid(),
+  serviceId: z.string().cuid(),
   duration: z.number().int().positive(),
   price: z.number().positive(),
   showPrice: z.boolean(),
-  isOnlineAvailable: z.boolean(),
-  isInPerson: z.boolean(),
-  locationId: z.string().uuid().optional(),
 });
 
 // Base availability object schema (without refinements)
 const baseAvailabilitySchema = z.object({
-  serviceProviderId: z.string().uuid(),
-  organizationId: z.string().uuid().optional(),
-  locationId: z.string().uuid().optional(),
-  connectionId: z.string().uuid().optional(),
+  serviceProviderId: z.string().cuid(),
+  organizationId: z.string().cuid().optional(),
+  locationId: z.string().cuid().optional(),
+  connectionId: z.string().cuid().optional(),
   startTime: z.date(),
   endTime: z.date(),
   isRecurring: z.boolean(),
   recurrencePattern: recurrencePatternSchema.optional(),
-  seriesId: z.string().uuid().optional(),
+  seriesId: z.string().cuid().optional(),
   schedulingRule: schedulingRuleSchema,
   schedulingInterval: z.number().int().positive().optional(),
   isOnlineAvailable: z.boolean(),
   requiresConfirmation: z.boolean(),
   billingEntity: billingEntitySchema.optional(),
-  defaultSubscriptionId: z.string().uuid().optional(),
+  defaultSubscriptionId: z.string().cuid().optional(),
   services: z.array(serviceConfigSchema).min(1),
 });
 
@@ -104,11 +101,15 @@ export const createAvailabilityDataSchema = baseAvailabilitySchema
       message: 'Scheduling interval required for custom interval rule',
       path: ['schedulingInterval'],
     }
-  );
+  )
+  .refine((data: BaseAvailabilityData) => data.isOnlineAvailable || data.locationId, {
+    message: 'Physical location is required when online availability is disabled',
+    path: ['locationId'],
+  });
 
 // Update availability data schema
 export const updateAvailabilityDataSchema = baseAvailabilitySchema.partial().extend({
-  id: z.string().uuid(),
+  id: z.string().cuid(),
 });
 
 // Availability search parameters schema
@@ -133,10 +134,10 @@ export const availabilitySearchParamsSchema = z
 // Slot search parameters schema
 export const slotSearchParamsSchema = z
   .object({
-    serviceProviderId: z.string().uuid().optional(),
-    organizationId: z.string().uuid().optional(),
-    locationId: z.string().uuid().optional(),
-    serviceId: z.string().uuid().optional(),
+    serviceProviderId: z.string().cuid().optional(),
+    organizationId: z.string().cuid().optional(),
+    locationId: z.string().cuid().optional(),
+    serviceId: z.string().cuid().optional(),
     startDate: z.date().optional(),
     endDate: z.date().optional(),
     isOnlineAvailable: z.boolean().optional(),
@@ -187,7 +188,7 @@ export const schedulingRuleConfigSchema = z
 
 // Slot generation request schema
 export const slotGenerationRequestSchema = z.object({
-  availabilityId: z.string().uuid(),
+  availabilityId: z.string().cuid(),
   forceRegenerate: z.boolean().optional(),
 });
 
@@ -199,8 +200,8 @@ export const availabilityConflictSchema = z.object({
     'LOCATION_UNAVAILABLE',
     'CALENDAR_CONFLICT',
   ]),
-  conflictingAvailabilityId: z.string().uuid().optional(),
-  conflictingEventId: z.string().uuid().optional(),
+  conflictingAvailabilityId: z.string().cuid().optional(),
+  conflictingEventId: z.string().cuid().optional(),
   message: z.string(),
   startTime: z.date(),
   endTime: z.date(),
@@ -209,10 +210,10 @@ export const availabilityConflictSchema = z.object({
 // Availability billing context schema
 export const availabilityBillingContextSchema = z.object({
   billingEntity: billingEntitySchema,
-  subscriptionId: z.string().uuid().optional(),
-  organizationId: z.string().uuid().optional(),
-  locationId: z.string().uuid().optional(),
-  serviceProviderId: z.string().uuid(),
+  subscriptionId: z.string().cuid().optional(),
+  organizationId: z.string().cuid().optional(),
+  locationId: z.string().cuid().optional(),
+  serviceProviderId: z.string().cuid(),
   estimatedSlots: z.number().int().nonnegative(),
   estimatedCost: z.number().nonnegative(),
 });
@@ -220,14 +221,14 @@ export const availabilityBillingContextSchema = z.object({
 // Form schemas for UI components
 export const availabilityFormSchema = createAvailabilityDataSchema;
 export const availabilityUpdateFormSchema = baseAvailabilitySchema.partial().extend({
-  id: z.string().uuid(),
+  id: z.string().cuid(),
 });
 export const availabilitySearchFormSchema = availabilitySearchParamsSchema;
 export const slotSearchFormSchema = slotSearchParamsSchema;
 
 // API response schemas
 export const slotGenerationResultSchema = z.object({
-  availabilityId: z.string().uuid(),
+  availabilityId: z.string().cuid(),
   slotsGenerated: z.number().int().nonnegative(),
   slotsConflicted: z.number().int().nonnegative(),
   errors: z.array(z.string()),
@@ -235,8 +236,8 @@ export const slotGenerationResultSchema = z.object({
 });
 
 export const availabilitySeriesSchema = z.object({
-  seriesId: z.string().uuid(),
-  masterAvailabilityId: z.string().uuid(),
+  seriesId: z.string().cuid(),
+  masterAvailabilityId: z.string().cuid(),
   recurrencePattern: recurrencePatternSchema,
   instances: z.array(z.any()), // Will be typed as Availability[] in TypeScript
   totalInstances: z.number().int().nonnegative(),

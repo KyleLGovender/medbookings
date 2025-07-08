@@ -164,3 +164,4 @@ Based on detailed analysis of existing Prisma schema against PRD requirements:
   - [x] 7.4 Add CANCELLED to prisma AvailabilityStatus
   - [ ] 7.5 Sort out types between features
   - [ ] 7.6 Remove custom appointment starting intervals. It should be continuous, starting on the hour, starting on the half hour and hour.
+  - [ ] 7.7 Add showPrice flag to Service Provider

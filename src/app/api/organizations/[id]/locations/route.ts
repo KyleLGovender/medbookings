@@ -6,6 +6,53 @@ import { organizationLocationsSchema } from '@/features/organizations/types/type
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = params;
+    const userId = currentUser.id;
+
+    // Check if organization exists and user has access
+    const organization = await prisma.organization.findUnique({
+      where: { id: id },
+      include: {
+        memberships: {
+          where: { userId },
+          select: { role: true },
+        },
+      },
+    });
+
+    if (!organization) {
+      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    }
+
+    // Check if user is a member of the organization
+    const isMember = organization.memberships.length > 0;
+    if (!isMember) {
+      return NextResponse.json(
+        { error: 'You do not have permission to view this organization' },
+        { status: 403 }
+      );
+    }
+
+    // Fetch locations for the organization
+    const locations = await prisma.location.findMany({
+      where: { organizationId: id },
+    });
+
+    return NextResponse.json(locations, { status: 200 });
+  } catch (error) {
+    console.error('Failed to fetch organization locations:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const currentUser = await getCurrentUser();

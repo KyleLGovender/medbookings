@@ -1,15 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 
-export interface ProviderAssociatedService {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  duration: number;
-}
+import { Service } from '@/features/providers/types';
 
 export function useProviderAssociatedServices(providerId: string | undefined) {
-  return useQuery<ProviderAssociatedService[]>({
+  return useQuery<Service[]>({
     queryKey: ['provider-associated-services', providerId],
     queryFn: async () => {
       if (!providerId) {

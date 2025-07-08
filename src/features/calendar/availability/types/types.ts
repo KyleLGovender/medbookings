@@ -5,6 +5,8 @@
 // Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
 import { Decimal } from '@prisma/client/runtime/library';
 
+import { Service } from '@/features/providers/types';
+
 // =============================================================================
 // ENUMS
 // =============================================================================
@@ -167,13 +169,6 @@ export interface Location {
   coordinates?: any; // JSON field with lat/lng
   phone?: string | null;
   email?: string | null;
-}
-
-export interface Service {
-  id: string;
-  name: string;
-  description?: string | null;
-  category?: string | null;
 }
 
 export interface Subscription {
@@ -571,9 +566,6 @@ export interface CreateAvailabilityData {
     duration: number;
     price: number;
     showPrice: boolean;
-    isOnlineAvailable: boolean;
-    isInPerson: boolean;
-    locationId?: string;
   }[];
 }
 

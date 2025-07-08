@@ -119,9 +119,6 @@ export function AvailabilityEditForm({
             duration: config.duration,
             price: config.price,
             showPrice: config.showPrice,
-            isOnlineAvailable: config.isOnlineAvailable,
-            isInPerson: config.isInPerson,
-            locationId: config.locationId || undefined,
           })
         ),
       });
@@ -130,6 +127,7 @@ export function AvailabilityEditForm({
 
   const watchIsRecurring = form.watch('isRecurring');
   const watchSchedulingRule = form.watch('schedulingRule');
+  const watchIsOnlineAvailable = form.watch('isOnlineAvailable');
 
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);

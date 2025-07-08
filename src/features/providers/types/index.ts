@@ -4,7 +4,6 @@ import type {
   OrganizationProviderConnection,
   ProviderInvitation,
   ProviderInvitationStatus,
-  ServiceProvider,
 } from '@prisma/client';
 import { z } from 'zod';
 
@@ -50,12 +49,19 @@ export const ConnectionUpdateSchema = z.object({
 
 export type ConnectionUpdate = z.infer<typeof ConnectionUpdateSchema>;
 
+// Service types for providers
+export interface Service {
+  id: string;
+  name: string;
+  description?: string | null;
+  price: number;
+  duration: number;
+}
+
 // Export Prisma types for convenience
 export type {
+  ConnectionStatus,
+  OrganizationProviderConnection,
   ProviderInvitation,
   ProviderInvitationStatus,
-  OrganizationProviderConnection,
-  ConnectionStatus,
 };
-
-// Types are already exported above, no need to re-export

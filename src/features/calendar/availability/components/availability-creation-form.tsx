@@ -81,7 +81,7 @@ export function AvailabilityCreationForm({
     defaultValues: {
       serviceProviderId,
       organizationId,
-      locationId,
+      locationId: locationId || undefined,
       startTime: new Date(),
       endTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
       isRecurring: false,
@@ -112,6 +112,7 @@ export function AvailabilityCreationForm({
 
   const watchIsRecurring = form.watch('isRecurring');
   const watchSchedulingRule = form.watch('schedulingRule');
+  const watchIsOnlineAvailable = form.watch('isOnlineAvailable');
 
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
@@ -192,121 +193,6 @@ export function AvailabilityCreationForm({
                   </FormItem>
                 )}
               />
-            </div>
-
-            <Separator />
-
-            {/* Location Section */}
-            <div className="space-y-4">
-              <h3 className="flex items-center gap-2 text-lg font-medium">
-                <MapPin className="h-4 w-4" />
-                Location
-              </h3>
-
-              {isLocationsLoading ? (
-                <div className="py-4 text-center text-muted-foreground">Loading locations...</div>
-              ) : (
-                <FormField
-                  control={form.control}
-                  name="locationId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Select Location</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value || undefined}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Choose a location" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value={''}>Online Only</SelectItem>
-                          {availableLocations.map((location: any) => (
-                            <SelectItem key={location.id} value={location.id}>
-                              {location.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Select a physical location or leave as &quot;Online Only&quot; for virtual
-                        appointments.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-            </div>
-
-            <Separator />
-
-            {/* Scheduling Rules */}
-            <div className="space-y-4">
-              <h3 className="flex items-center gap-2 text-lg font-medium">
-                <Clock className="h-4 w-4" />
-                Scheduling Rules
-              </h3>
-
-              <FormField
-                control={form.control}
-                name="schedulingRule"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Appointment Scheduling</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select scheduling rule" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value={SchedulingRule.CONTINUOUS}>
-                          Continuous - Appointments start immediately after previous ends
-                        </SelectItem>
-                        <SelectItem value={SchedulingRule.FIXED_INTERVAL}>
-                          Fixed Interval - Appointments start at regular intervals (hourly,
-                          half-hourly, etc.)
-                        </SelectItem>
-                        <SelectItem value={SchedulingRule.CUSTOM_INTERVAL}>
-                          Custom Interval - Appointments start at custom intervals you define
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      This determines when appointments can be scheduled within your availability
-                      period.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {watchSchedulingRule === SchedulingRule.CUSTOM_INTERVAL && (
-                <FormField
-                  control={form.control}
-                  name="schedulingInterval"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Custom Interval (minutes)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="e.g., 20"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        How many minutes between each possible appointment start time.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
             </div>
 
             <Separator />
@@ -434,6 +320,142 @@ export function AvailabilityCreationForm({
                     )}
                   />
                 </div>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Scheduling Rules */}
+            <div className="space-y-4">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
+                <Clock className="h-4 w-4" />
+                Scheduling Rules
+              </h3>
+
+              <FormField
+                control={form.control}
+                name="schedulingRule"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Appointment Scheduling</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select scheduling rule" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={SchedulingRule.CONTINUOUS}>
+                          Continuous - Appointments start immediately after previous ends
+                        </SelectItem>
+                        <SelectItem value={SchedulingRule.FIXED_INTERVAL}>
+                          Fixed Interval - Appointments start at regular intervals (hourly,
+                          half-hourly, etc.)
+                        </SelectItem>
+                        <SelectItem value={SchedulingRule.CUSTOM_INTERVAL}>
+                          Custom Interval - Appointments start at custom intervals you define
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      This determines when appointments can be scheduled within your availability
+                      period.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {watchSchedulingRule === SchedulingRule.CUSTOM_INTERVAL && (
+                <FormField
+                  control={form.control}
+                  name="schedulingInterval"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Custom Interval (minutes)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="e.g., 20"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        How many minutes between each possible appointment start time.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Location Section */}
+            <div className="space-y-4">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
+                <MapPin className="h-4 w-4" />
+                Location
+              </h3>
+
+              {/* Online Availability Toggle */}
+              <FormField
+                control={form.control}
+                name="isOnlineAvailable"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Available Online</FormLabel>
+                      <FormDescription>Allow virtual appointments via video call</FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {/* Physical Location Selection */}
+              {isLocationsLoading ? (
+                <div className="py-4 text-center text-muted-foreground">Loading locations...</div>
+              ) : (
+                <FormField
+                  control={form.control}
+                  name="locationId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Physical Location{!watchIsOnlineAvailable && ' (Required)'}
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value || undefined}
+                        required={!watchIsOnlineAvailable}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a physical location" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {availableLocations.map((location: any) => (
+                            <SelectItem key={location.id} value={location.id}>
+                              {location.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        {watchIsOnlineAvailable
+                          ? 'Select a physical location for in-person appointments (optional)'
+                          : 'You must select a physical location when online availability is disabled'}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
             </div>
 
