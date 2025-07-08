@@ -1,32 +1,53 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Clock, Repeat, Send, Users } from 'lucide-react';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Calendar, Clock, Repeat, Send, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
-import { DatePicker } from '@/components/ui/date-picker';
-import { TimePicker } from '@/components/ui/time-picker';
+
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DatePicker } from '@/components/ui/date-picker';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  CreateAvailabilityData,
-  SchedulingRule,
-  RecurrenceType,
+import { TimePicker } from '@/components/ui/time-picker';
+import { ServiceSelectionSection } from '@/features/calendar/availability/components/service-selection-section';
+import { useCreateAvailability } from '@/features/calendar/availability/hooks/use-availability';
+import {
+  billingEntitySchema,
+  recurrencePatternSchema,
+  schedulingRuleSchema,
+  serviceConfigSchema,
+} from '@/features/calendar/availability/types/schemas';
+import {
   BillingEntity,
-} from '../types';
-import { recurrencePatternSchema, serviceConfigSchema, schedulingRuleSchema, billingEntitySchema } from '../types/schemas';
-import { useCreateAvailability } from '../hooks';
-import { ServiceSelectionSection } from './service-selection-section';
+  CreateAvailabilityData,
+  RecurrenceType,
+  SchedulingRule,
+} from '@/features/calendar/availability/types/types';
+import { useToast } from '@/hooks/use-toast';
 
 interface AvailabilityProposalFormProps {
   organizationId: string;
@@ -121,8 +142,8 @@ export function AvailabilityProposalForm({
     try {
       // Remove proposalNote from the data before sending to API
       const { proposalNote, ...availabilityData } = data;
-      
-      // Note: In a real implementation, the proposalNote would be stored 
+
+      // Note: In a real implementation, the proposalNote would be stored
       // in a separate field or in the availability metadata
       await createMutation.mutateAsync(availabilityData);
     } catch (error) {
@@ -133,7 +154,7 @@ export function AvailabilityProposalForm({
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
+    <Card className="mx-auto w-full max-w-4xl">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
@@ -153,9 +174,10 @@ export function AvailabilityProposalForm({
           <Send className="h-4 w-4" />
           <AlertTitle>Availability Proposal</AlertTitle>
           <AlertDescription>
-            This availability will be sent to the provider for review. They can accept or reject 
-            the proposal. Once accepted, the availability will become active and slots will be generated.
-            Your organization will be billed for the slots based on your subscription plan.
+            This availability will be sent to the provider for review. They can accept or reject the
+            proposal. Once accepted, the availability will become active and slots will be
+            generated. Your organization will be billed for the slots based on your subscription
+            plan.
           </AlertDescription>
         </Alert>
 
@@ -186,7 +208,7 @@ export function AvailabilityProposalForm({
             <Separator />
 
             {/* Basic Time Settings */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
                 name="startTime"
@@ -207,10 +229,7 @@ export function AvailabilityProposalForm({
                             }
                           }}
                         />
-                        <TimePicker
-                          date={field.value}
-                          onChange={field.onChange}
-                        />
+                        <TimePicker date={field.value} onChange={field.onChange} />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -238,10 +257,7 @@ export function AvailabilityProposalForm({
                             }
                           }}
                         />
-                        <TimePicker
-                          date={field.value}
-                          onChange={field.onChange}
-                        />
+                        <TimePicker date={field.value} onChange={field.onChange} />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -254,11 +270,11 @@ export function AvailabilityProposalForm({
 
             {/* Scheduling Rules */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
                 <Clock className="h-4 w-4" />
                 Scheduling Rules
               </h3>
-              
+
               <FormField
                 control={form.control}
                 name="schedulingRule"
@@ -320,7 +336,7 @@ export function AvailabilityProposalForm({
 
             {/* Recurrence Settings */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
                 <Repeat className="h-4 w-4" />
                 Recurrence Settings
               </h3>
@@ -331,15 +347,10 @@ export function AvailabilityProposalForm({
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                     <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Make this availability recurring
-                      </FormLabel>
+                      <FormLabel>Make this availability recurring</FormLabel>
                       <FormDescription>
                         Propose a repeating schedule for the provider to consider.
                       </FormDescription>
@@ -373,7 +384,7 @@ export function AvailabilityProposalForm({
                     )}
                   />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <Controller
                       name="recurrencePattern.interval"
                       control={form.control}
@@ -386,7 +397,9 @@ export function AvailabilityProposalForm({
                               placeholder="1"
                               min="1"
                               {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                              onChange={(e) =>
+                                field.onChange(parseInt(e.target.value) || undefined)
+                              }
                             />
                           </FormControl>
                           <FormDescription>
@@ -410,12 +423,12 @@ export function AvailabilityProposalForm({
                               min="1"
                               max="52"
                               {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                              onChange={(e) =>
+                                field.onChange(parseInt(e.target.value) || undefined)
+                              }
                             />
                           </FormControl>
-                          <FormDescription>
-                            Total recurring sessions (max 52)
-                          </FormDescription>
+                          <FormDescription>Total recurring sessions (max 52)</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -438,23 +451,18 @@ export function AvailabilityProposalForm({
             {/* Additional Settings */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Additional Settings</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="isOnlineAvailable"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Available Online
-                        </FormLabel>
+                        <FormLabel>Available Online</FormLabel>
                         <FormDescription>
                           Allow online appointments for this availability
                         </FormDescription>
@@ -469,15 +477,10 @@ export function AvailabilityProposalForm({
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Requires Confirmation
-                        </FormLabel>
+                        <FormLabel>Requires Confirmation</FormLabel>
                         <FormDescription>
                           Provider must approve each booking manually
                         </FormDescription>
@@ -492,8 +495,8 @@ export function AvailabilityProposalForm({
             <Alert>
               <AlertTitle>Billing Information</AlertTitle>
               <AlertDescription>
-                Your organization will be billed for the time slots generated from this availability 
-                based on your current subscription plan. The provider can see the proposed times and 
+                Your organization will be billed for the time slots generated from this availability
+                based on your current subscription plan. The provider can see the proposed times and
                 services but not the billing details.
               </AlertDescription>
             </Alert>
@@ -501,12 +504,7 @@ export function AvailabilityProposalForm({
             {/* Form Actions */}
             <div className="flex justify-end gap-3 pt-6">
               {onCancel && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onCancel}
-                  disabled={isSubmitting}
-                >
+                <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
                   Cancel
                 </Button>
               )}

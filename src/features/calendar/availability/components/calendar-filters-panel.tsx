@@ -2,16 +2,7 @@
 
 import { useState } from 'react';
 
-import {
-  CalendarDays,
-  Clock,
-  Filter,
-  MapPin,
-  RotateCcw,
-  Search,
-  Settings,
-  Users,
-} from 'lucide-react';
+import { CalendarDays, Clock, Filter, MapPin, RotateCcw, Search, Users } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,10 +19,11 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-
-// Note: Popover components might need to be created if not available
-// import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { AvailabilityStatus, SchedulingRule, SlotStatus } from '../types';
+import {
+  AvailabilityStatus,
+  SchedulingRule,
+  SlotStatus,
+} from '@/features/calendar/availability/types/types';
 
 export interface CalendarFilters {
   // Provider filters
@@ -156,7 +148,7 @@ export function CalendarFiltersPanel({
   };
 
   const getProviderTypes = () => {
-    const types = [...new Set(providers.map((p) => p.type))];
+    const types = Array.from(new Set(providers.map((p) => p.type)));
     return types.sort();
   };
 

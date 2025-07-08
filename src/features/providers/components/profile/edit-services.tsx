@@ -16,7 +16,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useProvider } from '@/features/providers/hooks/use-provider';
-import { useProviderServices } from '@/features/providers/hooks/use-provider-services';
+import { useProviderTypeServices } from '@/features/providers/hooks/use-provider-type-services';
 import { useUpdateProviderServices } from '@/features/providers/hooks/use-provider-updates';
 import { useToast } from '@/hooks/use-toast';
 
@@ -46,7 +46,8 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
 
   // Fetch provider data and available services
   const { data: provider, isLoading: isProviderLoading, refetch } = useProvider(providerId);
-  const { data: availableServices, isLoading: isServicesLoading } = useProviderServices(providerId);
+  const { data: availableServices, isLoading: isServicesLoading } =
+    useProviderTypeServices(providerId);
 
   // Mutation for updating services
   const updateServicesMutation = useUpdateProviderServices({

@@ -157,10 +157,10 @@ export function CalendarNavigation({
     nextMonth.setMonth(nextMonth.getMonth() + 1);
 
     return [
-      { label: 'Today', date: today },
-      { label: 'Tomorrow', date: tomorrow },
-      { label: 'Next Week', date: nextWeek },
-      { label: 'Next Month', date: nextMonth },
+      { label: 'Today', date: today, badge: undefined },
+      { label: 'Tomorrow', date: tomorrow, badge: undefined },
+      { label: 'Next Week', date: nextWeek, badge: undefined },
+      { label: 'Next Month', date: nextMonth, badge: undefined },
     ];
   };
 

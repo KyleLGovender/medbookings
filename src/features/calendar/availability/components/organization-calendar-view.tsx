@@ -33,9 +33,16 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { CalendarEvent } from '@/features/calendar/availability/types/types';
+import {
+  AvailabilityWithRelations,
+  CalculatedAvailabilitySlotWithRelations,
+  CalendarEvent,
+} from '@/features/calendar/availability/types/types';
 import { useOrganization } from '@/features/organizations/hooks/use-organization';
-import { useOrganizationProviderConnections } from '@/features/organizations/hooks/use-provider-connections';
+import {
+  OrganizationProviderConnection,
+  useOrganizationProviderConnections,
+} from '@/features/organizations/hooks/use-provider-connections';
 
 import { useOrganizationAvailability } from '../hooks/use-availability';
 import {
@@ -110,96 +117,103 @@ export function OrganizationCalendarView({
     if (!organization || !providerConnections || !availabilityData) return null;
 
     // Transform provider connections into organization providers
-    const providers: OrganizationProvider[] = providerConnections.map((connection) => {
-      const provider = connection.serviceProvider;
+    const providers: OrganizationProvider[] = providerConnections.map(
+      (connection: OrganizationProviderConnection) => {
+        const provider = connection.serviceProvider;
 
-      // Get availability for this provider from organization availability data
-      const providerAvailability = availabilityData.filter(
-        (availability) => availability.serviceProviderId === provider.id
-      );
+        // Get availability for this provider from organization availability data
+        const providerAvailability = availabilityData.filter(
+          (availability: AvailabilityWithRelations) =>
+            availability.serviceProviderId === provider.id
+        );
 
-      // Transform availability into calendar events
-      const events: CalendarEvent[] = [];
+        // Transform availability into calendar events
+        const events: CalendarEvent[] = [];
 
-      providerAvailability.forEach((availability) => {
-        events.push({
-          id: availability.id,
-          type: 'availability',
-          title: `Available - ${availability.serviceAvailabilityConfigs?.[0]?.service?.name || 'General'}`,
-          startTime: new Date(availability.startTime),
-          endTime: new Date(availability.endTime),
-          status: availability.status,
-          schedulingRule: availability.schedulingRule,
-          isRecurring: availability.isRecurring,
-          seriesId: availability.seriesId || undefined,
-          location: availability.location
-            ? {
-                id: availability.location.id,
-                name: availability.location.name,
-                isOnline: !availability.locationId,
-              }
-            : undefined,
-          service: availability.serviceAvailabilityConfigs?.[0]
-            ? {
-                id: availability.serviceAvailabilityConfigs[0].service.id,
-                name: availability.serviceAvailabilityConfigs[0].service.name,
-                duration: availability.serviceAvailabilityConfigs[0].duration || 30,
-                price: availability.serviceAvailabilityConfigs[0].price || 0,
-              }
-            : undefined,
+        providerAvailability.forEach((availability: AvailabilityWithRelations) => {
+          events.push({
+            id: availability.id,
+            type: 'availability',
+            title: `Available - ${availability.availableServices?.[0]?.service?.name || 'General'}`,
+            startTime: new Date(availability.startTime),
+            endTime: new Date(availability.endTime),
+            status: availability.status,
+            schedulingRule: availability.schedulingRule,
+            isRecurring: availability.isRecurring,
+            seriesId: availability.seriesId || undefined,
+            location: availability.location
+              ? {
+                  id: availability.location.id,
+                  name: availability.location.name,
+                  isOnline: !availability.locationId,
+                }
+              : undefined,
+            service: availability.availableServices?.[0]
+              ? {
+                  id: availability.availableServices[0].service.id,
+                  name: availability.availableServices[0].service.name,
+                  duration: availability.availableServices[0].duration || 30,
+                  price: Number(availability.availableServices[0].price) || 0,
+                }
+              : undefined,
+          });
+
+          // Add booked slots
+          availability.calculatedSlots
+            ?.filter((slot: CalculatedAvailabilitySlotWithRelations) => slot.status === 'BOOKED')
+            .forEach((slot: CalculatedAvailabilitySlotWithRelations) => {
+              events.push({
+                id: slot.id,
+                type: 'booking',
+                title: `Booking - ${slot.service?.name || 'Service'}`,
+                startTime: new Date(slot.startTime),
+                endTime: new Date(slot.endTime),
+                status: slot.status,
+                location: slot.serviceConfig?.location
+                  ? {
+                      id: slot.serviceConfig.location.id,
+                      name: slot.serviceConfig.location.name,
+                      isOnline: slot.serviceConfig.isOnlineAvailable,
+                    }
+                  : undefined,
+                service: slot.service
+                  ? {
+                      id: slot.service.id,
+                      name: slot.service.name,
+                      duration: slot.serviceConfig?.duration || 30,
+                      price: Number(slot.serviceConfig?.price) || 0,
+                    }
+                  : undefined,
+              });
+            });
         });
 
-        // Add booked slots
-        availability.calculatedSlots
-          ?.filter((slot) => slot.status === 'BOOKED')
-          .forEach((slot) => {
-            events.push({
-              id: slot.id,
-              type: 'booking',
-              title: `Booking - ${slot.service?.name || 'Service'}`,
-              startTime: new Date(slot.startTime),
-              endTime: new Date(slot.endTime),
-              status: slot.status,
-              location: slot.location
-                ? {
-                    id: slot.location.id,
-                    name: slot.location.name,
-                    isOnline: slot.isOnlineAvailable,
-                  }
-                : undefined,
-              service: slot.service
-                ? {
-                    id: slot.service.id,
-                    name: slot.service.name,
-                    duration: slot.duration,
-                    price: slot.price,
-                  }
-                : undefined,
-            });
-          });
-      });
+        // Calculate stats for this provider
+        const allSlots = providerAvailability.flatMap(
+          (availability: AvailabilityWithRelations) => availability.calculatedSlots || []
+        );
+        const bookedSlots = allSlots.filter(
+          (slot: CalculatedAvailabilitySlotWithRelations) => slot.status === 'BOOKED'
+        ).length;
+        const availableSlots = allSlots.filter(
+          (slot: CalculatedAvailabilitySlotWithRelations) => slot.status === 'AVAILABLE'
+        ).length;
 
-      // Calculate stats for this provider
-      const allSlots = providerAvailability.flatMap(
-        (availability) => availability.calculatedSlots || []
-      );
-      const bookedSlots = allSlots.filter((slot) => slot.status === 'BOOKED').length;
-      const availableSlots = allSlots.filter((slot) => slot.status === 'AVAILABLE').length;
-
-      return {
-        id: provider.id,
-        name: provider.name,
-        type: provider.serviceProviderType?.name || 'Healthcare Provider',
-        specialization: provider.serviceProviderType?.name,
-        isActive: provider.status === 'ACTIVE',
-        workingHours: { start: '09:00', end: '17:00' }, // TODO: Get from provider settings
-        utilizationRate:
-          allSlots.length > 0 ? Math.round((bookedSlots / allSlots.length) * 100) : 0,
-        totalBookings: bookedSlots,
-        pendingBookings: 0, // No pending status in SlotStatus
-        events,
-      };
-    });
+        return {
+          id: provider.id,
+          name: provider.name,
+          type: provider.serviceProviderType?.name || 'Healthcare Provider',
+          specialization: provider.serviceProviderType?.name,
+          isActive: true, // Default to active since we don't have status in the connection type
+          workingHours: { start: '09:00', end: '17:00' }, // TODO: Get from provider settings
+          utilizationRate:
+            allSlots.length > 0 ? Math.round((bookedSlots / allSlots.length) * 100) : 0,
+          totalBookings: bookedSlots,
+          pendingBookings: 0, // No pending status in SlotStatus
+          events,
+        };
+      }
+    );
 
     // Calculate organization stats
     const totalSlots = providers.reduce(
@@ -215,7 +229,7 @@ export function OrganizationCalendarView({
       organizationName: organization.name,
       providers,
       locations:
-        organization.locations?.map((location) => ({
+        organization.locations?.map((location: any) => ({
           id: location.id,
           name: location.name,
           address: location.address || '',

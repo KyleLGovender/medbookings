@@ -7,7 +7,7 @@ export default function ProviderCalendarLoading() {
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-10 w-32" />
       </div>
-      
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="md:col-span-1">
           <Skeleton className="h-64 w-full" />

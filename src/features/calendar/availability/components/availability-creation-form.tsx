@@ -1,27 +1,46 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Calendar, Clock, Repeat } from 'lucide-react';
+import { Calendar, Clock, MapPin, Repeat } from 'lucide-react';
+import { Controller, useForm } from 'react-hook-form';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
 import { DatePicker } from '@/components/ui/date-picker';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { TimePicker } from '@/components/ui/time-picker';
-import { useToast } from '@/hooks/use-toast';
-import { 
+import { useCreateAvailability } from '@/features/calendar/availability/hooks/use-availability';
+import { createAvailabilityDataSchema } from '@/features/calendar/availability/types/schemas';
+import {
   CreateAvailabilityData,
-  createAvailabilityDataSchema,
-  SchedulingRule,
   RecurrenceType,
-  DayOfWeek,
-} from '../types';
-import { useCreateAvailability } from '../hooks';
+  SchedulingRule,
+} from '@/features/calendar/availability/types/types';
+import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
+import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
+import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
+import { useToast } from '@/hooks/use-toast';
+
 import { ServiceSelectionSection } from './service-selection-section';
 
 interface AvailabilityCreationFormProps {
@@ -43,6 +62,19 @@ export function AvailabilityCreationForm({
 }: AvailabilityCreationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  // Fetch provider's services
+  const {
+    data: availableServices,
+    isLoading: isServicesLoading,
+    error: servicesError,
+  } = useProviderAssociatedServices(serviceProviderId);
+
+  // Fetch user's organizations and their locations
+  const { data: userOrganizations = [] } = useCurrentUserOrganizations();
+  const organizationIds = userOrganizations.map((org: any) => org.id);
+  const { data: availableLocations = [], isLoading: isLocationsLoading } =
+    useOrganizationLocations(organizationIds);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(createAvailabilityDataSchema),
@@ -93,7 +125,7 @@ export function AvailabilityCreationForm({
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
+    <Card className="mx-auto w-full max-w-4xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5" />
@@ -104,7 +136,7 @@ export function AvailabilityCreationForm({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Basic Time Settings */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
                 name="startTime"
@@ -125,10 +157,7 @@ export function AvailabilityCreationForm({
                             }
                           }}
                         />
-                        <TimePicker
-                          date={field.value}
-                          onChange={field.onChange}
-                        />
+                        <TimePicker date={field.value} onChange={field.onChange} />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -156,10 +185,7 @@ export function AvailabilityCreationForm({
                             }
                           }}
                         />
-                        <TimePicker
-                          date={field.value}
-                          onChange={field.onChange}
-                        />
+                        <TimePicker date={field.value} onChange={field.onChange} />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -170,13 +196,60 @@ export function AvailabilityCreationForm({
 
             <Separator />
 
+            {/* Location Section */}
+            <div className="space-y-4">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
+                <MapPin className="h-4 w-4" />
+                Location
+              </h3>
+
+              {isLocationsLoading ? (
+                <div className="py-4 text-center text-muted-foreground">Loading locations...</div>
+              ) : (
+                <FormField
+                  control={form.control}
+                  name="locationId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Select Location</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value || undefined}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a location" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value={''}>Online Only</SelectItem>
+                          {availableLocations.map((location: any) => (
+                            <SelectItem key={location.id} value={location.id}>
+                              {location.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Select a physical location or leave as &quot;Online Only&quot; for virtual
+                        appointments.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
+
+            <Separator />
+
             {/* Scheduling Rules */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
                 <Clock className="h-4 w-4" />
                 Scheduling Rules
               </h3>
-              
+
               <FormField
                 control={form.control}
                 name="schedulingRule"
@@ -194,7 +267,8 @@ export function AvailabilityCreationForm({
                           Continuous - Appointments start immediately after previous ends
                         </SelectItem>
                         <SelectItem value={SchedulingRule.FIXED_INTERVAL}>
-                          Fixed Interval - Appointments start at regular intervals (hourly, half-hourly, etc.)
+                          Fixed Interval - Appointments start at regular intervals (hourly,
+                          half-hourly, etc.)
                         </SelectItem>
                         <SelectItem value={SchedulingRule.CUSTOM_INTERVAL}>
                           Custom Interval - Appointments start at custom intervals you define
@@ -202,7 +276,8 @@ export function AvailabilityCreationForm({
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      This determines when appointments can be scheduled within your availability period.
+                      This determines when appointments can be scheduled within your availability
+                      period.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -238,7 +313,7 @@ export function AvailabilityCreationForm({
 
             {/* Recurrence Settings */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
                 <Repeat className="h-4 w-4" />
                 Recurrence Settings
               </h3>
@@ -249,15 +324,10 @@ export function AvailabilityCreationForm({
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                     <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Make this availability recurring
-                      </FormLabel>
+                      <FormLabel>Make this availability recurring</FormLabel>
                       <FormDescription>
                         Create a repeating schedule based on a pattern you define.
                       </FormDescription>
@@ -292,7 +362,7 @@ export function AvailabilityCreationForm({
                     )}
                   />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <Controller
                       name="recurrencePattern.interval"
                       control={form.control}
@@ -305,7 +375,9 @@ export function AvailabilityCreationForm({
                               placeholder="1"
                               min="1"
                               {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                              onChange={(e) =>
+                                field.onChange(parseInt(e.target.value) || undefined)
+                              }
                             />
                           </FormControl>
                           <FormDescription>
@@ -328,7 +400,9 @@ export function AvailabilityCreationForm({
                               placeholder="10"
                               min="1"
                               {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                              onChange={(e) =>
+                                field.onChange(parseInt(e.target.value) || undefined)
+                              }
                             />
                           </FormControl>
                           <FormDescription>
@@ -366,82 +440,54 @@ export function AvailabilityCreationForm({
             <Separator />
 
             {/* Service Selection */}
-            <ServiceSelectionSection
-              serviceProviderId={serviceProviderId}
-              organizationId={organizationId}
-            />
+            {isServicesLoading ? (
+              <div className="py-8 text-center text-muted-foreground">Loading services...</div>
+            ) : servicesError ? (
+              <div className="py-8 text-center text-destructive">Failed to load services.</div>
+            ) : (
+              <ServiceSelectionSection
+                serviceProviderId={serviceProviderId}
+                organizationId={organizationId}
+                availableServices={(availableServices || []).map((s) => ({
+                  ...s,
+                  description: s.description ?? undefined,
+                }))}
+              />
+            )}
 
             <Separator />
 
             {/* Additional Settings */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Additional Settings</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="isOnlineAvailable"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Available Online
-                        </FormLabel>
-                        <FormDescription>
-                          Allow online appointments for this availability
-                        </FormDescription>
-                      </div>
-                    </FormItem>
-                  )}
-                />
 
-                <FormField
-                  control={form.control}
-                  name="requiresConfirmation"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Requires Confirmation
-                        </FormLabel>
-                        <FormDescription>
-                          Manually approve bookings for this availability
-                        </FormDescription>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="requiresConfirmation"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Requires Confirmation</FormLabel>
+                      <FormDescription>
+                        Manually approve bookings for this availability
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
             </div>
 
             {/* Form Actions */}
             <div className="flex justify-end gap-3 pt-6">
               {onCancel && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onCancel}
-                  disabled={isSubmitting}
-                >
+                <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
                   Cancel
                 </Button>
               )}
-              <Button
-                type="submit"
-                disabled={isSubmitting || !form.formState.isValid}
-              >
+              <Button type="submit" disabled={isSubmitting || !form.formState.isValid}>
                 {isSubmitting ? 'Creating...' : 'Create Availability'}
               </Button>
             </div>

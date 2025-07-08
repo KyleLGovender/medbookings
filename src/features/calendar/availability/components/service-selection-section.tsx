@@ -26,8 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-
-import { CreateAvailabilityData } from '../types';
+import { CreateAvailabilityData } from '@/features/calendar/availability/types/types';
 
 interface ServiceSelectionSectionProps {
   serviceProviderId: string;
@@ -74,7 +73,7 @@ export function ServiceSelectionSection({
           isOnlineAvailable: true,
           isInPerson: true,
         });
-        setSelectedServiceIds((prev) => new Set([...prev, serviceId]));
+        setSelectedServiceIds((prev) => new Set(Array.from(prev).concat(serviceId)));
       }
     }
   };

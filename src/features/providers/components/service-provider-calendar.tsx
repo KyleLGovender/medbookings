@@ -1,19 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Plus, Settings, BarChart, Download } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
-// Import our comprehensive availability management components
-import { ProviderCalendarView } from '@/features/calendar/availability/components/provider-calendar-view';
-import { EnhancedCalendarView } from '@/features/calendar/availability/components/enhanced-calendar-view';
+import { BarChart, Calendar, Download, Plus, Settings } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AvailabilityCreationForm } from '@/features/calendar/availability/components/availability-creation-form';
 import { AvailabilityProposalsList } from '@/features/calendar/availability/components/availability-proposals-list';
+import { CalendarExportDialog } from '@/features/calendar/availability/components/calendar-export-dialog';
 // import { ProviderSearchInterface } from '@/features/calendar/availability/components/provider-search-interface';
 import { DragDropCalendar } from '@/features/calendar/availability/components/drag-drop-calendar';
-import { CalendarExportDialog } from '@/features/calendar/availability/components/calendar-export-dialog';
+import { EnhancedCalendarView } from '@/features/calendar/availability/components/enhanced-calendar-view';
+// Import our comprehensive availability management components
+import { ProviderCalendarView } from '@/features/calendar/availability/components/provider-calendar-view';
 import { VisualIndicatorsConfig } from '@/features/calendar/availability/components/visual-indicators-config';
 
 // Mock data types - these would typically come from props or API
@@ -59,14 +60,18 @@ export function ServiceProviderCalendar({ searchParams }: ServiceProviderCalenda
             <Plus className="h-4 w-4" />
             Add Availability
           </Button>
-          <Button variant="outline" onClick={() => setShowExportDialog(true)} className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowExportDialog(true)}
+            className="flex items-center gap-2"
+          >
             <Download className="h-4 w-4" />
             Export Calendar
           </Button>
         </div>
-        
+
         <div className="flex items-center space-x-2">
-          <VisualIndicatorsConfig 
+          <VisualIndicatorsConfig
             config={visualConfig}
             onConfigChange={setVisualConfig}
             showPreview={false}
@@ -197,7 +202,7 @@ export function ServiceProviderCalendar({ searchParams }: ServiceProviderCalenda
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
+              <div className="py-8 text-center text-gray-500">
                 Provider search interface temporarily disabled during development.
               </div>
             </CardContent>
@@ -207,10 +212,10 @@ export function ServiceProviderCalendar({ searchParams }: ServiceProviderCalenda
 
       {/* Create Availability Form Modal */}
       {showCreateForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-auto m-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="m-4 max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg bg-white">
             <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Create Availability</h2>
                 <Button variant="ghost" onClick={() => setShowCreateForm(false)}>
                   ×

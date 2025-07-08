@@ -37,5 +37,8 @@
   "markdownlint.config": {
     "MD029": false,
     "MD013": false
+  },
+  "[markdown]": {
+    "editor.wordWrap": "off"
   }
 }

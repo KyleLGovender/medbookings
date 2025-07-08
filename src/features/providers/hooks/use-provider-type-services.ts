@@ -7,7 +7,7 @@ import { SerializedService } from '@/features/providers/hooks/types';
  * @param providerId The ID of the provider
  * @returns Query result containing the available services
  */
-export function useProviderServices(providerId: string | undefined) {
+export function useProviderTypeServices(providerId: string | undefined) {
   // First, fetch the provider to get its type ID
   const providerQuery = useQuery({
     queryKey: ['provider', providerId],

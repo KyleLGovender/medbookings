@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Trash2, AlertTriangle, Calendar, Users, Clock } from 'lucide-react';
+
+import { AlertTriangle, Calendar, Clock, Trash2, Users } from 'lucide-react';
+
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,15 +16,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { useDeleteAvailability } from '@/features/calendar/availability/hooks/use-availability';
+import { AvailabilityWithRelations } from '@/features/calendar/availability/types/types';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  AvailabilityWithRelations,
-} from '../types';
-import { useDeleteAvailability } from '../hooks';
 
 interface AvailabilityDeleteDialogProps {
   availability: AvailabilityWithRelations;
@@ -58,22 +57,24 @@ export function AvailabilityDeleteDialog({
 
   // Calculate booking statistics
   const totalSlots = availability.calculatedSlots?.length || 0;
-  const bookedSlots = availability.calculatedSlots?.filter(slot => slot.booking)?.length || 0;
+  const bookedSlots = availability.calculatedSlots?.filter((slot) => slot.booking)?.length || 0;
   const hasBookings = bookedSlots > 0;
 
   // Check if this is a recurring series
   const isRecurring = availability.isRecurring;
-  const seriesCount = isRecurring ? 
-    availability.calculatedSlots?.reduce((acc, slot) => {
-      // In a real implementation, we'd count unique series occurrences
-      return acc;
-    }, 0) || 1 : 1;
+  const seriesCount = isRecurring
+    ? availability.calculatedSlots?.reduce((acc, slot) => {
+        // In a real implementation, we'd count unique series occurrences
+        return acc;
+      }, 0) || 1
+    : 1;
 
   const handleDelete = async () => {
     if (hasBookings) {
       toast({
         title: 'Cannot Delete',
-        description: 'Cannot delete availability with existing bookings. Cancel the bookings first.',
+        description:
+          'Cannot delete availability with existing bookings. Cancel the bookings first.',
         variant: 'destructive',
       });
       return;
@@ -94,7 +95,7 @@ export function AvailabilityDeleteDialog({
       <AlertDialogTrigger asChild>
         {children || (
           <Button variant="destructive" size="sm">
-            <Trash2 className="h-4 w-4 mr-2" />
+            <Trash2 className="mr-2 h-4 w-4" />
             Delete
           </Button>
         )}
@@ -112,13 +113,20 @@ export function AvailabilityDeleteDialog({
               </p>
 
               {/* Availability Details */}
-              <div className="space-y-3 p-3 bg-muted rounded-lg">
+              <div className="space-y-3 rounded-lg bg-muted p-3">
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4" />
                   <span className="font-medium">
-                    {availability.startTime.toLocaleDateString()} {availability.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {availability.startTime.toLocaleDateString()}{' '}
+                    {availability.startTime.toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                     {' - '}
-                    {availability.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {availability.endTime.toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </span>
                 </div>
 
@@ -148,8 +156,9 @@ export function AvailabilityDeleteDialog({
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>Cannot Delete</AlertTitle>
                   <AlertDescription>
-                    This availability has {bookedSlots} existing booking{bookedSlots !== 1 ? 's' : ''}. 
-                    You must cancel all bookings before deleting the availability.
+                    This availability has {bookedSlots} existing booking
+                    {bookedSlots !== 1 ? 's' : ''}. You must cancel all bookings before deleting the
+                    availability.
                   </AlertDescription>
                 </Alert>
               )}
@@ -160,7 +169,8 @@ export function AvailabilityDeleteDialog({
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>Recurring Series</AlertTitle>
                   <AlertDescription>
-                    This will delete the entire recurring series. All future occurrences will be removed.
+                    This will delete the entire recurring series. All future occurrences will be
+                    removed.
                   </AlertDescription>
                 </Alert>
               )}
@@ -171,12 +181,15 @@ export function AvailabilityDeleteDialog({
                   <p className="text-sm font-medium">Affected Services:</p>
                   <div className="space-y-1">
                     {availability.availableServices.map((serviceConfig, index) => (
-                      <div key={index} className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                        {serviceConfig.service?.name || 'Unknown Service'} 
+                      <div
+                        key={index}
+                        className="rounded bg-muted/50 p-2 text-xs text-muted-foreground"
+                      >
+                        {serviceConfig.service?.name || 'Unknown Service'}
                         {' - '}
                         {serviceConfig.duration} min
                         {serviceConfig.showPrice && serviceConfig.price && (
-                          <span> - ${serviceConfig.price}</span>
+                          <span> - ${serviceConfig.price.toString()}</span>
                         )}
                       </div>
                     ))}
@@ -187,9 +200,7 @@ export function AvailabilityDeleteDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>
-            Cancel
-          </AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={hasBookings || isDeleting}
@@ -218,10 +229,7 @@ export function QuickDeleteButton({
   size = 'sm',
 }: QuickDeleteButtonProps) {
   return (
-    <AvailabilityDeleteDialog
-      availability={availability}
-      onSuccess={onSuccess}
-    >
+    <AvailabilityDeleteDialog availability={availability} onSuccess={onSuccess}>
       <Button variant={variant} size={size}>
         <Trash2 className="h-4 w-4" />
       </Button>

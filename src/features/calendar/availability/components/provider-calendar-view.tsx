@@ -42,6 +42,21 @@ enum BookingStatus {
   NO_SHOW = 'NO_SHOW',
 }
 
+interface ProviderCalendarData {
+  providerId: string;
+  providerName: string;
+  providerType: string;
+  workingHours: { start: string; end: string };
+  events: CalendarEvent[];
+  stats: {
+    totalAvailabilityHours: number;
+    bookedHours: number;
+    utilizationRate: number;
+    pendingBookings: number;
+    completedBookings: number;
+  };
+}
+
 export interface ProviderCalendarViewProps {
   providerId: string;
   onEventClick?: (event: CalendarEvent) => void;
@@ -155,14 +170,15 @@ export function ProviderCalendarView({
                   isOnline: slot.serviceConfig.isOnlineAvailable,
                 }
               : undefined,
-            service: slot.service
-              ? {
-                  id: slot.service.id,
-                  name: slot.service.name,
-                  duration: slot.serviceConfig.duration,
-                  price: Number(slot.serviceConfig.price),
-                }
-              : undefined,
+            service:
+              slot.service && slot.serviceConfig
+                ? {
+                    id: slot.service.id,
+                    name: slot.service.name,
+                    duration: slot.serviceConfig.duration || 30,
+                    price: Number(slot.serviceConfig.price) || 0,
+                  }
+                : undefined,
             // TODO: Add customer data when booking relationship is available
           });
         });
@@ -299,7 +315,7 @@ export function ProviderCalendarView({
                 <AvatarFallback>
                   {calendarData.providerName
                     .split(' ')
-                    .map((n) => n[0])
+                    .map((n: string) => n[0])
                     .join('')}
                 </AvatarFallback>
               </Avatar>

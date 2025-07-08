@@ -1,14 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, X, Calendar, Clock, MapPin, Monitor, Building, MessageSquare } from 'lucide-react';
+
+import { Building, Calendar, Check, Clock, MapPin, Monitor, X } from 'lucide-react';
+
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -18,37 +17,39 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  AvailabilityWithRelations,
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  useAcceptAvailabilityProposal,
+  useProviderAvailability,
+  useRejectAvailabilityProposal,
+} from '@/features/calendar/availability/hooks/use-availability';
+import {
   AvailabilityStatus,
+  AvailabilityWithRelations,
   SchedulingRule,
-} from '../types';
-import { 
-  useProviderAvailability, 
-  useAcceptAvailabilityProposal, 
-  useRejectAvailabilityProposal 
-} from '../hooks';
+  ServiceAvailabilityConfigWithRelations,
+} from '@/features/calendar/availability/types/types';
+import { useToast } from '@/hooks/use-toast';
 
 interface AvailabilityProposalsListProps {
   serviceProviderId: string;
 }
 
-export function AvailabilityProposalsList({
-  serviceProviderId,
-}: AvailabilityProposalsListProps) {
+export function AvailabilityProposalsList({ serviceProviderId }: AvailabilityProposalsListProps) {
   const { toast } = useToast();
 
   // Fetch pending proposals for the provider
-  const { 
-    data: allAvailability = [], 
-    isLoading, 
-    error 
+  const {
+    data: allAvailability = [],
+    isLoading,
+    error,
   } = useProviderAvailability(serviceProviderId);
 
   // Filter for pending proposals only
   const pendingProposals = allAvailability.filter(
-    availability => availability.status === AvailabilityStatus.PENDING
+    (availability: AvailabilityWithRelations) => availability.status === AvailabilityStatus.PENDING
   );
 
   const acceptMutation = useAcceptAvailabilityProposal({
@@ -133,10 +134,12 @@ export function AvailabilityProposalsList({
           <CardTitle>Availability Proposals</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <div className="py-8 text-center text-muted-foreground">
+            <Calendar className="mx-auto mb-4 h-12 w-12 opacity-50" />
             <p className="text-lg font-medium">No pending proposals</p>
-            <p className="text-sm">Organizations will send availability proposals for you to review here.</p>
+            <p className="text-sm">
+              Organizations will send availability proposals for you to review here.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -151,7 +154,7 @@ export function AvailabilityProposalsList({
       </div>
 
       <div className="space-y-4">
-        {pendingProposals.map((proposal) => (
+        {pendingProposals.map((proposal: AvailabilityWithRelations) => (
           <ProposalCard
             key={proposal.id}
             proposal={proposal}
@@ -208,13 +211,13 @@ function ProposalCard({
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               <Building className="h-4 w-4" />
               {proposal.organization?.name || 'Organization'}
             </CardTitle>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-3 w-3" />
-              {proposal.startTime.toLocaleDateString()} 
+              {proposal.startTime.toLocaleDateString()}
               {' • '}
               {proposal.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               {' - '}
@@ -226,9 +229,9 @@ function ProposalCard({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Proposal Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <h4 className="font-medium text-sm">Scheduling Details</h4>
+            <h4 className="text-sm font-medium">Scheduling Details</h4>
             <div className="space-y-1 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Clock className="h-3 w-3" />
@@ -250,13 +253,11 @@ function ProposalCard({
           </div>
 
           <div className="space-y-2">
-            <h4 className="font-medium text-sm">Services & Billing</h4>
+            <h4 className="text-sm font-medium">Services & Billing</h4>
             <div className="space-y-1 text-sm text-muted-foreground">
-              <p>{proposal.availableServices.length} service(s) configured</p>
+              <p>{proposal.availableServices?.length || 0} service(s) configured</p>
               <p>Organization billed for slots</p>
-              {proposal.requiresConfirmation && (
-                <p>Manual booking confirmation required</p>
-              )}
+              {proposal.requiresConfirmation && <p>Manual booking confirmation required</p>}
             </div>
           </div>
         </div>
@@ -264,14 +265,17 @@ function ProposalCard({
         {/* Recurrence Information */}
         {proposal.isRecurring && proposal.recurrencePattern && (
           <div className="space-y-2">
-            <h4 className="font-medium text-sm flex items-center gap-1">
+            <h4 className="flex items-center gap-1 text-sm font-medium">
               <Calendar className="h-3 w-3" />
               Recurring Schedule
             </h4>
-            <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+            <div className="rounded bg-muted/50 p-2 text-sm text-muted-foreground">
               <p>Type: {proposal.recurrencePattern.type}</p>
               {proposal.recurrencePattern.interval && (
-                <p>Repeat every: {proposal.recurrencePattern.interval} {proposal.recurrencePattern.type.toLowerCase()}</p>
+                <p>
+                  Repeat every: {proposal.recurrencePattern.interval}{' '}
+                  {proposal.recurrencePattern.type.toLowerCase()}
+                </p>
               )}
               {proposal.recurrencePattern.count && (
                 <p>Total occurrences: {proposal.recurrencePattern.count}</p>
@@ -281,23 +285,30 @@ function ProposalCard({
         )}
 
         {/* Services List */}
-        {proposal.availableServices.length > 0 && (
+        {proposal.availableServices && proposal.availableServices.length > 0 && (
           <div className="space-y-2">
-            <h4 className="font-medium text-sm">Proposed Services</h4>
+            <h4 className="text-sm font-medium">Proposed Services</h4>
             <div className="space-y-1">
-              {proposal.availableServices.map((serviceConfig, index) => (
-                <div key={index} className="text-sm bg-muted/50 p-2 rounded flex items-center justify-between">
-                  <div>
-                    <span className="font-medium">{serviceConfig.service?.name || 'Service'}</span>
-                    <span className="text-muted-foreground ml-2">
-                      {serviceConfig.duration} min
-                    </span>
+              {proposal.availableServices.map(
+                (serviceConfig: ServiceAvailabilityConfigWithRelations, index: number) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between rounded bg-muted/50 p-2 text-sm"
+                  >
+                    <div>
+                      <span className="font-medium">
+                        {serviceConfig.service?.name || 'Service'}
+                      </span>
+                      <span className="ml-2 text-muted-foreground">
+                        {serviceConfig.duration} min
+                      </span>
+                    </div>
+                    {serviceConfig.showPrice && (
+                      <span className="font-medium">${serviceConfig.price.toString()}</span>
+                    )}
                   </div>
-                  {serviceConfig.showPrice && (
-                    <span className="font-medium">${serviceConfig.price}</span>
-                  )}
-                </div>
-              ))}
+                )
+              )}
             </div>
           </div>
         )}
@@ -308,8 +319,8 @@ function ProposalCard({
         <div className="flex justify-end gap-2">
           <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
             <DialogTrigger asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="flex items-center gap-2"
                 disabled={isAccepting || isRejecting}
               >
@@ -321,8 +332,8 @@ function ProposalCard({
               <DialogHeader>
                 <DialogTitle>Reject Availability Proposal</DialogTitle>
                 <DialogDescription>
-                  Are you sure you want to reject this availability proposal? 
-                  You can optionally provide a reason for the organization.
+                  Are you sure you want to reject this availability proposal? You can optionally
+                  provide a reason for the organization.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-2">
@@ -335,15 +346,15 @@ function ProposalCard({
                 />
               </div>
               <DialogFooter>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setIsRejectDialogOpen(false)}
                   disabled={isRejecting}
                 >
                   Cancel
                 </Button>
-                <Button 
-                  variant="destructive" 
+                <Button
+                  variant="destructive"
                   onClick={handleRejectWithReason}
                   disabled={isRejecting}
                 >
@@ -353,7 +364,7 @@ function ProposalCard({
             </DialogContent>
           </Dialog>
 
-          <Button 
+          <Button
             onClick={onAccept}
             disabled={isAccepting || isRejecting}
             className="flex items-center gap-2"

@@ -1,26 +1,21 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { 
-  Move, 
-  Copy, 
-  RotateCcw, 
-  Save, 
-  AlertTriangle, 
-  CheckCircle,
-  Calendar,
-  Clock,
-  Repeat
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
+import { AlertTriangle, CheckCircle, Move, Repeat, Save } from 'lucide-react';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { CalendarEvent } from './provider-calendar-view';
-import { CalendarEventIndicator, CalendarEventWithVisuals, VisualIndicatorConfig } from './calendar-visual-indicators';
-import { AvailabilityStatus, SlotStatus, SchedulingRule } from '../types';
+import { Switch } from '@/components/ui/switch';
+import {
+  CalendarEventIndicator,
+  CalendarEventWithVisuals,
+  VisualIndicatorConfig,
+} from '@/features/calendar/availability/components/calendar-visual-indicators';
+import { CalendarEvent, SlotStatus } from '@/features/calendar/availability/types/types';
 
 export interface DragDropOperation {
   id: string;
@@ -56,7 +51,11 @@ export interface SeriesUpdateOptions {
 interface DragDropCalendarProps {
   events: CalendarEventWithVisuals[];
   onEventUpdate: (eventId: string, updates: Partial<CalendarEvent>) => void;
-  onSeriesUpdate?: (seriesId: string, updates: Partial<CalendarEvent>, options: SeriesUpdateOptions) => void;
+  onSeriesUpdate?: (
+    seriesId: string,
+    updates: Partial<CalendarEvent>,
+    options: SeriesUpdateOptions
+  ) => void;
   onConflictDetected?: (conflicts: DragDropOperation[]) => void;
   config: DragDropConfig;
   visualConfig: VisualIndicatorConfig;
@@ -111,124 +110,147 @@ export function DragDropCalendar({
   const timeSlots = generateTimeSlots();
 
   // Snap time to grid
-  const snapToGrid = useCallback((time: Date): Date => {
-    if (!config.snapToGrid) return time;
+  const snapToGrid = useCallback(
+    (time: Date): Date => {
+      if (!config.snapToGrid) return time;
 
-    const intervalMs = config.gridIntervalMinutes * 60 * 1000;
-    const timeMs = time.getTime();
-    const snappedMs = Math.round(timeMs / intervalMs) * intervalMs;
-    return new Date(snappedMs);
-  }, [config.snapToGrid, config.gridIntervalMinutes]);
+      const intervalMs = config.gridIntervalMinutes * 60 * 1000;
+      const timeMs = time.getTime();
+      const snappedMs = Math.round(timeMs / intervalMs) * intervalMs;
+      return new Date(snappedMs);
+    },
+    [config.snapToGrid, config.gridIntervalMinutes]
+  );
 
   // Detect conflicts
-  const detectConflicts = useCallback((operation: DragDropOperation): string[] => {
-    const conflicts: string[] = [];
-    
-    events.forEach(event => {
-      if (event.id === operation.eventId) return;
-      
-      const eventStart = event.startTime.getTime();
-      const eventEnd = event.endTime.getTime();
-      const newStart = operation.newStart.getTime();
-      const newEnd = operation.newEnd.getTime();
+  const detectConflicts = useCallback(
+    (operation: DragDropOperation): string[] => {
+      const conflicts: string[] = [];
 
-      // Check for time overlap
-      if ((newStart < eventEnd && newEnd > eventStart)) {
-        conflicts.push(event.id);
-      }
-    });
+      events.forEach((event) => {
+        if (event.id === operation.eventId) return;
 
-    return conflicts;
-  }, [events]);
+        const eventStart = event.startTime.getTime();
+        const eventEnd = event.endTime.getTime();
+        const newStart = operation.newStart.getTime();
+        const newEnd = operation.newEnd.getTime();
+
+        // Check for time overlap
+        if (newStart < eventEnd && newEnd > eventStart) {
+          conflicts.push(event.id);
+        }
+      });
+
+      return conflicts;
+    },
+    [events]
+  );
 
   // Validate operation
-  const validateOperation = useCallback((operation: DragDropOperation): { isValid: boolean; message?: string } => {
-    // Check if event exists
-    const event = events.find(e => e.id === operation.eventId);
-    if (!event) {
-      return { isValid: false, message: 'Event not found' };
-    }
+  const validateOperation = useCallback(
+    (operation: DragDropOperation): { isValid: boolean; message?: string } => {
+      // Check if event exists
+      const event = events.find((e) => e.id === operation.eventId);
+      if (!event) {
+        return { isValid: false, message: 'Event not found' };
+      }
 
-    // Check working hours
-    const newStartHour = operation.newStart.getHours();
-    const newEndHour = operation.newEnd.getHours();
-    
-    if (newStartHour < workingHours.start || newEndHour > workingHours.end) {
-      return { isValid: false, message: 'Event must be within working hours' };
-    }
+      // Check working hours
+      const newStartHour = operation.newStart.getHours();
+      const newEndHour = operation.newEnd.getHours();
 
-    // Check minimum duration
-    const durationMs = operation.newEnd.getTime() - operation.newStart.getTime();
-    const minDurationMs = 15 * 60 * 1000; // 15 minutes
-    
-    if (durationMs < minDurationMs) {
-      return { isValid: false, message: 'Event must be at least 15 minutes long' };
-    }
+      if (newStartHour < workingHours.start || newEndHour > workingHours.end) {
+        return { isValid: false, message: 'Event must be within working hours' };
+      }
 
-    // Check for conflicts
-    const conflicts = detectConflicts(operation);
-    if (conflicts.length > 0 && config.showConflicts) {
-      return { isValid: false, message: `Conflicts with ${conflicts.length} other event(s)` };
-    }
+      // Check minimum duration
+      const durationMs = operation.newEnd.getTime() - operation.newStart.getTime();
+      const minDurationMs = 15 * 60 * 1000; // 15 minutes
 
-    // Check booking restrictions
-    if (event.type === 'booking' && event.status === SlotStatus.BOOKED) {
-      return { isValid: false, message: 'Cannot move confirmed bookings' };
-    }
+      if (durationMs < minDurationMs) {
+        return { isValid: false, message: 'Event must be at least 15 minutes long' };
+      }
 
-    return { isValid: true };
-  }, [events, workingHours, detectConflicts, config.showConflicts]);
+      // Check for conflicts
+      const conflicts = detectConflicts(operation);
+      if (conflicts.length > 0 && config.showConflicts) {
+        return { isValid: false, message: `Conflicts with ${conflicts.length} other event(s)` };
+      }
+
+      // Check booking restrictions
+      if (event.type === 'booking' && event.status === SlotStatus.BOOKED) {
+        return { isValid: false, message: 'Cannot move confirmed bookings' };
+      }
+
+      return { isValid: true };
+    },
+    [events, workingHours, detectConflicts, config.showConflicts]
+  );
 
   // Handle drag start
-  const handleDragStart = useCallback((event: CalendarEventWithVisuals, clientX: number, clientY: number) => {
-    if (!config.enableMove && !config.enableCopy) return;
+  const handleDragStart = useCallback(
+    (event: CalendarEventWithVisuals, clientX: number, clientY: number) => {
+      if (!config.enableMove && !config.enableCopy) return;
 
-    setDraggedEvent(event);
-    dragStartPos.current = { x: clientX, y: clientY };
-  }, [config.enableMove, config.enableCopy]);
+      setDraggedEvent(event);
+      dragStartPos.current = { x: clientX, y: clientY };
+    },
+    [config.enableMove, config.enableCopy]
+  );
 
   // Handle drag move
-  const handleDragMove = useCallback((clientX: number, clientY: number) => {
-    if (!draggedEvent || !calendarRef.current) return;
+  const handleDragMove = useCallback(
+    (clientX: number, clientY: number) => {
+      if (!draggedEvent || !calendarRef.current) return;
 
-    const rect = calendarRef.current.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
+      const rect = calendarRef.current.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
 
-    // Calculate new time based on position
-    const slotHeight = 60; // Assuming 60px per hour
-    const hourOffset = Math.floor(y / slotHeight);
-    const newStart = new Date(currentDate);
-    newStart.setHours(workingHours.start + hourOffset, 0, 0, 0);
+      // Calculate new time based on position
+      const slotHeight = 60; // Assuming 60px per hour
+      const hourOffset = Math.floor(y / slotHeight);
+      const newStart = new Date(currentDate);
+      newStart.setHours(workingHours.start + hourOffset, 0, 0, 0);
 
-    if (config.snapToGrid) {
-      const snappedStart = snapToGrid(newStart);
-      newStart.setTime(snappedStart.getTime());
-    }
+      if (config.snapToGrid) {
+        const snappedStart = snapToGrid(newStart);
+        newStart.setTime(snappedStart.getTime());
+      }
 
-    const duration = draggedEvent.endTime.getTime() - draggedEvent.startTime.getTime();
-    const newEnd = new Date(newStart.getTime() + duration);
+      const duration = draggedEvent.endTime.getTime() - draggedEvent.startTime.getTime();
+      const newEnd = new Date(newStart.getTime() + duration);
 
-    const operation: DragDropOperation = {
-      id: `drag-${Date.now()}`,
-      type: 'move',
-      eventId: draggedEvent.id,
-      originalStart: draggedEvent.startTime,
-      originalEnd: draggedEvent.endTime,
-      newStart,
-      newEnd,
-      affectedSeries: draggedEvent.seriesId,
-      conflictEvents: [],
-      isValid: true,
-    };
+      const operation: DragDropOperation = {
+        id: `drag-${Date.now()}`,
+        type: 'move',
+        eventId: draggedEvent.id,
+        originalStart: draggedEvent.startTime,
+        originalEnd: draggedEvent.endTime,
+        newStart,
+        newEnd,
+        affectedSeries: draggedEvent.seriesId,
+        conflictEvents: [],
+        isValid: true,
+      };
 
-    const validation = validateOperation(operation);
-    operation.isValid = validation.isValid;
-    operation.validationMessage = validation.message;
-    operation.conflictEvents = detectConflicts(operation);
+      const validation = validateOperation(operation);
+      operation.isValid = validation.isValid;
+      operation.validationMessage = validation.message;
+      operation.conflictEvents = detectConflicts(operation);
 
-    setDragOperation(operation);
-  }, [draggedEvent, currentDate, workingHours, config.snapToGrid, snapToGrid, validateOperation, detectConflicts]);
+      setDragOperation(operation);
+    },
+    [
+      draggedEvent,
+      currentDate,
+      workingHours,
+      config.snapToGrid,
+      snapToGrid,
+      validateOperation,
+      detectConflicts,
+    ]
+  );
 
   // Handle drag end
   const handleDragEnd = useCallback(() => {
@@ -258,33 +280,39 @@ export function DragDropCalendar({
   }, [dragOperation, draggedEvent, config.enableSeriesOperations]);
 
   // Apply operation
-  const applyOperation = useCallback((operation: DragDropOperation) => {
-    const updates: Partial<CalendarEvent> = {
-      startTime: operation.newStart,
-      endTime: operation.newEnd,
-    };
+  const applyOperation = useCallback(
+    (operation: DragDropOperation) => {
+      const updates: Partial<CalendarEvent> = {
+        startTime: operation.newStart,
+        endTime: operation.newEnd,
+      };
 
-    onEventUpdate(operation.eventId, updates);
+      onEventUpdate(operation.eventId, updates);
 
-    if (config.autoSave) {
-      // Auto-save logic would go here
-      console.log('Auto-saving operation:', operation);
-    }
-  }, [onEventUpdate, config.autoSave]);
+      if (config.autoSave) {
+        // Auto-save logic would go here
+        console.log('Auto-saving operation:', operation);
+      }
+    },
+    [onEventUpdate, config.autoSave]
+  );
 
   // Apply series operation
-  const applySeriesOperation = useCallback((operation: DragDropOperation, options: SeriesUpdateOptions) => {
-    if (!operation.affectedSeries || !onSeriesUpdate) return;
+  const applySeriesOperation = useCallback(
+    (operation: DragDropOperation, options: SeriesUpdateOptions) => {
+      if (!operation.affectedSeries || !onSeriesUpdate) return;
 
-    const updates: Partial<CalendarEvent> = {
-      startTime: operation.newStart,
-      endTime: operation.newEnd,
-    };
+      const updates: Partial<CalendarEvent> = {
+        startTime: operation.newStart,
+        endTime: operation.newEnd,
+      };
 
-    onSeriesUpdate(operation.affectedSeries, updates, options);
-    setIsSeriesDialogOpen(false);
-    setPendingOperations([]);
-  }, [onSeriesUpdate]);
+      onSeriesUpdate(operation.affectedSeries, updates, options);
+      setIsSeriesDialogOpen(false);
+      setPendingOperations([]);
+    },
+    [onSeriesUpdate]
+  );
 
   // Get day columns for week view
   const getDayColumns = () => {
@@ -305,10 +333,9 @@ export function DragDropCalendar({
 
   // Get events for a specific time slot
   const getEventsForSlot = (date: Date, hour: number) => {
-    return events.filter(event => {
+    return events.filter((event) => {
       const eventDate = new Date(event.startTime);
-      return eventDate.toDateString() === date.toDateString() &&
-             eventDate.getHours() === hour;
+      return eventDate.toDateString() === date.toDateString() && eventDate.getHours() === hour;
     });
   };
 
@@ -378,7 +405,9 @@ export function DragDropCalendar({
     <div className={className}>
       {/* Drag Drop Status */}
       {dragOperation && (
-        <Alert className={`mb-4 ${dragOperation.isValid ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+        <Alert
+          className={`mb-4 ${dragOperation.isValid ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}
+        >
           <div className="flex items-center space-x-2">
             {dragOperation.isValid ? (
               <CheckCircle className="h-4 w-4 text-green-600" />
@@ -387,9 +416,12 @@ export function DragDropCalendar({
             )}
             <AlertDescription>
               <strong>Moving event:</strong> {draggedEvent?.title} to{' '}
-              {dragOperation.newStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {dragOperation.newStart.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
               {!dragOperation.isValid && (
-                <span className="text-red-600 ml-2">- {dragOperation.validationMessage}</span>
+                <span className="ml-2 text-red-600">- {dragOperation.validationMessage}</span>
               )}
             </AlertDescription>
           </div>
@@ -405,14 +437,14 @@ export function DragDropCalendar({
               Drag & Drop Calendar
             </CardTitle>
             <div className="flex items-center space-x-2">
-              <Badge variant={config.enableMove ? "default" : "secondary"}>
-                Move: {config.enableMove ? "On" : "Off"}
+              <Badge variant={config.enableMove ? 'default' : 'secondary'}>
+                Move: {config.enableMove ? 'On' : 'Off'}
               </Badge>
-              <Badge variant={config.enableCopy ? "default" : "secondary"}>
-                Copy: {config.enableCopy ? "On" : "Off"}
+              <Badge variant={config.enableCopy ? 'default' : 'secondary'}>
+                Copy: {config.enableCopy ? 'On' : 'Off'}
               </Badge>
-              <Badge variant={config.snapToGrid ? "default" : "secondary"}>
-                Snap: {config.snapToGrid ? "On" : "Off"}
+              <Badge variant={config.snapToGrid ? 'default' : 'secondary'}>
+                Snap: {config.snapToGrid ? 'On' : 'Off'}
               </Badge>
             </div>
           </div>
@@ -428,13 +460,13 @@ export function DragDropCalendar({
             onTouchEnd={handleTouchEnd}
           >
             {/* Week View Grid */}
-            <div className="grid grid-cols-8 gap-1 min-w-[800px]">
+            <div className="grid min-w-[800px] grid-cols-8 gap-1">
               {/* Time column header */}
-              <div className="p-2 text-center font-medium border-b">Time</div>
-              
+              <div className="border-b p-2 text-center font-medium">Time</div>
+
               {/* Day headers */}
               {dayColumns.map((day, index) => (
-                <div key={index} className="p-2 text-center font-medium border-b">
+                <div key={index} className="border-b p-2 text-center font-medium">
                   <div className="text-sm">{day.toLocaleDateString([], { weekday: 'short' })}</div>
                   <div className="text-xs text-muted-foreground">{day.getDate()}</div>
                 </div>
@@ -446,49 +478,49 @@ export function DragDropCalendar({
                 return (
                   <React.Fragment key={hour}>
                     {/* Time label */}
-                    <div className="p-2 text-xs text-muted-foreground text-right border-r">
+                    <div className="border-r p-2 text-right text-xs text-muted-foreground">
                       {hour.toString().padStart(2, '0')}:00
                     </div>
-                    
+
                     {/* Day slots */}
                     {dayColumns.map((day, dayIndex) => {
                       const slotEvents = getEventsForSlot(day, hour);
                       const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-                      
+
                       return (
                         <div
                           key={`${dayIndex}-${hour}`}
-                          className={`
-                            min-h-[60px] p-1 border border-gray-200 relative
-                            ${config.snapToGrid ? 'bg-gray-50/50' : ''}
-                            ${isWeekend ? 'bg-gray-100' : ''}
-                            ${dragOperation && dragOperation.newStart.getHours() === hour && 
-                              dragOperation.newStart.toDateString() === day.toDateString() ? 
-                              'bg-blue-100 border-blue-300' : ''}
-                          `}
+                          className={`relative min-h-[60px] border border-gray-200 p-1 ${config.snapToGrid ? 'bg-gray-50/50' : ''} ${isWeekend ? 'bg-gray-100' : ''} ${
+                            dragOperation &&
+                            dragOperation.newStart.getHours() === hour &&
+                            dragOperation.newStart.toDateString() === day.toDateString()
+                              ? 'border-blue-300 bg-blue-100'
+                              : ''
+                          } `}
                         >
                           {/* Grid lines for snap-to-grid */}
                           {config.snapToGrid && config.gridIntervalMinutes < 60 && (
-                            <div className="absolute inset-0 pointer-events-none">
-                              {Array.from({ length: 60 / config.gridIntervalMinutes - 1 }, (_, i) => (
-                                <div
-                                  key={i}
-                                  className="absolute w-full border-t border-gray-200"
-                                  style={{ top: `${((i + 1) * config.gridIntervalMinutes / 60) * 100}%` }}
-                                />
-                              ))}
+                            <div className="pointer-events-none absolute inset-0">
+                              {Array.from(
+                                { length: 60 / config.gridIntervalMinutes - 1 },
+                                (_, i) => (
+                                  <div
+                                    key={i}
+                                    className="absolute w-full border-t border-gray-200"
+                                    style={{
+                                      top: `${(((i + 1) * config.gridIntervalMinutes) / 60) * 100}%`,
+                                    }}
+                                  />
+                                )
+                              )}
                             </div>
                           )}
-                          
+
                           {/* Events */}
-                          {slotEvents.map(event => (
+                          {slotEvents.map((event) => (
                             <div
                               key={event.id}
-                              className={`
-                                mb-1 cursor-move select-none
-                                ${draggedEvent?.id === event.id ? 'opacity-50 transform scale-105 z-10' : ''}
-                                ${config.enableMove || config.enableCopy ? 'hover:shadow-md' : ''}
-                              `}
+                              className={`mb-1 cursor-move select-none ${draggedEvent?.id === event.id ? 'z-10 scale-105 transform opacity-50' : ''} ${config.enableMove || config.enableCopy ? 'hover:shadow-md' : ''} `}
                               onMouseDown={(e) => handleMouseDown(event, e)}
                               onTouchStart={(e) => handleTouchStart(event, e)}
                               draggable={false}
@@ -503,20 +535,21 @@ export function DragDropCalendar({
                           ))}
 
                           {/* Drop zone indicator */}
-                          {dragOperation && 
-                           dragOperation.newStart.getHours() === hour && 
-                           dragOperation.newStart.toDateString() === day.toDateString() && (
-                            <div className={`
-                              absolute inset-0 border-2 border-dashed pointer-events-none
-                              ${dragOperation.isValid ? 'border-green-400 bg-green-100/50' : 'border-red-400 bg-red-100/50'}
-                            `}>
-                              <div className="flex items-center justify-center h-full">
-                                <span className={`text-xs font-medium ${dragOperation.isValid ? 'text-green-700' : 'text-red-700'}`}>
-                                  {dragOperation.isValid ? 'Drop here' : 'Invalid'}
-                                </span>
+                          {dragOperation &&
+                            dragOperation.newStart.getHours() === hour &&
+                            dragOperation.newStart.toDateString() === day.toDateString() && (
+                              <div
+                                className={`pointer-events-none absolute inset-0 border-2 border-dashed ${dragOperation.isValid ? 'border-green-400 bg-green-100/50' : 'border-red-400 bg-red-100/50'} `}
+                              >
+                                <div className="flex h-full items-center justify-center">
+                                  <span
+                                    className={`text-xs font-medium ${dragOperation.isValid ? 'text-green-700' : 'text-red-700'}`}
+                                  >
+                                    {dragOperation.isValid ? 'Drop here' : 'Invalid'}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
                         </div>
                       );
                     })}
@@ -549,33 +582,39 @@ export function DragDropCalendar({
                   id="single"
                   name="updateType"
                   checked={seriesUpdateOptions.updateType === 'single'}
-                  onChange={() => setSeriesUpdateOptions(prev => ({ ...prev, updateType: 'single' }))}
+                  onChange={() =>
+                    setSeriesUpdateOptions((prev) => ({ ...prev, updateType: 'single' }))
+                  }
                 />
                 <Label htmlFor="single" className="text-sm">
                   This occurrence only
                 </Label>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <input
                   type="radio"
                   id="thisAndFuture"
                   name="updateType"
                   checked={seriesUpdateOptions.updateType === 'thisAndFuture'}
-                  onChange={() => setSeriesUpdateOptions(prev => ({ ...prev, updateType: 'thisAndFuture' }))}
+                  onChange={() =>
+                    setSeriesUpdateOptions((prev) => ({ ...prev, updateType: 'thisAndFuture' }))
+                  }
                 />
                 <Label htmlFor="thisAndFuture" className="text-sm">
                   This and future occurrences
                 </Label>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <input
                   type="radio"
                   id="allOccurrences"
                   name="updateType"
                   checked={seriesUpdateOptions.updateType === 'allOccurrences'}
-                  onChange={() => setSeriesUpdateOptions(prev => ({ ...prev, updateType: 'allOccurrences' }))}
+                  onChange={() =>
+                    setSeriesUpdateOptions((prev) => ({ ...prev, updateType: 'allOccurrences' }))
+                  }
                 />
                 <Label htmlFor="allOccurrences" className="text-sm">
                   All occurrences in the series
@@ -588,8 +627,8 @@ export function DragDropCalendar({
                 <Switch
                   id="maintain-pattern"
                   checked={seriesUpdateOptions.maintainPattern}
-                  onCheckedChange={(checked) => 
-                    setSeriesUpdateOptions(prev => ({ ...prev, maintainPattern: checked }))
+                  onCheckedChange={(checked) =>
+                    setSeriesUpdateOptions((prev) => ({ ...prev, maintainPattern: checked }))
                   }
                 />
                 <Label htmlFor="maintain-pattern" className="text-sm">

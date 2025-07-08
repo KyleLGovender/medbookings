@@ -1,30 +1,49 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Calendar, Clock, Repeat, Save, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
-import { DatePicker } from '@/components/ui/date-picker';
-import { TimePicker } from '@/components/ui/time-picker';
+import { AlertTriangle, Calendar, Clock, Repeat, Save } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  UpdateAvailabilityData,
-  updateAvailabilityDataSchema,
-  AvailabilityWithRelations,
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DatePicker } from '@/components/ui/date-picker';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { TimePicker } from '@/components/ui/time-picker';
+import { ServiceSelectionSection } from '@/features/calendar/availability/components/service-selection-section';
+import {
+  useAvailabilityById,
+  useUpdateAvailability,
+} from '@/features/calendar/availability/hooks/use-availability';
+import { updateAvailabilityDataSchema } from '@/features/calendar/availability/types/schemas';
+import {
+  CalculatedAvailabilitySlotWithRelations,
   SchedulingRule,
-  RecurrenceType,
-} from '../types';
-import { useUpdateAvailability, useAvailabilityById } from '../hooks';
-import { ServiceSelectionSection } from './service-selection-section';
+  ServiceAvailabilityConfigWithRelations,
+  UpdateAvailabilityData,
+} from '@/features/calendar/availability/types/types';
+import { useToast } from '@/hooks/use-toast';
 
 interface AvailabilityEditFormProps {
   availabilityId: string;
@@ -57,7 +76,7 @@ export function AvailabilityEditForm({
     onSuccess: (data) => {
       toast({
         title: 'Success',
-        description: `Availability updated successfully`,
+        description: 'Availability updated successfully',
       });
       onSuccess?.(data);
     },
@@ -74,7 +93,10 @@ export function AvailabilityEditForm({
   useEffect(() => {
     if (availability) {
       // Check for existing bookings
-      const bookingCount = availability.calculatedSlots?.filter(slot => slot.booking).length || 0;
+      const bookingCount =
+        availability.calculatedSlots?.filter(
+          (slot: CalculatedAvailabilitySlotWithRelations) => slot.booking
+        ).length || 0;
       setHasExistingBookings(bookingCount > 0);
 
       // Populate form with current values
@@ -91,15 +113,17 @@ export function AvailabilityEditForm({
         schedulingInterval: availability.schedulingInterval || undefined,
         isOnlineAvailable: availability.isOnlineAvailable,
         requiresConfirmation: availability.requiresConfirmation,
-        services: availability.availableServices.map(config => ({
-          serviceId: config.serviceId,
-          duration: config.duration,
-          price: config.price,
-          showPrice: config.showPrice,
-          isOnlineAvailable: config.isOnlineAvailable,
-          isInPerson: config.isInPerson,
-          locationId: config.locationId || undefined,
-        })),
+        services: availability.availableServices.map(
+          (config: ServiceAvailabilityConfigWithRelations) => ({
+            serviceId: config.serviceId,
+            duration: config.duration,
+            price: config.price,
+            showPrice: config.showPrice,
+            isOnlineAvailable: config.isOnlineAvailable,
+            isInPerson: config.isInPerson,
+            locationId: config.locationId || undefined,
+          })
+        ),
       });
     }
   }, [availability, form]);
@@ -120,7 +144,7 @@ export function AvailabilityEditForm({
 
   if (isLoading) {
     return (
-      <Card className="w-full max-w-4xl mx-auto">
+      <Card className="mx-auto w-full max-w-4xl">
         <CardContent className="pt-6">
           <div className="flex items-center justify-center py-8">
             <div className="animate-pulse text-muted-foreground">Loading availability...</div>
@@ -132,14 +156,12 @@ export function AvailabilityEditForm({
 
   if (error) {
     return (
-      <Card className="w-full max-w-4xl mx-auto">
+      <Card className="mx-auto w-full max-w-4xl">
         <CardContent className="pt-6">
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
-            <AlertDescription>
-              Failed to load availability: {error.message}
-            </AlertDescription>
+            <AlertDescription>Failed to load availability: {error.message}</AlertDescription>
           </Alert>
         </CardContent>
       </Card>
@@ -148,13 +170,13 @@ export function AvailabilityEditForm({
 
   if (!availability) {
     return (
-      <Card className="w-full max-w-4xl mx-auto">
+      <Card className="mx-auto w-full max-w-4xl">
         <CardContent className="pt-6">
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Not Found</AlertTitle>
             <AlertDescription>
-              Availability not found or you don't have permission to edit it.
+              Availability not found or you don&apos;t have permission to edit it.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -163,7 +185,7 @@ export function AvailabilityEditForm({
   }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
+    <Card className="mx-auto w-full max-w-4xl">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
@@ -173,13 +195,13 @@ export function AvailabilityEditForm({
           <div className="flex items-center gap-2">
             {availability.isRecurring && (
               <Badge variant="secondary">
-                <Repeat className="h-3 w-3 mr-1" />
+                <Repeat className="mr-1 h-3 w-3" />
                 Recurring
               </Badge>
             )}
             {hasExistingBookings && (
               <Badge variant="outline">
-                <AlertTriangle className="h-3 w-3 mr-1" />
+                <AlertTriangle className="mr-1 h-3 w-3" />
                 Has Bookings
               </Badge>
             )}
@@ -193,7 +215,7 @@ export function AvailabilityEditForm({
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Existing Bookings</AlertTitle>
             <AlertDescription>
-              This availability has existing bookings. Changes to time and date will be restricted 
+              This availability has existing bookings. Changes to time and date will be restricted
               to prevent conflicts. You can modify other settings like confirmation requirements.
             </AlertDescription>
           </Alert>
@@ -205,9 +227,13 @@ export function AvailabilityEditForm({
             <Repeat className="h-4 w-4" />
             <AlertTitle>Recurring Availability</AlertTitle>
             <AlertDescription>
-              Changes will apply to {editMode === 'single' ? 'this occurrence only' : 
-                editMode === 'series' ? 'all occurrences in the series' : 
-                'this and future occurrences'}.
+              Changes will apply to{' '}
+              {editMode === 'single'
+                ? 'this occurrence only'
+                : editMode === 'series'
+                  ? 'all occurrences in the series'
+                  : 'this and future occurrences'}
+              .
             </AlertDescription>
           </Alert>
         )}
@@ -215,7 +241,7 @@ export function AvailabilityEditForm({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Basic Time Settings */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
                 name="startTime"
@@ -227,7 +253,7 @@ export function AvailabilityEditForm({
                         <DatePicker
                           date={field.value}
                           onChange={(date) => {
-                            if (date && !hasExistingBookings) {
+                            if (date && field.value && !hasExistingBookings) {
                               const newDateTime = new Date(field.value);
                               newDateTime.setFullYear(date.getFullYear());
                               newDateTime.setMonth(date.getMonth());
@@ -235,19 +261,15 @@ export function AvailabilityEditForm({
                               field.onChange(newDateTime);
                             }
                           }}
-                          disabled={hasExistingBookings}
                         />
                         <TimePicker
                           date={field.value}
                           onChange={hasExistingBookings ? undefined : field.onChange}
-                          disabled={hasExistingBookings}
                         />
                       </div>
                     </FormControl>
                     {hasExistingBookings && (
-                      <FormDescription>
-                        Cannot modify time when bookings exist
-                      </FormDescription>
+                      <FormDescription>Cannot modify time when bookings exist</FormDescription>
                     )}
                     <FormMessage />
                   </FormItem>
@@ -265,7 +287,7 @@ export function AvailabilityEditForm({
                         <DatePicker
                           date={field.value}
                           onChange={(date) => {
-                            if (date && !hasExistingBookings) {
+                            if (date && field.value && !hasExistingBookings) {
                               const newDateTime = new Date(field.value);
                               newDateTime.setFullYear(date.getFullYear());
                               newDateTime.setMonth(date.getMonth());
@@ -273,19 +295,15 @@ export function AvailabilityEditForm({
                               field.onChange(newDateTime);
                             }
                           }}
-                          disabled={hasExistingBookings}
                         />
                         <TimePicker
                           date={field.value}
                           onChange={hasExistingBookings ? undefined : field.onChange}
-                          disabled={hasExistingBookings}
                         />
                       </div>
                     </FormControl>
                     {hasExistingBookings && (
-                      <FormDescription>
-                        Cannot modify time when bookings exist
-                      </FormDescription>
+                      <FormDescription>Cannot modify time when bookings exist</FormDescription>
                     )}
                     <FormMessage />
                   </FormItem>
@@ -297,19 +315,19 @@ export function AvailabilityEditForm({
 
             {/* Scheduling Rules */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
                 <Clock className="h-4 w-4" />
                 Scheduling Rules
               </h3>
-              
+
               <FormField
                 control={form.control}
                 name="schedulingRule"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Appointment Scheduling</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
+                    <Select
+                      onValueChange={field.onChange}
                       defaultValue={field.value}
                       disabled={hasExistingBookings}
                     >
@@ -376,23 +394,18 @@ export function AvailabilityEditForm({
             {/* Additional Settings */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Additional Settings</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="isOnlineAvailable"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Available Online
-                        </FormLabel>
+                        <FormLabel>Available Online</FormLabel>
                         <FormDescription>
                           Allow online appointments for this availability
                         </FormDescription>
@@ -407,15 +420,10 @@ export function AvailabilityEditForm({
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Requires Confirmation
-                        </FormLabel>
+                        <FormLabel>Requires Confirmation</FormLabel>
                         <FormDescription>
                           Manually approve bookings for this availability
                         </FormDescription>
@@ -429,12 +437,7 @@ export function AvailabilityEditForm({
             {/* Form Actions */}
             <div className="flex justify-end gap-3 pt-6">
               {onCancel && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onCancel}
-                  disabled={isSubmitting}
-                >
+                <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
                   Cancel
                 </Button>
               )}

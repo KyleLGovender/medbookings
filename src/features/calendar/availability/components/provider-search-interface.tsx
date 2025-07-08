@@ -196,11 +196,6 @@ export function ProviderSearchInterface({
   }, []);
 
   const handleSearch = async (data: SearchFormValues) => {
-    if (!data.serviceProviderId || !data.serviceId) {
-      setLocationError('Please select both a provider and a service');
-      return;
-    }
-
     setIsSearching(true);
     setLocationError(null);
     const searchStartTime = Date.now();

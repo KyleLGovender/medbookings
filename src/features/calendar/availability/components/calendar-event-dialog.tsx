@@ -1,14 +1,30 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Clock, MapPin, User, Phone, Mail, DollarSign, AlertCircle, Edit2, Trash2, Copy } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+
+import {
+  AlertCircle,
+  Calendar,
+  Clock,
+  Copy,
+  DollarSign,
+  Edit2,
+  Mail,
+  MapPin,
+  Trash2,
+  User,
+} from 'lucide-react';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CalendarEvent } from './provider-calendar-view';
-import { AvailabilityStatus, SlotStatus } from '../types';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import {
+  AvailabilityStatus,
+  CalendarEvent,
+  SlotStatus,
+} from '@/features/calendar/availability/types/types';
 
 interface CalendarEventDialogProps {
   event: CalendarEvent | null;
@@ -39,7 +55,7 @@ export function CalendarEventDialog({
     switch (event.type) {
       case 'availability':
         switch (event.status) {
-          case AvailabilityStatus.ACTIVE:
+          case AvailabilityStatus.ACCEPTED:
             return <Badge className="bg-green-100 text-green-800">Active</Badge>;
           case AvailabilityStatus.PENDING:
             return <Badge className="bg-yellow-100 text-yellow-800">Pending Approval</Badge>;
@@ -52,10 +68,10 @@ export function CalendarEventDialog({
         switch (event.status) {
           case SlotStatus.BOOKED:
             return <Badge className="bg-blue-100 text-blue-800">Confirmed</Badge>;
-          case SlotStatus.PENDING:
-            return <Badge className="bg-orange-100 text-orange-800">Pending Confirmation</Badge>;
-          case SlotStatus.CANCELLED:
-            return <Badge className="bg-red-100 text-red-800">Cancelled</Badge>;
+          case SlotStatus.AVAILABLE:
+            return <Badge className="bg-green-100 text-green-800">Available</Badge>;
+          case SlotStatus.BLOCKED:
+            return <Badge className="bg-red-100 text-red-800">Blocked</Badge>;
           default:
             return <Badge variant="secondary">{event.status}</Badge>;
         }
@@ -71,7 +87,7 @@ export function CalendarEventDialog({
     const diffMins = Math.round(diffMs / (1000 * 60));
     const hours = Math.floor(diffMins / 60);
     const minutes = diffMins % 60;
-    
+
     if (hours > 0) {
       return `${hours}h ${minutes > 0 ? `${minutes}m` : ''}`;
     }
@@ -105,20 +121,22 @@ export function CalendarEventDialog({
           <div className="space-y-3">
             <div className="flex items-center space-x-2 text-sm">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>{event.startTime.toLocaleDateString([], { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}</span>
+              <span>
+                {event.startTime.toLocaleDateString([], {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </span>
             </div>
 
             <div className="flex items-center space-x-2 text-sm">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span>
-                {event.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
+                {event.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -
                 {event.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                <span className="text-muted-foreground ml-2">({getDuration()})</span>
+                <span className="ml-2 text-muted-foreground">({getDuration()})</span>
               </span>
             </div>
 
@@ -127,7 +145,9 @@ export function CalendarEventDialog({
                 <MapPin className="h-4 w-4 text-muted-foreground" />
                 <span>
                   {event.location.isOnline ? (
-                    <Badge variant="secondary" className="text-xs">Online</Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      Online
+                    </Badge>
                   ) : (
                     event.location.name
                   )}
@@ -173,12 +193,6 @@ export function CalendarEventDialog({
                     <Mail className="h-4 w-4 text-muted-foreground" />
                     <span>{event.customer.email}</span>
                   </div>
-                  {event.customer.phone && (
-                    <div className="flex items-center space-x-2 text-sm">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span>{event.customer.phone}</span>
-                    </div>
-                  )}
                 </div>
               </div>
             </>
@@ -202,7 +216,9 @@ export function CalendarEventDialog({
                   {event.isRecurring && (
                     <div className="flex items-center space-x-1">
                       <span className="text-muted-foreground">Recurring Series</span>
-                      <Badge variant="outline" className="text-xs">Series</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Series
+                      </Badge>
                     </div>
                   )}
                 </div>
@@ -222,7 +238,7 @@ export function CalendarEventDialog({
           )}
 
           {/* Confirmation Required Alert */}
-          {event.requiresConfirmation && event.status === SlotStatus.PENDING && (
+          {event.status === SlotStatus.BOOKED && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
@@ -235,22 +251,16 @@ export function CalendarEventDialog({
           <Separator />
           <div className="flex flex-wrap gap-2">
             {/* Booking Actions */}
-            {event.type === 'booking' && event.status === SlotStatus.PENDING && onConfirmBooking && (
-              <Button 
-                size="sm" 
-                onClick={handleConfirmBooking}
-                disabled={isConfirming}
-              >
-                {isConfirming ? 'Confirming...' : 'Confirm Booking'}
-              </Button>
-            )}
+            {event.type === 'booking' &&
+              event.status === SlotStatus.AVAILABLE &&
+              onConfirmBooking && (
+                <Button size="sm" onClick={handleConfirmBooking} disabled={isConfirming}>
+                  {isConfirming ? 'Confirming...' : 'Confirm Booking'}
+                </Button>
+              )}
 
             {event.type === 'booking' && event.status === SlotStatus.BOOKED && onCancelBooking && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => onCancelBooking(event)}
-              >
+              <Button variant="outline" size="sm" onClick={() => onCancelBooking(event)}>
                 Cancel Booking
               </Button>
             )}
@@ -258,7 +268,7 @@ export function CalendarEventDialog({
             {/* Edit Actions */}
             {onEdit && (event.type === 'availability' || event.type === 'blocked') && (
               <Button variant="outline" size="sm" onClick={() => onEdit(event)}>
-                <Edit2 className="h-3 w-3 mr-1" />
+                <Edit2 className="mr-1 h-3 w-3" />
                 Edit
               </Button>
             )}
@@ -266,20 +276,20 @@ export function CalendarEventDialog({
             {/* Duplicate Actions */}
             {onDuplicate && event.type === 'availability' && (
               <Button variant="outline" size="sm" onClick={() => onDuplicate(event)}>
-                <Copy className="h-3 w-3 mr-1" />
+                <Copy className="mr-1 h-3 w-3" />
                 Duplicate
               </Button>
             )}
 
             {/* Delete Actions */}
             {onDelete && (event.type === 'availability' || event.type === 'blocked') && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-red-600 hover:bg-red-50 hover:text-red-700"
                 onClick={() => onDelete(event)}
               >
-                <Trash2 className="h-3 w-3 mr-1" />
+                <Trash2 className="mr-1 h-3 w-3" />
                 Delete
               </Button>
             )}

@@ -1,13 +1,14 @@
 'use client';
 
-import { Clock, Check, X, Calendar, AlertCircle, Repeat } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Check, Clock, Repeat, X } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { 
-  AvailabilityWithRelations,
+import {
   AvailabilityStatus,
-} from '../types';
+  AvailabilityWithRelations,
+} from '@/features/calendar/availability/types/types';
 
 interface AvailabilityStatusTrackerProps {
   availability: AvailabilityWithRelations;
@@ -30,7 +31,7 @@ export function AvailabilityStatusTracker({
 }: AvailabilityStatusTrackerProps) {
   const getStatusSteps = (): StatusStep[] => {
     const currentStatus = availability.status;
-    
+
     const baseSteps: StatusStep[] = [
       {
         status: AvailabilityStatus.PENDING,
@@ -44,9 +45,9 @@ export function AvailabilityStatusTracker({
     ];
 
     // Add the final status based on current state
-    if (currentStatus === AvailabilityStatus.ACTIVE) {
+    if (currentStatus === AvailabilityStatus.ACCEPTED) {
       baseSteps.push({
-        status: AvailabilityStatus.ACTIVE,
+        status: AvailabilityStatus.ACCEPTED,
         label: 'Active',
         description: 'Provider accepted - slots generated',
         icon: Check,
@@ -80,14 +81,14 @@ export function AvailabilityStatusTracker({
   };
 
   const statusSteps = getStatusSteps();
-  const currentStepIndex = statusSteps.findIndex(step => step.isCurrent);
+  const currentStepIndex = statusSteps.findIndex((step) => step.isCurrent);
   const progressPercentage = ((currentStepIndex + 1) / statusSteps.length) * 100;
 
   const getStatusColor = (status: AvailabilityStatus) => {
     switch (status) {
       case AvailabilityStatus.PENDING:
         return 'bg-yellow-500';
-      case AvailabilityStatus.ACTIVE:
+      case AvailabilityStatus.ACCEPTED:
         return 'bg-green-500';
       case AvailabilityStatus.REJECTED:
         return 'bg-red-500';
@@ -102,7 +103,7 @@ export function AvailabilityStatusTracker({
     switch (status) {
       case AvailabilityStatus.PENDING:
         return 'secondary' as const;
-      case AvailabilityStatus.ACTIVE:
+      case AvailabilityStatus.ACCEPTED:
         return 'default' as const;
       case AvailabilityStatus.REJECTED:
         return 'destructive' as const;
@@ -122,7 +123,7 @@ export function AvailabilityStatusTracker({
         </Badge>
         {availability.isRecurring && (
           <Badge variant="outline" className="text-xs">
-            <Repeat className="h-3 w-3 mr-1" />
+            <Repeat className="mr-1 h-3 w-3" />
             Recurring
           </Badge>
         )}
@@ -141,7 +142,7 @@ export function AvailabilityStatusTracker({
             </Badge>
             {availability.isRecurring && (
               <Badge variant="outline" className="text-xs">
-                <Repeat className="h-3 w-3 mr-1" />
+                <Repeat className="mr-1 h-3 w-3" />
                 Series
               </Badge>
             )}
@@ -165,35 +166,49 @@ export function AvailabilityStatusTracker({
             return (
               <div key={step.status} className="flex items-start gap-3">
                 {/* Status Icon */}
-                <div className={`
-                  flex items-center justify-center w-8 h-8 rounded-full
-                  ${step.isCompleted || step.isCurrent 
-                    ? getStatusColor(step.status) + ' text-white' 
-                    : 'bg-gray-200 text-gray-400'
-                  }
-                `}>
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                    step.isCompleted || step.isCurrent
+                      ? `${getStatusColor(step.status)} text-white`
+                      : 'bg-gray-200 text-gray-400'
+                  } `}
+                >
                   <StepIcon className="h-4 w-4" />
                 </div>
 
                 {/* Status Details */}
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
-                    <h4 className={`font-medium text-sm ${
-                      step.isCurrent ? 'text-foreground' : 
-                      step.isCompleted ? 'text-foreground' : 'text-muted-foreground'
-                    }`}>
+                    <h4
+                      className={`text-sm font-medium ${
+                        step.isCurrent
+                          ? 'text-foreground'
+                          : step.isCompleted
+                            ? 'text-foreground'
+                            : 'text-muted-foreground'
+                      }`}
+                    >
                       {step.label}
                     </h4>
                     {step.timestamp && (
                       <span className="text-xs text-muted-foreground">
-                        {step.timestamp.toLocaleDateString()} {step.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {step.timestamp.toLocaleDateString()}{' '}
+                        {step.timestamp.toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </span>
                     )}
                   </div>
-                  <p className={`text-xs ${
-                    step.isCurrent ? 'text-muted-foreground' : 
-                    step.isCompleted ? 'text-muted-foreground' : 'text-muted-foreground'
-                  }`}>
+                  <p
+                    className={`text-xs ${
+                      step.isCurrent
+                        ? 'text-muted-foreground'
+                        : step.isCompleted
+                          ? 'text-muted-foreground'
+                          : 'text-muted-foreground'
+                    }`}
+                  >
                     {step.description}
                   </p>
                 </div>
@@ -203,63 +218,67 @@ export function AvailabilityStatusTracker({
         </div>
 
         {/* Additional Information */}
-        {availability.status === AvailabilityStatus.ACTIVE && (
-          <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+        {availability.status === AvailabilityStatus.ACCEPTED && (
+          <div className="rounded-lg border border-green-200 bg-green-50 p-3">
             <div className="flex items-center gap-2 text-green-800">
               <Check className="h-4 w-4" />
-              <span className="font-medium text-sm">Active & Ready</span>
+              <span className="text-sm font-medium">Active & Ready</span>
             </div>
-            <p className="text-xs text-green-700 mt-1">
-              {availability.calculatedSlots?.length || 0} time slots have been generated and are available for booking.
+            <p className="mt-1 text-xs text-green-700">
+              {availability.calculatedSlots?.length || 0} time slots have been generated and are
+              available for booking.
             </p>
           </div>
         )}
 
         {availability.status === AvailabilityStatus.REJECTED && (
-          <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3">
             <div className="flex items-center gap-2 text-red-800">
               <X className="h-4 w-4" />
-              <span className="font-medium text-sm">Proposal Rejected</span>
+              <span className="text-sm font-medium">Proposal Rejected</span>
             </div>
-            <p className="text-xs text-red-700 mt-1">
-              The provider declined this availability proposal. You can create a new proposal with different terms.
+            <p className="mt-1 text-xs text-red-700">
+              The provider declined this availability proposal. You can create a new proposal with
+              different terms.
             </p>
           </div>
         )}
 
         {availability.status === AvailabilityStatus.PENDING && (
-          <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
             <div className="flex items-center gap-2 text-yellow-800">
               <Clock className="h-4 w-4" />
-              <span className="font-medium text-sm">Awaiting Response</span>
+              <span className="text-sm font-medium">Awaiting Response</span>
             </div>
-            <p className="text-xs text-yellow-700 mt-1">
-              The provider will receive a notification about this proposal and can accept or reject it.
+            <p className="mt-1 text-xs text-yellow-700">
+              The provider will receive a notification about this proposal and can accept or reject
+              it.
             </p>
           </div>
         )}
 
         {/* Recurring Series Information */}
         {availability.isRecurring && (
-          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
             <div className="flex items-center gap-2 text-blue-800">
               <Repeat className="h-4 w-4" />
-              <span className="font-medium text-sm">Recurring Series</span>
+              <span className="text-sm font-medium">Recurring Series</span>
             </div>
-            <p className="text-xs text-blue-700 mt-1">
-              This status applies to the entire recurring series. Individual occurrences inherit this status.
+            <p className="mt-1 text-xs text-blue-700">
+              This status applies to the entire recurring series. Individual occurrences inherit
+              this status.
             </p>
           </div>
         )}
 
         {/* Created Information */}
-        <div className="pt-2 border-t border-muted">
+        <div className="border-t border-muted pt-2">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>Created by {availability.organization?.name || 'Organization'}</span>
             <span>{availability.createdAt.toLocaleDateString()}</span>
           </div>
           {availability.createdByMembership && (
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="mt-1 text-xs text-muted-foreground">
               By: {availability.createdBy?.name || 'Organization Member'}
             </div>
           )}

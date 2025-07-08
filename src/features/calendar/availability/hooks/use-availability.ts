@@ -7,7 +7,7 @@ import {
   AvailabilityWithRelations,
   CreateAvailabilityData,
   UpdateAvailabilityData,
-} from '../types';
+} from '@/features/calendar/availability/types/types';
 
 // Add context type definitions at the top of the file
 type UpdateAvailabilityContext = {

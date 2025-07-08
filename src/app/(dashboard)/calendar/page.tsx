@@ -1,8 +1,10 @@
 import Link from 'next/link';
-import { Calendar, Plus, Users, BarChart, Settings, Clock } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+import { BarChart, Calendar, Clock, Plus, Settings } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
-import { EnhancedCalendarView } from '@/features/calendar/availability/components';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EnhancedCalendarView } from '@/features/calendar/availability/components/enhanced-calendar-view';
 
 export default function CalendarOverviewPage() {
   return (
@@ -28,27 +30,28 @@ export default function CalendarOverviewPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <EnhancedCalendarView />
+              <EnhancedCalendarView mode="provider" />
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {/* Availability Management */}
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="transition-shadow hover:shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-blue-600" />
                 Availability Management
               </CardTitle>
               <CardDescription>
-                Set your available time slots, manage recurring schedules, and configure booking rules
+                Set your available time slots, manage recurring schedules, and configure booking
+                rules
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <p className="text-sm text-gray-600">Features:</p>
-                <ul className="text-xs text-gray-500 space-y-1">
+                <ul className="space-y-1 text-xs text-gray-500">
                   <li>• Create and edit availability slots</li>
                   <li>• Set up recurring patterns</li>
                   <li>• Configure scheduling rules</li>
@@ -57,40 +60,36 @@ export default function CalendarOverviewPage() {
                 </ul>
               </div>
               <Link href="/calendar/availability">
-                <Button className="w-full">
-                  Manage Availability
-                </Button>
+                <Button className="w-full">Manage Availability</Button>
               </Link>
             </CardContent>
           </Card>
 
           {/* Quick Actions */}
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="transition-shadow hover:shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Plus className="h-5 w-5 text-green-600" />
                 Quick Actions
               </CardTitle>
-              <CardDescription>
-                Common calendar tasks and shortcuts
-              </CardDescription>
+              <CardDescription>Common calendar tasks and shortcuts</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <Link href="/calendar/availability">
                 <Button variant="outline" className="w-full justify-start">
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Add Availability
                 </Button>
               </Link>
               <Link href="/calendar/availability">
                 <Button variant="outline" className="w-full justify-start">
-                  <Clock className="h-4 w-4 mr-2" />
+                  <Clock className="mr-2 h-4 w-4" />
                   View Schedule
                 </Button>
               </Link>
               <Link href="/calendar/availability">
                 <Button variant="outline" className="w-full justify-start">
-                  <BarChart className="h-4 w-4 mr-2" />
+                  <BarChart className="mr-2 h-4 w-4" />
                   Export Calendar
                 </Button>
               </Link>
@@ -98,7 +97,7 @@ export default function CalendarOverviewPage() {
           </Card>
 
           {/* Settings & Configuration */}
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="transition-shadow hover:shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5 text-purple-600" />
@@ -111,7 +110,7 @@ export default function CalendarOverviewPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <p className="text-sm text-gray-600">Available settings:</p>
-                <ul className="text-xs text-gray-500 space-y-1">
+                <ul className="space-y-1 text-xs text-gray-500">
                   <li>• Visual indicators</li>
                   <li>• Working hours</li>
                   <li>• Scheduling rules</li>
@@ -136,31 +135,29 @@ export default function CalendarOverviewPage() {
                 <Calendar className="h-5 w-5" />
                 Calendar Overview
               </CardTitle>
-              <CardDescription>
-                Your current calendar status and upcoming schedule
-              </CardDescription>
+              <CardDescription>Your current calendar status and upcoming schedule</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600 mb-1">0</div>
+                  <div className="mb-1 text-2xl font-bold text-blue-600">0</div>
                   <div className="text-sm text-gray-500">Available Slots Today</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600 mb-1">0</div>
+                  <div className="mb-1 text-2xl font-bold text-green-600">0</div>
                   <div className="text-sm text-gray-500">Booked Appointments</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600 mb-1">0</div>
+                  <div className="mb-1 text-2xl font-bold text-orange-600">0</div>
                   <div className="text-sm text-gray-500">Pending Proposals</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600 mb-1">0%</div>
+                  <div className="mb-1 text-2xl font-bold text-purple-600">0%</div>
                   <div className="text-sm text-gray-500">Calendar Utilization</div>
                 </div>
               </div>
-              
-              <div className="mt-6 pt-6 border-t">
+
+              <div className="mt-6 border-t pt-6">
                 <Link href="/calendar/availability">
                   <Button size="lg" className="w-full md:w-auto">
                     Open Full Calendar Interface
