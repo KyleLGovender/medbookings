@@ -20,6 +20,7 @@ A custom hook for enhanced navigation with loading states and error handling.
 **Location:** `src/hooks/use-navigation.ts`
 
 **Features:**
+
 - Enhanced router navigation with loading states
 - Error handling for navigation failures
 - Prevent double navigation
@@ -27,12 +28,14 @@ A custom hook for enhanced navigation with loading states and error handling.
 - Customizable callbacks for navigation events
 
 **Parameters:**
+
 - `options`: Optional configuration object
   - `onError`: Function called when navigation fails
   - `onStart`: Function called when navigation starts
   - `onComplete`: Function called when navigation completes
 
 **Return Value:**
+
 ```typescript
 {
   navigate: (url: string) => Promise<void>;
@@ -46,6 +49,7 @@ A custom hook for enhanced navigation with loading states and error handling.
 ```
 
 **Example:**
+
 ```tsx
 import { useNavigation } from '@/hooks/use-navigation';
 
@@ -53,7 +57,7 @@ function MyComponent() {
   const { navigate, isNavigating, navigatingTo } = useNavigation({
     onStart: () => console.log('Navigation started'),
     onComplete: () => console.log('Navigation completed'),
-    onError: (error) => console.error('Navigation failed:', error)
+    onError: (error) => console.error('Navigation failed:', error),
   });
 
   const handleNavigate = async () => {
@@ -72,6 +76,7 @@ function MyComponent() {
 ```
 
 **Key Features:**
+
 - **Loading States**: Track navigation progress with `isNavigating`
 - **Destination Tracking**: Know where you're navigating with `navigatingTo`
 - **Error Handling**: Graceful error handling with custom error callbacks
@@ -89,6 +94,7 @@ A comprehensive toast notification system with state management.
 **Location:** `src/hooks/use-toast.ts`
 
 **Features:**
+
 - Global toast state management
 - Toast queuing and limits
 - Customizable toast types and styling
@@ -97,6 +103,7 @@ A comprehensive toast notification system with state management.
 - Update existing toasts
 
 **Return Value:**
+
 ```typescript
 {
   toasts: ToasterToast[];
@@ -106,6 +113,7 @@ A comprehensive toast notification system with state management.
 ```
 
 **Toast Properties:**
+
 - `title`: Toast title (ReactNode)
 - `description`: Toast description (ReactNode)
 - `variant`: Toast variant ('default' | 'destructive')
@@ -113,6 +121,7 @@ A comprehensive toast notification system with state management.
 - `duration`: Auto-dismiss duration (optional)
 
 **Example:**
+
 ```tsx
 import { useToast } from '@/hooks/use-toast';
 
@@ -121,39 +130,41 @@ function MyComponent() {
 
   const showSuccess = () => {
     toast({
-      title: "Success!",
-      description: "Your action was completed successfully.",
-      variant: "default"
+      title: 'Success!',
+      description: 'Your action was completed successfully.',
+      variant: 'default',
     });
   };
 
   const showError = () => {
     toast({
-      title: "Error!",
-      description: "Something went wrong. Please try again.",
-      variant: "destructive"
+      title: 'Error!',
+      description: 'Something went wrong. Please try again.',
+      variant: 'destructive',
     });
   };
 
   const showWithAction = () => {
     const { dismiss, update } = toast({
-      title: "Confirmation needed",
-      description: "Please confirm your action",
+      title: 'Confirmation needed',
+      description: 'Please confirm your action',
       action: (
-        <button onClick={() => {
-          // Handle action
-          dismiss();
-        }}>
+        <button
+          onClick={() => {
+            // Handle action
+            dismiss();
+          }}
+        >
           Confirm
         </button>
-      )
+      ),
     });
 
     // Update the toast later
     setTimeout(() => {
       update({
-        title: "Updated!",
-        description: "Toast has been updated"
+        title: 'Updated!',
+        description: 'Toast has been updated',
       });
     }, 2000);
   };
@@ -169,6 +180,7 @@ function MyComponent() {
 ```
 
 **Key Features:**
+
 - **Global State**: Centralized toast management across the app
 - **Queuing**: Automatic toast queuing with configurable limits
 - **Customization**: Flexible styling and content options
@@ -186,18 +198,22 @@ A hook for detecting media query matches with real-time updates.
 **Location:** `src/hooks/use-media-query.ts`
 
 **Features:**
+
 - Real-time media query detection
 - Automatic cleanup of event listeners
 - Support for any CSS media query
 - SSR-safe implementation
 
 **Parameters:**
+
 - `query`: CSS media query string
 
 **Return Value:**
+
 - `boolean`: Whether the media query matches
 
 **Example:**
+
 ```tsx
 import { useMediaQuery } from '@/hooks/use-media-query';
 
@@ -219,6 +235,7 @@ function ResponsiveComponent() {
 ```
 
 **Common Use Cases:**
+
 - **Responsive Layouts**: Show/hide elements based on screen size
 - **Theme Detection**: Detect user's preferred color scheme
 - **Device Capabilities**: Check for hover, touch, or orientation
@@ -231,15 +248,18 @@ A specialized hook for mobile device detection.
 **Location:** `src/hooks/use-mobile.tsx`
 
 **Features:**
+
 - Mobile-specific breakpoint detection
 - Configurable breakpoint (768px default)
 - Real-time window resize detection
 - SSR-safe with undefined initial state
 
 **Return Value:**
+
 - `boolean`: Whether the device is mobile-sized
 
 **Example:**
+
 ```tsx
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -248,21 +268,16 @@ function MobileAwareComponent() {
 
   return (
     <div>
-      {isMobile ? (
-        <MobileMenu />
-      ) : (
-        <DesktopMenu />
-      )}
-      
-      <div className={isMobile ? 'mobile-layout' : 'desktop-layout'}>
-        Content here
-      </div>
+      {isMobile ? <MobileMenu /> : <DesktopMenu />}
+
+      <div className={isMobile ? 'mobile-layout' : 'desktop-layout'}>Content here</div>
     </div>
   );
 }
 ```
 
 **Key Features:**
+
 - **Optimized**: Specifically designed for mobile/desktop detection
 - **Performance**: Efficient window resize handling
 - **Flexible**: Easy to customize breakpoint if needed
@@ -287,26 +302,26 @@ function AdvancedToastExample() {
   const showProgressToast = () => {
     let progress = 0;
     const { id, update } = toast({
-      title: "Processing...",
+      title: 'Processing...',
       description: `Progress: ${progress}%`,
-      duration: Infinity // Don't auto-dismiss
+      duration: Infinity, // Don't auto-dismiss
     });
 
     const interval = setInterval(() => {
       progress += 10;
       update({
-        title: "Processing...",
-        description: `Progress: ${progress}%`
+        title: 'Processing...',
+        description: `Progress: ${progress}%`,
       });
 
       if (progress >= 100) {
         clearInterval(interval);
         update({
-          title: "Complete!",
-          description: "Processing finished successfully",
-          variant: "default"
+          title: 'Complete!',
+          description: 'Processing finished successfully',
+          variant: 'default',
         });
-        
+
         // Auto-dismiss after showing completion
         setTimeout(() => dismiss(id), 2000);
       }
@@ -315,8 +330,8 @@ function AdvancedToastExample() {
 
   const showUndoToast = () => {
     const { dismiss: dismissToast } = toast({
-      title: "Item deleted",
-      description: "The item has been removed from your list",
+      title: 'Item deleted',
+      description: 'The item has been removed from your list',
       action: (
         <button
           onClick={() => {
@@ -327,7 +342,7 @@ function AdvancedToastExample() {
         >
           Undo
         </button>
-      )
+      ),
     });
   };
 
@@ -341,6 +356,7 @@ function AdvancedToastExample() {
 ```
 
 **Toast Configuration:**
+
 ```typescript
 // Global toast configuration
 const TOAST_LIMIT = 1; // Maximum number of toasts
@@ -371,7 +387,7 @@ When creating custom hooks, follow these patterns:
 // Template for custom hooks
 function useCustomHook(config?: Config) {
   const [state, setState] = useState(initialState);
-  
+
   useEffect(() => {
     // Setup logic
     return () => {
@@ -385,7 +401,7 @@ function useCustomHook(config?: Config) {
 
   return {
     ...state,
-    ...methods
+    ...methods,
   };
 }
 ```
@@ -436,7 +452,8 @@ function useOptimizedHook() {
 
 ```typescript
 // Test custom hooks using @testing-library/react-hooks
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
+
 import { useNavigation } from '@/hooks/use-navigation';
 
 test('useNavigation should handle navigation', async () => {
@@ -516,16 +533,19 @@ function useNavigation(options?: NavigationOptions): NavigationReturn;
 ## Performance Considerations
 
 ### Memory Management
+
 - Always clean up event listeners in useEffect cleanup
 - Use WeakMap for object references when possible
 - Implement proper dependency arrays to prevent memory leaks
 
 ### Re-render Optimization
+
 - Use useCallback for function props
 - Use useMemo for expensive calculations
 - Consider using React.memo for components that use these hooks
 
 ### SSR Compatibility
+
 - Handle server-side rendering appropriately
 - Use conditional rendering for client-only features
 - Implement proper hydration handling
@@ -535,35 +555,40 @@ function useNavigation(options?: NavigationOptions): NavigationReturn;
 ## Common Patterns
 
 ### Combining Hooks
+
 ```tsx
 function useResponsiveNavigation() {
   const isMobile = useIsMobile();
   const { navigate } = useNavigation();
   const { toast } = useToast();
 
-  const navigateWithFeedback = useCallback(async (url: string) => {
-    try {
-      await navigate(url);
-      if (isMobile) {
+  const navigateWithFeedback = useCallback(
+    async (url: string) => {
+      try {
+        await navigate(url);
+        if (isMobile) {
+          toast({
+            title: 'Navigation complete',
+            description: "You've been redirected",
+          });
+        }
+      } catch (error) {
         toast({
-          title: "Navigation complete",
-          description: "You've been redirected"
+          title: 'Navigation failed',
+          description: 'Please try again',
+          variant: 'destructive',
         });
       }
-    } catch (error) {
-      toast({
-        title: "Navigation failed",
-        description: "Please try again",
-        variant: "destructive"
-      });
-    }
-  }, [navigate, toast, isMobile]);
+    },
+    [navigate, toast, isMobile]
+  );
 
   return { navigateWithFeedback, isMobile };
 }
 ```
 
 ### Conditional Hook Usage
+
 ```tsx
 function useConditionalFeature(shouldUse: boolean) {
   const result = shouldUse ? useFeatureHook() : null;
@@ -572,6 +597,7 @@ function useConditionalFeature(shouldUse: boolean) {
 ```
 
 ### Hook Composition
+
 ```tsx
 function useComposedHook() {
   const navigation = useNavigation();
@@ -583,13 +609,13 @@ function useComposedHook() {
     ...navigation,
     navigateWithToast: (url: string) => {
       navigation.navigate(url);
-      toast.toast({ title: "Navigating..." });
-    }
+      toast.toast({ title: 'Navigating...' });
+    },
   };
 
   return {
     ...enhancedNavigation,
-    isMobile
+    isMobile,
   };
 }
 ```

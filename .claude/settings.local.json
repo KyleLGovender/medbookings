@@ -31,9 +31,6 @@
     ],
     "deny": []
   },
-  "enabledMcpjsonServers": [
-    "filesystem-server",
-    "postgres-server"
-  ],
+  "enabledMcpjsonServers": ["filesystem-server", "postgres-server"],
   "enableAllProjectMcpServers": true
 }

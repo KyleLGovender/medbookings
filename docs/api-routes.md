@@ -23,12 +23,14 @@ This document provides comprehensive documentation for all REST API endpoints in
 Most API endpoints require authentication using NextAuth.js sessions. The session is checked server-side using `getServerSession()`.
 
 **Authentication Flow:**
+
 1. User signs in through OAuth (Google)
 2. Session is created and stored
 3. Subsequent API requests include session cookies
 4. Server validates session for protected routes
 
 **Protected Routes:**
+
 - All `/api/admin/*` routes require ADMIN or SUPER_ADMIN role
 - All `/api/providers/*` routes require authentication
 - All `/api/organizations/*` routes require authentication
@@ -41,9 +43,11 @@ Most API endpoints require authentication using NextAuth.js sessions. The sessio
 **Description:** NextAuth.js authentication handler for OAuth and session management.
 
 **Supported Providers:**
+
 - Google OAuth 2.0
 
 **Configuration:**
+
 ```typescript
 {
   providers: [GoogleProvider],
@@ -68,6 +72,7 @@ Most API endpoints require authentication using NextAuth.js sessions. The sessio
 **Authentication:** Required (authenticated user)
 
 **Request Body:**
+
 ```typescript
 {
   basicInfo: {
@@ -103,6 +108,7 @@ Most API endpoints require authentication using NextAuth.js sessions. The sessio
 ```
 
 **Response:**
+
 ```typescript
 // Success
 {
@@ -117,6 +123,7 @@ Most API endpoints require authentication using NextAuth.js sessions. The sessio
 ```
 
 **Example:**
+
 ```typescript
 const response = await fetch('/api/providers', {
   method: 'POST',
@@ -127,7 +134,7 @@ const response = await fetch('/api/providers', {
       bio: 'Experienced family physician',
       email: 'john.smith@example.com',
       whatsapp: '+1234567890',
-      languages: ['english', 'spanish']
+      languages: ['english', 'spanish'],
     },
     serviceProviderTypeId: 'provider-type-id',
     services: {
@@ -135,15 +142,16 @@ const response = await fetch('/api/providers', {
       serviceConfigs: {
         'service-id-1': {
           duration: 30,
-          price: 100
-        }
-      }
-    }
-  })
+          price: 100,
+        },
+      },
+    },
+  }),
 });
 ```
 
 **Error Codes:**
+
 - `401`: Unauthorized (no valid session)
 - `404`: User not found
 - `400`: Invalid request data
@@ -158,10 +166,12 @@ const response = await fetch('/api/providers', {
 **Authentication:** Required
 
 **Query Parameters:**
+
 - `type`: Filter by provider type (optional)
 - `category`: Filter by service category (optional)
 
 **Response:**
+
 ```typescript
 {
   services: Array<{
@@ -184,6 +194,7 @@ const response = await fetch('/api/providers', {
 **Authentication:** Required
 
 **Response:**
+
 ```typescript
 {
   types: Array<{
@@ -209,9 +220,11 @@ const response = await fetch('/api/providers', {
 **Authentication:** Optional (public endpoint)
 
 **Path Parameters:**
+
 - `id`: Provider ID
 
 **Response:**
+
 ```typescript
 {
   id: string;
@@ -247,11 +260,13 @@ const response = await fetch('/api/providers', {
 **Authentication:** Required (must be provider owner or admin)
 
 **Path Parameters:**
+
 - `id`: Provider ID
 
 **Request Body:** Same as create provider
 
 **Response:**
+
 ```typescript
 {
   success: boolean;
@@ -269,9 +284,11 @@ const response = await fetch('/api/providers', {
 **Authentication:** Required (must be provider owner or admin)
 
 **Path Parameters:**
+
 - `id`: Provider ID
 
 **Response:**
+
 ```typescript
 {
   success: boolean;
@@ -292,6 +309,7 @@ const response = await fetch('/api/providers', {
 **Authentication:** Required
 
 **Request Body:**
+
 ```typescript
 {
   name: string;
@@ -311,6 +329,7 @@ const response = await fetch('/api/providers', {
 ```
 
 **Response:**
+
 ```typescript
 {
   success: boolean;
@@ -332,9 +351,11 @@ const response = await fetch('/api/providers', {
 **Authentication:** Optional (public endpoint)
 
 **Path Parameters:**
+
 - `id`: Organization ID
 
 **Response:**
+
 ```typescript
 {
   id: string;
@@ -364,6 +385,7 @@ const response = await fetch('/api/providers', {
 **Authentication:** Required (must be organization admin)
 
 **Path Parameters:**
+
 - `id`: Organization ID
 
 **Request Body:** Same as create organization
@@ -377,6 +399,7 @@ const response = await fetch('/api/providers', {
 **Authentication:** Required (must be organization admin)
 
 **Path Parameters:**
+
 - `id`: Organization ID
 
 ### Get Organization User
@@ -388,6 +411,7 @@ const response = await fetch('/api/providers', {
 **Authentication:** Required
 
 **Response:**
+
 ```typescript
 {
   organization?: {
@@ -412,12 +436,14 @@ const response = await fetch('/api/providers', {
 **Authentication:** Required
 
 **Request Body:** `multipart/form-data`
+
 - `file`: File to upload
 - `userId`: User ID
 - `directory`: Upload directory (optional, defaults to 'profile-images')
 - `purpose`: File purpose identifier (required)
 
 **Response:**
+
 ```typescript
 {
   success: boolean;
@@ -427,6 +453,7 @@ const response = await fetch('/api/providers', {
 ```
 
 **Example:**
+
 ```typescript
 const formData = new FormData();
 formData.append('file', fileInput.files[0]);
@@ -436,16 +463,18 @@ formData.append('purpose', 'license-verification');
 
 const response = await fetch('/api/upload', {
   method: 'POST',
-  body: formData
+  body: formData,
 });
 ```
 
 **File Restrictions:**
+
 - Maximum file size: 10MB
 - Supported formats: PDF, JPG, PNG (configurable)
 - Files are stored with organized naming convention
 
 **Error Codes:**
+
 - `400`: No file provided or invalid request
 - `401`: Unauthorized
 - `500`: Upload failed
@@ -463,6 +492,7 @@ const response = await fetch('/api/upload', {
 **Authentication:** Required (ADMIN or SUPER_ADMIN role)
 
 **Response:**
+
 ```typescript
 {
   stats: {
@@ -470,7 +500,7 @@ const response = await fetch('/api/upload', {
     totalOrganizations: number;
     totalUsers: number;
     pendingApprovals: number;
-  };
+  }
   recentActivity: Array<{
     id: string;
     type: string;
@@ -489,12 +519,14 @@ const response = await fetch('/api/upload', {
 **Authentication:** Required (ADMIN or SUPER_ADMIN role)
 
 **Query Parameters:**
+
 - `page`: Page number (default: 1)
 - `limit`: Items per page (default: 10)
 - `status`: Filter by status
 - `search`: Search term
 
 **Response:**
+
 ```typescript
 {
   providers: Array<{
@@ -510,7 +542,7 @@ const response = await fetch('/api/upload', {
     limit: number;
     total: number;
     pages: number;
-  };
+  }
 }
 ```
 
@@ -523,9 +555,11 @@ const response = await fetch('/api/upload', {
 **Authentication:** Required (ADMIN or SUPER_ADMIN role)
 
 **Path Parameters:**
+
 - `id`: Provider ID
 
 **Request Body:**
+
 ```typescript
 {
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
@@ -534,6 +568,7 @@ const response = await fetch('/api/upload', {
 ```
 
 **Response:**
+
 ```typescript
 {
   success: boolean;
@@ -567,6 +602,7 @@ const response = await fetch('/api/upload', {
 **Authentication:** Required
 
 **Response:**
+
 ```typescript
 {
   id: string;
@@ -597,6 +633,7 @@ const response = await fetch('/api/upload', {
 **Authentication:** Required
 
 **Request Body:**
+
 ```typescript
 {
   name?: string;
@@ -610,6 +647,7 @@ const response = await fetch('/api/upload', {
 ```
 
 **Response:**
+
 ```typescript
 {
   success: boolean;
@@ -631,11 +669,13 @@ const response = await fetch('/api/upload', {
 **Authentication:** Required
 
 **Query Parameters:**
+
 - `start`: Start date (ISO string)
 - `end`: End date (ISO string)
 - `providerId`: Filter by provider ID (optional)
 
 **Response:**
+
 ```typescript
 {
   events: Array<{
@@ -660,6 +700,7 @@ const response = await fetch('/api/upload', {
 **Authentication:** Required
 
 **Request Body:**
+
 ```typescript
 {
   title: string;
@@ -673,6 +714,7 @@ const response = await fetch('/api/upload', {
 ```
 
 **Response:**
+
 ```typescript
 {
   success: boolean;
@@ -690,6 +732,7 @@ const response = await fetch('/api/upload', {
 **Authentication:** Required
 
 **Path Parameters:**
+
 - `id`: Event ID
 
 **Request Body:** Same as create event
@@ -703,9 +746,11 @@ const response = await fetch('/api/upload', {
 **Authentication:** Required
 
 **Path Parameters:**
+
 - `id`: Event ID
 
 **Response:**
+
 ```typescript
 {
   success: boolean;
@@ -720,6 +765,7 @@ const response = await fetch('/api/upload', {
 ### Request/Response Format
 
 **Standard Success Response:**
+
 ```typescript
 {
   success: true;
@@ -729,6 +775,7 @@ const response = await fetch('/api/upload', {
 ```
 
 **Standard Error Response:**
+
 ```typescript
 {
   success: false;
@@ -740,12 +787,14 @@ const response = await fetch('/api/upload', {
 ### Pagination
 
 **Query Parameters:**
+
 - `page`: Page number (1-based)
 - `limit`: Items per page
 - `sort`: Sort field
 - `order`: Sort order ('asc' | 'desc')
 
 **Response Format:**
+
 ```typescript
 {
   data: Array<any>;
@@ -756,13 +805,14 @@ const response = await fetch('/api/upload', {
     pages: number;
     hasNext: boolean;
     hasPrev: boolean;
-  };
+  }
 }
 ```
 
 ### Filtering and Search
 
 **Query Parameters:**
+
 - `search`: General search term
 - `filter[field]`: Filter by specific field
 - `status`: Filter by status
@@ -773,6 +823,7 @@ const response = await fetch('/api/upload', {
 ### Authentication Headers
 
 **Session-based Authentication:**
+
 - Authentication is handled via HTTP-only cookies
 - No additional headers required
 - Session validation on server-side
@@ -811,6 +862,7 @@ const response = await fetch('/api/upload', {
 ### Common Error Scenarios
 
 **Authentication Errors:**
+
 ```typescript
 {
   success: false;
@@ -823,6 +875,7 @@ const response = await fetch('/api/upload', {
 ```
 
 **Validation Errors:**
+
 ```typescript
 {
   success: false;
@@ -836,6 +889,7 @@ const response = await fetch('/api/upload', {
 ```
 
 **Permission Errors:**
+
 ```typescript
 {
   success: false;
@@ -861,16 +915,19 @@ const response = await fetch('/api/upload', {
 ## Rate Limiting
 
 ### Upload Endpoints
+
 - File uploads: 10 requests per minute per user
 - Maximum file size: 10MB
 - Concurrent uploads: 3 per user
 
 ### API Endpoints
+
 - General API: 100 requests per minute per user
 - Authentication: 10 requests per minute per IP
 - Admin endpoints: 50 requests per minute per admin
 
 ### Rate Limit Headers
+
 ```
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 99
@@ -882,21 +939,25 @@ X-RateLimit-Reset: 1640995200
 ## Security Considerations
 
 ### Input Validation
+
 - All inputs are validated using Zod schemas
 - File uploads are scanned for malicious content
 - SQL injection protection via Prisma ORM
 
 ### Authentication Security
+
 - Session-based authentication with HTTP-only cookies
 - CSRF protection enabled
 - Secure session storage
 
 ### Data Protection
+
 - Sensitive data is encrypted at rest
 - Personal information is handled according to privacy policies
 - File access is controlled via signed URLs
 
 ### API Security
+
 - Rate limiting on all endpoints
 - Input sanitization
 - Output encoding
@@ -909,37 +970,34 @@ X-RateLimit-Reset: 1640995200
 ### Example Test Cases
 
 **Authentication Test:**
+
 ```typescript
 describe('POST /api/providers', () => {
   it('should require authentication', async () => {
-    const response = await request(app)
-      .post('/api/providers')
-      .send(validProviderData);
-    
+    const response = await request(app).post('/api/providers').send(validProviderData);
+
     expect(response.status).toBe(401);
   });
 });
 ```
 
 **Validation Test:**
+
 ```typescript
 it('should validate required fields', async () => {
-  const response = await authenticatedRequest
-    .post('/api/providers')
-    .send({}); // Empty data
-  
+  const response = await authenticatedRequest.post('/api/providers').send({}); // Empty data
+
   expect(response.status).toBe(400);
   expect(response.body.error).toContain('validation');
 });
 ```
 
 **Success Test:**
+
 ```typescript
 it('should create provider successfully', async () => {
-  const response = await authenticatedRequest
-    .post('/api/providers')
-    .send(validProviderData);
-  
+  const response = await authenticatedRequest.post('/api/providers').send(validProviderData);
+
   expect(response.status).toBe(200);
   expect(response.body.success).toBe(true);
 });

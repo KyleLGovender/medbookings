@@ -382,10 +382,10 @@ async function main() {
   // Create sample availability data demonstrating new scheduling features
   try {
     console.log('Creating sample availability data...');
-    
+
     // Note: This creates sample data structure only - actual users/providers would be created by the application
     // This demonstrates the schema structure for the new availability fields
-    
+
     const sampleAvailabilityData = [
       {
         // Single availability with continuous scheduling
@@ -406,7 +406,7 @@ async function main() {
           daysOfWeek: [1, 2, 3, 4, 5], // Monday to Friday
           startTime: '09:00',
           endTime: '17:00',
-          endDate: '2024-12-31'
+          endDate: '2024-12-31',
         },
         isOnlineAvailable: false,
         requiresConfirmation: true,
@@ -419,12 +419,11 @@ async function main() {
         isRecurring: false,
         isOnlineAvailable: true,
         requiresConfirmation: false,
-      }
+      },
     ];
 
     console.log('Sample availability configurations:', sampleAvailabilityData);
     console.log('Sample availability data structure created for reference');
-    
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('Error creating sample availability data:', error);

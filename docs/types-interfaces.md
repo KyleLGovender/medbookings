@@ -36,6 +36,7 @@ export type ApiResponse<T> = {
 ```
 
 **Usage:**
+
 ```typescript
 // API function return type
 async function fetchProviders(): Promise<ApiResponse<Provider[]>> {
@@ -45,16 +46,17 @@ async function fetchProviders(): Promise<ApiResponse<Provider[]>> {
 // Component handling API response
 function MyComponent() {
   const [response, setResponse] = useState<ApiResponse<User>>();
-  
+
   if (response?.error) {
     return <div>Error: {response.error}</div>;
   }
-  
+
   return <div>User: {response?.data?.name}</div>;
 }
 ```
 
 **Features:**
+
 - **Generic**: Supports any data type
 - **Error Handling**: Structured error information
 - **Validation**: Field-level and form-level error support
@@ -88,6 +90,7 @@ declare module 'next-auth' {
 ```
 
 **Extended Session Interface:**
+
 - `user.id`: User database ID
 - `user.role`: User role from Prisma enum
 - `user.name`: User's display name
@@ -95,21 +98,23 @@ declare module 'next-auth' {
 - `user.image`: User's profile image URL
 
 **User Roles:**
+
 ```typescript
 enum UserRole {
   USER = 'USER',
   ADMIN = 'ADMIN',
-  SUPER_ADMIN = 'SUPER_ADMIN'
+  SUPER_ADMIN = 'SUPER_ADMIN',
 }
 ```
 
 **Usage:**
+
 ```typescript
 import { useSession } from 'next-auth/react';
 
 function ProfileComponent() {
   const { data: session } = useSession();
-  
+
   if (session?.user) {
     return (
       <div>
@@ -119,7 +124,7 @@ function ProfileComponent() {
       </div>
     );
   }
-  
+
   return <div>Please sign in</div>;
 }
 ```
@@ -230,15 +235,14 @@ export const ServiceProviderCalendarViewType = {
   schedule: 'schedule',
 } as const;
 
-export type CalendarViewType = 
-  (typeof CalendarViewType)[keyof typeof CalendarViewType];
+export type CalendarViewType = (typeof CalendarViewType)[keyof typeof CalendarViewType];
 
-export type ServiceProviderCalendarViewType = 
+export type ServiceProviderCalendarViewType =
   (typeof ServiceProviderCalendarViewType)[keyof typeof ServiceProviderCalendarViewType];
 
 export interface TimeRange {
   earliestTime: number; // 24-hour format (e.g., 9 for 9:00)
-  latestTime: number;   // 24-hour format (e.g., 17 for 17:00)
+  latestTime: number; // 24-hour format (e.g., 17 for 17:00)
 }
 ```
 
@@ -436,7 +440,7 @@ export const SUPPORTED_LANGUAGES = [
   'venda',
   'tsonga',
   'ndebele',
-  'swati'
+  'swati',
 ] as const;
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
@@ -675,8 +679,7 @@ export const NotificationChannel = {
   IN_APP: 'in_app',
 } as const;
 
-export type NotificationChannel = 
-  (typeof NotificationChannel)[keyof typeof NotificationChannel];
+export type NotificationChannel = (typeof NotificationChannel)[keyof typeof NotificationChannel];
 
 export const TemplateType = {
   BOOKING_CONFIRMATION: 'booking_confirmation',
@@ -695,8 +698,7 @@ export const NotificationType = {
   ERROR: 'error',
 } as const;
 
-export type NotificationType = 
-  (typeof NotificationType)[keyof typeof NotificationType];
+export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
 ```
 
 ### Notification Options
@@ -995,6 +997,7 @@ declare module 'vcards-js' {
 ```
 
 **Usage:**
+
 ```typescript
 import vCards from 'vcards-js';
 
@@ -1004,7 +1007,7 @@ function generateVCard(provider: ServiceProvider) {
   vCard.lastName = provider.name.split(' ').slice(1).join(' ');
   vCard.workPhone = provider.whatsapp;
   vCard.url = provider.website;
-  
+
   return vCard.getFormattedString();
 }
 ```
@@ -1015,15 +1018,15 @@ The application relies heavily on Prisma-generated types:
 
 ```typescript
 // Import Prisma types
-import { 
-  User, 
-  ServiceProvider, 
-  Organization, 
-  Booking, 
+import {
   Availability,
-  UserRole,
+  Booking,
   BookingStatus,
-  SchedulingRule 
+  Organization,
+  SchedulingRule,
+  ServiceProvider,
+  User,
+  UserRole,
 } from '@prisma/client';
 
 // Extended types with relations
@@ -1069,11 +1072,8 @@ function isErrorResponse(response: ApiResponse<any>): response is ErrorResponse 
 }
 
 // Object type guards
-function hasRequiredFields<T extends Record<string, any>>(
-  obj: any,
-  fields: (keyof T)[]
-): obj is T {
-  return fields.every(field => field in obj && obj[field] !== undefined);
+function hasRequiredFields<T extends Record<string, any>>(obj: any, fields: (keyof T)[]): obj is T {
+  return fields.every((field) => field in obj && obj[field] !== undefined);
 }
 ```
 
@@ -1104,10 +1104,14 @@ const providerRegistrationSchema = z.object({
   serviceProviderTypeId: z.string().uuid(),
   services: z.object({
     availableServices: z.array(z.string().uuid()).min(1),
-    serviceConfigs: z.record(z.object({
-      duration: z.number().min(15).max(480),
-      price: z.number().min(0),
-    })).optional(),
+    serviceConfigs: z
+      .record(
+        z.object({
+          duration: z.number().min(15).max(480),
+          price: z.number().min(0),
+        })
+      )
+      .optional(),
   }),
 });
 
@@ -1123,13 +1127,14 @@ type ProviderRegistration = z.infer<typeof providerRegistrationSchema>;
 ### Type Definition Guidelines
 
 1. **Use Interface for Object Types**
+
    ```typescript
    // Preferred
    interface User {
      id: string;
      name: string;
    }
-   
+
    // Avoid for object types
    type User = {
      id: string;
@@ -1138,6 +1143,7 @@ type ProviderRegistration = z.infer<typeof providerRegistrationSchema>;
    ```
 
 2. **Use Type for Unions and Computed Types**
+
    ```typescript
    // Preferred
    type Status = 'pending' | 'approved' | 'rejected';
@@ -1145,11 +1151,12 @@ type ProviderRegistration = z.infer<typeof providerRegistrationSchema>;
    ```
 
 3. **Use Enums for Constants**
+
    ```typescript
    enum UserRole {
      USER = 'USER',
      ADMIN = 'ADMIN',
-     SUPER_ADMIN = 'SUPER_ADMIN'
+     SUPER_ADMIN = 'SUPER_ADMIN',
    }
    ```
 
@@ -1179,16 +1186,16 @@ type ProviderRegistration = z.infer<typeof providerRegistrationSchema>;
 interface ServiceProvider {
   /** Unique identifier for the provider */
   id: string;
-  
+
   /** Provider's display name */
   name: string;
-  
+
   /** Optional biographical information */
   bio?: string;
-  
+
   /** Provider's current status in the system */
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
-  
+
   /** Services offered by this provider */
   services: Service[];
 }
@@ -1198,9 +1205,7 @@ interface ServiceProvider {
 
 ```typescript
 // Result type for operations that can fail
-type Result<T, E = Error> = 
-  | { success: true; data: T }
-  | { success: false; error: E };
+type Result<T, E = Error> = { success: true; data: T } | { success: false; error: E };
 
 // Usage
 async function fetchUser(id: string): Promise<Result<User, string>> {

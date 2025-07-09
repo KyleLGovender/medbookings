@@ -41,6 +41,7 @@ MedBookings is a comprehensive medical appointment booking system built with mod
 ## Technology Stack
 
 ### Frontend
+
 - **Next.js 14**: React framework with App Router
 - **TypeScript**: Type-safe JavaScript development
 - **Tailwind CSS**: Utility-first CSS framework
@@ -50,12 +51,14 @@ MedBookings is a comprehensive medical appointment booking system built with mod
 - **Zod**: Schema validation
 
 ### Backend
+
 - **Next.js API Routes**: Serverless API endpoints
 - **Prisma**: Database ORM and schema management
 - **PostgreSQL**: Primary database
 - **NextAuth.js**: Authentication and session management
 
 ### Infrastructure
+
 - **Vercel**: Hosting and deployment platform
 - **Vercel Blob**: File storage
 - **Google OAuth**: Authentication provider
@@ -117,7 +120,7 @@ graph TD
     C --> D[Server Action]
     D --> E[Prisma ORM]
     E --> F[PostgreSQL]
-    
+
     G[Form Submission] --> H[Validation]
     H --> I[API Endpoint]
     I --> J[Database Update]
@@ -128,11 +131,13 @@ graph TD
 ### State Management Flow
 
 1. **Server State**: Managed by TanStack Query
+
    - API data caching
    - Background refetching
    - Optimistic updates
 
 2. **Client State**: React state and hooks
+
    - UI interactions
    - Form state
    - Local preferences
@@ -181,7 +186,7 @@ callbacks: {
 enum UserRole {
   USER = 'USER',
   ADMIN = 'ADMIN',
-  SUPER_ADMIN = 'SUPER_ADMIN'
+  SUPER_ADMIN = 'SUPER_ADMIN',
 }
 
 // Authorization check
@@ -200,17 +205,20 @@ async function checkRole(allowedRoles: UserRole[]) {
 ### Provider Management
 
 **Components:**
+
 - Registration forms and wizards
 - Profile management interfaces
 - Service configuration
 - Availability management
 
 **API Endpoints:**
+
 - `POST /api/providers` - Provider registration
 - `GET /api/providers/[id]` - Provider details
 - `PUT /api/providers/[id]` - Profile updates
 
 **Database Models:**
+
 - ServiceProvider
 - ServiceProviderType
 - RequirementSubmission
@@ -219,17 +227,20 @@ async function checkRole(allowedRoles: UserRole[]) {
 ### Booking System
 
 **Components:**
+
 - Provider search interface
 - Calendar availability display
 - Booking forms
 - Confirmation flows
 
 **API Endpoints:**
+
 - `GET /api/calendar` - Availability slots
 - `POST /api/bookings` - Create booking
 - `PUT /api/bookings/[id]` - Update booking
 
 **Database Models:**
+
 - Availability
 - CalculatedAvailabilitySlot
 - Booking
@@ -238,17 +249,20 @@ async function checkRole(allowedRoles: UserRole[]) {
 ### Organization Management
 
 **Components:**
+
 - Organization registration
 - Provider network management
 - Invitation system
 - Location management
 
 **API Endpoints:**
+
 - `POST /api/organizations` - Create organization
 - `GET /api/organizations/[id]` - Organization details
 - `POST /api/invitations` - Send invitations
 
 **Database Models:**
+
 - Organization
 - OrganizationProviderConnection
 - ProviderInvitation
@@ -331,7 +345,7 @@ const updateProvider = useMutation({
 const useProviderForm = () => {
   const [formData, setFormData] = useState(initialData);
   const [errors, setErrors] = useState({});
-  
+
   // Form logic and validation
   return { formData, errors, handleSubmit, reset };
 };
@@ -365,15 +379,14 @@ ComponentName/
 ```typescript
 // External libraries
 import React from 'react';
+
 import { useQuery } from '@tanstack/react-query';
 
-// Internal utilities
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-
 // Feature imports
 import { useProviderData } from '@/features/providers/hooks';
-
+// Internal utilities
+import { cn } from '@/lib/utils';
 // Types
 import type { Provider } from '@/types/provider';
 ```

@@ -11,14 +11,14 @@ async function testAvailabilityTypes() {
     startTime: new Date(),
     endTime: new Date(),
     createdById: 'test-user-id',
-    
+
     // New fields - should all be properly typed
     recurrencePattern: {
       type: 'weekly',
       daysOfWeek: [1, 2, 3, 4, 5],
       startTime: '09:00',
       endTime: '17:00',
-      endDate: '2024-12-31'
+      endDate: '2024-12-31',
     },
     seriesId: 'weekly-series-123',
     isRecurring: true,
@@ -32,7 +32,7 @@ async function testAvailabilityTypes() {
     serviceId: 'test-service-id',
     serviceProviderId: 'test-provider-id',
     duration: 30,
-    price: 650.00,
+    price: 650.0,
     showPrice: true, // New field
     locationId: 'test-location-id', // New field
     isOnlineAvailable: false,
@@ -49,7 +49,7 @@ async function testAvailabilityTypes() {
   console.log('- isOnlineAvailable (Boolean)');
   console.log('- showPrice (Boolean)');
   console.log('- locationId (String)');
-  
+
   return { availabilityData, serviceConfigData };
 }
 
