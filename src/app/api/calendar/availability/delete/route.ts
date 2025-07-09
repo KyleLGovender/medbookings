@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { deleteAvailability } from '@/features/calendar/availability/lib/actions';
 
 export async function DELETE(request: NextRequest) {
@@ -7,10 +8,7 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json(
-        { error: 'Availability ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Availability ID is required' }, { status: 400 });
     }
 
     const result = await deleteAvailability(id);
@@ -25,9 +23,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ message: 'Availability deleted successfully' });
   } catch (error) {
     console.error('Error in delete availability API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

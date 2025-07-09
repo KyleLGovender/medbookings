@@ -92,6 +92,7 @@ model ServiceProvider {
   website                String?                          @db.Text // Must be a valid URL
   email                  String                           @default("default@example.com")
   whatsapp               String                           @default("+1234567890")
+  showPrice              Boolean                          @default(true) // Whether to display prices to patients
   
   // Lifecycle and approval workflow
   status                 ServiceProviderStatus            @default(PENDING_APPROVAL)
@@ -816,8 +817,8 @@ enum AvailabilityStatus {
 
 enum SchedulingRule {
   CONTINUOUS // Appointments start immediately after the previous appointment ends
-  FIXED_INTERVAL // Appointments start only at specified intervals (e.g., on the hour, half-hour, quarter-hour)
-  CUSTOM_INTERVAL // Appointments start at provider-defined intervals (e.g., every 20 minutes)
+  ON_THE_HOUR // Appointments start only on the hour (e.g., 9:00, 10:00, 11:00)
+  ON_THE_HALF_HOUR // Appointments start only on the hour or half-hour (e.g., 9:00, 9:30, 10:00, 10:30)
 }
 
 // Modified CalculatedAvailabilitySlot model

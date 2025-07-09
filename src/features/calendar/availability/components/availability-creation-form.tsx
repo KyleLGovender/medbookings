@@ -348,12 +348,12 @@ export function AvailabilityCreationForm({
                         <SelectItem value={SchedulingRule.CONTINUOUS}>
                           Continuous - Appointments start immediately after previous ends
                         </SelectItem>
-                        <SelectItem value={SchedulingRule.FIXED_INTERVAL}>
-                          Fixed Interval - Appointments start at regular intervals (hourly,
-                          half-hourly, etc.)
+                        <SelectItem value={SchedulingRule.ON_THE_HOUR}>
+                          On the Hour - Appointments start only on the hour (9:00, 10:00, 11:00)
                         </SelectItem>
-                        <SelectItem value={SchedulingRule.CUSTOM_INTERVAL}>
-                          Custom Interval - Appointments start at custom intervals you define
+                        <SelectItem value={SchedulingRule.ON_THE_HALF_HOUR}>
+                          On the Half Hour - Appointments start on the hour or half-hour (9:00,
+                          9:30, 10:00)
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -365,30 +365,6 @@ export function AvailabilityCreationForm({
                   </FormItem>
                 )}
               />
-
-              {watchSchedulingRule === SchedulingRule.CUSTOM_INTERVAL && (
-                <FormField
-                  control={form.control}
-                  name="schedulingInterval"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Custom Interval (minutes)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="e.g., 20"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        How many minutes between each possible appointment start time.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
             </div>
 
             <Separator />

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { createAvailability } from '@/features/calendar/availability/lib/actions';
 
 export async function POST(request: NextRequest) {
@@ -16,9 +17,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result.data, { status: 201 });
   } catch (error) {
     console.error('Error in create availability API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

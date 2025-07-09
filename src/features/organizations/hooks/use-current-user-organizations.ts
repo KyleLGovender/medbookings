@@ -14,7 +14,7 @@ export function useCurrentUserOrganizations() {
     queryKey: ['organizations', 'user', userId],
     queryFn: async () => {
       if (!userId) return [];
-      
+
       const response = await fetch(`/api/organizations/user/${userId}`);
       if (!response.ok) {
         if (response.status === 404) {

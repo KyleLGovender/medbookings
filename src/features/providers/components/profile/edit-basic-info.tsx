@@ -12,6 +12,7 @@ import CalendarLoader from '@/components/calendar-loader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
@@ -77,6 +78,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
       email: '',
       whatsapp: '',
       serviceProviderTypeId: '',
+      showPrice: true, // Default to showing prices
     },
     mode: 'onSubmit', // Changed to onSubmit to avoid premature validation
   });
@@ -97,6 +99,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
         email: provider.email || '',
         whatsapp: provider.whatsapp || '',
         serviceProviderTypeId: providerTypeId,
+        showPrice: provider.showPrice !== undefined ? provider.showPrice : true, // Default to true if not set
       });
 
       // Force set the value directly to ensure it's updated
@@ -449,6 +452,24 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
                     </p>
                   )}
                 </div>
+
+                <FormField
+                  control={methods.control}
+                  name="showPrice"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Display prices to patients</FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Show your service prices when patients view your available appointments
+                        </p>
+                      </div>
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
           </Card>

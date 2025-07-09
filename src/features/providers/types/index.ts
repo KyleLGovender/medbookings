@@ -2,6 +2,7 @@ import type {
   ConnectionStatus,
   Organization,
   OrganizationProviderConnection,
+  ServiceProvider as PrismaServiceProvider,
   ProviderInvitation,
   ProviderInvitationStatus,
 } from '@prisma/client';
@@ -48,6 +49,11 @@ export const ConnectionUpdateSchema = z.object({
 });
 
 export type ConnectionUpdate = z.infer<typeof ConnectionUpdateSchema>;
+
+// ServiceProvider types for providers
+export interface ServiceProvider extends PrismaServiceProvider {
+  showPrice: boolean; // Whether to display prices to patients looking to book
+}
 
 // Service types for providers
 export interface Service {

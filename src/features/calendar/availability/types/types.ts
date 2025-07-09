@@ -5,7 +5,7 @@
 // Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
 import { Decimal } from '@prisma/client/runtime/library';
 
-import { Service } from '@/features/providers/types';
+import { Service, ServiceProvider } from '@/features/providers/types';
 
 // =============================================================================
 // ENUMS
@@ -21,8 +21,8 @@ export enum AvailabilityStatus {
 
 export enum SchedulingRule {
   CONTINUOUS = 'CONTINUOUS',
-  FIXED_INTERVAL = 'FIXED_INTERVAL',
-  CUSTOM_INTERVAL = 'CUSTOM_INTERVAL',
+  ON_THE_HOUR = 'ON_THE_HOUR',
+  ON_THE_HALF_HOUR = 'ON_THE_HALF_HOUR',
 }
 
 export enum SlotStatus {
@@ -87,14 +87,6 @@ export interface Organization {
   email?: string | null;
   phone?: string | null;
   website?: string | null;
-}
-
-export interface ServiceProvider {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string | null;
-  serviceProviderTypeId?: string | null;
 }
 
 export interface OrganizationProvider {
@@ -528,10 +520,7 @@ export interface SchedulingOptions {
   availabilityEnd: Date;
   serviceDuration: number; // in minutes
   schedulingRule: SchedulingRule;
-  schedulingInterval?: number; // in minutes, for CUSTOM_INTERVAL
-  alignToHour?: boolean; // for FIXED_INTERVAL
-  alignToHalfHour?: boolean; // for FIXED_INTERVAL
-  alignToQuarterHour?: boolean; // for FIXED_INTERVAL
+  schedulingInterval?: number; // in minutes (deprecated)
 }
 
 // Result from time slot generation
@@ -579,10 +568,6 @@ export interface UpdateAvailabilityData extends Partial<CreateAvailabilityData> 
 
 export interface SchedulingRuleConfig {
   rule: SchedulingRule;
-  interval?: number; // For CUSTOM_INTERVAL
-  alignToHour?: boolean; // For FIXED_INTERVAL
-  alignToHalfHour?: boolean; // For FIXED_INTERVAL
-  alignToQuarterHour?: boolean; // For FIXED_INTERVAL
 }
 
 export interface SlotGenerationRequest {

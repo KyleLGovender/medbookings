@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { acceptAvailabilityProposal } from '@/features/calendar/availability/lib/actions';
 
 export async function POST(request: NextRequest) {
@@ -7,10 +8,7 @@ export async function POST(request: NextRequest) {
     const { id } = body;
 
     if (!id) {
-      return NextResponse.json(
-        { error: 'Availability ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Availability ID is required' }, { status: 400 });
     }
 
     const result = await acceptAvailabilityProposal(id);
@@ -25,9 +23,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result.data);
   } catch (error) {
     console.error('Error in accept availability API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

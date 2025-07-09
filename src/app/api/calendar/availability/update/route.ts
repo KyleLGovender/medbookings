@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { updateAvailability } from '@/features/calendar/availability/lib/actions';
 
 export async function PUT(request: NextRequest) {
@@ -16,9 +17,6 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json(result.data);
   } catch (error) {
     console.error('Error in update availability API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

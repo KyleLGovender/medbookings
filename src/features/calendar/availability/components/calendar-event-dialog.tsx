@@ -18,7 +18,13 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import {
   AvailabilityStatus,
@@ -115,7 +121,12 @@ export function CalendarEventDialog({
             {getStatusBadge()}
           </DialogTitle>
           <DialogDescription>
-            Event details and actions for {event.type === 'availability' ? 'availability' : event.type === 'booking' ? 'booking' : 'blocked time'}
+            Event details and actions for{' '}
+            {event.type === 'availability'
+              ? 'availability'
+              : event.type === 'booking'
+                ? 'booking'
+                : 'blocked time'}
           </DialogDescription>
         </DialogHeader>
 

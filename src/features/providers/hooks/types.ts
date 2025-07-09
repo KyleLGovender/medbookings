@@ -206,6 +206,7 @@ export const basicInfoSchema = z.object({
   website: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
   email: z.string().email('Please enter a valid email address'),
   whatsapp: z.string().min(10, 'Please enter a valid WhatsApp number'),
+  showPrice: z.boolean().default(true),
 });
 
 // No longer needed as we're validating serviceProviderTypeId directly at the root level

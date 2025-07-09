@@ -11,7 +11,7 @@ interface OrganizationCalendarPageProps {
 export default function OrganizationCalendarPage({ params }: OrganizationCalendarPageProps) {
   return (
     <div className="container mx-auto py-6">
-      <OrganizationCalendarView 
+      <OrganizationCalendarView
         organizationId={params.id}
         viewMode="week"
         showCoverageGaps={false}

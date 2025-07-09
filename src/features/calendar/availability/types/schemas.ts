@@ -94,14 +94,6 @@ export const createAvailabilityDataSchema = baseAvailabilitySchema
     message: 'Recurrence pattern required for recurring availability',
     path: ['recurrencePattern'],
   })
-  .refine(
-    (data: BaseAvailabilityData) =>
-      data.schedulingRule !== SchedulingRule.CUSTOM_INTERVAL || data.schedulingInterval,
-    {
-      message: 'Scheduling interval required for custom interval rule',
-      path: ['schedulingInterval'],
-    }
-  )
   .refine((data: BaseAvailabilityData) => data.isOnlineAvailable || data.locationId, {
     message: 'Physical location is required when online availability is disabled',
     path: ['locationId'],
@@ -162,29 +154,9 @@ export const slotSearchParamsSchema = z
   );
 
 // Scheduling rule configuration schema
-export const schedulingRuleConfigSchema = z
-  .object({
-    rule: schedulingRuleSchema,
-    interval: z.number().int().positive().optional(),
-    alignToHour: z.boolean().optional(),
-    alignToHalfHour: z.boolean().optional(),
-    alignToQuarterHour: z.boolean().optional(),
-  })
-  .refine((data) => data.rule !== SchedulingRule.CUSTOM_INTERVAL || data.interval, {
-    message: 'Interval required for custom interval rule',
-    path: ['interval'],
-  })
-  .refine(
-    (data) =>
-      data.rule !== SchedulingRule.FIXED_INTERVAL ||
-      data.alignToHour ||
-      data.alignToHalfHour ||
-      data.alignToQuarterHour,
-    {
-      message: 'At least one alignment option required for fixed interval rule',
-      path: ['alignToHour'],
-    }
-  );
+export const schedulingRuleConfigSchema = z.object({
+  rule: schedulingRuleSchema,
+});
 
 // Slot generation request schema
 export const slotGenerationRequestSchema = z.object({

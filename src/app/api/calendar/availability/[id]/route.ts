@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { getAvailabilityById } from '@/features/calendar/availability/lib/actions';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const result = await getAvailabilityById(params.id);
 
@@ -18,9 +16,6 @@ export async function GET(
     return NextResponse.json(result.data);
   } catch (error) {
     console.error('Error in availability by ID API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
