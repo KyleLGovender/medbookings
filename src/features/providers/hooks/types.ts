@@ -74,6 +74,7 @@ export interface SerializedServiceProvider {
   whatsapp: string | null;
   website: string | null;
   languages: string[];
+  showPrice: boolean;
   billingType: string | null;
   status: string;
   serviceProviderTypeId: string;

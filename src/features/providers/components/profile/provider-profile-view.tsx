@@ -150,6 +150,15 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
           )}
 
           <div>
+            <h3 className="font-medium">Show Prices</h3>
+            <p className="text-sm text-muted-foreground">
+              {provider.showPrice
+                ? 'Yes - Prices are displayed to patients'
+                : 'No - Prices are not displayed to patients'}
+            </p>
+          </div>
+
+          <div>
             <h3 className="font-medium">Languages</h3>
             <div className="flex flex-wrap gap-1">
               {provider.languages.map((language: string) => (

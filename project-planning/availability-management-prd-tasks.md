@@ -165,3 +165,9 @@ Based on detailed analysis of existing Prisma schema against PRD requirements:
   - [ ] 7.5 Sort out types between features
   - [ ] 7.6 Remove custom appointment starting intervals. It should be continuous, starting on the hour, starting on the half hour and hour.
   - [ ] 7.7 Add showPrice flag to Service Provider
+  - [ ] 7.8 Make the price and duration inputs on availability creation increase and decrease by correct amounts
+  - [ ] 7.9
+  - [ ] 7.10
+  - [ ] 7.11
+  - [ ] 7.12
+  - [ ] 7.13

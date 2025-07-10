@@ -27,6 +27,7 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
     const languages = formData.getAll('languages') as Languages[];
     const userId = formData.get('userId') as string;
     const serviceProviderTypeId = formData.get('serviceProviderTypeId') as string;
+    const showPrice = formData.get('showPrice') === 'true';
 
     providerDebug.log('action', 'Form data extracted:', {
       name,
@@ -38,6 +39,7 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
       languages,
       userId,
       serviceProviderTypeId,
+      showPrice,
     });
 
     // Get current provider data to compare changes
@@ -83,6 +85,9 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
     }
     if (serviceProviderTypeId && serviceProviderTypeId !== currentProvider.serviceProviderTypeId) {
       updateData.serviceProviderTypeId = serviceProviderTypeId;
+    }
+    if (showPrice !== currentProvider.showPrice) {
+      updateData.showPrice = showPrice;
     }
 
     if (whatsapp !== currentProvider.whatsapp) {

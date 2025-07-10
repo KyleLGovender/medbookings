@@ -69,5 +69,5 @@ export type {
   ConnectionStatus,
   OrganizationProviderConnection,
   ProviderInvitation,
-  ProviderInvitationStatus,
+  ProviderInvitationStatus
 };

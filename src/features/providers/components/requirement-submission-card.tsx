@@ -16,14 +16,14 @@ interface RequirementSubmission {
   adminNotes?: string;
   rejectionReason?: string;
   notes?: string;
-  documentMetadata?: {
-    value?: any;
-  };
+  documentMetadata?: Record<string, any> | null;
   requirementType?: {
-    name?: string;
-    description?: string;
-    validationType?: string;
+    id: string;
+    name: string;
+    description: string | null;
+    validationType: string;
     required?: boolean;
+    displayPriority?: number;
   };
 }
 
@@ -185,7 +185,7 @@ export function RequirementSubmissionCard({
               {shouldShowStatusBadge && (
                 <div className="flex items-center gap-1">
                   <div className="scale-110">
-                    <StatusBadge status={submission.status} />
+                    <StatusBadge status={submission.status as any} />
                   </div>
                   {/* Show rejection details icon for rejected requirements */}
                   {(submission.status === 'REJECTED' || submission.status?.includes('REJECT')) && (
@@ -229,7 +229,7 @@ export function RequirementSubmissionCard({
 
               {shouldShowViewButton && (
                 <NavigationLink
-                  href={submission.documentMetadata!.value}
+                  href={submission.documentMetadata?.value}
                   className="inline-flex h-8 items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
                 >
                   View Document

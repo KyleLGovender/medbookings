@@ -167,6 +167,9 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
         formData.append('languages', lang);
       });
 
+      // Add showPrice field
+      formData.append('showPrice', data.showPrice.toString());
+
       // Use mutateAsync to properly await the result
       await updateProviderMutation.mutateAsync(formData);
 
@@ -183,6 +186,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
           email: data.email,
           whatsapp: data.whatsapp,
           serviceProviderTypeId: selectedProviderTypeId,
+          showPrice: data.showPrice,
         };
 
         // Force update the query cache with the new data
@@ -197,8 +201,8 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
       // Force a hard refetch to ensure we have the latest data
       refetch();
 
-      // Also refresh the router to update any server components
-      router.refresh();
+      // Redirect to the provider profile view
+      router.push(`/providers/${providerId}`);
     } catch (error) {
       toast({
         title: 'Error',
