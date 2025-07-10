@@ -129,7 +129,7 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
     return {
       success: true,
       data: serializeServiceProvider(updatedProvider),
-      redirect: `/providers/${id}/edit`,
+      redirect: `/providers/${id}`,
     };
   } catch (error) {
     return {
@@ -228,7 +228,7 @@ export async function updateProviderServices(prevState: any, formData: FormData)
     return {
       success: true,
       message: 'Services updated successfully',
-      redirect: `/providers/${id}/edit`,
+      redirect: `/providers/${id}`,
     };
   } catch (error) {
     return {
@@ -412,7 +412,7 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
     return {
       success: true,
       data: serializeServiceProvider(updatedProvider),
-      redirect: `/providers/${id}/edit`,
+      redirect: `/providers/${id}`,
     };
   } catch (error) {
     return {

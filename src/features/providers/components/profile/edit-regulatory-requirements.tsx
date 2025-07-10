@@ -196,8 +196,8 @@ export function EditRegulatoryRequirements({
       // Force a hard refetch to ensure we have the latest data
       refetch();
 
-      // Also refresh the router to update any server components
-      router.refresh();
+      // Redirect to the provider profile view
+      router.push(`/providers/${providerId}`);
     } catch (error) {
       toast({
         title: 'Error',

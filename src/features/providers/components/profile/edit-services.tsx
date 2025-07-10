@@ -62,7 +62,8 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
       });
 
       refetch();
-      router.refresh();
+      // Redirect to the provider profile view
+      router.push(`/providers/${providerId}`);
     },
     onError: (error) => {
       toast({
