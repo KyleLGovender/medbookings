@@ -5,6 +5,7 @@ Welcome to the comprehensive documentation for the MedBookings medical appointme
 ## Table of Contents
 
 ### Core Documentation
+
 - [UI Components](./ui-components.md) - Reusable UI components and their usage
 - [Feature Components](./feature-components.md) - Feature-specific components and business logic
 - [API Routes](./api-routes.md) - REST API endpoints and their specifications
@@ -13,6 +14,7 @@ Welcome to the comprehensive documentation for the MedBookings medical appointme
 - [Types & Interfaces](./types-interfaces.md) - TypeScript type definitions
 
 ### Project Structure
+
 - [Architecture Overview](./architecture.md) - High-level system architecture
 - [Navigation Patterns](./navigation-patterns.md) - Existing navigation documentation
 
@@ -36,6 +38,7 @@ For new developers joining the project:
 ## Contributing
 
 When adding new components, hooks, or utilities:
+
 1. Follow the existing code patterns
 2. Add comprehensive JSDoc comments
 3. Update the relevant documentation files
@@ -44,4 +47,4 @@ When adding new components, hooks, or utilities:
 
 ---
 
-*This documentation is maintained by the development team and should be updated with any API changes or new features.*
+_This documentation is maintained by the development team and should be updated with any API changes or new features._
