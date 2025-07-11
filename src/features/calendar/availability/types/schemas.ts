@@ -5,41 +5,44 @@ import {
   AvailabilityStatus,
   BillingEntity,
   DayOfWeek,
-  RecurrenceType,
+  RecurrenceOption,
   SchedulingRule,
   SlotStatus,
 } from '@/features/calendar/availability/types/types';
 
 // Base Zod schemas for enums
-export const schedulingRuleSchema = z.nativeEnum(SchedulingRule);
 export const availabilityStatusSchema = z.nativeEnum(AvailabilityStatus);
-export const slotStatusSchema = z.nativeEnum(SlotStatus);
 export const billingEntitySchema = z.nativeEnum(BillingEntity);
-export const recurrenceTypeSchema = z.nativeEnum(RecurrenceType);
+export const schedulingRuleSchema = z.nativeEnum(SchedulingRule);
+export const slotStatusSchema = z.nativeEnum(SlotStatus);
 export const dayOfWeekSchema = z.nativeEnum(DayOfWeek);
+export const recurrenceOptionSchema = z.nativeEnum(RecurrenceOption);
 export const availabilityContextSchema = z.nativeEnum(AvailabilityContext);
 
-// Recurrence pattern schema
-export const recurrencePatternSchema = z.object({
-  type: recurrenceTypeSchema,
-  interval: z.number().int().positive().optional(),
-  daysOfWeek: z.array(dayOfWeekSchema).optional(),
-  dayOfMonth: z.number().int().min(1).max(31).optional(),
-  weekOfMonth: z.number().int().min(-1).max(4).optional(),
-  startTime: z
-    .string()
-    .regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
-    .optional(),
-  endTime: z
-    .string()
-    .regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
-    .optional(),
+// Simple recurrence pattern schema (Google Calendar style)
+export const simpleRecurrencePatternSchema = z.object({
+  option: recurrenceOptionSchema,
+  weeklyDay: dayOfWeekSchema.optional(),
+  customDays: z.array(dayOfWeekSchema).optional(),
   endDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
-  count: z.number().int().positive().optional(),
-  exceptions: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
+}).refine((data) => {
+  // If recurrence is not NONE, endDate is required
+  if (data.option !== 'none') {
+    return !!data.endDate;
+  }
+  return true;
+}, {
+  message: 'End date is required for recurring availability',
+  path: ['endDate'],
+});
+
+// Custom recurrence data schema (for modal) - endDate is now required
+export const customRecurrenceDataSchema = z.object({
+  selectedDays: z.array(dayOfWeekSchema).min(1, 'At least one day must be selected'),
+  endDate: z.date(), // Required - no longer optional
 });
 
 // Time slot schema
@@ -71,7 +74,7 @@ const baseAvailabilitySchema = z.object({
   startTime: z.date(),
   endTime: z.date(),
   isRecurring: z.boolean(),
-  recurrencePattern: recurrencePatternSchema.optional(),
+  simpleRecurrence: simpleRecurrencePatternSchema.optional(),
   seriesId: z.string().cuid().optional(),
   schedulingRule: schedulingRuleSchema,
   schedulingInterval: z.number().int().positive().optional(),
@@ -90,9 +93,9 @@ export const createAvailabilityDataSchema = baseAvailabilitySchema
     message: 'End time must be after start time',
     path: ['endTime'],
   })
-  .refine((data: BaseAvailabilityData) => !data.isRecurring || data.recurrencePattern, {
+  .refine((data: BaseAvailabilityData) => !data.isRecurring || data.simpleRecurrence, {
     message: 'Recurrence pattern required for recurring availability',
-    path: ['recurrencePattern'],
+    path: ['simpleRecurrence'],
   })
   .refine((data: BaseAvailabilityData) => data.isOnlineAvailable || data.locationId, {
     message: 'Physical location is required when online availability is disabled',
@@ -210,7 +213,7 @@ export const slotGenerationResultSchema = z.object({
 export const availabilitySeriesSchema = z.object({
   seriesId: z.string().cuid(),
   masterAvailabilityId: z.string().cuid(),
-  recurrencePattern: recurrencePatternSchema,
+  recurrencePattern: simpleRecurrencePatternSchema,
   instances: z.array(z.any()), // Will be typed as Availability[] in TypeScript
   totalInstances: z.number().int().nonnegative(),
   activeInstances: z.number().int().nonnegative(),

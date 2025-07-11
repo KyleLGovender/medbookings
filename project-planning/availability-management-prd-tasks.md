@@ -159,12 +159,12 @@ Based on detailed analysis of existing Prisma schema against PRD requirements:
 
 - [ ] 8.0 Cleanup
   - [ ] 7.1 Figure out pages routing and where to display various calendars
-  - [ ] 7.2 Get rid of mock availability data and make sure everything is driven from database configuration
+  - [x] 7.2 Get rid of mock availability data and make sure everything is driven from database configuration
   - [ ] 7.3 Update customer recurring pattern to match Google calendar
   - [x] 7.4 Add CANCELLED to prisma AvailabilityStatus
   - [ ] 7.5 Sort out types between features
-  - [ ] 7.6 Remove custom appointment starting intervals. It should be continuous, starting on the hour, starting on the half hour and hour.
-  - [ ] 7.7 Add showPrice flag to Service Provider
+  - [x] 7.6 Remove custom appointment starting intervals. It should be continuous, starting on the hour, starting on the half hour and hour.
+  - [x] 7.7 Add showPrice flag to Service Provider
   - [ ] 7.8 Make the price and duration inputs on availability creation increase and decrease by correct amounts
   - [ ] 7.9
   - [ ] 7.10

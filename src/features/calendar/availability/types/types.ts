@@ -38,12 +38,11 @@ export enum BillingEntity {
   PROVIDER = 'PROVIDER',
 }
 
-// Recurrence and scheduling enums
-export enum RecurrenceType {
+// Simplified recurrence options (Google Calendar style)
+export enum RecurrenceOption {
   NONE = 'none',
-  DAILY = 'daily',
+  DAILY = 'daily', 
   WEEKLY = 'weekly',
-  MONTHLY = 'monthly',
   CUSTOM = 'custom',
 }
 
@@ -234,7 +233,7 @@ export interface Availability {
   startTime: Date;
   endTime: Date;
   isRecurring: boolean;
-  recurrencePattern?: any; // JSON field
+  simpleRecurrence?: SimpleRecurrencePattern | null;
   seriesId?: string | null;
   status: AvailabilityStatus;
   schedulingRule: SchedulingRule;
@@ -314,23 +313,34 @@ export interface CalculatedAvailabilitySlotWithRelations extends CalculatedAvail
 // RECURRENCE AND PATTERNS
 // =============================================================================
 
-export interface RecurrencePattern {
-  type: RecurrenceType;
-  interval?: number; // For custom intervals (e.g., every 2 weeks)
-  daysOfWeek?: DayOfWeek[]; // For weekly patterns
-  dayOfMonth?: number; // For monthly patterns (1-31)
-  weekOfMonth?: number; // For monthly patterns (1-4, or -1 for last week)
-  startTime?: string; // HH:MM format
-  endTime?: string; // HH:MM format
-  endDate?: string; // YYYY-MM-DD format
-  count?: number; // Number of occurrences
-  exceptions?: string[]; // Array of dates to exclude (YYYY-MM-DD format)
+// Simplified recurrence pattern (Google Calendar style)
+export interface SimpleRecurrencePattern {
+  option: RecurrenceOption;
+  // For weekly recurrence (determined from start date)
+  weeklyDay?: DayOfWeek;
+  // For custom weekly recurrence
+  customDays?: DayOfWeek[];
+  // End date for all recurrence types (required for non-NONE options)
+  endDate?: string; // YYYY-MM-DD format - required for DAILY, WEEKLY, and CUSTOM
+}
+
+// Custom recurrence modal data
+export interface CustomRecurrenceData {
+  selectedDays: DayOfWeek[];
+  endDate: Date; // Required - no longer optional
+}
+
+// Helper type for day of week display
+export interface DayOfWeekOption {
+  value: DayOfWeek;
+  label: string;
+  shortLabel: string;
 }
 
 export interface AvailabilitySeries {
   seriesId: string;
   masterAvailabilityId: string;
-  recurrencePattern: RecurrencePattern;
+  recurrencePattern: SimpleRecurrencePattern;
   instances: Availability[];
   totalInstances: number;
   activeInstances: number;
@@ -542,7 +552,7 @@ export interface CreateAvailabilityData {
   startTime: Date;
   endTime: Date;
   isRecurring: boolean;
-  recurrencePattern?: RecurrencePattern;
+  simpleRecurrence?: SimpleRecurrencePattern;
   seriesId?: string;
   schedulingRule: SchedulingRule;
   schedulingInterval?: number;

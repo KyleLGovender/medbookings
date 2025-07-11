@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Calendar, Clock, MapPin, Repeat } from 'lucide-react';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +19,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -30,10 +29,12 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { TimePicker } from '@/components/ui/time-picker';
 import { useCreateAvailability } from '@/features/calendar/availability/hooks/use-availability';
+import { createSimpleRecurrencePattern, getRecurrenceOptions } from '@/features/calendar/availability/lib/recurrence-utils';
 import { createAvailabilityDataSchema } from '@/features/calendar/availability/types/schemas';
 import {
   CreateAvailabilityData,
-  RecurrenceType,
+  CustomRecurrenceData,
+  RecurrenceOption,
   SchedulingRule,
 } from '@/features/calendar/availability/types/types';
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
@@ -41,6 +42,7 @@ import { useOrganizationLocations } from '@/features/organizations/hooks/use-org
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
 
+import { CustomRecurrenceModal } from './custom-recurrence-modal';
 import { ServiceSelectionSection } from './service-selection-section';
 
 interface AvailabilityCreationFormProps {
@@ -61,6 +63,9 @@ export function AvailabilityCreationForm({
   onCancel,
 }: AvailabilityCreationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customRecurrenceModalOpen, setCustomRecurrenceModalOpen] = useState(false);
+  const [currentRecurrenceOption, setCurrentRecurrenceOption] = useState<RecurrenceOption>(RecurrenceOption.NONE);
+  const [customRecurrenceData, setCustomRecurrenceData] = useState<CustomRecurrenceData | undefined>();
   const { toast } = useToast();
 
   // Fetch provider's services
@@ -123,6 +128,25 @@ export function AvailabilityCreationForm({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCustomRecurrenceSave = (data: CustomRecurrenceData) => {
+    const startTime = form.watch('startTime');
+    const pattern = createSimpleRecurrencePattern(
+      RecurrenceOption.CUSTOM,
+      startTime,
+      data.selectedDays,
+      data.endDate ? data.endDate.toISOString().split('T')[0] : undefined
+    );
+    
+    form.setValue('simpleRecurrence', pattern);
+    form.setValue('isRecurring', true);
+    setCustomRecurrenceData(data);
+    setCustomRecurrenceModalOpen(false);
+  };
+
+  const handleCustomRecurrenceCancel = () => {
+    setCustomRecurrenceModalOpen(false);
   };
 
   return (
@@ -206,121 +230,50 @@ export function AvailabilityCreationForm({
 
               <FormField
                 control={form.control}
-                name="isRecurring"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Make this availability recurring</FormLabel>
-                      <FormDescription>
-                        Create a repeating schedule based on a pattern you define.
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              {watchIsRecurring && (
-                <div className="ml-6 space-y-4 border-l-2 border-muted pl-4">
-                  <Controller
-                    name="recurrencePattern.type"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Recurrence Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select recurrence type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value={RecurrenceType.DAILY}>Daily</SelectItem>
-                            <SelectItem value={RecurrenceType.WEEKLY}>Weekly</SelectItem>
-                            <SelectItem value={RecurrenceType.MONTHLY}>Monthly</SelectItem>
-                            <SelectItem value={RecurrenceType.CUSTOM}>Custom</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <Controller
-                      name="recurrencePattern.interval"
-                      control={form.control}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Repeat Every</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="1"
-                              min="1"
-                              {...field}
-                              onChange={(e) =>
-                                field.onChange(parseInt(e.target.value) || undefined)
-                              }
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            How often to repeat (e.g., every 2 weeks)
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <Controller
-                      name="recurrencePattern.count"
-                      control={form.control}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Number of Occurrences</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="10"
-                              min="1"
-                              {...field}
-                              onChange={(e) =>
-                                field.onChange(parseInt(e.target.value) || undefined)
-                              }
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Total number of recurring sessions (optional)
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <Controller
-                    name="recurrencePattern.endDate"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>End Date (Optional)</FormLabel>
+                name="simpleRecurrence"
+                render={({ field }) => {
+                  const startTime = form.watch('startTime');
+                  const recurrenceOptions = getRecurrenceOptions(startTime);
+                  
+                  return (
+                    <FormItem>
+                      <FormLabel>Recurrence</FormLabel>
+                      <Select
+                        onValueChange={(value) => {
+                          const option = value as RecurrenceOption;
+                          setCurrentRecurrenceOption(option);
+                          
+                          if (option === RecurrenceOption.CUSTOM) {
+                            setCustomRecurrenceModalOpen(true);
+                          } else {
+                            const pattern = createSimpleRecurrencePattern(option, startTime);
+                            field.onChange(pattern);
+                            form.setValue('isRecurring', option !== RecurrenceOption.NONE);
+                          }
+                        }}
+                        defaultValue={field.value?.option || RecurrenceOption.NONE}
+                      >
                         <FormControl>
-                          <DatePicker
-                            date={field.value ? new Date(field.value) : undefined}
-                            onChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                          />
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select recurrence" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormDescription>
-                          Stop creating recurring availability after this date
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
+                        <SelectContent>
+                          {recurrenceOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Choose how often this availability should repeat.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
             </div>
 
             <Separator />
@@ -492,6 +445,14 @@ export function AvailabilityCreationForm({
           </form>
         </Form>
       </CardContent>
+      
+      {/* Custom Recurrence Modal */}
+      <CustomRecurrenceModal
+        isOpen={customRecurrenceModalOpen}
+        onClose={handleCustomRecurrenceCancel}
+        onSave={handleCustomRecurrenceSave}
+        initialData={customRecurrenceData}
+      />
     </Card>
   );
 }

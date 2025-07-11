@@ -10,7 +10,6 @@ import {
   notifyAvailabilityCancelled,
   notifyAvailabilityRejected,
 } from './notification-service';
-import { generateSlotsForAvailability } from './slot-generator';
 
 export interface WorkflowResult {
   success: boolean;
@@ -90,19 +89,13 @@ export async function processAvailabilityAcceptance(
       },
     });
 
-    // Generate slots for the accepted availability
-    const slotGenerationResult = await generateSlotsForAvailability({
-      availabilityId: availabilityId,
-      forceRegenerate: true,
-    });
-
-    if (slotGenerationResult.errors.length > 0) {
-      console.error('Slot generation had errors:', slotGenerationResult.errors);
-    }
+    // TODO: Implement simplified slot generation for accepted availability
+    // Slot generation was removed as part of recurrence system simplification
+    const slotsGenerated = 0;
 
     // Send acceptance notifications
     try {
-      await notifyAvailabilityAccepted(updatedAvailability as AvailabilityWithRelations, {
+      await notifyAvailabilityAccepted(updatedAvailability as unknown as AvailabilityWithRelations, {
         id: currentUser.id,
         name: currentUser.name || 'Provider',
         role: 'PROVIDER',
@@ -114,8 +107,8 @@ export async function processAvailabilityAcceptance(
 
     return {
       success: true,
-      availability: updatedAvailability as AvailabilityWithRelations,
-      slotsGenerated: slotGenerationResult.slotsGenerated,
+      availability: updatedAvailability as unknown as AvailabilityWithRelations,
+      slotsGenerated: slotsGenerated,
     };
   } catch (error) {
     console.error('Error processing availability acceptance:', error);
@@ -195,7 +188,7 @@ export async function processAvailabilityRejection(
     // Send rejection notifications
     try {
       await notifyAvailabilityRejected(
-        updatedAvailability as AvailabilityWithRelations,
+        updatedAvailability as unknown as AvailabilityWithRelations,
         {
           id: currentUser.id,
           name: currentUser.name || 'Provider',
@@ -210,7 +203,7 @@ export async function processAvailabilityRejection(
 
     return {
       success: true,
-      availability: updatedAvailability as AvailabilityWithRelations,
+      availability: updatedAvailability as unknown as AvailabilityWithRelations,
     };
   } catch (error) {
     console.error('Error processing availability rejection:', error);
@@ -327,7 +320,7 @@ export async function processAvailabilityCancellation(
 
     // Send cancellation notifications
     try {
-      await notifyAvailabilityCancelled(updatedAvailability as AvailabilityWithRelations, {
+      await notifyAvailabilityCancelled(updatedAvailability as unknown as AvailabilityWithRelations, {
         id: currentUser.id,
         name: currentUser.name || 'User',
         role: currentUser.id === availability.serviceProviderId ? 'PROVIDER' : 'ORGANIZATION',
@@ -339,7 +332,7 @@ export async function processAvailabilityCancellation(
 
     return {
       success: true,
-      availability: updatedAvailability as AvailabilityWithRelations,
+      availability: updatedAvailability as unknown as AvailabilityWithRelations,
     };
   } catch (error) {
     console.error('Error processing availability cancellation:', error);
@@ -407,22 +400,9 @@ export async function processRecurringSeriesAcceptance(
       },
     });
 
-    // Generate slots for all accepted availability
-    const seriesAvailabilities = await prisma.availability.findMany({
-      where: {
-        seriesId: masterAvailability.seriesId,
-        status: AvailabilityStatus.ACCEPTED,
-      },
-    });
-
-    let totalSlotsGenerated = 0;
-    for (const availability of seriesAvailabilities) {
-      const slotResult = await generateSlotsForAvailability({
-        availabilityId: availability.id,
-        forceRegenerate: true,
-      });
-      totalSlotsGenerated += slotResult.slotsGenerated;
-    }
+    // TODO: Generate slots for all accepted availability
+    // Slot generation was removed as part of recurrence system simplification
+    const totalSlotsGenerated = 0;
 
     // Send notifications for series acceptance
     try {
