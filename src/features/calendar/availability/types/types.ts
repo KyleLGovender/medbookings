@@ -564,7 +564,6 @@ export interface CreateAvailabilityData {
     serviceId: string;
     duration: number;
     price: number;
-    showPrice: boolean;
   }[];
 }
 

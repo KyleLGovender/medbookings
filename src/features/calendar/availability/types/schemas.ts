@@ -62,7 +62,6 @@ export const serviceConfigSchema = z.object({
   serviceId: z.string().cuid(),
   duration: z.number().int().positive(),
   price: z.number().positive(),
-  showPrice: z.boolean(),
 });
 
 // Base availability object schema (without refinements)

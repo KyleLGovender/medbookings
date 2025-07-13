@@ -8,14 +8,12 @@ import { useFieldArray, useFormContext } from 'react-hook-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
+  FormMessage
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { CreateAvailabilityData } from '@/features/calendar/availability/types/types';
@@ -57,7 +55,6 @@ export function ServiceSelectionSection({
           serviceId,
           duration: service.duration || 15, // Use service default or 15 minutes
           price: service.price || 600, // Use service default or 600
-          showPrice: true,
         });
         setSelectedServiceIds((prev) => new Set(Array.from(prev).concat(serviceId)));
       }
@@ -180,25 +177,6 @@ export function ServiceSelectionSection({
                     )}
                   />
                 </div>
-
-                {/* Price Display */}
-                <FormField
-                  control={form.control}
-                  name={`services.${index}.showPrice`}
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Show price to patients</FormLabel>
-                        <FormDescription>
-                          Display the price when patients view available appointments
-                        </FormDescription>
-                      </div>
-                    </FormItem>
-                  )}
-                />
               </CardContent>
             </Card>
           ))}
