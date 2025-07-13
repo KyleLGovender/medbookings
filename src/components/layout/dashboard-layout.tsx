@@ -156,7 +156,7 @@ function DynamicBreadcrumb() {
 }
 
 // We'll create this as a function to make it dynamic
-const createNavData = (providers: any[] = [], organizations: any[] = []) => ({
+const createNavData = (providers: any[] = [], organizations: any[] = [], user?: any) => ({
   title: 'MedBookings',
   url: '/',
   navMain: [
@@ -178,7 +178,8 @@ const createNavData = (providers: any[] = [], organizations: any[] = []) => ({
         },
       ],
     },
-    {
+    // Only show Admin section for users with admin privileges
+    ...(user && ['ADMIN', 'SUPER_ADMIN'].includes(user.role) ? [{
       title: 'Admin',
       url: '/admin',
       items: [
@@ -191,7 +192,7 @@ const createNavData = (providers: any[] = [], organizations: any[] = []) => ({
           url: '/admin/organizations',
         },
       ],
-    },
+    }] : []),
     {
       title: 'Profile',
       url: '/profile',
@@ -286,7 +287,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const providers = userProvider ? [userProvider] : [];
   const organizations = userOrganizations || [];
 
-  const navData = createNavData(providers, organizations);
+  const navData = createNavData(providers, organizations, session?.user);
 
   return (
     <SidebarProvider collapsible="offcanvas">

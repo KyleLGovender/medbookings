@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { AlertCircle, Send } from 'lucide-react';
 import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 
+import CalendarLoader from '@/components/calendar-loader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -28,6 +29,32 @@ import { BasicInfoSection } from './basic-info-section';
 import { ProviderTypeSection } from './provider-type-section';
 import { RegulatoryRequirementsSection } from './regulatory-requirements-section';
 import { ServicesSection } from './services-section';
+
+// Type for the consolidated onboarding data
+interface OnboardingData {
+  providerTypes: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+  }>;
+  requirements: Record<string, Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    validationType: string;
+    isRequired: boolean;
+    validationConfig: any;
+    displayPriority?: number;
+  }>>;
+  services: Record<string, Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    defaultDuration: number;
+    defaultPrice: string;
+    displayPriority: number;
+  }>>;
+}
 
 // API mutation function
 const submitProviderApplication = async (data: ServiceProviderFormType) => {
@@ -51,6 +78,18 @@ export function ProviderOnboardingForm() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const { toast } = useToast();
+
+  // Fetch consolidated onboarding data
+  const { data: onboardingData, isLoading: isLoadingData, error: dataError } = useQuery<OnboardingData>({
+    queryKey: ['onboarding-data'],
+    queryFn: async () => {
+      const response = await fetch('/api/providers/onboarding');
+      if (!response.ok) {
+        throw new Error('Failed to fetch onboarding data');
+      }
+      return response.json();
+    },
+  });
 
   const methods = useForm<ServiceProviderFormType>({
     resolver: zodResolver(providerFormSchema),
@@ -76,6 +115,42 @@ export function ProviderOnboardingForm() {
     },
     mode: 'onBlur',
   });
+
+  // Watch the selected provider type to orchestrate data flow
+  const selectedProviderTypeId = methods.watch('serviceProviderTypeId');
+
+  // Get filtered data based on selected provider type
+  const selectedProviderType = onboardingData?.providerTypes.find(
+    type => type.id === selectedProviderTypeId
+  );
+  const requirementsForSelectedType = selectedProviderTypeId && onboardingData?.requirements[selectedProviderTypeId] || [];
+  const servicesForSelectedType = selectedProviderTypeId && onboardingData?.services[selectedProviderTypeId] || [];
+
+  // Update form state when provider type changes
+  useEffect(() => {
+    if (selectedProviderTypeId && onboardingData) {
+      // Set requirements in form state
+      const requirements = onboardingData.requirements[selectedProviderTypeId] || [];
+      methods.setValue(
+        'regulatoryRequirements.requirements',
+        requirements.map((req, idx) => ({
+          requirementTypeId: req.id,
+          index: idx,
+        }))
+      );
+
+      // Reset services selection when provider type changes
+      methods.setValue('services.availableServices', []);
+      
+      // Store the full service objects for reference in services section
+      methods.setValue('services.loadedServices', onboardingData.services[selectedProviderTypeId] || []);
+
+      toast({
+        title: 'Provider type selected',
+        description: `Data for ${selectedProviderType?.name} has been loaded.`,
+      });
+    }
+  }, [selectedProviderTypeId, onboardingData, methods, toast, selectedProviderType]);
 
   // Watch for validation errors - only update on submission
   useEffect(() => {
@@ -188,6 +263,35 @@ export function ProviderOnboardingForm() {
     });
   };
 
+  // Show loading state while fetching data
+  if (isLoadingData) {
+    return (
+      <CalendarLoader 
+        message="Loading onboarding data"
+        submessage="Preparing your provider application form..."
+        showAfterMs={0}
+      />
+    );
+  }
+
+  // Show error state if data loading failed
+  if (dataError) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          Failed to load onboarding data. Please refresh the page and try again.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  // Don't render form if data is not loaded yet
+  if (!onboardingData) {
+    return null;
+  }
+
   return (
     <FormProvider {...methods}>
       <form onSubmit={methods.handleSubmit(onSubmit, handleInvalidSubmit)} className="space-y-8">
@@ -220,7 +324,12 @@ export function ProviderOnboardingForm() {
             Select your medical profession or specialty.
           </p>
           <Separator className="my-4" />
-          <ProviderTypeSection />
+          <ProviderTypeSection 
+            providerTypes={onboardingData.providerTypes}
+            selectedProviderType={selectedProviderType}
+            requirementsCount={requirementsForSelectedType.length}
+            servicesCount={servicesForSelectedType.length}
+          />
         </Card>
 
         <Card className="p-6">
@@ -229,7 +338,10 @@ export function ProviderOnboardingForm() {
             Let patients know what services you offer and your fee structure.
           </p>
           <Separator className="my-4" />
-          <ServicesSection />
+          <ServicesSection 
+            availableServices={servicesForSelectedType}
+            selectedProviderTypeId={selectedProviderTypeId}
+          />
         </Card>
 
         <Card className="p-6">
@@ -238,7 +350,10 @@ export function ProviderOnboardingForm() {
             Please complete all required regulatory information and upload necessary documents.
           </p>
           <Separator className="my-4" />
-          <RegulatoryRequirementsSection />
+          <RegulatoryRequirementsSection 
+            requirements={requirementsForSelectedType}
+            selectedProviderTypeId={selectedProviderTypeId}
+          />
         </Card>
 
         <FormField

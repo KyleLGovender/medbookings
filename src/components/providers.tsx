@@ -12,11 +12,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
-        <div className="flex h-full w-full flex-col">
-          <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
-            {children}
-          </NextThemesProvider>
-        </div>
+        <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+        </NextThemesProvider>
       </SessionProvider>
     </QueryClientProvider>
   );

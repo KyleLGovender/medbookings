@@ -4,7 +4,6 @@ import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { AdminProviderSelect, AdminRequirementSubmission } from '@/features/admin/types';
 import { RequirementSubmissionCard } from '@/features/providers/components/requirement-submission-card';
 import {
   useApproveRequirement,

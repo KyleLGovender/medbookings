@@ -2,15 +2,27 @@
 
 import { useEffect, useState } from 'react';
 
-import { useFormContext, useWatch } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { renderRequirementInput } from '@/features/providers/components/render-requirement-input';
 import { RequirementType, RequirementValidationType } from '@/features/providers/hooks/types';
-import { getRequirementsForProviderType } from '@/features/providers/lib/provider-types';
 
-export function RegulatoryRequirementsSection() {
+interface RegulatoryRequirementsSectionProps {
+  requirements: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    validationType: string;
+    isRequired: boolean;
+    validationConfig: any;
+    displayPriority?: number;
+  }>;
+  selectedProviderTypeId: string;
+}
+
+export function RegulatoryRequirementsSection({ requirements, selectedProviderTypeId }: RegulatoryRequirementsSectionProps) {
   const {
     control,
     setValue,
@@ -18,58 +30,41 @@ export function RegulatoryRequirementsSection() {
     register,
     formState: { errors },
   } = useFormContext();
-  const [requirements, setRequirements] = useState<RequirementType[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [transformedRequirements, setTransformedRequirements] = useState<RequirementType[]>([]);
 
-  // Watch the provider type to dynamically update requirements
-  const providerType = useWatch({
-    control,
-    name: 'serviceProviderTypeId',
-  });
-
-  // Fetch requirements when provider type changes
+  // Transform requirements when they change
   useEffect(() => {
-    async function fetchRequirements() {
-      if (!providerType) return;
-
-      setIsLoading(true);
-      try {
-        const fetchedRequirements = await getRequirementsForProviderType(providerType);
-
-        // Transform the fetched requirements to match our component's expected format
-        const transformedRequirements: RequirementType[] = fetchedRequirements.map((req, idx) => ({
-          id: req.id,
-          name: req.name,
-          description: req.description || '',
-          validationType: req.validationType as RequirementValidationType,
-          isRequired: req.isRequired,
-          validationConfig: req.validationConfig,
-          index: idx,
-        }));
-
-        setRequirements(transformedRequirements);
-
-        // Set the requirements array with proper indexes in the form
-        setValue(
-          'regulatoryRequirements.requirements',
-          transformedRequirements.map((req, idx) => ({
-            requirementTypeId: req.id,
-            index: idx,
-          }))
-        );
-      } catch (error) {
-        console.error('Failed to fetch requirements:', error);
-      } finally {
-        setIsLoading(false);
-      }
+    if (!selectedProviderTypeId || requirements.length === 0) {
+      setTransformedRequirements([]);
+      return;
     }
 
-    fetchRequirements();
-  }, [providerType, setValue]);
+    // Transform the requirements to match our component's expected format
+    const transformedReqs: RequirementType[] = requirements.map((req, idx) => ({
+      id: req.id,
+      name: req.name,
+      description: req.description || '',
+      validationType: req.validationType as RequirementValidationType,
+      isRequired: req.isRequired,
+      validationConfig: req.validationConfig,
+      index: idx,
+    }));
 
-  const requiredRequirements = requirements.filter((req) => req.isRequired);
+    setTransformedRequirements(transformedReqs);
 
-  if (!providerType) {
+    // Set the requirements array with proper indexes in the form
+    setValue(
+      'regulatoryRequirements.requirements',
+      transformedReqs.map((req, idx) => ({
+        requirementTypeId: req.id,
+        index: idx,
+      }))
+    );
+  }, [requirements, selectedProviderTypeId, setValue]);
+
+  const requiredRequirements = transformedRequirements.filter((req) => req.isRequired);
+
+  if (!selectedProviderTypeId) {
     return (
       <div className="rounded-lg bg-muted/50 p-6 text-center">
         <p className="text-muted-foreground">
@@ -79,15 +74,7 @@ export function RegulatoryRequirementsSection() {
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="rounded-lg bg-muted/50 p-6 text-center">
-        <p className="text-muted-foreground">Loading requirements...</p>
-      </div>
-    );
-  }
-
-  if (requirements.length === 0 && !isLoading) {
+  if (transformedRequirements.length === 0) {
     return (
       <div className="rounded-lg bg-muted/50 p-6 text-center">
         <p className="text-muted-foreground">
@@ -108,7 +95,7 @@ export function RegulatoryRequirementsSection() {
       </div>
 
       <div className="space-y-4">
-        {requirements.map((requirement, index) => (
+        {transformedRequirements.map((requirement, index) => (
           <Card key={requirement.id}>
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">

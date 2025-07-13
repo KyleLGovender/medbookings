@@ -7,9 +7,20 @@ import { useFormContext } from 'react-hook-form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { ServiceTypeData } from '@/features/providers/lib/provider-types';
 
-export function ServicesSection() {
+interface ServicesSectionProps {
+  availableServices: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    defaultDuration: number;
+    defaultPrice: string;
+    displayPriority: number;
+  }>;
+  selectedProviderTypeId: string;
+}
+
+export function ServicesSection({ availableServices, selectedProviderTypeId }: ServicesSectionProps) {
   const {
     control,
     setValue,
@@ -21,9 +32,6 @@ export function ServicesSection() {
 
   // Get the selected services from the form state
   const watchedServices = watch('services.availableServices') || [];
-
-  // Get the available services loaded from provider type selection
-  const availableServices: ServiceTypeData[] = watch('services.loadedServices') || [];
 
   // Force clear services when component mounts and when available services change
   useEffect(() => {
@@ -45,7 +53,12 @@ export function ServicesSection() {
     }
   }, [availableServices, setValue, getValues]);
 
-  // If no services are loaded yet, show a message
+  // Reset initialization when provider type changes
+  useEffect(() => {
+    initializedRef.current = false;
+  }, [selectedProviderTypeId]);
+
+  // If no services are available, show a message
   if (availableServices.length === 0) {
     return (
       <div className="space-y-6">
@@ -72,7 +85,7 @@ export function ServicesSection() {
               <FormItem>
                 <FormLabel>Select services you provide *</FormLabel>
                 <div className="space-y-4">
-                  {availableServices.map((service) => {
+                  {availableServices.map((service: any) => {
                     const isChecked = fieldValue.includes(service.id);
                     return (
                       <div key={service.id} className="rounded-md border p-4">

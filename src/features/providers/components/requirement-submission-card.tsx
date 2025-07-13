@@ -151,6 +151,9 @@ export function RequirementSubmissionCard({
             {submission.requirementType?.name || 'Requirement'}
           </h3>
         </div>
+        <div className="scale-110">
+          <StatusBadge status={submission.status as any} />
+        </div>
       </div>
 
       {submission.requirementType?.description && (
@@ -178,15 +181,9 @@ export function RequirementSubmissionCard({
           {/* Show action buttons and status */}
           {(shouldShowViewButton ||
             shouldShowPendingButtons ||
-            shouldShowReapproveButton ||
-            shouldShowStatusBadge) && (
+            shouldShowReapproveButton ) && (
             <div className="flex items-center gap-2">
-              {/* Approved/Rejected requirements: Show status badge first */}
-              {shouldShowStatusBadge && (
                 <div className="flex items-center gap-1">
-                  <div className="scale-110">
-                    <StatusBadge status={submission.status as any} />
-                  </div>
                   {/* Show rejection details icon for rejected requirements */}
                   {(submission.status === 'REJECTED' || submission.status?.includes('REJECT')) && (
                     <Popover>
@@ -225,7 +222,6 @@ export function RequirementSubmissionCard({
                     </Popover>
                   )}
                 </div>
-              )}
 
               {shouldShowViewButton && (
                 <NavigationLink

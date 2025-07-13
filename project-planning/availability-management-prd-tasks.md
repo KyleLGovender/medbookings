@@ -159,7 +159,10 @@ Based on detailed analysis of existing Prisma schema against PRD requirements:
 
 - [ ] 8.0 Cleanup
   - [ ] Service Provider Manage Calendar Works
+  - [ ] Availability display isn't working
+  - [ ] Edit Availabiity
   - [ ] Organization Manage Calendar Works
+  - [ ] Default service duration and price are not pulling through in availability creation
   - [ ] Make the price and duration inputs on availability creation increase and decrease by correct amounts
   - [ ] Figure out pages routing and where to display various calendars
   - [ ] Sort out types between features
