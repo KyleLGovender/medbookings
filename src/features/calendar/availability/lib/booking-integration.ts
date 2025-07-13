@@ -192,7 +192,7 @@ export class BookingIntegrationService {
       // Check if requested time is valid for the scheduling rule
       const isValidTime = isSlotValidForSchedulingRule(startTime, duration, schedulingRule, {
         interval: schedulingInterval || undefined,
-        alignToHour: schedulingRule === SchedulingRule.FIXED_INTERVAL,
+        alignToHour: schedulingRule === SchedulingRule.ON_THE_HOUR,
         alignToHalfHour: false,
         alignToQuarterHour: false,
       });
@@ -327,7 +327,7 @@ export class BookingIntegrationService {
           schedulingRule,
           {
             interval: slot.availability.schedulingInterval || undefined,
-            alignToHour: schedulingRule === SchedulingRule.FIXED_INTERVAL,
+            alignToHour: schedulingRule === SchedulingRule.ON_THE_HOUR,
             alignToHalfHour: false,
             alignToQuarterHour: false,
           }
@@ -456,7 +456,7 @@ export class BookingIntegrationService {
 
     const isValid = isSlotValidForSchedulingRule(startTime, slot.duration, schedulingRule, {
       interval: slot.availability.schedulingInterval || undefined,
-      alignToHour: schedulingRule === SchedulingRule.FIXED_INTERVAL,
+      alignToHour: schedulingRule === SchedulingRule.ON_THE_HOUR,
       alignToHalfHour: false,
       alignToQuarterHour: false,
     });
@@ -545,8 +545,8 @@ export class BookingIntegrationService {
     // This is a simplified implementation
     // In production, you'd want more sophisticated time finding logic
 
-    if (schedulingRule === SchedulingRule.FIXED_INTERVAL) {
-      // Adjust to nearest 15-minute boundary
+    if (schedulingRule === SchedulingRule.ON_THE_HOUR) {
+      // Adjust to nearest hour boundary
       const adjustedTime = new Date(requestedTime);
       const minutes = adjustedTime.getMinutes();
       const adjustedMinutes = Math.round(minutes / 15) * 15;

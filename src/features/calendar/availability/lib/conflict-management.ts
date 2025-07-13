@@ -295,7 +295,7 @@ export class ConflictManager {
       availability.schedulingRule as SchedulingRule,
       {
         interval: availability.schedulingInterval || undefined,
-        alignToHour: availability.schedulingRule === 'FIXED_INTERVAL',
+        alignToHour: availability.schedulingRule === 'ON_THE_HOUR',
         alignToHalfHour: false,
         alignToQuarterHour: false,
       }
@@ -487,8 +487,8 @@ export class ConflictManager {
     }
 
     // For now, we'll implement basic adjustment for fixed intervals
-    if (availability.schedulingRule === 'FIXED_INTERVAL') {
-      // Adjust to nearest 15-minute boundary
+    if (availability.schedulingRule === 'ON_THE_HOUR') {
+      // Adjust to nearest hour boundary
       const minutes = slot.startTime.getMinutes();
       const adjustedMinutes = Math.round(minutes / 15) * 15;
 

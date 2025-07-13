@@ -42,13 +42,28 @@ export const simpleRecurrencePatternSchema = z.object({
 // Custom recurrence data schema (for modal) - endDate is now required
 export const customRecurrenceDataSchema = z.object({
   selectedDays: z.array(dayOfWeekSchema).min(1, 'At least one day must be selected'),
-  endDate: z.date(), // Required - no longer optional
+  endDate: z.union([z.date(), z.string()]).transform((val) => {
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }), // Required - no longer optional
 });
 
 // Time slot schema
 export const timeSlotSchema = z.object({
-  startTime: z.date(),
-  endTime: z.date(),
+  startTime: z.union([z.date(), z.string()]).transform((val) => {
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }),
+  endTime: z.union([z.date(), z.string()]).transform((val) => {
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }),
   duration: z.number().int().positive(),
   isAvailable: z.boolean(),
   price: z.number().positive().optional(),
@@ -70,10 +85,20 @@ const baseAvailabilitySchema = z.object({
   organizationId: z.string().cuid().optional(),
   locationId: z.string().cuid().optional(),
   connectionId: z.string().cuid().optional(),
-  startTime: z.date(),
-  endTime: z.date(),
+  startTime: z.union([z.date(), z.string()]).transform((val) => {
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }),
+  endTime: z.union([z.date(), z.string()]).transform((val) => {
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }),
   isRecurring: z.boolean(),
-  simpleRecurrence: simpleRecurrencePatternSchema.optional(),
+  recurrencePattern: z.any().optional(), // JSON field to match Prisma schema
   seriesId: z.string().cuid().optional(),
   schedulingRule: schedulingRuleSchema,
   schedulingInterval: z.number().int().positive().optional(),
@@ -92,9 +117,9 @@ export const createAvailabilityDataSchema = baseAvailabilitySchema
     message: 'End time must be after start time',
     path: ['endTime'],
   })
-  .refine((data: BaseAvailabilityData) => !data.isRecurring || data.simpleRecurrence, {
+  .refine((data: BaseAvailabilityData) => !data.isRecurring || data.recurrencePattern, {
     message: 'Recurrence pattern required for recurring availability',
-    path: ['simpleRecurrence'],
+    path: ['recurrencePattern'],
   })
   .refine((data: BaseAvailabilityData) => data.isOnlineAvailable || data.locationId, {
     message: 'Physical location is required when online availability is disabled',
@@ -113,8 +138,18 @@ export const availabilitySearchParamsSchema = z
     organizationId: z.string().min(1).optional(),
     locationId: z.string().min(1).optional(),
     serviceId: z.string().min(1).optional(),
-    startDate: z.date().optional(),
-    endDate: z.date().optional(),
+    startDate: z.union([z.date(), z.string()]).transform((val) => {
+      if (typeof val === 'string') {
+        return new Date(val);
+      }
+      return val;
+    }).optional(),
+    endDate: z.union([z.date(), z.string()]).transform((val) => {
+      if (typeof val === 'string') {
+        return new Date(val);
+      }
+      return val;
+    }).optional(),
     isOnlineAvailable: z.boolean().optional(),
     status: availabilityStatusSchema.optional(),
     schedulingRule: schedulingRuleSchema.optional(),
@@ -132,8 +167,18 @@ export const slotSearchParamsSchema = z
     organizationId: z.string().cuid().optional(),
     locationId: z.string().cuid().optional(),
     serviceId: z.string().cuid().optional(),
-    startDate: z.date().optional(),
-    endDate: z.date().optional(),
+    startDate: z.union([z.date(), z.string()]).transform((val) => {
+      if (typeof val === 'string') {
+        return new Date(val);
+      }
+      return val;
+    }).optional(),
+    endDate: z.union([z.date(), z.string()]).transform((val) => {
+      if (typeof val === 'string') {
+        return new Date(val);
+      }
+      return val;
+    }).optional(),
     isOnlineAvailable: z.boolean().optional(),
     status: slotStatusSchema.optional(),
     minDuration: z.number().int().positive().optional(),
@@ -177,8 +222,18 @@ export const availabilityConflictSchema = z.object({
   conflictingAvailabilityId: z.string().cuid().optional(),
   conflictingEventId: z.string().cuid().optional(),
   message: z.string(),
-  startTime: z.date(),
-  endTime: z.date(),
+  startTime: z.union([z.date(), z.string()]).transform((val) => {
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }),
+  endTime: z.union([z.date(), z.string()]).transform((val) => {
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }),
 });
 
 // Availability billing context schema
@@ -216,6 +271,16 @@ export const availabilitySeriesSchema = z.object({
   instances: z.array(z.any()), // Will be typed as Availability[] in TypeScript
   totalInstances: z.number().int().nonnegative(),
   activeInstances: z.number().int().nonnegative(),
-  createdAt: z.date(),
-  lastModified: z.date(),
+  createdAt: z.union([z.date(), z.string()]).transform((val) => {
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }),
+  lastModified: z.union([z.date(), z.string()]).transform((val) => {
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }),
 });

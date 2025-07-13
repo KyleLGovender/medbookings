@@ -107,7 +107,7 @@ export function AvailabilityProposalForm({
       startTime: new Date(),
       endTime: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4 hours from now
       isRecurring: false,
-      schedulingRule: SchedulingRule.FIXED_INTERVAL,
+      schedulingRule: SchedulingRule.CONTINUOUS,
       isOnlineAvailable: true,
       requiresConfirmation: false,
       billingEntity: BillingEntity.ORGANIZATION, // Organization pays for proposed availability
@@ -291,11 +291,11 @@ export function AvailabilityProposalForm({
                         <SelectItem value={SchedulingRule.CONTINUOUS}>
                           Continuous - Appointments start immediately after previous ends
                         </SelectItem>
-                        <SelectItem value={SchedulingRule.FIXED_INTERVAL}>
-                          Fixed Interval - Appointments start at regular intervals (recommended)
+                        <SelectItem value={SchedulingRule.ON_THE_HOUR}>
+                          On the Hour - Appointments start only on the hour (9:00, 10:00, 11:00)
                         </SelectItem>
-                        <SelectItem value={SchedulingRule.CUSTOM_INTERVAL}>
-                          Custom Interval - Appointments start at custom intervals
+                        <SelectItem value={SchedulingRule.ON_THE_HALF_HOUR}>
+                          On the Half Hour - Appointments start on the hour or half-hour (9:00, 9:30, 10:00)
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -307,7 +307,7 @@ export function AvailabilityProposalForm({
                 )}
               />
 
-              {watchSchedulingRule === SchedulingRule.CUSTOM_INTERVAL && (
+              {/* Note: schedulingInterval field removed as it's no longer used with the simplified scheduling rules */ false && (
                 <FormField
                   control={form.control}
                   name="schedulingInterval"

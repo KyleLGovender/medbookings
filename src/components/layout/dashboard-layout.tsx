@@ -213,12 +213,12 @@ const createNavData = (providers: any[] = [], organizations: any[] = []) => ({
                 url: `/providers/${providers[0].id}`,
               },
               {
-                title: 'Calendar',
-                url: `/providers/${providers[0].id}/calendar`,
+                title: 'View Calendar',
+                url: `/providers/${providers[0].id}/view-calendar`,
               },
               {
-                title: 'Availability',
-                url: `/providers/${providers[0].id}/availability`,
+                title: 'Manage Calendar',
+                url: `/providers/${providers[0].id}/manage-calendar`,
               },
             ],
           },
@@ -236,12 +236,12 @@ const createNavData = (providers: any[] = [], organizations: any[] = []) => ({
                 url: `/organizations/${organization.id}`,
               },
               {
-                title: 'Calendar',
-                url: `/organizations/${organization.id}/calendar`,
+                title: 'View Calendar',
+                url: `/organizations/${organization.id}/view-calendar`,
               },
               {
-                title: 'Availability',
-                url: `/organizations/${organization.id}/availability`,
+                title: 'Manage Calendar',
+                url: `/organizations/${organization.id}/manage-calendar`,
               },
             ],
           }))

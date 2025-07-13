@@ -6,15 +6,15 @@ import { AlertTriangle, Calendar, Clock, Trash2, Users } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -188,7 +188,7 @@ export function AvailabilityDeleteDialog({
                         {serviceConfig.service?.name || 'Unknown Service'}
                         {' - '}
                         {serviceConfig.duration} min
-                        {serviceConfig.showPrice && serviceConfig.price && (
+                        {serviceConfig.serviceProvider?.showPrice && serviceConfig.price && (
                           <span> - ${serviceConfig.price.toString()}</span>
                         )}
                       </div>

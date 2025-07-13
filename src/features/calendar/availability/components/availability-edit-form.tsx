@@ -21,7 +21,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -118,7 +117,6 @@ export function AvailabilityEditForm({
             serviceId: config.serviceId,
             duration: config.duration,
             price: config.price,
-            showPrice: config.showPrice,
           })
         ),
       });

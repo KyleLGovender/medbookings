@@ -16,7 +16,6 @@ export interface ServiceFilterParams {
     min?: number; // minutes
     max?: number; // minutes
   };
-  showPriceOnly?: boolean; // Only show services with visible pricing
   excludeServices?: string[]; // Service IDs to exclude
   includeInactive?: boolean; // Include inactive services (default: false)
 }
@@ -117,7 +116,6 @@ export class ServiceFilterService {
         specializations,
         priceRange,
         durationRange,
-        showPriceOnly = false,
         excludeServices = [],
         includeInactive = false,
       } = params;
@@ -160,7 +158,6 @@ export class ServiceFilterService {
               },
             }
           : {}),
-        ...(showPriceOnly ? { showPrice: true } : {}),
         ...(additionalFilters?.locationId ? { locationId: additionalFilters.locationId } : {}),
       };
 
@@ -276,7 +273,7 @@ export class ServiceFilterService {
           },
           pricing: {
             price: config.price.toNumber(),
-            showPrice: config.showPrice,
+            showPrice: config.serviceProvider.showPrice, // Use provider-level setting
             defaultDuration: config.duration,
           },
           availability: {

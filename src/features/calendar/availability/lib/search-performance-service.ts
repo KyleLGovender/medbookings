@@ -76,11 +76,11 @@ export class SearchPerformanceService {
           serviceId: true,
           locationId: true,
           price: true,
-          showPrice: true,
           duration: true,
           serviceProvider: {
             select: {
               id: true,
+              showPrice: true, // Provider-level price display setting
               user: {
                 select: {
                   id: true,
@@ -188,7 +188,7 @@ export class SearchPerformanceService {
           serviceProviderTypeId: config.service.serviceProviderTypeId,
           duration: config.duration,
           price: config.price,
-          showPrice: config.showPrice,
+          showPrice: config.serviceProvider.showPrice,
         });
 
         if (config.location) {

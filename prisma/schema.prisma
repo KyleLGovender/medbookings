@@ -728,7 +728,6 @@ model ServiceAvailabilityConfig {
   serviceProviderId String
   duration          Int // Duration in minutes
   price             Decimal                      @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
-  showPrice         Boolean                      @default(true) // Whether to display price for this service configuration
   isOnlineAvailable Boolean                      @default(false)
   isInPerson        Boolean                      @default(false)
   location          Location?                    @relation(fields: [locationId], references: [id])

@@ -23,9 +23,7 @@ export function generateTimeSlots(options: SchedulingOptions): TimeSlotGeneratio
     errors.push('Service duration must be positive');
   }
 
-  if (options.schedulingRule === SchedulingRule.CUSTOM_INTERVAL && !options.schedulingInterval) {
-    errors.push('Scheduling interval required for CUSTOM_INTERVAL rule');
-  }
+  // Note: schedulingInterval is only used for backward compatibility and custom logic
 
   if (errors.length > 0) {
     return { slots: [], totalSlots: 0, errors };
@@ -38,12 +36,12 @@ export function generateTimeSlots(options: SchedulingOptions): TimeSlotGeneratio
       slots = generateContinuousSlots(options);
       break;
 
-    case SchedulingRule.FIXED_INTERVAL:
-      slots = generateFixedIntervalSlots(options);
+    case SchedulingRule.ON_THE_HOUR:
+      slots = generateOnTheHourSlots(options);
       break;
 
-    case SchedulingRule.CUSTOM_INTERVAL:
-      slots = generateCustomIntervalSlots(options);
+    case SchedulingRule.ON_THE_HALF_HOUR:
+      slots = generateOnTheHalfHourSlots(options);
       break;
 
     default:
@@ -89,29 +87,18 @@ function generateContinuousSlots(options: SchedulingOptions): TimeSlot[] {
 }
 
 /**
- * Generate fixed interval slots (appointments start at regular intervals)
+ * Generate on-the-hour slots (appointments start only on the hour)
  */
-function generateFixedIntervalSlots(options: SchedulingOptions): TimeSlot[] {
+function generateOnTheHourSlots(options: SchedulingOptions): TimeSlot[] {
   const slots: TimeSlot[] = [];
 
-  // Determine the interval based on alignment preferences
-  let intervalMinutes: number;
+  // For on-the-hour scheduling, appointments start only at the top of each hour
+  const intervalMinutes = 60;
 
-  if (options.alignToQuarterHour) {
-    intervalMinutes = 15;
-  } else if (options.alignToHalfHour) {
-    intervalMinutes = 30;
-  } else if (options.alignToHour) {
-    intervalMinutes = 60;
-  } else {
-    // Default to 15-minute intervals if no alignment specified
-    intervalMinutes = 15;
-  }
-
-  // Find the first aligned start time at or after availability start
+  // Find the first hour start time at or after availability start
   let currentStart = getNextAlignedTime(options.availabilityStart, intervalMinutes);
 
-  // If the aligned time is before availability start, move to next interval
+  // If the aligned time is before availability start, move to next hour
   if (currentStart < options.availabilityStart) {
     currentStart = addMinutes(currentStart, intervalMinutes);
   }
@@ -138,13 +125,21 @@ function generateFixedIntervalSlots(options: SchedulingOptions): TimeSlot[] {
 }
 
 /**
- * Generate custom interval slots (appointments start at provider-defined intervals)
+ * Generate on-the-half-hour slots (appointments start only on the hour or half-hour)
  */
-function generateCustomIntervalSlots(options: SchedulingOptions): TimeSlot[] {
+function generateOnTheHalfHourSlots(options: SchedulingOptions): TimeSlot[] {
   const slots: TimeSlot[] = [];
-  const intervalMinutes = options.schedulingInterval!;
 
-  let currentStart = new Date(options.availabilityStart);
+  // For on-the-half-hour scheduling, appointments start at :00 or :30 minutes
+  const intervalMinutes = 30;
+
+  // Find the first half-hour start time at or after availability start
+  let currentStart = getNextAlignedTime(options.availabilityStart, intervalMinutes);
+
+  // If the aligned time is before availability start, move to next interval
+  if (currentStart < options.availabilityStart) {
+    currentStart = addMinutes(currentStart, intervalMinutes);
+  }
 
   while (currentStart < options.availabilityEnd) {
     const currentEnd = addMinutes(currentStart, options.serviceDuration);
@@ -160,7 +155,7 @@ function generateCustomIntervalSlots(options: SchedulingOptions): TimeSlot[] {
       duration: options.serviceDuration,
     });
 
-    // Next slot starts after the custom interval
+    // Next slot starts after 30 minutes
     currentStart = addMinutes(currentStart, intervalMinutes);
   }
 
@@ -201,7 +196,7 @@ export function validateSchedulingRuleConfig(config: SchedulingRuleConfig): {
 
   // Rule-specific validation
   switch (config.rule) {
-    case SchedulingRule.CUSTOM_INTERVAL:
+    case SchedulingRule.ON_THE_HALF_HOUR:
       if (!config.interval || config.interval <= 0) {
         errors.push('Custom interval must be a positive number');
       }
@@ -211,7 +206,7 @@ export function validateSchedulingRuleConfig(config: SchedulingRuleConfig): {
       }
       break;
 
-    case SchedulingRule.FIXED_INTERVAL:
+    case SchedulingRule.ON_THE_HOUR:
       const hasAlignment =
         config.alignToHour || config.alignToHalfHour || config.alignToQuarterHour;
       if (!hasAlignment) {
@@ -259,14 +254,14 @@ export function calculateOptimalInterval(
     case SchedulingRule.CONTINUOUS:
       return serviceDuration; // No gaps between appointments
 
-    case SchedulingRule.FIXED_INTERVAL:
+    case SchedulingRule.ON_THE_HOUR:
       // Round up to nearest 15, 30, or 60 minute interval
       if (totalTime <= 15) return 15;
       if (totalTime <= 30) return 30;
       if (totalTime <= 60) return 60;
       return Math.ceil(totalTime / 60) * 60; // Round up to next hour
 
-    case SchedulingRule.CUSTOM_INTERVAL:
+    case SchedulingRule.ON_THE_HALF_HOUR:
       // For custom intervals, use the service duration + buffer as base
       return Math.max(totalTime, 5); // Minimum 5-minute interval
 
@@ -296,7 +291,7 @@ export function isSlotValidForSchedulingRule(
       // Any start time is valid for continuous scheduling
       return true;
 
-    case SchedulingRule.FIXED_INTERVAL:
+    case SchedulingRule.ON_THE_HOUR:
       // Check if start time aligns with fixed intervals
       if (ruleConfig?.alignToQuarterHour) {
         return minutes % 15 === 0;
@@ -310,7 +305,7 @@ export function isSlotValidForSchedulingRule(
       // Default to quarter-hour alignment
       return minutes % 15 === 0;
 
-    case SchedulingRule.CUSTOM_INTERVAL:
+    case SchedulingRule.ON_THE_HALF_HOUR:
       // For custom intervals, we need to check against a base time
       // This would typically be validated in the context of the availability period
       return true;
@@ -338,7 +333,7 @@ export function getNextValidSlotTime(
       // For continuous scheduling, any time is valid
       return new Date(fromTime);
 
-    case SchedulingRule.FIXED_INTERVAL:
+    case SchedulingRule.ON_THE_HOUR:
       let intervalMinutes = 15; // Default
       if (ruleConfig?.alignToQuarterHour) intervalMinutes = 15;
       if (ruleConfig?.alignToHalfHour) intervalMinutes = 30;
@@ -346,7 +341,7 @@ export function getNextValidSlotTime(
 
       return getNextAlignedTime(fromTime, intervalMinutes);
 
-    case SchedulingRule.CUSTOM_INTERVAL:
+    case SchedulingRule.ON_THE_HALF_HOUR:
       if (ruleConfig?.interval) {
         // Find next time that aligns with custom interval from start of day
         const startOfDayTime = startOfDay(fromTime);
@@ -396,7 +391,7 @@ export function calculateScheduleEfficiency(
       averageGapTime = 0;
       break;
 
-    case SchedulingRule.FIXED_INTERVAL:
+    case SchedulingRule.ON_THE_HOUR:
       let intervalMinutes = 15;
       if (ruleConfig?.alignToHour) intervalMinutes = 60;
       else if (ruleConfig?.alignToHalfHour) intervalMinutes = 30;
@@ -406,7 +401,7 @@ export function calculateScheduleEfficiency(
       averageGapTime = Math.max(0, intervalMinutes - serviceDuration);
       break;
 
-    case SchedulingRule.CUSTOM_INTERVAL:
+    case SchedulingRule.ON_THE_HALF_HOUR:
       const customInterval = ruleConfig?.interval || serviceDuration;
       actualSlots = Math.floor(availabilityDuration / customInterval);
       averageGapTime = Math.max(0, customInterval - serviceDuration);

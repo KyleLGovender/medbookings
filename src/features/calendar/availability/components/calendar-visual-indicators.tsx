@@ -99,17 +99,17 @@ export const SchedulingRuleIndicators = {
     background: 'bg-blue-100',
     description: 'Continuous scheduling - flexible appointment times',
   },
-  [SchedulingRule.FIXED_INTERVAL]: {
+  [SchedulingRule.ON_THE_HOUR]: {
     icon: Calendar,
     color: 'text-green-600',
     background: 'bg-green-100',
-    description: 'Fixed intervals - standardized appointment slots',
+    description: 'On the hour - appointments start only on the hour',
   },
-  [SchedulingRule.CUSTOM_INTERVAL]: {
+  [SchedulingRule.ON_THE_HALF_HOUR]: {
     icon: Settings,
     color: 'text-purple-600',
     background: 'bg-purple-100',
-    description: 'Custom intervals - specialized scheduling rules',
+    description: 'On the half hour - appointments start on the hour or half-hour',
   },
 };
 

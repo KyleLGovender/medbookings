@@ -146,10 +146,9 @@ export async function createAvailability(
             serviceProviderId: validatedData.serviceProviderId,
             duration: service.duration,
             price: service.price,
-            showPrice: service.showPrice,
-            isOnlineAvailable: service.isOnlineAvailable,
-            isInPerson: service.isInPerson,
-            locationId: service.locationId,
+            isOnlineAvailable: validatedData.isOnlineAvailable, // Use availability-level setting
+            isInPerson: !validatedData.isOnlineAvailable || !!validatedData.locationId, // True if not online-only or has location
+            locationId: validatedData.locationId, // Use availability-level location
           })),
         },
       },
@@ -448,10 +447,9 @@ export async function updateAvailability(
           serviceProviderId: existingAvailability.serviceProviderId,
           duration: service.duration,
           price: service.price,
-          showPrice: service.showPrice,
-          isOnlineAvailable: service.isOnlineAvailable,
-          isInPerson: service.isInPerson,
-          locationId: service.locationId,
+          isOnlineAvailable: validatedData.isOnlineAvailable || false, // Use availability-level setting
+          isInPerson: !validatedData.isOnlineAvailable || !!validatedData.locationId, // True if not online-only or has location
+          locationId: validatedData.locationId, // Use availability-level location
         })),
       });
     }

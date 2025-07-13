@@ -158,16 +158,13 @@ Based on detailed analysis of existing Prisma schema against PRD requirements:
   - [x] 7.7 Build calendar export functionality leveraging existing CalendarIntegration infrastructure
 
 - [ ] 8.0 Cleanup
-  - [ ] 7.1 Figure out pages routing and where to display various calendars
-  - [x] 7.2 Get rid of mock availability data and make sure everything is driven from database configuration
-  - [ ] 7.3 Update customer recurring pattern to match Google calendar
-  - [x] 7.4 Add CANCELLED to prisma AvailabilityStatus
-  - [ ] 7.5 Sort out types between features
-  - [x] 7.6 Remove custom appointment starting intervals. It should be continuous, starting on the hour, starting on the half hour and hour.
-  - [x] 7.7 Add showPrice flag to Service Provider
-  - [ ] 7.8 Make the price and duration inputs on availability creation increase and decrease by correct amounts
-  - [ ] 7.9
-  - [ ] 7.10
-  - [ ] 7.11
-  - [ ] 7.12
-  - [ ] 7.13
+  - [ ] Service Provider Manage Calendar Works
+  - [ ] Organization Manage Calendar Works
+  - [ ] Make the price and duration inputs on availability creation increase and decrease by correct amounts
+  - [ ] Figure out pages routing and where to display various calendars
+  - [ ] Sort out types between features
+  - [x] Get rid of mock availability data and make sure everything is driven from database configuration
+  - [x] Update customer recurring pattern to match Google calendar
+  - [x] Add CANCELLED to prisma AvailabilityStatus
+  - [x] Remove custom appointment starting intervals. It should be continuous, starting on the hour, starting on the half hour and hour.
+  - [x] Add showPrice flag to Service Provider

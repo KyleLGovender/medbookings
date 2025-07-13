@@ -191,10 +191,10 @@ function ProposalCard({
     switch (rule) {
       case SchedulingRule.CONTINUOUS:
         return 'Continuous scheduling';
-      case SchedulingRule.FIXED_INTERVAL:
-        return 'Fixed intervals';
-      case SchedulingRule.CUSTOM_INTERVAL:
-        return `Custom intervals (${proposal.schedulingInterval} min)`;
+      case SchedulingRule.ON_THE_HOUR:
+        return 'On the hour';
+      case SchedulingRule.ON_THE_HALF_HOUR:
+        return 'On the half hour';
       default:
         return 'Standard scheduling';
     }
@@ -303,7 +303,7 @@ function ProposalCard({
                         {serviceConfig.duration} min
                       </span>
                     </div>
-                    {serviceConfig.showPrice && (
+                    {proposal.serviceProvider.showPrice && (
                       <span className="font-medium">${serviceConfig.price.toString()}</span>
                     )}
                   </div>

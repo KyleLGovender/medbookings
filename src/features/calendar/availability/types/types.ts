@@ -233,7 +233,7 @@ export interface Availability {
   startTime: Date;
   endTime: Date;
   isRecurring: boolean;
-  simpleRecurrence?: SimpleRecurrencePattern | null;
+  recurrencePattern?: any | null; // JSON field from Prisma
   seriesId?: string | null;
   status: AvailabilityStatus;
   schedulingRule: SchedulingRule;
@@ -270,7 +270,6 @@ export interface ServiceAvailabilityConfig {
   locationId?: string | null;
   duration: number;
   price: Decimal;
-  showPrice: boolean;
   isOnlineAvailable: boolean;
   isInPerson: boolean;
   createdAt: Date;
@@ -552,7 +551,7 @@ export interface CreateAvailabilityData {
   startTime: Date;
   endTime: Date;
   isRecurring: boolean;
-  simpleRecurrence?: SimpleRecurrencePattern;
+  recurrencePattern?: any; // JSON field to match Prisma schema
   seriesId?: string;
   schedulingRule: SchedulingRule;
   schedulingInterval?: number;
