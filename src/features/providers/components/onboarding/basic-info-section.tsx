@@ -130,7 +130,8 @@ export function BasicInfoSection() {
               <div className="space-y-0.5">
                 <FormLabel className="text-base">Show Prices</FormLabel>
                 <p className="text-sm text-muted-foreground">
-                  Display your service prices to patients when they view your profile.  You switch this one or off at any time and all appointments will updated accordingly.
+                  Display your service prices to patients when they view your profile. You switch
+                  this one or off at any time and all appointments will updated accordingly.
                 </p>
               </div>
               <FormControl>
