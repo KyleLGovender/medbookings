@@ -108,6 +108,16 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Prevent double scrollbars in dashboard layout */
+  html, body {
+    overflow-x: hidden;
+  }
+  
+  /* Ensure dashboard layout takes full height without body scroll */
+  body:has([data-sidebar-layout]) {
+    overflow: hidden;
+  }
 }
 
 @keyframes progress {

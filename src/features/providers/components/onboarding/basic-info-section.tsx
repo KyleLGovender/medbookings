@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { SUPPORTED_LANGUAGES } from '@/features/providers/hooks/types';
 
@@ -117,6 +118,24 @@ export function BasicInfoSection() {
                 <Input type="url" placeholder="https://your-website.com" {...field} />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={control}
+          name="basicInfo.showPrice"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">Show Prices</FormLabel>
+                <p className="text-sm text-muted-foreground">
+                  Display your service prices to patients when they view your profile.  You switch this one or off at any time and all appointments will updated accordingly.
+                </p>
+              </div>
+              <FormControl>
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
+              </FormControl>
             </FormItem>
           )}
         />
