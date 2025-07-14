@@ -59,7 +59,7 @@ export function AppSidebar({ data, ...props }: AppSidebarProps) {
         <SidebarGroup>
           <SidebarMenu>
             {data.navMain.map((item, index) => (
-              <Collapsible key={item.title} defaultOpen={index === 1} className="group/collapsible">
+              <Collapsible key={item.title} defaultOpen={true} className="group/collapsible">
                 <SidebarMenuItem>
                   <div className="flex w-full items-center">
                     {/* Clickable main item */}
