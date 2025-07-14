@@ -1,5 +1,6 @@
-import { Mail, Shield } from 'lucide-react';
 import Link from 'next/link';
+
+import { Mail, Shield } from 'lucide-react';
 
 import { BackButton } from '@/components/back-button';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ export default function UnauthorizedPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
       <div className="container mx-auto px-4 py-16">
-        <div className="flex items-center justify-center min-h-[70vh]">
+        <div className="flex min-h-[70vh] items-center justify-center">
           <Card className="w-full max-w-md">
             <CardHeader className="text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
@@ -22,28 +23,23 @@ export default function UnauthorizedPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-lg bg-muted/50 p-4">
-                <h3 className="font-semibold mb-2">What happened?</h3>
+                <h3 className="mb-2 font-semibold">What happened?</h3>
                 <p className="text-sm text-muted-foreground">
-                  This page requires administrative privileges that your account doesn't currently have.
+                  This page requires administrative privileges that your account doesn't currently
+                  have.
                 </p>
               </div>
-              
+
               <div className="space-y-2">
-                <BackButton className="w-full">
-                  Back
-                </BackButton>
-                
+                <BackButton className="w-full">Back</BackButton>
+
                 <Button variant="outline" asChild className="w-full">
-                  <Link href="/">
-                    Go to Home
-                  </Link>
+                  <Link href="/">Go to Home</Link>
                 </Button>
               </div>
 
-              <div className="text-center pt-4 border-t">
-                <p className="text-sm text-muted-foreground mb-3">
-                  Need admin access?
-                </p>
+              <div className="border-t pt-4 text-center">
+                <p className="mb-3 text-sm text-muted-foreground">Need admin access?</p>
                 <Button variant="ghost" size="sm" asChild>
                   <Link href="mailto:support@medbookings.com">
                     <Mail className="mr-2 h-4 w-4" />
@@ -57,4 +53,4 @@ export default function UnauthorizedPage() {
       </div>
     </div>
   );
-} 
+}

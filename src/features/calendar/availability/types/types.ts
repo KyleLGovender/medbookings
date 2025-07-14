@@ -41,7 +41,7 @@ export enum BillingEntity {
 // Simplified recurrence options (Google Calendar style)
 export enum RecurrenceOption {
   NONE = 'none',
-  DAILY = 'daily', 
+  DAILY = 'daily',
   WEEKLY = 'weekly',
   CUSTOM = 'custom',
 }
@@ -218,6 +218,17 @@ export interface CalendarEvent {
     email?: string;
   };
   notes?: string;
+  // Creator information for availabilities
+  createdBy?: {
+    id: string;
+    name: string;
+    type: 'provider' | 'organization';
+  };
+  organization?: {
+    id: string;
+    name: string;
+  };
+  isProviderCreated?: boolean;
 }
 
 // =============================================================================
@@ -246,6 +257,7 @@ export interface Availability {
   createdByMembershipId?: string | null;
   acceptedById?: string | null;
   acceptedAt?: Date | null;
+  isProviderCreated?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

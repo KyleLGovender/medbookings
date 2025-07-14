@@ -179,20 +179,24 @@ const createNavData = (providers: any[] = [], organizations: any[] = [], user?: 
       ],
     },
     // Only show Admin section for users with admin privileges
-    ...(user && ['ADMIN', 'SUPER_ADMIN'].includes(user.role) ? [{
-      title: 'Admin',
-      url: '/admin',
-      items: [
-        {
-          title: 'Providers',
-          url: '/admin/providers',
-        },
-        {
-          title: 'Organizations',
-          url: '/admin/organizations',
-        },
-      ],
-    }] : []),
+    ...(user && ['ADMIN', 'SUPER_ADMIN'].includes(user.role)
+      ? [
+          {
+            title: 'Admin',
+            url: '/admin',
+            items: [
+              {
+                title: 'Providers',
+                url: '/admin/providers',
+              },
+              {
+                title: 'Organizations',
+                url: '/admin/organizations',
+              },
+            ],
+          },
+        ]
+      : []),
     {
       title: 'Profile',
       url: '/profile',
@@ -212,10 +216,6 @@ const createNavData = (providers: any[] = [], organizations: any[] = [], user?: 
               {
                 title: 'Profile',
                 url: `/providers/${providers[0].id}`,
-              },
-              {
-                title: 'View Calendar',
-                url: `/providers/${providers[0].id}/view-calendar`,
               },
               {
                 title: 'Manage Calendar',

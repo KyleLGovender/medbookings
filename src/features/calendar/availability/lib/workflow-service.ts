@@ -95,11 +95,14 @@ export async function processAvailabilityAcceptance(
 
     // Send acceptance notifications
     try {
-      await notifyAvailabilityAccepted(updatedAvailability as unknown as AvailabilityWithRelations, {
-        id: currentUser.id,
-        name: currentUser.name || 'Provider',
-        role: 'PROVIDER',
-      });
+      await notifyAvailabilityAccepted(
+        updatedAvailability as unknown as AvailabilityWithRelations,
+        {
+          id: currentUser.id,
+          name: currentUser.name || 'Provider',
+          role: 'PROVIDER',
+        }
+      );
     } catch (notificationError) {
       console.error('Failed to send acceptance notifications:', notificationError);
       // Don't fail the entire workflow for notification errors
@@ -320,11 +323,14 @@ export async function processAvailabilityCancellation(
 
     // Send cancellation notifications
     try {
-      await notifyAvailabilityCancelled(updatedAvailability as unknown as AvailabilityWithRelations, {
-        id: currentUser.id,
-        name: currentUser.name || 'User',
-        role: currentUser.id === availability.serviceProviderId ? 'PROVIDER' : 'ORGANIZATION',
-      });
+      await notifyAvailabilityCancelled(
+        updatedAvailability as unknown as AvailabilityWithRelations,
+        {
+          id: currentUser.id,
+          name: currentUser.name || 'User',
+          role: currentUser.id === availability.serviceProviderId ? 'PROVIDER' : 'ORGANIZATION',
+        }
+      );
     } catch (notificationError) {
       console.error('Failed to send cancellation notifications:', notificationError);
       // Don't fail the entire workflow for notification errors

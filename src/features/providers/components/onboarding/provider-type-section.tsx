@@ -26,11 +26,11 @@ interface ProviderTypeSectionProps {
   servicesCount: number;
 }
 
-export function ProviderTypeSection({ 
-  providerTypes, 
-  selectedProviderType, 
-  requirementsCount, 
-  servicesCount 
+export function ProviderTypeSection({
+  providerTypes,
+  selectedProviderType,
+  requirementsCount,
+  servicesCount,
 }: ProviderTypeSectionProps) {
   const { control } = useFormContext();
 
@@ -54,7 +54,9 @@ export function ProviderTypeSection({
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a provider type">
-                      {field.value && selectedProviderType ? selectedProviderType.name : "Select a provider type"}
+                      {field.value && selectedProviderType
+                        ? selectedProviderType.name
+                        : 'Select a provider type'}
                     </SelectValue>
                   </SelectTrigger>
                 </FormControl>
@@ -64,9 +66,7 @@ export function ProviderTypeSection({
                       <div className="flex flex-col">
                         <span className="font-medium">{type.name}</span>
                         {type.description && (
-                          <span className="text-sm text-muted-foreground">
-                            {type.description}
-                          </span>
+                          <span className="text-sm text-muted-foreground">{type.description}</span>
                         )}
                       </div>
                     </SelectItem>
@@ -80,36 +80,34 @@ export function ProviderTypeSection({
       )}
 
       {selectedProviderType && (
-        <div className="border bg-background rounded-md">
+        <div className="rounded-md border bg-background">
           <div className="space-y-3 p-4">
             <div className="flex items-center gap-2">
-              <div className="h-2 w-2 bg-primary rounded-full" />
-              <p className="font-medium">
-                {selectedProviderType.name} Selected
-              </p>
+              <div className="h-2 w-2 rounded-full bg-primary" />
+              <p className="font-medium">{selectedProviderType.name} Selected</p>
             </div>
             {selectedProviderType.description && (
-              <p className="text-sm text-muted-foreground pl-4">
+              <p className="pl-4 text-sm text-muted-foreground">
                 {selectedProviderType.description}
               </p>
             )}
             {requirementsCount > 0 && (
               <div className="pl-4">
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-medium">Regulatory Requirements:</span>{' '}
-                  {requirementsCount} requirements loaded.
+                  <span className="font-medium">Regulatory Requirements:</span> {requirementsCount}{' '}
+                  requirements loaded.
                 </p>
               </div>
             )}
             {servicesCount > 0 && (
               <div className="pl-4">
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-medium">Available Services:</span>{' '}
-                  {servicesCount} services available.
+                  <span className="font-medium">Available Services:</span> {servicesCount} services
+                  available.
                 </p>
               </div>
             )}
-            <p className="text-sm text-muted-foreground pl-4">
+            <p className="pl-4 text-sm text-muted-foreground">
               Please continue to the next section to complete your application.
             </p>
           </div>

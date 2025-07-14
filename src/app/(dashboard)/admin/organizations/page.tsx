@@ -5,7 +5,9 @@ import type { AdminOrganizationsPageProps } from '@/features/admin/types';
 import { AdminApprovalStatus } from '@/features/admin/types/enums';
 import { getCurrentUser } from '@/lib/auth';
 
-export default async function AdminOrganizationsPage({ searchParams }: AdminOrganizationsPageProps) {
+export default async function AdminOrganizationsPage({
+  searchParams,
+}: AdminOrganizationsPageProps) {
   const currentUser = await getCurrentUser();
 
   // Check if user has admin privileges

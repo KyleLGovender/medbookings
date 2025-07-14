@@ -22,7 +22,10 @@ interface RegulatoryRequirementsSectionProps {
   selectedProviderTypeId: string;
 }
 
-export function RegulatoryRequirementsSection({ requirements, selectedProviderTypeId }: RegulatoryRequirementsSectionProps) {
+export function RegulatoryRequirementsSection({
+  requirements,
+  selectedProviderTypeId,
+}: RegulatoryRequirementsSectionProps) {
   const {
     control,
     setValue,

@@ -737,7 +737,6 @@ model ServiceAvailabilityConfig {
   createdAt         DateTime                     @default(now())
   updatedAt         DateTime                     @updatedAt
 
-  @@unique([serviceId, serviceProviderId])
   @@index([serviceProviderId])
   @@index([locationId])
 }

@@ -295,7 +295,8 @@ export function AvailabilityProposalForm({
                           On the Hour - Appointments start only on the hour (9:00, 10:00, 11:00)
                         </SelectItem>
                         <SelectItem value={SchedulingRule.ON_THE_HALF_HOUR}>
-                          On the Half Hour - Appointments start on the hour or half-hour (9:00, 9:30, 10:00)
+                          On the Half Hour - Appointments start on the hour or half-hour (9:00,
+                          9:30, 10:00)
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -307,29 +308,31 @@ export function AvailabilityProposalForm({
                 )}
               />
 
-              {/* Note: schedulingInterval field removed as it's no longer used with the simplified scheduling rules */ false && (
-                <FormField
-                  control={form.control}
-                  name="schedulingInterval"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Custom Interval (minutes)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="e.g., 30"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        How many minutes between each possible appointment start time.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
+              {
+                /* Note: schedulingInterval field removed as it's no longer used with the simplified scheduling rules */ false && (
+                  <FormField
+                    control={form.control}
+                    name="schedulingInterval"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Custom Interval (minutes)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="e.g., 30"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          How many minutes between each possible appointment start time.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )
+              }
             </div>
 
             <Separator />

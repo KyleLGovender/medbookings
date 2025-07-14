@@ -24,7 +24,7 @@ export function getDayOfWeekFromDate(date: Date): DayOfWeek {
  * Get day name from DayOfWeek enum
  */
 export function getDayName(dayOfWeek: DayOfWeek): string {
-  const option = dayOfWeekOptions.find(opt => opt.value === dayOfWeek);
+  const option = dayOfWeekOptions.find((opt) => opt.value === dayOfWeek);
   return option?.label || 'Unknown';
 }
 
@@ -32,17 +32,19 @@ export function getDayName(dayOfWeek: DayOfWeek): string {
  * Get short day name from DayOfWeek enum
  */
 export function getShortDayName(dayOfWeek: DayOfWeek): string {
-  const option = dayOfWeekOptions.find(opt => opt.value === dayOfWeek);
+  const option = dayOfWeekOptions.find((opt) => opt.value === dayOfWeek);
   return option?.shortLabel || 'U';
 }
 
 /**
  * Generate recurrence options for the dropdown
  */
-export function getRecurrenceOptions(startDate: Date): Array<{ value: RecurrenceOption; label: string }> {
+export function getRecurrenceOptions(
+  startDate: Date
+): Array<{ value: RecurrenceOption; label: string }> {
   const dayOfWeek = getDayOfWeekFromDate(startDate);
   const dayName = getDayName(dayOfWeek);
-  
+
   return [
     { value: RecurrenceOption.NONE, label: 'Does not repeat' },
     { value: RecurrenceOption.DAILY, label: 'Daily' },
@@ -55,8 +57,8 @@ export function getRecurrenceOptions(startDate: Date): Array<{ value: Recurrence
  * Create a recurrence pattern based on the selected option
  */
 export function createRecurrencePattern(
-  option: RecurrenceOption, 
-  startDate: Date, 
+  option: RecurrenceOption,
+  startDate: Date,
   customDays?: DayOfWeek[],
   endDate?: string
 ): RecurrencePattern {
@@ -95,8 +97,8 @@ export function createRecurrencePattern(
  * Convert recurrence pattern to description text
  */
 export function getRecurrenceDescription(pattern: RecurrencePattern): string {
-  const endDateText = pattern.endDate 
-    ? ` until ${formatDateForDisplay(parseDateFromInput(pattern.endDate))}` 
+  const endDateText = pattern.endDate
+    ? ` until ${formatDateForDisplay(parseDateFromInput(pattern.endDate))}`
     : '';
 
   switch (pattern.option) {
@@ -113,7 +115,7 @@ export function getRecurrenceDescription(pattern: RecurrencePattern): string {
       if (pattern.customDays && pattern.customDays.length > 0) {
         const dayNames = pattern.customDays
           .sort((a, b) => a - b)
-          .map(day => getShortDayName(day))
+          .map((day) => getShortDayName(day))
           .join(', ');
         return `Weekly on ${dayNames}${endDateText}`;
       }
@@ -145,7 +147,7 @@ export function formatDateForInput(date: Date): string {
  * Parse date from input string (YYYY-MM-DD)
  */
 export function parseDateFromInput(dateString: string): Date {
-  return new Date(dateString + 'T00:00:00');
+  return new Date(`${dateString}T00:00:00`);
 }
 
 /**
@@ -163,4 +165,4 @@ export function isValidRecurrencePattern(pattern: RecurrencePattern): boolean {
     default:
       return false;
   }
-} 
+}

@@ -540,15 +540,106 @@ export async function deleteAvailability(
       };
     }
 
-    // Soft delete by setting status to REJECTED
-    await prisma.availability.update({
+    // Hard delete - first delete calculated slots, then availability
+    await prisma.calculatedAvailabilitySlot.deleteMany({
+      where: { availabilityId: id },
+    });
+
+    // Delete the availability record
+    await prisma.availability.delete({
       where: { id },
-      data: {
-        status: AvailabilityStatus.REJECTED,
+    });
+
+    // Revalidate paths
+    revalidatePath('/dashboard/availability');
+    revalidatePath('/dashboard/calendar');
+    if (existingAvailability.organizationId) {
+      revalidatePath(
+        `/dashboard/organizations/${existingAvailability.organizationId}/availability`
+      );
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting availability:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete availability',
+    };
+  }
+}
+
+/**
+ * Cancel availability (soft delete by setting status to CANCELLED)
+ */
+export async function cancelAvailability(
+  id: string,
+  reason?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return { success: false, error: 'Authentication required' };
+    }
+
+    // Get existing availability
+    const existingAvailability = await prisma.availability.findUnique({
+      where: { id },
+      include: {
+        calculatedSlots: {
+          include: {
+            booking: true,
+          },
+        },
       },
     });
 
-    // Also mark calculated slots as unavailable
+    if (!existingAvailability) {
+      return { success: false, error: 'Availability not found' };
+    }
+
+    // Check permissions
+    const canCancel =
+      currentUser.id === existingAvailability.serviceProviderId ||
+      currentUser.id === existingAvailability.createdById ||
+      currentUser.role === 'ADMIN' ||
+      currentUser.role === 'SUPER_ADMIN';
+
+    if (!canCancel && existingAvailability.organizationId) {
+      const membership = await prisma.organizationMembership.findFirst({
+        where: {
+          userId: currentUser.id,
+          organizationId: existingAvailability.organizationId,
+          role: { in: ['OWNER', 'ADMIN', 'MANAGER'] },
+        },
+      });
+
+      if (!membership) {
+        return { success: false, error: 'Insufficient permissions' };
+      }
+    } else if (!canCancel) {
+      return { success: false, error: 'Access denied' };
+    }
+
+    // Check for existing bookings
+    const hasBookings = existingAvailability.calculatedSlots.some((slot) => slot.booking);
+
+    if (hasBookings) {
+      return {
+        success: false,
+        error: 'Cannot cancel availability with existing bookings. Cancel the bookings first.',
+      };
+    }
+
+    // Set status to CANCELLED
+    await prisma.availability.update({
+      where: { id },
+      data: {
+        status: AvailabilityStatus.CANCELLED,
+      },
+    });
+
+    // Mark calculated slots as invalid
     await prisma.calculatedAvailabilitySlot.updateMany({
       where: { availabilityId: id },
       data: {
@@ -567,10 +658,10 @@ export async function deleteAvailability(
 
     return { success: true };
   } catch (error) {
-    console.error('Error deleting availability:', error);
+    console.error('Error cancelling availability:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to delete availability',
+      error: error instanceof Error ? error.message : 'Failed to cancel availability',
     };
   }
 }

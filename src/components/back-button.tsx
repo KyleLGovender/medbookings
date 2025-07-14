@@ -13,7 +13,7 @@ interface BackButtonProps {
   showIcon?: boolean;
 }
 
-export function BackButton({ 
+export function BackButton({
   children = 'Go Back',
   className,
   variant = 'default',
@@ -22,8 +22,8 @@ export function BackButton({
   ...props
 }: BackButtonProps) {
   return (
-    <Button 
-      variant={variant} 
+    <Button
+      variant={variant}
       size={size}
       className={cn('', className)}
       onClick={() => window.history.back()}

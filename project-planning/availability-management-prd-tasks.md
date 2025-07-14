@@ -159,15 +159,18 @@ Based on detailed analysis of existing Prisma schema against PRD requirements:
 
 - [ ] 8.0 Cleanup
   - [ ] Service Provider Manage Calendar Works
+  - [ ] Generate Availability Slots
   - [ ] Availability display isn't working
-  - [ ] Edit Availabiity
+  - [ ] Edit Availability
   - [ ] Organization Manage Calendar Works
   - [ ] Default service duration and price are not pulling through in availability creation
   - [ ] Make the price and duration inputs on availability creation increase and decrease by correct amounts
   - [ ] Figure out pages routing and where to display various calendars
   - [ ] Sort out types between features
+  - [ ] Date picker in the calendar view
   - [x] Get rid of mock availability data and make sure everything is driven from database configuration
   - [x] Update customer recurring pattern to match Google calendar
   - [x] Add CANCELLED to prisma AvailabilityStatus
   - [x] Remove custom appointment starting intervals. It should be continuous, starting on the hour, starting on the half hour and hour.
   - [x] Add showPrice flag to Service Provider
+

@@ -37,23 +37,29 @@ interface OnboardingData {
     name: string;
     description: string | null;
   }>;
-  requirements: Record<string, Array<{
-    id: string;
-    name: string;
-    description: string | null;
-    validationType: string;
-    isRequired: boolean;
-    validationConfig: any;
-    displayPriority?: number;
-  }>>;
-  services: Record<string, Array<{
-    id: string;
-    name: string;
-    description: string | null;
-    defaultDuration: number;
-    defaultPrice: string;
-    displayPriority: number;
-  }>>;
+  requirements: Record<
+    string,
+    Array<{
+      id: string;
+      name: string;
+      description: string | null;
+      validationType: string;
+      isRequired: boolean;
+      validationConfig: any;
+      displayPriority?: number;
+    }>
+  >;
+  services: Record<
+    string,
+    Array<{
+      id: string;
+      name: string;
+      description: string | null;
+      defaultDuration: number;
+      defaultPrice: string;
+      displayPriority: number;
+    }>
+  >;
 }
 
 // API mutation function
@@ -80,7 +86,11 @@ export function ProviderOnboardingForm() {
   const { toast } = useToast();
 
   // Fetch consolidated onboarding data
-  const { data: onboardingData, isLoading: isLoadingData, error: dataError } = useQuery<OnboardingData>({
+  const {
+    data: onboardingData,
+    isLoading: isLoadingData,
+    error: dataError,
+  } = useQuery<OnboardingData>({
     queryKey: ['onboarding-data'],
     queryFn: async () => {
       const response = await fetch('/api/providers/onboarding');
@@ -121,10 +131,12 @@ export function ProviderOnboardingForm() {
 
   // Get filtered data based on selected provider type
   const selectedProviderType = onboardingData?.providerTypes.find(
-    type => type.id === selectedProviderTypeId
+    (type) => type.id === selectedProviderTypeId
   );
-  const requirementsForSelectedType = selectedProviderTypeId && onboardingData?.requirements[selectedProviderTypeId] || [];
-  const servicesForSelectedType = selectedProviderTypeId && onboardingData?.services[selectedProviderTypeId] || [];
+  const requirementsForSelectedType =
+    (selectedProviderTypeId && onboardingData?.requirements[selectedProviderTypeId]) || [];
+  const servicesForSelectedType =
+    (selectedProviderTypeId && onboardingData?.services[selectedProviderTypeId]) || [];
 
   // Update form state when provider type changes
   useEffect(() => {
@@ -141,9 +153,12 @@ export function ProviderOnboardingForm() {
 
       // Reset services selection when provider type changes
       methods.setValue('services.availableServices', []);
-      
+
       // Store the full service objects for reference in services section
-      methods.setValue('services.loadedServices', onboardingData.services[selectedProviderTypeId] || []);
+      methods.setValue(
+        'services.loadedServices',
+        onboardingData.services[selectedProviderTypeId] || []
+      );
 
       toast({
         title: 'Provider type selected',
@@ -266,7 +281,7 @@ export function ProviderOnboardingForm() {
   // Show loading state while fetching data
   if (isLoadingData) {
     return (
-      <CalendarLoader 
+      <CalendarLoader
         message="Loading onboarding data"
         submessage="Preparing your provider application form..."
         showAfterMs={0}
@@ -324,7 +339,7 @@ export function ProviderOnboardingForm() {
             Select your medical profession or specialty.
           </p>
           <Separator className="my-4" />
-          <ProviderTypeSection 
+          <ProviderTypeSection
             providerTypes={onboardingData.providerTypes}
             selectedProviderType={selectedProviderType}
             requirementsCount={requirementsForSelectedType.length}
@@ -338,7 +353,7 @@ export function ProviderOnboardingForm() {
             Let patients know what services you offer and your fee structure.
           </p>
           <Separator className="my-4" />
-          <ServicesSection 
+          <ServicesSection
             availableServices={servicesForSelectedType}
             selectedProviderTypeId={selectedProviderTypeId}
           />
@@ -350,7 +365,7 @@ export function ProviderOnboardingForm() {
             Please complete all required regulatory information and upload necessary documents.
           </p>
           <Separator className="my-4" />
-          <RegulatoryRequirementsSection 
+          <RegulatoryRequirementsSection
             requirements={requirementsForSelectedType}
             selectedProviderTypeId={selectedProviderTypeId}
           />

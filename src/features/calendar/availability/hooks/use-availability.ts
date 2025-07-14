@@ -266,6 +266,37 @@ export function useUpdateAvailability(options?: {
   });
 }
 
+export function useCancelAvailability(options?: {
+  onSuccess?: (variables: { id: string; reason?: string }) => void;
+  onError?: (error: Error) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, { id: string; reason?: string }>({
+    mutationFn: async ({ id, reason }) => {
+      const response = await fetch('/api/calendar/availability/cancel', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, reason }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to cancel availability');
+      }
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate all availability queries
+      queryClient.invalidateQueries({ queryKey: ['availability'] });
+
+      options?.onSuccess?.(variables);
+    },
+    onError: options?.onError,
+  });
+}
+
 export function useDeleteAvailability(options?: {
   onSuccess?: (variables: { id: string }) => void;
   onError?: (error: Error) => void;

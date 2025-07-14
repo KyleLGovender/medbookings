@@ -15,14 +15,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage
-} from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Label } from '@/components/ui/label';
+
 import { dayOfWeekOptions } from '../lib/recurrence-utils';
 import { customRecurrenceDataSchema } from '../types/schemas';
 import { CustomRecurrenceData, DayOfWeek } from '../types/types';
@@ -42,9 +37,7 @@ export function CustomRecurrenceModal({
   onSave,
   initialData,
 }: CustomRecurrenceModalProps) {
-  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(
-    initialData?.selectedDays || []
-  );
+  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(initialData?.selectedDays || []);
 
   // Calculate 4 weeks from today as default end date - memoized to prevent infinite loops
   const fourWeeksFromNow = useMemo(() => {
@@ -81,9 +74,9 @@ export function CustomRecurrenceModal({
 
   const handleDayToggle = (day: DayOfWeek) => {
     const newSelectedDays = selectedDays.includes(day)
-      ? selectedDays.filter(d => d !== day)
+      ? selectedDays.filter((d) => d !== day)
       : [...selectedDays, day];
-    
+
     setSelectedDays(newSelectedDays);
     form.setValue('selectedDays', newSelectedDays);
   };
@@ -117,7 +110,7 @@ export function CustomRecurrenceModal({
         <DialogHeader>
           <DialogTitle>Custom recurrence</DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6">
             <div className="space-y-4">
@@ -139,7 +132,7 @@ export function CustomRecurrenceModal({
                       key={option.value}
                       type="button"
                       onClick={() => handleDayToggle(option.value)}
-                      className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
+                      className={`h-8 w-8 rounded-full text-sm font-medium transition-colors ${
                         selectedDays.includes(option.value)
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -152,9 +145,7 @@ export function CustomRecurrenceModal({
                 <FormField
                   control={form.control}
                   name="selectedDays"
-                  render={() => (
-                    <FormMessage />
-                  )}
+                  render={() => <FormMessage />}
                 />
               </div>
 
@@ -167,10 +158,7 @@ export function CustomRecurrenceModal({
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <DatePicker
-                          date={field.value}
-                          onChange={(date) => field.onChange(date)}
-                        />
+                        <DatePicker date={field.value} onChange={(date) => field.onChange(date)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -190,4 +178,4 @@ export function CustomRecurrenceModal({
       </DialogContent>
     </Dialog>
   );
-} 
+}

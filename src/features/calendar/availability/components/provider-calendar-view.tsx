@@ -2,14 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 
-import {
-  Calendar as CalendarIcon,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  MapPin,
-  Plus,
-} from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, MapPin, Plus } from 'lucide-react';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -59,7 +52,7 @@ interface ProviderCalendarData {
 
 export interface ProviderCalendarViewProps {
   providerId: string;
-  onEventClick?: (event: CalendarEvent) => void;
+  onEventClick?: (event: CalendarEvent, clickEvent: React.MouseEvent) => void;
   onTimeSlotClick?: (date: Date, hour: number) => void;
   onCreateAvailability?: () => void;
   onEditEvent?: (event: CalendarEvent) => void;
@@ -81,6 +74,7 @@ export function ProviderCalendarView({
   const [currentDate, setCurrentDate] = useState(initialDate);
   const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<AvailabilityStatus | 'ALL'>('ALL');
 
   // Fetch real data from API
   const { data: provider, isLoading: isProviderLoading } = useProvider(providerId);
@@ -112,6 +106,7 @@ export function ProviderCalendarView({
     serviceProviderId: providerId,
     startDate: dateRange.start,
     endDate: dateRange.end,
+    ...(statusFilter !== 'ALL' && { status: statusFilter }),
   });
 
   const isLoading = isProviderLoading || isAvailabilityLoading;
@@ -125,6 +120,11 @@ export function ProviderCalendarView({
 
     // Add availability blocks
     availabilityData.forEach((availability: AvailabilityWithRelations) => {
+      // Determine creator information
+      const isProviderCreated =
+        availability.isProviderCreated ||
+        (!availability.organizationId && !availability.createdByMembershipId);
+
       events.push({
         id: availability.id,
         type: 'availability',
@@ -148,6 +148,19 @@ export function ProviderCalendarView({
               name: availability.availableServices[0].service.name,
               duration: availability.availableServices[0].duration || 30,
               price: Number(availability.availableServices[0].price) || 0,
+            }
+          : undefined,
+        // Creator information
+        isProviderCreated,
+        createdBy: availability.createdBy ? {
+          id: availability.createdBy.id,
+          name: availability.createdBy.name || 'Unknown',
+          type: isProviderCreated ? 'provider' : 'organization',
+        } : undefined,
+        organization: availability.organization
+          ? {
+              id: availability.organization.id,
+              name: availability.organization.name,
             }
           : undefined,
       });
@@ -254,18 +267,36 @@ export function ProviderCalendarView({
   const getEventStyle = (event: CalendarEvent): string => {
     switch (event.type) {
       case 'availability':
-        switch (event.status) {
-          case AvailabilityStatus.ACCEPTED:
-            return 'bg-primary/60 border-primary/90 text-white';
-          case AvailabilityStatus.PENDING:
-            return 'bg-primary/60 border-primary/90 text-white';
-          default:
-            return 'bg-primary/60 border-primary/90 text-white';
+        // Provider-created availabilities (green tones)
+        if (event.isProviderCreated) {
+          switch (event.status) {
+            case AvailabilityStatus.ACCEPTED:
+              return 'bg-green-100 border-green-400 text-green-800';
+            case AvailabilityStatus.CANCELLED:
+              return 'bg-green-50 border-green-300 text-green-600';
+            default:
+              return 'bg-green-100 border-green-400 text-green-800';
+          }
+        }
+        // Organization-created availabilities (blue/yellow tones)
+        else {
+          switch (event.status) {
+            case AvailabilityStatus.PENDING:
+              return 'bg-yellow-100 border-yellow-400 text-yellow-800';
+            case AvailabilityStatus.ACCEPTED:
+              return 'bg-blue-100 border-blue-400 text-blue-800';
+            case AvailabilityStatus.REJECTED:
+              return 'bg-red-100 border-red-400 text-red-800';
+            case AvailabilityStatus.CANCELLED:
+              return 'bg-gray-100 border-gray-400 text-gray-800';
+            default:
+              return 'bg-blue-100 border-blue-400 text-blue-800';
+          }
         }
       case 'booking':
         switch (event.status) {
           case 'BOOKED':
-            return 'bg-blue-100 border-blue-300 text-blue-800';
+            return 'bg-purple-100 border-purple-300 text-purple-800';
           case 'PENDING':
             return 'bg-orange-100 border-orange-300 text-orange-800';
           default:
@@ -391,10 +422,21 @@ export function ProviderCalendarView({
                 </SelectContent>
               </Select>
 
-              <Button variant="outline" size="sm">
-                <Filter className="mr-2 h-4 w-4" />
-                Filter
-              </Button>
+              <Select
+                value={statusFilter}
+                onValueChange={(value: AvailabilityStatus | 'ALL') => setStatusFilter(value)}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Statuses</SelectItem>
+                  <SelectItem value={AvailabilityStatus.ACCEPTED}>✅ Active</SelectItem>
+                  <SelectItem value={AvailabilityStatus.PENDING}>🟡 Pending</SelectItem>
+                  <SelectItem value={AvailabilityStatus.CANCELLED}>⏸️ Cancelled</SelectItem>
+                  <SelectItem value={AvailabilityStatus.REJECTED}>❌ Rejected</SelectItem>
+                </SelectContent>
+              </Select>
 
               {onCreateAvailability && (
                 <Button size="sm" onClick={onCreateAvailability}>
@@ -446,22 +488,49 @@ export function ProviderCalendarView({
           <CardTitle className="text-sm">Legend</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
-            <div className="flex items-center space-x-2">
-              <div className="h-4 w-4 rounded border border-green-300 bg-green-100"></div>
-              <span>Available</span>
+          <div className="space-y-3">
+            <div className="text-xs font-medium text-muted-foreground">Provider Created</div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="flex items-center space-x-2">
+                <div className="h-4 w-4 rounded border border-green-400 bg-green-100"></div>
+                <span>✅ Active</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="h-4 w-4 rounded border border-green-300 bg-green-50"></div>
+                <span>⏸️ Cancelled</span>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="h-4 w-4 rounded border border-blue-300 bg-blue-100"></div>
-              <span>Booked</span>
+
+            <div className="text-xs font-medium text-muted-foreground">Organization Created</div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="flex items-center space-x-2">
+                <div className="h-4 w-4 rounded border border-yellow-400 bg-yellow-100"></div>
+                <span>🟡 Pending</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="h-4 w-4 rounded border border-blue-400 bg-blue-100"></div>
+                <span>✅ Accepted</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="h-4 w-4 rounded border border-red-400 bg-red-100"></div>
+                <span>❌ Rejected</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="h-4 w-4 rounded border border-gray-400 bg-gray-100"></div>
+                <span>⏸️ Cancelled</span>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="h-4 w-4 rounded border border-orange-300 bg-orange-100"></div>
-              <span>Pending</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="h-4 w-4 rounded border border-red-300 bg-red-100"></div>
-              <span>Blocked</span>
+
+            <div className="text-xs font-medium text-muted-foreground">Bookings</div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="flex items-center space-x-2">
+                <div className="h-4 w-4 rounded border border-purple-300 bg-purple-100"></div>
+                <span>📅 Booked</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="h-4 w-4 rounded border border-orange-300 bg-orange-100"></div>
+                <span>⏳ Booking Pending</span>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -475,7 +544,7 @@ interface WeekViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   workingHours: { start: string; end: string };
-  onEventClick?: (event: CalendarEvent) => void;
+  onEventClick?: (event: CalendarEvent, clickEvent: React.MouseEvent) => void;
   onTimeSlotClick?: (date: Date, hour: number) => void;
   getEventStyle: (event: CalendarEvent) => string;
 }
@@ -510,16 +579,14 @@ function WeekView({
 
   const calculateEventPosition = (event: CalendarEvent) => {
     const startHour = new Date(event.startTime).getHours();
-    const startMinutes = new Date(event.startTime).getMinutes();
     const endHour = new Date(event.endTime).getHours();
-    const endMinutes = new Date(event.endTime).getMinutes();
-    
+
     // Each time slot: 60px height + 4px gap + 1px border = 65px total per hour
     const slotHeight = 65;
     const top = startHour * slotHeight;
     const duration = endHour - startHour;
     const height = duration * slotHeight - 20; // Subtract gap to not overlap into next hour
-    
+
     return { top, height };
   };
 
@@ -527,140 +594,171 @@ function WeekView({
     <div className="overflow-auto">
       <div className="relative min-w-[800px]">
         <div className="grid grid-cols-8 gap-1">
-        {/* Header */}
-        <div className="p-2 text-center font-medium">Time</div>
-        {days.map((day, index) => (
-          <div key={index} className="border-b p-2 text-center font-medium">
-            <div className="text-sm">{day.toLocaleDateString([], { weekday: 'short' })}</div>
-            <div className="text-xs text-muted-foreground">{day.getDate()}</div>
-          </div>
-        ))}
-
-        {/* Time slots background grid */}
-        {hours.map((hour) => (
-          <React.Fragment key={hour}>
-            <div className="border-r p-2 text-right text-xs text-muted-foreground">
-              {hour.toString().padStart(2, '0')}:00
+          {/* Header */}
+          <div className="p-2 text-center font-medium">Time</div>
+          {days.map((day, index) => (
+            <div key={index} className="border-b p-2 text-center font-medium">
+              <div className="text-sm">{day.toLocaleDateString([], { weekday: 'short' })}</div>
+              <div className="text-xs text-muted-foreground">{day.getDate()}</div>
             </div>
-            {days.map((day, dayIndex) => {
-              const isWorkingHour = hour >= workingStartHour && hour < workingEndHour;
-              const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+          ))}
 
-              return (
-                <div
-                  key={`${dayIndex}-${hour}`}
-                  className={`min-h-[60px] cursor-pointer border border-gray-200 hover:bg-gray-50 ${!isWorkingHour || isWeekend ? 'bg-gray-50' : ''} `}
-                  onClick={() => onTimeSlotClick?.(day, hour)}
-                />
-              );
-            })}
-          </React.Fragment>
-        ))}
-        
-        {/* Event overlays */}
-        {days.map((day, dayIndex) => {
-          const dayEvents = getEventsForDate(day);
-          
-          return (
-            <div
-              key={`events-${dayIndex}`}
-              className="absolute inset-0"
-              style={{
-                left: `${((dayIndex + 1) / 8) * 100}%`,
-                width: `${(1 / 8) * 100}%`,
-                top: '52px', // Account for header height with padding and border
-              }}
-            >
-              {dayEvents.map((event) => {
-                const { top, height } = calculateEventPosition(event);
-                
+          {/* Time slots background grid */}
+          {hours.map((hour) => (
+            <React.Fragment key={hour}>
+              <div className="border-r p-2 text-right text-xs text-muted-foreground">
+                {hour.toString().padStart(2, '0')}:00
+              </div>
+              {days.map((day, dayIndex) => {
+                const isWorkingHour = hour >= workingStartHour && hour < workingEndHour;
+                const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+
                 return (
-                  <TooltipProvider key={event.id}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div
-                          className={`absolute left-1 right-1 cursor-pointer rounded border p-2 text-xs ${getEventStyle(event)} shadow-sm`}
-                          style={{
-                            top: `${top}px`,
-                            height: `${height}px`,
-                            zIndex: 10,
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEventClick?.(event);
-                          }}
-                        >
-                          <div className="font-medium truncate">{event.title}</div>
-                          <div className="text-xs opacity-75 mt-1">
-                            {event.startTime.toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                            {' - '}
-                            {event.endTime.toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </div>
-                          {event.location && height > 50 && (
-                            <div className="flex items-center text-xs opacity-75 mt-1">
-                              {event.location.isOnline ? (
-                                <span>Online</span>
-                              ) : (
-                                <>
-                                  <MapPin className="mr-1 h-3 w-3" />
-                                  <span className="truncate">{event.location.name}</span>
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <div className="space-y-2 max-w-xs">
-                          <div className="font-medium">{event.title}</div>
-                          <div className="text-sm">
-                            {event.startTime.toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}{' '}
-                            -{' '}
-                            {event.endTime.toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </div>
-                          {event.service && (
-                            <div className="space-y-1">
-                              <div className="text-sm">Service: {event.service.name}</div>
-                              {event.service.duration && (
-                                <div className="text-sm">Duration: {event.service.duration} minutes</div>
-                              )}
-                              {event.service.price && (
-                                <div className="text-sm">Price: ${event.service.price}</div>
-                              )}
-                            </div>
-                          )}
-                          {event.location && (
-                            <div className="text-sm">
-                              Location: {event.location.isOnline ? 'Online' : event.location.name}
-                            </div>
-                          )}
-                          {event.customer && (
-                            <div className="text-sm">Customer: {event.customer.name}</div>
-                          )}
-                          <div className="text-sm capitalize">
-                            Status: {event.status.toLowerCase().replace('_', ' ')}
-                          </div>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <div
+                    key={`${dayIndex}-${hour}`}
+                    className={`min-h-[60px] cursor-pointer border border-gray-200 hover:bg-gray-50 ${!isWorkingHour || isWeekend ? 'bg-gray-50' : ''} `}
+                    onClick={() => onTimeSlotClick?.(day, hour)}
+                  />
                 );
               })}
-            </div>
-          );
-        })}
+            </React.Fragment>
+          ))}
+
+          {/* Event overlays */}
+          {days.map((day, dayIndex) => {
+            const dayEvents = getEventsForDate(day);
+
+            return (
+              <div
+                key={`events-${dayIndex}`}
+                className="absolute inset-0"
+                style={{
+                  left: `${((dayIndex + 1) / 8) * 100}%`,
+                  width: `${(1 / 8) * 100}%`,
+                  top: '52px', // Account for header height with padding and border
+                }}
+              >
+                {dayEvents.map((event) => {
+                  const { top, height } = calculateEventPosition(event);
+
+                  return (
+                    <TooltipProvider key={event.id}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div
+                            className={`absolute left-1 right-1 cursor-pointer rounded border p-2 text-xs ${getEventStyle(event)} shadow-sm`}
+                            style={{
+                              top: `${top}px`,
+                              height: `${height}px`,
+                              zIndex: 10,
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEventClick?.(event, e);
+                            }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="truncate font-medium">{event.title}</div>
+                              {event.type === 'availability' && (
+                                <div className="ml-1 text-xs">
+                                  {event.status === AvailabilityStatus.PENDING && '🟡'}
+                                  {event.status === AvailabilityStatus.ACCEPTED && '✅'}
+                                  {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
+                                  {event.status === AvailabilityStatus.REJECTED && '❌'}
+                                </div>
+                              )}
+                            </div>
+                            {event.type === 'availability' && event.createdBy && height > 70 && (
+                              <div className="mt-1 text-xs opacity-75">
+                                {event.isProviderCreated ? (
+                                  <span className="text-green-600">Provider Created</span>
+                                ) : (
+                                  <span className="text-blue-600">
+                                    {event.organization?.name || 'Organization'}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            <div className="mt-1 text-xs opacity-75">
+                              {event.startTime.toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                              {' - '}
+                              {event.endTime.toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </div>
+                            {event.location && height > 50 && (
+                              <div className="mt-1 flex items-center text-xs opacity-75">
+                                {event.location.isOnline ? (
+                                  <span>Online</span>
+                                ) : (
+                                  <>
+                                    <MapPin className="mr-1 h-3 w-3" />
+                                    <span className="truncate">{event.location.name}</span>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <div className="max-w-xs space-y-2">
+                            <div className="font-medium">{event.title}</div>
+                            <div className="text-sm">
+                              {event.startTime.toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}{' '}
+                              -{' '}
+                              {event.endTime.toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </div>
+                            {event.service && (
+                              <div className="space-y-1">
+                                <div className="text-sm">Service: {event.service.name}</div>
+                                {event.service.duration && (
+                                  <div className="text-sm">
+                                    Duration: {event.service.duration} minutes
+                                  </div>
+                                )}
+                                {event.service.price && (
+                                  <div className="text-sm">Price: R{event.service.price}</div>
+                                )}
+                              </div>
+                            )}
+                            {event.location && (
+                              <div className="text-sm">
+                                Location: {event.location.isOnline ? 'Online' : event.location.name}
+                              </div>
+                            )}
+                            {event.customer && (
+                              <div className="text-sm">Customer: {event.customer.name}</div>
+                            )}
+                            <div className="text-sm capitalize">
+                              Status: {event.status.toLowerCase().replace('_', ' ')}
+                            </div>
+                            {event.type === 'availability' && event.createdBy && (
+                              <div className="text-sm">
+                                Creator:{' '}
+                                {event.isProviderCreated
+                                  ? 'Provider'
+                                  : event.organization?.name || 'Organization'}
+                              </div>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -690,11 +788,11 @@ function DayView({
     const startMinutes = new Date(event.startTime).getMinutes();
     const endHour = new Date(event.endTime).getHours();
     const endMinutes = new Date(event.endTime).getMinutes();
-    
+
     const top = (startHour + startMinutes / 60) * 80; // 80px per hour
-    const duration = (endHour - startHour) + (endMinutes - startMinutes) / 60;
+    const duration = endHour - startHour + (endMinutes - startMinutes) / 60;
     const height = Math.max(duration * 80, 40); // Minimum 40px height
-    
+
     return { top, height };
   };
 
@@ -719,12 +817,12 @@ function DayView({
           );
         })}
       </div>
-      
+
       {/* Event overlays */}
       <div className="absolute inset-0" style={{ left: '80px' }}>
         {dayEvents.map((event) => {
           const { top, height } = calculateEventPosition(event);
-          
+
           return (
             <TooltipProvider key={event.id}>
               <Tooltip>
@@ -738,29 +836,40 @@ function DayView({
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      onEventClick?.(event);
+                      onEventClick?.(event, e);
                     }}
                   >
-                    <div className="font-medium truncate">{event.title}</div>
-                    <div className="text-xs opacity-75 mt-1">
-                      {event.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <div className="flex items-center justify-between">
+                      <div className="truncate font-medium">{event.title}</div>
+                      {event.type === 'availability' && (
+                        <div className="ml-1 text-xs">
+                          {event.status === AvailabilityStatus.PENDING && '🟡'}
+                          {event.status === AvailabilityStatus.ACCEPTED && '✅'}
+                          {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
+                          {event.status === AvailabilityStatus.REJECTED && '❌'}
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-1 text-xs opacity-75">
+                      {event.startTime.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                       {' - '}
                       {event.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                     {event.location && height > 60 && (
-                      <div className="text-xs opacity-75 mt-1 truncate">
+                      <div className="mt-1 truncate text-xs opacity-75">
                         {event.location.isOnline ? 'Online' : event.location.name}
                       </div>
                     )}
                     {event.customer && height > 80 && (
-                      <div className="text-xs opacity-75 mt-1 truncate">
-                        {event.customer.name}
-                      </div>
+                      <div className="mt-1 truncate text-xs opacity-75">{event.customer.name}</div>
                     )}
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <div className="space-y-2 max-w-xs">
+                  <div className="max-w-xs space-y-2">
                     <div className="font-medium">{event.title}</div>
                     <div className="text-sm">
                       {event.startTime.toLocaleTimeString([], {
@@ -810,7 +919,7 @@ function DayView({
 interface MonthViewProps {
   currentDate: Date;
   events: CalendarEvent[];
-  onEventClick?: (event: CalendarEvent) => void;
+  onEventClick?: (event: CalendarEvent, clickEvent: React.MouseEvent) => void;
   getEventStyle: (event: CalendarEvent) => string;
 }
 
@@ -856,13 +965,23 @@ function MonthView({ currentDate, events, onEventClick, getEventStyle }: MonthVi
               {dayEvents.slice(0, 3).map((event) => (
                 <div
                   key={event.id}
-                  className={`cursor-pointer truncate rounded border p-1 text-xs ${getEventStyle(event)} `}
+                  className={`cursor-pointer rounded border p-1 text-xs ${getEventStyle(event)} `}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onEventClick?.(event);
+                    onEventClick?.(event, e);
                   }}
                 >
-                  {event.title}
+                  <div className="flex items-center justify-between">
+                    <div className="truncate">{event.title}</div>
+                    {event.type === 'availability' && (
+                      <div className="ml-1 text-xs">
+                        {event.status === AvailabilityStatus.PENDING && '🟡'}
+                        {event.status === AvailabilityStatus.ACCEPTED && '✅'}
+                        {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
+                        {event.status === AvailabilityStatus.REJECTED && '❌'}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
               {dayEvents.length > 3 && (

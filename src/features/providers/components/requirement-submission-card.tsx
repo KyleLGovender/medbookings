@@ -179,49 +179,46 @@ export function RequirementSubmissionCard({
           <div className="flex items-center gap-2">{renderContent()}</div>
 
           {/* Show action buttons and status */}
-          {(shouldShowViewButton ||
-            shouldShowPendingButtons ||
-            shouldShowReapproveButton ) && (
+          {(shouldShowViewButton || shouldShowPendingButtons || shouldShowReapproveButton) && (
             <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  {/* Show rejection details icon for rejected requirements */}
-                  {(submission.status === 'REJECTED' || submission.status?.includes('REJECT')) && (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
-                          title="View rejection reason"
-                        >
-                          <Info className="h-4 w-4" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80" align="end">
-                        <div className="space-y-2">
-                          <h4 className="font-medium text-red-800">Rejection Details</h4>
-                          {submission.rejectionReason ? (
-                            <p className="text-sm text-red-700">{submission.rejectionReason}</p>
-                          ) : submission.notes ? (
-                            <p className="text-sm text-red-700">{submission.notes}</p>
-                          ) : submission.adminNotes ? (
-                            <p className="text-sm text-red-700">{submission.adminNotes}</p>
-                          ) : (
-                            <div className="space-y-2">
-                              <p className="text-sm text-red-700">
-                                No rejection reason was provided when this requirement was rejected.
-                              </p>
-                              <p className="text-xs text-red-600">
-                                This requirement can be re-approved by clicking the Re-approve
-                                button.
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  )}
-                </div>
+              <div className="flex items-center gap-1">
+                {/* Show rejection details icon for rejected requirements */}
+                {(submission.status === 'REJECTED' || submission.status?.includes('REJECT')) && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        title="View rejection reason"
+                      >
+                        <Info className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80" align="end">
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-red-800">Rejection Details</h4>
+                        {submission.rejectionReason ? (
+                          <p className="text-sm text-red-700">{submission.rejectionReason}</p>
+                        ) : submission.notes ? (
+                          <p className="text-sm text-red-700">{submission.notes}</p>
+                        ) : submission.adminNotes ? (
+                          <p className="text-sm text-red-700">{submission.adminNotes}</p>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="text-sm text-red-700">
+                              No rejection reason was provided when this requirement was rejected.
+                            </p>
+                            <p className="text-xs text-red-600">
+                              This requirement can be re-approved by clicking the Re-approve button.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
 
               {shouldShowViewButton && (
                 <NavigationLink

@@ -29,7 +29,10 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { TimePicker } from '@/components/ui/time-picker';
 import { useCreateAvailability } from '@/features/calendar/availability/hooks/use-availability';
-import { createRecurrencePattern, getRecurrenceOptions } from '@/features/calendar/availability/lib/recurrence-utils';
+import {
+  createRecurrencePattern,
+  getRecurrenceOptions,
+} from '@/features/calendar/availability/lib/recurrence-utils';
 import { createAvailabilityDataSchema } from '@/features/calendar/availability/types/schemas';
 import {
   CreateAvailabilityData,
@@ -64,8 +67,12 @@ export function AvailabilityCreationForm({
 }: AvailabilityCreationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customRecurrenceModalOpen, setCustomRecurrenceModalOpen] = useState(false);
-  const [currentRecurrenceOption, setCurrentRecurrenceOption] = useState<RecurrenceOption>(RecurrenceOption.NONE);
-  const [customRecurrenceData, setCustomRecurrenceData] = useState<CustomRecurrenceData | undefined>();
+  const [currentRecurrenceOption, setCurrentRecurrenceOption] = useState<RecurrenceOption>(
+    RecurrenceOption.NONE
+  );
+  const [customRecurrenceData, setCustomRecurrenceData] = useState<
+    CustomRecurrenceData | undefined
+  >();
   const { toast } = useToast();
 
   // Fetch provider's services
@@ -138,7 +145,7 @@ export function AvailabilityCreationForm({
       data.selectedDays,
       data.endDate ? data.endDate.toISOString().split('T')[0] : undefined
     );
-    
+
     form.setValue('recurrencePattern', pattern);
     form.setValue('isRecurring', true);
     setCustomRecurrenceData(data);
@@ -234,7 +241,7 @@ export function AvailabilityCreationForm({
                 render={({ field }) => {
                   const startTime = form.watch('startTime');
                   const recurrenceOptions = getRecurrenceOptions(startTime);
-                  
+
                   return (
                     <FormItem>
                       <FormLabel>Recurrence</FormLabel>
@@ -242,7 +249,7 @@ export function AvailabilityCreationForm({
                         onValueChange={(value) => {
                           const option = value as RecurrenceOption;
                           setCurrentRecurrenceOption(option);
-                          
+
                           if (option === RecurrenceOption.CUSTOM) {
                             setCustomRecurrenceModalOpen(true);
                           } else {
@@ -445,7 +452,7 @@ export function AvailabilityCreationForm({
           </form>
         </Form>
       </CardContent>
-      
+
       {/* Custom Recurrence Modal */}
       <CustomRecurrenceModal
         isOpen={customRecurrenceModalOpen}

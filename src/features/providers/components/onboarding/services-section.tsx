@@ -20,7 +20,10 @@ interface ServicesSectionProps {
   selectedProviderTypeId: string;
 }
 
-export function ServicesSection({ availableServices, selectedProviderTypeId }: ServicesSectionProps) {
+export function ServicesSection({
+  availableServices,
+  selectedProviderTypeId,
+}: ServicesSectionProps) {
   const {
     control,
     setValue,
