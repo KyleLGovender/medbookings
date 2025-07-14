@@ -29,7 +29,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { TimePicker } from '@/components/ui/time-picker';
 import { useCreateAvailability } from '@/features/calendar/availability/hooks/use-availability';
-import { createSimpleRecurrencePattern, getRecurrenceOptions } from '@/features/calendar/availability/lib/recurrence-utils';
+import { createRecurrencePattern, getRecurrenceOptions } from '@/features/calendar/availability/lib/recurrence-utils';
 import { createAvailabilityDataSchema } from '@/features/calendar/availability/types/schemas';
 import {
   CreateAvailabilityData,
@@ -132,14 +132,14 @@ export function AvailabilityCreationForm({
 
   const handleCustomRecurrenceSave = (data: CustomRecurrenceData) => {
     const startTime = form.watch('startTime');
-    const pattern = createSimpleRecurrencePattern(
+    const pattern = createRecurrencePattern(
       RecurrenceOption.CUSTOM,
       startTime,
       data.selectedDays,
       data.endDate ? data.endDate.toISOString().split('T')[0] : undefined
     );
     
-    form.setValue('simpleRecurrence', pattern);
+    form.setValue('recurrencePattern', pattern);
     form.setValue('isRecurring', true);
     setCustomRecurrenceData(data);
     setCustomRecurrenceModalOpen(false);
@@ -230,7 +230,7 @@ export function AvailabilityCreationForm({
 
               <FormField
                 control={form.control}
-                name="simpleRecurrence"
+                name="recurrencePattern"
                 render={({ field }) => {
                   const startTime = form.watch('startTime');
                   const recurrenceOptions = getRecurrenceOptions(startTime);
@@ -246,7 +246,7 @@ export function AvailabilityCreationForm({
                           if (option === RecurrenceOption.CUSTOM) {
                             setCustomRecurrenceModalOpen(true);
                           } else {
-                            const pattern = createSimpleRecurrencePattern(option, startTime);
+                            const pattern = createRecurrencePattern(option, startTime);
                             field.onChange(pattern);
                             form.setValue('isRecurring', option !== RecurrenceOption.NONE);
                           }

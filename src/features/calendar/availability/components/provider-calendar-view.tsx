@@ -128,7 +128,7 @@ export function ProviderCalendarView({
       events.push({
         id: availability.id,
         type: 'availability',
-        title: `Available - ${availability.availableServices?.[0]?.service?.name || 'General'}`,
+        title: availability.availableServices?.[0]?.service?.name || 'General Consultation',
         startTime: new Date(availability.startTime),
         endTime: new Date(availability.endTime),
         status: availability.status,
@@ -159,7 +159,7 @@ export function ProviderCalendarView({
           events.push({
             id: slot.id,
             type: 'booking',
-            title: `Booking - ${slot.service?.name || 'Service'}`,
+            title: slot.service?.name || 'Appointment',
             startTime: new Date(slot.startTime),
             endTime: new Date(slot.endTime),
             status: slot.status,
@@ -256,11 +256,11 @@ export function ProviderCalendarView({
       case 'availability':
         switch (event.status) {
           case AvailabilityStatus.ACCEPTED:
-            return 'bg-green-100 border-green-300 text-green-800';
+            return 'bg-primary/60 border-primary/90 text-white';
           case AvailabilityStatus.PENDING:
-            return 'bg-yellow-100 border-yellow-300 text-yellow-800';
+            return 'bg-primary/60 border-primary/90 text-white';
           default:
-            return 'bg-gray-100 border-gray-300 text-gray-800';
+            return 'bg-primary/60 border-primary/90 text-white';
         }
       case 'booking':
         switch (event.status) {
@@ -501,20 +501,32 @@ function WeekView({
   const workingStartHour = parseInt(workingHours.start.split(':')[0]);
   const workingEndHour = parseInt(workingHours.end.split(':')[0]);
 
-  const getEventsForDateAndHour = (date: Date, hour: number) => {
+  const getEventsForDate = (date: Date) => {
     return events.filter((event) => {
       const eventDate = new Date(event.startTime);
-      return (
-        eventDate.toDateString() === date.toDateString() &&
-        eventDate.getHours() <= hour &&
-        new Date(event.endTime).getHours() > hour
-      );
+      return eventDate.toDateString() === date.toDateString();
     });
+  };
+
+  const calculateEventPosition = (event: CalendarEvent) => {
+    const startHour = new Date(event.startTime).getHours();
+    const startMinutes = new Date(event.startTime).getMinutes();
+    const endHour = new Date(event.endTime).getHours();
+    const endMinutes = new Date(event.endTime).getMinutes();
+    
+    // Each time slot: 60px height + 4px gap + 1px border = 65px total per hour
+    const slotHeight = 65;
+    const top = startHour * slotHeight;
+    const duration = endHour - startHour;
+    const height = duration * slotHeight - 20; // Subtract gap to not overlap into next hour
+    
+    return { top, height };
   };
 
   return (
     <div className="overflow-auto">
-      <div className="grid min-w-[800px] grid-cols-8 gap-1">
+      <div className="relative min-w-[800px]">
+        <div className="grid grid-cols-8 gap-1">
         {/* Header */}
         <div className="p-2 text-center font-medium">Time</div>
         {days.map((day, index) => (
@@ -524,79 +536,132 @@ function WeekView({
           </div>
         ))}
 
-        {/* Time slots */}
+        {/* Time slots background grid */}
         {hours.map((hour) => (
           <React.Fragment key={hour}>
             <div className="border-r p-2 text-right text-xs text-muted-foreground">
               {hour.toString().padStart(2, '0')}:00
             </div>
             {days.map((day, dayIndex) => {
-              const dayEvents = getEventsForDateAndHour(day, hour);
               const isWorkingHour = hour >= workingStartHour && hour < workingEndHour;
               const isWeekend = day.getDay() === 0 || day.getDay() === 6;
 
               return (
                 <div
                   key={`${dayIndex}-${hour}`}
-                  className={`min-h-[60px] cursor-pointer border border-gray-200 p-1 hover:bg-gray-50 ${!isWorkingHour || isWeekend ? 'bg-gray-50' : ''} `}
+                  className={`min-h-[60px] cursor-pointer border border-gray-200 hover:bg-gray-50 ${!isWorkingHour || isWeekend ? 'bg-gray-50' : ''} `}
                   onClick={() => onTimeSlotClick?.(day, hour)}
-                >
-                  {dayEvents.map((event) => (
-                    <TooltipProvider key={event.id}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div
-                            className={`mb-1 cursor-pointer rounded border p-1 text-xs ${getEventStyle(event)} `}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEventClick?.(event);
-                            }}
-                          >
-                            <div className="truncate font-medium">{event.title}</div>
-                            {event.location && (
-                              <div className="flex items-center text-xs opacity-75">
-                                {event.location.isOnline ? (
-                                  <span>Online</span>
-                                ) : (
-                                  <>
-                                    <MapPin className="mr-1 h-3 w-3" />
-                                    {event.location.name}
-                                  </>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <div className="space-y-1">
-                            <div className="font-medium">{event.title}</div>
-                            <div className="text-sm">
-                              {event.startTime.toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}{' '}
-                              -
-                              {event.endTime.toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </div>
-                            {event.customer && (
-                              <div className="text-sm">Customer: {event.customer.name}</div>
-                            )}
-                            {event.service && (
-                              <div className="text-sm">Service: {event.service.name}</div>
-                            )}
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ))}
-                </div>
+                />
               );
             })}
           </React.Fragment>
         ))}
+        
+        {/* Event overlays */}
+        {days.map((day, dayIndex) => {
+          const dayEvents = getEventsForDate(day);
+          
+          return (
+            <div
+              key={`events-${dayIndex}`}
+              className="absolute inset-0"
+              style={{
+                left: `${((dayIndex + 1) / 8) * 100}%`,
+                width: `${(1 / 8) * 100}%`,
+                top: '52px', // Account for header height with padding and border
+              }}
+            >
+              {dayEvents.map((event) => {
+                const { top, height } = calculateEventPosition(event);
+                
+                return (
+                  <TooltipProvider key={event.id}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div
+                          className={`absolute left-1 right-1 cursor-pointer rounded border p-2 text-xs ${getEventStyle(event)} shadow-sm`}
+                          style={{
+                            top: `${top}px`,
+                            height: `${height}px`,
+                            zIndex: 10,
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEventClick?.(event);
+                          }}
+                        >
+                          <div className="font-medium truncate">{event.title}</div>
+                          <div className="text-xs opacity-75 mt-1">
+                            {event.startTime.toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                            {' - '}
+                            {event.endTime.toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </div>
+                          {event.location && height > 50 && (
+                            <div className="flex items-center text-xs opacity-75 mt-1">
+                              {event.location.isOnline ? (
+                                <span>Online</span>
+                              ) : (
+                                <>
+                                  <MapPin className="mr-1 h-3 w-3" />
+                                  <span className="truncate">{event.location.name}</span>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="space-y-2 max-w-xs">
+                          <div className="font-medium">{event.title}</div>
+                          <div className="text-sm">
+                            {event.startTime.toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}{' '}
+                            -{' '}
+                            {event.endTime.toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </div>
+                          {event.service && (
+                            <div className="space-y-1">
+                              <div className="text-sm">Service: {event.service.name}</div>
+                              {event.service.duration && (
+                                <div className="text-sm">Duration: {event.service.duration} minutes</div>
+                              )}
+                              {event.service.price && (
+                                <div className="text-sm">Price: ${event.service.price}</div>
+                              )}
+                            </div>
+                          )}
+                          {event.location && (
+                            <div className="text-sm">
+                              Location: {event.location.isOnline ? 'Online' : event.location.name}
+                            </div>
+                          )}
+                          {event.customer && (
+                            <div className="text-sm">Customer: {event.customer.name}</div>
+                          )}
+                          <div className="text-sm capitalize">
+                            Status: {event.status.toLowerCase().replace('_', ' ')}
+                          </div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                );
+              })}
+            </div>
+          );
+        })}
+        </div>
       </div>
     </div>
   );
@@ -615,54 +680,128 @@ function DayView({
   const workingStartHour = parseInt(workingHours.start.split(':')[0]);
   const workingEndHour = parseInt(workingHours.end.split(':')[0]);
 
-  const getEventsForHour = (hour: number) => {
-    return events.filter((event) => {
-      const eventDate = new Date(event.startTime);
-      return (
-        eventDate.toDateString() === currentDate.toDateString() &&
-        eventDate.getHours() <= hour &&
-        new Date(event.endTime).getHours() > hour
-      );
-    });
+  const dayEvents = events.filter((event) => {
+    const eventDate = new Date(event.startTime);
+    return eventDate.toDateString() === currentDate.toDateString();
+  });
+
+  const calculateEventPosition = (event: CalendarEvent) => {
+    const startHour = new Date(event.startTime).getHours();
+    const startMinutes = new Date(event.startTime).getMinutes();
+    const endHour = new Date(event.endTime).getHours();
+    const endMinutes = new Date(event.endTime).getMinutes();
+    
+    const top = (startHour + startMinutes / 60) * 80; // 80px per hour
+    const duration = (endHour - startHour) + (endMinutes - startMinutes) / 60;
+    const height = Math.max(duration * 80, 40); // Minimum 40px height
+    
+    return { top, height };
   };
 
   return (
-    <div className="space-y-1">
-      {hours.map((hour) => {
-        const hourEvents = getEventsForHour(hour);
-        const isWorkingHour = hour >= workingStartHour && hour < workingEndHour;
+    <div className="relative">
+      {/* Time grid background */}
+      <div className="space-y-1">
+        {hours.map((hour) => {
+          const isWorkingHour = hour >= workingStartHour && hour < workingEndHour;
 
-        return (
-          <div
-            key={hour}
-            className={`flex min-h-[80px] cursor-pointer border border-gray-200 hover:bg-gray-50 ${!isWorkingHour ? 'bg-gray-50' : ''} `}
-            onClick={() => onTimeSlotClick?.(currentDate, hour)}
-          >
-            <div className="w-20 border-r p-2 text-sm text-muted-foreground">
-              {hour.toString().padStart(2, '0')}:00
+          return (
+            <div
+              key={hour}
+              className={`flex min-h-[80px] cursor-pointer border border-gray-200 hover:bg-gray-50 ${!isWorkingHour ? 'bg-gray-50' : ''} `}
+              onClick={() => onTimeSlotClick?.(currentDate, hour)}
+            >
+              <div className="w-20 border-r p-2 text-sm text-muted-foreground">
+                {hour.toString().padStart(2, '0')}:00
+              </div>
+              <div className="flex-1 p-2" />
             </div>
-            <div className="flex-1 p-2">
-              {hourEvents.map((event) => (
-                <div
-                  key={event.id}
-                  className={`mb-2 cursor-pointer rounded border p-2 ${getEventStyle(event)} `}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEventClick?.(event);
-                  }}
-                >
-                  <div className="font-medium">{event.title}</div>
-                  <div className="text-sm opacity-75">
-                    {event.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}{' '}
-                    -{event.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          );
+        })}
+      </div>
+      
+      {/* Event overlays */}
+      <div className="absolute inset-0" style={{ left: '80px' }}>
+        {dayEvents.map((event) => {
+          const { top, height } = calculateEventPosition(event);
+          
+          return (
+            <TooltipProvider key={event.id}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div
+                    className={`absolute left-2 right-2 cursor-pointer rounded border p-2 text-sm ${getEventStyle(event)} shadow-sm`}
+                    style={{
+                      top: `${top}px`,
+                      height: `${height}px`,
+                      zIndex: 10,
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEventClick?.(event);
+                    }}
+                  >
+                    <div className="font-medium truncate">{event.title}</div>
+                    <div className="text-xs opacity-75 mt-1">
+                      {event.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {' - '}
+                      {event.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    {event.location && height > 60 && (
+                      <div className="text-xs opacity-75 mt-1 truncate">
+                        {event.location.isOnline ? 'Online' : event.location.name}
+                      </div>
+                    )}
+                    {event.customer && height > 80 && (
+                      <div className="text-xs opacity-75 mt-1 truncate">
+                        {event.customer.name}
+                      </div>
+                    )}
                   </div>
-                  {event.customer && <div className="text-sm">Customer: {event.customer.name}</div>}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })}
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="space-y-2 max-w-xs">
+                    <div className="font-medium">{event.title}</div>
+                    <div className="text-sm">
+                      {event.startTime.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}{' '}
+                      -{' '}
+                      {event.endTime.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
+                    {event.service && (
+                      <div className="space-y-1">
+                        <div className="text-sm">Service: {event.service.name}</div>
+                        {event.service.duration && (
+                          <div className="text-sm">Duration: {event.service.duration} minutes</div>
+                        )}
+                        {event.service.price && (
+                          <div className="text-sm">Price: ${event.service.price}</div>
+                        )}
+                      </div>
+                    )}
+                    {event.location && (
+                      <div className="text-sm">
+                        Location: {event.location.isOnline ? 'Online' : event.location.name}
+                      </div>
+                    )}
+                    {event.customer && (
+                      <div className="text-sm">Customer: {event.customer.name}</div>
+                    )}
+                    <div className="text-sm capitalize">
+                      Status: {event.status.toLowerCase().replace('_', ' ')}
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -677,7 +816,6 @@ interface MonthViewProps {
 
 function MonthView({ currentDate, events, onEventClick, getEventStyle }: MonthViewProps) {
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
   const firstDayOfCalendar = new Date(firstDayOfMonth);
   firstDayOfCalendar.setDate(firstDayOfCalendar.getDate() - firstDayOfCalendar.getDay());
 

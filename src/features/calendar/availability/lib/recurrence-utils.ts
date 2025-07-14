@@ -1,4 +1,4 @@
-import { DayOfWeek, DayOfWeekOption, RecurrenceOption, SimpleRecurrencePattern } from '../types/types';
+import { DayOfWeek, DayOfWeekOption, RecurrenceOption, RecurrencePattern } from '../types/types';
 
 /**
  * Day of week options for UI display
@@ -52,15 +52,15 @@ export function getRecurrenceOptions(startDate: Date): Array<{ value: Recurrence
 }
 
 /**
- * Create a simple recurrence pattern based on the selected option
+ * Create a recurrence pattern based on the selected option
  */
-export function createSimpleRecurrencePattern(
+export function createRecurrencePattern(
   option: RecurrenceOption, 
   startDate: Date, 
   customDays?: DayOfWeek[],
   endDate?: string
-): SimpleRecurrencePattern {
-  const pattern: SimpleRecurrencePattern = {
+): RecurrencePattern {
+  const pattern: RecurrencePattern = {
     option,
   };
 
@@ -92,9 +92,9 @@ export function createSimpleRecurrencePattern(
 }
 
 /**
- * Convert simple recurrence pattern to description text
+ * Convert recurrence pattern to description text
  */
-export function getRecurrenceDescription(pattern: SimpleRecurrencePattern): string {
+export function getRecurrenceDescription(pattern: RecurrencePattern): string {
   const endDateText = pattern.endDate 
     ? ` until ${formatDateForDisplay(parseDateFromInput(pattern.endDate))}` 
     : '';
@@ -151,7 +151,7 @@ export function parseDateFromInput(dateString: string): Date {
 /**
  * Check if a recurrence pattern is valid
  */
-export function isValidRecurrencePattern(pattern: SimpleRecurrencePattern): boolean {
+export function isValidRecurrencePattern(pattern: RecurrencePattern): boolean {
   switch (pattern.option) {
     case RecurrenceOption.NONE:
     case RecurrenceOption.DAILY:

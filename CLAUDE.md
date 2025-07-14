@@ -31,6 +31,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Always display a list of files that were modified once a task is complete explaining briefly what was modified in each file
 
+## Server Management
+
+- Let the user run the dev server... never start the dev server yourself... just request the user to do it
+
 ## Architecture Overview
 
 [... rest of the existing content remains unchanged ...]

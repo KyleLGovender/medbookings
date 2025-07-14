@@ -19,8 +19,8 @@ export const dayOfWeekSchema = z.nativeEnum(DayOfWeek);
 export const recurrenceOptionSchema = z.nativeEnum(RecurrenceOption);
 export const availabilityContextSchema = z.nativeEnum(AvailabilityContext);
 
-// Simple recurrence pattern schema (Google Calendar style)
-export const simpleRecurrencePatternSchema = z.object({
+// Recurrence pattern schema (Google Calendar style)
+export const recurrencePatternSchema = z.object({
   option: recurrenceOptionSchema,
   weeklyDay: dayOfWeekSchema.optional(),
   customDays: z.array(dayOfWeekSchema).optional(),
@@ -267,7 +267,7 @@ export const slotGenerationResultSchema = z.object({
 export const availabilitySeriesSchema = z.object({
   seriesId: z.string().cuid(),
   masterAvailabilityId: z.string().cuid(),
-  recurrencePattern: simpleRecurrencePatternSchema,
+  recurrencePattern: recurrencePatternSchema,
   instances: z.array(z.any()), // Will be typed as Availability[] in TypeScript
   totalInstances: z.number().int().nonnegative(),
   activeInstances: z.number().int().nonnegative(),

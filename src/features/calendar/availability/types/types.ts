@@ -312,8 +312,8 @@ export interface CalculatedAvailabilitySlotWithRelations extends CalculatedAvail
 // RECURRENCE AND PATTERNS
 // =============================================================================
 
-// Simplified recurrence pattern (Google Calendar style)
-export interface SimpleRecurrencePattern {
+// Recurrence pattern (Google Calendar style)
+export interface RecurrencePattern {
   option: RecurrenceOption;
   // For weekly recurrence (determined from start date)
   weeklyDay?: DayOfWeek;
@@ -339,7 +339,7 @@ export interface DayOfWeekOption {
 export interface AvailabilitySeries {
   seriesId: string;
   masterAvailabilityId: string;
-  recurrencePattern: SimpleRecurrencePattern;
+  recurrencePattern: RecurrencePattern;
   instances: Availability[];
   totalInstances: number;
   activeInstances: number;
