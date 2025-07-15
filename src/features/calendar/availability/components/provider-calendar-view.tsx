@@ -7,6 +7,7 @@ import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, MapPin, Plus } fro
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Select,
   SelectContent,
@@ -56,6 +57,7 @@ export interface ProviderCalendarViewProps {
   onTimeSlotClick?: (date: Date, hour: number) => void;
   onCreateAvailability?: () => void;
   onEditEvent?: (event: CalendarEvent) => void;
+  onDateClick?: (date: Date) => void;
   viewMode?: 'day' | 'week' | 'month';
   initialDate?: Date;
 }
@@ -68,6 +70,7 @@ export function ProviderCalendarView({
   onTimeSlotClick,
   onCreateAvailability,
   onEditEvent,
+  onDateClick,
   viewMode: initialViewMode = 'week',
   initialDate = new Date(),
 }: ProviderCalendarViewProps) {
@@ -89,7 +92,10 @@ export function ProviderCalendarView({
         end.setDate(start.getDate() + 1);
         break;
       case 'week':
-        start.setDate(currentDate.getDate() - currentDate.getDay());
+        // Monday as first day (1 = Monday, 0 = Sunday)
+        const dayOfWeek = currentDate.getDay();
+        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        start.setDate(currentDate.getDate() - daysFromMonday);
         end.setDate(start.getDate() + 7);
         break;
       case 'month':
@@ -152,11 +158,13 @@ export function ProviderCalendarView({
           : undefined,
         // Creator information
         isProviderCreated,
-        createdBy: availability.createdBy ? {
-          id: availability.createdBy.id,
-          name: availability.createdBy.name || 'Unknown',
-          type: isProviderCreated ? 'provider' : 'organization',
-        } : undefined,
+        createdBy: availability.createdBy
+          ? {
+              id: availability.createdBy.id,
+              name: availability.createdBy.name || 'Unknown',
+              type: isProviderCreated ? 'provider' : 'organization',
+            }
+          : undefined,
         organization: availability.organization
           ? {
               id: availability.organization.id,
@@ -244,6 +252,12 @@ export function ProviderCalendarView({
     setCurrentDate(newDate);
   };
 
+  const handleDateClick = (date: Date) => {
+    setCurrentDate(date);
+    setViewMode('day');
+    onDateClick?.(date);
+  };
+
   const getViewTitle = (): string => {
     switch (viewMode) {
       case 'day':
@@ -255,7 +269,9 @@ export function ProviderCalendarView({
         });
       case 'week':
         const startOfWeek = new Date(currentDate);
-        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+        const dayOfWeek = currentDate.getDay();
+        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        startOfWeek.setDate(currentDate.getDate() - daysFromMonday);
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
         return `${startOfWeek.toLocaleDateString([], { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}`;
@@ -391,9 +407,10 @@ export function ProviderCalendarView({
       {/* Calendar Controls */}
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
+          <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+            {/* Navigation and Title */}
+            <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:space-x-4 sm:space-y-0">
+              <div className="flex items-center justify-center space-x-2">
                 <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -405,14 +422,18 @@ export function ProviderCalendarView({
                 </Button>
               </div>
 
-              <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
-                Today
-              </Button>
+              <div className="flex items-center justify-center space-x-2">
+                <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
+                  Today
+                </Button>
+                <DatePicker date={currentDate} onChange={(date) => date && setCurrentDate(date)} />
+              </div>
             </div>
 
-            <div className="flex items-center space-x-2">
+            {/* Controls */}
+            <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:space-x-2 sm:space-y-0">
               <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-full sm:w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -426,7 +447,7 @@ export function ProviderCalendarView({
                 value={statusFilter}
                 onValueChange={(value: AvailabilityStatus | 'ALL') => setStatusFilter(value)}
               >
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-full sm:w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -439,7 +460,7 @@ export function ProviderCalendarView({
               </Select>
 
               {onCreateAvailability && (
-                <Button size="sm" onClick={onCreateAvailability}>
+                <Button size="sm" onClick={onCreateAvailability} className="w-full sm:w-auto">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Availability
                 </Button>
@@ -456,6 +477,7 @@ export function ProviderCalendarView({
               workingHours={calendarData.workingHours}
               onEventClick={onEventClick}
               onTimeSlotClick={onTimeSlotClick}
+              onDateClick={handleDateClick}
               getEventStyle={getEventStyle}
             />
           )}
@@ -476,6 +498,7 @@ export function ProviderCalendarView({
               currentDate={currentDate}
               events={calendarData.events}
               onEventClick={onEventClick}
+              onDateClick={handleDateClick}
               getEventStyle={getEventStyle}
             />
           )}
@@ -546,6 +569,7 @@ interface WeekViewProps {
   workingHours: { start: string; end: string };
   onEventClick?: (event: CalendarEvent, clickEvent: React.MouseEvent) => void;
   onTimeSlotClick?: (date: Date, hour: number) => void;
+  onDateClick?: (date: Date) => void;
   getEventStyle: (event: CalendarEvent) => string;
 }
 
@@ -555,10 +579,14 @@ function WeekView({
   workingHours,
   onEventClick,
   onTimeSlotClick,
+  onDateClick,
   getEventStyle,
 }: WeekViewProps) {
+  // Start week on Monday
   const startOfWeek = new Date(currentDate);
-  startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+  const dayOfWeek = currentDate.getDay();
+  const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  startOfWeek.setDate(currentDate.getDate() - daysFromMonday);
 
   const days = Array.from({ length: 7 }, (_, i) => {
     const day = new Date(startOfWeek);
@@ -566,7 +594,31 @@ function WeekView({
     return day;
   });
 
-  const hours = Array.from({ length: 24 }, (_, i) => i);
+  // Calculate display time range based on events
+  const getDisplayTimeRange = () => {
+    const defaultStart = 6; // 6 AM
+    const defaultEnd = 18; // 6 PM
+
+    let earliestHour = defaultStart;
+    let latestHour = defaultEnd;
+
+    // Check all events to extend range if needed
+    events.forEach((event) => {
+      const startHour = new Date(event.startTime).getHours();
+      const endHour = new Date(event.endTime).getHours();
+
+      if (startHour < earliestHour) earliestHour = startHour;
+      if (endHour > latestHour) latestHour = endHour;
+    });
+
+    return { start: earliestHour, end: latestHour };
+  };
+
+  const timeRange = getDisplayTimeRange();
+  const hours = Array.from(
+    { length: timeRange.end - timeRange.start },
+    (_, i) => timeRange.start + i
+  );
   const workingStartHour = parseInt(workingHours.start.split(':')[0]);
   const workingEndHour = parseInt(workingHours.end.split(':')[0]);
 
@@ -577,188 +629,189 @@ function WeekView({
     });
   };
 
-  const calculateEventPosition = (event: CalendarEvent) => {
-    const startHour = new Date(event.startTime).getHours();
-    const endHour = new Date(event.endTime).getHours();
+  const calculateEventGridPosition = (event: CalendarEvent) => {
+    const startTime = new Date(event.startTime);
+    const endTime = new Date(event.endTime);
 
-    // Each time slot: 60px height + 4px gap + 1px border = 65px total per hour
-    const slotHeight = 65;
-    const top = startHour * slotHeight;
-    const duration = endHour - startHour;
-    const height = duration * slotHeight - 20; // Subtract gap to not overlap into next hour
+    // Convert to hour-based grid slots, accounting for display range offset
+    const startHour = startTime.getHours() - timeRange.start;
+    const endHour = endTime.getHours() - timeRange.start;
+    const startSlot = Math.max(1, startHour + 1);
+    const endSlot = Math.max(startSlot + 1, endHour + 1);
+    const spanSlots = endSlot - startSlot;
 
-    return { top, height };
+    return { gridRow: `${startSlot} / span ${spanSlots}` };
   };
 
   return (
-    <div className="overflow-auto">
-      <div className="relative min-w-[800px]">
-        <div className="grid grid-cols-8 gap-1">
-          {/* Header */}
-          <div className="p-2 text-center font-medium">Time</div>
-          {days.map((day, index) => (
-            <div key={index} className="border-b p-2 text-center font-medium">
-              <div className="text-sm">{day.toLocaleDateString([], { weekday: 'short' })}</div>
-              <div className="text-xs text-muted-foreground">{day.getDate()}</div>
-            </div>
-          ))}
-
-          {/* Time slots background grid */}
-          {hours.map((hour) => (
-            <React.Fragment key={hour}>
-              <div className="border-r p-2 text-right text-xs text-muted-foreground">
-                {hour.toString().padStart(2, '0')}:00
-              </div>
-              {days.map((day, dayIndex) => {
-                const isWorkingHour = hour >= workingStartHour && hour < workingEndHour;
-                const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-
-                return (
-                  <div
-                    key={`${dayIndex}-${hour}`}
-                    className={`min-h-[60px] cursor-pointer border border-gray-200 hover:bg-gray-50 ${!isWorkingHour || isWeekend ? 'bg-gray-50' : ''} `}
-                    onClick={() => onTimeSlotClick?.(day, hour)}
-                  />
-                );
-              })}
-            </React.Fragment>
-          ))}
-
-          {/* Event overlays */}
-          {days.map((day, dayIndex) => {
-            const dayEvents = getEventsForDate(day);
-
-            return (
-              <div
-                key={`events-${dayIndex}`}
-                className="absolute inset-0"
-                style={{
-                  left: `${((dayIndex + 1) / 8) * 100}%`,
-                  width: `${(1 / 8) * 100}%`,
-                  top: '52px', // Account for header height with padding and border
-                }}
+    <div className="flex h-full flex-col">
+      {/* Header */}
+      <div className="sticky top-0 z-30 flex-none bg-white shadow-sm ring-1 ring-black/5">
+        <div className="flex">
+          <div className="w-14 flex-none bg-white p-2 text-center text-sm font-medium text-gray-500">
+            Time
+          </div>
+          <div className="flex flex-auto">
+            {days.map((day, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => onDateClick?.(day)}
+                className="flex flex-1 items-center justify-center border-l border-gray-100 py-3 text-sm/6 text-gray-500 transition-colors hover:bg-gray-50"
               >
-                {dayEvents.map((event) => {
-                  const { top, height } = calculateEventPosition(event);
+                <span>
+                  {day.toLocaleDateString([], { weekday: 'short' })}{' '}
+                  <span className="font-semibold text-gray-900">{day.getDate()}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
-                  return (
-                    <TooltipProvider key={event.id}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div
-                            className={`absolute left-1 right-1 cursor-pointer rounded border p-2 text-xs ${getEventStyle(event)} shadow-sm`}
-                            style={{
-                              top: `${top}px`,
-                              height: `${height}px`,
-                              zIndex: 10,
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEventClick?.(event, e);
-                            }}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="truncate font-medium">{event.title}</div>
-                              {event.type === 'availability' && (
-                                <div className="ml-1 text-xs">
-                                  {event.status === AvailabilityStatus.PENDING && '🟡'}
-                                  {event.status === AvailabilityStatus.ACCEPTED && '✅'}
-                                  {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
-                                  {event.status === AvailabilityStatus.REJECTED && '❌'}
-                                </div>
-                              )}
-                            </div>
-                            {event.type === 'availability' && event.createdBy && height > 70 && (
-                              <div className="mt-1 text-xs opacity-75">
-                                {event.isProviderCreated ? (
-                                  <span className="text-green-600">Provider Created</span>
-                                ) : (
-                                  <span className="text-blue-600">
-                                    {event.organization?.name || 'Organization'}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                            <div className="mt-1 text-xs opacity-75">
-                              {event.startTime.toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                              {' - '}
-                              {event.endTime.toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </div>
-                            {event.location && height > 50 && (
-                              <div className="mt-1 flex items-center text-xs opacity-75">
-                                {event.location.isOnline ? (
-                                  <span>Online</span>
-                                ) : (
-                                  <>
-                                    <MapPin className="mr-1 h-3 w-3" />
-                                    <span className="truncate">{event.location.name}</span>
-                                  </>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <div className="max-w-xs space-y-2">
-                            <div className="font-medium">{event.title}</div>
-                            <div className="text-sm">
-                              {event.startTime.toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}{' '}
-                              -{' '}
-                              {event.endTime.toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </div>
-                            {event.service && (
-                              <div className="space-y-1">
-                                <div className="text-sm">Service: {event.service.name}</div>
-                                {event.service.duration && (
-                                  <div className="text-sm">
-                                    Duration: {event.service.duration} minutes
-                                  </div>
-                                )}
-                                {event.service.price && (
-                                  <div className="text-sm">Price: R{event.service.price}</div>
-                                )}
-                              </div>
-                            )}
-                            {event.location && (
-                              <div className="text-sm">
-                                Location: {event.location.isOnline ? 'Online' : event.location.name}
-                              </div>
-                            )}
-                            {event.customer && (
-                              <div className="text-sm">Customer: {event.customer.name}</div>
-                            )}
-                            <div className="text-sm capitalize">
-                              Status: {event.status.toLowerCase().replace('_', ' ')}
-                            </div>
-                            {event.type === 'availability' && event.createdBy && (
-                              <div className="text-sm">
-                                Creator:{' '}
-                                {event.isProviderCreated
-                                  ? 'Provider'
-                                  : event.organization?.name || 'Organization'}
-                              </div>
-                            )}
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  );
-                })}
+      {/* Calendar Grid */}
+      <div className="isolate flex flex-auto flex-col overflow-auto bg-white">
+        <div className="flex max-w-full flex-none flex-col">
+          <div className="flex flex-auto">
+            {/* Time column */}
+            <div className="sticky left-0 z-10 w-14 flex-none bg-white ring-1 ring-gray-100">
+              <div
+                className="grid"
+                style={{ gridTemplateRows: `repeat(${hours.length}, minmax(3.5rem, 1fr))` }}
+              >
+                {hours.map((hour) => (
+                  <div key={hour} className="relative border-b border-gray-100">
+                    <div className="absolute -top-2.5 right-2 text-right text-xs/5 text-gray-400">
+                      {hour === 0
+                        ? '12AM'
+                        : hour < 12
+                          ? `${hour}AM`
+                          : hour === 12
+                            ? '12PM'
+                            : `${hour - 12}PM`}
+                    </div>
+                  </div>
+                ))}
               </div>
-            );
-          })}
+            </div>
+
+            {/* Days columns */}
+            <div className="flex flex-auto divide-x divide-gray-100">
+              {days.map((day, dayIndex) => (
+                <div key={dayIndex} className="relative flex-1">
+                  {/* Background grid for this day */}
+                  <div
+                    className="absolute inset-0 grid"
+                    style={{ gridTemplateRows: `repeat(${hours.length}, minmax(3.5rem, 1fr))` }}
+                  >
+                    {hours.map((hour, i) => (
+                      <div
+                        key={i}
+                        className="cursor-pointer border-b border-gray-100 hover:bg-gray-50"
+                        onClick={() => onTimeSlotClick?.(day, hour)}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Events for this day */}
+                  <ol
+                    className="absolute inset-0 grid grid-cols-1"
+                    style={{ gridTemplateRows: `repeat(${hours.length * 2}, minmax(0, 1fr))` }}
+                  >
+                    {getEventsForDate(day).map((event) => {
+                      const { gridRow } = calculateEventGridPosition(event);
+                      return (
+                        <li key={event.id} className="relative mt-px flex" style={{ gridRow }}>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <a
+                                  href="#"
+                                  className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(event)} shadow-sm hover:opacity-80`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onEventClick?.(event, e);
+                                  }}
+                                >
+                                  <p className="order-1 truncate font-semibold">{event.title}</p>
+                                  <p className="text-xs opacity-75">
+                                    <time dateTime={event.startTime.toISOString()}>
+                                      {event.startTime.toLocaleTimeString([], {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })}
+                                    </time>
+                                  </p>
+                                  {event.type === 'availability' && (
+                                    <div className="text-xs">
+                                      {event.status === AvailabilityStatus.PENDING && '🟡'}
+                                      {event.status === AvailabilityStatus.ACCEPTED && '✅'}
+                                      {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
+                                      {event.status === AvailabilityStatus.REJECTED && '❌'}
+                                    </div>
+                                  )}
+                                </a>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="max-w-xs space-y-2">
+                                  <div className="font-medium">{event.title}</div>
+                                  <div className="text-sm">
+                                    {event.startTime.toLocaleTimeString([], {
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })}{' '}
+                                    -{' '}
+                                    {event.endTime.toLocaleTimeString([], {
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })}
+                                  </div>
+                                  {event.service && (
+                                    <div className="space-y-1">
+                                      <div className="text-sm">Service: {event.service.name}</div>
+                                      {event.service.duration && (
+                                        <div className="text-sm">
+                                          Duration: {event.service.duration} minutes
+                                        </div>
+                                      )}
+                                      {event.service.price && (
+                                        <div className="text-sm">Price: R{event.service.price}</div>
+                                      )}
+                                    </div>
+                                  )}
+                                  {event.location && (
+                                    <div className="text-sm">
+                                      Location:{' '}
+                                      {event.location.isOnline ? 'Online' : event.location.name}
+                                    </div>
+                                  )}
+                                  {event.customer && (
+                                    <div className="text-sm">Customer: {event.customer.name}</div>
+                                  )}
+                                  <div className="text-sm capitalize">
+                                    Status: {event.status.toLowerCase().replace('_', ' ')}
+                                  </div>
+                                  {event.type === 'availability' && event.createdBy && (
+                                    <div className="text-sm">
+                                      Creator:{' '}
+                                      {event.isProviderCreated
+                                        ? 'Provider'
+                                        : event.organization?.name || 'Organization'}
+                                    </div>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -774,66 +827,262 @@ function DayView({
   onTimeSlotClick,
   getEventStyle,
 }: WeekViewProps) {
-  const hours = Array.from({ length: 24 }, (_, i) => i);
-  const workingStartHour = parseInt(workingHours.start.split(':')[0]);
-  const workingEndHour = parseInt(workingHours.end.split(':')[0]);
-
   const dayEvents = events.filter((event) => {
     const eventDate = new Date(event.startTime);
     return eventDate.toDateString() === currentDate.toDateString();
   });
 
+  // Calculate display time range based on events
+  const getDisplayTimeRange = () => {
+    const defaultStart = 6; // 6 AM
+    const defaultEnd = 18; // 6 PM
+
+    let earliestHour = defaultStart;
+    let latestHour = defaultEnd;
+
+    // Check all events to extend range if needed
+    dayEvents.forEach((event) => {
+      const startHour = new Date(event.startTime).getHours();
+      const endHour = new Date(event.endTime).getHours();
+
+      if (startHour < earliestHour) earliestHour = startHour;
+      if (endHour > latestHour) latestHour = endHour;
+    });
+
+    return { start: earliestHour, end: latestHour };
+  };
+
+  const timeRange = getDisplayTimeRange();
+  const hours = Array.from(
+    { length: timeRange.end - timeRange.start },
+    (_, i) => timeRange.start + i
+  );
+
   const calculateEventPosition = (event: CalendarEvent) => {
-    const startHour = new Date(event.startTime).getHours();
-    const startMinutes = new Date(event.startTime).getMinutes();
-    const endHour = new Date(event.endTime).getHours();
-    const endMinutes = new Date(event.endTime).getMinutes();
+    const startTime = new Date(event.startTime);
+    const endTime = new Date(event.endTime);
 
-    const top = (startHour + startMinutes / 60) * 80; // 80px per hour
-    const duration = endHour - startHour + (endMinutes - startMinutes) / 60;
-    const height = Math.max(duration * 80, 40); // Minimum 40px height
+    // Convert to hour-based grid slots, accounting for display range offset
+    const startHour = startTime.getHours() - timeRange.start;
+    const endHour = endTime.getHours() - timeRange.start;
+    const startSlot = Math.max(1, startHour + 1);
+    const endSlot = Math.max(startSlot + 1, endHour + 1);
+    const spanSlots = endSlot - startSlot;
 
-    return { top, height };
+    return { gridRow: `${startSlot} / span ${spanSlots}` };
   };
 
   return (
-    <div className="relative">
-      {/* Time grid background */}
-      <div className="space-y-1">
-        {hours.map((hour) => {
-          const isWorkingHour = hour >= workingStartHour && hour < workingEndHour;
-
-          return (
-            <div
-              key={hour}
-              className={`flex min-h-[80px] cursor-pointer border border-gray-200 hover:bg-gray-50 ${!isWorkingHour ? 'bg-gray-50' : ''} `}
-              onClick={() => onTimeSlotClick?.(currentDate, hour)}
-            >
-              <div className="w-20 border-r p-2 text-sm text-muted-foreground">
-                {hour.toString().padStart(2, '0')}:00
+    <div className="flex h-full flex-col">
+      <div className="isolate flex flex-auto flex-col overflow-auto bg-white">
+        <div className="flex max-w-full flex-none flex-col">
+          <div className="flex flex-auto">
+            {/* Time column */}
+            <div className="sticky left-0 z-10 w-14 flex-none bg-white ring-1 ring-gray-100">
+              <div
+                className="grid"
+                style={{ gridTemplateRows: `repeat(${hours.length}, minmax(3.5rem, 1fr))` }}
+              >
+                {hours.map((hour) => (
+                  <div key={hour} className="relative border-b border-gray-100">
+                    <div className="absolute -top-2.5 right-2 text-right text-xs/5 text-gray-400">
+                      {hour === 0
+                        ? '12AM'
+                        : hour < 12
+                          ? `${hour}AM`
+                          : hour === 12
+                            ? '12PM'
+                            : `${hour - 12}PM`}
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex-1 p-2" />
             </div>
-          );
-        })}
+
+            {/* Day column */}
+            <div className="relative flex-1">
+              {/* Background grid for this day */}
+              <div
+                className="absolute inset-0 grid"
+                style={{ gridTemplateRows: `repeat(${hours.length}, minmax(3.5rem, 1fr))` }}
+              >
+                {hours.map((hour, i) => (
+                  <div
+                    key={i}
+                    className="cursor-pointer border-b border-gray-100 hover:bg-gray-50"
+                    onClick={() => onTimeSlotClick?.(currentDate, hour)}
+                  />
+                ))}
+              </div>
+
+              {/* Events for this day */}
+              <ol
+                className="absolute inset-0 grid grid-cols-1"
+                style={{ gridTemplateRows: `repeat(${hours.length * 2}, minmax(0, 1fr))` }}
+              >
+                {dayEvents.map((event) => {
+                  const { gridRow } = calculateEventPosition(event);
+                  return (
+                    <li key={event.id} className="relative mt-px flex" style={{ gridRow }}>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <a
+                              href="#"
+                              className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(event)} shadow-sm hover:opacity-80`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onEventClick?.(event, e);
+                              }}
+                            >
+                              <p className="order-1 font-semibold">{event.title}</p>
+                              <p className="text-xs opacity-75">
+                                <time dateTime={event.startTime.toISOString()}>
+                                  {event.startTime.toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </time>
+                              </p>
+                              {event.type === 'availability' && (
+                                <div className="text-xs">
+                                  {event.status === AvailabilityStatus.PENDING && '🟡'}
+                                  {event.status === AvailabilityStatus.ACCEPTED && '✅'}
+                                  {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
+                                  {event.status === AvailabilityStatus.REJECTED && '❌'}
+                                </div>
+                              )}
+                            </a>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="max-w-xs space-y-2">
+                              <div className="font-medium">{event.title}</div>
+                              <div className="text-sm">
+                                {event.startTime.toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}{' '}
+                                -{' '}
+                                {event.endTime.toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </div>
+                              {event.service && (
+                                <div className="space-y-1">
+                                  <div className="text-sm">Service: {event.service.name}</div>
+                                  {event.service.duration && (
+                                    <div className="text-sm">
+                                      Duration: {event.service.duration} minutes
+                                    </div>
+                                  )}
+                                  {event.service.price && (
+                                    <div className="text-sm">Price: R{event.service.price}</div>
+                                  )}
+                                </div>
+                              )}
+                              {event.location && (
+                                <div className="text-sm">
+                                  Location:{' '}
+                                  {event.location.isOnline ? 'Online' : event.location.name}
+                                </div>
+                              )}
+                              {event.customer && (
+                                <div className="text-sm">Customer: {event.customer.name}</div>
+                              )}
+                              <div className="text-sm capitalize">
+                                Status: {event.status.toLowerCase().replace('_', ' ')}
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Month View Component
+interface MonthViewProps {
+  currentDate: Date;
+  events: CalendarEvent[];
+  onEventClick?: (event: CalendarEvent, clickEvent: React.MouseEvent) => void;
+  onDateClick?: (date: Date) => void;
+  getEventStyle: (event: CalendarEvent) => string;
+}
+
+function MonthView({
+  currentDate,
+  events,
+  onEventClick,
+  onDateClick,
+  getEventStyle,
+}: MonthViewProps) {
+  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const firstDayOfCalendar = new Date(firstDayOfMonth);
+
+  // Adjust to start on Monday
+  const dayOfWeek = firstDayOfMonth.getDay();
+  const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  firstDayOfCalendar.setDate(firstDayOfMonth.getDate() - daysFromMonday);
+
+  const days = Array.from({ length: 42 }, (_, i) => {
+    const day = new Date(firstDayOfCalendar);
+    day.setDate(firstDayOfCalendar.getDate() + i);
+    return day;
+  });
+
+  const getEventsForDay = (date: Date) => {
+    return events.filter(
+      (event) => new Date(event.startTime).toDateString() === date.toDateString()
+    );
+  };
+
+  return (
+    <div className="isolate overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/5">
+      {/* Day headers with Tailwind calendar styling */}
+      <div className="grid grid-cols-7 gap-px bg-gray-200 text-center text-xs font-semibold leading-6 text-gray-700">
+        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+          <div key={day} className="bg-white py-2">
+            {day}
+          </div>
+        ))}
       </div>
 
-      {/* Event overlays */}
-      <div className="absolute inset-0" style={{ left: '80px' }}>
-        {dayEvents.map((event) => {
-          const { top, height } = calculateEventPosition(event);
+      {/* Calendar days with Tailwind calendar styling */}
+      <div className="grid grid-cols-7 gap-px bg-gray-200 text-sm">
+        {days.map((day, index) => {
+          const dayEvents = getEventsForDay(day);
+          const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+          const isToday = day.toDateString() === new Date().toDateString();
+          const isSelected = day.toDateString() === currentDate.toDateString();
 
           return (
-            <TooltipProvider key={event.id}>
-              <Tooltip>
-                <TooltipTrigger asChild>
+            <button
+              key={index}
+              type="button"
+              onClick={() => onDateClick?.(day)}
+              className={`min-h-[120px] bg-white p-2 text-left transition-colors hover:bg-gray-50 focus:z-10 ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'} ${isToday ? 'bg-blue-50' : ''} ${isSelected ? 'bg-blue-100' : ''} `}
+            >
+              <time
+                dateTime={day.toISOString().split('T')[0]}
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-sm font-semibold ${isToday ? 'bg-blue-600 text-white' : ''} ${isSelected && !isToday ? 'bg-gray-900 text-white' : ''} `}
+              >
+                {day.getDate()}
+              </time>
+              <div className="mt-2 space-y-1">
+                {dayEvents.slice(0, 3).map((event) => (
                   <div
-                    className={`absolute left-2 right-2 cursor-pointer rounded border p-2 text-sm ${getEventStyle(event)} shadow-sm`}
-                    style={{
-                      top: `${top}px`,
-                      height: `${height}px`,
-                      zIndex: 10,
-                    }}
+                    key={event.id}
+                    className={`cursor-pointer rounded border p-1 text-xs shadow-sm transition-shadow hover:shadow-md ${getEventStyle(event)}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       onEventClick?.(event, e);
@@ -850,147 +1099,24 @@ function DayView({
                         </div>
                       )}
                     </div>
-                    <div className="mt-1 text-xs opacity-75">
+                    <div className="text-xs opacity-75">
                       {event.startTime.toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
-                      {' - '}
-                      {event.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                    {event.location && height > 60 && (
-                      <div className="mt-1 truncate text-xs opacity-75">
-                        {event.location.isOnline ? 'Online' : event.location.name}
-                      </div>
-                    )}
-                    {event.customer && height > 80 && (
-                      <div className="mt-1 truncate text-xs opacity-75">{event.customer.name}</div>
-                    )}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <div className="max-w-xs space-y-2">
-                    <div className="font-medium">{event.title}</div>
-                    <div className="text-sm">
-                      {event.startTime.toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}{' '}
-                      -{' '}
-                      {event.endTime.toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </div>
-                    {event.service && (
-                      <div className="space-y-1">
-                        <div className="text-sm">Service: {event.service.name}</div>
-                        {event.service.duration && (
-                          <div className="text-sm">Duration: {event.service.duration} minutes</div>
-                        )}
-                        {event.service.price && (
-                          <div className="text-sm">Price: ${event.service.price}</div>
-                        )}
-                      </div>
-                    )}
-                    {event.location && (
-                      <div className="text-sm">
-                        Location: {event.location.isOnline ? 'Online' : event.location.name}
-                      </div>
-                    )}
-                    {event.customer && (
-                      <div className="text-sm">Customer: {event.customer.name}</div>
-                    )}
-                    <div className="text-sm capitalize">
-                      Status: {event.status.toLowerCase().replace('_', ' ')}
                     </div>
                   </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                ))}
+                {dayEvents.length > 3 && (
+                  <div className="text-xs font-medium text-gray-500">
+                    +{dayEvents.length - 3} more
+                  </div>
+                )}
+              </div>
+            </button>
           );
         })}
       </div>
-    </div>
-  );
-}
-
-// Month View Component
-interface MonthViewProps {
-  currentDate: Date;
-  events: CalendarEvent[];
-  onEventClick?: (event: CalendarEvent, clickEvent: React.MouseEvent) => void;
-  getEventStyle: (event: CalendarEvent) => string;
-}
-
-function MonthView({ currentDate, events, onEventClick, getEventStyle }: MonthViewProps) {
-  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const firstDayOfCalendar = new Date(firstDayOfMonth);
-  firstDayOfCalendar.setDate(firstDayOfCalendar.getDate() - firstDayOfCalendar.getDay());
-
-  const days = Array.from({ length: 42 }, (_, i) => {
-    const day = new Date(firstDayOfCalendar);
-    day.setDate(firstDayOfCalendar.getDate() + i);
-    return day;
-  });
-
-  const getEventsForDay = (date: Date) => {
-    return events.filter(
-      (event) => new Date(event.startTime).toDateString() === date.toDateString()
-    );
-  };
-
-  return (
-    <div className="grid grid-cols-7 gap-1">
-      {/* Day headers */}
-      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-        <div key={day} className="p-2 text-center text-sm font-medium">
-          {day}
-        </div>
-      ))}
-
-      {/* Calendar days */}
-      {days.map((day, index) => {
-        const dayEvents = getEventsForDay(day);
-        const isCurrentMonth = day.getMonth() === currentDate.getMonth();
-        const isToday = day.toDateString() === new Date().toDateString();
-
-        return (
-          <div
-            key={index}
-            className={`min-h-[120px] cursor-pointer border border-gray-200 p-1 hover:bg-gray-50 ${!isCurrentMonth ? 'bg-gray-50 text-muted-foreground' : ''} ${isToday ? 'border-blue-300 bg-blue-50' : ''} `}
-          >
-            <div className="mb-1 text-sm font-medium">{day.getDate()}</div>
-            <div className="space-y-1">
-              {dayEvents.slice(0, 3).map((event) => (
-                <div
-                  key={event.id}
-                  className={`cursor-pointer rounded border p-1 text-xs ${getEventStyle(event)} `}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEventClick?.(event, e);
-                  }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="truncate">{event.title}</div>
-                    {event.type === 'availability' && (
-                      <div className="ml-1 text-xs">
-                        {event.status === AvailabilityStatus.PENDING && '🟡'}
-                        {event.status === AvailabilityStatus.ACCEPTED && '✅'}
-                        {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
-                        {event.status === AvailabilityStatus.REJECTED && '❌'}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {dayEvents.length > 3 && (
-                <div className="text-xs text-muted-foreground">+{dayEvents.length - 3} more</div>
-              )}
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
 }

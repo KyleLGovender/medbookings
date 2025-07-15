@@ -1,1 +1,8 @@
-Provider calendar created availability should never be pending
+[x] Please make the default time period to be displayed in the week and day views to be from 6am to 6pm. If the availability that would be displayed falls outside that range extend the range to include the availability... so for example if someone has availability until 10pm at night extend it from 6am to 10pm
+[x] Day view is all grey?  It doesn't look like the week view.
+[x] Events are not displaying the day view
+[x] Please also use the tailwinds calendar architecture for the month view so it looks consistent
+[x] The header dates in the week view should clickable links that take you the day view for that dates
+[x] Please add a Date picker in the calendar header
+[x] Monday should be the first day of the week
+[x] The calendar header is not responsive... it doesn't stack on mobile views.  Please arrange this

@@ -167,7 +167,6 @@ Based on detailed analysis of existing Prisma schema against PRD requirements:
   - [ ] Make the price and duration inputs on availability creation increase and decrease by correct amounts
   - [ ] Figure out pages routing and where to display various calendars
   - [ ] Sort out types between features
-  - [ ] Date picker in the calendar view
   - [x] Get rid of mock availability data and make sure everything is driven from database configuration
   - [x] Update customer recurring pattern to match Google calendar
   - [x] Add CANCELLED to prisma AvailabilityStatus
