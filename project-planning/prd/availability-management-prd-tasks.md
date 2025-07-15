@@ -174,3 +174,14 @@ Based on detailed analysis of existing Prisma schema against PRD requirements:
   - [x] Remove custom appointment starting intervals. It should be continuous, starting on the hour, starting on the half hour and hour.
   - [x] Add showPrice flag to Service Provider
 
+
+use @project-planning/bug-task-generate.md to generate tasks from @project-planning/bugs/provider-availability-v2-bugs.md
+
+use @project-planning/bug-task-generate.md to generate tasks from @project-planning/bugs/calendar-bugs.md
+
+use @project-planning/process-tasks.md to execute the tasks in @project-planning/bugs/complete/provider-availability-v2-bugs-tasks.md execute in YOLO mode
+
+use @project-planning/process-tasks.md to execute the tasks in @project-planning/bugs/complete/calendar-bugs-tasks.md execute in YOLO mode
+
+
+
