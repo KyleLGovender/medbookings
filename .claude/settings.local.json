@@ -26,10 +26,14 @@
       "Bash(gh:*)",
       "Bash(git:*)",
       "Bash(rm:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": []
   },
-  "enabledMcpjsonServers": ["filesystem-server", "postgres-server"],
-  "enableAllProjectMcpServers": true
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "filesystem-server",
+    "postgres-server"
+  ]
 }

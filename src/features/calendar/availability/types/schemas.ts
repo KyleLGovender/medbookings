@@ -122,6 +122,15 @@ export const createAvailabilityDataSchema = baseAvailabilitySchema
     message: 'End time must be after start time',
     path: ['endTime'],
   })
+  .refine((data: BaseAvailabilityData) => {
+    // Ensure start and end times are on the same day
+    const startDate = new Date(data.startTime);
+    const endDate = new Date(data.endTime);
+    return startDate.toDateString() === endDate.toDateString();
+  }, {
+    message: 'Start and end times must be on the same day',
+    path: ['endTime'],
+  })
   .refine((data: BaseAvailabilityData) => !data.isRecurring || data.recurrencePattern, {
     message: 'Recurrence pattern required for recurring availability',
     path: ['recurrencePattern'],

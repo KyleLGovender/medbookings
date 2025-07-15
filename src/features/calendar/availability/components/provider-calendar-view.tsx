@@ -2,12 +2,13 @@
 
 import React, { useMemo, useState } from 'react';
 
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, MapPin, Plus } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -78,6 +79,78 @@ export function ProviderCalendarView({
   const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<AvailabilityStatus | 'ALL'>('ALL');
+  
+  // Modal state (context menu removed - modal now handled by parent)
+
+  // Calculate total hours for a day
+  const calculateDayHours = (events: CalendarEvent[]) => {
+    const availabilityEvents = events.filter(event => event.type === 'availability');
+    if (availabilityEvents.length === 0) return 0;
+
+    // Sort events by start time
+    const sortedEvents = availabilityEvents.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+    
+    // Merge overlapping events to avoid double counting
+    const mergedEvents = [];
+    let currentEvent = sortedEvents[0];
+    
+    for (let i = 1; i < sortedEvents.length; i++) {
+      const nextEvent = sortedEvents[i];
+      
+      // If events overlap, merge them
+      if (currentEvent.endTime >= nextEvent.startTime) {
+        currentEvent = {
+          ...currentEvent,
+          endTime: new Date(Math.max(currentEvent.endTime.getTime(), nextEvent.endTime.getTime()))
+        };
+      } else {
+        mergedEvents.push(currentEvent);
+        currentEvent = nextEvent;
+      }
+    }
+    mergedEvents.push(currentEvent);
+    
+    // Calculate total hours
+    return mergedEvents.reduce((total, event) => {
+      const duration = (event.endTime.getTime() - event.startTime.getTime()) / (1000 * 60 * 60);
+      return total + duration;
+    }, 0);
+  };
+
+  // Get status breakdown for a day
+  const getStatusBreakdown = (events: CalendarEvent[]) => {
+    const availabilityEvents = events.filter(event => event.type === 'availability');
+    const breakdown = {
+      [AvailabilityStatus.PENDING]: 0,
+      [AvailabilityStatus.ACCEPTED]: 0,
+      [AvailabilityStatus.CANCELLED]: 0,
+      [AvailabilityStatus.REJECTED]: 0,
+    };
+    
+    availabilityEvents.forEach(event => {
+      breakdown[event.status as AvailabilityStatus]++;
+    });
+    
+    return breakdown;
+  };
+
+  // Get styling based on status mix
+  const getHoursSummaryStyle = (events: CalendarEvent[]) => {
+    const breakdown = getStatusBreakdown(events);
+    const total = Object.values(breakdown).reduce((sum, count) => sum + count, 0);
+    
+    if (total === 0) return 'text-gray-400';
+    
+    const acceptedRatio = breakdown[AvailabilityStatus.ACCEPTED] / total;
+    const pendingRatio = breakdown[AvailabilityStatus.PENDING] / total;
+    const rejectedRatio = breakdown[AvailabilityStatus.REJECTED] / total;
+    
+    if (acceptedRatio > 0.7) return 'text-green-600 bg-green-50';
+    if (pendingRatio > 0.5) return 'text-yellow-600 bg-yellow-50';
+    if (rejectedRatio > 0.3) return 'text-red-600 bg-red-50';
+    
+    return 'text-blue-600 bg-blue-50';
+  };
 
   // Fetch real data from API
   const { data: provider, isLoading: isProviderLoading } = useProvider(providerId);
@@ -89,19 +162,26 @@ export function ProviderCalendarView({
 
     switch (viewMode) {
       case 'day':
-        end.setDate(start.getDate() + 1);
+        // Set start to beginning of day
+        start.setHours(0, 0, 0, 0);
+        // Set end to end of day
+        end.setHours(23, 59, 59, 999);
         break;
       case 'week':
         // Monday as first day (1 = Monday, 0 = Sunday)
         const dayOfWeek = currentDate.getDay();
         const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
         start.setDate(currentDate.getDate() - daysFromMonday);
-        end.setDate(start.getDate() + 7);
+        start.setHours(0, 0, 0, 0);
+        end.setDate(start.getDate() + 6);
+        end.setHours(23, 59, 59, 999);
         break;
       case 'month':
         start.setDate(1);
+        start.setHours(0, 0, 0, 0);
         end.setMonth(start.getMonth() + 1);
         end.setDate(0);
+        end.setHours(23, 59, 59, 999);
         break;
     }
 
@@ -121,6 +201,7 @@ export function ProviderCalendarView({
   const calendarData: ProviderCalendarData | null = useMemo(() => {
     if (!provider || !availabilityData) return null;
 
+
     // Transform availability records into calendar events
     const events: CalendarEvent[] = [];
 
@@ -131,9 +212,9 @@ export function ProviderCalendarView({
         availability.isProviderCreated ||
         (!availability.organizationId && !availability.createdByMembershipId);
 
-      events.push({
+      const event: CalendarEvent = {
         id: availability.id,
-        type: 'availability',
+        type: 'availability' as const,
         title: availability.availableServices?.[0]?.service?.name || 'General Consultation',
         startTime: new Date(availability.startTime),
         endTime: new Date(availability.endTime),
@@ -171,7 +252,9 @@ export function ProviderCalendarView({
               name: availability.organization.name,
             }
           : undefined,
-      });
+      };
+
+      events.push(event);
 
       // Add booked slots from this availability's calculated slots
       availability.calculatedSlots
@@ -179,11 +262,13 @@ export function ProviderCalendarView({
         .forEach((slot) => {
           events.push({
             id: slot.id,
-            type: 'booking',
+            type: 'booking' as const,
             title: slot.service?.name || 'Appointment',
             startTime: new Date(slot.startTime),
             endTime: new Date(slot.endTime),
             status: slot.status,
+            schedulingRule: availability.schedulingRule as SchedulingRule,
+            isRecurring: false,
             location: slot.serviceConfig?.location
               ? {
                   id: slot.serviceConfig.location.id,
@@ -325,6 +410,8 @@ export function ProviderCalendarView({
     }
   };
 
+
+
   if (isLoading) {
     return (
       <Card>
@@ -414,9 +501,7 @@ export function ProviderCalendarView({
                 <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <h2 className="min-w-[200px] text-center text-lg font-semibold">
-                  {getViewTitle()}
-                </h2>
+                <DatePicker date={currentDate} onChange={(date) => date && setCurrentDate(date)} />
                 <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -426,7 +511,6 @@ export function ProviderCalendarView({
                 <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
                   Today
                 </Button>
-                <DatePicker date={currentDate} onChange={(date) => date && setCurrentDate(date)} />
               </div>
             </div>
 
@@ -475,7 +559,7 @@ export function ProviderCalendarView({
               currentDate={currentDate}
               events={calendarData.events}
               workingHours={calendarData.workingHours}
-              onEventClick={onEventClick}
+              onEventClick={(event) => onEventClick?.(event, {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
               onDateClick={handleDateClick}
               getEventStyle={getEventStyle}
@@ -487,7 +571,7 @@ export function ProviderCalendarView({
               currentDate={currentDate}
               events={calendarData.events}
               workingHours={calendarData.workingHours}
-              onEventClick={onEventClick}
+              onEventClick={(event) => onEventClick?.(event, {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
               getEventStyle={getEventStyle}
             />
@@ -499,6 +583,7 @@ export function ProviderCalendarView({
               events={calendarData.events}
               onEventClick={onEventClick}
               onDateClick={handleDateClick}
+              onEditEvent={onEditEvent}
               getEventStyle={getEventStyle}
             />
           )}
@@ -558,6 +643,7 @@ export function ProviderCalendarView({
           </div>
         </CardContent>
       </Card>
+
     </div>
   );
 }
@@ -567,7 +653,7 @@ interface WeekViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   workingHours: { start: string; end: string };
-  onEventClick?: (event: CalendarEvent, clickEvent: React.MouseEvent) => void;
+  onEventClick?: (event: CalendarEvent) => void;
   onTimeSlotClick?: (date: Date, hour: number) => void;
   onDateClick?: (date: Date) => void;
   getEventStyle: (event: CalendarEvent) => string;
@@ -634,10 +720,11 @@ function WeekView({
     const endTime = new Date(event.endTime);
 
     // Convert to hour-based grid slots, accounting for display range offset
+    // The events grid has hours.length * 2 rows, so we need to multiply by 2
     const startHour = startTime.getHours() - timeRange.start;
     const endHour = endTime.getHours() - timeRange.start;
-    const startSlot = Math.max(1, startHour + 1);
-    const endSlot = Math.max(startSlot + 1, endHour + 1);
+    const startSlot = Math.max(1, startHour * 2 + 1);
+    const endSlot = Math.max(startSlot + 1, endHour * 2 + 1);
     const spanSlots = endSlot - startSlot;
 
     return { gridRow: `${startSlot} / span ${spanSlots}` };
@@ -722,88 +809,44 @@ function WeekView({
                       const { gridRow } = calculateEventGridPosition(event);
                       return (
                         <li key={event.id} className="relative mt-px flex" style={{ gridRow }}>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <a
-                                  href="#"
-                                  className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(event)} shadow-sm hover:opacity-80`}
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    onEventClick?.(event, e);
-                                  }}
-                                >
-                                  <p className="order-1 truncate font-semibold">{event.title}</p>
-                                  <p className="text-xs opacity-75">
-                                    <time dateTime={event.startTime.toISOString()}>
-                                      {event.startTime.toLocaleTimeString([], {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                      })}
-                                    </time>
-                                  </p>
-                                  {event.type === 'availability' && (
-                                    <div className="text-xs">
-                                      {event.status === AvailabilityStatus.PENDING && '🟡'}
-                                      {event.status === AvailabilityStatus.ACCEPTED && '✅'}
-                                      {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
-                                      {event.status === AvailabilityStatus.REJECTED && '❌'}
-                                    </div>
-                                  )}
-                                </a>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <div className="max-w-xs space-y-2">
-                                  <div className="font-medium">{event.title}</div>
-                                  <div className="text-sm">
-                                    {event.startTime.toLocaleTimeString([], {
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                    })}{' '}
-                                    -{' '}
+                          <a
+                            href="#"
+                            className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(event)} shadow-sm hover:opacity-80`}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onEventClick?.(event);
+                            }}
+                          >
+                            <p className="order-1 truncate font-semibold">{event.title}</p>
+                            <p className="text-xs opacity-75">
+                              <time dateTime={event.startTime.toISOString()}>
+                                {event.startTime.toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </time>
+                              {event.type === 'availability' && (
+                                <span>
+                                  {' - '}
+                                  <time dateTime={event.endTime.toISOString()}>
                                     {event.endTime.toLocaleTimeString([], {
                                       hour: '2-digit',
                                       minute: '2-digit',
                                     })}
-                                  </div>
-                                  {event.service && (
-                                    <div className="space-y-1">
-                                      <div className="text-sm">Service: {event.service.name}</div>
-                                      {event.service.duration && (
-                                        <div className="text-sm">
-                                          Duration: {event.service.duration} minutes
-                                        </div>
-                                      )}
-                                      {event.service.price && (
-                                        <div className="text-sm">Price: R{event.service.price}</div>
-                                      )}
-                                    </div>
-                                  )}
-                                  {event.location && (
-                                    <div className="text-sm">
-                                      Location:{' '}
-                                      {event.location.isOnline ? 'Online' : event.location.name}
-                                    </div>
-                                  )}
-                                  {event.customer && (
-                                    <div className="text-sm">Customer: {event.customer.name}</div>
-                                  )}
-                                  <div className="text-sm capitalize">
-                                    Status: {event.status.toLowerCase().replace('_', ' ')}
-                                  </div>
-                                  {event.type === 'availability' && event.createdBy && (
-                                    <div className="text-sm">
-                                      Creator:{' '}
-                                      {event.isProviderCreated
-                                        ? 'Provider'
-                                        : event.organization?.name || 'Organization'}
-                                    </div>
-                                  )}
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                                  </time>
+                                </span>
+                              )}
+                            </p>
+                            {event.type === 'availability' && (
+                              <div className="text-xs">
+                                {event.status === AvailabilityStatus.PENDING && '🟡'}
+                                {event.status === AvailabilityStatus.ACCEPTED && '✅'}
+                                {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
+                                {event.status === AvailabilityStatus.REJECTED && '❌'}
+                              </div>
+                            )}
+                          </a>
                         </li>
                       );
                     })}
@@ -829,7 +872,9 @@ function DayView({
 }: WeekViewProps) {
   const dayEvents = events.filter((event) => {
     const eventDate = new Date(event.startTime);
-    return eventDate.toDateString() === currentDate.toDateString();
+    const currentDateString = currentDate.toDateString();
+    const eventDateString = eventDate.toDateString();
+    return eventDateString === currentDateString;
   });
 
   // Calculate display time range based on events
@@ -863,10 +908,11 @@ function DayView({
     const endTime = new Date(event.endTime);
 
     // Convert to hour-based grid slots, accounting for display range offset
+    // The events grid has hours.length * 2 rows, so we need to multiply by 2
     const startHour = startTime.getHours() - timeRange.start;
     const endHour = endTime.getHours() - timeRange.start;
-    const startSlot = Math.max(1, startHour + 1);
-    const endSlot = Math.max(startSlot + 1, endHour + 1);
+    const startSlot = Math.max(1, startHour * 2 + 1);
+    const endSlot = Math.max(startSlot + 1, endHour * 2 + 1);
     const spanSlots = endSlot - startSlot;
 
     return { gridRow: `${startSlot} / span ${spanSlots}` };
@@ -924,80 +970,44 @@ function DayView({
                   const { gridRow } = calculateEventPosition(event);
                   return (
                     <li key={event.id} className="relative mt-px flex" style={{ gridRow }}>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <a
-                              href="#"
-                              className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(event)} shadow-sm hover:opacity-80`}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                onEventClick?.(event, e);
-                              }}
-                            >
-                              <p className="order-1 font-semibold">{event.title}</p>
-                              <p className="text-xs opacity-75">
-                                <time dateTime={event.startTime.toISOString()}>
-                                  {event.startTime.toLocaleTimeString([], {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })}
-                                </time>
-                              </p>
-                              {event.type === 'availability' && (
-                                <div className="text-xs">
-                                  {event.status === AvailabilityStatus.PENDING && '🟡'}
-                                  {event.status === AvailabilityStatus.ACCEPTED && '✅'}
-                                  {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
-                                  {event.status === AvailabilityStatus.REJECTED && '❌'}
-                                </div>
-                              )}
-                            </a>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <div className="max-w-xs space-y-2">
-                              <div className="font-medium">{event.title}</div>
-                              <div className="text-sm">
-                                {event.startTime.toLocaleTimeString([], {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}{' '}
-                                -{' '}
+                      <a
+                        href="#"
+                        className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(event)} shadow-sm hover:opacity-80`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onEventClick?.(event);
+                        }}
+                      >
+                        <p className="order-1 font-semibold">{event.title}</p>
+                        <p className="text-xs opacity-75">
+                          <time dateTime={event.startTime.toISOString()}>
+                            {event.startTime.toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </time>
+                          {event.type === 'availability' && (
+                            <span>
+                              {' - '}
+                              <time dateTime={event.endTime.toISOString()}>
                                 {event.endTime.toLocaleTimeString([], {
                                   hour: '2-digit',
                                   minute: '2-digit',
                                 })}
-                              </div>
-                              {event.service && (
-                                <div className="space-y-1">
-                                  <div className="text-sm">Service: {event.service.name}</div>
-                                  {event.service.duration && (
-                                    <div className="text-sm">
-                                      Duration: {event.service.duration} minutes
-                                    </div>
-                                  )}
-                                  {event.service.price && (
-                                    <div className="text-sm">Price: R{event.service.price}</div>
-                                  )}
-                                </div>
-                              )}
-                              {event.location && (
-                                <div className="text-sm">
-                                  Location:{' '}
-                                  {event.location.isOnline ? 'Online' : event.location.name}
-                                </div>
-                              )}
-                              {event.customer && (
-                                <div className="text-sm">Customer: {event.customer.name}</div>
-                              )}
-                              <div className="text-sm capitalize">
-                                Status: {event.status.toLowerCase().replace('_', ' ')}
-                              </div>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                              </time>
+                            </span>
+                          )}
+                        </p>
+                        {event.type === 'availability' && (
+                          <div className="text-xs">
+                            {event.status === AvailabilityStatus.PENDING && '🟡'}
+                            {event.status === AvailabilityStatus.ACCEPTED && '✅'}
+                            {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
+                            {event.status === AvailabilityStatus.REJECTED && '❌'}
+                          </div>
+                        )}
+                      </a>
                     </li>
                   );
                 })}
@@ -1016,6 +1026,7 @@ interface MonthViewProps {
   events: CalendarEvent[];
   onEventClick?: (event: CalendarEvent, clickEvent: React.MouseEvent) => void;
   onDateClick?: (date: Date) => void;
+  onEditEvent?: (event: CalendarEvent) => void;
   getEventStyle: (event: CalendarEvent) => string;
 }
 
@@ -1024,8 +1035,10 @@ function MonthView({
   events,
   onEventClick,
   onDateClick,
+  onEditEvent,
   getEventStyle,
 }: MonthViewProps) {
+
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const firstDayOfCalendar = new Date(firstDayOfMonth);
 
@@ -1046,77 +1059,74 @@ function MonthView({
     );
   };
 
+
   return (
-    <div className="isolate overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/5">
-      {/* Day headers with Tailwind calendar styling */}
-      <div className="grid grid-cols-7 gap-px bg-gray-200 text-center text-xs font-semibold leading-6 text-gray-700">
-        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-          <div key={day} className="bg-white py-2">
-            {day}
-          </div>
-        ))}
-      </div>
+    <>
+      <div className="isolate overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/5">
+        {/* Day headers with Tailwind calendar styling */}
+        <div className="grid grid-cols-7 gap-px bg-gray-200 text-center text-xs font-semibold leading-6 text-gray-700">
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+            <div key={day} className="bg-white py-2">
+              {day}
+            </div>
+          ))}
+        </div>
 
-      {/* Calendar days with Tailwind calendar styling */}
-      <div className="grid grid-cols-7 gap-px bg-gray-200 text-sm">
-        {days.map((day, index) => {
-          const dayEvents = getEventsForDay(day);
-          const isCurrentMonth = day.getMonth() === currentDate.getMonth();
-          const isToday = day.toDateString() === new Date().toDateString();
-          const isSelected = day.toDateString() === currentDate.toDateString();
+        {/* Calendar days with Tailwind calendar styling */}
+        <div className="grid grid-cols-7 gap-px bg-gray-200 text-sm">
+          {days.map((day, index) => {
+            const dayEvents = getEventsForDay(day);
+            const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+            const isToday = day.toDateString() === new Date().toDateString();
+            const isSelected = day.toDateString() === currentDate.toDateString();
 
-          return (
-            <button
-              key={index}
-              type="button"
-              onClick={() => onDateClick?.(day)}
-              className={`min-h-[120px] bg-white p-2 text-left transition-colors hover:bg-gray-50 focus:z-10 ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'} ${isToday ? 'bg-blue-50' : ''} ${isSelected ? 'bg-blue-100' : ''} `}
-            >
-              <time
-                dateTime={day.toISOString().split('T')[0]}
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-sm font-semibold ${isToday ? 'bg-blue-600 text-white' : ''} ${isSelected && !isToday ? 'bg-gray-900 text-white' : ''} `}
+            return (
+              <button
+                key={index}
+                type="button"
+                onClick={() => onDateClick?.(day)}
+                className={`min-h-[120px] bg-white p-2 text-left transition-colors hover:bg-gray-50 focus:z-10 ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'} ${isToday ? 'bg-blue-50' : ''} ${isSelected ? 'bg-blue-100' : ''} `}
               >
-                {day.getDate()}
-              </time>
-              <div className="mt-2 space-y-1">
-                {dayEvents.slice(0, 3).map((event) => (
-                  <div
-                    key={event.id}
-                    className={`cursor-pointer rounded border p-1 text-xs shadow-sm transition-shadow hover:shadow-md ${getEventStyle(event)}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEventClick?.(event, e);
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="truncate font-medium">{event.title}</div>
-                      {event.type === 'availability' && (
-                        <div className="ml-1 text-xs">
-                          {event.status === AvailabilityStatus.PENDING && '🟡'}
-                          {event.status === AvailabilityStatus.ACCEPTED && '✅'}
-                          {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
-                          {event.status === AvailabilityStatus.REJECTED && '❌'}
-                        </div>
-                      )}
+                <time
+                  dateTime={day.toISOString().split('T')[0]}
+                  className={`flex h-6 w-6 items-center justify-center rounded-full text-sm font-semibold ${isToday ? 'bg-blue-600 text-white' : ''} ${isSelected && !isToday ? 'bg-gray-900 text-white' : ''} `}
+                >
+                  {day.getDate()}
+                </time>
+                <div className="mt-2 space-y-1">
+                  {dayEvents.map((event) => (
+                    <div 
+                      key={event.id}
+                      className={`cursor-pointer rounded border p-1 text-xs shadow-sm transition-shadow hover:shadow-md ${getEventStyle(event)}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEventClick?.(event, e);
+                      }}
+                    >
+                      <div className="font-medium truncate">{event.title}</div>
+                      <div className="text-xs opacity-75">
+                        {event.startTime.toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                        {event.type === 'availability' && (
+                          <span className="ml-1">
+                            {event.status === AvailabilityStatus.PENDING && '🟡'}
+                            {event.status === AvailabilityStatus.ACCEPTED && '✅'}
+                            {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
+                            {event.status === AvailabilityStatus.REJECTED && '❌'}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-xs opacity-75">
-                      {event.startTime.toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </div>
-                  </div>
-                ))}
-                {dayEvents.length > 3 && (
-                  <div className="text-xs font-medium text-gray-500">
-                    +{dayEvents.length - 3} more
-                  </div>
-                )}
-              </div>
-            </button>
-          );
-        })}
+                  ))}
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+    </>
   );
 }

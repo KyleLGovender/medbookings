@@ -23,6 +23,7 @@ import { prisma } from '@/lib/prisma';
 
 import { notifyAvailabilityProposed } from './notification-service';
 import { processAvailabilityAcceptance, processAvailabilityRejection } from './workflow-service';
+import { generateRecurringInstances } from './recurrence-utils';
 
 // Helper function to include common relations
 const includeAvailabilityRelations = {
@@ -119,41 +120,106 @@ export async function createAvailability(
         })
       : null;
 
-    // Create availability
-    const availability = await prisma.availability.create({
-      data: {
-        serviceProviderId: validatedData.serviceProviderId,
-        organizationId: validatedData.organizationId,
-        locationId: validatedData.locationId,
-        connectionId: validatedData.connectionId,
-        startTime: validatedData.startTime,
-        endTime: validatedData.endTime,
-        isRecurring: validatedData.isRecurring,
-        recurrencePattern: validatedData.recurrencePattern || Prisma.JsonNull,
-        seriesId,
-        schedulingRule: validatedData.schedulingRule,
-        schedulingInterval: validatedData.schedulingInterval,
-        isOnlineAvailable: validatedData.isOnlineAvailable,
-        requiresConfirmation: validatedData.requiresConfirmation,
-        billingEntity: billingEntity || null,
-        status: initialStatus,
-        createdById: currentUser.id,
-        createdByMembershipId: createdByMembership?.id,
-        defaultSubscriptionId: validatedData.defaultSubscriptionId,
-        availableServices: {
-          create: validatedData.services.map((service) => ({
-            serviceId: service.serviceId,
-            serviceProviderId: validatedData.serviceProviderId,
-            duration: service.duration,
-            price: service.price,
-            isOnlineAvailable: validatedData.isOnlineAvailable, // Use availability-level setting
-            isInPerson: !validatedData.isOnlineAvailable || !!validatedData.locationId, // True if not online-only or has location
-            locationId: validatedData.locationId, // Use availability-level location
-          })),
+    // Validate recurring series if applicable
+    if (validatedData.isRecurring && validatedData.recurrencePattern) {
+      // Validate end date is after start date
+      if (validatedData.recurrencePattern.endDate) {
+        const endDate = new Date(validatedData.recurrencePattern.endDate);
+        if (endDate <= validatedData.startTime) {
+          return { success: false, error: 'Recurrence end date must be after start date' };
+        }
+      }
+
+      // Validate recurrence pattern is properly formed
+      if (!validatedData.recurrencePattern.option) {
+        return { success: false, error: 'Invalid recurrence pattern' };
+      }
+
+      // For custom recurrence, validate days are provided
+      if (validatedData.recurrencePattern.option === 'custom' && 
+          (!validatedData.recurrencePattern.customDays || validatedData.recurrencePattern.customDays.length === 0)) {
+        return { success: false, error: 'Custom recurrence requires at least one day to be selected' };
+      }
+    }
+
+    // Generate recurring instances if needed
+    const instances = validatedData.isRecurring && validatedData.recurrencePattern
+      ? generateRecurringInstances(
+          validatedData.recurrencePattern,
+          validatedData.startTime,
+          validatedData.endTime,
+          365 // Max 365 instances to prevent excessive generation
+        )
+      : [{ startTime: validatedData.startTime, endTime: validatedData.endTime }];
+
+    // Validate we don't have too many instances
+    if (instances.length > 365) {
+      return { success: false, error: 'Too many recurring instances. Maximum 365 instances allowed.' };
+    }
+
+    // Check for overlapping availability within the same series
+    if (validatedData.isRecurring && seriesId) {
+      const existingInSeries = await prisma.availability.findMany({
+        where: {
+          seriesId,
+          serviceProviderId: validatedData.serviceProviderId,
         },
-      },
-      include: includeAvailabilityRelations,
-    });
+        select: { startTime: true, endTime: true },
+      });
+
+      // Check for overlaps with existing instances in the same series
+      for (const instance of instances) {
+        const hasOverlap = existingInSeries.some(existing => 
+          (instance.startTime < existing.endTime && instance.endTime > existing.startTime)
+        );
+        if (hasOverlap) {
+          return { success: false, error: 'Recurring instances cannot overlap with existing availability in the same series' };
+        }
+      }
+    }
+
+    // Create availability instances
+    const availabilities = await Promise.all(
+      instances.map(async (instance) => {
+        return prisma.availability.create({
+          data: {
+            serviceProviderId: validatedData.serviceProviderId,
+            organizationId: validatedData.organizationId,
+            locationId: validatedData.locationId,
+            connectionId: validatedData.connectionId,
+            startTime: instance.startTime,
+            endTime: instance.endTime,
+            isRecurring: validatedData.isRecurring,
+            recurrencePattern: validatedData.recurrencePattern || Prisma.JsonNull,
+            seriesId,
+            schedulingRule: validatedData.schedulingRule,
+            schedulingInterval: validatedData.schedulingInterval,
+            isOnlineAvailable: validatedData.isOnlineAvailable,
+            requiresConfirmation: validatedData.requiresConfirmation,
+            billingEntity: billingEntity || null,
+            status: initialStatus,
+            createdById: currentUser.id,
+            createdByMembershipId: createdByMembership?.id,
+            defaultSubscriptionId: validatedData.defaultSubscriptionId,
+            availableServices: {
+              create: validatedData.services.map((service) => ({
+                serviceId: service.serviceId,
+                serviceProviderId: validatedData.serviceProviderId,
+                duration: service.duration,
+                price: service.price,
+                isOnlineAvailable: validatedData.isOnlineAvailable, // Use availability-level setting
+                isInPerson: !validatedData.isOnlineAvailable || !!validatedData.locationId, // True if not online-only or has location
+                locationId: validatedData.locationId, // Use availability-level location
+              })),
+            },
+          },
+          include: includeAvailabilityRelations,
+        });
+      })
+    );
+
+    // Return the first availability instance (master instance)
+    const availability = availabilities[0];
 
     // Send proposal notification if this is organization-created
     if (!isProviderCreated && availability.status === AvailabilityStatus.PENDING) {
@@ -331,6 +397,8 @@ export async function searchAvailability(
       where,
       include: includeAvailabilityRelations,
       orderBy: [{ startTime: 'asc' }, { createdAt: 'desc' }],
+      // Add pagination for large recurring series
+      take: 1000, // Limit to prevent memory issues with very large series
     });
 
     return { success: true, data: availabilities as unknown as AvailabilityWithRelations[] };

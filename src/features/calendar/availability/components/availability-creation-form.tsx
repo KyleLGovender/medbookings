@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Calendar, Clock, MapPin, Repeat } from 'lucide-react';
@@ -43,6 +43,7 @@ import {
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
+import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useToast } from '@/hooks/use-toast';
 
 import { CustomRecurrenceModal } from './custom-recurrence-modal';
@@ -75,15 +76,26 @@ export function AvailabilityCreationForm({
   >();
   const { toast } = useToast();
 
+  // Fetch user data for profile selection
+  const { data: currentUserProvider } = useCurrentUserProvider();
+  const { data: userOrganizations = [] } = useCurrentUserOrganizations();
+  
+  // State for profile selection
+  const [selectedCreatorType, setSelectedCreatorType] = useState<'provider' | 'organization'>(
+    currentUserProvider ? 'provider' : 'organization'
+  );
+  const [selectedProviderId, setSelectedProviderId] = useState<string>(
+    serviceProviderId || currentUserProvider?.id || ''
+  );
+
   // Fetch provider's services
   const {
     data: availableServices,
     isLoading: isServicesLoading,
     error: servicesError,
-  } = useProviderAssociatedServices(serviceProviderId);
+  } = useProviderAssociatedServices(selectedProviderId);
 
-  // Fetch user's organizations and their locations
-  const { data: userOrganizations = [] } = useCurrentUserOrganizations();
+  // Fetch organization locations
   const organizationIds = userOrganizations.map((org: any) => org.id);
   const { data: availableLocations = [], isLoading: isLocationsLoading } =
     useOrganizationLocations(organizationIds);
@@ -91,7 +103,7 @@ export function AvailabilityCreationForm({
   const form = useForm<FormValues>({
     resolver: zodResolver(createAvailabilityDataSchema),
     defaultValues: {
-      serviceProviderId,
+      serviceProviderId: selectedProviderId,
       organizationId,
       locationId: locationId || undefined,
       startTime: new Date(),
@@ -104,6 +116,11 @@ export function AvailabilityCreationForm({
     },
     mode: 'onChange',
   });
+
+  // Update form when selectedProviderId changes
+  useEffect(() => {
+    form.setValue('serviceProviderId', selectedProviderId);
+  }, [selectedProviderId, form]);
 
   const createMutation = useCreateAvailability({
     onSuccess: (data) => {
@@ -167,63 +184,142 @@ export function AvailabilityCreationForm({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Profile Selection */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Creating Availability</h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Creating as</label>
+                  <Select
+                    value={selectedCreatorType}
+                    onValueChange={(value: 'provider' | 'organization') => {
+                      setSelectedCreatorType(value);
+                      // Reset provider selection when changing creator type
+                      if (value === 'provider' && currentUserProvider) {
+                        setSelectedProviderId(currentUserProvider.id);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currentUserProvider && (
+                        <SelectItem value="provider">Provider (Self)</SelectItem>
+                      )}
+                      {userOrganizations.length > 0 && (
+                        <SelectItem value="organization">Organization Role</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Provider</label>
+                  <Select
+                    value={selectedProviderId}
+                    onValueChange={(value) => {
+                      setSelectedProviderId(value);
+                      form.setValue('serviceProviderId', value);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select provider" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedCreatorType === 'provider' && currentUserProvider && (
+                        <SelectItem value={currentUserProvider.id}>
+                          {currentUserProvider.name} (You)
+                        </SelectItem>
+                      )}
+                      {selectedCreatorType === 'organization' && userOrganizations.length > 0 && (
+                        <>
+                          {/* TODO: Add organization providers here */}
+                          <SelectItem value={selectedProviderId || ''}>
+                            {selectedProviderId ? 'Selected Provider' : 'No provider selected'}
+                          </SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
             {/* Basic Time Settings */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-4">
+              {/* Single Date Picker */}
               <FormField
                 control={form.control}
                 name="startTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Date & Time</FormLabel>
+                    <FormLabel>Date</FormLabel>
                     <FormControl>
-                      <div className="flex gap-2">
-                        <DatePicker
-                          date={field.value}
-                          onChange={(date) => {
-                            if (date) {
-                              const newDateTime = new Date(field.value);
-                              newDateTime.setFullYear(date.getFullYear());
-                              newDateTime.setMonth(date.getMonth());
-                              newDateTime.setDate(date.getDate());
-                              field.onChange(newDateTime);
-                            }
-                          }}
-                        />
-                        <TimePicker date={field.value} onChange={field.onChange} />
-                      </div>
+                      <DatePicker
+                        date={field.value}
+                        onChange={(date) => {
+                          if (date) {
+                            // Update both start and end time dates
+                            const currentStartTime = form.getValues('startTime');
+                            const currentEndTime = form.getValues('endTime');
+                            
+                            const newStartTime = new Date(currentStartTime);
+                            newStartTime.setFullYear(date.getFullYear());
+                            newStartTime.setMonth(date.getMonth());
+                            newStartTime.setDate(date.getDate());
+                            
+                            const newEndTime = new Date(currentEndTime);
+                            newEndTime.setFullYear(date.getFullYear());
+                            newEndTime.setMonth(date.getMonth());
+                            newEndTime.setDate(date.getDate());
+                            
+                            form.setValue('startTime', newStartTime);
+                            form.setValue('endTime', newEndTime);
+                          }
+                        }}
+                      />
                     </FormControl>
+                    <FormDescription>
+                      Select the date for your availability slot
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="endTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End Date & Time</FormLabel>
-                    <FormControl>
-                      <div className="flex gap-2">
-                        <DatePicker
-                          date={field.value}
-                          onChange={(date) => {
-                            if (date) {
-                              const newDateTime = new Date(field.value);
-                              newDateTime.setFullYear(date.getFullYear());
-                              newDateTime.setMonth(date.getMonth());
-                              newDateTime.setDate(date.getDate());
-                              field.onChange(newDateTime);
-                            }
-                          }}
-                        />
+              {/* Time Pickers */}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="startTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Start Time</FormLabel>
+                      <FormControl>
                         <TimePicker date={field.value} onChange={field.onChange} />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="endTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>End Time</FormLabel>
+                      <FormControl>
+                        <TimePicker date={field.value} onChange={field.onChange} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
             <Separator />
@@ -369,10 +465,21 @@ export function AvailabilityCreationForm({
                         onValueChange={field.onChange}
                         defaultValue={field.value || undefined}
                         required={!watchIsOnlineAvailable}
+                        aria-label="Physical location selection"
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger 
+                            className={field.value ? "border-green-500 bg-green-50" : ""}
+                            aria-describedby="location-description"
+                          >
                             <SelectValue placeholder="Choose a physical location" />
+                            {field.value && (
+                              <div className="flex items-center gap-2" aria-label="Location selected">
+                                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                            )}
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -383,10 +490,21 @@ export function AvailabilityCreationForm({
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormDescription>
-                        {watchIsOnlineAvailable
-                          ? 'Select a physical location for in-person appointments (optional)'
-                          : 'You must select a physical location when online availability is disabled'}
+                      <FormDescription id="location-description">
+                        {field.value ? (
+                          <div className="text-green-700 font-medium">
+                            ✓ Selected: {availableLocations.find((loc: any) => loc.id === field.value)?.name}
+                            {availableLocations.find((loc: any) => loc.id === field.value)?.formattedAddress && (
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {availableLocations.find((loc: any) => loc.id === field.value)?.formattedAddress}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          watchIsOnlineAvailable
+                            ? 'Select a physical location for in-person appointments (optional)'
+                            : 'You must select a physical location when online availability is disabled'
+                        )}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

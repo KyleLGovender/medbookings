@@ -41,12 +41,11 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
   const [showEditForm, setShowEditForm] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-  const [showActionMenu, setShowActionMenu] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [cancellationReason, setCancellationReason] = useState('');
+  const [showEventDetailsModal, setShowEventDetailsModal] = useState(false);
 
   const { toast } = useToast();
 
@@ -133,26 +132,25 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
   };
 
   const handleEventClick = (event: CalendarEvent, clickEvent: React.MouseEvent) => {
-    // Only show action menu for availability events (not bookings)
+    // Only show modal for availability events (not bookings)
     if (event.type === 'availability') {
       setSelectedEvent(event);
-      setMenuPosition({ x: clickEvent.clientX, y: clickEvent.clientY });
-      setShowActionMenu(true);
+      setShowEventDetailsModal(true);
     }
   };
 
   const handleEditEvent = () => {
-    setShowActionMenu(false);
+    setShowEventDetailsModal(false);
     setShowEditForm(true);
   };
 
   const handleDeleteEvent = () => {
-    setShowActionMenu(false);
+    setShowEventDetailsModal(false);
     setShowDeleteDialog(true);
   };
 
   const handleCancelEvent = () => {
-    setShowActionMenu(false);
+    setShowEventDetailsModal(false);
     if (selectedEvent && !selectedEvent.isProviderCreated) {
       // Organization-created availability - show reason dialog
       setShowCancelDialog(true);
@@ -163,18 +161,23 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
   };
 
   const handleAcceptEvent = () => {
-    setShowActionMenu(false);
+    setShowEventDetailsModal(false);
     if (selectedEvent) {
       acceptMutation.mutate({ id: selectedEvent.id });
     }
   };
 
   const handleRejectEvent = () => {
-    setShowActionMenu(false);
+    setShowEventDetailsModal(false);
     if (selectedEvent) {
       // Always show reason dialog for rejection
       setShowRejectDialog(true);
     }
+  };
+
+  const handleViewDetails = () => {
+    // TODO: Implement view details functionality
+    setShowEventDetailsModal(false);
   };
 
   const handleEditSuccess = () => {
@@ -199,8 +202,8 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
     setSelectedEvent(null);
   };
 
-  const handleMenuClose = () => {
-    setShowActionMenu(false);
+  const handleModalClose = () => {
+    setShowEventDetailsModal(false);
     setSelectedEvent(null);
   };
 
@@ -272,123 +275,199 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
         </DialogContent>
       </Dialog>
 
-      {/* Action Menu */}
-      {showActionMenu && selectedEvent && (
-        <div className="fixed inset-0 z-50" onClick={handleMenuClose}>
-          <div
-            className="absolute z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
-            style={{
-              left: `${menuPosition.x}px`,
-              top: `${menuPosition.y}px`,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Dynamic menu options based on availability status and creation type */}
-            {selectedEvent.isProviderCreated ? (
-              // Provider-created availabilities - always show edit/delete/cancel options
-              <>
-                <div className="px-2 py-1.5 text-xs font-medium text-green-600">
-                  Provider Created
-                </div>
-                <div className="-mx-1 my-1 h-px bg-muted" />
-                  <>
-                    <button
-                      className="relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-                      onClick={handleEditEvent}
-                    >
-                      <Edit className="h-4 w-4" />
-                      Edit
-                    </button>
-                    <button
-                      className="relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-red-600 outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-                      onClick={handleDeleteEvent}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </button>
-                    <div className="-mx-1 my-1 h-px bg-muted" />
-                    <button
-                      className="relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-orange-600 outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-                      onClick={handleCancelEvent}
-                      disabled={cancelMutation.isPending}
-                    >
-                      <Pause className="h-4 w-4" />
-                      {cancelMutation.isPending ? 'Cancelling...' : 'Cancel'}
-                    </button>
-                  </>
-              </>
-            ) : (
-              // Organization-created availabilities - full workflow
-              <>
-                <div className="px-2 py-1.5 text-xs font-medium text-blue-600">
-                  {selectedEvent.organization?.name || 'Organization'} Created
-                </div>
-                <div className="-mx-1 my-1 h-px bg-muted" />
-
-                {selectedEvent.status === AvailabilityStatus.PENDING && (
-                  <>
-                    <button
-                      className="relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-green-600 outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-                      onClick={handleAcceptEvent}
-                      disabled={acceptMutation.isPending}
-                    >
-                      <Check className="h-4 w-4" />
-                      {acceptMutation.isPending ? 'Accepting...' : 'Accept'}
-                    </button>
-                    <button
-                      className="relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-red-600 outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-                      onClick={handleRejectEvent}
-                      disabled={rejectMutation.isPending}
-                    >
-                      <X className="h-4 w-4" />
-                      {rejectMutation.isPending ? 'Rejecting...' : 'Reject'}
-                    </button>
-                  </>
-                )}
-
-                {selectedEvent.status === AvailabilityStatus.ACCEPTED && (
-                  <>
-                    <button
-                      className="relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-orange-600 outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-                      onClick={handleCancelEvent}
-                      disabled={cancelMutation.isPending}
-                    >
-                      <Pause className="h-4 w-4" />
-                      {cancelMutation.isPending ? 'Cancelling...' : 'Cancel'}
-                    </button>
-                  </>
-                )}
-
-                {(selectedEvent.status === AvailabilityStatus.REJECTED ||
-                  selectedEvent.status === AvailabilityStatus.CANCELLED) && (
-                  <>
-                    <button
-                      className="relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-                      onClick={() => {
-                        setShowActionMenu(false);
-                        // TODO: Implement view details
-                      }}
-                    >
-                      <Calendar className="h-4 w-4" />
-                      View Details
-                    </button>
-                  </>
-                )}
-                
-                {/* Default fallback for other statuses */}
-                {selectedEvent.status !== AvailabilityStatus.PENDING && 
-                 selectedEvent.status !== AvailabilityStatus.ACCEPTED && 
-                 selectedEvent.status !== AvailabilityStatus.REJECTED && 
-                 selectedEvent.status !== AvailabilityStatus.CANCELLED && (
-                  <div className="px-2 py-1.5 text-xs text-gray-500">
-                    No actions available for status: {selectedEvent.status}
+      {/* Event Details Modal */}
+      <Dialog open={showEventDetailsModal} onOpenChange={setShowEventDetailsModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Event Details</DialogTitle>
+          </DialogHeader>
+          {selectedEvent && (
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="font-medium text-lg">{selectedEvent.title}</div>
+                    <div className="text-sm text-gray-600">
+                      {selectedEvent.startTime.toLocaleString([], {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}{' '}
+                      -{' '}
+                      {selectedEvent.endTime.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
                   </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      )}
+                  <div className="flex flex-wrap gap-2">
+                    {/* Dynamic action buttons based on availability status and creation type */}
+                    {selectedEvent.isProviderCreated ? (
+                      // Provider-created availabilities - always show edit/delete/cancel options
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-400"
+                          onClick={handleEditEvent}
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-red-300 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-400"
+                          onClick={handleDeleteEvent}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </Button>
+                        {selectedEvent.status !== AvailabilityStatus.CANCELLED && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:border-orange-400"
+                            onClick={handleCancelEvent}
+                            disabled={cancelMutation.isPending}
+                          >
+                            <Pause className="mr-2 h-4 w-4" />
+                            {cancelMutation.isPending ? 'Cancelling...' : 'Cancel'}
+                          </Button>
+                        )}
+                      </>
+                    ) : (
+                      // Organization-created availabilities - full workflow
+                      <>
+                        {selectedEvent.status === AvailabilityStatus.PENDING && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-green-300 bg-green-50 text-green-700 hover:bg-green-100 hover:border-green-400"
+                              onClick={handleAcceptEvent}
+                              disabled={acceptMutation.isPending}
+                            >
+                              <Check className="mr-2 h-4 w-4" />
+                              {acceptMutation.isPending ? 'Accepting...' : 'Accept'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-red-300 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-400"
+                              onClick={handleRejectEvent}
+                              disabled={rejectMutation.isPending}
+                            >
+                              <X className="mr-2 h-4 w-4" />
+                              {rejectMutation.isPending ? 'Rejecting...' : 'Reject'}
+                            </Button>
+                          </>
+                        )}
+
+                        {selectedEvent.status === AvailabilityStatus.ACCEPTED && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:border-orange-400"
+                            onClick={handleCancelEvent}
+                            disabled={cancelMutation.isPending}
+                          >
+                            <Pause className="mr-2 h-4 w-4" />
+                            {cancelMutation.isPending ? 'Cancelling...' : 'Cancel'}
+                          </Button>
+                        )}
+
+                        {(selectedEvent.status === AvailabilityStatus.REJECTED ||
+                          selectedEvent.status === AvailabilityStatus.CANCELLED) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:border-gray-400"
+                            onClick={handleViewDetails}
+                          >
+                            <Calendar className="mr-2 h-4 w-4" />
+                            View Details
+                          </Button>
+                        )}
+                        
+                        {/* Default fallback for other statuses */}
+                        {selectedEvent.status !== AvailabilityStatus.PENDING && 
+                         selectedEvent.status !== AvailabilityStatus.ACCEPTED && 
+                         selectedEvent.status !== AvailabilityStatus.REJECTED && 
+                         selectedEvent.status !== AvailabilityStatus.CANCELLED && (
+                          <div className="px-2 py-1.5 text-xs text-gray-500">
+                            No actions available for status: {selectedEvent.status}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Creator Information */}
+                <div className="rounded-lg border bg-gray-50 p-4">
+                  <div className="text-sm font-medium text-gray-700 mb-2">
+                    {selectedEvent.isProviderCreated ? 'Provider Created' : `${selectedEvent.organization?.name || 'Organization'} Created`}
+                  </div>
+                  <div className="text-sm">
+                    {selectedEvent.createdBy && (
+                      <>
+                        <div className="text-xs text-gray-600 mb-1">
+                          Created by
+                        </div>
+                        <div className="text-sm font-medium">
+                          {selectedEvent.createdBy.name}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedEvent.service && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-gray-700">Service Details</div>
+                      <div className="text-sm"><strong>Service:</strong> {selectedEvent.service.name}</div>
+                      {selectedEvent.service.duration && (
+                        <div className="text-sm"><strong>Duration:</strong> {selectedEvent.service.duration} minutes</div>
+                      )}
+                      {selectedEvent.service.price && (
+                        <div className="text-sm"><strong>Price:</strong> R{selectedEvent.service.price}</div>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium text-gray-700">Additional Information</div>
+                    {selectedEvent.location && (
+                      <div className="text-sm">
+                        <strong>Location:</strong> {selectedEvent.location.isOnline ? 'Online' : selectedEvent.location.name}
+                      </div>
+                    )}
+                    {selectedEvent.customer && (
+                      <div className="text-sm"><strong>Customer:</strong> {selectedEvent.customer.name}</div>
+                    )}
+                    <div className="text-sm">
+                      <strong>Status:</strong> <span className="capitalize">{selectedEvent.status.toLowerCase().replace('_', ' ')}</span>
+                    </div>
+                    {selectedEvent.isRecurring && (
+                      <div className="text-sm">
+                        <strong>Recurring:</strong> Yes
+                        {selectedEvent.seriesId && (
+                          <div className="text-xs text-gray-600">Series ID: {selectedEvent.seriesId}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
