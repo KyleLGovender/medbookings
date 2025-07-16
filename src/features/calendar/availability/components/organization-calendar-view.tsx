@@ -394,33 +394,33 @@ export function OrganizationCalendarView({
               </div>
             </div>
 
-            <div className="grid grid-cols-5 gap-4 text-center">
+            <div className="grid grid-cols-2 gap-3 text-center md:grid-cols-3 lg:grid-cols-5 md:gap-4">
               <div>
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-lg font-bold text-blue-600 md:text-2xl">
                   {calendarData.stats.averageUtilization}%
                 </div>
                 <div className="text-xs text-muted-foreground">Avg Utilization</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-green-600">
+                <div className="text-lg font-bold text-green-600 md:text-2xl">
                   {calendarData.stats.activeProviders}
                 </div>
                 <div className="text-xs text-muted-foreground">Active Providers</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-orange-600">
+                <div className="text-lg font-bold text-orange-600 md:text-2xl">
                   {calendarData.stats.totalPendingBookings}
                 </div>
                 <div className="text-xs text-muted-foreground">Pending</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-purple-600">
+                <div className="text-lg font-bold text-purple-600 md:text-2xl">
                   {Math.round(calendarData.stats.totalBookedHours)}
                 </div>
                 <div className="text-xs text-muted-foreground">Booked Hours</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-red-600">
+                <div className="text-lg font-bold text-red-600 md:text-2xl">
                   {calendarData.stats.coverageGaps}
                 </div>
                 <div className="text-xs text-muted-foreground">Coverage Gaps</div>
