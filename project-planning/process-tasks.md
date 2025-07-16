@@ -49,16 +49,108 @@ The task files contain actionable implementation steps, but the source bug lists
    - List every file created or modified.
    - Give each file a one‑line description of its purpose.
 
+## Git Workflow for Task Implementation
+
+### Branch and PR Management
+
+When implementing tasks, follow this Git workflow:
+
+1. **Create Branch:**
+   ```bash
+   # For bug fixes (from @project-planning/bugs/ directory)
+   git checkout -b bugs/task-name-or-description
+   
+   # For feature development (from @project-planning/prd/ directory)
+   git checkout -b feature/task-name-or-description
+   ```
+
+2. **Regular Development:**
+   - Make incremental commits as you complete sub-tasks
+   - Use descriptive commit messages referencing task numbers
+   - Example: `feat(task-5.2): remove TODO comments from availability form`
+
+3. **After All Tasks Complete:**
+   ```bash
+   # Stage all changes
+   git add .
+   
+   # Create comprehensive commit with task summary
+   git commit -m "feat: implement [task group name] - [brief description]
+   
+   Completed Tasks:
+   - Task X.X: [description]
+   - Task Y.Y: [description]
+   
+   Technical improvements:
+   - [key improvement 1]
+   - [key improvement 2]
+   
+   Files modified: X files changed, Y insertions, Z deletions
+   
+   🤖 Generated with [Claude Code](https://claude.ai/code)
+   
+   Co-Authored-By: Claude <noreply@anthropic.com>"
+   
+   # Push to remote (use appropriate branch prefix)
+   git push -u origin bugs/task-name        # For bug fixes
+   git push -u origin feature/task-name     # For features
+   
+   # Create PR with comprehensive description
+   gh pr create --title "feat: [Task Group] - [Description]" --body "[detailed PR description]"
+   ```
+
+4. **User Review Process:**
+   - User reviews PR on GitHub
+   - User merges PR when satisfied
+   - User deletes feature branch on GitHub (click "Delete branch" button)
+
+5. **Local Cleanup:**
+   ```bash
+   # Switch back to master
+   git checkout master
+   
+   # Update local master with merged changes
+   git pull origin master
+   
+   # Delete local branch (use appropriate branch prefix)
+   git branch -d bugs/task-name          # For bug fixes
+   git branch -d feature/task-name       # For features
+   ```
+
+### Commit Message Guidelines
+
+- Use conventional commit format: `feat:`, `fix:`, `refactor:`, etc.
+- Include task references in commit messages
+- For comprehensive task completion commits, include:
+  - Summary of completed tasks
+  - Key technical improvements
+  - File change statistics
+  - Claude Code attribution
+
 ## AI Instructions
 
 When working with task lists, the AI must:
 
-1. Regularly update the task list file after finishing any significant work.
-2. Follow the completion protocol:
-   - Mark each finished **sub‑task** `[x]`.
-   - Mark the **parent task** `[x]` once **all** its subtasks are `[x]`.
-3. Add newly discovered tasks.
-4. Keep "Relevant Files" accurate and up to date.
-5. Before starting work, check which sub‑task is next.
-6. **Default Mode:** After implementing a sub‑task, update the file and then pause for user approval.
-7. **YOLO Mode:** After implementing a sub‑task, update the file and immediately proceed to the next task without waiting for approval.
+1. **Follow Git Workflow:**
+   - Create feature branch before starting work
+   - Make regular commits during implementation
+   - Create comprehensive final commit when all tasks complete
+   - Create detailed PR with proper description and test plan
+
+2. **Task Management:**
+   - Regularly update the task list file after finishing any significant work
+   - Follow the completion protocol:
+     - Mark each finished **sub‑task** `[x]`
+     - Mark the **parent task** `[x]` once **all** its subtasks are `[x]`
+   - Add newly discovered tasks
+   - Keep "Relevant Files" accurate and up to date
+
+3. **Execution Modes:**
+   - Before starting work, check which sub‑task is next
+   - **Default Mode:** After implementing a sub‑task, update the file and then pause for user approval
+   - **YOLO Mode:** After implementing a sub‑task, update the file and immediately proceed to the next task without waiting for approval
+
+4. **PR Creation:**
+   - When all tasks in a group are complete, create comprehensive PR
+   - Include detailed description, test plan, and file change summary
+   - Reference original task documentation
