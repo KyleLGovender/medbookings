@@ -6,12 +6,13 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const scope = searchParams.get('scope') as 'single' | 'future' | 'all' | null;
 
     if (!id) {
       return NextResponse.json({ error: 'Availability ID is required' }, { status: 400 });
     }
 
-    const result = await deleteAvailability(id);
+    const result = await deleteAvailability(id, scope || undefined);
 
     if (!result.success) {
       return NextResponse.json(

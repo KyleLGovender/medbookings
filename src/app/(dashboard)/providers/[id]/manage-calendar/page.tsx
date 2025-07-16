@@ -20,9 +20,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AvailabilityCreationForm } from '@/features/calendar/availability/components/availability-creation-form';
 import { AvailabilityEditForm } from '@/features/calendar/availability/components/availability-edit-form';
+import { AvailabilityViewModal } from '@/features/calendar/availability/components/availability-view-modal';
 import { ProviderCalendarView } from '@/features/calendar/availability/components/provider-calendar-view';
+import { SeriesActionDialog, SeriesActionScope } from '@/features/calendar/availability/components/series-action-dialog';
 import {
   useAcceptAvailabilityProposal,
+  useAvailabilityById,
   useCancelAvailability,
   useDeleteAvailability,
   useRejectAvailabilityProposal,
@@ -46,6 +49,11 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
   const [rejectionReason, setRejectionReason] = useState('');
   const [cancellationReason, setCancellationReason] = useState('');
   const [showEventDetailsModal, setShowEventDetailsModal] = useState(false);
+  const [showSeriesActionDialog, setShowSeriesActionDialog] = useState(false);
+  const [seriesActionType, setSeriesActionType] = useState<'edit' | 'delete' | 'cancel'>('edit');
+  const [pendingSeriesScope, setPendingSeriesScope] = useState<SeriesActionScope | null>(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingAvailabilityId, setViewingAvailabilityId] = useState<string | null>(null);
 
   const { toast } = useToast();
 
@@ -141,17 +149,35 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
 
   const handleEditEvent = () => {
     setShowEventDetailsModal(false);
-    setShowEditForm(true);
+    if (selectedEvent && selectedEvent.isRecurring) {
+      // Show series action dialog for recurring availability
+      setSeriesActionType('edit');
+      setShowSeriesActionDialog(true);
+    } else {
+      // Direct edit for single availability
+      setShowEditForm(true);
+    }
   };
 
   const handleDeleteEvent = () => {
     setShowEventDetailsModal(false);
-    setShowDeleteDialog(true);
+    if (selectedEvent && selectedEvent.isRecurring) {
+      // Show series action dialog for recurring availability
+      setSeriesActionType('delete');
+      setShowSeriesActionDialog(true);
+    } else {
+      // Direct delete for single availability
+      setShowDeleteDialog(true);
+    }
   };
 
   const handleCancelEvent = () => {
     setShowEventDetailsModal(false);
-    if (selectedEvent && !selectedEvent.isProviderCreated) {
+    if (selectedEvent && selectedEvent.isRecurring) {
+      // Show series action dialog for recurring availability
+      setSeriesActionType('cancel');
+      setShowSeriesActionDialog(true);
+    } else if (selectedEvent && !selectedEvent.isProviderCreated) {
       // Organization-created availability - show reason dialog
       setShowCancelDialog(true);
     } else if (selectedEvent) {
@@ -176,8 +202,11 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
   };
 
   const handleViewDetails = () => {
-    // TODO: Implement view details functionality
     setShowEventDetailsModal(false);
+    if (selectedEvent && selectedEvent.type === 'availability') {
+      setViewingAvailabilityId(selectedEvent.id);
+      setShowViewModal(true);
+    }
   };
 
   const handleEditSuccess = () => {
@@ -218,10 +247,15 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
 
   const handleCancelConfirm = () => {
     if (selectedEvent) {
-      cancelMutation.mutate({ id: selectedEvent.id, reason: cancellationReason });
+      cancelMutation.mutate({ 
+        id: selectedEvent.id, 
+        reason: cancellationReason,
+        scope: pendingSeriesScope || 'single'
+      });
     }
     setShowCancelDialog(false);
     setCancellationReason('');
+    setPendingSeriesScope(null);
     setSelectedEvent(null);
   };
 
@@ -234,6 +268,42 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
   const handleCancelCancel = () => {
     setShowCancelDialog(false);
     setCancellationReason('');
+    setPendingSeriesScope(null);
+    setSelectedEvent(null);
+  };
+
+  const handleSeriesAction = (scope: SeriesActionScope) => {
+    setShowSeriesActionDialog(false);
+    
+    if (!selectedEvent) return;
+
+    switch (seriesActionType) {
+      case 'edit':
+        // For series editing, pass scope to edit form
+        // TODO: Update edit form to handle scope parameter
+        setShowEditForm(true);
+        break;
+      case 'delete':
+        // Delete with scope parameter
+        deleteMutation.mutate({ id: selectedEvent.id, scope });
+        break;
+      case 'cancel':
+        // Cancel with scope parameter
+        if (!selectedEvent.isProviderCreated) {
+          // For organization-created availability, show reason dialog
+          setPendingSeriesScope(scope);
+          setShowCancelDialog(true);
+        } else {
+          // Provider-created availability - no reason needed
+          cancelMutation.mutate({ id: selectedEvent.id, scope });
+        }
+        break;
+    }
+  };
+
+  const handleSeriesActionCancel = () => {
+    setShowSeriesActionDialog(false);
+    setPendingSeriesScope(null);
     setSelectedEvent(null);
   };
 
@@ -596,6 +666,29 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Series Action Dialog */}
+      {selectedEvent && (
+        <SeriesActionDialog
+          isOpen={showSeriesActionDialog}
+          onClose={handleSeriesActionCancel}
+          onConfirm={handleSeriesAction}
+          actionType={seriesActionType}
+          availabilityTitle={selectedEvent.title}
+          availabilityDate={selectedEvent.startTime.toLocaleDateString()}
+          isDestructive={seriesActionType === 'delete' || seriesActionType === 'cancel'}
+        />
+      )}
+
+      {/* Availability View Modal */}
+      <AvailabilityViewModal
+        isOpen={showViewModal}
+        onClose={() => {
+          setShowViewModal(false);
+          setViewingAvailabilityId(null);
+        }}
+        availabilityId={viewingAvailabilityId}
+      />
     </>
   );
 }

@@ -5,13 +5,13 @@ import { cancelAvailability } from '@/features/calendar/availability/lib/actions
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, reason } = body;
+    const { id, reason, scope } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Availability ID is required' }, { status: 400 });
     }
 
-    const result = await cancelAvailability(id, reason);
+    const result = await cancelAvailability(id, reason, scope);
 
     if (!result.success) {
       return NextResponse.json(

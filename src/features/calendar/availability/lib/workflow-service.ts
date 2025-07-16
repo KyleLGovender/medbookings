@@ -10,6 +10,7 @@ import {
   notifyAvailabilityCancelled,
   notifyAvailabilityRejected,
 } from './notification-service';
+import { generateSlotsForAvailability } from './slot-generation';
 
 export interface WorkflowResult {
   success: boolean;
@@ -89,9 +90,33 @@ export async function processAvailabilityAcceptance(
       },
     });
 
-    // TODO: Implement simplified slot generation for accepted availability
-    // Slot generation was removed as part of recurrence system simplification
-    const slotsGenerated = 0;
+    // Generate slots for accepted availability
+    let slotsGenerated = 0;
+    try {
+      const slotResult = await generateSlotsForAvailability({
+        availabilityId: updatedAvailability.id,
+        startTime: updatedAvailability.startTime,
+        endTime: updatedAvailability.endTime,
+        serviceProviderId: updatedAvailability.serviceProviderId,
+        organizationId: updatedAvailability.organizationId,
+        locationId: updatedAvailability.locationId,
+        schedulingRule: updatedAvailability.schedulingRule,
+        schedulingInterval: updatedAvailability.schedulingInterval,
+        services: updatedAvailability.availableServices.map((as) => ({
+          serviceId: as.serviceId,
+          duration: as.duration,
+          price: as.price,
+        })),
+      });
+
+      if (slotResult.success) {
+        slotsGenerated = slotResult.slotsGenerated;
+      } else {
+        console.error('Failed to generate slots during acceptance:', slotResult.errors);
+      }
+    } catch (slotError) {
+      console.error('Error generating slots during acceptance:', slotError);
+    }
 
     // Send acceptance notifications
     try {
@@ -406,9 +431,51 @@ export async function processRecurringSeriesAcceptance(
       },
     });
 
-    // TODO: Generate slots for all accepted availability
-    // Slot generation was removed as part of recurrence system simplification
-    const totalSlotsGenerated = 0;
+    // Generate slots for all accepted availability in the series
+    let totalSlotsGenerated = 0;
+    try {
+      // Get all accepted availability in the series
+      const acceptedAvailabilities = await prisma.availability.findMany({
+        where: {
+          seriesId: masterAvailability.seriesId,
+          status: AvailabilityStatus.ACCEPTED,
+        },
+        include: {
+          availableServices: {
+            include: {
+              service: true,
+            },
+          },
+        },
+      });
+
+      // Generate slots for each accepted availability
+      for (const availability of acceptedAvailabilities) {
+        const slotResult = await generateSlotsForAvailability({
+          availabilityId: availability.id,
+          startTime: availability.startTime,
+          endTime: availability.endTime,
+          serviceProviderId: availability.serviceProviderId,
+          organizationId: availability.organizationId,
+          locationId: availability.locationId,
+          schedulingRule: availability.schedulingRule,
+          schedulingInterval: availability.schedulingInterval,
+          services: availability.availableServices.map((as) => ({
+            serviceId: as.serviceId,
+            duration: as.duration,
+            price: as.price,
+          })),
+        });
+
+        if (slotResult.success) {
+          totalSlotsGenerated += slotResult.slotsGenerated;
+        } else {
+          console.error(`Failed to generate slots for availability ${availability.id}:`, slotResult.errors);
+        }
+      }
+    } catch (slotError) {
+      console.error('Error generating slots for series acceptance:', slotError);
+    }
 
     // Send notifications for series acceptance
     try {

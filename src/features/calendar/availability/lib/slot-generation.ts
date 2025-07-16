@@ -1,0 +1,208 @@
+import { prisma } from '@/lib/prisma';
+import { addMinutes } from 'date-fns';
+import { SchedulingRule } from '@/features/calendar/availability/types/types';
+import { generateTimeSlots } from './scheduling-rules';
+
+export interface SlotGenerationOptions {
+  availabilityId: string;
+  startTime: Date;
+  endTime: Date;
+  serviceProviderId: string;
+  organizationId: string;
+  locationId?: string;
+  schedulingRule: SchedulingRule;
+  schedulingInterval?: number;
+  services: Array<{
+    serviceId: string;
+    duration: number;
+    price: number;
+  }>;
+}
+
+export interface SlotGenerationResult {
+  success: boolean;
+  slotsGenerated: number;
+  errors?: string[];
+}
+
+/**
+ * Generate CalculatedAvailabilitySlots for a given availability
+ */
+export async function generateSlotsForAvailability(
+  options: SlotGenerationOptions
+): Promise<SlotGenerationResult> {
+  try {
+    const errors: string[] = [];
+    let totalSlotsGenerated = 0;
+
+    // Generate slots for each service
+    for (const service of options.services) {
+      const slotResult = generateTimeSlots({
+        availabilityStart: options.startTime,
+        availabilityEnd: options.endTime,
+        serviceDuration: service.duration,
+        schedulingRule: options.schedulingRule,
+        schedulingInterval: options.schedulingInterval,
+      });
+
+      if (slotResult.errors.length > 0) {
+        errors.push(...slotResult.errors);
+        continue;
+      }
+
+      // Create CalculatedAvailabilitySlot records
+      const slotRecords = slotResult.slots.map((slot) => ({
+        availabilityId: options.availabilityId,
+        serviceId: service.serviceId,
+        serviceProviderId: options.serviceProviderId,
+        organizationId: options.organizationId,
+        locationId: options.locationId,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        duration: slot.duration,
+        price: service.price,
+        status: 'AVAILABLE' as const,
+        isBlocked: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+
+      if (slotRecords.length > 0) {
+        await prisma.calculatedAvailabilitySlot.createMany({
+          data: slotRecords,
+        });
+        totalSlotsGenerated += slotRecords.length;
+      }
+    }
+
+    return {
+      success: errors.length === 0,
+      slotsGenerated: totalSlotsGenerated,
+      errors: errors.length > 0 ? errors : undefined,
+    };
+  } catch (error) {
+    console.error('Error generating slots:', error);
+    return {
+      success: false,
+      slotsGenerated: 0,
+      errors: [error instanceof Error ? error.message : 'Unknown error occurred'],
+    };
+  }
+}
+
+/**
+ * Generate slots for multiple availability records (for recurring availability)
+ */
+export async function generateSlotsForMultipleAvailability(
+  availabilities: Array<{
+    id: string;
+    startTime: Date;
+    endTime: Date;
+    serviceProviderId: string;
+    organizationId: string;
+    locationId?: string;
+    schedulingRule: SchedulingRule;
+    schedulingInterval?: number;
+    availableServices: Array<{
+      serviceId: string;
+      duration: number;
+      price: number;
+    }>;
+  }>
+): Promise<SlotGenerationResult> {
+  try {
+    let totalSlotsGenerated = 0;
+    const allErrors: string[] = [];
+
+    for (const availability of availabilities) {
+      const result = await generateSlotsForAvailability({
+        availabilityId: availability.id,
+        startTime: availability.startTime,
+        endTime: availability.endTime,
+        serviceProviderId: availability.serviceProviderId,
+        organizationId: availability.organizationId,
+        locationId: availability.locationId,
+        schedulingRule: availability.schedulingRule,
+        schedulingInterval: availability.schedulingInterval,
+        services: availability.availableServices,
+      });
+
+      if (result.success) {
+        totalSlotsGenerated += result.slotsGenerated;
+      } else {
+        allErrors.push(...(result.errors || []));
+      }
+    }
+
+    return {
+      success: allErrors.length === 0,
+      slotsGenerated: totalSlotsGenerated,
+      errors: allErrors.length > 0 ? allErrors : undefined,
+    };
+  } catch (error) {
+    console.error('Error generating slots for multiple availability:', error);
+    return {
+      success: false,
+      slotsGenerated: 0,
+      errors: [error instanceof Error ? error.message : 'Unknown error occurred'],
+    };
+  }
+}
+
+/**
+ * Regenerate slots for an availability (useful for updates)
+ */
+export async function regenerateSlotsForAvailability(
+  availabilityId: string
+): Promise<SlotGenerationResult> {
+  try {
+    // Get the availability with its services
+    const availability = await prisma.availability.findUnique({
+      where: { id: availabilityId },
+      include: {
+        availableServices: {
+          include: {
+            service: true,
+          },
+        },
+      },
+    });
+
+    if (!availability) {
+      return {
+        success: false,
+        slotsGenerated: 0,
+        errors: ['Availability not found'],
+      };
+    }
+
+    // Delete existing slots
+    await prisma.calculatedAvailabilitySlot.deleteMany({
+      where: { availabilityId: availabilityId },
+    });
+
+    // Generate new slots
+    return await generateSlotsForAvailability({
+      availabilityId: availability.id,
+      startTime: availability.startTime,
+      endTime: availability.endTime,
+      serviceProviderId: availability.serviceProviderId,
+      organizationId: availability.organizationId,
+      locationId: availability.locationId,
+      schedulingRule: availability.schedulingRule,
+      schedulingInterval: availability.schedulingInterval,
+      services: availability.availableServices.map((as) => ({
+        serviceId: as.serviceId,
+        duration: as.duration,
+        price: as.price,
+      })),
+    });
+  } catch (error) {
+    console.error('Error regenerating slots:', error);
+    return {
+      success: false,
+      slotsGenerated: 0,
+      errors: [error instanceof Error ? error.message : 'Unknown error occurred'],
+    };
+  }
+}

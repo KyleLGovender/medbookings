@@ -24,6 +24,8 @@ import { prisma } from '@/lib/prisma';
 import { notifyAvailabilityProposed } from './notification-service';
 import { processAvailabilityAcceptance, processAvailabilityRejection } from './workflow-service';
 import { generateRecurringInstances } from './recurrence-utils';
+import { generateSlotsForMultipleAvailability } from './slot-generation';
+import { validateAvailability, validateRecurringAvailability, validateAvailabilityUpdate } from './availability-validation';
 
 // Helper function to include common relations
 const includeAvailabilityRelations = {
@@ -95,7 +97,12 @@ export async function createAvailability(
     }
 
     // Determine initial status based on context
-    const isProviderCreated = currentUser.id === validatedData.serviceProviderId;
+    // Check if current user is the service provider by comparing ServiceProvider IDs
+    const currentUserServiceProvider = await prisma.serviceProvider.findUnique({
+      where: { userId: currentUser.id },
+    });
+    
+    const isProviderCreated = currentUserServiceProvider?.id === validatedData.serviceProviderId;
     const initialStatus = isProviderCreated
       ? AvailabilityStatus.ACCEPTED
       : AvailabilityStatus.PENDING;
@@ -157,24 +164,29 @@ export async function createAvailability(
       return { success: false, error: 'Too many recurring instances. Maximum 365 instances allowed.' };
     }
 
-    // Check for overlapping availability within the same series
-    if (validatedData.isRecurring && seriesId) {
-      const existingInSeries = await prisma.availability.findMany({
-        where: {
-          seriesId,
-          serviceProviderId: validatedData.serviceProviderId,
-        },
-        select: { startTime: true, endTime: true },
+    // Comprehensive availability validation
+    if (validatedData.isRecurring && instances.length > 1) {
+      // Validate recurring availability
+      const recurringValidation = await validateRecurringAvailability({
+        serviceProviderId: validatedData.serviceProviderId,
+        startTime: validatedData.startTime,
+        endTime: validatedData.endTime,
+        instances,
       });
 
-      // Check for overlaps with existing instances in the same series
-      for (const instance of instances) {
-        const hasOverlap = existingInSeries.some(existing => 
-          (instance.startTime < existing.endTime && instance.endTime > existing.startTime)
-        );
-        if (hasOverlap) {
-          return { success: false, error: 'Recurring instances cannot overlap with existing availability in the same series' };
-        }
+      if (!recurringValidation.isValid) {
+        return { success: false, error: recurringValidation.errors.join('. ') };
+      }
+    } else {
+      // Validate single availability
+      const singleValidation = await validateAvailability({
+        serviceProviderId: validatedData.serviceProviderId,
+        startTime: validatedData.startTime,
+        endTime: validatedData.endTime,
+      });
+
+      if (!singleValidation.isValid) {
+        return { success: false, error: singleValidation.errors.join('. ') };
       }
     }
 
@@ -220,6 +232,37 @@ export async function createAvailability(
 
     // Return the first availability instance (master instance)
     const availability = availabilities[0];
+
+    // Generate slots for accepted availability only
+    if (availability.status === AvailabilityStatus.ACCEPTED) {
+      try {
+        const slotResult = await generateSlotsForMultipleAvailability(
+          availabilities.map((av) => ({
+            id: av.id,
+            startTime: av.startTime,
+            endTime: av.endTime,
+            serviceProviderId: av.serviceProviderId,
+            organizationId: av.organizationId,
+            locationId: av.locationId,
+            schedulingRule: av.schedulingRule,
+            schedulingInterval: av.schedulingInterval,
+            availableServices: av.availableServices.map((as) => ({
+              serviceId: as.serviceId,
+              duration: as.duration,
+              price: as.price,
+            })),
+          }))
+        );
+
+        if (!slotResult.success) {
+          console.error('Failed to generate slots:', slotResult.errors);
+          // Don't fail the creation for slot generation errors, but log them
+        }
+      } catch (slotError) {
+        console.error('Error generating slots:', slotError);
+        // Don't fail the creation for slot generation errors
+      }
+    }
 
     // Send proposal notification if this is organization-created
     if (!isProviderCreated && availability.status === AvailabilityStatus.PENDING) {
@@ -475,6 +518,23 @@ export async function updateAvailability(
       };
     }
 
+    // Validate time changes if startTime or endTime is being updated
+    if (validatedData.startTime || validatedData.endTime) {
+      const newStartTime = validatedData.startTime || existingAvailability.startTime;
+      const newEndTime = validatedData.endTime || existingAvailability.endTime;
+
+      const updateValidation = await validateAvailability({
+        serviceProviderId: existingAvailability.serviceProviderId,
+        startTime: newStartTime,
+        endTime: newEndTime,
+        excludeAvailabilityId: existingAvailability.id,
+      });
+
+      if (!updateValidation.isValid) {
+        return { success: false, error: updateValidation.errors.join('. ') };
+      }
+    }
+
     // Prepare update data
     const updateData: any = {};
 
@@ -551,7 +611,8 @@ export async function updateAvailability(
  * Delete availability (soft delete by setting status to CANCELLED)
  */
 export async function deleteAvailability(
-  id: string
+  id: string,
+  scope?: 'single' | 'future' | 'all'
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const currentUser = await getCurrentUser();
@@ -608,6 +669,11 @@ export async function deleteAvailability(
       };
     }
 
+    // Handle series operations
+    if (scope && existingAvailability.seriesId) {
+      return handleSeriesDelete(existingAvailability, scope);
+    }
+
     // Hard delete - first delete calculated slots, then availability
     await prisma.calculatedAvailabilitySlot.deleteMany({
       where: { availabilityId: id },
@@ -642,7 +708,8 @@ export async function deleteAvailability(
  */
 export async function cancelAvailability(
   id: string,
-  reason?: string
+  reason?: string,
+  scope?: 'single' | 'future' | 'all'
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const currentUser = await getCurrentUser();
@@ -697,6 +764,11 @@ export async function cancelAvailability(
         success: false,
         error: 'Cannot cancel availability with existing bookings. Cancel the bookings first.',
       };
+    }
+
+    // Handle series operations
+    if (scope && existingAvailability.seriesId) {
+      return handleSeriesCancel(existingAvailability, scope, reason);
     }
 
     // Set status to CANCELLED
@@ -787,6 +859,165 @@ export async function rejectAvailabilityProposal(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to reject availability proposal',
+    };
+  }
+}
+
+/**
+ * Handle series deletion operations
+ */
+async function handleSeriesDelete(
+  availability: any,
+  scope: 'single' | 'future' | 'all'
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const seriesId = availability.seriesId;
+    const currentDate = availability.startTime;
+
+    let deleteConditions: any = { seriesId };
+
+    switch (scope) {
+      case 'single':
+        // Delete only this occurrence
+        deleteConditions = { id: availability.id };
+        break;
+      case 'future':
+        // Delete this and all future occurrences
+        deleteConditions = {
+          seriesId,
+          startTime: { gte: currentDate },
+        };
+        break;
+      case 'all':
+        // Delete all occurrences in the series
+        deleteConditions = { seriesId };
+        break;
+    }
+
+    // Check for bookings in the affected availabilities
+    const affectedAvailabilities = await prisma.availability.findMany({
+      where: deleteConditions,
+      include: {
+        calculatedSlots: {
+          include: {
+            booking: true,
+          },
+        },
+      },
+    });
+
+    const hasBookings = affectedAvailabilities.some((av) =>
+      av.calculatedSlots.some((slot) => slot.booking)
+    );
+
+    if (hasBookings) {
+      return {
+        success: false,
+        error: 'Cannot delete availability with existing bookings. Cancel the bookings first.',
+      };
+    }
+
+    // Delete calculated slots first
+    await prisma.calculatedAvailabilitySlot.deleteMany({
+      where: {
+        availability: deleteConditions,
+      },
+    });
+
+    // Delete the availability records
+    await prisma.availability.deleteMany({
+      where: deleteConditions,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error in series delete:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete availability series',
+    };
+  }
+}
+
+/**
+ * Handle series cancellation operations
+ */
+async function handleSeriesCancel(
+  availability: any,
+  scope: 'single' | 'future' | 'all',
+  reason?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const seriesId = availability.seriesId;
+    const currentDate = availability.startTime;
+
+    let cancelConditions: any = { seriesId };
+
+    switch (scope) {
+      case 'single':
+        // Cancel only this occurrence
+        cancelConditions = { id: availability.id };
+        break;
+      case 'future':
+        // Cancel this and all future occurrences
+        cancelConditions = {
+          seriesId,
+          startTime: { gte: currentDate },
+        };
+        break;
+      case 'all':
+        // Cancel all occurrences in the series
+        cancelConditions = { seriesId };
+        break;
+    }
+
+    // Check for bookings in the affected availabilities
+    const affectedAvailabilities = await prisma.availability.findMany({
+      where: cancelConditions,
+      include: {
+        calculatedSlots: {
+          include: {
+            booking: true,
+          },
+        },
+      },
+    });
+
+    const hasBookings = affectedAvailabilities.some((av) =>
+      av.calculatedSlots.some((slot) => slot.booking)
+    );
+
+    if (hasBookings) {
+      return {
+        success: false,
+        error: 'Cannot cancel availability with existing bookings. Cancel the bookings first.',
+      };
+    }
+
+    // Update availability status to CANCELLED
+    await prisma.availability.updateMany({
+      where: cancelConditions,
+      data: {
+        status: AvailabilityStatus.CANCELLED,
+      },
+    });
+
+    // Mark calculated slots as invalid
+    await prisma.calculatedAvailabilitySlot.updateMany({
+      where: {
+        availability: cancelConditions,
+      },
+      data: {
+        status: 'INVALID',
+      },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error in series cancel:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to cancel availability series',
     };
   }
 }

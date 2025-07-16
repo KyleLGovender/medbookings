@@ -19,6 +19,7 @@ To guide an AI assistant in converting categorized bug/improvement source lists 
 - **Format:** Markdown (`.md`)
 - **Location:** `/project-planning/bugs/`
 - **Files:** `provider-availability-bugs-tasks.md`, `backend-bugs-tasks.md`, `performance-tasks.md`, etc.
+- **Task Format:** Hierarchical structure with parent tasks (1.0, 2.0, etc.) and sub-tasks (1.1, 1.2, etc.)
 
 ## Process
 
@@ -164,21 +165,47 @@ Before finalizing any task entry, ensure:
 - Archive old completed tasks monthly
 - Maintain running count of open tasks
 
+## Task Format Requirements
+
+### Hierarchical Structure
+All tasks must follow the hierarchical parent/sub-task format:
+
+```markdown
+## Relevant Files
+
+- `path/to/file.ts` - Brief description of file's purpose
+- `path/to/file.test.ts` - Unit tests for the file
+
+## Tasks
+
+- [ ] 1.0 **PRIORITY**: Parent Task Title
+  - [ ] 1.1 Sub-task description with specific action
+  - [ ] 1.2 Sub-task description with specific action
+  - [ ] 1.3 Sub-task description with specific action
+- [ ] 2.0 **PRIORITY**: Parent Task Title
+  - [ ] 2.1 Sub-task description with specific action
+  - [ ] 2.2 Sub-task description with specific action
+```
+
+### Task Requirements
+- **Parent Tasks**: High-level objectives with priority indicators (🔴 Critical, 🟡 High, 🔵 Medium, 🟢 Low)
+- **Sub-tasks**: Specific, actionable steps that complete the parent task
+- **File References**: Include `path/to/file.ts:line_number` when applicable
+- **Testing**: Include testing sub-tasks for each implementation
+- **Numbering**: Use decimal numbering (1.0, 1.1, 1.2, 2.0, 2.1, etc.)
+
 ## Example Task Entry
 
 ```markdown
-- [ ] **Bug Fix**: Calendar events not displaying correct timezone - `src/components/Calendar.tsx:145`
-  - **Issue**: Calendar events show in UTC instead of user's local timezone
-  - **Impact**: Users see incorrect event times, causing missed appointments
-  - **Implementation**: 
-    1. Update date formatting utility to use user's timezone
-    2. Modify Calendar component to pass timezone context
-    3. Test with different timezone settings
-  - **Testing**: 
-    - Manual testing with different timezone settings
-    - Unit tests for date formatting utility
-    - Integration tests for Calendar component
-  - **Estimated Time**: 4-6 hours
+- [ ] 1.0 🔴 **CRITICAL**: Fix Calendar Timezone Display
+  - [ ] 1.1 Identify timezone handling issue in `src/components/Calendar.tsx:145`
+  - [ ] 1.2 Update date formatting utility to use user's timezone
+  - [ ] 1.3 Modify Calendar component to pass timezone context
+  - [ ] 1.4 Add timezone configuration to user preferences
+  - [ ] 1.5 Test with different timezone settings manually
+  - [ ] 1.6 Write unit tests for date formatting utility
+  - [ ] 1.7 Write integration tests for Calendar component
+  - [ ] 1.8 Verify no regressions in existing calendar functionality
 ```
 
 ## Target Audience
