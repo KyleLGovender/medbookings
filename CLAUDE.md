@@ -35,6 +35,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Let the user run the dev server... never start the dev server yourself... just request the user to do it
 
+## Command Line Usage Guidelines
+
+### Search Commands
+
+- **Use `grep` instead of `find` for file searches** - The Grep tool is more reliable and has better permissions handling
+- **Use `rg` (ripgrep) for fast text searches** - Pre-installed and optimized for code searching
+- **Avoid complex bash pipelines** - Use dedicated tools (Grep, Glob) when possible
+
+### Examples:
+- ✅ Use: `grep -r "pattern" .` or the Grep tool
+- ❌ Avoid: `find . -name "*.js" | xargs grep "pattern"`
+
+## Bash Tips
+
+- Prefer `grep` over `find` for searching text within files - it's more efficient and straightforward for text-based searches
+
 ## Architecture Overview
 
 [... rest of the existing content remains unchanged ...]

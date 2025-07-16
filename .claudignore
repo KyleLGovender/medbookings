@@ -1,0 +1,33 @@
+# Backup and archive directories
+backup/
+project-planning/bugs/complete
+old_files/
+archive/
+
+# Next.js
+.next/
+out/
+build/
+
+# Dependencies
+node_modules/
+
+# Environment files
+.env*
+
+# Logs
+*.log
+
+# Cache and temp
+.cache/
+tmp/
+temp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup file patterns
+*.backup
+*.old
+

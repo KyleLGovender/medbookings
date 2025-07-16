@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Calendar, Clock, MapPin, Repeat } from 'lucide-react';
@@ -42,23 +42,48 @@ import {
 } from '@/features/calendar/availability/types/types';
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
-import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
+import { OrganizationMembership } from '@/features/organizations/types/types';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
+import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
 
 import { CustomRecurrenceModal } from './custom-recurrence-modal';
 import { ServiceSelectionSection } from './service-selection-section';
 
+interface LocationData {
+  id: string;
+  name: string;
+  formattedAddress?: string;
+}
+
 interface AvailabilityCreationFormProps {
   serviceProviderId: string;
   organizationId?: string;
   locationId?: string;
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: CreateAvailabilityData) => void;
   onCancel?: () => void;
 }
 
 type FormValues = CreateAvailabilityData;
 
+/**
+ * AvailabilityCreationForm - A comprehensive form for creating provider availability
+ *
+ * This form handles:
+ * - Profile selection (provider vs organization)
+ * - Time settings (date, start/end times)
+ * - Recurrence patterns (including custom recurrence)
+ * - Scheduling rules (continuous, hourly, half-hourly)
+ * - Location management (online and physical locations)
+ * - Service selection and configuration
+ * - Additional settings (confirmation requirements)
+ *
+ * @param serviceProviderId - The ID of the service provider
+ * @param organizationId - Optional organization ID for organization-created availability
+ * @param locationId - Optional pre-selected location ID
+ * @param onSuccess - Callback fired when availability is created successfully
+ * @param onCancel - Callback fired when the form is cancelled
+ */
 export function AvailabilityCreationForm({
   serviceProviderId,
   organizationId,
@@ -79,7 +104,7 @@ export function AvailabilityCreationForm({
   // Fetch user data for profile selection
   const { data: currentUserProvider } = useCurrentUserProvider();
   const { data: userOrganizations = [] } = useCurrentUserOrganizations();
-  
+
   // State for profile selection
   const [selectedCreatorType, setSelectedCreatorType] = useState<'provider' | 'organization'>(
     currentUserProvider ? 'provider' : 'organization'
@@ -96,7 +121,9 @@ export function AvailabilityCreationForm({
   } = useProviderAssociatedServices(selectedProviderId);
 
   // Fetch organization locations
-  const organizationIds = userOrganizations.map((org: any) => org.id);
+  const organizationIds = userOrganizations.map(
+    (org: OrganizationMembership) => org.organizationId
+  );
   const { data: availableLocations = [], isLoading: isLocationsLoading } =
     useOrganizationLocations(organizationIds);
 
@@ -133,7 +160,7 @@ export function AvailabilityCreationForm({
     onError: (error) => {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to create availability',
         variant: 'destructive',
       });
     },
@@ -142,13 +169,22 @@ export function AvailabilityCreationForm({
   const watchIsRecurring = form.watch('isRecurring');
   const watchSchedulingRule = form.watch('schedulingRule');
   const watchIsOnlineAvailable = form.watch('isOnlineAvailable');
+  const watchLocationId = form.watch('locationId');
+
+  // Memoize selected location to avoid repeated lookups
+  const selectedLocation = useMemo(() => {
+    if (!watchLocationId) return null;
+    return availableLocations.find((loc: LocationData) => loc.id === watchLocationId) || null;
+  }, [watchLocationId, availableLocations]);
 
   const onSubmit = async (data: FormValues) => {
+    if (createMutation.isPending) return;
+
     setIsSubmitting(true);
     try {
       await createMutation.mutateAsync(data);
     } catch (error) {
-      // Error handled by mutation
+      // Error handled by mutation onError callback
     } finally {
       setIsSubmitting(false);
     }
@@ -234,9 +270,9 @@ export function AvailabilityCreationForm({
                       )}
                       {selectedCreatorType === 'organization' && userOrganizations.length > 0 && (
                         <>
-                          {/* TODO: Add organization providers here */}
-                          <SelectItem value={selectedProviderId || ''}>
-                            {selectedProviderId ? 'Selected Provider' : 'No provider selected'}
+                          {/* Organization providers will be loaded via organization provider connections */}
+                          <SelectItem value={selectedProviderId || ''} disabled>
+                            Organization providers not yet implemented
                           </SelectItem>
                         </>
                       )}
@@ -265,26 +301,24 @@ export function AvailabilityCreationForm({
                             // Update both start and end time dates
                             const currentStartTime = form.getValues('startTime');
                             const currentEndTime = form.getValues('endTime');
-                            
+
                             const newStartTime = new Date(currentStartTime);
                             newStartTime.setFullYear(date.getFullYear());
                             newStartTime.setMonth(date.getMonth());
                             newStartTime.setDate(date.getDate());
-                            
+
                             const newEndTime = new Date(currentEndTime);
                             newEndTime.setFullYear(date.getFullYear());
                             newEndTime.setMonth(date.getMonth());
                             newEndTime.setDate(date.getDate());
-                            
+
                             form.setValue('startTime', newStartTime);
                             form.setValue('endTime', newEndTime);
                           }
                         }}
                       />
                     </FormControl>
-                    <FormDescription>
-                      Select the date for your availability slot
-                    </FormDescription>
+                    <FormDescription>Select the date for your availability slot</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -468,22 +502,35 @@ export function AvailabilityCreationForm({
                         aria-label="Physical location selection"
                       >
                         <FormControl>
-                          <SelectTrigger 
-                            className={field.value ? "border-green-500 bg-green-50" : ""}
+                          <SelectTrigger
+                            className={field.value ? 'border-green-500 bg-green-50' : ''}
                             aria-describedby="location-description"
                           >
                             <SelectValue placeholder="Choose a physical location" />
                             {field.value && (
-                              <div className="flex items-center gap-2" aria-label="Location selected">
-                                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              <div
+                                className="flex items-center gap-2"
+                                aria-label="Location selected"
+                              >
+                                <svg
+                                  className="h-4 w-4 text-green-600"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M5 13l4 4L19 7"
+                                  />
                                 </svg>
                               </div>
                             )}
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {availableLocations.map((location: any) => (
+                          {availableLocations.map((location: LocationData) => (
                             <SelectItem key={location.id} value={location.id}>
                               {location.name}
                             </SelectItem>
@@ -491,19 +538,19 @@ export function AvailabilityCreationForm({
                         </SelectContent>
                       </Select>
                       <FormDescription id="location-description">
-                        {field.value ? (
-                          <div className="text-green-700 font-medium">
-                            ✓ Selected: {availableLocations.find((loc: any) => loc.id === field.value)?.name}
-                            {availableLocations.find((loc: any) => loc.id === field.value)?.formattedAddress && (
-                              <div className="text-sm text-muted-foreground mt-1">
-                                {availableLocations.find((loc: any) => loc.id === field.value)?.formattedAddress}
+                        {selectedLocation ? (
+                          <div className="font-medium text-green-700">
+                            ✓ Selected: {selectedLocation.name}
+                            {selectedLocation.formattedAddress && (
+                              <div className="mt-1 text-sm text-muted-foreground">
+                                {selectedLocation.formattedAddress}
                               </div>
                             )}
                           </div>
+                        ) : watchIsOnlineAvailable ? (
+                          'Select a physical location for in-person appointments (optional)'
                         ) : (
-                          watchIsOnlineAvailable
-                            ? 'Select a physical location for in-person appointments (optional)'
-                            : 'You must select a physical location when online availability is disabled'
+                          'You must select a physical location when online availability is disabled'
                         )}
                       </FormDescription>
                       <FormMessage />
@@ -559,12 +606,21 @@ export function AvailabilityCreationForm({
             {/* Form Actions */}
             <div className="flex justify-end gap-3 pt-6">
               {onCancel && (
-                <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onCancel}
+                  disabled={isSubmitting || createMutation.isPending}
+                >
                   Cancel
                 </Button>
               )}
-              <Button type="submit" disabled={isSubmitting || !form.formState.isValid}>
-                {isSubmitting ? 'Creating...' : 'Create Availability'}
+              <Button
+                type="submit"
+                disabled={isSubmitting || createMutation.isPending || !form.formState.isValid}
+                className="min-w-[140px]"
+              >
+                {isSubmitting || createMutation.isPending ? 'Creating...' : 'Create Availability'}
               </Button>
             </div>
           </form>

@@ -23,6 +23,21 @@ Guidelines for managing task lists in markdown files to track progress on comple
   1. When you finish a **sub‑task**, immediately mark it as completed by changing `[ ]` to `[x]`.
   2. If **all** subtasks underneath a parent task are now `[x]`, also mark the **parent task** as completed.
 
+## Source Reference Protocol
+
+When working with generated task files:
+
+1. **Always reference the source bug list** for complete context
+2. **Check the task file header** for the source file reference (e.g., "Generated from: calendar-v20250715-bugs.md")
+3. **Consult the original bug list** when you need:
+   - Detailed issue explanations
+   - Root cause analysis
+   - Time estimates
+   - Specific reproduction steps
+   - Full impact assessments
+
+The task files contain actionable implementation steps, but the source bug lists contain the complete problem context.
+
 ## Task List Maintenance
 
 1. **Update the task list as you work:**
@@ -30,7 +45,7 @@ Guidelines for managing task lists in markdown files to track progress on comple
    - Mark tasks and subtasks as completed (`[x]`) per the protocol above.
    - Add new tasks as they emerge.
 
-2. **Maintain the “Relevant Files” section:**
+2. **Maintain the "Relevant Files" section:**
    - List every file created or modified.
    - Give each file a one‑line description of its purpose.
 

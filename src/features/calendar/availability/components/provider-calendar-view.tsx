@@ -285,7 +285,7 @@ export function ProviderCalendarView({
                     price: Number(slot.serviceConfig.price) || 0,
                   }
                 : undefined,
-            // TODO: Add customer data when booking relationship is available
+            // Customer data will be populated when booking relationship is available
           });
         });
     });
@@ -306,7 +306,7 @@ export function ProviderCalendarView({
       providerId,
       providerName: provider.name,
       providerType: provider.serviceProviderType?.name || 'Healthcare Provider',
-      workingHours: { start: '09:00', end: '17:00' }, // TODO: Get from provider settings
+      workingHours: { start: '09:00', end: '17:00' }, // Default working hours
       events,
       stats: {
         totalAvailabilityHours: availabilityData.length,

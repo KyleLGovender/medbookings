@@ -189,7 +189,7 @@ export function useCreateAvailability(options?: {
 }
 
 export function useUpdateAvailability(options?: {
-  onSuccess?: (data: AvailabilityWithRelations, variables: UpdateAvailabilityData) => void;
+  onSuccess?: (data: AvailabilityWithRelations, variables: UpdateAvailabilityData & { scope?: 'single' | 'future' | 'all' }) => void;
   onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
@@ -197,7 +197,7 @@ export function useUpdateAvailability(options?: {
   return useMutation<
     AvailabilityWithRelations,
     Error,
-    UpdateAvailabilityData,
+    UpdateAvailabilityData & { scope?: 'single' | 'future' | 'all' },
     UpdateAvailabilityContext
   >({
     mutationFn: async (data) => {
@@ -267,19 +267,19 @@ export function useUpdateAvailability(options?: {
 }
 
 export function useCancelAvailability(options?: {
-  onSuccess?: (variables: { id: string; reason?: string }) => void;
+  onSuccess?: (variables: { id: string; reason?: string; scope?: 'single' | 'future' | 'all' }) => void;
   onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, { id: string; reason?: string }>({
-    mutationFn: async ({ id, reason }) => {
+  return useMutation<void, Error, { id: string; reason?: string; scope?: 'single' | 'future' | 'all' }>({
+    mutationFn: async ({ id, reason, scope }) => {
       const response = await fetch('/api/calendar/availability/cancel', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id, reason }),
+        body: JSON.stringify({ id, reason, scope }),
       });
 
       if (!response.ok) {
@@ -298,14 +298,19 @@ export function useCancelAvailability(options?: {
 }
 
 export function useDeleteAvailability(options?: {
-  onSuccess?: (variables: { id: string }) => void;
+  onSuccess?: (variables: { id: string; scope?: 'single' | 'future' | 'all' }) => void;
   onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, { id: string }>({
-    mutationFn: async ({ id }) => {
-      const response = await fetch(`/api/calendar/availability/delete?id=${id}`, {
+  return useMutation<void, Error, { id: string; scope?: 'single' | 'future' | 'all' }>({
+    mutationFn: async ({ id, scope }) => {
+      const searchParams = new URLSearchParams({ id });
+      if (scope) {
+        searchParams.set('scope', scope);
+      }
+      
+      const response = await fetch(`/api/calendar/availability/delete?${searchParams.toString()}`, {
         method: 'DELETE',
       });
 

@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertTriangle, Calendar, Clock, Repeat, Save } from 'lucide-react';
+import { AlertTriangle, Calendar, Clock, MapPin, Repeat, Save } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -42,12 +42,22 @@ import {
   ServiceAvailabilityConfigWithRelations,
   UpdateAvailabilityData,
 } from '@/features/calendar/availability/types/types';
+import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
+import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
+import { OrganizationMembership } from '@/features/organizations/types/types';
+import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useToast } from '@/hooks/use-toast';
+
+interface LocationData {
+  id: string;
+  name: string;
+  formattedAddress?: string;
+}
 
 interface AvailabilityEditFormProps {
   availabilityId: string;
   editMode?: 'single' | 'series' | 'future'; // How to handle recurring series
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: UpdateAvailabilityData) => void;
   onCancel?: () => void;
 }
 
@@ -66,6 +76,17 @@ export function AvailabilityEditForm({
   // Fetch existing availability data
   const { data: availability, isLoading, error } = useAvailabilityById(availabilityId);
 
+  // Fetch user data for profile information
+  const { data: currentUserProvider } = useCurrentUserProvider();
+  const { data: userOrganizations = [] } = useCurrentUserOrganizations();
+
+  // Fetch organization locations
+  const organizationIds = userOrganizations.map(
+    (org: OrganizationMembership) => org.organizationId
+  );
+  const { data: availableLocations = [], isLoading: isLocationsLoading } =
+    useOrganizationLocations(organizationIds);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(updateAvailabilityDataSchema),
     mode: 'onChange',
@@ -82,7 +103,7 @@ export function AvailabilityEditForm({
     onError: (error) => {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to update availability',
         variant: 'destructive',
       });
     },
@@ -126,13 +147,22 @@ export function AvailabilityEditForm({
   const watchIsRecurring = form.watch('isRecurring');
   const watchSchedulingRule = form.watch('schedulingRule');
   const watchIsOnlineAvailable = form.watch('isOnlineAvailable');
+  const watchLocationId = form.watch('locationId');
+
+  // Memoize selected location to avoid repeated lookups
+  const selectedLocation = useMemo(() => {
+    if (!watchLocationId) return null;
+    return availableLocations.find((loc: LocationData) => loc.id === watchLocationId) || null;
+  }, [watchLocationId, availableLocations]);
 
   const onSubmit = async (data: FormValues) => {
+    if (updateMutation.isPending) return;
+
     setIsSubmitting(true);
     try {
       await updateMutation.mutateAsync(data);
     } catch (error) {
-      // Error handled by mutation
+      // Error handled by mutation onError callback
     } finally {
       setIsSubmitting(false);
     }
@@ -236,6 +266,38 @@ export function AvailabilityEditForm({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Profile Information (Read-only) */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Availability Information</h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Created by</label>
+                  <div className="rounded-md border bg-gray-50 p-3">
+                    <div className="text-sm font-medium">
+                      {availability?.createdBy?.name || 'Unknown'}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {availability?.serviceProviderId === availability?.createdBy?.id
+                        ? 'Provider (Self)'
+                        : 'Organization Role'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Provider</label>
+                  <div className="rounded-md border bg-gray-50 p-3">
+                    <div className="text-sm font-medium">
+                      {availability?.serviceProvider?.name || 'Unknown Provider'}
+                    </div>
+                    <div className="text-xs text-gray-600">Service Provider</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
             {/* Basic Time Settings */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField
@@ -358,6 +420,124 @@ export function AvailabilityEditForm({
 
             <Separator />
 
+            {/* Location Section */}
+            <div className="space-y-4">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
+                <MapPin className="h-4 w-4" />
+                Location
+              </h3>
+
+              {/* Online Availability Toggle */}
+              <FormField
+                control={form.control}
+                name="isOnlineAvailable"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={hasExistingBookings}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Available Online</FormLabel>
+                      <FormDescription>Allow virtual appointments via video call</FormDescription>
+                      {hasExistingBookings && (
+                        <FormDescription className="text-yellow-600">
+                          Cannot modify online availability when bookings exist
+                        </FormDescription>
+                      )}
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {/* Physical Location Selection */}
+              {isLocationsLoading ? (
+                <div className="py-4 text-center text-muted-foreground">Loading locations...</div>
+              ) : (
+                <FormField
+                  control={form.control}
+                  name="locationId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Physical Location{!watchIsOnlineAvailable && ' (Required)'}
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value || undefined}
+                        required={!watchIsOnlineAvailable}
+                        disabled={hasExistingBookings}
+                        aria-label="Physical location selection"
+                      >
+                        <FormControl>
+                          <SelectTrigger
+                            className={field.value ? 'border-green-500 bg-green-50' : ''}
+                            aria-describedby="location-description"
+                          >
+                            <SelectValue placeholder="Choose a physical location" />
+                            {field.value && (
+                              <div
+                                className="flex items-center gap-2"
+                                aria-label="Location selected"
+                              >
+                                <svg
+                                  className="h-4 w-4 text-green-600"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              </div>
+                            )}
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {availableLocations.map((location: LocationData) => (
+                            <SelectItem key={location.id} value={location.id}>
+                              {location.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription id="location-description">
+                        {selectedLocation ? (
+                          <div className="font-medium text-green-700">
+                            ✓ Selected: {selectedLocation.name}
+                            {selectedLocation.formattedAddress && (
+                              <div className="mt-1 text-sm text-muted-foreground">
+                                {selectedLocation.formattedAddress}
+                              </div>
+                            )}
+                          </div>
+                        ) : watchIsOnlineAvailable ? (
+                          'Select a physical location for in-person appointments (optional)'
+                        ) : (
+                          'You must select a physical location when online availability is disabled'
+                        )}
+                        {hasExistingBookings && (
+                          <div className="mt-1 text-yellow-600">
+                            Cannot modify location when bookings exist
+                          </div>
+                        )}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
+
+            <Separator />
+
             {/* Service Selection */}
             <ServiceSelectionSection
               serviceProviderId={availability.serviceProviderId}
@@ -370,59 +550,44 @@ export function AvailabilityEditForm({
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Additional Settings</h3>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="isOnlineAvailable"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Available Online</FormLabel>
-                        <FormDescription>
-                          Allow online appointments for this availability
-                        </FormDescription>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="requiresConfirmation"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Requires Confirmation</FormLabel>
-                        <FormDescription>
-                          Manually approve bookings for this availability
-                        </FormDescription>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="requiresConfirmation"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Requires Confirmation</FormLabel>
+                      <FormDescription>
+                        Manually approve bookings for this availability
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
             </div>
 
             {/* Form Actions */}
             <div className="flex justify-end gap-3 pt-6">
               {onCancel && (
-                <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onCancel}
+                  disabled={isSubmitting || updateMutation.isPending}
+                >
                   Cancel
                 </Button>
               )}
               <Button
                 type="submit"
-                disabled={isSubmitting || !form.formState.isValid}
-                className="flex items-center gap-2"
+                disabled={isSubmitting || updateMutation.isPending || !form.formState.isValid}
+                className="flex min-w-[140px] items-center gap-2"
               >
                 <Save className="h-4 w-4" />
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
+                {isSubmitting || updateMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </form>
