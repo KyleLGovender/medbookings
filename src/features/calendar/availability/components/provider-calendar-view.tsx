@@ -460,27 +460,27 @@ export function ProviderCalendarView({
             </div>
 
             <div className="flex items-center space-x-4">
-              <div className="grid grid-cols-4 gap-4 text-center">
+              <div className="grid grid-cols-2 gap-3 text-center md:grid-cols-4 md:gap-4">
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-lg font-bold text-blue-600 md:text-2xl">
                     {calendarData.stats.utilizationRate}%
                   </div>
                   <div className="text-xs text-muted-foreground">Utilization</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-lg font-bold text-green-600 md:text-2xl">
                     {calendarData.stats.bookedHours}
                   </div>
                   <div className="text-xs text-muted-foreground">Booked Hours</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-orange-600">
+                  <div className="text-lg font-bold text-orange-600 md:text-2xl">
                     {calendarData.stats.pendingBookings}
                   </div>
                   <div className="text-xs text-muted-foreground">Pending</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-purple-600">
+                  <div className="text-lg font-bold text-purple-600 md:text-2xl">
                     {calendarData.stats.completedBookings}
                   </div>
                   <div className="text-xs text-muted-foreground">Completed</div>

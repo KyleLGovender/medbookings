@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   Calendar as CalendarIcon,
@@ -31,8 +31,9 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { getAllowedCalendarViewModes, isMobileForUI } from '@/lib/utils/responsive';
 
-export type CalendarViewMode = 'day' | 'week' | 'month' | 'agenda';
+export type CalendarViewMode = 'day' | '3-day' | 'week' | 'month' | 'agenda';
 
 export interface RecurringPatternView {
   showAllOccurrences: boolean;
@@ -97,6 +98,28 @@ export function CalendarNavigation({
   className = '',
 }: CalendarNavigationProps) {
   const [showRecurringSettings, setShowRecurringSettings] = useState(false);
+  const [allowedViewModes, setAllowedViewModes] = useState<string[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const updateResponsiveState = () => {
+      setAllowedViewModes(getAllowedCalendarViewModes());
+      setIsMobile(isMobileForUI());
+    };
+
+    updateResponsiveState();
+    window.addEventListener('resize', updateResponsiveState);
+    return () => window.removeEventListener('resize', updateResponsiveState);
+  }, []);
+
+  // Auto-switch to allowed view mode when device type changes
+  useEffect(() => {
+    if (allowedViewModes.length > 0 && !allowedViewModes.includes(viewMode)) {
+      // Switch to first allowed view mode, preferring 'day' for mobile
+      const preferredMode = isMobile ? 'day' : allowedViewModes[0];
+      onViewModeChange(preferredMode as CalendarViewMode);
+    }
+  }, [allowedViewModes, viewMode, isMobile, onViewModeChange]);
 
   const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
@@ -104,6 +127,9 @@ export function CalendarNavigation({
     switch (viewMode) {
       case 'day':
         newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
+        break;
+      case '3-day':
+        newDate.setDate(newDate.getDate() + (direction === 'next' ? 3 : -3));
         break;
       case 'week':
         newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
@@ -128,6 +154,12 @@ export function CalendarNavigation({
           month: 'long',
           day: 'numeric',
         });
+      case '3-day':
+        const threeDayStart = new Date(currentDate);
+        threeDayStart.setDate(currentDate.getDate() - 1);
+        const threeDayEnd = new Date(currentDate);
+        threeDayEnd.setDate(currentDate.getDate() + 1);
+        return `${threeDayStart.toLocaleDateString([], { month: 'short', day: 'numeric' })} - ${threeDayEnd.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}`;
       case 'week':
         const startOfWeek = new Date(currentDate);
         startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
@@ -220,10 +252,13 @@ export function CalendarNavigation({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="day">Day</SelectItem>
-              <SelectItem value="week">Week</SelectItem>
-              <SelectItem value="month">Month</SelectItem>
-              <SelectItem value="agenda">Agenda</SelectItem>
+              {allowedViewModes.includes('day') && <SelectItem value="day">Day</SelectItem>}
+              {allowedViewModes.includes('3-day') && <SelectItem value="3-day">3-Day</SelectItem>}
+              {allowedViewModes.includes('week') && <SelectItem value="week">Week</SelectItem>}
+              {allowedViewModes.includes('month') && <SelectItem value="month">Month</SelectItem>}
+              {allowedViewModes.includes('agenda') && (
+                <SelectItem value="agenda">Agenda</SelectItem>
+              )}
             </SelectContent>
           </Select>
 
