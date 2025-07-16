@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   Calendar as CalendarIcon,
@@ -256,7 +256,9 @@ export function CalendarNavigation({
               {allowedViewModes.includes('3-day') && <SelectItem value="3-day">3-Day</SelectItem>}
               {allowedViewModes.includes('week') && <SelectItem value="week">Week</SelectItem>}
               {allowedViewModes.includes('month') && <SelectItem value="month">Month</SelectItem>}
-              {allowedViewModes.includes('agenda') && <SelectItem value="agenda">Agenda</SelectItem>}
+              {allowedViewModes.includes('agenda') && (
+                <SelectItem value="agenda">Agenda</SelectItem>
+              )}
             </SelectContent>
           </Select>
 

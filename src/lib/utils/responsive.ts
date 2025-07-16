@@ -123,11 +123,11 @@ export function useResizeListener(
  */
 export function shouldTreatIPadAsMobile(): boolean {
   if (typeof navigator === 'undefined') return false;
-  
+
   const userAgent = navigator.userAgent.toLowerCase();
-  const isIPad = userAgent.includes('ipad') || 
-    (userAgent.includes('macintosh') && 'ontouchend' in document);
-  
+  const isIPad =
+    userAgent.includes('ipad') || (userAgent.includes('macintosh') && 'ontouchend' in document);
+
   // For now, treat iPad as tablet (desktop-like), but this can be configured
   return false;
 }
@@ -139,10 +139,10 @@ export function shouldTreatIPadAsMobile(): boolean {
 export function isMobileForUI(): boolean {
   const { width } = getScreenSize();
   const deviceType = getDeviceType(width);
-  
+
   if (deviceType.isMobile) return true;
   if (shouldTreatIPadAsMobile() && deviceType.isTablet) return true;
-  
+
   return false;
 }
 
@@ -154,6 +154,6 @@ export function getAllowedCalendarViewModes(): string[] {
   if (isMobileForUI()) {
     return ['day', '3-day', 'agenda'];
   }
-  
+
   return ['day', '3-day', 'week', 'month', 'agenda'];
 }
