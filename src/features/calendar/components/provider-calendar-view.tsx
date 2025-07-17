@@ -8,7 +8,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -16,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   AvailabilityStatus,
   AvailabilityWithRelations,
@@ -24,9 +22,10 @@ import {
   CalendarEvent,
   SchedulingRule,
 } from '@/features/calendar/availability/types/types';
+import { useAvailabilitySearch } from '@/features/calendar/hooks/use-availability';
 import { useProvider } from '@/features/providers/hooks/use-provider';
 
-import { useAvailabilitySearch } from '../hooks/use-availability';
+
 
 // Client-safe enum (matches Prisma BookingStatus)
 enum BookingStatus {

@@ -33,7 +33,6 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { TimePicker } from '@/components/ui/time-picker';
-import { ServiceSelectionSection } from '@/features/calendar/availability/components/service-selection-section';
 import { useCreateAvailability } from '@/features/calendar/availability/hooks/use-availability';
 import {
   billingEntitySchema,
@@ -47,6 +46,7 @@ import {
   RecurrenceType,
   SchedulingRule,
 } from '@/features/calendar/availability/types/types';
+import { ServiceSelectionSection } from '@/features/calendar/components/availability/service-selection-section';
 import { useToast } from '@/hooks/use-toast';
 
 interface AvailabilityProposalFormProps {

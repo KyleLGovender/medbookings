@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { useAvailabilityById } from '@/features/calendar/availability/hooks/use-availability';
-import { AvailabilityWithRelations } from '@/features/calendar/availability/types/types';
 
 interface AvailabilityViewModalProps {
   isOpen: boolean;

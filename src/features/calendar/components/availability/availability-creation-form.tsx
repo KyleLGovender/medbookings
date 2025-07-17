@@ -47,8 +47,8 @@ import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-u
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
 
-import { CustomRecurrenceModal } from './custom-recurrence-modal';
-import { ServiceSelectionSection } from './service-selection-section';
+import { CustomRecurrenceModal } from '../../availability/components/custom-recurrence-modal';
+import { ServiceSelectionSection } from '../../availability/components/service-selection-section';
 
 interface LocationData {
   id: string;

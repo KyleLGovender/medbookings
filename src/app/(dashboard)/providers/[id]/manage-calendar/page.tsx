@@ -18,19 +18,18 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { AvailabilityCreationForm } from '@/features/calendar/availability/components/availability-creation-form';
-import { AvailabilityEditForm } from '@/features/calendar/availability/components/availability-edit-form';
-import { AvailabilityViewModal } from '@/features/calendar/availability/components/availability-view-modal';
 import { ProviderCalendarView } from '@/features/calendar/availability/components/provider-calendar-view';
-import { SeriesActionDialog, SeriesActionScope } from '@/features/calendar/availability/components/series-action-dialog';
 import {
   useAcceptAvailabilityProposal,
-  useAvailabilityById,
   useCancelAvailability,
   useDeleteAvailability,
-  useRejectAvailabilityProposal,
+  useRejectAvailabilityProposal
 } from '@/features/calendar/availability/hooks/use-availability';
 import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/availability/types/types';
+import { AvailabilityCreationForm } from '@/features/calendar/components/availability/availability-creation-form';
+import { AvailabilityEditForm } from '@/features/calendar/components/availability/availability-edit-form';
+import { AvailabilityViewModal } from '@/features/calendar/components/availability/availability-view-modal';
+import { SeriesActionDialog, SeriesActionScope } from '@/features/calendar/components/availability/series-action-dialog';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProviderAvailabilityPageProps {

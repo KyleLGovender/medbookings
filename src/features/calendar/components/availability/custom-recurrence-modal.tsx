@@ -18,9 +18,9 @@ import {
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Label } from '@/components/ui/label';
 
-import { dayOfWeekOptions } from '../lib/recurrence-utils';
-import { customRecurrenceDataSchema } from '../types/schemas';
-import { CustomRecurrenceData, DayOfWeek } from '../types/types';
+import { dayOfWeekOptions } from '../../availability/lib/recurrence-utils';
+import { customRecurrenceDataSchema } from '../../availability/types/schemas';
+import { CustomRecurrenceData, DayOfWeek } from '../../availability/types/types';
 
 interface CustomRecurrenceModalProps {
   isOpen: boolean;

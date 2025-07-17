@@ -30,7 +30,6 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { TimePicker } from '@/components/ui/time-picker';
-import { ServiceSelectionSection } from '@/features/calendar/availability/components/service-selection-section';
 import {
   useAvailabilityById,
   useUpdateAvailability,
@@ -42,6 +41,7 @@ import {
   ServiceAvailabilityConfigWithRelations,
   UpdateAvailabilityData,
 } from '@/features/calendar/availability/types/types';
+import { ServiceSelectionSection } from '@/features/calendar/components/availability/service-selection-section';
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
 import { OrganizationMembership } from '@/features/organizations/types/types';
