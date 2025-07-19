@@ -26,10 +26,15 @@ export async function getServiceProviderByUserId(userId: string): Promise<Servic
           email: true,
         },
       },
-      serviceProviderType: {
-        select: {
-          name: true,
-          description: true,
+      typeAssignments: {
+        include: {
+          serviceProviderType: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
         },
       },
       requirementSubmissions: {
@@ -61,10 +66,15 @@ export async function getServiceProviderByServiceProviderId(
           email: true,
         },
       },
-      serviceProviderType: {
-        select: {
-          name: true,
-          description: true,
+      typeAssignments: {
+        include: {
+          serviceProviderType: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
         },
       },
       requirementSubmissions: {
@@ -87,10 +97,15 @@ export async function getApprovedServiceProviders() {
       status: 'APPROVED', // Only fetch approved providers
     },
     include: {
-      serviceProviderType: {
-        select: {
-          name: true,
-          description: true,
+      typeAssignments: {
+        include: {
+          serviceProviderType: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
         },
       },
       services: true,
