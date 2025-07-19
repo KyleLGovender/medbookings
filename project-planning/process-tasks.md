@@ -160,7 +160,20 @@ When working with task lists, the AI must:
    - **Preference**: Always prefer MCP tools over traditional command-line equivalents when available
    - **Database Verification**: Use PostgreSQL MCP server to verify migrations, constraints, and data integrity instead of bash commands
 
-5. **PR Creation:**
+5. **Interactive Commands Policy:**
+   - **NEVER** execute commands that require interactive environments (e.g., `npx prisma migrate dev`, `npm init`, interactive prompts)
+   - **STOP and ASK** the user to execute these commands manually
+   - **Commands to avoid**: 
+     - `npx prisma migrate dev` (requires interaction)
+     - `npm init` (requires interaction)
+     - Any command with interactive prompts or confirmations
+   - **Safe alternatives**:
+     - Use `npx prisma migrate deploy` for non-interactive migration application
+     - Use `npx prisma generate` for client generation
+     - Create migration files manually when needed
+     - Use MCP PostgreSQL server for database verification instead of interactive commands
+
+6. **PR Creation:**
    - When all tasks in a group are complete, create comprehensive PR
    - Include detailed description, test plan, and file change summary
    - Reference original task documentation
