@@ -67,7 +67,7 @@ When implementing tasks, follow this Git workflow:
 2. **Regular Development:**
    - Make incremental commits as you complete sub-tasks
    - Use descriptive commit messages referencing task numbers
-   - Example: `feat(task-5.2): remove TODO comments from availability form`
+   - Example: `feat(task-1.2): add subscription creation API with polymorphic validation`
 
 3. **After All Tasks Complete:**
    ```bash
@@ -75,7 +75,7 @@ When implementing tasks, follow this Git workflow:
    git add .
    
    # Create comprehensive commit with task summary
-   git commit -m "feat: implement [task group name] - [brief description]
+   git commit -m "implement [task group name] - [brief description]
    
    Completed Tasks:
    - Task X.X: [description]
@@ -132,9 +132,11 @@ When implementing tasks, follow this Git workflow:
 When working with task lists, the AI must:
 
 1. **Follow Git Workflow:**
-   - Create feature branch before starting work
-   - Make regular commits during implementation
-   - Create comprehensive final commit when all tasks complete
+   - **FIRST STEP**: Create feature branch before starting ANY work
+   - Confirm branch creation and announce current branch to user
+   - Make incremental commits after completing each sub-task
+   - Use descriptive commit messages referencing task numbers
+   - Create comprehensive final commit when all parent tasks complete
    - Create detailed PR with proper description and test plan
 
 2. **Task Management:**
@@ -146,9 +148,10 @@ When working with task lists, the AI must:
    - Keep "Relevant Files" accurate and up to date
 
 3. **Execution Modes:**
-   - Before starting work, check which sub‑task is next
-   - **Default Mode:** After implementing a sub‑task, update the file and then pause for user approval
-   - **YOLO Mode:** After implementing a sub‑task, update the file and immediately proceed to the next task without waiting for approval
+   - **Before starting work**: Verify correct branch and announce current working branch
+   - Check which sub‑task is next
+   - **Default Mode:** After implementing a sub‑task, commit changes, update the file, and then pause for user approval
+   - **YOLO Mode:** After implementing a sub‑task, commit changes, update the file, and immediately proceed to the next task without waiting for approval
 
 4. **PR Creation:**
    - When all tasks in a group are complete, create comprehensive PR
