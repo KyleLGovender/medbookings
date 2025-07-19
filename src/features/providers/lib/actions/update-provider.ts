@@ -27,6 +27,7 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
     const languages = formData.getAll('languages') as Languages[];
     const userId = formData.get('userId') as string;
     const serviceProviderTypeId = formData.get('serviceProviderTypeId') as string;
+    const serviceProviderTypeIds = formData.getAll('serviceProviderTypeIds') as string[];
     const showPrice = formData.get('showPrice') === 'true';
 
     providerDebug.log('action', 'Form data extracted:', {
@@ -39,6 +40,7 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
       languages,
       userId,
       serviceProviderTypeId,
+      serviceProviderTypeIds,
       showPrice,
     });
 
@@ -56,6 +58,17 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
           select: {
             name: true,
             description: true,
+          },
+        },
+        typeAssignments: {
+          include: {
+            serviceProviderType: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
           },
         },
         requirementSubmissions: {
@@ -90,6 +103,23 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
       updateData.showPrice = showPrice;
     }
 
+    // Handle provider type assignments
+    const currentTypeIds = currentProvider.typeAssignments.map(assignment => assignment.serviceProviderTypeId);
+    const newTypeIds = serviceProviderTypeIds.length > 0 ? serviceProviderTypeIds : 
+                       (serviceProviderTypeId ? [serviceProviderTypeId] : []);
+    
+    // Check if type assignments changed
+    const typeAssignmentsChanged = JSON.stringify(currentTypeIds.sort()) !== JSON.stringify(newTypeIds.sort());
+    
+    if (typeAssignmentsChanged && newTypeIds.length > 0) {
+      updateData.typeAssignments = {
+        deleteMany: {}, // Remove all existing assignments
+        create: newTypeIds.map(typeId => ({
+          serviceProviderTypeId: typeId,
+        })),
+      };
+    }
+
     if (whatsapp !== currentProvider.whatsapp) {
       // Send WhatsApp confirmation
       try {
@@ -114,6 +144,17 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
           select: {
             name: true,
             description: true,
+          },
+        },
+        typeAssignments: {
+          include: {
+            serviceProviderType: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
           },
         },
         requirementSubmissions: {
