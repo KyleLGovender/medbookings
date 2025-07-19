@@ -3,7 +3,115 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 
 import { registerServiceProvider } from '@/features/providers/lib/actions/register-provider';
+import { serializeServiceProvider } from '@/features/providers/lib/helper';
 import { prisma } from '@/lib/prisma';
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    
+    // Get search parameters
+    const search = searchParams.get('search');
+    const typeIds = searchParams.get('typeIds')?.split(',').filter(Boolean);
+    const status = searchParams.get('status') || 'APPROVED';
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = parseInt(searchParams.get('offset') || '0');
+
+    // Build where clause
+    const where: any = {
+      status: status as any,
+    };
+
+    // Add search filter
+    if (search) {
+      where.OR = [
+        {
+          name: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          user: {
+            email: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+        },
+        {
+          bio: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+      ];
+    }
+
+    // Add type filter for multiple types
+    if (typeIds && typeIds.length > 0) {
+      where.typeAssignments = {
+        some: {
+          serviceProviderTypeId: {
+            in: typeIds,
+          },
+        },
+      };
+    }
+
+    const providers = await prisma.serviceProvider.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            email: true,
+          },
+        },
+        typeAssignments: {
+          include: {
+            serviceProviderType: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
+          },
+        },
+        requirementSubmissions: {
+          include: {
+            requirementType: true,
+          },
+        },
+        services: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+      take: limit,
+      skip: offset,
+    });
+
+    // Get total count for pagination
+    const total = await prisma.serviceProvider.count({ where });
+
+    // Serialize providers
+    const serializedProviders = providers.map(provider => serializeServiceProvider(provider));
+
+    return NextResponse.json({
+      providers: serializedProviders,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error searching providers:', error);
+    return NextResponse.json({ error: 'Failed to search providers' }, { status: 500 });
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,11 +153,16 @@ export async function POST(request: NextRequest) {
       formData.append('imageUrl', data.basicInfo.image);
     }
 
-    // Add provider type
-    if (data.serviceProviderTypeId) {
-      formData.append('serviceProviderTypeId', data.serviceProviderTypeId);
+    // Add provider types (support multiple types)
+    if (data.serviceProviderTypeIds && Array.isArray(data.serviceProviderTypeIds) && data.serviceProviderTypeIds.length > 0) {
+      data.serviceProviderTypeIds.forEach((typeId: string) => {
+        formData.append('serviceProviderTypeIds', typeId);
+      });
+    } else if (data.serviceProviderTypeId) {
+      // Backward compatibility for single type
+      formData.append('serviceProviderTypeIds', data.serviceProviderTypeId);
     } else {
-      return NextResponse.json({ error: 'Provider type is required' }, { status: 400 });
+      return NextResponse.json({ error: 'At least one provider type is required' }, { status: 400 });
     }
 
     // Add languages

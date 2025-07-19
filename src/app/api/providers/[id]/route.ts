@@ -28,10 +28,15 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             email: true,
           },
         },
-        serviceProviderType: {
-          select: {
-            name: true,
-            description: true,
+        typeAssignments: {
+          include: {
+            serviceProviderType: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
           },
         },
         requirementSubmissions: {
