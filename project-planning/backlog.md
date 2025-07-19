@@ -44,6 +44,7 @@
 
 ## 📝 Quick Capture (New Issues)
 - [ ] Populate provider and organization and user email addresses with the associated Google email. Not possible to edit.
+- [ ] Implement testing throughout the application
 
 ---
 

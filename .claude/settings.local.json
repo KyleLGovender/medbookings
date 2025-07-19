@@ -29,7 +29,9 @@
       "Bash(curl:*)",
       "mcp__ide__getDiagnostics",
       "Bash(chmod:*)",
-      "mcp__filesystem-server__read_multiple_files"
+      "mcp__filesystem-server__read_multiple_files",
+      "Bash(npm test:*)",
+      "Bash(npx tsx:*)"
     ],
     "deny": []
   },
