@@ -6,7 +6,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 import { sendGuestVCardToServiceProvider } from './server-helper';
-import { BookingView } from './types';
+import { BookingView } from '@/features/calendar/lib/types';
 
 export async function sendServiceProviderPatientsDetailsByWhatsapp(
   bookingId: string
@@ -20,17 +20,21 @@ export async function sendServiceProviderPatientsDetailsByWhatsapp(
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        serviceProvider: true,
         slot: {
           include: {
             service: true,
             serviceConfig: true,
+            availability: {
+              include: {
+                serviceProvider: true
+              }
+            }
           },
         },
       },
     });
 
-    if (!booking || booking.serviceProvider.userId !== session.user.id) {
+    if (!booking || booking.slot?.availability?.serviceProvider?.userId !== session.user.id) {
       return { error: 'Unauthorized access to booking' };
     }
 
@@ -61,13 +65,13 @@ export async function sendServiceProviderPatientsDetailsByWhatsapp(
           duration: booking.slot?.serviceConfig.duration || 0,
           isOnlineAvailable: booking.slot?.serviceConfig.isOnlineAvailable || false,
           isInPerson: booking.slot?.serviceConfig.isInPerson || false,
-          location: booking.slot?.serviceConfig.location || undefined,
+          location: booking.slot?.serviceConfig.locationId || undefined,
         },
         serviceProvider: {
-          id: booking.serviceProvider.id,
-          name: booking.serviceProvider.name,
-          whatsapp: booking.serviceProvider.whatsapp || undefined,
-          image: booking.serviceProvider.image || undefined,
+          id: booking.slot?.availability?.serviceProvider?.id || '',
+          name: booking.slot?.availability?.serviceProvider?.name || '',
+          whatsapp: booking.slot?.availability?.serviceProvider?.whatsapp || undefined,
+          image: booking.slot?.availability?.serviceProvider?.image || undefined,
         },
       },
     };

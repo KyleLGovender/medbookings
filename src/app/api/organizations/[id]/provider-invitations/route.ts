@@ -96,7 +96,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
       },
     });
 
-    if (existingUser?.serviceProvider?.providerConnections.length > 0) {
+    if (existingUser?.serviceProvider?.providerConnections?.length && existingUser.serviceProvider.providerConnections.length > 0) {
       return NextResponse.json(
         {
           message: 'This provider is already connected to your organization',

@@ -8,7 +8,7 @@ import {
   RecurrenceOption,
   SchedulingRule,
   SlotStatus,
-} from '@/features/calendar/availability/types/types';
+} from '@/features/calendar/types/types';
 
 // Base Zod schemas for enums
 export const availabilityStatusSchema = z.nativeEnum(AvailabilityStatus);

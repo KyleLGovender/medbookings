@@ -17,7 +17,7 @@ export async function POST(
     const currentUser = await getCurrentUser();
 
     if (!currentUser || !['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const providerId = params.id;
@@ -26,7 +26,7 @@ export async function POST(
     // Validate request body
     const validation = rejectProviderRequestSchema.safeParse(body);
     if (!validation.success) {
-      return NextResponse.json({ error: 'Rejection reason is required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Rejection reason is required' }, { status: 400 });
     }
 
     const { reason } = validation.data;
@@ -38,7 +38,7 @@ export async function POST(
     });
 
     if (!provider) {
-      return NextResponse.json({ error: 'Provider not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Provider not found' }, { status: 404 });
     }
 
     // Reject the provider
@@ -72,6 +72,6 @@ export async function POST(
     });
   } catch (error) {
     console.error('Error rejecting provider:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

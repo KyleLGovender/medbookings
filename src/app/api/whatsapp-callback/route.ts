@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import twilio from 'twilio';
 
 import env from '@/config/env/server';
-import { sendGuestVCardToServiceProvider } from '@/features/calendar/lib/server-helper';
+import { sendGuestVCardToServiceProvider } from '@/features/communications/lib/server-helper';
 import { type BookingView } from '@/features/calendar/lib/types';
 import { prisma } from '@/lib/prisma';
 
@@ -101,8 +101,17 @@ export async function POST(request: NextRequest) {
       const booking = await prisma.booking.findUnique({
         where: { id: bookingId },
         include: {
-          serviceProvider: true,
-          slot: { include: { service: true, serviceConfig: true } },
+          slot: { 
+            include: { 
+              service: true, 
+              serviceConfig: true,
+              availability: {
+                include: {
+                  serviceProvider: true
+                }
+              }
+            } 
+          },
         },
       });
 
@@ -112,7 +121,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Associated booking not found' }, { status: 404 }); // Or 400
       }
 
-      const providerWhatsappNormalized = normalizePhoneNumber(booking.serviceProvider.whatsapp);
+      const providerWhatsappNormalized = normalizePhoneNumber(booking.slot?.availability?.serviceProvider?.whatsapp || '');
 
       // Verify the sender is the correct provider for this booking ID
       if (!providerWhatsappNormalized || fromNumberNormalized !== providerWhatsappNormalized) {
@@ -162,13 +171,13 @@ export async function POST(request: NextRequest) {
             duration: booking.slot.serviceConfig.duration,
             isOnlineAvailable: booking.slot.serviceConfig.isOnlineAvailable,
             isInPerson: booking.slot.serviceConfig.isInPerson,
-            location: booking.slot.serviceConfig.location ?? undefined,
+            location: booking.slot.serviceConfig.locationId ?? undefined,
           },
           serviceProvider: {
-            id: booking.serviceProvider.id,
-            name: booking.serviceProvider.name,
-            whatsapp: booking.serviceProvider.whatsapp,
-            image: booking.serviceProvider.image,
+            id: booking.slot.availability?.serviceProvider?.id || '',
+            name: booking.slot.availability?.serviceProvider?.name || '',
+            whatsapp: booking.slot.availability?.serviceProvider?.whatsapp,
+            image: booking.slot.availability?.serviceProvider?.image,
           },
         },
       };

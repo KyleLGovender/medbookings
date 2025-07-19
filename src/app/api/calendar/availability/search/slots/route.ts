@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { searchSlotsByTime } from '@/features/calendar/availability/lib/time-search-service';
+import { searchSlotsByTime } from '@/features/calendar/lib/time-search-service';
 
 export async function POST(request: NextRequest) {
   try {

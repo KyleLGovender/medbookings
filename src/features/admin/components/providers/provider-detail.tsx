@@ -109,7 +109,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
   }
 
   const approvedRequirements =
-    provider?.requirementSubmissions?.filter((req) => req.status === 'APPROVED').length || 0;
+    provider?.requirementSubmissions?.filter((req: any) => req.status === 'APPROVED').length || 0;
   const totalRequirements = provider?.requirementSubmissions?.length || 0;
   const allRequirementsApproved =
     approvedRequirements === totalRequirements && totalRequirements > 0;
@@ -205,7 +205,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                   Services Offered
                 </label>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {provider.services.map((service) => (
+                  {provider.services.map((service: any) => (
                     <Badge key={service.id} variant="secondary">
                       {service.name}
                     </Badge>
@@ -279,21 +279,21 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div className="rounded-lg bg-green-50 p-2 text-center dark:bg-green-900/20">
                     <div className="font-semibold text-green-700 dark:text-green-300">
-                      {provider?.requirementSubmissions?.filter((req) => req.status === 'APPROVED')
+                      {provider?.requirementSubmissions?.filter((req: any) => req.status === 'APPROVED')
                         .length || 0}
                     </div>
                     <div className="text-green-600 dark:text-green-400">Approved</div>
                   </div>
                   <div className="rounded-lg bg-yellow-50 p-2 text-center dark:bg-yellow-900/20">
                     <div className="font-semibold text-yellow-700 dark:text-yellow-300">
-                      {provider?.requirementSubmissions?.filter((req) => req.status === 'PENDING')
+                      {provider?.requirementSubmissions?.filter((req: any) => req.status === 'PENDING')
                         .length || 0}
                     </div>
                     <div className="text-yellow-600 dark:text-yellow-400">Pending</div>
                   </div>
                   <div className="rounded-lg bg-red-50 p-2 text-center dark:bg-red-900/20">
                     <div className="font-semibold text-red-700 dark:text-red-300">
-                      {provider?.requirementSubmissions?.filter((req) => req.status === 'REJECTED')
+                      {provider?.requirementSubmissions?.filter((req: any) => req.status === 'REJECTED')
                         .length || 0}
                     </div>
                     <div className="text-red-600 dark:text-red-400">Rejected</div>
@@ -313,13 +313,13 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
               ) : (
                 provider?.requirementSubmissions
                   ?.slice()
-                  .sort((a, b) => {
+                  .sort((a: any, b: any) => {
                     // Sort by requirementType displayPriority to maintain consistent order
                     const priorityA = a.requirementType?.displayPriority ?? 999;
                     const priorityB = b.requirementType?.displayPriority ?? 999;
                     return priorityA - priorityB;
                   })
-                  .map((submission) => (
+                  .map((submission: any) => (
                     <RequirementSubmissionCard
                       key={submission.id}
                       submission={submission}

@@ -37,7 +37,7 @@ import {
   AvailabilityWithRelations,
   CalculatedAvailabilitySlotWithRelations,
   CalendarEvent,
-} from '@/features/calendar/availability/types/types';
+} from '@/features/calendar/types/types';
 import { useOrganization } from '@/features/organizations/hooks/use-organization';
 import {
   OrganizationProviderConnection,

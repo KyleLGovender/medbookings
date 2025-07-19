@@ -28,27 +28,31 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { TimePicker } from '@/components/ui/time-picker';
-import { useCreateAvailability } from '@/features/calendar/availability/hooks/use-availability';
+import { CustomRecurrenceModal } from '@/features/calendar/components/availability/custom-recurrence-modal';
+import { ServiceSelectionSection } from '@/features/calendar/components/availability/service-selection-section';
+import { useCreateAvailability } from '@/features/calendar/hooks/use-availability';
 import {
   createRecurrencePattern,
   getRecurrenceOptions,
-} from '@/features/calendar/availability/lib/recurrence-utils';
-import { createAvailabilityDataSchema } from '@/features/calendar/availability/types/schemas';
+} from '@/features/calendar/lib/recurrence-utils';
+import { createAvailabilityDataSchema } from '@/features/calendar/types/schemas';
 import {
+  AvailabilityWithRelations,
   CreateAvailabilityData,
   CustomRecurrenceData,
   RecurrenceOption,
   SchedulingRule,
-} from '@/features/calendar/availability/types/types';
+} from '@/features/calendar/types/types';
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
-import { OrganizationMembership } from '@/features/organizations/types/types';
+
+
+
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
+import { Organization } from '@prisma/client';
 
-import { CustomRecurrenceModal } from '../../availability/components/custom-recurrence-modal';
-import { ServiceSelectionSection } from '../../availability/components/service-selection-section';
 
 interface LocationData {
   id: string;
@@ -60,7 +64,7 @@ interface AvailabilityCreationFormProps {
   serviceProviderId: string;
   organizationId?: string;
   locationId?: string;
-  onSuccess?: (data: CreateAvailabilityData) => void;
+  onSuccess?: (data: AvailabilityWithRelations) => void;
   onCancel?: () => void;
 }
 
@@ -122,7 +126,7 @@ export function AvailabilityCreationForm({
 
   // Fetch organization locations
   const organizationIds = userOrganizations.map(
-    (org: OrganizationMembership) => org.organizationId
+    (org: Organization) => org.id
   );
   const { data: availableLocations = [], isLoading: isLocationsLoading } =
     useOrganizationLocations(organizationIds);

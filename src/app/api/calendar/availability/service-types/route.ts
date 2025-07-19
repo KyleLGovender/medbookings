@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { getAvailableServiceTypes } from '@/features/calendar/availability/lib/service-filter-service';
+import { getAvailableServiceTypes } from '@/features/calendar/lib/service-filter-service';
 
 export async function GET() {
   try {

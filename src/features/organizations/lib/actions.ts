@@ -52,15 +52,14 @@ export async function registerOrganization(data: OrganizationRegistrationData) {
         await tx.location.create({
           data: {
             name: location.name,
-            googlePlaceId: location.googlePlaceId,
-            formattedAddress: location.formattedAddress,
+            googlePlaceId: location.googlePlaceId || `temp-${Date.now()}`,
+            formattedAddress: location.formattedAddress || '',
             coordinates: {
               create: {
                 latitude: location.coordinates.lat,
                 longitude: location.coordinates.lng,
               },
             },
-            addressComponents: location.addressComponents,
             searchTerms: location.searchTerms || [],
             phone: location.phone || '',
             email: location.email || '',

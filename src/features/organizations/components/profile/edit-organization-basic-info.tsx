@@ -77,13 +77,13 @@ export function EditOrganizationBasicInfo({
     if (
       organization &&
       userId &&
-      organization.memberships.some((m) => m.userId === userId && m.role === 'ADMIN')
+      organization.memberships.some((m: any) => m.userId === userId && m.role === 'ADMIN')
     ) {
       // User is an admin, allow editing
     } else if (
       organization &&
       userId &&
-      !organization.memberships.some((m) => m.userId === userId && m.role === 'ADMIN')
+      !organization.memberships.some((m: any) => m.userId === userId && m.role === 'ADMIN')
     ) {
       // User is not an admin, or not a member, disable editing
       form.setError('name', {

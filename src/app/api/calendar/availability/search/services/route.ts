@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { searchServices } from '@/features/calendar/availability/lib/service-filter-service';
+import { searchServices } from '@/features/calendar/lib/service-filter-service';
 
 export async function POST(request: NextRequest) {
   try {

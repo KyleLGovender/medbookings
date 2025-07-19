@@ -3,6 +3,12 @@
 // =============================================================================
 // All type definitions for the calendar availability feature in one place
 // Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
+import {
+  Organization,
+  OrganizationMembership,
+  OrganizationProviderConnection,
+  User
+} from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 import { Service, ServiceProvider } from '@/features/providers/types';
@@ -73,21 +79,6 @@ export enum SlotGenerationStatus {
 // BASE INTERFACES (Client-safe versions of Prisma types)
 // =============================================================================
 
-export interface User {
-  id: string;
-  email?: string | null;
-  name?: string | null;
-  image?: string | null;
-}
-
-export interface Organization {
-  id: string;
-  name: string;
-  email?: string | null;
-  phone?: string | null;
-  website?: string | null;
-}
-
 export interface OrganizationProvider {
   id: string;
   name: string;
@@ -98,7 +89,6 @@ export interface OrganizationProvider {
   utilizationRate: number;
   totalBookings: number;
   pendingBookings: number;
-  avatar?: string;
   events: CalendarEvent[];
 }
 
@@ -167,21 +157,6 @@ export interface Subscription {
   status: string;
   type?: string;
   isActive?: boolean;
-}
-
-export interface OrganizationMembership {
-  id: string;
-  userId: string;
-  organizationId: string;
-  role: string;
-}
-
-export interface OrganizationProviderConnection {
-  id: string;
-  organizationId: string;
-  serviceProviderId: string;
-  status: string;
-  serviceProvider: ServiceProvider;
 }
 
 export interface Booking {

@@ -2,7 +2,7 @@ import {
   AvailabilityStatus,
   SchedulingRule,
   SlotStatus,
-} from '@/features/calendar/availability/types/types';
+} from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
 
 import { isSlotValidForSchedulingRule } from './scheduling-rules';

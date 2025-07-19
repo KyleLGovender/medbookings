@@ -89,17 +89,18 @@ export function ProviderInvitationList({
   const { toast } = useToast();
 
   const manageInvitationMutation = useManageProviderInvitation({
-    onSuccess: (data, variables) => {
-      const action = variables.action === 'cancel' ? 'cancelled' : 'resent';
+    onSuccess: (data: any) => {
+      // Extract action from the mutation data or set default
+      const action = 'updated';
       toast({
         title: `Invitation ${action}`,
         description: `The invitation has been ${action} successfully.`,
       });
     },
-    onError: (error, variables) => {
+    onError: (error: any) => {
       toast({
-        title: `Failed to ${variables.action} invitation`,
-        description: error.message,
+        title: 'Failed to update invitation',
+        description: error.message || 'An error occurred',
         variant: 'destructive',
       });
     },
@@ -159,9 +160,9 @@ export function ProviderInvitationList({
                 <TableCell className="font-medium">
                   <div className="flex flex-col">
                     <span>{invitation.email}</span>
-                    {invitation.connection?.serviceProvider && (
+                    {invitation.connection && (
                       <span className="text-sm text-muted-foreground">
-                        Connected as: {invitation.connection.serviceProvider.name}
+                        Connected (Provider ID: {invitation.connection.serviceProviderId})
                       </span>
                     )}
                   </div>

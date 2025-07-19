@@ -15,15 +15,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ThreeDayView } from '@/features/calendar/components/views/3-day-view';
+import { DayView } from '@/features/calendar/components/views/day-view';
+import { MonthView } from '@/features/calendar/components/views/month-view';
+import { WeekView } from '@/features/calendar/components/views/week-view';
+import { useAvailabilitySearch } from '@/features/calendar/hooks/use-availability';
 import {
   AvailabilityStatus,
   AvailabilityWithRelations,
   CalculatedAvailabilitySlotWithRelations,
   CalendarEvent,
   SchedulingRule,
-} from '@/features/calendar/availability/types/types';
-import { useAvailabilitySearch } from '@/features/calendar/hooks/use-availability';
+} from '@/features/calendar/types/types';
 import { useProvider } from '@/features/providers/hooks/use-provider';
+
 
 
 
@@ -58,11 +63,11 @@ export interface ProviderCalendarViewProps {
   onCreateAvailability?: () => void;
   onEditEvent?: (event: CalendarEvent) => void;
   onDateClick?: (date: Date) => void;
-  viewMode?: 'day' | 'week' | 'month';
+  viewMode?: 'day' | '3-day' | 'week' | 'month';
   initialDate?: Date;
 }
 
-type ViewMode = 'day' | 'week' | 'month';
+type ViewMode = 'day' | '3-day' | 'week' | 'month';
 
 export function ProviderCalendarView({
   providerId,
@@ -351,6 +356,13 @@ export function ProviderCalendarView({
           month: 'long',
           day: 'numeric',
         });
+      case '3-day':
+        return currentDate.toLocaleDateString([], {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
       case 'week':
         const startOfWeek = new Date(currentDate);
         const dayOfWeek = currentDate.getDay();
@@ -553,6 +565,26 @@ export function ProviderCalendarView({
         </CardHeader>
 
         <CardContent>
+          {viewMode === 'day' && (
+            <DayView
+              currentDate={currentDate}
+              events={calendarData.events}
+              workingHours={calendarData.workingHours}
+              onEventClick={(event) => onEventClick?.(event, {} as React.MouseEvent)}
+              onTimeSlotClick={onTimeSlotClick}
+              getEventStyle={getEventStyle}
+            />
+          )}
+          {viewMode === '3-day' && (
+            <ThreeDayView
+              currentDate={currentDate}
+              events={calendarData.events}
+              workingHours={calendarData.workingHours}
+              onEventClick={(event) => onEventClick?.(event, {} as React.MouseEvent)}
+              onTimeSlotClick={onTimeSlotClick}
+              getEventStyle={getEventStyle}
+            />
+          )}
           {viewMode === 'week' && (
             <WeekView
               currentDate={currentDate}
@@ -564,18 +596,6 @@ export function ProviderCalendarView({
               getEventStyle={getEventStyle}
             />
           )}
-
-          {viewMode === 'day' && (
-            <DayView
-              currentDate={currentDate}
-              events={calendarData.events}
-              workingHours={calendarData.workingHours}
-              onEventClick={(event) => onEventClick?.(event, {} as React.MouseEvent)}
-              onTimeSlotClick={onTimeSlotClick}
-              getEventStyle={getEventStyle}
-            />
-          )}
-
           {viewMode === 'month' && (
             <MonthView
               currentDate={currentDate}
@@ -647,485 +667,7 @@ export function ProviderCalendarView({
   );
 }
 
-// Week View Component
-interface WeekViewProps {
-  currentDate: Date;
-  events: CalendarEvent[];
-  workingHours: { start: string; end: string };
-  onEventClick?: (event: CalendarEvent) => void;
-  onTimeSlotClick?: (date: Date, hour: number) => void;
-  onDateClick?: (date: Date) => void;
-  getEventStyle: (event: CalendarEvent) => string;
-}
-
-function WeekView({
-  currentDate,
-  events,
-  workingHours,
-  onEventClick,
-  onTimeSlotClick,
-  onDateClick,
-  getEventStyle,
-}: WeekViewProps) {
-  // Start week on Monday
-  const startOfWeek = new Date(currentDate);
-  const dayOfWeek = currentDate.getDay();
-  const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  startOfWeek.setDate(currentDate.getDate() - daysFromMonday);
-
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const day = new Date(startOfWeek);
-    day.setDate(startOfWeek.getDate() + i);
-    return day;
-  });
-
-  // Calculate display time range based on events
-  const getDisplayTimeRange = () => {
-    const defaultStart = 6; // 6 AM
-    const defaultEnd = 18; // 6 PM
-
-    let earliestHour = defaultStart;
-    let latestHour = defaultEnd;
-
-    // Check all events to extend range if needed
-    events.forEach((event) => {
-      const startHour = new Date(event.startTime).getHours();
-      const endHour = new Date(event.endTime).getHours();
-
-      if (startHour < earliestHour) earliestHour = startHour;
-      if (endHour > latestHour) latestHour = endHour;
-    });
-
-    return { start: earliestHour, end: latestHour };
-  };
-
-  const timeRange = getDisplayTimeRange();
-  const hours = Array.from(
-    { length: timeRange.end - timeRange.start },
-    (_, i) => timeRange.start + i
-  );
-  const workingStartHour = parseInt(workingHours.start.split(':')[0]);
-  const workingEndHour = parseInt(workingHours.end.split(':')[0]);
-
-  const getEventsForDate = (date: Date) => {
-    return events.filter((event) => {
-      const eventDate = new Date(event.startTime);
-      return eventDate.toDateString() === date.toDateString();
-    });
-  };
-
-  const calculateEventGridPosition = (event: CalendarEvent) => {
-    const startTime = new Date(event.startTime);
-    const endTime = new Date(event.endTime);
-
-    // Convert to hour-based grid slots, accounting for display range offset
-    // The events grid has hours.length * 2 rows, so we need to multiply by 2
-    const startHour = startTime.getHours() - timeRange.start;
-    const endHour = endTime.getHours() - timeRange.start;
-    const startSlot = Math.max(1, startHour * 2 + 1);
-    const endSlot = Math.max(startSlot + 1, endHour * 2 + 1);
-    const spanSlots = endSlot - startSlot;
-
-    return { gridRow: `${startSlot} / span ${spanSlots}` };
-  };
-
-  return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="sticky top-0 z-30 flex-none bg-white shadow-sm ring-1 ring-black/5">
-        <div className="flex">
-          <div className="w-14 flex-none bg-white p-2 text-center text-sm font-medium text-gray-500">
-            Time
-          </div>
-          <div className="flex flex-auto">
-            {days.map((day, index) => (
-              <button
-                key={index}
-                type="button"
-                onClick={() => onDateClick?.(day)}
-                className="flex flex-1 items-center justify-center border-l border-gray-100 py-3 text-sm/6 text-gray-500 transition-colors hover:bg-gray-50"
-              >
-                <span>
-                  {day.toLocaleDateString([], { weekday: 'short' })}{' '}
-                  <span className="font-semibold text-gray-900">{day.getDate()}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Calendar Grid */}
-      <div className="isolate flex flex-auto flex-col overflow-auto bg-white">
-        <div className="flex max-w-full flex-none flex-col">
-          <div className="flex flex-auto">
-            {/* Time column */}
-            <div className="sticky left-0 z-10 w-14 flex-none bg-white ring-1 ring-gray-100">
-              <div
-                className="grid"
-                style={{ gridTemplateRows: `repeat(${hours.length}, minmax(3.5rem, 1fr))` }}
-              >
-                {hours.map((hour) => (
-                  <div key={hour} className="relative border-b border-gray-100">
-                    <div className="absolute -top-2.5 right-2 text-right text-xs/5 text-gray-400">
-                      {hour === 0
-                        ? '12AM'
-                        : hour < 12
-                          ? `${hour}AM`
-                          : hour === 12
-                            ? '12PM'
-                            : `${hour - 12}PM`}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Days columns */}
-            <div className="flex flex-auto divide-x divide-gray-100">
-              {days.map((day, dayIndex) => (
-                <div key={dayIndex} className="relative flex-1">
-                  {/* Background grid for this day */}
-                  <div
-                    className="absolute inset-0 grid"
-                    style={{ gridTemplateRows: `repeat(${hours.length}, minmax(3.5rem, 1fr))` }}
-                  >
-                    {hours.map((hour, i) => (
-                      <div
-                        key={i}
-                        className="cursor-pointer border-b border-gray-100 hover:bg-gray-50"
-                        onClick={() => onTimeSlotClick?.(day, hour)}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Events for this day */}
-                  <ol
-                    className="absolute inset-0 grid grid-cols-1"
-                    style={{ gridTemplateRows: `repeat(${hours.length * 2}, minmax(0, 1fr))` }}
-                  >
-                    {getEventsForDate(day).map((event) => {
-                      const { gridRow } = calculateEventGridPosition(event);
-                      return (
-                        <li key={event.id} className="relative mt-px flex" style={{ gridRow }}>
-                          <a
-                            href="#"
-                            className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(event)} shadow-sm hover:opacity-80`}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              onEventClick?.(event);
-                            }}
-                          >
-                            <p className="order-1 truncate font-semibold">{event.title}</p>
-                            <p className="text-xs opacity-75">
-                              <time dateTime={event.startTime.toISOString()}>
-                                {event.startTime.toLocaleTimeString([], {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </time>
-                              {event.type === 'availability' && (
-                                <span>
-                                  {' - '}
-                                  <time dateTime={event.endTime.toISOString()}>
-                                    {event.endTime.toLocaleTimeString([], {
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                    })}
-                                  </time>
-                                </span>
-                              )}
-                            </p>
-                            {event.type === 'availability' && (
-                              <div className="text-xs">
-                                {event.status === AvailabilityStatus.PENDING && '🟡'}
-                                {event.status === AvailabilityStatus.ACCEPTED && '✅'}
-                                {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
-                                {event.status === AvailabilityStatus.REJECTED && '❌'}
-                              </div>
-                            )}
-                          </a>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Day View Component
-function DayView({
-  currentDate,
-  events,
-  workingHours,
-  onEventClick,
-  onTimeSlotClick,
-  getEventStyle,
-}: WeekViewProps) {
-  const dayEvents = events.filter((event) => {
-    const eventDate = new Date(event.startTime);
-    const currentDateString = currentDate.toDateString();
-    const eventDateString = eventDate.toDateString();
-    return eventDateString === currentDateString;
-  });
-
-  // Calculate display time range based on events
-  const getDisplayTimeRange = () => {
-    const defaultStart = 6; // 6 AM
-    const defaultEnd = 18; // 6 PM
-
-    let earliestHour = defaultStart;
-    let latestHour = defaultEnd;
-
-    // Check all events to extend range if needed
-    dayEvents.forEach((event) => {
-      const startHour = new Date(event.startTime).getHours();
-      const endHour = new Date(event.endTime).getHours();
-
-      if (startHour < earliestHour) earliestHour = startHour;
-      if (endHour > latestHour) latestHour = endHour;
-    });
-
-    return { start: earliestHour, end: latestHour };
-  };
-
-  const timeRange = getDisplayTimeRange();
-  const hours = Array.from(
-    { length: timeRange.end - timeRange.start },
-    (_, i) => timeRange.start + i
-  );
-
-  const calculateEventPosition = (event: CalendarEvent) => {
-    const startTime = new Date(event.startTime);
-    const endTime = new Date(event.endTime);
-
-    // Convert to hour-based grid slots, accounting for display range offset
-    // The events grid has hours.length * 2 rows, so we need to multiply by 2
-    const startHour = startTime.getHours() - timeRange.start;
-    const endHour = endTime.getHours() - timeRange.start;
-    const startSlot = Math.max(1, startHour * 2 + 1);
-    const endSlot = Math.max(startSlot + 1, endHour * 2 + 1);
-    const spanSlots = endSlot - startSlot;
-
-    return { gridRow: `${startSlot} / span ${spanSlots}` };
-  };
-
-  return (
-    <div className="flex h-full flex-col">
-      <div className="isolate flex flex-auto flex-col overflow-auto bg-white">
-        <div className="flex max-w-full flex-none flex-col">
-          <div className="flex flex-auto">
-            {/* Time column */}
-            <div className="sticky left-0 z-10 w-14 flex-none bg-white ring-1 ring-gray-100">
-              <div
-                className="grid"
-                style={{ gridTemplateRows: `repeat(${hours.length}, minmax(3.5rem, 1fr))` }}
-              >
-                {hours.map((hour) => (
-                  <div key={hour} className="relative border-b border-gray-100">
-                    <div className="absolute -top-2.5 right-2 text-right text-xs/5 text-gray-400">
-                      {hour === 0
-                        ? '12AM'
-                        : hour < 12
-                          ? `${hour}AM`
-                          : hour === 12
-                            ? '12PM'
-                            : `${hour - 12}PM`}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Day column */}
-            <div className="relative flex-1">
-              {/* Background grid for this day */}
-              <div
-                className="absolute inset-0 grid"
-                style={{ gridTemplateRows: `repeat(${hours.length}, minmax(3.5rem, 1fr))` }}
-              >
-                {hours.map((hour, i) => (
-                  <div
-                    key={i}
-                    className="cursor-pointer border-b border-gray-100 hover:bg-gray-50"
-                    onClick={() => onTimeSlotClick?.(currentDate, hour)}
-                  />
-                ))}
-              </div>
-
-              {/* Events for this day */}
-              <ol
-                className="absolute inset-0 grid grid-cols-1"
-                style={{ gridTemplateRows: `repeat(${hours.length * 2}, minmax(0, 1fr))` }}
-              >
-                {dayEvents.map((event) => {
-                  const { gridRow } = calculateEventPosition(event);
-                  return (
-                    <li key={event.id} className="relative mt-px flex" style={{ gridRow }}>
-                      <a
-                        href="#"
-                        className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(event)} shadow-sm hover:opacity-80`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onEventClick?.(event);
-                        }}
-                      >
-                        <p className="order-1 font-semibold">{event.title}</p>
-                        <p className="text-xs opacity-75">
-                          <time dateTime={event.startTime.toISOString()}>
-                            {event.startTime.toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </time>
-                          {event.type === 'availability' && (
-                            <span>
-                              {' - '}
-                              <time dateTime={event.endTime.toISOString()}>
-                                {event.endTime.toLocaleTimeString([], {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </time>
-                            </span>
-                          )}
-                        </p>
-                        {event.type === 'availability' && (
-                          <div className="text-xs">
-                            {event.status === AvailabilityStatus.PENDING && '🟡'}
-                            {event.status === AvailabilityStatus.ACCEPTED && '✅'}
-                            {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
-                            {event.status === AvailabilityStatus.REJECTED && '❌'}
-                          </div>
-                        )}
-                      </a>
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Month View Component
-interface MonthViewProps {
-  currentDate: Date;
-  events: CalendarEvent[];
-  onEventClick?: (event: CalendarEvent, clickEvent: React.MouseEvent) => void;
-  onDateClick?: (date: Date) => void;
-  onEditEvent?: (event: CalendarEvent) => void;
-  getEventStyle: (event: CalendarEvent) => string;
-}
-
-function MonthView({
-  currentDate,
-  events,
-  onEventClick,
-  onDateClick,
-  onEditEvent,
-  getEventStyle,
-}: MonthViewProps) {
-
-  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const firstDayOfCalendar = new Date(firstDayOfMonth);
-
-  // Adjust to start on Monday
-  const dayOfWeek = firstDayOfMonth.getDay();
-  const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  firstDayOfCalendar.setDate(firstDayOfMonth.getDate() - daysFromMonday);
-
-  const days = Array.from({ length: 42 }, (_, i) => {
-    const day = new Date(firstDayOfCalendar);
-    day.setDate(firstDayOfCalendar.getDate() + i);
-    return day;
-  });
-
-  const getEventsForDay = (date: Date) => {
-    return events.filter(
-      (event) => new Date(event.startTime).toDateString() === date.toDateString()
-    );
-  };
 
 
-  return (
-    <>
-      <div className="isolate overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/5">
-        {/* Day headers with Tailwind calendar styling */}
-        <div className="grid grid-cols-7 gap-px bg-gray-200 text-center text-xs font-semibold leading-6 text-gray-700">
-          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-            <div key={day} className="bg-white py-2">
-              {day}
-            </div>
-          ))}
-        </div>
 
-        {/* Calendar days with Tailwind calendar styling */}
-        <div className="grid grid-cols-7 gap-px bg-gray-200 text-sm">
-          {days.map((day, index) => {
-            const dayEvents = getEventsForDay(day);
-            const isCurrentMonth = day.getMonth() === currentDate.getMonth();
-            const isToday = day.toDateString() === new Date().toDateString();
-            const isSelected = day.toDateString() === currentDate.toDateString();
 
-            return (
-              <button
-                key={index}
-                type="button"
-                onClick={() => onDateClick?.(day)}
-                className={`min-h-[120px] bg-white p-2 text-left transition-colors hover:bg-gray-50 focus:z-10 ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'} ${isToday ? 'bg-blue-50' : ''} ${isSelected ? 'bg-blue-100' : ''} `}
-              >
-                <time
-                  dateTime={day.toISOString().split('T')[0]}
-                  className={`flex h-6 w-6 items-center justify-center rounded-full text-sm font-semibold ${isToday ? 'bg-blue-600 text-white' : ''} ${isSelected && !isToday ? 'bg-gray-900 text-white' : ''} `}
-                >
-                  {day.getDate()}
-                </time>
-                <div className="mt-2 space-y-1">
-                  {dayEvents.map((event) => (
-                    <div 
-                      key={event.id}
-                      className={`cursor-pointer rounded border p-1 text-xs shadow-sm transition-shadow hover:shadow-md ${getEventStyle(event)}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEventClick?.(event, e);
-                      }}
-                    >
-                      <div className="font-medium truncate">{event.title}</div>
-                      <div className="text-xs opacity-75">
-                        {event.startTime.toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                        {event.type === 'availability' && (
-                          <span className="ml-1">
-                            {event.status === AvailabilityStatus.PENDING && '🟡'}
-                            {event.status === AvailabilityStatus.ACCEPTED && '✅'}
-                            {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
-                            {event.status === AvailabilityStatus.REJECTED && '❌'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-    </>
-  );
-}

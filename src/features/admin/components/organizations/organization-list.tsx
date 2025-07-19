@@ -206,7 +206,12 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <StatusBadge status={organization.status} />
+                          <StatusBadge status={
+                            organization.status === 'PENDING_APPROVAL' ? 'PENDING' :
+                            organization.status === 'REJECTED' ? 'REJECTED' :
+                            organization.status === 'SUSPENDED' ? 'SUSPENDED' :
+                            'APPROVED'
+                          } />
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">

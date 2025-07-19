@@ -13,7 +13,7 @@ export async function GET(
     const currentUser = await getCurrentUser();
 
     if (!currentUser || !['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -44,9 +44,9 @@ export async function GET(
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(providers);
+    return NextResponse.json({ success: true, data: providers });
   } catch (error) {
     console.error('Error fetching providers:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { getDatabasePerformanceRecommendations } from '@/features/calendar/availability/lib/search-performance-service';
+import { getDatabasePerformanceRecommendations } from '@/features/calendar/lib/search-performance-service';
 
 export async function GET() {
   try {

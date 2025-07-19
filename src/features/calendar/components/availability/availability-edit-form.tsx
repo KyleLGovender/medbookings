@@ -30,23 +30,25 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { TimePicker } from '@/components/ui/time-picker';
+import { ServiceSelectionSection } from '@/features/calendar/components/availability/service-selection-section';
 import {
   useAvailabilityById,
   useUpdateAvailability,
-} from '@/features/calendar/availability/hooks/use-availability';
-import { updateAvailabilityDataSchema } from '@/features/calendar/availability/types/schemas';
+} from '@/features/calendar/hooks/use-availability';
+import { updateAvailabilityDataSchema } from '@/features/calendar/types/schemas';
 import {
+  AvailabilityWithRelations,
   CalculatedAvailabilitySlotWithRelations,
   SchedulingRule,
   ServiceAvailabilityConfigWithRelations,
   UpdateAvailabilityData,
-} from '@/features/calendar/availability/types/types';
-import { ServiceSelectionSection } from '@/features/calendar/components/availability/service-selection-section';
+} from '@/features/calendar/types/types';
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
-import { OrganizationMembership } from '@/features/organizations/types/types';
+
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useToast } from '@/hooks/use-toast';
+import { Organization } from '@prisma/client';
 
 interface LocationData {
   id: string;
@@ -57,7 +59,7 @@ interface LocationData {
 interface AvailabilityEditFormProps {
   availabilityId: string;
   editMode?: 'single' | 'series' | 'future'; // How to handle recurring series
-  onSuccess?: (data: UpdateAvailabilityData) => void;
+  onSuccess?: (data: AvailabilityWithRelations) => void;
   onCancel?: () => void;
 }
 
@@ -82,7 +84,7 @@ export function AvailabilityEditForm({
 
   // Fetch organization locations
   const organizationIds = userOrganizations.map(
-    (org: OrganizationMembership) => org.organizationId
+    (org: Organization) => org.id
   );
   const { data: availableLocations = [], isLoading: isLocationsLoading } =
     useOrganizationLocations(organizationIds);

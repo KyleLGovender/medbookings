@@ -59,7 +59,7 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
   const invitations = invitationsData?.invitations || [];
 
   // Filter data based on search query
-  const filteredConnections = connections.filter((connection) => {
+  const filteredConnections = connections.filter((connection: any) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -227,7 +227,7 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
             />
           ) : (
             <div className="space-y-4">
-              {filteredConnections.map((connection) => (
+              {filteredConnections.map((connection: any) => (
                 <ProviderConnectionCard
                   key={connection.id}
                   connection={connection}

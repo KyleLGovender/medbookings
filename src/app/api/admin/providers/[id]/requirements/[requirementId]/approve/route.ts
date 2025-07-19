@@ -12,7 +12,7 @@ export async function POST(
     const currentUser = await getCurrentUser();
 
     if (!currentUser || !['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id: providerId, requirementId } = params;
@@ -29,13 +29,13 @@ export async function POST(
     });
 
     if (!submission) {
-      return NextResponse.json({ error: 'Requirement submission not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Requirement submission not found' }, { status: 404 });
     }
 
     // Verify the submission belongs to the specified provider
     if (submission.serviceProviderId !== providerId) {
       return NextResponse.json(
-        { error: 'Requirement submission does not belong to this provider' },
+        { success: false, error: 'Requirement submission does not belong to this provider' },
         { status: 400 }
       );
     }
@@ -71,6 +71,6 @@ export async function POST(
     });
   } catch (error) {
     console.error('Error approving requirement:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

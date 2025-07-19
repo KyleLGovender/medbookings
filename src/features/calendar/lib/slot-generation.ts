@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { addMinutes } from 'date-fns';
-import { SchedulingRule } from '@/features/calendar/availability/types/types';
+import { SchedulingRule } from '@/features/calendar/types/types';
 import { generateTimeSlots } from './scheduling-rules';
 
 export interface SlotGenerationOptions {
@@ -54,6 +54,7 @@ export async function generateSlotsForAvailability(
       const slotRecords = slotResult.slots.map((slot) => ({
         availabilityId: options.availabilityId,
         serviceId: service.serviceId,
+        serviceConfigId: 'default-config-id',
         serviceProviderId: options.serviceProviderId,
         organizationId: options.organizationId,
         locationId: options.locationId,
@@ -63,6 +64,7 @@ export async function generateSlotsForAvailability(
         price: service.price,
         status: 'AVAILABLE' as const,
         isBlocked: false,
+        lastCalculated: new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),
       }));
@@ -187,14 +189,14 @@ export async function regenerateSlotsForAvailability(
       startTime: availability.startTime,
       endTime: availability.endTime,
       serviceProviderId: availability.serviceProviderId,
-      organizationId: availability.organizationId,
-      locationId: availability.locationId,
-      schedulingRule: availability.schedulingRule,
-      schedulingInterval: availability.schedulingInterval,
+      organizationId: availability.organizationId || '',
+      locationId: availability.locationId || undefined,
+      schedulingRule: availability.schedulingRule as SchedulingRule,
+      schedulingInterval: availability.schedulingInterval || undefined,
       services: availability.availableServices.map((as) => ({
         serviceId: as.serviceId,
         duration: as.duration,
-        price: as.price,
+        price: Number(as.price),
       })),
     });
   } catch (error) {

@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { useAvailabilityById } from '@/features/calendar/availability/hooks/use-availability';
+import { useAvailabilityById } from '@/features/calendar/hooks/use-availability';
 
 interface AvailabilityViewModalProps {
   isOpen: boolean;
@@ -33,9 +33,9 @@ export function AvailabilityViewModal({
   availabilityId,
 }: AvailabilityViewModalProps) {
   // Fetch availability data
-  const { data: availability, isLoading, error } = useAvailabilityById(availabilityId || '', {
-    enabled: isOpen && !!availabilityId,
-  });
+  const { data: availability, isLoading, error } = useAvailabilityById(
+    isOpen ? availabilityId || undefined : undefined
+  );
 
   const selectedLocation = useMemo(() => {
     if (!availability?.locationId) return null;
@@ -281,7 +281,7 @@ export function AvailabilityViewModal({
             <h3 className="text-lg font-medium">Services Offered</h3>
             <div className="space-y-2">
               {availability.availableServices && availability.availableServices.length > 0 ? (
-                availability.availableServices.map((serviceConfig, index) => (
+                availability.availableServices.map((serviceConfig: any, index: number) => (
                   <div key={index} className="rounded-md border bg-gray-50 p-3">
                     <div className="flex items-center justify-between">
                       <div>

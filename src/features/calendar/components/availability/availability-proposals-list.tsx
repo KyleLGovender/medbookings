@@ -24,13 +24,13 @@ import {
   useAcceptAvailabilityProposal,
   useProviderAvailability,
   useRejectAvailabilityProposal,
-} from '@/features/calendar/availability/hooks/use-availability';
+} from '@/features/calendar/hooks/use-availability';
 import {
   AvailabilityStatus,
   AvailabilityWithRelations,
   SchedulingRule,
   ServiceAvailabilityConfigWithRelations,
-} from '@/features/calendar/availability/types/types';
+} from '@/features/calendar/types/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface AvailabilityProposalsListProps {

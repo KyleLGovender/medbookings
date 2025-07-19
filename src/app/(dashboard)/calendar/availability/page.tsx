@@ -1,4 +1,4 @@
-import { EnhancedCalendarView } from '@/features/calendar/availability/components/enhanced-calendar-view';
+import { ProviderCalendarView } from '@/features/calendar/components/provider-calendar-view';
 
 export default async function GlobalAvailabilityPage({
   searchParams,
@@ -15,7 +15,7 @@ export default async function GlobalAvailabilityPage({
           </p>
         </div>
 
-        <EnhancedCalendarView mode="provider" />
+        <ProviderCalendarView providerId="current" />
       </div>
     </div>
   );

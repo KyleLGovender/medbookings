@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { deleteAvailability } from '@/features/calendar/availability/lib/actions';
+import { deleteAvailability } from '@/features/calendar/lib/actions';
 
 export async function DELETE(request: NextRequest) {
   try {

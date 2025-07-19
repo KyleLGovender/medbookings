@@ -7,15 +7,15 @@ import { BarChart, Calendar, Download, Plus, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarExportDialog } from '@/features/calendar/availability/components/calendar-export-dialog';
+// import { CalendarExportDialog } from '@/features/calendar/availability/components/calendar-export-dialog';
 import { AvailabilityCreationForm } from '@/features/calendar/components/availability/availability-creation-form';
 import { AvailabilityProposalsList } from '@/features/calendar/components/availability/availability-proposals-list';
 // import { ProviderSearchInterface } from '@/features/calendar/availability/components/provider-search-interface';
-import { DragDropCalendar } from '@/features/calendar/availability/components/drag-drop-calendar';
-import { EnhancedCalendarView } from '@/features/calendar/availability/components/enhanced-calendar-view';
+// import { DragDropCalendar } from '@/features/calendar/availability/components/drag-drop-calendar';
+// import { EnhancedCalendarView } from '@/features/calendar/availability/components/enhanced-calendar-view';
 // Import our comprehensive availability management components
-import { ProviderCalendarView } from '@/features/calendar/availability/components/provider-calendar-view';
-import { VisualIndicatorsConfig } from '@/features/calendar/availability/components/visual-indicators-config';
+import { ProviderCalendarView } from '@/features/calendar/components/provider-calendar-view';
+// import { VisualIndicatorsConfig } from '@/features/calendar/availability/components/visual-indicators-config';
 
 // Mock data types - these would typically come from props or API
 interface ServiceProviderCalendarProps {
@@ -25,31 +25,31 @@ interface ServiceProviderCalendarProps {
 export function ServiceProviderCalendar({ searchParams }: ServiceProviderCalendarProps) {
   const [activeTab, setActiveTab] = useState('calendar');
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showExportDialog, setShowExportDialog] = useState(false);
+  // const [showExportDialog, setShowExportDialog] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
 
   // Mock configurations - these would come from user preferences/settings
-  const [dragDropConfig, setDragDropConfig] = useState({
-    enableMove: true,
-    enableCopy: false,
-    enableResize: true,
-    enableSeriesOperations: true,
-    showConflicts: true,
-    autoSave: false,
-    snapToGrid: true,
-    gridIntervalMinutes: 15,
-  });
+  // const [dragDropConfig, setDragDropConfig] = useState({
+  //   enableMove: true,
+  //   enableCopy: false,
+  //   enableResize: true,
+  //   enableSeriesOperations: true,
+  //   showConflicts: true,
+  //   autoSave: false,
+  //   snapToGrid: true,
+  //   gridIntervalMinutes: 15,
+  // });
 
-  const [visualConfig, setVisualConfig] = useState({
-    showStatusIndicators: true,
-    showSchedulingRuleIcons: true,
-    showRecurringPatternBadges: true,
-    showLocationIcons: true,
-    showDurationBadges: false,
-    showPriorityIndicators: false,
-    compactMode: false,
-  });
+  // const [visualConfig, setVisualConfig] = useState({
+  //   showStatusIndicators: true,
+  //   showSchedulingRuleIcons: true,
+  //   showRecurringPatternBadges: true,
+  //   showLocationIcons: true,
+  //   showDurationBadges: false,
+  //   showPriorityIndicators: false,
+  //   compactMode: false,
+  // });
 
   return (
     <div className="space-y-6">
@@ -62,7 +62,7 @@ export function ServiceProviderCalendar({ searchParams }: ServiceProviderCalenda
           </Button>
           <Button
             variant="outline"
-            onClick={() => setShowExportDialog(true)}
+            onClick={() => console.log('Export calendar functionality disabled')}
             className="flex items-center gap-2"
           >
             <Download className="h-4 w-4" />
@@ -71,11 +71,11 @@ export function ServiceProviderCalendar({ searchParams }: ServiceProviderCalenda
         </div>
 
         <div className="flex items-center space-x-2">
-          <VisualIndicatorsConfig
+          {/* <VisualIndicatorsConfig
             config={visualConfig}
             onConfigChange={setVisualConfig}
             showPreview={false}
-          />
+          /> */}
         </div>
       </div>
 
@@ -117,10 +117,7 @@ export function ServiceProviderCalendar({ searchParams }: ServiceProviderCalenda
               <ProviderCalendarView
                 providerId="current-provider" // This would come from auth context
                 viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                currentDate={currentDate}
-                onDateChange={setCurrentDate}
-                visualConfig={visualConfig}
+                initialDate={currentDate}
               />
             </CardContent>
           </Card>
@@ -136,14 +133,14 @@ export function ServiceProviderCalendar({ searchParams }: ServiceProviderCalenda
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <EnhancedCalendarView
+              {/* <EnhancedCalendarView
                 mode="provider"
                 providerId="current-provider" // This would come from auth context
                 currentDate={currentDate}
                 onDateChange={setCurrentDate}
                 viewMode={viewMode}
                 onViewModeChange={setViewMode}
-              />
+              /> */}
             </CardContent>
           </Card>
         </TabsContent>
@@ -158,7 +155,7 @@ export function ServiceProviderCalendar({ searchParams }: ServiceProviderCalenda
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <DragDropCalendar
+              {/* <DragDropCalendar
                 events={[]} // This would be loaded from API
                 onEventUpdate={(eventId, updates) => {
                   console.log('Update event:', eventId, updates);
@@ -170,7 +167,7 @@ export function ServiceProviderCalendar({ searchParams }: ServiceProviderCalenda
                 visualConfig={visualConfig}
                 viewMode={viewMode}
                 currentDate={currentDate}
-              />
+              /> */}
             </CardContent>
           </Card>
         </TabsContent>
@@ -186,7 +183,7 @@ export function ServiceProviderCalendar({ searchParams }: ServiceProviderCalenda
             </CardHeader>
             <CardContent>
               <AvailabilityProposalsList
-                providerId="current-provider" // This would come from auth context
+                serviceProviderId="current-provider" // This would come from auth context
               />
             </CardContent>
           </Card>
@@ -222,6 +219,7 @@ export function ServiceProviderCalendar({ searchParams }: ServiceProviderCalenda
                 </Button>
               </div>
               <AvailabilityCreationForm
+                serviceProviderId="current-provider" // This would come from auth context
                 onSuccess={() => {
                   setShowCreateForm(false);
                   // Refresh calendar data
@@ -233,18 +231,7 @@ export function ServiceProviderCalendar({ searchParams }: ServiceProviderCalenda
         </div>
       )}
 
-      {/* Export Dialog */}
-      {showExportDialog && (
-        <CalendarExportDialog
-          events={[]} // This would be loaded from current calendar view
-          isOpen={showExportDialog}
-          onClose={() => setShowExportDialog(false)}
-          onExportComplete={(result) => {
-            console.log('Export completed:', result);
-            setShowExportDialog(false);
-          }}
-        />
-      )}
+      {/* Export Dialog - Functionality disabled due to missing component */}
     </div>
   );
 }

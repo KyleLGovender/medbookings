@@ -119,10 +119,6 @@ export function StaticLocationMap({ coordinates, locationName }: StaticLocationM
           // Ensure the map is properly centered
           map.setCenter(coordinates);
         }}
-        onError={(error) => {
-          console.error('Google Maps error:', error);
-          setMapError('Failed to load map properly');
-        }}
       >
         <Marker
           position={coordinates}

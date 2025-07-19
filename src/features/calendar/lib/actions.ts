@@ -8,15 +8,16 @@ import {
   availabilitySearchParamsSchema,
   createAvailabilityDataSchema,
   updateAvailabilityDataSchema,
-} from '@/features/calendar/availability/types/schemas';
+} from '@/features/calendar/types/schemas';
 import {
   AvailabilitySearchParams,
   AvailabilityStatus,
   AvailabilityWithRelations,
   BillingEntity,
   CreateAvailabilityData,
+  SchedulingRule,
   UpdateAvailabilityData,
-} from '@/features/calendar/availability/types/types';
+} from '@/features/calendar/types/types';
 import { UserRole } from '@/features/profile/types/types';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -242,14 +243,14 @@ export async function createAvailability(
             startTime: av.startTime,
             endTime: av.endTime,
             serviceProviderId: av.serviceProviderId,
-            organizationId: av.organizationId,
-            locationId: av.locationId,
-            schedulingRule: av.schedulingRule,
-            schedulingInterval: av.schedulingInterval,
+            organizationId: av.organizationId || '',
+            locationId: av.locationId || undefined,
+            schedulingRule: av.schedulingRule as SchedulingRule,
+            schedulingInterval: av.schedulingInterval || undefined,
             availableServices: av.availableServices.map((as) => ({
               serviceId: as.serviceId,
               duration: as.duration,
-              price: as.price,
+              price: Number(as.price),
             })),
           }))
         );

@@ -1,4 +1,4 @@
-import { OrganizationCalendarView } from '@/features/calendar/availability/components/organization-calendar-view';
+import { OrganizationCalendarView } from '@/features/calendar/components/organization-calendar-view';
 
 interface OrganizationAvailabilityPageProps {
   params: {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { geocodeAddress } from '@/features/calendar/availability/lib/location-search-service';
+import { geocodeAddress } from '@/features/calendar/lib/location-search-service';
 
 export async function GET(request: NextRequest) {
   try {

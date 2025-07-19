@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import { AppSidebar } from '@/components/app-sidebar';
 import {
   Breadcrumb,
+  BreadcrumbEllipsis,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,

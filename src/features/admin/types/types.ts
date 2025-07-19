@@ -1,9 +1,9 @@
 import { Prisma } from '@prisma/client';
+import { ApprovalEntityType } from './enums';
 
 // Basic Admin Action Types
 export type AdminActionType = 'APPROVE' | 'REJECT' | 'SUSPEND';
 export type ApprovalStatus = 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
-export type ApprovalEntityType = 'PROVIDER' | 'ORGANIZATION' | 'REQUIREMENT';
 
 // API Response Types
 export interface AdminApiResponse<T = any> {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { updateAvailability } from '@/features/calendar/availability/lib/actions';
+import { updateAvailability } from '@/features/calendar/lib/actions';
 
 export async function PUT(request: NextRequest) {
   try {

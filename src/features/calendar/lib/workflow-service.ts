@@ -1,7 +1,8 @@
 import {
   AvailabilityStatus,
   AvailabilityWithRelations,
-} from '@/features/calendar/availability/types/types';
+  SchedulingRule,
+} from '@/features/calendar/types/types';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -98,14 +99,14 @@ export async function processAvailabilityAcceptance(
         startTime: updatedAvailability.startTime,
         endTime: updatedAvailability.endTime,
         serviceProviderId: updatedAvailability.serviceProviderId,
-        organizationId: updatedAvailability.organizationId,
-        locationId: updatedAvailability.locationId,
-        schedulingRule: updatedAvailability.schedulingRule,
-        schedulingInterval: updatedAvailability.schedulingInterval,
+        organizationId: updatedAvailability.organizationId || '',
+        locationId: updatedAvailability.locationId || undefined,
+        schedulingRule: updatedAvailability.schedulingRule as SchedulingRule,
+        schedulingInterval: updatedAvailability.schedulingInterval || undefined,
         services: updatedAvailability.availableServices.map((as) => ({
           serviceId: as.serviceId,
           duration: as.duration,
-          price: as.price,
+          price: Number(as.price),
         })),
       });
 
@@ -456,14 +457,14 @@ export async function processRecurringSeriesAcceptance(
           startTime: availability.startTime,
           endTime: availability.endTime,
           serviceProviderId: availability.serviceProviderId,
-          organizationId: availability.organizationId,
-          locationId: availability.locationId,
-          schedulingRule: availability.schedulingRule,
-          schedulingInterval: availability.schedulingInterval,
+          organizationId: availability.organizationId || '',
+          locationId: availability.locationId || undefined,
+          schedulingRule: availability.schedulingRule as SchedulingRule,
+          schedulingInterval: availability.schedulingInterval || undefined,
           services: availability.availableServices.map((as) => ({
             serviceId: as.serviceId,
             duration: as.duration,
-            price: as.price,
+            price: Number(as.price),
           })),
         });
 

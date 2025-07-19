@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { searchProvidersByLocation } from '@/features/calendar/availability/lib/location-search-service';
+import { searchProvidersByLocation } from '@/features/calendar/lib/location-search-service';
 
 export async function POST(request: NextRequest) {
   try {

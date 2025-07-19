@@ -30,7 +30,7 @@ import {
   AvailabilityStatus,
   CalendarEvent,
   SlotStatus,
-} from '@/features/calendar/availability/types/types';
+} from '@/features/calendar/types/types';
 
 interface CalendarEventDialogProps {
   event: CalendarEvent | null;

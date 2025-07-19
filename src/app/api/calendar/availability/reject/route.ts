@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { rejectAvailabilityProposal } from '@/features/calendar/availability/lib/actions';
+import { rejectAvailabilityProposal } from '@/features/calendar/lib/actions';
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { processAvailabilityAcceptance } from './workflow-service';
-import { AvailabilityStatus } from '@/features/calendar/availability/types/types';
+import { AvailabilityStatus } from '@/features/calendar/types/types';
 
 // Mock dependencies
 vi.mock('@/lib/auth', () => ({

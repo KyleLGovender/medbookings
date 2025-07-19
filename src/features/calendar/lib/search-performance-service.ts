@@ -1,4 +1,4 @@
-import { AvailabilityStatus, SlotStatus } from '@/features/calendar/availability/types/types';
+import { AvailabilityStatus, SlotStatus } from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
 
 export interface SearchPerformanceOptions {

@@ -196,7 +196,12 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <StatusBadge status={provider.status} />
+                          <StatusBadge status={
+                            provider.status === 'PENDING_APPROVAL' ? 'PENDING' :
+                            provider.status === 'REJECTED' ? 'REJECTED' :
+                            provider.status === 'SUSPENDED' ? 'SUSPENDED' :
+                            'APPROVED'
+                          } />
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">

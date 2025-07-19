@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getAvailabilityById } from '@/features/calendar/availability/lib/actions';
+import { getAvailabilityById } from '@/features/calendar/lib/actions';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {

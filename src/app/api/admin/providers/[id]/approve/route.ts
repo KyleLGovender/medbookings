@@ -16,7 +16,7 @@ export async function POST(
     const currentUser = await getCurrentUser();
 
     if (!currentUser || !['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const providerId = params.id;
@@ -35,7 +35,7 @@ export async function POST(
     });
 
     if (!provider) {
-      return NextResponse.json({ error: 'Provider not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Provider not found' }, { status: 404 });
     }
 
     // Check if all required requirements are approved
@@ -50,6 +50,7 @@ export async function POST(
     if (unapprovedRequired.length > 0) {
       return NextResponse.json(
         {
+          success: false,
           error: 'Cannot approve provider: not all required requirements are approved',
           unapprovedRequirements: unapprovedRequired.map((sub) => ({
             id: sub.id,
@@ -91,6 +92,6 @@ export async function POST(
     });
   } catch (error) {
     console.error('Error approving provider:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

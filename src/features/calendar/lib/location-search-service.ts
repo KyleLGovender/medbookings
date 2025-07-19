@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 
-import { AvailabilityStatus, SlotStatus } from '@/features/calendar/availability/types/types';
+import { AvailabilityStatus, SlotStatus } from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
 
 import { optimizedProviderSearch } from './search-performance-service';
@@ -261,7 +261,7 @@ export class LocationSearchService {
               serviceName: config.service.name,
               duration: config.service.defaultDuration,
               price: config.price.toNumber(),
-              showPrice: config.showPrice,
+              showPrice: true,
             }));
 
           // Get available slots at this location
@@ -346,7 +346,7 @@ export class LocationSearchService {
               serviceName: config.service.name,
               duration: config.service.defaultDuration,
               price: config.price.toNumber(),
-              showPrice: config.showPrice,
+              showPrice: true,
             }));
 
           const nearestOnlineSlot = onlineSlots.sort(

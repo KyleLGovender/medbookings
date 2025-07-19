@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { searchAvailability } from '@/features/calendar/availability/lib/actions';
+import { searchAvailability } from '@/features/calendar/lib/actions';
+import { AvailabilityStatus } from '@/features/calendar/types/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
         ? new Date(searchParams.get('startDate')!)
         : undefined,
       endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined,
-      status: searchParams.get('status') || undefined,
+      status: (searchParams.get('status') as AvailabilityStatus) || undefined,
       seriesId: searchParams.get('seriesId') || undefined,
     };
 

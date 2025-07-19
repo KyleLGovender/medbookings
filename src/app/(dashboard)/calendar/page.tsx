@@ -4,7 +4,7 @@ import { BarChart, Calendar, Clock, Plus, Settings } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { EnhancedCalendarView } from '@/features/calendar/availability/components/enhanced-calendar-view';
+import { ProviderCalendarView } from '@/features/calendar/components/provider-calendar-view';
 
 export default function CalendarOverviewPage() {
   return (
@@ -30,7 +30,7 @@ export default function CalendarOverviewPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <EnhancedCalendarView mode="provider" />
+              <ProviderCalendarView providerId="current" />
             </CardContent>
           </Card>
         </div>

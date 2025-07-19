@@ -95,7 +95,7 @@ export function isDesktopDevice(): boolean {
 export function useResizeListener(
   callback: (size: ScreenSize) => void,
   throttleMs: number = 100
-): void {
+): (() => void) | void {
   if (typeof window === 'undefined') return;
 
   let timeoutId: NodeJS.Timeout;

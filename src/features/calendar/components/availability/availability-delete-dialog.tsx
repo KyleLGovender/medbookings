@@ -18,8 +18,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useDeleteAvailability } from '@/features/calendar/availability/hooks/use-availability';
-import { AvailabilityWithRelations } from '@/features/calendar/availability/types/types';
+import { useDeleteAvailability } from '@/features/calendar/hooks/use-availability';
+import { AvailabilityWithRelations } from '@/features/calendar/types/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface AvailabilityDeleteDialogProps {

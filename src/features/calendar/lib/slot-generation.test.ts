@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { generateSlotsForAvailability, generateSlotsForMultipleAvailability } from './slot-generation';
-import { SchedulingRule } from '@/features/calendar/availability/types/types';
+import { SchedulingRule } from '@/features/calendar/types/types';
 
 // Mock Prisma
 vi.mock('@/lib/prisma', () => ({

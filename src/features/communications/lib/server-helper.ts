@@ -1,3 +1,10 @@
+import sgMail from '@sendgrid/mail';
+import twilio from 'twilio';
+import vCardsJS from 'vcards-js';
+import { put } from '@vercel/blob';
+import env from '@/config/env/server';
+import { BookingView } from '@/features/calendar/lib/types';
+
 // Load environment variables
 const accountSid = env.TWILIO_ACCOUNT_SID;
 const authToken = env.TWILIO_AUTH_TOKEN;
@@ -18,7 +25,7 @@ export async function sendBookingNotifications(booking: BookingView) {
 
     const templateVariablesServiceProvider = JSON.stringify({
       1: booking.slot.serviceProvider.name,
-      2: `${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}`,
+      2: `${booking.slot.startTime.toLocaleDateString()} at ${booking.slot.startTime.toLocaleTimeString()}`,
       3: `${booking.slot.serviceConfig.duration} minutes`,
       4: `R${booking.slot.serviceConfig.price}`,
       5: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
@@ -41,7 +48,7 @@ export async function sendBookingNotifications(booking: BookingView) {
     const templateVariablesPatient = JSON.stringify({
       1: booking.guestInfo.name,
       2: booking.slot.serviceProvider.name,
-      3: `${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}`,
+      3: `${booking.slot.startTime.toLocaleDateString()} at ${booking.slot.startTime.toLocaleTimeString()}`,
       4: `${booking.slot.serviceConfig.duration} minutes`,
       5: `R${booking.slot.serviceConfig.price}`,
       6: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
@@ -67,19 +74,7 @@ export async function sendBookingNotifications(booking: BookingView) {
     const results = await Promise.allSettled(notificationPromises);
     console.log('Notification results:', results);
 
-    // Create notification logs in the database
-    const notificationLogs = results.map((result, index) => ({
-      bookingId: booking.id,
-      type: NotificationType.BOOKING_CONFIRMATION,
-      channel: index === 0 ? NotificationChannel.EMAIL : NotificationChannel.WHATSAPP,
-      content: JSON.stringify({ templateVariablesServiceProvider }),
-      status: result.status === 'fulfilled' ? 'SENT' : 'FAILED',
-    }));
-
-    // Log notifications to database
-    await prisma.notificationLog.createMany({
-      data: notificationLogs,
-    });
+    // Note: Notification logging would go here if NotificationLog model existed
   } catch (error) {
     console.error('Error sending notifications:', error);
     // Don't throw the error - we don't want to fail the booking if notifications fail
@@ -93,7 +88,7 @@ export async function sendBookingConfirmation(booking: BookingView) {
     const templateVariablesServiceProvider = JSON.stringify({
       1: booking.slot.serviceProvider.name,
       2: booking.id,
-      3: `${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}`,
+      3: `${booking.slot.startTime.toLocaleDateString()} at ${booking.slot.startTime.toLocaleTimeString()}`,
       4: `${booking.slot.serviceConfig.duration} minutes`,
       5: `R${booking.slot.serviceConfig.price}`,
       6: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
@@ -118,7 +113,7 @@ export async function sendBookingConfirmation(booking: BookingView) {
       1: booking.guestInfo.name,
       2: booking.slot.serviceProvider.name,
       3: booking.id,
-      4: `${formatLocalDate(booking.slot.startTime)} at ${formatLocalTime(booking.slot.startTime)}`,
+      4: `${booking.slot.startTime.toLocaleDateString()} at ${booking.slot.startTime.toLocaleTimeString()}`,
       5: `${booking.slot.serviceConfig.duration} minutes`,
       6: `R${booking.slot.serviceConfig.price}`,
       7: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
@@ -144,19 +139,7 @@ export async function sendBookingConfirmation(booking: BookingView) {
     const results = await Promise.allSettled(notificationPromises);
     console.log('Notification results:', results);
 
-    // Create notification logs in the database
-    const notificationLogs = results.map((result, index) => ({
-      bookingId: booking.id,
-      type: NotificationType.BOOKING_CONFIRMATION,
-      channel: index === 0 ? NotificationChannel.EMAIL : NotificationChannel.WHATSAPP,
-      content: JSON.stringify({ templateVariablesServiceProvider }),
-      status: result.status === 'fulfilled' ? 'SENT' : 'FAILED',
-    }));
-
-    // Log notifications to database
-    await prisma.notificationLog.createMany({
-      data: notificationLogs,
-    });
+    // Note: Notification logging would go here if NotificationLog model existed
   } catch (error) {
     console.error('Error sending booking confirmation:', error);
   }

@@ -18,18 +18,18 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ProviderCalendarView } from '@/features/calendar/availability/components/provider-calendar-view';
+import { AvailabilityCreationForm } from '@/features/calendar/components/availability/availability-creation-form';
+import { AvailabilityEditForm } from '@/features/calendar/components/availability/availability-edit-form';
+import { AvailabilityViewModal } from '@/features/calendar/components/availability/availability-view-modal';
+import { SeriesActionDialog, SeriesActionScope } from '@/features/calendar/components/availability/series-action-dialog';
+import { ProviderCalendarView } from '@/features/calendar/components/provider-calendar-view';
 import {
   useAcceptAvailabilityProposal,
   useCancelAvailability,
   useDeleteAvailability,
   useRejectAvailabilityProposal
-} from '@/features/calendar/availability/hooks/use-availability';
-import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/availability/types/types';
-import { AvailabilityCreationForm } from '@/features/calendar/components/availability/availability-creation-form';
-import { AvailabilityEditForm } from '@/features/calendar/components/availability/availability-edit-form';
-import { AvailabilityViewModal } from '@/features/calendar/components/availability/availability-view-modal';
-import { SeriesActionDialog, SeriesActionScope } from '@/features/calendar/components/availability/series-action-dialog';
+} from '@/features/calendar/hooks/use-availability';
+import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProviderAvailabilityPageProps {

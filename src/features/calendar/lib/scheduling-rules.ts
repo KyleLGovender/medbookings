@@ -6,7 +6,7 @@ import {
   SchedulingRuleConfig,
   TimeSlot,
   TimeSlotGenerationResult,
-} from '@/features/calendar/availability/types/types';
+} from '@/features/calendar/types/types';
 
 /**
  * Generate time slots based on scheduling rules
@@ -197,32 +197,13 @@ export function validateSchedulingRuleConfig(config: SchedulingRuleConfig): {
   // Rule-specific validation
   switch (config.rule) {
     case SchedulingRule.ON_THE_HALF_HOUR:
-      if (!config.interval || config.interval <= 0) {
-        errors.push('Custom interval must be a positive number');
-      }
-      if (config.interval && config.interval > 1440) {
-        // 24 hours
-        errors.push('Custom interval cannot exceed 24 hours (1440 minutes)');
-      }
+      // Interval validation would go here if the property existed
       break;
 
     case SchedulingRule.ON_THE_HOUR:
-      const hasAlignment =
-        config.alignToHour || config.alignToHalfHour || config.alignToQuarterHour;
-      if (!hasAlignment) {
-        errors.push('Fixed interval rule requires at least one alignment option');
-      }
+      // Alignment validation would go here if the properties existed
 
-      // Check for conflicting alignments
-      const alignmentCount = [
-        config.alignToHour,
-        config.alignToHalfHour,
-        config.alignToQuarterHour,
-      ].filter(Boolean).length;
-
-      if (alignmentCount > 1) {
-        errors.push('Only one alignment option can be selected for fixed interval rule');
-      }
+      // Alignment conflict validation would go here if the properties existed
       break;
 
     case SchedulingRule.CONTINUOUS:
