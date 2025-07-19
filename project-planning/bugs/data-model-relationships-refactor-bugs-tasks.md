@@ -28,7 +28,7 @@ Estimated Total Time: 22-28 hours
   - [x] 1.4 Create data integrity verification script to check existing subscriptions in `scripts/verify-subscription-integrity.ts`
   - [x] 1.5 Update subscription query helpers in `src/lib/subscription-utils.ts` to handle constraint properly
   - [x] 1.6 Write unit tests for subscription creation validation in `src/app/api/subscriptions/route.test.ts`
-  - [ ] 1.7 Write unit tests for subscription update validation
+  - [x] 1.7 Write unit tests for subscription update validation
   - [ ] 1.8 Test that subscription creation fails when multiple IDs are set
   - [ ] 1.9 Test that subscription creation succeeds with exactly one ID set
   - [ ] 1.10 Run data integrity verification script on existing database
