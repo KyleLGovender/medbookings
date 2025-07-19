@@ -243,7 +243,9 @@ export const servicesSchema = z.object({
 export const providerFormSchema = z.object({
   basicInfo: basicInfoSchema,
   providerType: providerTypeSchema,
-  serviceProviderTypeId: z.string().min(1, 'Please select a provider type'),
+  serviceProviderTypeIds: z.array(z.string()).min(1, 'Please select at least one provider type'),
+  // Keep the old single field for backward compatibility
+  serviceProviderTypeId: z.string().optional(),
   regulatoryRequirements: regulatoryRequirementsSchema,
   services: servicesSchema,
   termsAccepted: z.boolean().refine((val) => val === true, {

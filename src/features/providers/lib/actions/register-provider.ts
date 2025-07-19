@@ -20,6 +20,22 @@ export async function registerServiceProvider(prevState: any, formData: FormData
     const email = formData.get('email') as string;
     const whatsapp = formData.get('whatsapp') as string;
     const website = (formData.get('website') as string) || null;
+    
+    // Handle provider types (multiple or single for backward compatibility)
+    const serviceProviderTypeIds = formData.getAll('serviceProviderTypeIds') as string[];
+    const singleServiceProviderTypeId = formData.get('serviceProviderTypeId') as string;
+    
+    // Use multiple types if provided, otherwise fall back to single type
+    const providerTypeIds = serviceProviderTypeIds.length > 0 
+      ? serviceProviderTypeIds 
+      : singleServiceProviderTypeId ? [singleServiceProviderTypeId] : [];
+      
+    if (providerTypeIds.length === 0) {
+      return {
+        success: false,
+        error: 'At least one provider type must be selected',
+      };
+    }
 
     // Process requirements first if any were submitted
     const requirementSubmissions: {
@@ -70,7 +86,7 @@ export async function registerServiceProvider(prevState: any, formData: FormData
       });
     }
 
-    // Save provider data with requirements
+    // Save provider data with requirements and type assignments
     const provider = await prisma.serviceProvider.create({
       data: {
         userId,
@@ -86,7 +102,11 @@ export async function registerServiceProvider(prevState: any, formData: FormData
         languages: {
           set: languages,
         },
-        serviceProviderTypeId: formData.get('serviceProviderTypeId') as string,
+        typeAssignments: {
+          create: providerTypeIds.map(typeId => ({
+            serviceProviderTypeId: typeId,
+          })),
+        },
         requirementSubmissions: {
           create: requirementSubmissions,
         },
@@ -98,10 +118,15 @@ export async function registerServiceProvider(prevState: any, formData: FormData
             email: true,
           },
         },
-        serviceProviderType: {
-          select: {
-            name: true,
-            description: true,
+        typeAssignments: {
+          include: {
+            serviceProviderType: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
           },
         },
         requirementSubmissions: {
