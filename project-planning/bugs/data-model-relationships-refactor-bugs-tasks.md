@@ -26,7 +26,7 @@ Estimated Total Time: 22-28 hours
   - [x] 1.2 Add application-level validation in subscription creation API endpoints in `src/app/api/subscriptions/`
   - [x] 1.3 Add application-level validation in subscription update API endpoints
   - [x] 1.4 Create data integrity verification script to check existing subscriptions in `scripts/verify-subscription-integrity.ts`
-  - [ ] 1.5 Update subscription query helpers in `src/lib/subscription-utils.ts` to handle constraint properly
+  - [x] 1.5 Update subscription query helpers in `src/lib/subscription-utils.ts` to handle constraint properly
   - [ ] 1.6 Write unit tests for subscription creation validation in `src/app/api/subscriptions/route.test.ts`
   - [ ] 1.7 Write unit tests for subscription update validation
   - [ ] 1.8 Test that subscription creation fails when multiple IDs are set
