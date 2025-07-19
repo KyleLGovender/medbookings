@@ -49,11 +49,11 @@ Estimated Total Time: 22-28 hours
   - [x] 2.12 Update approval workflow in `src/features/providers/lib/approval.ts` to validate requirements from ALL selected provider types
   - [x] 2.13 Update provider registration form in `src/features/providers/components/registration-form.tsx` to support multiple type selection
   - [x] 2.14 Update provider edit form in `src/features/providers/components/edit-form.tsx` to support multiple type selection
-  - [ ] 2.15 Test provider assignment to multiple types manually
-  - [ ] 2.16 Test provider-related queries work with new relationship structure
-  - [ ] 2.17 Test approval workflow: provider must satisfy requirements for ALL types to be approved
-  - [ ] 2.18 Test provider can remove problematic types and resubmit for approval
-  - [ ] 2.19 Verify services from all provider types are available to multi-type providers
+  - [x] 2.15 Test provider assignment to multiple types manually
+  - [x] 2.16 Test provider-related queries work with new relationship structure
+  - [x] 2.17 Test approval workflow: provider must satisfy requirements for ALL types to be approved
+  - [x] 2.18 Test provider can remove problematic types and resubmit for approval
+  - [x] 2.19 Verify services from all provider types are available to multi-type providers
 
 - [ ] 3.0 🔵 **MEDIUM**: Optimize Service Provider Type Queries  
   - [ ] 3.1 Add database index on serviceProviderId in ServiceProviderTypeAssignment table
