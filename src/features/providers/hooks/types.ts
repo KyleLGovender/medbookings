@@ -208,6 +208,8 @@ export const basicInfoSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   whatsapp: z.string().min(10, 'Please enter a valid WhatsApp number'),
   showPrice: z.boolean().default(true),
+  serviceProviderTypeIds: z.array(z.string()).min(1, 'Please select at least one provider type'),
+  serviceProviderTypeId: z.string().optional(), // Backward compatibility
 });
 
 // No longer needed as we're validating serviceProviderTypeId directly at the root level

@@ -25,6 +25,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { ProfileImageUploader } from '@/features/providers/components/onboarding/profile-image-uploader';
+import { ProviderTypeSection } from '@/features/providers/components/onboarding/provider-type-section';
 import { SUPPORTED_LANGUAGES, basicInfoSchema } from '@/features/providers/hooks/types';
 import { useProvider } from '@/features/providers/hooks/use-provider';
 import { useProviderTypes } from '@/features/providers/hooks/use-provider-types';
@@ -77,7 +78,8 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
       website: '',
       email: '',
       whatsapp: '',
-      serviceProviderTypeId: '',
+      serviceProviderTypeIds: [] as string[], // New field for multiple types
+      serviceProviderTypeId: '', // Keep for backward compatibility
       showPrice: true, // Default to showing prices
     },
     mode: 'onSubmit', // Changed to onSubmit to avoid premature validation
@@ -86,10 +88,12 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
   // Update form values when provider data is loaded
   useEffect(() => {
     if (provider) {
-      // Make sure we have the provider type ID
-      const providerTypeId = provider.serviceProviderTypeId || '';
+      // Get provider type IDs from the new relationship structure
+      const providerTypeIds = provider.typeAssignments?.map(assignment => assignment.serviceProviderTypeId) || 
+                              (provider.serviceProviderTypeId ? [provider.serviceProviderTypeId] : []);
+      const legacyProviderTypeId = provider.serviceProviderTypeId || '';
 
-      // Set form values including provider type ID
+      // Set form values including provider type IDs
       methods.reset({
         name: provider.name || '',
         bio: provider.bio || '',
@@ -98,12 +102,14 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
         website: provider.website || '',
         email: provider.email || '',
         whatsapp: provider.whatsapp || '',
-        serviceProviderTypeId: providerTypeId,
+        serviceProviderTypeIds: providerTypeIds,
+        serviceProviderTypeId: legacyProviderTypeId, // Keep for backward compatibility
         showPrice: provider.showPrice !== undefined ? provider.showPrice : true, // Default to true if not set
       });
 
-      // Force set the value directly to ensure it's updated
-      methods.setValue('serviceProviderTypeId', providerTypeId);
+      // Force set the values directly to ensure they're updated
+      methods.setValue('serviceProviderTypeIds', providerTypeIds);
+      methods.setValue('serviceProviderTypeId', legacyProviderTypeId);
     }
   }, [provider, methods]);
 
@@ -157,9 +163,14 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
       formData.append('whatsapp', data.whatsapp);
       formData.append('website', data.website || '');
 
-      // Use the selected provider type from the form data
-      const selectedProviderTypeId =
-        data.serviceProviderTypeId || provider.serviceProviderTypeId || '';
+      // Handle multiple provider types
+      const selectedProviderTypeIds = data.serviceProviderTypeIds || [];
+      selectedProviderTypeIds.forEach(typeId => {
+        formData.append('serviceProviderTypeIds', typeId);
+      });
+      
+      // Also include the legacy single type for backward compatibility
+      const selectedProviderTypeId = data.serviceProviderTypeId || provider.serviceProviderTypeId || '';
       formData.append('serviceProviderTypeId', selectedProviderTypeId);
 
       // Add languages
@@ -186,6 +197,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
           email: data.email,
           whatsapp: data.whatsapp,
           serviceProviderTypeId: selectedProviderTypeId,
+          serviceProviderTypeIds: selectedProviderTypeIds,
           showPrice: data.showPrice,
         };
 
@@ -253,56 +265,40 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
         >
           {/* Provider Type Card */}
           <Card className="mb-8 p-6">
-            <h2 className="text-2xl font-bold">Provider Type</h2>
+            <h2 className="text-2xl font-bold">Provider Types</h2>
             <p className="text-sm text-muted-foreground">
-              Specialization and category of the provider.
+              Select your medical profession or specialties.
             </p>
             <Separator className="my-4" />
 
             <div className="space-y-6">
-              <h3 className="mb-2 font-medium">Current Type</h3>
-              <p className="mb-4">{provider?.serviceProviderType?.name || 'Not specified'}</p>
-
-              <FormField
-                control={methods.control}
-                name="serviceProviderTypeId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Change Provider Type</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        // Explicitly update the form value
-                        methods.setValue('serviceProviderTypeId', value);
-                      }}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select provider type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {isLoadingProviderTypes ? (
-                          <SelectItem value="loading" disabled>
-                            Loading provider types...
-                          </SelectItem>
-                        ) : providerTypes?.length ? (
-                          providerTypes.map((type) => (
-                            <SelectItem key={type.id} value={type.id}>
-                              {type.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="none" disabled>
-                            No provider types available
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
+              <h3 className="mb-2 font-medium">Current Types</h3>
+              <div className="mb-4">
+                {provider?.typeAssignments?.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {provider.typeAssignments.map(assignment => (
+                      <Badge key={assignment.serviceProviderTypeId} variant="secondary">
+                        {assignment.serviceProviderType.name}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : provider?.serviceProviderType ? (
+                  <Badge variant="secondary">
+                    {provider.serviceProviderType.name}
+                  </Badge>
+                ) : (
+                  <p className="text-muted-foreground">Not specified</p>
                 )}
+              </div>
+
+              <ProviderTypeSection
+                providerTypes={providerTypes || []}
+                selectedProviderTypes={providerTypes?.filter(type => 
+                  methods.watch('serviceProviderTypeIds')?.includes(type.id)
+                ) || []}
+                totalRequirementsCount={0}
+                totalServicesCount={0}
+                multipleSelection={true}
               />
             </div>
           </Card>
