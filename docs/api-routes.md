@@ -67,7 +67,7 @@ Most API endpoints require authentication using NextAuth.js sessions. The sessio
 
 **Endpoint:** `POST /api/providers`
 
-**Description:** Creates a new service provider profile.
+**Description:** Creates a new service provider profile with support for multiple provider types.
 
 **Authentication:** Required (authenticated user)
 
@@ -84,7 +84,9 @@ Most API endpoints require authentication using NextAuth.js sessions. The sessio
     image?: string; // URL to uploaded image
     languages?: string[];
   };
-  serviceProviderTypeId: string;
+  // NEW: Support for multiple provider types
+  serviceProviderTypeIds: string[]; // Array of provider type IDs
+  serviceProviderTypeId?: string; // Legacy single type (backward compatibility)
   services?: {
     availableServices: string[];
     serviceConfigs?: {
@@ -136,6 +138,9 @@ const response = await fetch('/api/providers', {
       whatsapp: '+1234567890',
       languages: ['english', 'spanish'],
     },
+    // Multiple provider types (NEW)
+    serviceProviderTypeIds: ['gp-type-id', 'psych-type-id'],
+    // OR single type (legacy compatibility)
     serviceProviderTypeId: 'provider-type-id',
     services: {
       availableServices: ['service-id-1', 'service-id-2'],
@@ -156,6 +161,87 @@ const response = await fetch('/api/providers', {
 - `404`: User not found
 - `400`: Invalid request data
 - `500`: Server error
+
+### Search Providers
+
+**Endpoint:** `GET /api/providers`
+
+**Description:** Search and filter providers with enhanced support for multiple provider types.
+
+**Authentication:** Optional (public endpoint)
+
+**Query Parameters:**
+
+- `search`: Text search across provider name, email, and bio (optional)
+- `typeIds`: Comma-separated list of provider type IDs for filtering (optional)
+- `status`: Provider status filter (default: 'APPROVED')
+- `limit`: Number of results per page (default: 50, max: 100)
+- `offset`: Number of results to skip for pagination (default: 0)
+- `includeServices`: Include provider services in response (default: true)
+- `includeRequirements`: Include requirement submissions in response (default: false)
+
+**Response:**
+
+```typescript
+{
+  providers: Array<{
+    id: string;
+    name: string;
+    bio: string;
+    email: string;
+    status: string;
+    // NEW: Multiple type assignments
+    typeAssignments: Array<{
+      id: string;
+      serviceProviderTypeId: string;
+      serviceProviderType: {
+        id: string;
+        name: string;
+        description: string;
+      };
+      createdAt: string;
+    }>;
+    // NEW: Convenience array of all provider types
+    serviceProviderTypes: Array<{
+      id: string;
+      name: string;
+    }>;
+    // Legacy compatibility
+    serviceProviderType?: {
+      id: string;
+      name: string;
+    };
+    services?: Array<{
+      id: string;
+      name: string;
+      defaultPrice: number;
+      defaultDuration: number;
+    }>;
+  }>;
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+}
+```
+
+**Examples:**
+
+```typescript
+// Search by text
+GET /api/providers?search=Dr&limit=10
+
+// Filter by single provider type
+GET /api/providers?typeIds=gp-type-id
+
+// Filter by multiple provider types (OR logic)
+GET /api/providers?typeIds=gp-type-id,psych-type-id
+
+// Complex search
+GET /api/providers?search=specialist&typeIds=psych-type-id&status=APPROVED&limit=20
+```
 
 ### Get Provider Services
 
