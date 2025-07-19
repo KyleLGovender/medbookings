@@ -153,7 +153,14 @@ When working with task lists, the AI must:
    - **Default Mode:** After implementing a sub‑task, commit changes, update the file, and then pause for user approval
    - **YOLO Mode:** After implementing a sub‑task, commit changes, update the file, and immediately proceed to the next task without waiting for approval
 
-4. **PR Creation:**
+4. **MCP Tool Usage:**
+   - **PostgreSQL Server** (`mcp__postgres-server__query`): Use for database queries, constraint verification, data integrity checks
+   - **Filesystem Server** (`mcp__filesystem-server__*`): Use for file operations when available, preferred over traditional file tools
+   - **IDE Integration** (`mcp__ide__*`): Use for getting diagnostics and executing code when available
+   - **Preference**: Always prefer MCP tools over traditional command-line equivalents when available
+   - **Database Verification**: Use PostgreSQL MCP server to verify migrations, constraints, and data integrity instead of bash commands
+
+5. **PR Creation:**
    - When all tasks in a group are complete, create comprehensive PR
    - Include detailed description, test plan, and file change summary
    - Reference original task documentation
