@@ -3,7 +3,7 @@
  */
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { serializeServiceProvider } from './helper';
+import { serializeProvider } from './helper';
 import {
   generateSearchCacheKey,
   generateProvidersByTypeCacheKey,
@@ -34,7 +34,7 @@ interface ProviderSearchResult {
 
 /**
  * Optimized provider search that efficiently joins through assignment table
- * Uses the new indexes on ServiceProviderTypeAssignment for fast filtering
+ * Uses the new indexes on ProviderTypeAssignment for fast filtering
  */
 export async function searchProviders(options: ProviderSearchOptions): Promise<ProviderSearchResult> {
   const {
@@ -71,7 +71,7 @@ async function performProviderSearch(options: ProviderSearchOptions): Promise<Pr
   } = options;
 
   // Build optimized where clause
-  const where: Prisma.ServiceProviderWhereInput = {
+  const where: Prisma.ProviderWhereInput = {
     status: status as any,
   };
 
@@ -105,7 +105,7 @@ async function performProviderSearch(options: ProviderSearchOptions): Promise<Pr
   if (typeIds.length > 0) {
     where.typeAssignments = {
       some: {
-        serviceProviderTypeId: {
+        providerTypeId: {
           in: typeIds,
         },
       },
@@ -113,7 +113,7 @@ async function performProviderSearch(options: ProviderSearchOptions): Promise<Pr
   }
 
   // Build optimized include clause based on requirements
-  const include: Prisma.ServiceProviderInclude = {
+  const include: Prisma.ProviderInclude = {
     user: {
       select: {
         email: true,
@@ -121,7 +121,7 @@ async function performProviderSearch(options: ProviderSearchOptions): Promise<Pr
     },
     typeAssignments: {
       include: {
-        serviceProviderType: {
+        providerType: {
           select: {
             id: true,
             name: true,
@@ -148,7 +148,7 @@ async function performProviderSearch(options: ProviderSearchOptions): Promise<Pr
 
   // Execute optimized query with pagination
   const [providers, total] = await Promise.all([
-    prisma.serviceProvider.findMany({
+    prisma.provider.findMany({
       where,
       include,
       orderBy: {
@@ -157,11 +157,11 @@ async function performProviderSearch(options: ProviderSearchOptions): Promise<Pr
       take: limit,
       skip: offset,
     }),
-    prisma.serviceProvider.count({ where }),
+    prisma.provider.count({ where }),
   ]);
 
   // Serialize providers for JSON response
-  const serializedProviders = providers.map(provider => serializeServiceProvider(provider));
+  const serializedProviders = providers.map(provider => serializeProvider(provider));
 
   return {
     providers: serializedProviders,
@@ -190,12 +190,12 @@ export async function getProvidersByType(typeId: string, limit = 10): Promise<an
  * Internal function that performs the actual lookup without caching
  */
 async function performGetProvidersByType(typeId: string, limit: number): Promise<any[]> {
-  const providers = await prisma.serviceProvider.findMany({
+  const providers = await prisma.provider.findMany({
     where: {
       status: 'APPROVED',
       typeAssignments: {
         some: {
-          serviceProviderTypeId: typeId,
+          providerTypeId: typeId,
         },
       },
     },
@@ -207,7 +207,7 @@ async function performGetProvidersByType(typeId: string, limit: number): Promise
       },
       typeAssignments: {
         include: {
-          serviceProviderType: {
+          providerType: {
             select: {
               id: true,
               name: true,
@@ -222,7 +222,7 @@ async function performGetProvidersByType(typeId: string, limit: number): Promise
     take: limit,
   });
 
-  return providers.map(provider => serializeServiceProvider(provider));
+  return providers.map(provider => serializeProvider(provider));
 }
 
 /**
@@ -239,21 +239,21 @@ export async function getProviderTypeStats(): Promise<Array<{ typeId: string; ty
  * Internal function that performs the actual stats calculation without caching
  */
 async function performGetProviderTypeStats(): Promise<Array<{ typeId: string; typeName: string; count: number }>> {
-  const stats = await prisma.serviceProviderTypeAssignment.groupBy({
-    by: ['serviceProviderTypeId'],
+  const stats = await prisma.providerTypeAssignment.groupBy({
+    by: ['providerTypeId'],
     where: {
-      serviceProvider: {
+      provider: {
         status: 'APPROVED',
       },
     },
     _count: {
-      serviceProviderId: true,
+      providerId: true,
     },
   });
 
   // Get type names in a separate optimized query
-  const typeIds = stats.map(stat => stat.serviceProviderTypeId);
-  const types = await prisma.serviceProviderType.findMany({
+  const typeIds = stats.map(stat => stat.providerTypeId);
+  const types = await prisma.providerType.findMany({
     where: {
       id: {
         in: typeIds,
@@ -269,9 +269,9 @@ async function performGetProviderTypeStats(): Promise<Array<{ typeId: string; ty
   const typeMap = new Map(types.map(type => [type.id, type.name]));
   
   return stats.map(stat => ({
-    typeId: stat.serviceProviderTypeId,
-    typeName: typeMap.get(stat.serviceProviderTypeId) || 'Unknown',
-    count: stat._count.serviceProviderId,
+    typeId: stat.providerTypeId,
+    typeName: typeMap.get(stat.providerTypeId) || 'Unknown',
+    count: stat._count.providerId,
   }));
 }
 
@@ -297,18 +297,18 @@ export async function searchProvidersWithAllTypes(
   } = options;
 
   // Use a more complex query for AND logic (provider must have ALL specified types)
-  const providerIds = await prisma.serviceProviderTypeAssignment.groupBy({
-    by: ['serviceProviderId'],
+  const providerIds = await prisma.providerTypeAssignment.groupBy({
+    by: ['providerId'],
     where: {
-      serviceProviderTypeId: {
+      providerTypeId: {
         in: typeIds,
       },
-      serviceProvider: {
+      provider: {
         status: status as any,
       },
     },
     having: {
-      serviceProviderId: {
+      providerId: {
         _count: {
           equals: typeIds.length, // Must have assignments for ALL types
         },
@@ -316,7 +316,7 @@ export async function searchProvidersWithAllTypes(
     },
   });
 
-  const matchingProviderIds = providerIds.map(group => group.serviceProviderId);
+  const matchingProviderIds = providerIds.map(group => group.providerId);
 
   if (matchingProviderIds.length === 0) {
     return {

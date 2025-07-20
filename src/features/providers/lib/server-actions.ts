@@ -4,11 +4,11 @@ import { revalidatePath } from 'next/cache';
 
 import {
   approveRequirement,
-  approveServiceProvider,
+  approveProvider,
   checkAllRequiredRequirementsApproved,
   getProviderRequirementSubmissions,
   rejectRequirement,
-  rejectServiceProvider,
+  rejectProvider,
 } from './actions/administer-provider';
 
 // Server action for approving a requirement
@@ -21,7 +21,7 @@ export async function approveRequirementAction(
   if (result.success) {
     // Revalidate relevant paths
     revalidatePath('/admin/providers');
-    revalidatePath(`/admin/providers/${result.data?.serviceProviderId}`);
+    revalidatePath(`/admin/providers/${result.data?.providerId}`);
   }
 
   return result;
@@ -37,47 +37,51 @@ export async function rejectRequirementAction(
   if (result.success) {
     // Revalidate relevant paths
     revalidatePath('/admin/providers');
-    revalidatePath(`/admin/providers/${result.data?.serviceProviderId}`);
+    revalidatePath(`/admin/providers/${result.data?.providerId}`);
   }
 
   return result;
 }
 
 // Server action for checking if all required requirements are approved
-export async function checkAllRequiredRequirementsApprovedAction(serviceProviderId: string) {
-  return await checkAllRequiredRequirementsApproved(serviceProviderId);
+export async function checkAllRequiredRequirementsApprovedAction(providerId: string) {
+  return await checkAllRequiredRequirementsApproved(providerId);
 }
 
 // Server action for getting provider requirement submissions
-export async function getProviderRequirementSubmissionsAction(serviceProviderId: string) {
-  return await getProviderRequirementSubmissions(serviceProviderId);
+export async function getProviderRequirementSubmissionsAction(providerId: string) {
+  return await getProviderRequirementSubmissions(providerId);
 }
 
-// Server action for approving a service provider
-export async function approveServiceProviderAction(serviceProviderId: string) {
-  const result = await approveServiceProvider(serviceProviderId);
+// Server action for approving a provider
+export async function approveProviderAction(providerId: string) {
+  const result = await approveProvider(providerId);
 
   if (result.success) {
     // Revalidate relevant paths
     revalidatePath('/admin/providers');
-    revalidatePath(`/admin/providers/${serviceProviderId}`);
+    revalidatePath(`/admin/providers/${providerId}`);
   }
 
   return result;
 }
 
-// Server action for rejecting a service provider
-export async function rejectServiceProviderAction(
-  serviceProviderId: string,
+// Server action for rejecting a provider
+export async function rejectProviderAction(
+  providerId: string,
   rejectionReason: string
 ) {
-  const result = await rejectServiceProvider(serviceProviderId, rejectionReason);
+  const result = await rejectProvider(providerId, rejectionReason);
 
   if (result.success) {
     // Revalidate relevant paths
     revalidatePath('/admin/providers');
-    revalidatePath(`/admin/providers/${serviceProviderId}`);
+    revalidatePath(`/admin/providers/${providerId}`);
   }
 
   return result;
 }
+
+// Backward compatibility exports
+export const approveServiceProviderAction = approveProviderAction;
+export const rejectServiceProviderAction = rejectProviderAction;

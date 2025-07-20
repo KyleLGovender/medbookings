@@ -4,27 +4,27 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   approveRequirementAction,
-  approveServiceProviderAction,
+  approveProviderAction,
   checkAllRequiredRequirementsApprovedAction,
   getProviderRequirementSubmissionsAction,
   rejectRequirementAction,
-  rejectServiceProviderAction,
+  rejectProviderAction,
 } from '../lib/server-actions';
 
 /**
  * Hook for fetching provider requirement submissions (admin view)
- * @param serviceProviderId The ID of the service provider
+ * @param providerId The ID of the provider
  * @returns Query result with requirement submissions
  */
-export function useProviderRequirementSubmissions(serviceProviderId: string | undefined) {
+export function useProviderRequirementSubmissions(providerId: string | undefined) {
   return useQuery({
-    queryKey: ['admin', 'provider-requirement-submissions', serviceProviderId],
+    queryKey: ['admin', 'provider-requirement-submissions', providerId],
     queryFn: async () => {
-      if (!serviceProviderId) {
-        throw new Error('Service Provider ID is required');
+      if (!providerId) {
+        throw new Error('Provider ID is required');
       }
 
-      const result = await getProviderRequirementSubmissionsAction(serviceProviderId);
+      const result = await getProviderRequirementSubmissionsAction(providerId);
 
       if (!result.success) {
         throw new Error(result.error);
@@ -32,24 +32,24 @@ export function useProviderRequirementSubmissions(serviceProviderId: string | un
 
       return result.data;
     },
-    enabled: !!serviceProviderId,
+    enabled: !!providerId,
   });
 }
 
 /**
  * Hook for checking if all required requirements are approved
- * @param serviceProviderId The ID of the service provider
+ * @param providerId The ID of the provider
  * @returns Query result with approval status
  */
-export function useRequiredRequirementsStatus(serviceProviderId: string | undefined) {
+export function useRequiredRequirementsStatus(providerId: string | undefined) {
   return useQuery({
-    queryKey: ['admin', 'required-requirements-status', serviceProviderId],
+    queryKey: ['admin', 'required-requirements-status', providerId],
     queryFn: async () => {
-      if (!serviceProviderId) {
-        throw new Error('Service Provider ID is required');
+      if (!providerId) {
+        throw new Error('Provider ID is required');
       }
 
-      const result = await checkAllRequiredRequirementsApprovedAction(serviceProviderId);
+      const result = await checkAllRequiredRequirementsApprovedAction(providerId);
 
       if (!result.success) {
         throw new Error(result.error);
@@ -57,7 +57,7 @@ export function useRequiredRequirementsStatus(serviceProviderId: string | undefi
 
       return result.data;
     },
-    enabled: !!serviceProviderId,
+    enabled: !!providerId,
   });
 }
 
@@ -85,13 +85,13 @@ export function useApproveRequirement(options?: {
     onSuccess: (data, variables) => {
       // Invalidate and refetch relevant queries
       queryClient.invalidateQueries({
-        queryKey: ['admin', 'provider-requirement-submissions', data.serviceProviderId],
+        queryKey: ['admin', 'provider-requirement-submissions', data.providerId],
       });
       queryClient.invalidateQueries({
-        queryKey: ['admin', 'required-requirements-status', data.serviceProviderId],
+        queryKey: ['admin', 'required-requirements-status', data.providerId],
       });
       queryClient.invalidateQueries({ queryKey: ['admin', 'providers'] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'provider', data.serviceProviderId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'provider', data.providerId] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'provider-counts'] });
 
       // Call the user-provided onSuccess callback if it exists
@@ -132,13 +132,13 @@ export function useRejectRequirement(options?: {
     onSuccess: (data, variables) => {
       // Invalidate and refetch relevant queries
       queryClient.invalidateQueries({
-        queryKey: ['admin', 'provider-requirement-submissions', data.serviceProviderId],
+        queryKey: ['admin', 'provider-requirement-submissions', data.providerId],
       });
       queryClient.invalidateQueries({
-        queryKey: ['admin', 'required-requirements-status', data.serviceProviderId],
+        queryKey: ['admin', 'required-requirements-status', data.providerId],
       });
       queryClient.invalidateQueries({ queryKey: ['admin', 'providers'] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'provider', data.serviceProviderId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'provider', data.providerId] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'provider-counts'] });
 
       // Call the user-provided onSuccess callback if it exists
@@ -156,19 +156,19 @@ export function useRejectRequirement(options?: {
 }
 
 /**
- * Hook for approving a service provider
+ * Hook for approving a provider
  * @param options Optional mutation options including onSuccess and onError callbacks
  * @returns Mutation object for approving a provider
  */
-export function useApproveServiceProvider(options?: {
+export function useApproveProvider(options?: {
   onSuccess?: (data: any) => void;
   onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
   return useMutation<any, Error, string>({
-    mutationFn: async (serviceProviderId: string) => {
-      const result = await approveServiceProviderAction(serviceProviderId);
+    mutationFn: async (providerId: string) => {
+      const result = await approveProviderAction(providerId);
 
       if (!result.success) {
         throw new Error(result.error);
@@ -176,15 +176,15 @@ export function useApproveServiceProvider(options?: {
 
       return result.data;
     },
-    onSuccess: (data, serviceProviderId) => {
+    onSuccess: (data, providerId) => {
       // Invalidate and refetch relevant queries
       queryClient.invalidateQueries({ queryKey: ['admin', 'providers'] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'provider', serviceProviderId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'provider', providerId] });
       queryClient.invalidateQueries({
-        queryKey: ['admin', 'required-requirements-status', serviceProviderId],
+        queryKey: ['admin', 'required-requirements-status', providerId],
       });
       queryClient.invalidateQueries({
-        queryKey: ['admin', 'provider-requirement-submissions', serviceProviderId],
+        queryKey: ['admin', 'provider-requirement-submissions', providerId],
       });
       queryClient.invalidateQueries({ queryKey: ['admin', 'provider-counts'] });
 
@@ -203,19 +203,19 @@ export function useApproveServiceProvider(options?: {
 }
 
 /**
- * Hook for rejecting a service provider
+ * Hook for rejecting a provider
  * @param options Optional mutation options including onSuccess and onError callbacks
  * @returns Mutation object for rejecting a provider
  */
-export function useRejectServiceProvider(options?: {
+export function useRejectProvider(options?: {
   onSuccess?: (data: any) => void;
   onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
-  return useMutation<any, Error, { serviceProviderId: string; rejectionReason: string }>({
-    mutationFn: async ({ serviceProviderId, rejectionReason }) => {
-      const result = await rejectServiceProviderAction(serviceProviderId, rejectionReason);
+  return useMutation<any, Error, { providerId: string; rejectionReason: string }>({
+    mutationFn: async ({ providerId, rejectionReason }) => {
+      const result = await rejectProviderAction(providerId, rejectionReason);
 
       if (!result.success) {
         throw new Error(result.error);
@@ -227,13 +227,13 @@ export function useRejectServiceProvider(options?: {
       // Invalidate and refetch relevant queries
       queryClient.invalidateQueries({ queryKey: ['admin', 'providers'] });
       queryClient.invalidateQueries({
-        queryKey: ['admin', 'provider', variables.serviceProviderId],
+        queryKey: ['admin', 'provider', variables.providerId],
       });
       queryClient.invalidateQueries({
-        queryKey: ['admin', 'required-requirements-status', variables.serviceProviderId],
+        queryKey: ['admin', 'required-requirements-status', variables.providerId],
       });
       queryClient.invalidateQueries({
-        queryKey: ['admin', 'provider-requirement-submissions', variables.serviceProviderId],
+        queryKey: ['admin', 'provider-requirement-submissions', variables.providerId],
       });
       queryClient.invalidateQueries({ queryKey: ['admin', 'provider-counts'] });
 
@@ -250,3 +250,8 @@ export function useRejectServiceProvider(options?: {
     },
   });
 }
+
+// Backward compatibility exports for hooks
+export const useApproveServiceProvider = useApproveProvider;
+export const useRejectServiceProvider = useRejectProvider;
+export const useSuspendServiceProvider = useSuspendProvider;

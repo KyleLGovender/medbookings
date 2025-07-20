@@ -1,6 +1,6 @@
 'use client';
 
-import { ServiceProviderStatus } from '@prisma/client';
+import { ProviderStatus } from '@prisma/client';
 import { useQuery } from '@tanstack/react-query';
 
 /**
@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
  * @param status Optional status filter for providers
  * @returns Query result with providers list
  */
-export function useAdminProviders(status?: ServiceProviderStatus) {
+export function useAdminProviders(status?: ProviderStatus) {
   return useQuery({
     queryKey: ['admin', 'providers', status],
     queryFn: async () => {

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getServerSession } from 'next-auth';
 
-import { registerServiceProvider } from '@/features/providers/lib/actions/register-provider';
-import { serializeServiceProvider } from '@/features/providers/lib/helper';
+import { registerProvider } from '@/features/providers/lib/actions/register-provider';
+import { serializeProvider } from '@/features/providers/lib/helper';
 import { searchProviders } from '@/features/providers/lib/search';
 import { prisma } from '@/lib/prisma';
 
@@ -79,13 +79,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Add provider types (support multiple types)
-    if (data.serviceProviderTypeIds && Array.isArray(data.serviceProviderTypeIds) && data.serviceProviderTypeIds.length > 0) {
-      data.serviceProviderTypeIds.forEach((typeId: string) => {
-        formData.append('serviceProviderTypeIds', typeId);
+    if (data.providerTypeIds && Array.isArray(data.providerTypeIds) && data.providerTypeIds.length > 0) {
+      data.providerTypeIds.forEach((typeId: string) => {
+        formData.append('providerTypeIds', typeId);
       });
-    } else if (data.serviceProviderTypeId) {
+    } else if (data.providerTypeId) {
       // Backward compatibility for single type
-      formData.append('serviceProviderTypeIds', data.serviceProviderTypeId);
+      formData.append('providerTypeIds', data.providerTypeId);
     } else {
       return NextResponse.json({ error: 'At least one provider type is required' }, { status: 400 });
     }
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use the service layer function
-    const result = await registerServiceProvider({}, formData);
+    const result = await registerProvider({}, formData);
 
     if (result.success) {
       return NextResponse.json({

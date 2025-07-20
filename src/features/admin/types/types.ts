@@ -63,17 +63,17 @@ export interface ServerActionResult<T = void> {
   error?: string;
 }
 
-export type ApproveServiceProviderAction = (
-  serviceProviderId: string
+export type ApproveProviderAction = (
+  providerId: string
 ) => Promise<ServerActionResult>;
-export type SuspendServiceProviderAction = (
-  serviceProviderId: string
+export type SuspendProviderAction = (
+  providerId: string
 ) => Promise<ServerActionResult>;
-export type DeleteServiceProviderAction = (
-  serviceProviderId: string
+export type DeleteProviderAction = (
+  providerId: string
 ) => Promise<ServerActionResult>;
-export type RejectServiceProviderAction = (
-  serviceProviderId: string,
+export type RejectProviderAction = (
+  providerId: string,
   reason: string
 ) => Promise<ServerActionResult>;
 export type ApproveOrganizationAction = (organizationId: string) => Promise<ServerActionResult>;
@@ -178,7 +178,7 @@ export type AdminOrganizationSelect = Prisma.OrganizationGetPayload<{
     };
     providerConnections: {
       include: {
-        serviceProvider: {
+        provider: {
           include: {
             user: {
               select: {
@@ -188,7 +188,7 @@ export type AdminOrganizationSelect = Prisma.OrganizationGetPayload<{
                 phone: true;
               };
             };
-            serviceProviderType: {
+            providerType: {
               select: {
                 name: true;
               };
@@ -207,7 +207,7 @@ export type AdminOrganizationSelect = Prisma.OrganizationGetPayload<{
   };
 }>;
 
-export type AdminProviderSelect = Prisma.ServiceProviderGetPayload<{
+export type AdminProviderSelect = Prisma.ProviderGetPayload<{
   include: {
     user: {
       select: {
@@ -218,7 +218,7 @@ export type AdminProviderSelect = Prisma.ServiceProviderGetPayload<{
         whatsapp: true;
       };
     };
-    serviceProviderType: {
+    providerType: {
       select: {
         id: true;
         name: true;
@@ -258,7 +258,7 @@ export type AdminProviderSelect = Prisma.ServiceProviderGetPayload<{
   };
 }>;
 
-export type AdminProviderListSelect = Prisma.ServiceProviderGetPayload<{
+export type AdminProviderListSelect = Prisma.ProviderGetPayload<{
   include: {
     user: {
       select: {
@@ -267,7 +267,7 @@ export type AdminProviderListSelect = Prisma.ServiceProviderGetPayload<{
         email: true;
       };
     };
-    serviceProviderType: {
+    providerType: {
       select: {
         name: true;
       };
@@ -334,7 +334,7 @@ export interface OrganizationLocation {
 export interface OrganizationProviderConnection {
   id: string;
   createdAt: string;
-  serviceProvider: {
+  provider: {
     status: string;
     user: {
       id: string;
@@ -342,7 +342,7 @@ export interface OrganizationProviderConnection {
       email: string;
       phone?: string;
     };
-    serviceProviderType: {
+    providerType: {
       name: string;
     };
   };

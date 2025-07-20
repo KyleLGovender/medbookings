@@ -5,7 +5,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function approveServiceProvider(serviceProviderId: string) {
+export async function approveProvider(providerId: string) {
   try {
     // Get the current user's session
     const session = await getServerSession(authOptions);
@@ -16,7 +16,7 @@ export async function approveServiceProvider(serviceProviderId: string) {
     }
 
     // Check if all required requirements are approved
-    const requirementCheck = await checkAllRequiredRequirementsApproved(serviceProviderId);
+    const requirementCheck = await checkAllRequiredRequirementsApproved(providerId);
     if (!requirementCheck.success) {
       return { success: false, error: requirementCheck.error };
     }
@@ -41,9 +41,9 @@ export async function approveServiceProvider(serviceProviderId: string) {
       };
     }
 
-    // Update service provider status
-    const updatedProvider = await prisma.serviceProvider.update({
-      where: { id: serviceProviderId },
+    // Update provider status
+    const updatedProvider = await prisma.provider.update({
+      where: { id: providerId },
       data: {
         status: 'APPROVED',
         approvedAt: new Date(),
@@ -58,9 +58,9 @@ export async function approveServiceProvider(serviceProviderId: string) {
 
     // Console log for future email integration
     console.log('PROVIDER_APPROVED:', {
-      serviceProviderId,
-      serviceProviderName: updatedProvider.name,
-      serviceProviderEmail: updatedProvider.user.email,
+      providerId,
+      providerName: updatedProvider.name,
+      providerEmail: updatedProvider.user.email,
       adminId: session.user.id,
       adminEmail: session.user.email,
       adminName: session.user.name,
@@ -71,12 +71,12 @@ export async function approveServiceProvider(serviceProviderId: string) {
 
     return { success: true, data: updatedProvider };
   } catch (error) {
-    console.error('Error approving service provider:', error);
-    return { success: false, error: 'Failed to approve service provider' };
+    console.error('Error approving provider:', error);
+    return { success: false, error: 'Failed to approve provider' };
   }
 }
 
-export async function rejectServiceProvider(serviceProviderId: string, rejectionReason: string) {
+export async function rejectProvider(providerId: string, rejectionReason: string) {
   try {
     // Get the current user's session
     const session = await getServerSession(authOptions);
@@ -90,9 +90,9 @@ export async function rejectServiceProvider(serviceProviderId: string, rejection
       return { success: false, error: 'Rejection reason is required' };
     }
 
-    // Update service provider status
-    const updatedProvider = await prisma.serviceProvider.update({
-      where: { id: serviceProviderId },
+    // Update provider status
+    const updatedProvider = await prisma.provider.update({
+      where: { id: providerId },
       data: {
         status: 'REJECTED',
         rejectedAt: new Date(),
@@ -107,9 +107,9 @@ export async function rejectServiceProvider(serviceProviderId: string, rejection
 
     // Console log for future email integration
     console.log('PROVIDER_REJECTED:', {
-      serviceProviderId,
-      serviceProviderName: updatedProvider.name,
-      serviceProviderEmail: updatedProvider.user.email,
+      providerId,
+      providerName: updatedProvider.name,
+      providerEmail: updatedProvider.user.email,
       adminId: session.user.id,
       adminEmail: session.user.email,
       adminName: session.user.name,
@@ -119,12 +119,12 @@ export async function rejectServiceProvider(serviceProviderId: string, rejection
 
     return { success: true, data: updatedProvider };
   } catch (error) {
-    console.error('Error rejecting service provider:', error);
-    return { success: false, error: 'Failed to reject service provider' };
+    console.error('Error rejecting provider:', error);
+    return { success: false, error: 'Failed to reject provider' };
   }
 }
 
-export async function suspendServiceProvider(serviceProviderId: string) {
+export async function suspendProvider(providerId: string) {
   try {
     // Get the current user's session
     const session = await getServerSession(authOptions);
@@ -134,9 +134,9 @@ export async function suspendServiceProvider(serviceProviderId: string) {
       return { success: false, error: 'Unauthorized: Admin access required' };
     }
 
-    // Update service provider status
-    const updatedProvider = await prisma.serviceProvider.update({
-      where: { id: serviceProviderId },
+    // Update provider status
+    const updatedProvider = await prisma.provider.update({
+      where: { id: providerId },
       data: {
         status: 'SUSPENDED',
       },
@@ -144,8 +144,8 @@ export async function suspendServiceProvider(serviceProviderId: string) {
 
     return { success: true, data: updatedProvider };
   } catch (error) {
-    console.error('Error suspending service provider:', error);
-    return { success: false, error: 'Failed to suspend service provider' };
+    console.error('Error suspending provider:', error);
+    return { success: false, error: 'Failed to suspend provider' };
   }
 }
 
@@ -172,7 +172,7 @@ export async function approveRequirement(requirementSubmissionId: string, adminN
       },
       include: {
         requirementType: true,
-        serviceProvider: {
+        provider: {
           include: {
             user: true,
           },
@@ -185,9 +185,9 @@ export async function approveRequirement(requirementSubmissionId: string, adminN
       requirementSubmissionId,
       requirementTypeId: updatedSubmission.requirementTypeId,
       requirementTypeName: updatedSubmission.requirementType.name,
-      serviceProviderId: updatedSubmission.serviceProviderId,
-      serviceProviderName: updatedSubmission.serviceProvider.name,
-      serviceProviderEmail: updatedSubmission.serviceProvider.user.email,
+      providerId: updatedSubmission.providerId,
+      providerName: updatedSubmission.provider.name,
+      providerEmail: updatedSubmission.provider.user.email,
       adminId: session.user.id,
       adminEmail: session.user.email,
       adminName: session.user.name,
@@ -227,7 +227,7 @@ export async function rejectRequirement(requirementSubmissionId: string, rejecti
       },
       include: {
         requirementType: true,
-        serviceProvider: {
+        provider: {
           include: {
             user: true,
           },
@@ -240,9 +240,9 @@ export async function rejectRequirement(requirementSubmissionId: string, rejecti
       requirementSubmissionId,
       requirementTypeId: updatedSubmission.requirementTypeId,
       requirementTypeName: updatedSubmission.requirementType.name,
-      serviceProviderId: updatedSubmission.serviceProviderId,
-      serviceProviderName: updatedSubmission.serviceProvider.name,
-      serviceProviderEmail: updatedSubmission.serviceProvider.user.email,
+      providerId: updatedSubmission.providerId,
+      providerName: updatedSubmission.provider.name,
+      providerEmail: updatedSubmission.provider.user.email,
       adminId: session.user.id,
       adminEmail: session.user.email,
       adminName: session.user.name,
@@ -257,15 +257,15 @@ export async function rejectRequirement(requirementSubmissionId: string, rejecti
   }
 }
 
-export async function checkAllRequiredRequirementsApproved(serviceProviderId: string) {
+export async function checkAllRequiredRequirementsApproved(providerId: string) {
   try {
-    // Get the service provider with all their assigned types and requirements
-    const serviceProvider = await prisma.serviceProvider.findUnique({
-      where: { id: serviceProviderId },
+    // Get the provider with all their assigned types and requirements
+    const provider = await prisma.provider.findUnique({
+      where: { id: providerId },
       include: {
         typeAssignments: {
           include: {
-            serviceProviderType: {
+            providerType: {
               include: {
                 requirements: {
                   where: { isRequired: true },
@@ -287,13 +287,13 @@ export async function checkAllRequiredRequirementsApproved(serviceProviderId: st
       },
     });
 
-    if (!serviceProvider) {
-      return { success: false, error: 'Service provider not found' };
+    if (!provider) {
+      return { success: false, error: 'Provider not found' };
     }
 
     // Collect all required requirements from ALL assigned provider types
-    const allRequiredRequirements = serviceProvider.typeAssignments.flatMap(
-      (assignment) => assignment.serviceProviderType.requirements
+    const allRequiredRequirements = provider.typeAssignments.flatMap(
+      (assignment) => assignment.providerType.requirements
     );
 
     // Remove duplicates (same requirement may be required by multiple types)
@@ -302,7 +302,7 @@ export async function checkAllRequiredRequirementsApproved(serviceProviderId: st
         array.findIndex(r => r.id === requirement.id) === index
     );
 
-    const approvedSubmissions = serviceProvider.requirementSubmissions.filter(
+    const approvedSubmissions = provider.requirementSubmissions.filter(
       (submission) => submission.status === 'APPROVED'
     );
 
@@ -317,10 +317,10 @@ export async function checkAllRequiredRequirementsApproved(serviceProviderId: st
     );
 
     // Group pending requirements by provider type for better error messaging
-    const pendingByType = serviceProvider.typeAssignments.map(assignment => ({
-      typeName: assignment.serviceProviderType.name,
-      typeId: assignment.serviceProviderType.id,
-      pendingRequirements: assignment.serviceProviderType.requirements.filter(
+    const pendingByType = provider.typeAssignments.map(assignment => ({
+      typeName: assignment.providerType.name,
+      typeId: assignment.providerType.id,
+      pendingRequirements: assignment.providerType.requirements.filter(
         requirement => !approvedSubmissions.some(submission => submission.requirementTypeId === requirement.id)
       ),
     })).filter(typeInfo => typeInfo.pendingRequirements.length > 0);
@@ -331,7 +331,7 @@ export async function checkAllRequiredRequirementsApproved(serviceProviderId: st
         allRequiredApproved,
         totalRequired: uniqueRequiredRequirements.length,
         totalApproved: approvedSubmissions.length,
-        assignedTypes: serviceProvider.typeAssignments.length,
+        assignedTypes: provider.typeAssignments.length,
         pendingRequirements: pendingRequirements.map((req) => ({
           id: req.id,
           name: req.name,
@@ -355,7 +355,7 @@ export async function checkAllRequiredRequirementsApproved(serviceProviderId: st
   }
 }
 
-export async function getProviderRequirementSubmissions(serviceProviderId: string) {
+export async function getProviderRequirementSubmissions(providerId: string) {
   try {
     // Get the current user's session
     const session = await getServerSession(authOptions);
@@ -366,7 +366,7 @@ export async function getProviderRequirementSubmissions(serviceProviderId: strin
     }
 
     const submissions = await prisma.requirementSubmission.findMany({
-      where: { serviceProviderId },
+      where: { providerId },
       include: {
         requirementType: true,
         validatedBy: {
@@ -389,3 +389,9 @@ export async function getProviderRequirementSubmissions(serviceProviderId: strin
     return { success: false, error: 'Failed to fetch requirement submissions' };
   }
 }
+
+// Backward compatibility exports
+export const approveServiceProvider = approveProvider;
+export const rejectServiceProvider = rejectProvider;
+export const suspendServiceProvider = suspendProvider;
+export const deleteServiceProvider = deleteProvider;

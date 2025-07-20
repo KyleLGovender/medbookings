@@ -4,10 +4,10 @@
 import { Decimal } from '@prisma/client/runtime/library';
 
 /**
- * Serializes a service provider object to ensure it's safe for JSON responses
+ * Serializes a provider object to ensure it's safe for JSON responses
  * Handles Decimal values and other non-serializable types
  */
-export function serializeServiceProvider(provider: any): any {
+export function serializeProvider(provider: any): any {
   if (!provider) return null;
 
   return {
@@ -37,15 +37,18 @@ export function serializeServiceProvider(provider: any): any {
         createdAt: assignment.createdAt?.toISOString(),
         updatedAt: assignment.updatedAt?.toISOString(),
       })),
-      // Also provide a legacy serviceProviderType for backward compatibility
-      serviceProviderType: provider.typeAssignments.length > 0 
-        ? provider.typeAssignments[0].serviceProviderType 
+      // Also provide a legacy providerType for backward compatibility
+      providerType: provider.typeAssignments.length > 0 
+        ? provider.typeAssignments[0].providerType 
         : null,
       // Provide all types as an array
-      serviceProviderTypes: provider.typeAssignments.map((assignment: any) => assignment.serviceProviderType),
+      providerTypes: provider.typeAssignments.map((assignment: any) => assignment.providerType),
     }),
     // Ensure dates are serialized properly
     createdAt: provider.createdAt?.toISOString(),
     updatedAt: provider.updatedAt?.toISOString(),
   };
 }
+
+// Backward compatibility export
+export const serializeServiceProvider = serializeProvider;

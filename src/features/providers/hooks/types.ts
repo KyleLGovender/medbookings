@@ -62,9 +62,9 @@ export interface SerializedService {
 }
 
 /**
- * Type for serialized ServiceProvider
+ * Type for serialized Provider
  */
-export interface SerializedServiceProvider {
+export interface SerializedProvider {
   id: string;
   userId: string;
   name: string;
@@ -77,11 +77,11 @@ export interface SerializedServiceProvider {
   showPrice: boolean;
   billingType: string | null;
   status: string;
-  serviceProviderTypeId: string;
+  providerTypeId: string;
   createdAt: string;
   updatedAt: string;
   services: SerializedService[];
-  serviceProviderType: {
+  providerType: {
     name: string;
     description: string | null;
   };
@@ -184,7 +184,7 @@ export type RequirementType = {
 export type RequirementSubmission = {
   id?: string;
   requirementTypeId: string;
-  serviceProviderId?: string;
+  providerId?: string;
   status?: RequirementsValidationStatus;
   documentMetadata?: Record<string, any> | null; // Includes document URLs in the value field
   expiresAt?: Date | null;
@@ -208,11 +208,11 @@ export const basicInfoSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   whatsapp: z.string().min(10, 'Please enter a valid WhatsApp number'),
   showPrice: z.boolean().default(true),
-  serviceProviderTypeIds: z.array(z.string()).min(1, 'Please select at least one provider type'),
-  serviceProviderTypeId: z.string().optional(), // Backward compatibility
+  providerTypeIds: z.array(z.string()).min(1, 'Please select at least one provider type'),
+  providerTypeId: z.string().optional(), // Backward compatibility
 });
 
-// No longer needed as we're validating serviceProviderTypeId directly at the root level
+// No longer needed as we're validating providerTypeId directly at the root level
 export const providerTypeSchema = z.object({});
 
 export const regulatoryRequirementsSchema = z.object({
@@ -245,9 +245,9 @@ export const servicesSchema = z.object({
 export const providerFormSchema = z.object({
   basicInfo: basicInfoSchema,
   providerType: providerTypeSchema,
-  serviceProviderTypeIds: z.array(z.string()).min(1, 'Please select at least one provider type'),
+  providerTypeIds: z.array(z.string()).min(1, 'Please select at least one provider type'),
   // Keep the old single field for backward compatibility
-  serviceProviderTypeId: z.string().optional(),
+  providerTypeId: z.string().optional(),
   regulatoryRequirements: regulatoryRequirementsSchema,
   services: servicesSchema,
   termsAccepted: z.boolean().refine((val) => val === true, {
@@ -256,4 +256,4 @@ export const providerFormSchema = z.object({
 });
 
 // Type for the entire form data
-export type ServiceProviderFormType = z.infer<typeof providerFormSchema>;
+export type ProviderFormType = z.infer<typeof providerFormSchema>;

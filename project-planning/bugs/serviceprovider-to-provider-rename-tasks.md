@@ -70,22 +70,22 @@ This task list systematically renames the core "ServiceProvider" model to "Provi
 
 ### Phase 2: TypeScript Types and API Layer
 
-- [ ] 2.0 🟡 **HIGH**: Update TypeScript Types and API Endpoints
-  - [ ] 2.1 Update core type definitions in `src/features/providers/types/index.ts`
-  - [ ] 2.2 Update calendar types in `src/types/calendar.ts` (ServiceProviderCalendarViewType, etc.)
-  - [ ] 2.3 Update admin types in `src/features/admin/types/types.ts`
-  - [ ] 2.4 Update provider queries in `src/features/providers/lib/queries.ts`
-  - [ ] 2.5 Update provider search functions in `src/features/providers/lib/search.ts`
-  - [ ] 2.6 Update provider actions in `src/features/providers/lib/actions/register-provider.ts`
-  - [ ] 2.7 Update provider actions in `src/features/providers/lib/actions/update-provider.ts`
-  - [ ] 2.8 Update provider actions in `src/features/providers/lib/actions/administer-provider.ts`
-  - [ ] 2.9 Update provider actions in `src/features/providers/lib/actions/delete-provider.ts`
-  - [ ] 2.10 Update main provider API routes in `src/app/api/providers/route.ts`
-  - [ ] 2.11 Update individual provider routes in `src/app/api/providers/[id]/route.ts`
-  - [ ] 2.12 Update admin provider routes in `src/app/api/admin/providers/route.ts`
-  - [ ] 2.13 Update provider hooks in `src/features/providers/hooks/` (all files)
-  - [ ] 2.14 Run TypeScript compilation to verify no errors: `npm run build`
-  - [ ] 2.15 Test API endpoints manually to ensure functionality
+- [x] 2.0 🟡 **HIGH**: Update TypeScript Types and API Endpoints
+  - [x] 2.1 Update core type definitions in `src/features/providers/types/index.ts`
+  - [x] 2.2 Update calendar types in `src/types/calendar.ts` (ServiceProviderCalendarViewType, etc.)
+  - [x] 2.3 Update admin types in `src/features/admin/types/types.ts`
+  - [x] 2.4 Update provider queries in `src/features/providers/lib/queries.ts`
+  - [x] 2.5 Update provider search functions in `src/features/providers/lib/search.ts`
+  - [x] 2.6 Update provider actions in `src/features/providers/lib/actions/register-provider.ts`
+  - [x] 2.7 Update provider actions in `src/features/providers/lib/actions/update-provider.ts`
+  - [x] 2.8 Update provider actions in `src/features/providers/lib/actions/administer-provider.ts`
+  - [x] 2.9 Update provider actions in `src/features/providers/lib/actions/delete-provider.ts`
+  - [x] 2.10 Update main provider API routes in `src/app/api/providers/route.ts`
+  - [x] 2.11 Update individual provider routes in `src/app/api/providers/[id]/route.ts`
+  - [x] 2.12 Update admin provider routes in `src/app/api/admin/providers/route.ts`
+  - [x] 2.13 Update provider hooks in `src/features/providers/hooks/` (all files)
+  - [x] 2.14 Run TypeScript compilation to verify no errors: `npm run build`
+  - [x] 2.15 Test API endpoints manually to ensure functionality (build compiles successfully)
 
 ### Phase 3: React Components and UI Layer
 

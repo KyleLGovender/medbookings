@@ -7,19 +7,19 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function deleteServiceProvider(serviceProviderId: string) {
+export async function deleteProvider(providerId: string) {
   try {
     // Get the current user's session
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
 
     if (!userId) {
-      return { success: false, error: 'You must be logged in to delete a service provider' };
+      return { success: false, error: 'You must be logged in to delete a provider' };
     }
 
-    // Get the service provider to check ownership
-    const serviceProvider = await prisma.serviceProvider.findUnique({
-      where: { id: serviceProviderId },
+    // Get the provider to check ownership
+    const provider = await prisma.provider.findUnique({
+      where: { id: providerId },
       include: {
         user: true,
         requirementSubmissions: true,
@@ -28,51 +28,51 @@ export async function deleteServiceProvider(serviceProviderId: string) {
       },
     });
 
-    if (!serviceProvider) {
-      return { success: false, error: 'Service provider not found' };
+    if (!provider) {
+      return { success: false, error: 'Provider not found' };
     }
 
     // Check if user is authorized (either the owner or an admin)
     const isAuthorized =
-      serviceProvider.userId === userId ||
+      provider.userId === userId ||
       session.user.role === 'ADMIN' ||
       session.user.role === 'SUPER_ADMIN';
 
     if (!isAuthorized) {
-      return { success: false, error: 'You are not authorized to delete this service provider' };
+      return { success: false, error: 'You are not authorized to delete this provider' };
     }
 
     // Delete all related records in the correct order
     // 1. Delete requirement submissions
-    if (serviceProvider.requirementSubmissions.length > 0) {
+    if (provider.requirementSubmissions.length > 0) {
       await prisma.requirementSubmission.deleteMany({
-        where: { serviceProviderId },
+        where: { providerId },
       });
     }
 
     // 2. Delete calculated availability slots for each config
-    for (const config of serviceProvider.availabilityConfigs) {
+    for (const config of provider.availabilityConfigs) {
       await prisma.calculatedAvailabilitySlot.deleteMany({
         where: { serviceConfigId: config.id },
       });
     }
 
     // 3. Delete availability configs
-    if (serviceProvider.availabilityConfigs.length > 0) {
+    if (provider.availabilityConfigs.length > 0) {
       await prisma.serviceAvailabilityConfig.deleteMany({
-        where: { serviceProviderId },
+        where: { providerId },
       });
     }
 
     // 4. Delete availability records
     await prisma.availability.deleteMany({
-      where: { serviceProviderId },
+      where: { providerId },
     });
 
     // 5. Find all slots associated with this provider's availability configs
     const slotIds = [];
 
-    for (const config of serviceProvider.availabilityConfigs) {
+    for (const config of provider.availabilityConfigs) {
       const slots = await prisma.calculatedAvailabilitySlot.findMany({
         where: { serviceConfigId: config.id },
         select: { id: true },
@@ -91,9 +91,9 @@ export async function deleteServiceProvider(serviceProviderId: string) {
     }
 
     // 6. Disconnect services
-    if (serviceProvider.services.length > 0) {
-      await prisma.serviceProvider.update({
-        where: { id: serviceProviderId },
+    if (provider.services.length > 0) {
+      await prisma.provider.update({
+        where: { id: providerId },
         data: {
           services: {
             set: [],
@@ -102,9 +102,9 @@ export async function deleteServiceProvider(serviceProviderId: string) {
       });
     }
 
-    // 7. Finally delete the service provider
-    await prisma.serviceProvider.delete({
-      where: { id: serviceProviderId },
+    // 7. Finally delete the provider
+    await prisma.provider.delete({
+      where: { id: providerId },
     });
 
     // Revalidate paths to update UI
@@ -112,10 +112,13 @@ export async function deleteServiceProvider(serviceProviderId: string) {
 
     return { success: true };
   } catch (error) {
-    console.error('Error deleting service provider:', error);
+    console.error('Error deleting provider:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to delete service provider',
+      error: error instanceof Error ? error.message : 'Failed to delete provider',
     };
   }
 }
+
+// Backward compatibility exports
+export const deleteServiceProvider = deleteProvider;

@@ -165,7 +165,7 @@ async function main() {
             placeholder: 'Upload your valid HPCSA registration',
           },
           displayPriority: 3,
-          serviceProviderType: {
+          providerType: {
             connect: { name: 'General Practitioner' },
           },
         },

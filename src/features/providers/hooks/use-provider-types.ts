@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-interface ServiceProviderTypeData {
+interface ProviderTypeData {
   id: string;
   name: string;
   description?: string | null;
@@ -12,7 +12,7 @@ interface ServiceProviderTypeData {
  * Hook to fetch all available provider types
  */
 export function useProviderTypes() {
-  return useQuery<ServiceProviderTypeData[], Error>({
+  return useQuery<ProviderTypeData[], Error>({
     queryKey: ['provider-types'],
     queryFn: async () => {
       // Fetch provider types from the API endpoint
