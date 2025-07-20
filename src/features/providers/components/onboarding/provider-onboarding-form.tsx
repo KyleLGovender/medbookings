@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { ServiceProviderFormType, providerFormSchema } from '@/features/providers/hooks/types';
+import { ProviderFormType, providerFormSchema } from '@/features/providers/hooks/types';
 import { useToast } from '@/hooks/use-toast';
 
 import { BasicInfoSection } from './basic-info-section';
@@ -63,7 +63,7 @@ interface OnboardingData {
 }
 
 // API mutation function
-const submitProviderApplication = async (data: ServiceProviderFormType) => {
+const submitProviderApplication = async (data: ProviderFormType) => {
   const response = await fetch('/api/providers', {
     method: 'POST',
     headers: {
@@ -101,7 +101,7 @@ export function ProviderOnboardingForm() {
     },
   });
 
-  const methods = useForm<ServiceProviderFormType>({
+  const methods = useForm<ProviderFormType>({
     resolver: zodResolver(providerFormSchema),
     defaultValues: {
       basicInfo: {
@@ -114,8 +114,8 @@ export function ProviderOnboardingForm() {
         whatsapp: '',
       },
       providerType: {}, // Empty object since we moved the field to root level
-      serviceProviderTypeIds: [], // Added at root level for multiple types
-      serviceProviderTypeId: '', // Keep for backward compatibility
+      providerTypeIds: [], // Added at root level for multiple types
+      providerTypeId: '', // Keep for backward compatibility
       regulatoryRequirements: {
         requirements: [],
       },
@@ -128,7 +128,7 @@ export function ProviderOnboardingForm() {
   });
 
   // Watch the selected provider types to orchestrate data flow
-  const selectedProviderTypeIds = methods.watch('serviceProviderTypeIds') || [];
+  const selectedProviderTypeIds = methods.watch('providerTypeIds') || [];
 
   // Get filtered data based on selected provider types
   const selectedProviderTypes = onboardingData?.providerTypes.filter(
@@ -218,7 +218,7 @@ export function ProviderOnboardingForm() {
     },
   });
 
-  const onSubmit: SubmitHandler<ServiceProviderFormType> = (data) => {
+  const onSubmit: SubmitHandler<ProviderFormType> = (data) => {
     setShowConfirmDialog(true);
   };
 

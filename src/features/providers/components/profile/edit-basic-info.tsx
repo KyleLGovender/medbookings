@@ -78,8 +78,8 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
       website: '',
       email: '',
       whatsapp: '',
-      serviceProviderTypeIds: [] as string[], // New field for multiple types
-      serviceProviderTypeId: '', // Keep for backward compatibility
+      providerTypeIds: [] as string[], // New field for multiple types
+      providerTypeId: '', // Keep for backward compatibility
       showPrice: true, // Default to showing prices
     },
     mode: 'onSubmit', // Changed to onSubmit to avoid premature validation
@@ -89,9 +89,9 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
   useEffect(() => {
     if (provider) {
       // Get provider type IDs from the new relationship structure
-      const providerTypeIds = provider.typeAssignments?.map(assignment => assignment.serviceProviderTypeId) || 
-                              (provider.serviceProviderTypeId ? [provider.serviceProviderTypeId] : []);
-      const legacyProviderTypeId = provider.serviceProviderTypeId || '';
+      const providerTypeIds = provider.typeAssignments?.map(assignment => assignment.providerTypeId) || 
+                              (provider.providerTypeId ? [provider.providerTypeId] : []);
+      const legacyProviderTypeId = provider.providerTypeId || '';
 
       // Set form values including provider type IDs
       methods.reset({
@@ -102,14 +102,14 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
         website: provider.website || '',
         email: provider.email || '',
         whatsapp: provider.whatsapp || '',
-        serviceProviderTypeIds: providerTypeIds,
-        serviceProviderTypeId: legacyProviderTypeId, // Keep for backward compatibility
+        providerTypeIds: providerTypeIds,
+        providerTypeId: legacyProviderTypeId, // Keep for backward compatibility
         showPrice: provider.showPrice !== undefined ? provider.showPrice : true, // Default to true if not set
       });
 
       // Force set the values directly to ensure they're updated
-      methods.setValue('serviceProviderTypeIds', providerTypeIds);
-      methods.setValue('serviceProviderTypeId', legacyProviderTypeId);
+      methods.setValue('providerTypeIds', providerTypeIds);
+      methods.setValue('providerTypeId', legacyProviderTypeId);
     }
   }, [provider, methods]);
 
@@ -164,14 +164,14 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
       formData.append('website', data.website || '');
 
       // Handle multiple provider types
-      const selectedProviderTypeIds = data.serviceProviderTypeIds || [];
+      const selectedProviderTypeIds = data.providerTypeIds || [];
       selectedProviderTypeIds.forEach(typeId => {
-        formData.append('serviceProviderTypeIds', typeId);
+        formData.append('providerTypeIds', typeId);
       });
       
       // Also include the legacy single type for backward compatibility
-      const selectedProviderTypeId = data.serviceProviderTypeId || provider.serviceProviderTypeId || '';
-      formData.append('serviceProviderTypeId', selectedProviderTypeId);
+      const selectedProviderTypeId = data.providerTypeId || provider.providerTypeId || '';
+      formData.append('providerTypeId', selectedProviderTypeId);
 
       // Add languages
       selectedLanguages.forEach((lang) => {
@@ -196,8 +196,8 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
           website: data.website || '',
           email: data.email,
           whatsapp: data.whatsapp,
-          serviceProviderTypeId: selectedProviderTypeId,
-          serviceProviderTypeIds: selectedProviderTypeIds,
+          providerTypeId: selectedProviderTypeId,
+          providerTypeIds: selectedProviderTypeIds,
           showPrice: data.showPrice,
         };
 
@@ -277,14 +277,14 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
                 {provider?.typeAssignments?.length ? (
                   <div className="flex flex-wrap gap-2">
                     {provider.typeAssignments.map(assignment => (
-                      <Badge key={assignment.serviceProviderTypeId} variant="secondary">
-                        {assignment.serviceProviderType.name}
+                      <Badge key={assignment.providerTypeId} variant="secondary">
+                        {assignment.providerType.name}
                       </Badge>
                     ))}
                   </div>
-                ) : provider?.serviceProviderType ? (
+                ) : provider?.providerType ? (
                   <Badge variant="secondary">
-                    {provider.serviceProviderType.name}
+                    {provider.providerType.name}
                   </Badge>
                 ) : (
                   <p className="text-muted-foreground">Not specified</p>
@@ -294,7 +294,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
               <ProviderTypeSection
                 providerTypes={providerTypes || []}
                 selectedProviderTypes={providerTypes?.filter(type => 
-                  methods.watch('serviceProviderTypeIds')?.includes(type.id)
+                  methods.watch('providerTypeIds')?.includes(type.id)
                 ) || []}
                 totalRequirementsCount={0}
                 totalServicesCount={0}

@@ -15,32 +15,32 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { deleteServiceProvider } from '@/features/providers/lib/actions/delete-provider';
+import { deleteProvider } from '@/features/providers/lib/actions/delete-provider';
 import { useNavigation } from '@/hooks/use-navigation';
 
-interface DeleteServiceProviderButtonProps {
-  serviceProviderId: string;
+interface DeleteProviderButtonProps {
+  providerId: string;
 }
 
-export function DeleteServiceProviderButton({
-  serviceProviderId,
-}: DeleteServiceProviderButtonProps) {
+export function DeleteProviderButton({
+  providerId,
+}: DeleteProviderButtonProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const { navigate } = useNavigation();
 
   const handleDelete = async () => {
     try {
       setIsDeleting(true);
-      const result = await deleteServiceProvider(serviceProviderId);
+      const result = await deleteProvider(providerId);
 
       if (result.success) {
         await navigate('/profile');
       } else {
         // You might want to show an error toast here
-        console.error('Failed to delete service provider:', result.error);
+        console.error('Failed to delete provider:', result.error);
       }
     } catch (error) {
-      console.error('Error deleting service provider:', error);
+      console.error('Error deleting provider:', error);
     } finally {
       setIsDeleting(false);
     }
@@ -56,7 +56,7 @@ export function DeleteServiceProviderButton({
               Deleting...
             </>
           ) : (
-            'Delete Service Provider Profile'
+            'Delete Provider Profile'
           )}
         </Button>
       </AlertDialogTrigger>
@@ -64,7 +64,7 @@ export function DeleteServiceProviderButton({
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your service provider profile
+            This action cannot be undone. This will permanently delete your provider profile
             and all associated data.
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -81,7 +81,7 @@ export function DeleteServiceProviderButton({
                 Deleting...
               </>
             ) : (
-              'Delete Service Provider Profile'
+              'Delete Provider Profile'
             )}
           </AlertDialogAction>
         </AlertDialogFooter>

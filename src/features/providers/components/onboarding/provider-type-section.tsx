@@ -51,7 +51,7 @@ export function ProviderTypeSection({
       ) : multipleSelection ? (
         <FormField
           control={control}
-          name="serviceProviderTypeIds"
+          name="providerTypeIds"
           render={({ field }) => (
             <FormItem className="space-y-4">
               <FormLabel>Healthcare Service Types</FormLabel>
@@ -91,18 +91,14 @@ export function ProviderTypeSection({
       ) : (
         <FormField
           control={control}
-          name="serviceProviderTypeId"
+          name="providerTypeId"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Provider Type *</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a provider type">
-                      {field.value && selectedProviderType
-                        ? selectedProviderType.name
-                        : 'Select a provider type'}
-                    </SelectValue>
+                    <SelectValue placeholder="Select a provider type" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
