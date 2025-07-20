@@ -99,12 +99,12 @@ When implementing tasks, follow this Git workflow:
    gh pr create --title "feat: [Task Group] - [Description]" --body "[detailed PR description]"
    ```
 
-4. **User Review Process:**
+4. **User Review Process (Only to be done by Developer. Never to be done by AI):**
    - User reviews PR on GitHub
    - User merges PR when satisfied
    - User deletes feature branch on GitHub (click "Delete branch" button)
 
-5. **Local Cleanup:**
+5. **Local Cleanup (Only to be done by Developer. Never to be done by AI):**
    ```bash
    # Switch back to master
    git checkout master

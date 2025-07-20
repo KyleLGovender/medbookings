@@ -22,7 +22,7 @@ model User {
   role                     UserRole                        @default(USER)
   // Relations
   accounts                 Account[]
-  serviceProvider          ServiceProvider?
+  provider                 Provider?
   bookingsAsClient         Booking[]                       @relation("BookingClient")
   bookingsCreated          Booking[]                       @relation("BookingCreator") // Bookings created by this user
   bookingsConfirmed        Booking[]                       @relation("BookingConfirmer") // Bookings confirmed by this user
@@ -32,7 +32,7 @@ model User {
   availabilitiesCreated    Availability[]                  // Availabilities created by this user
   availabilitiesAccepted   Availability[]                  @relation("AvailabilityAccepter") // Availabilities accepted by this user
   organizationsApproved    Organization[]                  @relation("OrganizationApprovals") // Organizations approved by this admin
-  providersApproved        ServiceProvider[]               @relation("ProviderApprovals") // Service providers approved by this admin
+  providersApproved        Provider[]                      @relation("ProviderApprovals") // Service providers approved by this admin
   sentInvitations          OrganizationInvitation[]        @relation("SentInvitations") // Invitations sent by this user
   sentProviderInvitations  ProviderInvitation[]            @relation("ProviderInvitationsSent") // Provider invitations sent by this user
   createdAt                DateTime                        @default(now())
@@ -65,36 +65,36 @@ model Account {
   @@unique([provider, providerAccountId])
 }
 
-// Service Provider
-model ServiceProviderType {
+// Provider
+model ProviderType {
   id               String            @id @default(cuid())
   name             String            @unique
   description      String?
-  requirements     RequirementType[] // Keep as array - one ServiceProviderType can have many RequirementTypes
+  requirements     RequirementType[] // Keep as array - one ProviderType can have many RequirementTypes
   services         Service[]
-  typeAssignments  ServiceProviderTypeAssignment[] // New n:n relationship
+  typeAssignments  ProviderTypeAssignment[] // New n:n relationship
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 }
 
-// Many-to-many assignment table for service providers and their types
-model ServiceProviderTypeAssignment {
-  id                    String              @id @default(cuid())
-  serviceProviderId     String
-  serviceProviderTypeId String
+// Many-to-many assignment table for providers and their types
+model ProviderTypeAssignment {
+  id                String        @id @default(cuid())
+  providerId        String
+  providerTypeId    String
   
   // Relations
-  serviceProvider       ServiceProvider     @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
-  serviceProviderType   ServiceProviderType @relation(fields: [serviceProviderTypeId], references: [id], onDelete: Cascade)
+  provider          Provider      @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerType      ProviderType  @relation(fields: [providerTypeId], references: [id], onDelete: Cascade)
   
   // Unique constraint to prevent duplicate assignments
-  @@unique([serviceProviderId, serviceProviderTypeId])
+  @@unique([providerId, providerTypeId])
   
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
 }
 
-model ServiceProvider {
+model Provider {
   id                     String                           @id @default(cuid())
   name                   String
   user                   User                             @relation(fields: [userId], references: [id])
@@ -110,7 +110,7 @@ model ServiceProvider {
   showPrice              Boolean                          @default(true) // Whether to display prices to patients
   
   // Lifecycle and approval workflow
-  status                 ServiceProviderStatus            @default(PENDING_APPROVAL)
+  status                 ProviderStatus                   @default(PENDING_APPROVAL)
   approvedBy             User?                            @relation("ProviderApprovals", fields: [approvedById], references: [id])
   approvedById           String?                          // Admin who approved this provider
   approvedAt             DateTime?                        // When the provider was approved
@@ -135,7 +135,7 @@ model ServiceProvider {
   providerConnections    OrganizationProviderConnection[]
   
   // Provider type assignments (n:n relationship)
-  typeAssignments        ServiceProviderTypeAssignment[]
+  typeAssignments        ProviderTypeAssignment[]
   
   // Trial and subscription management
   subscriptions          Subscription[]
@@ -148,7 +148,7 @@ model ServiceProvider {
   selfPaidBookingsEnabled  Boolean                        @default(false) // Whether provider can pay for their own bookings
 }
 
-enum ServiceProviderStatus {
+enum ProviderStatus {
   // Approval workflow
   PENDING_APPROVAL     // Initial registration, awaiting admin review
   REJECTED            // Registration rejected
@@ -472,8 +472,8 @@ model OrganizationProviderConnection {
   id                String          @id @default(cuid())
   organization      Organization    @relation(fields: [organizationId], references: [id])
   organizationId    String
-  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
-  serviceProviderId String
+  provider          Provider        @relation(fields: [providerId], references: [id])
+  providerId        String
 
   status ConnectionStatus @default(PENDING)
 
@@ -514,8 +514,8 @@ model Subscription {
   organizationId    String?
   location          Location?        @relation(fields: [locationId], references: [id])
   locationId        String?
-  serviceProvider   ServiceProvider? @relation(fields: [serviceProviderId], references: [id])
-  serviceProviderId String?
+  provider          Provider?        @relation(fields: [providerId], references: [id])
+  providerId        String?
 
   // Subscription details
   status SubscriptionStatus
@@ -598,7 +598,7 @@ model UsageRecord {
   billingCycle String // e.g., "2024-01" for Jan 2024
 
   // Provider and service context
-  serviceProviderId String // Which provider this slot belongs to
+  providerId        String // Which provider this slot belongs to
   serviceId         String // Which service this slot was for
 
   // Pricing applied
@@ -674,8 +674,8 @@ model RequirementType {
   validationType        RequirementValidationType
   validationConfig      Json? // Store validation-specific configuration
   displayPriority       Int                       @default(0) // Added field
-  serviceProviderType   ServiceProviderType       @relation(fields: [serviceProviderTypeId], references: [id])
-  serviceProviderTypeId String
+  providerType          ProviderType              @relation(fields: [providerTypeId], references: [id])
+  providerTypeId        String
   submissions           RequirementSubmission[]
   createdAt             DateTime                  @default(now())
   updatedAt             DateTime                  @updatedAt
@@ -697,8 +697,8 @@ model RequirementSubmission {
   id                String                       @id @default(cuid())
   requirementType   RequirementType              @relation(fields: [requirementTypeId], references: [id])
   requirementTypeId String
-  serviceProvider   ServiceProvider              @relation(fields: [serviceProviderId], references: [id])
-  serviceProviderId String
+  provider          Provider                     @relation(fields: [providerId], references: [id])
+  providerId        String
   status            RequirementsValidationStatus @default(PENDING)
   documentMetadata  Json? // Store actual metadata values including document URLs
   expiresAt         DateTime? // Generic expiration date
@@ -709,7 +709,7 @@ model RequirementSubmission {
   createdAt         DateTime                     @default(now())
   updatedAt         DateTime                     @updatedAt
 
-  @@unique([requirementTypeId, serviceProviderId])
+  @@unique([requirementTypeId, providerId])
 }
 
 enum RequirementsValidationStatus {
@@ -723,18 +723,18 @@ model Service {
   id                    String                       @id @default(cuid())
   name                  String
   description           String?
-  serviceProviderType   ServiceProviderType          @relation(fields: [serviceProviderTypeId], references: [id])
-  serviceProviderTypeId String
+  providerType          ProviderType                 @relation(fields: [providerTypeId], references: [id])
+  providerTypeId        String
   displayPriority       Int                          @default(0)
   defaultDuration       Int // Default duration in minutes
   defaultPrice          Decimal                      @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
-  providers             ServiceProvider[]
+  providers             Provider[]
   availabilityConfigs   ServiceAvailabilityConfig[]
   calculatedSlots       CalculatedAvailabilitySlot[]
   createdAt             DateTime                     @default(now())
   updatedAt             DateTime                     @updatedAt
 
-  @@index([serviceProviderTypeId, displayPriority])
+  @@index([providerTypeId, displayPriority])
 }
 
 // New model for service-specific availability configurations
@@ -742,8 +742,8 @@ model ServiceAvailabilityConfig {
   id                String                       @id @default(cuid())
   service           Service                      @relation(fields: [serviceId], references: [id])
   serviceId         String
-  serviceProvider   ServiceProvider              @relation(fields: [serviceProviderId], references: [id])
-  serviceProviderId String
+  provider          Provider                     @relation(fields: [providerId], references: [id])
+  providerId        String
   duration          Int // Duration in minutes
   price             Decimal                      @db.Decimal(10, 2) /// @zod.custom.use(z.number().positive())
   isOnlineAvailable Boolean                      @default(false)
@@ -755,15 +755,15 @@ model ServiceAvailabilityConfig {
   createdAt         DateTime                     @default(now())
   updatedAt         DateTime                     @updatedAt
 
-  @@index([serviceProviderId])
+  @@index([providerId])
   @@index([locationId])
 }
 
 // Modified Availability model
 model Availability {
   id                String          @id @default(cuid())
-  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
-  serviceProviderId String
+  provider          Provider        @relation(fields: [providerId], references: [id])
+  providerId        String
 
   // Organization context - who created this availability
   organization   Organization? @relation(fields: [organizationId], references: [id])
@@ -817,7 +817,7 @@ model Availability {
   createdAt         DateTime                     @default(now())
   updatedAt         DateTime                     @updatedAt
 
-  @@index([serviceProviderId, startTime, endTime])
+  @@index([providerId, startTime, endTime])
   @@index([organizationId, status])
   @@index([connectionId])
   @@index([billingEntity, organizationId])
@@ -990,8 +990,8 @@ enum CommunicationChannel {
 // Calendar Integration
 model CalendarIntegration {
   id                String          @id @default(cuid())
-  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
-  serviceProviderId String          @unique
+  provider          Provider        @relation(fields: [providerId], references: [id])
+  providerId        String          @unique
   provider          String // GOOGLE, OUTLOOK, etc.
   accessToken       String          @db.Text
   refreshToken      String          @db.Text
@@ -1186,8 +1186,8 @@ enum MeetSessionStatus {
 
 model Review {
   id                String          @id @default(cuid())
-  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id])
-  serviceProviderId String
+  provider          Provider        @relation(fields: [providerId], references: [id])
+  providerId        String
   client            User            @relation(fields: [clientId], references: [id])
   clientId          String
   booking           Booking         @relation(fields: [bookingId], references: [id])

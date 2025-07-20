@@ -1,7 +1,7 @@
 # MedBookings MVP Project Plan
 
 ## 🚀 Current Sprint (In Progress)
-- [ ] Refactor data model relationships from 1-to-n to many-to-many where appropriate - Enable users to have multiple service provider roles and review other entity relationships for flexibility (Prisma schema, migrations, API endpoints)
+- [x] Refactor data model relationships from 1-to-n to many-to-many where appropriate - Enable users to have multiple service provider roles and review other entity relationships for flexibility (Prisma schema, migrations, API endpoints)
 - [ ] Change ServiceProvider to Provider throughout the codebase
 - [ ] Move development to staging database. Will require alignment of current prisma models etc.
 - [ ] Implement user roles system (guest, user, provider, organization manager, admin)

@@ -7,11 +7,11 @@ async function main() {
 
   // First check if tables exist before trying to delete data
   try {
-    await prisma.$queryRaw`SELECT 1 FROM "ServiceProviderType" LIMIT 1`;
-    await prisma.serviceProviderType.deleteMany();
-    console.log('Cleared ServiceProviderType table');
+    await prisma.$queryRaw`SELECT 1 FROM "ProviderType" LIMIT 1`;
+    await prisma.providerType.deleteMany();
+    console.log('Cleared ProviderType table');
   } catch (e) {
-    console.log('ServiceProviderType table not found or empty');
+    console.log('ProviderType table not found or empty');
   }
 
   try {
@@ -33,14 +33,14 @@ async function main() {
   // Create provider types
   try {
     const providerTypes = await Promise.all([
-      prisma.serviceProviderType.create({
+      prisma.providerType.create({
         data: {
           name: 'General Practitioner',
           description:
             'A doctor who practices primary health care. They must be licensed by the HPCSA and have medical insurance.',
         },
       }),
-      prisma.serviceProviderType.create({
+      prisma.providerType.create({
         data: {
           name: 'Psychologist',
           description:
@@ -60,7 +60,7 @@ async function main() {
         data: {
           name: 'General Consultation',
           description: 'Standard medical consultation for general health concerns',
-          serviceProviderType: { connect: { name: 'General Practitioner' } },
+          providerType: { connect: { name: 'General Practitioner' } },
           displayPriority: 1,
           defaultDuration: 15, // in minutes
           defaultPrice: 650.0, // in ZAR
@@ -71,7 +71,7 @@ async function main() {
           name: 'Chronic Disease Management',
           description:
             'Ongoing care and management of chronic conditions like diabetes, hypertension, and asthma',
-          serviceProviderType: { connect: { name: 'General Practitioner' } },
+          providerType: { connect: { name: 'General Practitioner' } },
           displayPriority: 2,
           defaultDuration: 30,
           defaultPrice: 950.0,
@@ -81,7 +81,7 @@ async function main() {
         data: {
           name: 'Preventive Health Screening',
           description: 'Regular health check-ups and preventive screenings',
-          serviceProviderType: { connect: { name: 'General Practitioner' } },
+          providerType: { connect: { name: 'General Practitioner' } },
           displayPriority: 3,
           defaultDuration: 30,
           defaultPrice: 950.0,
@@ -91,7 +91,7 @@ async function main() {
         data: {
           name: 'Prescription Refill',
           description: 'Refill of prescription medications',
-          serviceProviderType: { connect: { name: 'General Practitioner' } },
+          providerType: { connect: { name: 'General Practitioner' } },
           displayPriority: 4,
           defaultDuration: 5,
           defaultPrice: 300.0,
@@ -123,7 +123,7 @@ async function main() {
             placeholder: 'Select your HPCSA registration status',
           },
           displayPriority: 1,
-          serviceProviderType: { connect: { name: 'General Practitioner' } },
+          providerType: { connect: { name: 'General Practitioner' } },
         },
       }),
       prisma.requirementType.create({
@@ -146,7 +146,7 @@ async function main() {
             placeholder: 'Enter your HPCSA number (e.g., MP123456)',
           },
           displayPriority: 2,
-          serviceProviderType: { connect: { name: 'General Practitioner' } },
+          providerType: { connect: { name: 'General Practitioner' } },
         },
       }),
       prisma.requirementType.create({
@@ -188,7 +188,7 @@ async function main() {
             placeholder: 'Select your Medical Practice Insurance status',
           },
           displayPriority: 4,
-          serviceProviderType: { connect: { name: 'General Practitioner' } },
+          providerType: { connect: { name: 'General Practitioner' } },
         },
       }),
       prisma.requirementType.create({
@@ -211,7 +211,7 @@ async function main() {
               'Your insurance will expire soon. Please arrange renewal to ensure continuous coverage.',
           },
           displayPriority: 5,
-          serviceProviderType: { connect: { name: 'General Practitioner' } },
+          providerType: { connect: { name: 'General Practitioner' } },
         },
       }),
       prisma.requirementType.create({
@@ -229,7 +229,7 @@ async function main() {
             placeholder: 'Upload your Medical Practice Insurance',
           },
           displayPriority: 6,
-          serviceProviderType: { connect: { name: 'General Practitioner' } },
+          providerType: { connect: { name: 'General Practitioner' } },
         },
       }),
       prisma.requirementType.create({
@@ -267,7 +267,7 @@ async function main() {
             placeholder: 'Select your medical school',
           },
           displayPriority: 7,
-          serviceProviderType: { connect: { name: 'General Practitioner' } },
+          providerType: { connect: { name: 'General Practitioner' } },
         },
       }),
       prisma.requirementType.create({
@@ -286,7 +286,7 @@ async function main() {
             validationError: 'Please enter a valid graduation year. It cannot be in the future.',
           },
           displayPriority: 8,
-          serviceProviderType: { connect: { name: 'General Practitioner' } },
+          providerType: { connect: { name: 'General Practitioner' } },
         },
       }),
       prisma.requirementType.create({
@@ -305,7 +305,7 @@ async function main() {
             placeholder: 'Upload your medical degree certificate',
           },
           displayPriority: 9,
-          serviceProviderType: { connect: { name: 'General Practitioner' } },
+          providerType: { connect: { name: 'General Practitioner' } },
         },
       }),
       prisma.requirementType.create({
@@ -325,7 +325,7 @@ async function main() {
             placeholder: 'Select your HPCSA registration status',
           },
           displayPriority: 1,
-          serviceProviderType: { connect: { name: 'Psychologist' } },
+          providerType: { connect: { name: 'Psychologist' } },
         },
       }),
       prisma.requirementType.create({
@@ -348,7 +348,7 @@ async function main() {
             placeholder: 'Enter your HPCSA number (e.g., MP123456)',
           },
           displayPriority: 2,
-          serviceProviderType: { connect: { name: 'Psychologist' } },
+          providerType: { connect: { name: 'Psychologist' } },
         },
       }),
       prisma.requirementType.create({
@@ -366,7 +366,7 @@ async function main() {
             placeholder: 'Upload your valid HPCSA registration',
           },
           displayPriority: 3,
-          serviceProviderType: { connect: { name: 'Psychologist' } },
+          providerType: { connect: { name: 'Psychologist' } },
         },
       }),
     ]);
