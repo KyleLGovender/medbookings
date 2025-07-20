@@ -38,8 +38,8 @@ Search and filter providers with support for multiple provider types.
       "typeAssignments": [
         {
           "id": "assignment-id-1",
-          "serviceProviderTypeId": "gp-id",
-          "serviceProviderType": {
+          "providerTypeId": "gp-id",
+          "providerType": {
             "id": "gp-id",
             "name": "General Practitioner",
             "description": "Primary healthcare provider"
@@ -47,15 +47,15 @@ Search and filter providers with support for multiple provider types.
         },
         {
           "id": "assignment-id-2", 
-          "serviceProviderTypeId": "psych-id",
-          "serviceProviderType": {
+          "providerTypeId": "psych-id",
+          "providerType": {
             "id": "psych-id",
             "name": "Psychologist",
             "description": "Mental health specialist"
           }
         }
       ],
-      "serviceProviderTypes": [
+      "providerTypes": [
         {
           "id": "gp-id",
           "name": "General Practitioner"
@@ -123,7 +123,7 @@ Register a new provider with multiple provider types.
     "languages": ["English", "Afrikaans"],
     "image": "https://example.com/image.jpg"
   },
-  "serviceProviderTypeIds": [
+  "providerTypeIds": [
     "gp-id",
     "psych-id"
   ],
@@ -188,8 +188,8 @@ Get detailed information about a specific provider.
   "typeAssignments": [
     {
       "id": "assignment-id",
-      "serviceProviderTypeId": "gp-id",
-      "serviceProviderType": {
+      "providerTypeId": "gp-id",
+      "providerType": {
         "id": "gp-id",
         "name": "General Practitioner",
         "description": "Primary healthcare provider"
@@ -226,8 +226,8 @@ Update provider basic information including provider types.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `serviceProviderTypeIds` | string[] | Array of provider type IDs |
-| `serviceProviderTypeId` | string | Legacy single type (for backward compatibility) |
+| `providerTypeIds` | string[] | Array of provider type IDs |
+| `providerTypeId` | string | Legacy single type (for backward compatibility) |
 | `name` | string | Provider name |
 | `bio` | string | Provider biography |
 | `email` | string | Contact email |
@@ -246,8 +246,8 @@ Update provider basic information including provider types.
     "name": "Updated Name",
     "typeAssignments": [
       {
-        "serviceProviderTypeId": "new-type-id",
-        "serviceProviderType": {
+        "providerTypeId": "new-type-id",
+        "providerType": {
           "name": "New Provider Type"
         }
       }
@@ -258,36 +258,36 @@ Update provider basic information including provider types.
 
 ## Data Model
 
-### ServiceProviderTypeAssignment
+### ProviderTypeAssignment
 
 The n:n relationship between providers and provider types.
 
 ```typescript
-interface ServiceProviderTypeAssignment {
+interface ProviderTypeAssignment {
   id: string;
-  serviceProviderId: string;
-  serviceProviderTypeId: string;
+  providerId: string;
+  providerTypeId: string;
   createdAt: Date;
   updatedAt: Date;
-  serviceProvider: ServiceProvider;
-  serviceProviderType: ServiceProviderType;
+  serviceProvider: Provider;
+  providerType: ProviderType;
 }
 ```
 
-### Updated ServiceProvider
+### Updated Provider
 
 ```typescript
-interface ServiceProvider {
+interface Provider {
   id: string;
   name: string;
   bio: string;
   email: string;
   status: ProviderStatus;
   // Multiple type assignments (n:n relationship)
-  typeAssignments: ServiceProviderTypeAssignment[];
+  typeAssignments: ProviderTypeAssignment[];
   // Derived fields for convenience
-  serviceProviderTypes: ServiceProviderType[];
-  serviceProviderType?: ServiceProviderType; // Legacy compatibility
+  providerTypes: ProviderType[];
+  providerType?: ProviderType; // Legacy compatibility
 }
 ```
 
@@ -314,9 +314,9 @@ Provider assigned to both "General Practitioner" and "Psychologist":
 
 The following indexes optimize query performance:
 
-- `ServiceProviderTypeAssignment_serviceProviderId_idx`
-- `ServiceProviderTypeAssignment_serviceProviderTypeId_idx` 
-- `ServiceProviderTypeAssignment_serviceProviderId_serviceProviderTypeId_idx`
+- `ProviderTypeAssignment_providerId_idx`
+- `ProviderTypeAssignment_providerTypeId_idx` 
+- `ProviderTypeAssignment_providerId_providerTypeId_idx`
 
 ### Caching
 
@@ -337,25 +337,25 @@ The following indexes optimize query performance:
 **Before:**
 ```json
 {
-  "serviceProviderTypeId": "gp-id"
+  "providerTypeId": "gp-id"
 }
 ```
 
 **After:**
 ```json
 {
-  "serviceProviderTypeIds": ["gp-id"],
-  "serviceProviderTypeId": "gp-id"
+  "providerTypeIds": ["gp-id"],
+  "providerTypeId": "gp-id"
 }
 ```
 
-**Note:** The `serviceProviderTypeId` field is maintained for backward compatibility.
+**Note:** The `providerTypeId` field is maintained for backward compatibility.
 
 ### API Changes
 
 1. **New fields in responses:**
    - `typeAssignments[]` - Full assignment details
-   - `serviceProviderTypes[]` - Array of all assigned types
+   - `providerTypes[]` - Array of all assigned types
 
 2. **New query parameters:**
    - `includeServices` - Control service inclusion
@@ -368,6 +368,6 @@ The following indexes optimize query performance:
 ### Backward Compatibility
 
 All existing API integrations continue to work:
-- `serviceProviderTypeId` field maintained in responses
+- `providerTypeId` field maintained in responses
 - Single type registration still supported
 - Existing query parameters unchanged

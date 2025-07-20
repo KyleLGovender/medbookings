@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 
-export type ServiceProviderTypeData = {
+export type ProviderTypeData = {
   id: string;
   name: string;
   description: string | null;
@@ -28,11 +28,11 @@ export type ServiceTypeData = {
 };
 
 /**
- * Fetches all service provider types from the database
+ * Fetches all provider types from the database
  */
-export async function getServiceProviderTypes(): Promise<ServiceProviderTypeData[]> {
+export async function getProviderTypes(): Promise<ProviderTypeData[]> {
   try {
-    const providerTypes = await prisma.serviceProviderType.findMany({
+    const providerTypes = await prisma.providerType.findMany({
       select: {
         id: true,
         name: true,
@@ -45,8 +45,8 @@ export async function getServiceProviderTypes(): Promise<ServiceProviderTypeData
 
     return providerTypes;
   } catch (error) {
-    console.error('Failed to fetch service provider types:', error);
-    throw new Error('Failed to fetch service provider types');
+    console.error('Failed to fetch provider types:', error);
+    throw new Error('Failed to fetch provider types');
   }
 }
 
@@ -57,7 +57,7 @@ export async function getRequirementsForProviderType(
   providerTypeId: string
 ): Promise<RequirementTypeData[]> {
   try {
-    const providerType = await prisma.serviceProviderType.findUnique({
+    const providerType = await prisma.providerType.findUnique({
       where: { id: providerTypeId },
       include: {
         requirements: {
@@ -95,7 +95,7 @@ export async function getServicesForProviderType(
   try {
     const services = await prisma.service.findMany({
       where: {
-        serviceProviderTypeId: providerTypeId,
+        providerTypeId: providerTypeId,
       },
       select: {
         id: true,

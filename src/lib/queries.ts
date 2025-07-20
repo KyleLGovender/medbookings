@@ -1,10 +1,10 @@
 import { prisma } from '@/lib/prisma';
 
-export async function getServiceProviderName(serviceProviderId: string) {
-  const serviceProvider = await prisma.serviceProvider.findUnique({
-    where: { id: serviceProviderId },
+export async function getProviderName(providerId: string) {
+  const provider = await prisma.provider.findUnique({
+    where: { id: providerId },
     select: { name: true },
   });
 
-  return serviceProvider?.name;
+  return provider?.name;
 }

@@ -3,8 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function getServiceProviderId(userId: string): Promise<string | null> {
-  const serviceProvider = await prisma.serviceProvider.findUnique({
+export async function getProviderId(userId: string): Promise<string | null> {
+  const provider = await prisma.provider.findUnique({
     where: {
       userId,
     },
@@ -13,11 +13,11 @@ export async function getServiceProviderId(userId: string): Promise<string | nul
     },
   });
 
-  return serviceProvider?.id ?? null;
+  return provider?.id ?? null;
 }
 
-export async function getAuthenticatedServiceProvider(): Promise<{
-  serviceProviderId?: string;
+export async function getAuthenticatedProvider(): Promise<{
+  providerId?: string;
   error?: string;
 }> {
   const session = await getServerSession(authOptions);
@@ -26,14 +26,14 @@ export async function getAuthenticatedServiceProvider(): Promise<{
     return { error: 'Unauthorized' };
   }
 
-  const serviceProvider = await prisma.serviceProvider.findUnique({
+  const provider = await prisma.provider.findUnique({
     where: { userId: session.user.id },
     select: { id: true },
   });
 
-  if (!serviceProvider) {
-    return { error: 'No service provider profile found' };
+  if (!provider) {
+    return { error: 'No provider profile found' };
   }
 
-  return { serviceProviderId: serviceProvider.id };
+  return { providerId: provider.id };
 }

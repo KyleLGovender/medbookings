@@ -23,18 +23,18 @@ jest.mock('../../src/lib/prisma', () => ({
 
 // Create mock Prisma client
 const mockPrisma = {
-  serviceProvider: {
+  provider: {
     findMany: jest.fn(),
     findUnique: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     count: jest.fn(),
   },
-  serviceProviderType: {
+  providerType: {
     findMany: jest.fn(),
     findFirst: jest.fn(),
   },
-  serviceProviderTypeAssignment: {
+  providerTypeAssignment: {
     findMany: jest.fn(),
     create: jest.fn(),
     deleteMany: jest.fn(),
@@ -85,17 +85,17 @@ const mockProvider = {
   typeAssignments: [
     {
       id: 'assignment-1',
-      serviceProviderId: 'provider-123',
-      serviceProviderTypeId: 'gp-type-id',
-      serviceProviderType: mockProviderTypes[0],
+      providerId: 'provider-123',
+      providerTypeId: 'gp-type-id',
+      providerType: mockProviderTypes[0],
       createdAt: new Date(),
       updatedAt: new Date(),
     },
     {
       id: 'assignment-2',
-      serviceProviderId: 'provider-123',
-      serviceProviderTypeId: 'psych-type-id',
-      serviceProviderType: mockProviderTypes[1],
+      providerId: 'provider-123',
+      providerTypeId: 'psych-type-id',
+      providerType: mockProviderTypes[1],
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -117,7 +117,7 @@ describe('Multi-Type Provider Integration Tests', () => {
       (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
       
       // Mock provider creation
-      (mockPrisma.serviceProvider.create as jest.Mock).mockResolvedValue(mockProvider);
+      (mockPrisma.provider.create as jest.Mock).mockResolvedValue(mockProvider);
 
       const requestBody = {
         basicInfo: {
@@ -127,7 +127,7 @@ describe('Multi-Type Provider Integration Tests', () => {
           whatsapp: '+1234567890',
           languages: ['English'],
         },
-        serviceProviderTypeIds: ['gp-type-id', 'psych-type-id'],
+        providerTypeIds: ['gp-type-id', 'psych-type-id'],
         services: {
           availableServices: ['service-1'],
         },
@@ -149,13 +149,13 @@ describe('Multi-Type Provider Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(responseBody.success).toBe(true);
-      expect(mockPrisma.serviceProvider.create).toHaveBeenCalledWith(
+      expect(mockPrisma.provider.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             typeAssignments: {
               create: [
-                { serviceProviderTypeId: 'gp-type-id' },
-                { serviceProviderTypeId: 'psych-type-id' },
+                { providerTypeId: 'gp-type-id' },
+                { providerTypeId: 'psych-type-id' },
               ],
             },
           }),
@@ -165,7 +165,7 @@ describe('Multi-Type Provider Integration Tests', () => {
 
     it('should handle single provider type for backward compatibility', async () => {
       (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      (mockPrisma.serviceProvider.create as jest.Mock).mockResolvedValue({
+      (mockPrisma.provider.create as jest.Mock).mockResolvedValue({
         ...mockProvider,
         typeAssignments: [mockProvider.typeAssignments[0]], // Only one assignment
       });
@@ -176,7 +176,7 @@ describe('Multi-Type Provider Integration Tests', () => {
           bio: 'Test provider bio',
           email: 'provider@example.com',
         },
-        serviceProviderTypeId: 'gp-type-id', // Legacy single type
+        providerTypeId: 'gp-type-id', // Legacy single type
         services: { availableServices: [] },
         regulatoryRequirements: { requirements: [] },
       };
@@ -191,11 +191,11 @@ describe('Multi-Type Provider Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(responseBody.success).toBe(true);
-      expect(mockPrisma.serviceProvider.create).toHaveBeenCalledWith(
+      expect(mockPrisma.provider.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             typeAssignments: {
-              create: [{ serviceProviderTypeId: 'gp-type-id' }],
+              create: [{ providerTypeId: 'gp-type-id' }],
             },
           }),
         })
@@ -208,7 +208,7 @@ describe('Multi-Type Provider Integration Tests', () => {
           name: 'Dr. Test Provider',
           email: 'provider@example.com',
         },
-        // No serviceProviderTypeIds or serviceProviderTypeId
+        // No providerTypeIds or providerTypeId
         services: { availableServices: [] },
         regulatoryRequirements: { requirements: [] },
       };
@@ -228,8 +228,8 @@ describe('Multi-Type Provider Integration Tests', () => {
 
   describe('Provider Search', () => {
     it('should search providers by multiple types', async () => {
-      (mockPrisma.serviceProvider.findMany as jest.Mock).mockResolvedValue([mockProvider]);
-      (mockPrisma.serviceProvider.count as jest.Mock).mockResolvedValue(1);
+      (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue([mockProvider]);
+      (mockPrisma.provider.count as jest.Mock).mockResolvedValue(1);
 
       const request = new NextRequest(
         'http://localhost/api/providers?typeIds=gp-type-id,psych-type-id&limit=10'
@@ -243,12 +243,12 @@ describe('Multi-Type Provider Integration Tests', () => {
       expect(responseBody.providers[0].typeAssignments).toHaveLength(2);
       expect(responseBody.pagination.total).toBe(1);
 
-      expect(mockPrisma.serviceProvider.findMany).toHaveBeenCalledWith(
+      expect(mockPrisma.provider.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             typeAssignments: {
               some: {
-                serviceProviderTypeId: {
+                providerTypeId: {
                   in: ['gp-type-id', 'psych-type-id'],
                 },
               },
@@ -259,8 +259,8 @@ describe('Multi-Type Provider Integration Tests', () => {
     });
 
     it('should search providers by text and filter by types', async () => {
-      (mockPrisma.serviceProvider.findMany as jest.Mock).mockResolvedValue([mockProvider]);
-      (mockPrisma.serviceProvider.count as jest.Mock).mockResolvedValue(1);
+      (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue([mockProvider]);
+      (mockPrisma.provider.count as jest.Mock).mockResolvedValue(1);
 
       const request = new NextRequest(
         'http://localhost/api/providers?search=Dr&typeIds=gp-type-id&limit=5'
@@ -270,7 +270,7 @@ describe('Multi-Type Provider Integration Tests', () => {
       const responseBody = await response.json();
 
       expect(response.status).toBe(200);
-      expect(mockPrisma.serviceProvider.findMany).toHaveBeenCalledWith(
+      expect(mockPrisma.provider.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             OR: expect.arrayContaining([
@@ -280,7 +280,7 @@ describe('Multi-Type Provider Integration Tests', () => {
             ]),
             typeAssignments: {
               some: {
-                serviceProviderTypeId: { in: ['gp-type-id'] },
+                providerTypeId: { in: ['gp-type-id'] },
               },
             },
           }),
@@ -289,8 +289,8 @@ describe('Multi-Type Provider Integration Tests', () => {
     });
 
     it('should handle pagination correctly', async () => {
-      (mockPrisma.serviceProvider.findMany as jest.Mock).mockResolvedValue([mockProvider]);
-      (mockPrisma.serviceProvider.count as jest.Mock).mockResolvedValue(100);
+      (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue([mockProvider]);
+      (mockPrisma.provider.count as jest.Mock).mockResolvedValue(100);
 
       const request = new NextRequest(
         'http://localhost/api/providers?limit=10&offset=20'
@@ -307,7 +307,7 @@ describe('Multi-Type Provider Integration Tests', () => {
         hasMore: true,
       });
 
-      expect(mockPrisma.serviceProvider.findMany).toHaveBeenCalledWith(
+      expect(mockPrisma.provider.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           take: 10,
           skip: 20,
@@ -318,7 +318,7 @@ describe('Multi-Type Provider Integration Tests', () => {
 
   describe('Provider Details', () => {
     it('should return provider with all type assignments', async () => {
-      (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(mockProvider);
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(mockProvider);
 
       const request = new NextRequest('http://localhost/api/providers/provider-123');
 
@@ -328,12 +328,12 @@ describe('Multi-Type Provider Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(responseBody.id).toBe('provider-123');
       expect(responseBody.typeAssignments).toHaveLength(2);
-      expect(responseBody.serviceProviderTypes).toHaveLength(2);
-      expect(responseBody.serviceProviderType).toEqual(mockProviderTypes[0]); // Legacy field
+      expect(responseBody.providerTypes).toHaveLength(2);
+      expect(responseBody.providerType).toEqual(mockProviderTypes[0]); // Legacy field
     });
 
     it('should return 404 for non-existent provider', async () => {
-      (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(null);
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(null);
 
       const request = new NextRequest('http://localhost/api/providers/non-existent');
 
@@ -347,8 +347,8 @@ describe('Multi-Type Provider Integration Tests', () => {
 
   describe('Provider Updates', () => {
     it('should update provider types successfully', async () => {
-      (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(mockProvider);
-      (mockPrisma.serviceProvider.update as jest.Mock).mockResolvedValue({
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(mockProvider);
+      (mockPrisma.provider.update as jest.Mock).mockResolvedValue({
         ...mockProvider,
         typeAssignments: [mockProvider.typeAssignments[1]], // Only psychologist now
       });
@@ -356,7 +356,7 @@ describe('Multi-Type Provider Integration Tests', () => {
       const formData = new FormData();
       formData.append('id', 'provider-123');
       formData.append('name', 'Updated Name');
-      formData.append('serviceProviderTypeIds', 'psych-type-id'); // Only one type now
+      formData.append('providerTypeIds', 'psych-type-id'); // Only one type now
 
       const request = new NextRequest('http://localhost/api/providers/provider-123/basic-info', {
         method: 'PUT',
@@ -368,12 +368,12 @@ describe('Multi-Type Provider Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(responseBody.success).toBe(true);
-      expect(mockPrisma.serviceProvider.update).toHaveBeenCalledWith(
+      expect(mockPrisma.provider.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             typeAssignments: {
               deleteMany: {},
-              create: [{ serviceProviderTypeId: 'psych-type-id' }],
+              create: [{ providerTypeId: 'psych-type-id' }],
             },
           }),
         })
@@ -382,7 +382,7 @@ describe('Multi-Type Provider Integration Tests', () => {
 
     it('should handle authorization for provider updates', async () => {
       const unauthorizedProvider = { ...mockProvider, userId: 'different-user' };
-      (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(unauthorizedProvider);
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(unauthorizedProvider);
 
       const formData = new FormData();
       formData.append('id', 'provider-123');
@@ -401,7 +401,7 @@ describe('Multi-Type Provider Integration Tests', () => {
 
   describe('Error Scenarios', () => {
     it('should handle database errors gracefully', async () => {
-      (mockPrisma.serviceProvider.findMany as jest.Mock).mockRejectedValue(
+      (mockPrisma.provider.findMany as jest.Mock).mockRejectedValue(
         new Error('Database connection failed')
       );
 
@@ -432,8 +432,8 @@ describe('Multi-Type Provider Integration Tests', () => {
         id: `provider-${i}`,
       }));
 
-      (mockPrisma.serviceProvider.findMany as jest.Mock).mockResolvedValue(largeProviderList);
-      (mockPrisma.serviceProvider.count as jest.Mock).mockResolvedValue(10000);
+      (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue(largeProviderList);
+      (mockPrisma.provider.count as jest.Mock).mockResolvedValue(10000);
 
       const request = new NextRequest('http://localhost/api/providers?limit=1000');
 
@@ -460,9 +460,9 @@ describe('Provider Type Assignment Tests', () => {
     const formData = new FormData();
     formData.append('id', 'provider-123');
     formData.append('name', 'Test Provider');
-    // No serviceProviderTypeIds provided
+    // No providerTypeIds provided
 
-    (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(mockProvider);
+    (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(mockProvider);
     (getServerSession as jest.Mock).mockResolvedValue(mockSession);
 
     const request = new NextRequest('http://localhost/api/providers/provider-123/basic-info', {
@@ -480,11 +480,11 @@ describe('Provider Type Assignment Tests', () => {
     const formData = new FormData();
     formData.append('id', 'provider-123');
     formData.append('name', 'Test Provider');
-    formData.append('serviceProviderTypeIds', 'gp-type-id');
-    formData.append('serviceProviderTypeIds', 'psych-type-id');
+    formData.append('providerTypeIds', 'gp-type-id');
+    formData.append('providerTypeIds', 'psych-type-id');
 
-    (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(mockProvider);
-    (mockPrisma.serviceProvider.update as jest.Mock).mockResolvedValue(mockProvider);
+    (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(mockProvider);
+    (mockPrisma.provider.update as jest.Mock).mockResolvedValue(mockProvider);
     (getServerSession as jest.Mock).mockResolvedValue(mockSession);
 
     const request = new NextRequest('http://localhost/api/providers/provider-123/basic-info', {
@@ -496,7 +496,7 @@ describe('Provider Type Assignment Tests', () => {
 
     expect(response.status).toBe(200);
     // Should not include typeAssignments update since they're the same
-    expect(mockPrisma.serviceProvider.update).toHaveBeenCalledWith(
+    expect(mockPrisma.provider.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.not.objectContaining({
           typeAssignments: expect.anything(),

@@ -91,15 +91,15 @@ export async function GET(req: NextRequest) {
   const token = await getToken({ req });
 
   if (token && token.sub) {
-    // Find the service provider for this user
-    const serviceProvider = await prisma.serviceProvider.findFirst({
+    // Find the provider for this user
+    const provider = await prisma.provider.findFirst({
       where: { userId: token.sub },
     });
 
-    if (serviceProvider) {
+    if (provider) {
       // Store or update calendar integration
       await prisma.calendarIntegration.upsert({
-        where: { serviceProviderId: serviceProvider.id },
+        where: { providerId: provider.id },
         update: {
           accessToken: token.accessToken as string,
           refreshToken: token.refreshToken as string,
@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
           googleEmail: token.email as string,
         },
         create: {
-          serviceProviderId: serviceProvider.id,
+          providerId: provider.id,
           accessToken: token.accessToken as string,
           refreshToken: token.refreshToken as string,
           expiresAt: new Date(Date.now() + 3600 * 1000),

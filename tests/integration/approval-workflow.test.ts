@@ -12,7 +12,7 @@ jest.mock('../../src/lib/prisma', () => ({
 }));
 
 const mockPrisma = {
-  serviceProvider: {
+  provider: {
     findUnique: jest.fn(),
     update: jest.fn(),
   },
@@ -39,12 +39,12 @@ const mockMultiTypeProvider = {
   id: 'provider-123',
   typeAssignments: [
     {
-      serviceProviderType: {
+      providerType: {
         requirements: gpRequirements,
       },
     },
     {
-      serviceProviderType: {
+      providerType: {
         requirements: psychRequirements,
       },
     },
@@ -59,7 +59,7 @@ describe('Approval Workflow with Multiple Types', () => {
 
   describe('Requirement Collection', () => {
     it('should collect requirements from all assigned provider types', async () => {
-      (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(mockMultiTypeProvider);
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(mockMultiTypeProvider);
 
       const result = await checkAllRequiredRequirementsApproved('provider-123');
 
@@ -73,7 +73,7 @@ describe('Approval Workflow with Multiple Types', () => {
         ...mockMultiTypeProvider,
         typeAssignments: [
           {
-            serviceProviderType: {
+            providerType: {
               requirements: [
                 { id: 'hpcsa-reg', name: 'HPCSA Registration', isRequired: true },
                 { id: 'insurance', name: 'Insurance', isRequired: true },
@@ -81,7 +81,7 @@ describe('Approval Workflow with Multiple Types', () => {
             },
           },
           {
-            serviceProviderType: {
+            providerType: {
               requirements: [
                 { id: 'hpcsa-reg', name: 'HPCSA Registration', isRequired: true }, // Duplicate
                 { id: 'license', name: 'License', isRequired: true },
@@ -91,7 +91,7 @@ describe('Approval Workflow with Multiple Types', () => {
         ],
       };
 
-      (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(providerWithDuplicateRequirements);
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(providerWithDuplicateRequirements);
 
       const result = await checkAllRequiredRequirementsApproved('provider-123');
 
@@ -121,7 +121,7 @@ describe('Approval Workflow with Multiple Types', () => {
         ],
       };
 
-      (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(providerWithPartialApprovals);
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(providerWithPartialApprovals);
 
       const result = await checkAllRequiredRequirementsApproved('provider-123');
 
@@ -143,7 +143,7 @@ describe('Approval Workflow with Multiple Types', () => {
         ],
       };
 
-      (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(providerWithAllApprovals);
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(providerWithAllApprovals);
 
       const result = await checkAllRequiredRequirementsApproved('provider-123');
 
@@ -165,7 +165,7 @@ describe('Approval Workflow with Multiple Types', () => {
         ],
       };
 
-      (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(providerWithRejectedRequirement);
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(providerWithRejectedRequirement);
 
       const result = await checkAllRequiredRequirementsApproved('provider-123');
 
@@ -185,7 +185,7 @@ describe('Approval Workflow with Multiple Types', () => {
         ...mockMultiTypeProvider,
         typeAssignments: [
           {
-            serviceProviderType: {
+            providerType: {
               requirements: gpRequirements,
             },
           },
@@ -198,7 +198,7 @@ describe('Approval Workflow with Multiple Types', () => {
         ],
       };
 
-      (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(modifiedProvider);
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(modifiedProvider);
 
       const result = await checkAllRequiredRequirementsApproved('provider-123');
 
@@ -215,7 +215,7 @@ describe('Approval Workflow with Multiple Types', () => {
         requirementSubmissions: [],
       };
 
-      (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(providerWithNoTypes);
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(providerWithNoTypes);
 
       const result = await checkAllRequiredRequirementsApproved('provider-123');
 
@@ -232,7 +232,7 @@ describe('Approval Workflow with Multiple Types', () => {
         id: 'provider-123',
         typeAssignments: [
           {
-            serviceProviderType: {
+            providerType: {
               requirements: [
                 { id: 'req-1', name: 'Requirement 1', isRequired: true },
                 { id: 'req-2', name: 'Requirement 2', isRequired: true },
@@ -240,7 +240,7 @@ describe('Approval Workflow with Multiple Types', () => {
             },
           },
           {
-            serviceProviderType: {
+            providerType: {
               requirements: [
                 { id: 'req-2', name: 'Requirement 2', isRequired: true }, // Duplicate
                 { id: 'req-3', name: 'Requirement 3', isRequired: true },
@@ -248,7 +248,7 @@ describe('Approval Workflow with Multiple Types', () => {
             },
           },
           {
-            serviceProviderType: {
+            providerType: {
               requirements: [
                 { id: 'req-4', name: 'Requirement 4', isRequired: true },
                 { id: 'req-5', name: 'Requirement 5', isRequired: true },
@@ -265,7 +265,7 @@ describe('Approval Workflow with Multiple Types', () => {
         ],
       };
 
-      (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(tripleTypeProvider);
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(tripleTypeProvider);
 
       const result = await checkAllRequiredRequirementsApproved('provider-123');
 
@@ -285,7 +285,7 @@ describe('Approval Workflow with Multiple Types', () => {
         ],
       };
 
-      (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(providerWithMixedApprovals);
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(providerWithMixedApprovals);
 
       const result = await checkAllRequiredRequirementsApproved('provider-123');
 
@@ -301,7 +301,7 @@ describe('Approval Workflow with Multiple Types', () => {
 
   describe('Error Handling', () => {
     it('should handle non-existent provider', async () => {
-      (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(null);
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(null);
 
       const result = await checkAllRequiredRequirementsApproved('non-existent');
 
@@ -310,7 +310,7 @@ describe('Approval Workflow with Multiple Types', () => {
     });
 
     it('should handle database errors gracefully', async () => {
-      (mockPrisma.serviceProvider.findUnique as jest.Mock).mockRejectedValue(
+      (mockPrisma.provider.findUnique as jest.Mock).mockRejectedValue(
         new Error('Database connection failed')
       );
 
@@ -327,7 +327,7 @@ describe('Approval Workflow with Multiple Types', () => {
       const manyTypesProvider = {
         id: 'provider-123',
         typeAssignments: Array.from({ length: 10 }, (_, i) => ({
-          serviceProviderType: {
+          providerType: {
             requirements: Array.from({ length: 5 }, (_, j) => ({
               id: `req-${i}-${j}`,
               name: `Requirement ${i}-${j}`,
@@ -341,7 +341,7 @@ describe('Approval Workflow with Multiple Types', () => {
         })),
       };
 
-      (mockPrisma.serviceProvider.findUnique as jest.Mock).mockResolvedValue(manyTypesProvider);
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(manyTypesProvider);
 
       const startTime = Date.now();
       const result = await checkAllRequiredRequirementsApproved('provider-123');

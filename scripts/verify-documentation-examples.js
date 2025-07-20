@@ -173,10 +173,10 @@ function verifyApiPatterns(content, filePath) {
   
   // Check for multi-type provider examples
   if (filePath.includes('providers')) {
-    // Verify that multi-type examples include serviceProviderTypeIds
-    if (content.includes('serviceProviderTypeId') && 
-        !content.includes('serviceProviderTypeIds')) {
-      issues.push('Multi-type provider examples should include serviceProviderTypeIds array');
+    // Verify that multi-type examples include providerTypeIds
+    if (content.includes('providerTypeId') && 
+        !content.includes('providerTypeIds')) {
+      issues.push('Multi-type provider examples should include providerTypeIds array');
     }
     
     // Verify typeAssignments are mentioned in response examples
@@ -328,9 +328,9 @@ function generateReport() {
   
   // Check if key multi-type concepts are documented
   const requiredConcepts = [
-    'serviceProviderTypeIds',
+    'providerTypeIds',
     'typeAssignments',
-    'ServiceProviderTypeAssignment',
+    'ProviderTypeAssignment',
     'multiple provider types',
     'n:n relationship'
   ];

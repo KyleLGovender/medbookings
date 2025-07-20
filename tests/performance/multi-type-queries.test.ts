@@ -20,14 +20,14 @@ jest.mock('../../src/lib/cache', () => ({
 }));
 
 const mockPrisma = {
-  serviceProvider: {
+  provider: {
     findMany: jest.fn(),
     count: jest.fn(),
   },
-  serviceProviderTypeAssignment: {
+  providerTypeAssignment: {
     groupBy: jest.fn(),
   },
-  serviceProviderType: {
+  providerType: {
     findMany: jest.fn(),
   },
 } as unknown as PrismaClient;
@@ -43,8 +43,8 @@ function generateMockProviders(count: number) {
     typeAssignments: [
       {
         id: `assignment-${i}-1`,
-        serviceProviderTypeId: `type-${i % 5}`, // Distribute across 5 types
-        serviceProviderType: {
+        providerTypeId: `type-${i % 5}`, // Distribute across 5 types
+        providerType: {
           id: `type-${i % 5}`,
           name: `Provider Type ${i % 5}`,
           description: `Description for type ${i % 5}`,
@@ -53,8 +53,8 @@ function generateMockProviders(count: number) {
       // Some providers have multiple types
       ...(i % 3 === 0 ? [{
         id: `assignment-${i}-2`,
-        serviceProviderTypeId: `type-${(i + 1) % 5}`,
-        serviceProviderType: {
+        providerTypeId: `type-${(i + 1) % 5}`,
+        providerType: {
           id: `type-${(i + 1) % 5}`,
           name: `Provider Type ${(i + 1) % 5}`,
           description: `Description for type ${(i + 1) % 5}`,
@@ -91,8 +91,8 @@ describe('Multi-Type Query Performance Tests', () => {
   describe('Large Dataset Search Performance', () => {
     it('should handle search across 10,000 providers efficiently', async () => {
       const largeProviderSet = generateMockProviders(10000);
-      (mockPrisma.serviceProvider.findMany as jest.Mock).mockResolvedValue(largeProviderSet.slice(0, 50));
-      (mockPrisma.serviceProvider.count as jest.Mock).mockResolvedValue(10000);
+      (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue(largeProviderSet.slice(0, 50));
+      (mockPrisma.provider.count as jest.Mock).mockResolvedValue(10000);
 
       const startTime = process.hrtime.bigint();
       
@@ -113,8 +113,8 @@ describe('Multi-Type Query Performance Tests', () => {
 
     it('should handle complex multi-type filtering efficiently', async () => {
       const complexProviderSet = generateMockProviders(5000);
-      (mockPrisma.serviceProvider.findMany as jest.Mock).mockResolvedValue(complexProviderSet.slice(0, 20));
-      (mockPrisma.serviceProvider.count as jest.Mock).mockResolvedValue(5000);
+      (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue(complexProviderSet.slice(0, 20));
+      (mockPrisma.provider.count as jest.Mock).mockResolvedValue(5000);
 
       const startTime = process.hrtime.bigint();
       
@@ -137,8 +137,8 @@ describe('Multi-Type Query Performance Tests', () => {
 
     it('should handle deep pagination efficiently', async () => {
       const paginationSet = generateMockProviders(100);
-      (mockPrisma.serviceProvider.findMany as jest.Mock).mockResolvedValue(paginationSet);
-      (mockPrisma.serviceProvider.count as jest.Mock).mockResolvedValue(50000);
+      (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue(paginationSet);
+      (mockPrisma.provider.count as jest.Mock).mockResolvedValue(50000);
 
       const startTime = process.hrtime.bigint();
       
@@ -159,14 +159,14 @@ describe('Multi-Type Query Performance Tests', () => {
   describe('Provider Type Statistics Performance', () => {
     it('should calculate statistics for many provider types efficiently', async () => {
       const statsData = Array.from({ length: 20 }, (_, i) => ({
-        serviceProviderTypeId: `type-${i}`,
-        _count: { serviceProviderId: 50 + i * 10 },
+        providerTypeId: `type-${i}`,
+        _count: { providerId: 50 + i * 10 },
       }));
 
       const typeData = generateMockProviderTypes(20);
 
-      (mockPrisma.serviceProviderTypeAssignment.groupBy as jest.Mock).mockResolvedValue(statsData);
-      (mockPrisma.serviceProviderType.findMany as jest.Mock).mockResolvedValue(typeData);
+      (mockPrisma.providerTypeAssignment.groupBy as jest.Mock).mockResolvedValue(statsData);
+      (mockPrisma.providerType.findMany as jest.Mock).mockResolvedValue(typeData);
 
       const startTime = process.hrtime.bigint();
       
@@ -186,7 +186,7 @@ describe('Multi-Type Query Performance Tests', () => {
   describe('Provider by Type Lookup Performance', () => {
     it('should retrieve providers by type efficiently', async () => {
       const typeProviders = generateMockProviders(500).filter((_, i) => i % 5 === 0); // Every 5th provider
-      (mockPrisma.serviceProvider.findMany as jest.Mock).mockResolvedValue(typeProviders.slice(0, 10));
+      (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue(typeProviders.slice(0, 10));
 
       const startTime = process.hrtime.bigint();
       
@@ -203,8 +203,8 @@ describe('Multi-Type Query Performance Tests', () => {
   describe('Concurrent Query Performance', () => {
     it('should handle multiple concurrent searches efficiently', async () => {
       const mockData = generateMockProviders(1000);
-      (mockPrisma.serviceProvider.findMany as jest.Mock).mockResolvedValue(mockData.slice(0, 20));
-      (mockPrisma.serviceProvider.count as jest.Mock).mockResolvedValue(1000);
+      (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue(mockData.slice(0, 20));
+      (mockPrisma.provider.count as jest.Mock).mockResolvedValue(1000);
 
       const startTime = process.hrtime.bigint();
       
@@ -232,15 +232,15 @@ describe('Multi-Type Query Performance Tests', () => {
 
     it('should handle mixed query types concurrently', async () => {
       // Setup different mock responses for different query types
-      (mockPrisma.serviceProvider.findMany as jest.Mock)
+      (mockPrisma.provider.findMany as jest.Mock)
         .mockResolvedValueOnce(generateMockProviders(50).slice(0, 20)) // Search query
         .mockResolvedValueOnce(generateMockProviders(20).slice(0, 10)); // Type lookup
 
-      (mockPrisma.serviceProvider.count as jest.Mock).mockResolvedValue(1000);
-      (mockPrisma.serviceProviderTypeAssignment.groupBy as jest.Mock).mockResolvedValue([
-        { serviceProviderTypeId: 'type-1', _count: { serviceProviderId: 100 } },
+      (mockPrisma.provider.count as jest.Mock).mockResolvedValue(1000);
+      (mockPrisma.providerTypeAssignment.groupBy as jest.Mock).mockResolvedValue([
+        { providerTypeId: 'type-1', _count: { providerId: 100 } },
       ]);
-      (mockPrisma.serviceProviderType.findMany as jest.Mock).mockResolvedValue([
+      (mockPrisma.providerType.findMany as jest.Mock).mockResolvedValue([
         { id: 'type-1', name: 'Type 1' },
       ]);
 
@@ -266,8 +266,8 @@ describe('Multi-Type Query Performance Tests', () => {
   describe('Memory Usage Performance', () => {
     it('should handle large result sets without excessive memory usage', async () => {
       const largeDataset = generateMockProviders(5000);
-      (mockPrisma.serviceProvider.findMany as jest.Mock).mockResolvedValue(largeDataset);
-      (mockPrisma.serviceProvider.count as jest.Mock).mockResolvedValue(5000);
+      (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue(largeDataset);
+      (mockPrisma.provider.count as jest.Mock).mockResolvedValue(5000);
 
       const initialMemory = process.memoryUsage().heapUsed;
       
@@ -287,8 +287,8 @@ describe('Multi-Type Query Performance Tests', () => {
   describe('Query Complexity Performance', () => {
     it('should handle complex WHERE clauses efficiently', async () => {
       const complexData = generateMockProviders(2000);
-      (mockPrisma.serviceProvider.findMany as jest.Mock).mockResolvedValue(complexData.slice(0, 50));
-      (mockPrisma.serviceProvider.count as jest.Mock).mockResolvedValue(2000);
+      (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue(complexData.slice(0, 50));
+      (mockPrisma.provider.count as jest.Mock).mockResolvedValue(2000);
 
       const startTime = process.hrtime.bigint();
       
@@ -313,8 +313,8 @@ describe('Multi-Type Query Performance Tests', () => {
 
   describe('Edge Case Performance', () => {
     it('should handle empty result sets efficiently', async () => {
-      (mockPrisma.serviceProvider.findMany as jest.Mock).mockResolvedValue([]);
-      (mockPrisma.serviceProvider.count as jest.Mock).mockResolvedValue(0);
+      (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue([]);
+      (mockPrisma.provider.count as jest.Mock).mockResolvedValue(0);
 
       const startTime = process.hrtime.bigint();
       
@@ -333,8 +333,8 @@ describe('Multi-Type Query Performance Tests', () => {
 
     it('should handle single character searches efficiently', async () => {
       const singleCharData = generateMockProviders(1000);
-      (mockPrisma.serviceProvider.findMany as jest.Mock).mockResolvedValue(singleCharData.slice(0, 50));
-      (mockPrisma.serviceProvider.count as jest.Mock).mockResolvedValue(1000);
+      (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue(singleCharData.slice(0, 50));
+      (mockPrisma.provider.count as jest.Mock).mockResolvedValue(1000);
 
       const startTime = process.hrtime.bigint();
       
