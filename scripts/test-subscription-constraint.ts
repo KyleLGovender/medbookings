@@ -17,7 +17,7 @@ async function testSubscriptionConstraint(): Promise<void> {
     // First, let's check if we have any existing entities to use for testing
     const organizations = await prisma.organization.findMany({ take: 1 });
     const locations = await prisma.location.findMany({ take: 1 });
-    const providers = await prisma.serviceProvider.findMany({ take: 1 });
+    const providers = await prisma.provider.findMany({ take: 1 });
     const plans = await prisma.subscriptionPlan.findMany({ take: 1 });
 
     if (plans.length === 0) {
@@ -69,7 +69,7 @@ async function testSubscriptionConstraint(): Promise<void> {
           planId: plan.id,
           organizationId: testOrganizationId,
           locationId: null,
-          serviceProviderId: null,
+          providerId: null,
           status: 'ACTIVE',
           startDate: new Date(),
           billingCycleStart: new Date(),
@@ -90,7 +90,7 @@ async function testSubscriptionConstraint(): Promise<void> {
           planId: plan.id,
           organizationId: testOrganizationId,
           locationId: testLocationId || 'fake-location-id',
-          serviceProviderId: null,
+          providerId: null,
           status: 'ACTIVE',
           startDate: new Date(),
           billingCycleStart: new Date(),
@@ -115,7 +115,7 @@ async function testSubscriptionConstraint(): Promise<void> {
           planId: plan.id,
           organizationId: null,
           locationId: null,
-          serviceProviderId: null,
+          providerId: null,
           status: 'ACTIVE',
           startDate: new Date(),
           billingCycleStart: new Date(),
@@ -141,7 +141,7 @@ async function testSubscriptionConstraint(): Promise<void> {
             planId: plan.id,
             organizationId: null,
             locationId: testLocationId,
-            serviceProviderId: null,
+            providerId: null,
             status: 'ACTIVE',
             startDate: new Date(),
             billingCycleStart: new Date(),
@@ -164,7 +164,7 @@ async function testSubscriptionConstraint(): Promise<void> {
             planId: plan.id,
             organizationId: null,
             locationId: null,
-            serviceProviderId: testProviderId,
+            providerId: testProviderId,
             status: 'ACTIVE',
             startDate: new Date(),
             billingCycleStart: new Date(),

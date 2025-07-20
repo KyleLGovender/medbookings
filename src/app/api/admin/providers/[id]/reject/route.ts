@@ -32,7 +32,7 @@ export async function POST(
     const { reason } = validation.data;
 
     // Check if provider exists
-    const provider = await prisma.serviceProvider.findUnique({
+    const provider = await prisma.provider.findUnique({
       where: { id: providerId },
       select: { id: true, name: true, email: true },
     });
@@ -42,7 +42,7 @@ export async function POST(
     }
 
     // Reject the provider
-    const updatedProvider = await prisma.serviceProvider.update({
+    const updatedProvider = await prisma.provider.update({
       where: { id: providerId },
       data: {
         status: 'REJECTED',

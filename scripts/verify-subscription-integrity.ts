@@ -5,7 +5,7 @@
  * 
  * This script verifies that all existing subscriptions in the database
  * satisfy the polymorphic constraint: exactly one of organizationId, 
- * locationId, or serviceProviderId is set.
+ * locationId, or providerId is set.
  */
 
 import { PrismaClient } from '@prisma/client';
@@ -17,7 +17,7 @@ interface SubscriptionIntegrityIssue {
   issue: string;
   organizationId: string | null;
   locationId: string | null;
-  serviceProviderId: string | null;
+  providerId: string | null;
   createdAt: Date;
 }
 
@@ -35,7 +35,7 @@ async function verifySubscriptionIntegrity(): Promise<{
         id: true,
         organizationId: true,
         locationId: true,
-        serviceProviderId: true,
+        providerId: true,
         createdAt: true,
       }
     });
@@ -50,7 +50,7 @@ async function verifySubscriptionIntegrity(): Promise<{
       const setFields = [
         subscription.organizationId,
         subscription.locationId,
-        subscription.serviceProviderId
+        subscription.providerId
       ].filter(Boolean);
 
       if (setFields.length === 0) {
@@ -60,7 +60,7 @@ async function verifySubscriptionIntegrity(): Promise<{
           issue: 'No entity assigned (orphaned subscription)',
           organizationId: subscription.organizationId,
           locationId: subscription.locationId,
-          serviceProviderId: subscription.serviceProviderId,
+          providerId: subscription.providerId,
           createdAt: subscription.createdAt,
         });
       } else if (setFields.length > 1) {
@@ -70,7 +70,7 @@ async function verifySubscriptionIntegrity(): Promise<{
           issue: 'Multiple entities assigned (violates polymorphic constraint)',
           organizationId: subscription.organizationId,
           locationId: subscription.locationId,
-          serviceProviderId: subscription.serviceProviderId,
+          providerId: subscription.providerId,
           createdAt: subscription.createdAt,
         });
       } else {
@@ -139,14 +139,14 @@ async function validateReferencedEntities(): Promise<{
 
     // Check service provider references
     const subscriptionsWithProviders = await prisma.subscription.findMany({
-      where: { serviceProviderId: { not: null } },
-      select: { id: true, serviceProviderId: true }
+      where: { providerId: { not: null } },
+      select: { id: true, providerId: true }
     });
 
     for (const sub of subscriptionsWithProviders) {
-      if (sub.serviceProviderId) {
-        const provider = await prisma.serviceProvider.findUnique({
-          where: { id: sub.serviceProviderId }
+      if (sub.providerId) {
+        const provider = await prisma.provider.findUnique({
+          where: { id: sub.providerId }
         });
         if (!provider) {
           invalidProviders.push(sub.id);
@@ -188,7 +188,7 @@ async function generateReport(
       console.log(`Issue: ${issue.issue}`);
       console.log(`Organization ID: ${issue.organizationId || 'null'}`);
       console.log(`Location ID: ${issue.locationId || 'null'}`);
-      console.log(`Service Provider ID: ${issue.serviceProviderId || 'null'}`);
+      console.log(`Service Provider ID: ${issue.providerId || 'null'}`);
       console.log(`Created: ${issue.createdAt.toISOString()}`);
     }
   }

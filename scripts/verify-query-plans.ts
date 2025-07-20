@@ -60,8 +60,8 @@ async function verifyQueryPlans() {
   console.log('='.repeat(60));
 
   // Get sample data for realistic queries
-  const sampleProvider = await prisma.serviceProvider.findFirst();
-  const sampleType = await prisma.serviceProviderType.findFirst();
+  const sampleProvider = await prisma.provider.findFirst();
+  const sampleType = await prisma.providerType.findFirst();
   
   if (!sampleProvider || !sampleType) {
     console.log('❌ No sample data available for testing');
@@ -73,9 +73,9 @@ async function verifyQueryPlans() {
   // Query 1: Basic provider search with type filter (should use index)
   const query1 = `
     SELECT sp.id, sp.name, sp.email 
-    FROM "ServiceProvider" sp
-    JOIN "ServiceProviderTypeAssignment" spa ON sp.id = spa."serviceProviderId"
-    WHERE spa."serviceProviderTypeId" = '${sampleType.id}'
+    FROM "Provider" sp
+    JOIN "ProviderTypeAssignment" spa ON sp.id = spa."providerId"
+    WHERE spa."providerTypeId" = '${sampleType.id}'
     AND sp.status = 'APPROVED'
     ORDER BY sp.name
     LIMIT 50
@@ -85,37 +85,37 @@ async function verifyQueryPlans() {
   queries.push(plan1);
   
   await checkIndexUsage(plan1.plan, [
-    'ServiceProviderTypeAssignment_serviceProviderTypeId_idx',
-    'ServiceProviderTypeAssignment_serviceProviderId_idx'
+    'ProviderTypeAssignment_providerTypeId_idx',
+    'ProviderTypeAssignment_providerId_idx'
   ]);
   await analyzeCostAndTime(plan1.plan);
 
   // Query 2: Provider type statistics (should use index)
   const query2 = `
-    SELECT spa."serviceProviderTypeId", COUNT(DISTINCT spa."serviceProviderId") as provider_count
-    FROM "ServiceProviderTypeAssignment" spa
-    JOIN "ServiceProvider" sp ON spa."serviceProviderId" = sp.id
+    SELECT spa."providerTypeId", COUNT(DISTINCT spa."providerId") as provider_count
+    FROM "ProviderTypeAssignment" spa
+    JOIN "Provider" sp ON spa."providerId" = sp.id
     WHERE sp.status = 'APPROVED'
-    GROUP BY spa."serviceProviderTypeId"
+    GROUP BY spa."providerTypeId"
   `;
   
   const plan2 = await analyzeQuery('Provider type statistics', query2);
   queries.push(plan2);
   
   await checkIndexUsage(plan2.plan, [
-    'ServiceProviderTypeAssignment_serviceProviderId_idx'
+    'ProviderTypeAssignment_providerId_idx'
   ]);
   await analyzeCostAndTime(plan2.plan);
 
   // Query 3: Complex search with multiple conditions
   const query3 = `
     SELECT DISTINCT sp.id, sp.name, sp.email 
-    FROM "ServiceProvider" sp
-    JOIN "ServiceProviderTypeAssignment" spa ON sp.id = spa."serviceProviderId"
+    FROM "Provider" sp
+    JOIN "ProviderTypeAssignment" spa ON sp.id = spa."providerId"
     LEFT JOIN "User" u ON sp."userId" = u.id
     WHERE sp.status = 'APPROVED'
     AND (sp.name ILIKE '%Dr%' OR u.email ILIKE '%Dr%' OR sp.bio ILIKE '%Dr%')
-    AND spa."serviceProviderTypeId" IN ('${sampleType.id}')
+    AND spa."providerTypeId" IN ('${sampleType.id}')
     ORDER BY sp.name
     LIMIT 50
   `;
@@ -124,40 +124,40 @@ async function verifyQueryPlans() {
   queries.push(plan3);
   
   await checkIndexUsage(plan3.plan, [
-    'ServiceProviderTypeAssignment_serviceProviderTypeId_idx'
+    'ProviderTypeAssignment_providerTypeId_idx'
   ]);
   await analyzeCostAndTime(plan3.plan);
 
   // Query 4: Fast provider lookup by assignment (should be very fast with composite index)
   const query4 = `
     SELECT spa.*
-    FROM "ServiceProviderTypeAssignment" spa
-    WHERE spa."serviceProviderId" = '${sampleProvider.id}'
-    AND spa."serviceProviderTypeId" = '${sampleType.id}'
+    FROM "ProviderTypeAssignment" spa
+    WHERE spa."providerId" = '${sampleProvider.id}'
+    AND spa."providerTypeId" = '${sampleType.id}'
   `;
   
   const plan4 = await analyzeQuery('Fast assignment lookup', query4);
   queries.push(plan4);
   
   await checkIndexUsage(plan4.plan, [
-    'ServiceProviderTypeAssignment_serviceProviderId_serviceProviderTypeId_idx'
+    'ProviderTypeAssignment_providerId_providerTypeId_idx'
   ]);
   await analyzeCostAndTime(plan4.plan);
 
   // Query 5: Count query for pagination (should use index)
   const query5 = `
     SELECT COUNT(DISTINCT sp.id)
-    FROM "ServiceProvider" sp
-    JOIN "ServiceProviderTypeAssignment" spa ON sp.id = spa."serviceProviderId"
+    FROM "Provider" sp
+    JOIN "ProviderTypeAssignment" spa ON sp.id = spa."providerId"
     WHERE sp.status = 'APPROVED'
-    AND spa."serviceProviderTypeId" = '${sampleType.id}'
+    AND spa."providerTypeId" = '${sampleType.id}'
   `;
   
   const plan5 = await analyzeQuery('Count query for pagination', query5);
   queries.push(plan5);
   
   await checkIndexUsage(plan5.plan, [
-    'ServiceProviderTypeAssignment_serviceProviderTypeId_idx'
+    'ProviderTypeAssignment_providerTypeId_idx'
   ]);
   await analyzeCostAndTime(plan5.plan);
 

@@ -120,7 +120,7 @@ class LoadTester {
       maxTime: times.length > 0 ? Math.max(...times) : 0,
       requestsPerSecond: results.length / (totalTime / 1000),
       successRate: (successfulRequests.length / results.length) * 100,
-      errors: [...new Set(errors)] // Unique errors only
+      errors: Array.from(new Set(errors)) // Unique errors only
     };
   }
 
@@ -208,7 +208,7 @@ async function runLoadTests() {
     try {
       const requestResults = await tester.runConcurrentRequests(
         scenario.endpoint,
-        scenario.params,
+        Object.fromEntries(Object.entries(scenario.params).filter(([_, v]) => v !== undefined)) as Record<string, string>,
         scenario.concurrentUsers,
         scenario.requestsPerUser
       );

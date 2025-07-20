@@ -22,7 +22,7 @@ export async function POST(
     const providerId = params.id;
 
     // Check if all required requirements are approved
-    const provider = await prisma.serviceProvider.findUnique({
+    const provider = await prisma.provider.findUnique({
       where: { id: providerId },
       include: {
         requirementSubmissions: {
@@ -30,7 +30,11 @@ export async function POST(
             requirementType: true,
           },
         },
-        serviceProviderType: true,
+        typeAssignments: {
+          include: {
+            providerType: true,
+          },
+        },
       },
     });
 
@@ -63,7 +67,7 @@ export async function POST(
     }
 
     // Approve the provider
-    const updatedProvider = await prisma.serviceProvider.update({
+    const updatedProvider = await prisma.provider.update({
       where: { id: providerId },
       data: {
         status: 'APPROVED',

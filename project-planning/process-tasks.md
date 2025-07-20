@@ -69,7 +69,16 @@ When implementing tasks, follow this Git workflow:
    - Use descriptive commit messages referencing task numbers
    - Example: `feat(task-1.2): add subscription creation API with polymorphic validation`
 
-3. **After All Tasks Complete:**
+3. **Before Creating PR - Critical Build Verification:**
+   ```bash
+   # REQUIRED: Verify application compiles successfully
+   npm run build
+   
+   # REQUIRED: Fix any compilation errors before proceeding
+   # Only continue to PR creation after successful build
+   ```
+
+4. **After All Tasks Complete and Build Passes:**
    ```bash
    # Stage all changes
    git add .
@@ -99,12 +108,12 @@ When implementing tasks, follow this Git workflow:
    gh pr create --title "feat: [Task Group] - [Description]" --body "[detailed PR description]"
    ```
 
-4. **User Review Process (Only to be done by Developer. Never to be done by AI):**
+5. **User Review Process (Only to be done by Developer. Never to be done by AI):**
    - User reviews PR on GitHub
    - User merges PR when satisfied
    - User deletes feature branch on GitHub (click "Delete branch" button)
 
-5. **Local Cleanup (Only to be done by Developer. Never to be done by AI):**
+6. **Local Cleanup (Only to be done by Developer. Never to be done by AI):**
    ```bash
    # Switch back to master
    git checkout master
@@ -173,7 +182,13 @@ When working with task lists, the AI must:
      - Create migration files manually when needed
      - Use MCP PostgreSQL server for database verification instead of interactive commands
 
-6. **PR Creation:**
-   - When all tasks in a group are complete, create comprehensive PR
+6. **Build Verification:**
+   - **CRITICAL**: Before creating any PR, ALWAYS run `npm run build` to verify the application compiles successfully
+   - Fix ALL compilation errors before proceeding to PR creation
+   - This prevents failed CI/CD builds and deployment issues
+   - The build must pass completely before any PR is created
+
+7. **PR Creation:**
+   - When all tasks in a group are complete AND build passes, create comprehensive PR
    - Include detailed description, test plan, and file change summary
    - Reference original task documentation

@@ -53,9 +53,9 @@ async function performanceTestProviderSearch() {
   console.log('='.repeat(60));
 
   // Get current database stats
-  const totalProviders = await prisma.serviceProvider.count();
-  const totalAssignments = await prisma.serviceProviderTypeAssignment.count();
-  const totalTypes = await prisma.serviceProviderType.count();
+  const totalProviders = await prisma.provider.count();
+  const totalAssignments = await prisma.providerTypeAssignment.count();
+  const totalTypes = await prisma.providerType.count();
 
   console.log(`📊 Database Stats:`);
   console.log(`   - Total Providers: ${totalProviders}`);
@@ -87,7 +87,7 @@ async function performanceTestProviderSearch() {
 
   // Test 3: Search with single type filter
   console.log('🔍 Test 3: Search with single type filter');
-  const typeIds = await prisma.serviceProviderType.findMany({ select: { id: true }, take: 1 });
+  const typeIds = await prisma.providerType.findMany({ select: { id: true }, take: 1 });
   if (typeIds.length > 0) {
     const test3 = await measurePerformance(
       'Single type filter',
@@ -100,7 +100,7 @@ async function performanceTestProviderSearch() {
 
   // Test 4: Search with multiple type filters
   console.log('🔍 Test 4: Search with multiple type filters');
-  const allTypeIds = await prisma.serviceProviderType.findMany({ select: { id: true } });
+  const allTypeIds = await prisma.providerType.findMany({ select: { id: true } });
   if (allTypeIds.length > 1) {
     const multipleTypeIds = allTypeIds.slice(0, Math.min(2, allTypeIds.length)).map(t => t.id);
     const test4 = await measurePerformance(
