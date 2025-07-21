@@ -4,6 +4,8 @@ import { getCurrentUser } from '@/lib/auth';
 import { isInvitationExpired } from '@/lib/invitation-utils';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/providers/invitations
 export async function GET(request: Request) {
   try {

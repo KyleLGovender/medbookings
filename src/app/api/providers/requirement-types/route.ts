@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET handler for /api/providers/requirement-types
  * Fetches requirement types for a provider type
@@ -12,7 +14,7 @@ import { prisma } from '@/lib/prisma';
 export async function GET(request: NextRequest) {
   try {
     // Get query parameters
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const providerTypeId = searchParams.get('providerTypeId');
     const providerId = searchParams.get('providerId');
 

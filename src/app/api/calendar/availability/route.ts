@@ -3,9 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { searchAvailability } from '@/features/calendar/lib/actions';
 import { AvailabilityStatus } from '@/features/calendar/types/types';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
 
     const params = {
       providerId: searchParams.get('providerId') || undefined,
