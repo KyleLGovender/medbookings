@@ -3,15 +3,15 @@ export const CalendarViewType = {
   slots: 'slots',
 } as const;
 
-export const ServiceProviderCalendarViewType = {
+export const ProviderCalendarViewType = {
   day: 'day',
   week: 'week',
   schedule: 'schedule',
 } as const;
 
 export type CalendarViewType = (typeof CalendarViewType)[keyof typeof CalendarViewType];
-export type ServiceProviderCalendarViewType =
-  (typeof ServiceProviderCalendarViewType)[keyof typeof ServiceProviderCalendarViewType];
+export type ProviderCalendarViewType =
+  (typeof ProviderCalendarViewType)[keyof typeof ProviderCalendarViewType];
 
 export interface TimeRange {
   earliestTime: number; // 24-hour format (e.g., 9 for 9:00, 13 for 13:00)

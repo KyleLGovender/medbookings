@@ -51,7 +51,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Provider ID is required' }, { status: 400 });
     }
 
-    const provider = await prisma.serviceProvider.findUnique({
+    const provider = await prisma.provider.findUnique({
       where: { id: providerId },
       include: { services: true },
     });

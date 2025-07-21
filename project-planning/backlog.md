@@ -1,11 +1,12 @@
 # MedBookings MVP Project Plan
 
 ## 🚀 Current Sprint (In Progress)
-- [ ] Fix all build errors and get system building cleanly
-- [x] Remove/clean up non-MVP code to focus on core functionality
+- [x] Refactor data model relationships from 1-to-n to many-to-many where appropriate - Enable users to have multiple service provider roles and review other entity relationships for flexibility (Prisma schema, migrations, API endpoints)
+- [ ] Change ServiceProvider to Provider throughout the codebase
+- [ ] Move development to staging database. Will require alignment of current prisma models etc.
+- [ ] Implement user roles system (guest, user, provider, organization manager, admin)
 
 ## 📋 Ready for Development (Prioritized)
-- [ ] Implement user roles system (guest, user, provider, organization manager, admin)
 
 ## 🔥 High Priority Issues & Tasks
 
@@ -22,6 +23,8 @@
 
 
 ## ✅ Recently Completed
+- [x] Fix all build errors and get system building cleanly
+- [x] Remove/clean up non-MVP code to focus on core functionality
 - [x] Provider onboarding layout... long form... some weird issue with two vertical scrolling windows. Quite annoying.
 - [x] Figure out why there is no loading when a button is clicked sometimes.
 - [x] Resolve sidebar mobile view.
@@ -40,7 +43,8 @@
 - [x] Make side bar in view by default.
 
 ## 📝 Quick Capture (New Issues)
-<!-- Use @project-planning/add-issue.md to add new items here, then move to appropriate priority section -->
+- [ ] Populate provider and organization and user email addresses with the associated Google email. Not possible to edit.
+- [ ] Implement testing throughout the application
 
 ---
 
@@ -236,6 +240,7 @@
 
 ## 🧹 High Priority / Technical Debt
 - [ ] Refactor data model relationships from 1-to-n to many-to-many where appropriate - Enable users to have multiple service provider roles and review other entity relationships for flexibility (Prisma schema, migrations, API endpoints)
+- [ ] Change ServiceProvider to Provider throughout the codebase
 
 ## 📊 Medium Priority Issues
 - [ ] Location creation doesn't save GP coordinates. Works on location update but not creation.

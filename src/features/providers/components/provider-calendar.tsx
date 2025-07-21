@@ -18,11 +18,11 @@ import { ProviderCalendarView } from '@/features/calendar/components/provider-ca
 // import { VisualIndicatorsConfig } from '@/features/calendar/availability/components/visual-indicators-config';
 
 // Mock data types - these would typically come from props or API
-interface ServiceProviderCalendarProps {
+interface ProviderCalendarProps {
   searchParams?: { [key: string]: string | string[] | undefined };
 }
 
-export function ServiceProviderCalendar({ searchParams }: ServiceProviderCalendarProps) {
+export function ProviderCalendar({ searchParams }: ProviderCalendarProps) {
   const [activeTab, setActiveTab] = useState('calendar');
   const [showCreateForm, setShowCreateForm] = useState(false);
   // const [showExportDialog, setShowExportDialog] = useState(false);
@@ -183,7 +183,7 @@ export function ServiceProviderCalendar({ searchParams }: ServiceProviderCalenda
             </CardHeader>
             <CardContent>
               <AvailabilityProposalsList
-                serviceProviderId="current-provider" // This would come from auth context
+                providerId="current-provider" // This would come from auth context
               />
             </CardContent>
           </Card>
@@ -219,7 +219,7 @@ export function ServiceProviderCalendar({ searchParams }: ServiceProviderCalenda
                 </Button>
               </div>
               <AvailabilityCreationForm
-                serviceProviderId="current-provider" // This would come from auth context
+                providerId="current-provider" // This would come from auth context
                 onSuccess={() => {
                   setShowCreateForm(false);
                   // Refresh calendar data

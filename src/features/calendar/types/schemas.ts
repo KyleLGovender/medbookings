@@ -86,7 +86,7 @@ export const serviceConfigSchema = z.object({
 
 // Base availability object schema (without refinements)
 const baseAvailabilitySchema = z.object({
-  serviceProviderId: z.string().cuid(),
+  providerId: z.string().cuid(),
   organizationId: z.string().cuid().optional(),
   locationId: z.string().cuid().optional(),
   connectionId: z.string().cuid().optional(),
@@ -148,7 +148,7 @@ export const updateAvailabilityDataSchema = baseAvailabilitySchema.partial().ext
 // Availability search parameters schema
 export const availabilitySearchParamsSchema = z
   .object({
-    serviceProviderId: z.string().min(1).optional(),
+    providerId: z.string().min(1).optional(),
     organizationId: z.string().min(1).optional(),
     locationId: z.string().min(1).optional(),
     serviceId: z.string().min(1).optional(),
@@ -183,7 +183,7 @@ export const availabilitySearchParamsSchema = z
 // Slot search parameters schema
 export const slotSearchParamsSchema = z
   .object({
-    serviceProviderId: z.string().cuid().optional(),
+    providerId: z.string().cuid().optional(),
     organizationId: z.string().cuid().optional(),
     locationId: z.string().cuid().optional(),
     serviceId: z.string().cuid().optional(),
@@ -268,7 +268,7 @@ export const availabilityBillingContextSchema = z.object({
   subscriptionId: z.string().cuid().optional(),
   organizationId: z.string().cuid().optional(),
   locationId: z.string().cuid().optional(),
-  serviceProviderId: z.string().cuid(),
+  providerId: z.string().cuid(),
   estimatedSlots: z.number().int().nonnegative(),
   estimatedCost: z.number().nonnegative(),
 });

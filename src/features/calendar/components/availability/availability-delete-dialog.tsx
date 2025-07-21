@@ -188,7 +188,7 @@ export function AvailabilityDeleteDialog({
                         {serviceConfig.service?.name || 'Unknown Service'}
                         {' - '}
                         {serviceConfig.duration} min
-                        {serviceConfig.serviceProvider?.showPrice && serviceConfig.price && (
+                        {serviceConfig.provider?.showPrice && serviceConfig.price && (
                           <span> - ${serviceConfig.price.toString()}</span>
                         )}
                       </div>

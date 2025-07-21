@@ -7,13 +7,13 @@ import CalendarLoader from '@/components/calendar-loader';
 import { ProviderProfileView } from '@/features/providers/components/profile/provider-profile-view';
 import { authOptions } from '@/lib/auth';
 
-interface ServiceProviderPageProps {
+interface ProviderPageProps {
   params: {
     id: string;
   };
 }
 
-export default async function ServiceProviderPage({ params }: ServiceProviderPageProps) {
+export default async function ProviderPage({ params }: ProviderPageProps) {
   // Get current session to check if user can edit this profile
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;

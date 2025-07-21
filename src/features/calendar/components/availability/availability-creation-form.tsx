@@ -61,7 +61,7 @@ interface LocationData {
 }
 
 interface AvailabilityCreationFormProps {
-  serviceProviderId: string;
+  providerId: string;
   organizationId?: string;
   locationId?: string;
   onSuccess?: (data: AvailabilityWithRelations) => void;
@@ -82,14 +82,14 @@ type FormValues = CreateAvailabilityData;
  * - Service selection and configuration
  * - Additional settings (confirmation requirements)
  *
- * @param serviceProviderId - The ID of the service provider
+ * @param providerId - The ID of the provider
  * @param organizationId - Optional organization ID for organization-created availability
  * @param locationId - Optional pre-selected location ID
  * @param onSuccess - Callback fired when availability is created successfully
  * @param onCancel - Callback fired when the form is cancelled
  */
 export function AvailabilityCreationForm({
-  serviceProviderId,
+  providerId,
   organizationId,
   locationId,
   onSuccess,
@@ -114,7 +114,7 @@ export function AvailabilityCreationForm({
     currentUserProvider ? 'provider' : 'organization'
   );
   const [selectedProviderId, setSelectedProviderId] = useState<string>(
-    serviceProviderId || currentUserProvider?.id || ''
+    providerId || currentUserProvider?.id || ''
   );
 
   // Fetch provider's services
@@ -134,7 +134,7 @@ export function AvailabilityCreationForm({
   const form = useForm<FormValues>({
     resolver: zodResolver(createAvailabilityDataSchema),
     defaultValues: {
-      serviceProviderId: selectedProviderId,
+      providerId: selectedProviderId,
       organizationId,
       locationId: locationId || undefined,
       startTime: new Date(),
@@ -150,7 +150,7 @@ export function AvailabilityCreationForm({
 
   // Update form when selectedProviderId changes
   useEffect(() => {
-    form.setValue('serviceProviderId', selectedProviderId);
+    form.setValue('providerId', selectedProviderId);
   }, [selectedProviderId, form]);
 
   const createMutation = useCreateAvailability({
@@ -260,7 +260,7 @@ export function AvailabilityCreationForm({
                     value={selectedProviderId}
                     onValueChange={(value) => {
                       setSelectedProviderId(value);
-                      form.setValue('serviceProviderId', value);
+                      form.setValue('providerId', value);
                     }}
                   >
                     <SelectTrigger>
@@ -573,7 +573,7 @@ export function AvailabilityCreationForm({
               <div className="py-8 text-center text-destructive">Failed to load services.</div>
             ) : (
               <ServiceSelectionSection
-                serviceProviderId={serviceProviderId}
+                providerId={providerId}
                 organizationId={organizationId}
                 availableServices={(availableServices || []).map((s) => ({
                   ...s,

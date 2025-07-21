@@ -262,7 +262,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                     <p className="text-xs text-green-600">
                       {
                         organization.providerConnections.filter(
-                          (p: any) => p.serviceProvider?.status === 'APPROVED'
+                          (p: any) => p.provider?.status === 'APPROVED'
                         ).length
                       }{' '}
                       approved
@@ -414,25 +414,29 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                           <TableCell>
                             <div>
                               <p className="font-medium">
-                                {connection.serviceProvider?.user?.name || 'Unknown'}
+                                {connection.provider?.user?.name || 'Unknown'}
                               </p>
                               <p className="text-sm text-muted-foreground">
-                                {connection.serviceProvider?.user?.email}
+                                {connection.provider?.user?.email}
                               </p>
-                              {connection.serviceProvider?.user?.phone && (
+                              {connection.provider?.user?.phone && (
                                 <p className="text-xs text-muted-foreground">
-                                  {connection.serviceProvider.user.phone}
+                                  {connection.provider.user.phone}
                                 </p>
                               )}
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline">
-                              {connection.serviceProvider?.serviceProviderType?.name || 'Unknown'}
-                            </Badge>
+                            <div className="flex flex-wrap gap-1">
+                              {connection.provider?.typeAssignments?.map((assignment: any, index: number) => (
+                                <Badge key={index} variant="outline">
+                                  {assignment.providerType?.name || 'Unknown'}
+                                </Badge>
+                              )) || <Badge variant="outline">Unknown</Badge>}
+                            </div>
                           </TableCell>
                           <TableCell>
-                            <StatusBadge status={connection.serviceProvider?.status} />
+                            <StatusBadge status={connection.provider?.status} />
                           </TableCell>
                           <TableCell>
                             <div className="text-sm text-muted-foreground">

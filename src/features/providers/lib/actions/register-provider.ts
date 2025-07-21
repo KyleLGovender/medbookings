@@ -2,7 +2,7 @@
 
 import { Languages, RequirementsValidationStatus } from '@prisma/client';
 
-import { sendServiceProviderWhatsappConfirmation } from '@/features/providers/lib/server-helper';
+import { sendProviderWhatsappConfirmation } from '@/features/providers/lib/server-helper';
 import { prisma } from '@/lib/prisma';
 
 /**
@@ -11,7 +11,7 @@ import { prisma } from '@/lib/prisma';
  * @param formData Form data containing provider information
  * @returns Object with success status and redirect path or error
  */
-export async function registerServiceProvider(prevState: any, formData: FormData) {
+export async function registerProvider(prevState: any, formData: FormData) {
   try {
     const userId = formData.get('userId') as string;
     const imageUrl = formData.get('imageUrl') as string;
@@ -20,6 +20,22 @@ export async function registerServiceProvider(prevState: any, formData: FormData
     const email = formData.get('email') as string;
     const whatsapp = formData.get('whatsapp') as string;
     const website = (formData.get('website') as string) || null;
+    
+    // Handle provider types (multiple or single for backward compatibility)
+    const multipleProviderTypeIds = formData.getAll('providerTypeIds') as string[];
+    const singleProviderTypeId = formData.get('providerTypeId') as string;
+    
+    // Use multiple types if provided, otherwise fall back to single type
+    const providerTypeIds = multipleProviderTypeIds.length > 0 
+      ? multipleProviderTypeIds 
+      : singleProviderTypeId ? [singleProviderTypeId] : [];
+      
+    if (providerTypeIds.length === 0) {
+      return {
+        success: false,
+        error: 'At least one provider type must be selected',
+      };
+    }
 
     // Process requirements first if any were submitted
     const requirementSubmissions: {
@@ -70,8 +86,8 @@ export async function registerServiceProvider(prevState: any, formData: FormData
       });
     }
 
-    // Save provider data with requirements
-    const provider = await prisma.serviceProvider.create({
+    // Save provider data with requirements and type assignments
+    const provider = await prisma.provider.create({
       data: {
         userId,
         image: imageUrl || '',
@@ -86,7 +102,11 @@ export async function registerServiceProvider(prevState: any, formData: FormData
         languages: {
           set: languages,
         },
-        serviceProviderTypeId: formData.get('serviceProviderTypeId') as string,
+        typeAssignments: {
+          create: providerTypeIds.map(typeId => ({
+            providerTypeId: typeId,
+          })),
+        },
         requirementSubmissions: {
           create: requirementSubmissions,
         },
@@ -98,10 +118,15 @@ export async function registerServiceProvider(prevState: any, formData: FormData
             email: true,
           },
         },
-        serviceProviderType: {
-          select: {
-            name: true,
-            description: true,
+        typeAssignments: {
+          include: {
+            providerType: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
           },
         },
         requirementSubmissions: {
@@ -114,7 +139,7 @@ export async function registerServiceProvider(prevState: any, formData: FormData
 
     // Send WhatsApp confirmation
     try {
-      await sendServiceProviderWhatsappConfirmation(provider.name, provider.whatsapp);
+      await sendProviderWhatsappConfirmation(provider.name, provider.whatsapp);
     } catch (error) {
       console.error('Failed to send WhatsApp confirmation:', error);
       // Note: We don't want to fail the registration if WhatsApp fails

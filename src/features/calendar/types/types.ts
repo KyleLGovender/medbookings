@@ -11,7 +11,7 @@ import {
 } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
-import { Service, ServiceProvider } from '@/features/providers/types';
+import { Service, Provider } from '@/features/providers/types';
 
 // =============================================================================
 // ENUMS
@@ -212,7 +212,7 @@ export interface CalendarEvent {
 
 export interface Availability {
   id: string;
-  serviceProviderId: string;
+  providerId: string;
   organizationId?: string | null;
   locationId?: string | null;
   connectionId?: string | null;
@@ -238,7 +238,7 @@ export interface Availability {
 }
 
 export interface AvailabilityWithRelations extends Availability {
-  serviceProvider: ServiceProvider;
+  provider: Provider;
   organization?: Organization | null;
   location?: Location | null;
   providerConnection?: OrganizationProviderConnection | null;
@@ -253,7 +253,7 @@ export interface AvailabilityWithRelations extends Availability {
 export interface ServiceAvailabilityConfig {
   id: string;
   serviceId: string;
-  serviceProviderId: string;
+  providerId: string;
   locationId?: string | null;
   duration: number;
   price: Decimal;
@@ -265,7 +265,7 @@ export interface ServiceAvailabilityConfig {
 
 export interface ServiceAvailabilityConfigWithRelations extends ServiceAvailabilityConfig {
   service: Service;
-  serviceProvider?: ServiceProvider;
+  provider?: Provider;
   location?: Location | null;
   availabilities?: Availability[];
   calculatedSlots?: CalculatedAvailabilitySlot[];
@@ -442,7 +442,7 @@ export interface GoogleCalendarIntegration {
 // =============================================================================
 
 export interface AvailabilitySearchParams {
-  serviceProviderId?: string;
+  providerId?: string;
   organizationId?: string;
   locationId?: string;
   serviceId?: string;
@@ -455,7 +455,7 @@ export interface AvailabilitySearchParams {
 }
 
 export interface SlotSearchParams {
-  serviceProviderId?: string;
+  providerId?: string;
   organizationId?: string;
   locationId?: string;
   serviceId?: string;
@@ -531,7 +531,7 @@ export interface TimeSlotGenerationResult {
 // =============================================================================
 
 export interface CreateAvailabilityData {
-  serviceProviderId: string;
+  providerId: string;
   organizationId?: string;
   locationId?: string;
   connectionId?: string;
@@ -600,7 +600,7 @@ export interface AvailabilityBillingContext {
   subscriptionId?: string;
   organizationId?: string;
   locationId?: string;
-  serviceProviderId: string;
+  providerId: string;
   estimatedSlots: number;
   estimatedCost: number;
 }

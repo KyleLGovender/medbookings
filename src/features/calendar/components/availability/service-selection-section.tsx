@@ -15,7 +15,7 @@ import { CreateAvailabilityData } from '@/features/calendar/types/types';
 import { Service } from '@/features/providers/types';
 
 interface ServiceSelectionSectionProps {
-  serviceProviderId: string;
+  providerId: string;
   organizationId?: string;
   availableServices?: Service[];
   availableLocations?: Array<{
@@ -26,7 +26,7 @@ interface ServiceSelectionSectionProps {
 }
 
 export function ServiceSelectionSection({
-  serviceProviderId,
+  providerId,
   organizationId,
   availableServices = [],
   availableLocations = [],

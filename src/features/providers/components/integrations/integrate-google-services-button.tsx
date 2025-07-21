@@ -7,13 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 
 interface IntegrateGoogleServicesButtonProps {
-  serviceProviderId: string;
+  providerId: string;
   hasIntegration: boolean;
   children: React.ReactNode;
 }
 
 export function IntegrateGoogleServicesButton({
-  serviceProviderId,
+  providerId,
   hasIntegration,
   children,
 }: IntegrateGoogleServicesButtonProps) {
@@ -21,7 +21,7 @@ export function IntegrateGoogleServicesButton({
 
   const handleIntegrate = async () => {
     setIsLoading(true);
-    const url = `/api/auth/google/calendar?serviceProviderId=${serviceProviderId}`;
+    const url = `/api/auth/google/calendar?providerId=${providerId}`;
     window.location.href = url;
   };
 

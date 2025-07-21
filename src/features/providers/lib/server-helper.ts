@@ -14,11 +14,11 @@ if (!accountSid || !authToken || !TwilioWhatsappNumber) {
 const twilioClient = twilio(accountSid, authToken);
 
 /**
- * Sends a WhatsApp confirmation message to the service provider
- * @param name - The name of the service provider
+ * Sends a WhatsApp confirmation message to the provider
+ * @param name - The name of the provider
  * @param whatsappNumber - The WhatsApp number to send the message to
  */
-export async function sendServiceProviderWhatsappConfirmation(
+export async function sendProviderWhatsappConfirmation(
   name: string,
   whatsappNumber: string
 ) {
@@ -41,10 +41,13 @@ export async function sendServiceProviderWhatsappConfirmation(
       to: `whatsapp:${whatsappNumber}`,
     });
 
-    console.log('Service provider WhatsApp confirmation sent successfully:', message.sid);
+    console.log('Provider WhatsApp confirmation sent successfully:', message.sid);
     return message;
   } catch (error) {
-    console.error('Error sending service provider WhatsApp confirmation:', error);
+    console.error('Error sending provider WhatsApp confirmation:', error);
     throw error;
   }
 }
+
+// Backward compatibility export
+export const sendServiceProviderWhatsappConfirmation = sendProviderWhatsappConfirmation;

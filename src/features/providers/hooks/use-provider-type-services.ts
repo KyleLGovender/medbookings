@@ -32,7 +32,7 @@ export function useProviderTypeServices(providerId: string | undefined) {
 
   // Then fetch services based on the provider type ID
   return useQuery<SerializedService[]>({
-    queryKey: ['provider-services', providerId, providerQuery.data?.serviceProviderTypeId],
+    queryKey: ['provider-services', providerId, providerQuery.data?.providerTypeId],
     queryFn: async () => {
       if (!providerId) {
         throw new Error('Provider ID is required');
@@ -43,8 +43,8 @@ export function useProviderTypeServices(providerId: string | undefined) {
       url.searchParams.append('providerId', providerId);
 
       // providerTypeId
-      if (providerQuery.data?.serviceProviderTypeId) {
-        url.searchParams.append('providerTypeId', providerQuery.data.serviceProviderTypeId);
+      if (providerQuery.data?.providerTypeId) {
+        url.searchParams.append('providerTypeId', providerQuery.data.providerTypeId);
       }
 
       const response = await fetch(url.toString());
@@ -53,6 +53,6 @@ export function useProviderTypeServices(providerId: string | undefined) {
       }
       return response.json();
     },
-    enabled: !!providerId && !!providerQuery.data?.serviceProviderTypeId,
+    enabled: !!providerId && !!providerQuery.data?.providerTypeId,
   });
 }

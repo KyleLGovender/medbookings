@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     const params = {
-      serviceProviderId: searchParams.get('serviceProviderId') || undefined,
+      providerId: searchParams.get('providerId') || undefined,
       organizationId: searchParams.get('organizationId') || undefined,
       locationId: searchParams.get('locationId') || undefined,
       serviceId: searchParams.get('serviceId') || undefined,

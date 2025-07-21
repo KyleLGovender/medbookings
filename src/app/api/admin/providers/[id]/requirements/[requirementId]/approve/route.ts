@@ -22,7 +22,7 @@ export async function POST(
       where: { id: requirementId },
       include: {
         requirementType: true,
-        serviceProvider: {
+        provider: {
           select: { id: true, name: true, email: true },
         },
       },
@@ -33,7 +33,7 @@ export async function POST(
     }
 
     // Verify the submission belongs to the specified provider
-    if (submission.serviceProviderId !== providerId) {
+    if (submission.providerId !== providerId) {
       return NextResponse.json(
         { success: false, error: 'Requirement submission does not belong to this provider' },
         { status: 400 }
@@ -53,9 +53,9 @@ export async function POST(
 
     // Console log for future email integration
     console.log('ADMIN_ACTION: Requirement approved', {
-      providerId: submission.serviceProvider.id,
-      providerName: submission.serviceProvider.name,
-      providerEmail: submission.serviceProvider.email,
+      providerId: submission.provider.id,
+      providerName: submission.provider.name,
+      providerEmail: submission.provider.email,
       requirementId: submission.id,
       requirementName: submission.requirementType.name,
       adminId: currentUser.id,

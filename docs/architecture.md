@@ -219,8 +219,8 @@ async function checkRole(allowedRoles: UserRole[]) {
 
 **Database Models:**
 
-- ServiceProvider
-- ServiceProviderType
+- Provider
+- ProviderType
 - RequirementSubmission
 - Service configurations
 
@@ -437,7 +437,7 @@ graph TD
 ```sql
 -- Core entities
 User (authentication)
-ServiceProvider (healthcare providers)
+Provider (healthcare providers)
 Organization (healthcare organizations)
 Service (medical services)
 

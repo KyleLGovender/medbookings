@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { SerializedServiceProvider } from './types';
+import { SerializedProvider } from './types';
 
 /**
  * Hook to fetch provider data
@@ -8,7 +8,7 @@ import { SerializedServiceProvider } from './types';
  * @returns Query result containing the provider data
  */
 export function useProvider(providerId: string | undefined) {
-  return useQuery<SerializedServiceProvider>({
+  return useQuery<SerializedProvider>({
     queryKey: ['provider', providerId],
     queryFn: async () => {
       if (!providerId) {

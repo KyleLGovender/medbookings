@@ -4,8 +4,8 @@ import { revalidatePath } from 'next/cache';
 
 import { Languages, RequirementsValidationStatus } from '@prisma/client';
 
-import { serializeServiceProvider } from '@/features/providers/lib/helper';
-import { sendServiceProviderWhatsappConfirmation } from '@/features/providers/lib/server-helper';
+import { serializeProvider } from '@/features/providers/lib/helper';
+import { sendProviderWhatsappConfirmation } from '@/features/providers/lib/server-helper';
 import { providerDebug } from '@/lib/debug';
 import { prisma } from '@/lib/prisma';
 
@@ -14,7 +14,7 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
     const id = formData.get('id') as string;
 
     if (!id) {
-      return { success: false, error: 'Service provider ID is required' };
+      return { success: false, error: 'Provider ID is required' };
     }
 
     // Extract basic data fields
@@ -26,7 +26,8 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
     const website = (formData.get('website') as string) || null;
     const languages = formData.getAll('languages') as Languages[];
     const userId = formData.get('userId') as string;
-    const serviceProviderTypeId = formData.get('serviceProviderTypeId') as string;
+    const providerTypeId = formData.get('providerTypeId') as string;
+    const providerTypeIds = formData.getAll('providerTypeIds') as string[];
     const showPrice = formData.get('showPrice') === 'true';
 
     providerDebug.log('action', 'Form data extracted:', {
@@ -38,12 +39,13 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
       website,
       languages,
       userId,
-      serviceProviderTypeId,
+      providerTypeId,
+      providerTypeIds,
       showPrice,
     });
 
     // Get current provider data to compare changes
-    const currentProvider = await prisma.serviceProvider.findUnique({
+    const currentProvider = await prisma.provider.findUnique({
       where: { id },
       include: {
         services: true,
@@ -52,10 +54,15 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
             email: true,
           },
         },
-        serviceProviderType: {
-          select: {
-            name: true,
-            description: true,
+        typeAssignments: {
+          include: {
+            providerType: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
           },
         },
         requirementSubmissions: {
@@ -67,7 +74,7 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
     });
 
     if (!currentProvider) {
-      return { success: false, error: 'Service provider not found' };
+      return { success: false, error: 'Provider not found' };
     }
 
     // Build update data object only with changed fields
@@ -83,24 +90,43 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
     if (JSON.stringify(languages) !== JSON.stringify(currentProvider.languages)) {
       updateData.languages = languages;
     }
-    if (serviceProviderTypeId && serviceProviderTypeId !== currentProvider.serviceProviderTypeId) {
-      updateData.serviceProviderTypeId = serviceProviderTypeId;
+    // Get current provider type ID from type assignments (for legacy compatibility)
+    const currentProviderTypeId = currentProvider.typeAssignments?.[0]?.providerTypeId;
+    if (providerTypeId && providerTypeId !== currentProviderTypeId) {
+      updateData.providerTypeId = providerTypeId;
     }
     if (showPrice !== currentProvider.showPrice) {
       updateData.showPrice = showPrice;
     }
 
+    // Handle provider type assignments
+    const currentTypeIds = currentProvider.typeAssignments.map(assignment => assignment.providerTypeId);
+    const newTypeIds = providerTypeIds.length > 0 ? providerTypeIds : 
+                       (providerTypeId ? [providerTypeId] : []);
+    
+    // Check if type assignments changed
+    const typeAssignmentsChanged = JSON.stringify(currentTypeIds.sort()) !== JSON.stringify(newTypeIds.sort());
+    
+    if (typeAssignmentsChanged && newTypeIds.length > 0) {
+      updateData.typeAssignments = {
+        deleteMany: {}, // Remove all existing assignments
+        create: newTypeIds.map(typeId => ({
+          providerTypeId: typeId,
+        })),
+      };
+    }
+
     if (whatsapp !== currentProvider.whatsapp) {
       // Send WhatsApp confirmation
       try {
-        await sendServiceProviderWhatsappConfirmation(updateData.name, updateData.whatsapp);
+        await sendProviderWhatsappConfirmation(updateData.name, updateData.whatsapp);
       } catch (error) {
         // Note: We don't want to fail the registration if WhatsApp fails
         // So we just log the error and continue
       }
     }
 
-    const updatedProvider = await prisma.serviceProvider.update({
+    const updatedProvider = await prisma.provider.update({
       where: { id },
       data: updateData,
       include: {
@@ -110,10 +136,15 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
             email: true,
           },
         },
-        serviceProviderType: {
-          select: {
-            name: true,
-            description: true,
+        typeAssignments: {
+          include: {
+            providerType: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
           },
         },
         requirementSubmissions: {
@@ -128,7 +159,7 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
 
     return {
       success: true,
-      data: serializeServiceProvider(updatedProvider),
+      data: serializeProvider(updatedProvider),
       redirect: `/providers/${id}`,
     };
   } catch (error) {
@@ -144,7 +175,7 @@ export async function updateProviderServices(prevState: any, formData: FormData)
     const id = formData.get('id') as string;
 
     if (!id) {
-      return { success: false, error: 'Service provider ID is required' };
+      return { success: false, error: 'Provider ID is required' };
     }
 
     // Extract service IDs
@@ -173,7 +204,7 @@ export async function updateProviderServices(prevState: any, formData: FormData)
     });
 
     // Get current provider data
-    const currentProvider = await prisma.serviceProvider.findUnique({
+    const currentProvider = await prisma.provider.findUnique({
       where: { id },
       include: {
         services: true,
@@ -181,12 +212,12 @@ export async function updateProviderServices(prevState: any, formData: FormData)
     });
 
     if (!currentProvider) {
-      return { success: false, error: 'Service provider not found' };
+      return { success: false, error: 'Provider not found' };
     }
 
     // Update the provider's services
     // First, disconnect all existing services
-    await prisma.serviceProvider.update({
+    await prisma.provider.update({
       where: { id },
       data: {
         services: {
@@ -196,7 +227,7 @@ export async function updateProviderServices(prevState: any, formData: FormData)
     });
 
     // Then connect the new services
-    await prisma.serviceProvider.update({
+    await prisma.provider.update({
       where: { id },
       data: {
         services: {
@@ -250,11 +281,11 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
     const userId = formData.get('userId') as string;
 
     if (!id) {
-      return { success: false, error: 'Service provider ID is required' };
+      return { success: false, error: 'Provider ID is required' };
     }
 
     // Get current provider data
-    const currentProvider = await prisma.serviceProvider.findUnique({
+    const currentProvider = await prisma.provider.findUnique({
       where: { id },
       include: {
         requirementSubmissions: true,
@@ -265,7 +296,7 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
     providerDebug.log('action', 'formData:', formData);
 
     if (!currentProvider) {
-      return { success: false, error: 'Service provider not found' };
+      return { success: false, error: 'Provider not found' };
     }
 
     // Check authorization
@@ -369,7 +400,7 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
         await prisma.requirementSubmission.create({
           data: {
             requirementTypeId: req.requirementTypeId,
-            serviceProviderId: id,
+            providerId: id,
             documentMetadata,
             status: RequirementsValidationStatus.PENDING,
           },
@@ -382,7 +413,7 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
     revalidatePath(`/providers/${id}/edit`);
 
     // Get updated provider data
-    const updatedProvider = await prisma.serviceProvider.findUnique({
+    const updatedProvider = await prisma.provider.findUnique({
       where: { id },
       include: {
         services: true,
@@ -391,10 +422,15 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
             email: true,
           },
         },
-        serviceProviderType: {
-          select: {
-            name: true,
-            description: true,
+        typeAssignments: {
+          include: {
+            providerType: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
           },
         },
         requirementSubmissions: {
@@ -411,7 +447,7 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
 
     return {
       success: true,
-      data: serializeServiceProvider(updatedProvider),
+      data: serializeProvider(updatedProvider),
       redirect: `/providers/${id}`,
     };
   } catch (error) {

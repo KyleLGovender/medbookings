@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma';
 export async function GET(request: NextRequest) {
   try {
     // Fetch all provider types
-    const providerTypes = await prisma.serviceProviderType.findMany({
+    const providerTypes = await prisma.providerType.findMany({
       select: {
         id: true,
         name: true,
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Fetch all requirements grouped by provider type
-    const requirementsData = await prisma.serviceProviderType.findMany({
+    const requirementsData = await prisma.providerType.findMany({
       select: {
         id: true,
         requirements: {
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         defaultDuration: true,
         defaultPrice: true,
         displayPriority: true,
-        serviceProviderTypeId: true,
+        providerTypeId: true,
       },
       orderBy: [{ displayPriority: 'asc' }, { name: 'asc' }],
     });
@@ -62,10 +62,10 @@ export async function GET(request: NextRequest) {
     // Organize services by provider type ID
     const servicesByProviderType: Record<string, any[]> = {};
     servicesData.forEach((service) => {
-      if (!servicesByProviderType[service.serviceProviderTypeId]) {
-        servicesByProviderType[service.serviceProviderTypeId] = [];
+      if (!servicesByProviderType[service.providerTypeId]) {
+        servicesByProviderType[service.providerTypeId] = [];
       }
-      servicesByProviderType[service.serviceProviderTypeId].push({
+      servicesByProviderType[service.providerTypeId].push({
         id: service.id,
         name: service.name,
         description: service.description,

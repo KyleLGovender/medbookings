@@ -73,7 +73,7 @@ export async function createAvailability(
 
     // Check if user has permission to create availability for this provider
     const canCreateForProvider =
-      currentUser.id === validatedData.serviceProviderId ||
+      currentUser.id === validatedData.providerId ||
       currentUser.role === UserRole.ADMIN ||
       currentUser.role === UserRole.SUPER_ADMIN;
 
@@ -99,11 +99,11 @@ export async function createAvailability(
 
     // Determine initial status based on context
     // Check if current user is the service provider by comparing ServiceProvider IDs
-    const currentUserServiceProvider = await prisma.serviceProvider.findUnique({
+    const currentUserProvider = await prisma.provider.findUnique({
       where: { userId: currentUser.id },
     });
     
-    const isProviderCreated = currentUserServiceProvider?.id === validatedData.serviceProviderId;
+    const isProviderCreated = currentUserProvider?.id === validatedData.providerId;
     const initialStatus = isProviderCreated
       ? AvailabilityStatus.ACCEPTED
       : AvailabilityStatus.PENDING;
@@ -169,7 +169,7 @@ export async function createAvailability(
     if (validatedData.isRecurring && instances.length > 1) {
       // Validate recurring availability
       const recurringValidation = await validateRecurringAvailability({
-        serviceProviderId: validatedData.serviceProviderId,
+        providerId: validatedData.providerId,
         startTime: validatedData.startTime,
         endTime: validatedData.endTime,
         instances,
@@ -181,7 +181,7 @@ export async function createAvailability(
     } else {
       // Validate single availability
       const singleValidation = await validateAvailability({
-        serviceProviderId: validatedData.serviceProviderId,
+        providerId: validatedData.providerId,
         startTime: validatedData.startTime,
         endTime: validatedData.endTime,
       });
@@ -196,7 +196,7 @@ export async function createAvailability(
       instances.map(async (instance) => {
         return prisma.availability.create({
           data: {
-            serviceProviderId: validatedData.serviceProviderId,
+            providerId: validatedData.providerId,
             organizationId: validatedData.organizationId,
             locationId: validatedData.locationId,
             connectionId: validatedData.connectionId,
@@ -216,8 +216,8 @@ export async function createAvailability(
             defaultSubscriptionId: validatedData.defaultSubscriptionId,
             availableServices: {
               create: validatedData.services.map((service) => ({
-                serviceId: service.serviceId,
-                serviceProviderId: validatedData.serviceProviderId,
+                service: { connect: { id: service.serviceId } },
+                provider: { connect: { id: validatedData.providerId } },
                 duration: service.duration,
                 price: service.price,
                 isOnlineAvailable: validatedData.isOnlineAvailable, // Use availability-level setting
@@ -242,7 +242,7 @@ export async function createAvailability(
             id: av.id,
             startTime: av.startTime,
             endTime: av.endTime,
-            serviceProviderId: av.serviceProviderId,
+            providerId: av.providerId,
             organizationId: av.organizationId || '',
             locationId: av.locationId || undefined,
             schedulingRule: av.schedulingRule as SchedulingRule,
@@ -319,7 +319,7 @@ export async function getAvailabilityById(
 
     // Check if user has permission to view this availability
     const canView =
-      currentUser.id === availability.serviceProviderId ||
+      currentUser.id === availability.providerId ||
       currentUser.id === availability.createdById ||
       currentUser.role === 'ADMIN' ||
       currentUser.role === 'SUPER_ADMIN';
@@ -368,8 +368,8 @@ export async function searchAvailability(
     // Build where clause
     const where: any = {};
 
-    if (validatedParams.serviceProviderId) {
-      where.serviceProviderId = validatedParams.serviceProviderId;
+    if (validatedParams.providerId) {
+      where.serviceProviderId = validatedParams.providerId;
     }
 
     if (validatedParams.organizationId) {
@@ -488,7 +488,7 @@ export async function updateAvailability(
 
     // Check permissions
     const canUpdate =
-      currentUser.id === existingAvailability.serviceProviderId ||
+      currentUser.id === existingAvailability.providerId ||
       currentUser.id === existingAvailability.createdById ||
       currentUser.role === 'ADMIN' ||
       currentUser.role === 'SUPER_ADMIN';
@@ -525,7 +525,7 @@ export async function updateAvailability(
       const newEndTime = validatedData.endTime || existingAvailability.endTime;
 
       const updateValidation = await validateAvailability({
-        serviceProviderId: existingAvailability.serviceProviderId,
+        providerId: existingAvailability.providerId,
         startTime: newStartTime,
         endTime: newEndTime,
         excludeAvailabilityId: existingAvailability.id,
@@ -573,7 +573,7 @@ export async function updateAvailability(
       await prisma.serviceAvailabilityConfig.createMany({
         data: validatedData.services.map((service) => ({
           serviceId: service.serviceId,
-          serviceProviderId: existingAvailability.serviceProviderId,
+          providerId: existingAvailability.providerId,
           duration: service.duration,
           price: service.price,
           isOnlineAvailable: validatedData.isOnlineAvailable || false, // Use availability-level setting
@@ -639,7 +639,7 @@ export async function deleteAvailability(
 
     // Check permissions
     const canDelete =
-      currentUser.id === existingAvailability.serviceProviderId ||
+      currentUser.id === existingAvailability.providerId ||
       currentUser.id === existingAvailability.createdById ||
       currentUser.role === 'ADMIN' ||
       currentUser.role === 'SUPER_ADMIN';
@@ -736,7 +736,7 @@ export async function cancelAvailability(
 
     // Check permissions
     const canCancel =
-      currentUser.id === existingAvailability.serviceProviderId ||
+      currentUser.id === existingAvailability.providerId ||
       currentUser.id === existingAvailability.createdById ||
       currentUser.role === 'ADMIN' ||
       currentUser.role === 'SUPER_ADMIN';

@@ -124,7 +124,7 @@ export function AvailabilityEditForm({
       // Populate form with current values
       form.reset({
         id: availability.id,
-        serviceProviderId: availability.serviceProviderId,
+        providerId: availability.serviceProviderId,
         organizationId: availability.organizationId || undefined,
         locationId: availability.locationId || undefined,
         startTime: availability.startTime,
@@ -542,7 +542,7 @@ export function AvailabilityEditForm({
 
             {/* Service Selection */}
             <ServiceSelectionSection
-              serviceProviderId={availability.serviceProviderId}
+              providerId={availability.providerId}
               organizationId={availability.organizationId || undefined}
             />
 

@@ -67,15 +67,24 @@ When implementing tasks, follow this Git workflow:
 2. **Regular Development:**
    - Make incremental commits as you complete sub-tasks
    - Use descriptive commit messages referencing task numbers
-   - Example: `feat(task-5.2): remove TODO comments from availability form`
+   - Example: `feat(task-1.2): add subscription creation API with polymorphic validation`
 
-3. **After All Tasks Complete:**
+3. **Before Creating PR - Critical Build Verification:**
+   ```bash
+   # REQUIRED: Verify application compiles successfully
+   npm run build
+   
+   # REQUIRED: Fix any compilation errors before proceeding
+   # Only continue to PR creation after successful build
+   ```
+
+4. **After All Tasks Complete and Build Passes:**
    ```bash
    # Stage all changes
    git add .
    
    # Create comprehensive commit with task summary
-   git commit -m "feat: implement [task group name] - [brief description]
+   git commit -m "implement [task group name] - [brief description]
    
    Completed Tasks:
    - Task X.X: [description]
@@ -99,12 +108,12 @@ When implementing tasks, follow this Git workflow:
    gh pr create --title "feat: [Task Group] - [Description]" --body "[detailed PR description]"
    ```
 
-4. **User Review Process:**
+5. **User Review Process (Only to be done by Developer. Never to be done by AI):**
    - User reviews PR on GitHub
    - User merges PR when satisfied
    - User deletes feature branch on GitHub (click "Delete branch" button)
 
-5. **Local Cleanup:**
+6. **Local Cleanup (Only to be done by Developer. Never to be done by AI):**
    ```bash
    # Switch back to master
    git checkout master
@@ -132,9 +141,11 @@ When implementing tasks, follow this Git workflow:
 When working with task lists, the AI must:
 
 1. **Follow Git Workflow:**
-   - Create feature branch before starting work
-   - Make regular commits during implementation
-   - Create comprehensive final commit when all tasks complete
+   - **FIRST STEP**: Create feature branch before starting ANY work
+   - Confirm branch creation and announce current branch to user
+   - Make incremental commits after completing each sub-task
+   - Use descriptive commit messages referencing task numbers
+   - Create comprehensive final commit when all parent tasks complete
    - Create detailed PR with proper description and test plan
 
 2. **Task Management:**
@@ -146,11 +157,38 @@ When working with task lists, the AI must:
    - Keep "Relevant Files" accurate and up to date
 
 3. **Execution Modes:**
-   - Before starting work, check which sub‑task is next
-   - **Default Mode:** After implementing a sub‑task, update the file and then pause for user approval
-   - **YOLO Mode:** After implementing a sub‑task, update the file and immediately proceed to the next task without waiting for approval
+   - **Before starting work**: Verify correct branch and announce current working branch
+   - Check which sub‑task is next
+   - **Default Mode:** After implementing a sub‑task, commit changes, update the file, and then pause for user approval
+   - **YOLO Mode:** After implementing a sub‑task, commit changes, update the file, and immediately proceed to the next task without waiting for approval
 
-4. **PR Creation:**
-   - When all tasks in a group are complete, create comprehensive PR
+4. **MCP Tool Usage:**
+   - **PostgreSQL Server** (`mcp__postgres-server__query`): Use for database queries, constraint verification, data integrity checks
+   - **Filesystem Server** (`mcp__filesystem-server__*`): Use for file operations when available, preferred over traditional file tools
+   - **IDE Integration** (`mcp__ide__*`): Use for getting diagnostics and executing code when available
+   - **Preference**: Always prefer MCP tools over traditional command-line equivalents when available
+   - **Database Verification**: Use PostgreSQL MCP server to verify migrations, constraints, and data integrity instead of bash commands
+
+5. **Interactive Commands Policy:**
+   - **NEVER** execute commands that require interactive environments (e.g., `npx prisma migrate dev`, `npm init`, interactive prompts)
+   - **STOP and ASK** the user to execute these commands manually
+   - **Commands to avoid**: 
+     - `npx prisma migrate dev` (requires interaction)
+     - `npm init` (requires interaction)
+     - Any command with interactive prompts or confirmations
+   - **Safe alternatives**:
+     - Use `npx prisma migrate deploy` for non-interactive migration application
+     - Use `npx prisma generate` for client generation
+     - Create migration files manually when needed
+     - Use MCP PostgreSQL server for database verification instead of interactive commands
+
+6. **Build Verification:**
+   - **CRITICAL**: Before creating any PR, ALWAYS run `npm run build` to verify the application compiles successfully
+   - Fix ALL compilation errors before proceeding to PR creation
+   - This prevents failed CI/CD builds and deployment issues
+   - The build must pass completely before any PR is created
+
+7. **PR Creation:**
+   - When all tasks in a group are complete AND build passes, create comprehensive PR
    - Include detailed description, test plan, and file change summary
    - Reference original task documentation

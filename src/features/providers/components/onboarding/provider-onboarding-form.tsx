@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { ServiceProviderFormType, providerFormSchema } from '@/features/providers/hooks/types';
+import { ProviderFormType, providerFormSchema } from '@/features/providers/hooks/types';
 import { useToast } from '@/hooks/use-toast';
 
 import { BasicInfoSection } from './basic-info-section';
@@ -63,7 +63,7 @@ interface OnboardingData {
 }
 
 // API mutation function
-const submitProviderApplication = async (data: ServiceProviderFormType) => {
+const submitProviderApplication = async (data: ProviderFormType) => {
   const response = await fetch('/api/providers', {
     method: 'POST',
     headers: {
@@ -101,7 +101,7 @@ export function ProviderOnboardingForm() {
     },
   });
 
-  const methods = useForm<ServiceProviderFormType>({
+  const methods = useForm<ProviderFormType>({
     resolver: zodResolver(providerFormSchema),
     defaultValues: {
       basicInfo: {
@@ -114,7 +114,8 @@ export function ProviderOnboardingForm() {
         whatsapp: '',
       },
       providerType: {}, // Empty object since we moved the field to root level
-      serviceProviderTypeId: '', // Added at root level to match our updated schema
+      providerTypeIds: [], // Added at root level for multiple types
+      providerTypeId: '', // Keep for backward compatibility
       regulatoryRequirements: {
         requirements: [],
       },
@@ -126,46 +127,64 @@ export function ProviderOnboardingForm() {
     mode: 'onBlur',
   });
 
-  // Watch the selected provider type to orchestrate data flow
-  const selectedProviderTypeId = methods.watch('serviceProviderTypeId');
+  // Watch the selected provider types to orchestrate data flow
+  const selectedProviderTypeIds = methods.watch('providerTypeIds') || [];
 
-  // Get filtered data based on selected provider type
-  const selectedProviderType = onboardingData?.providerTypes.find(
-    (type) => type.id === selectedProviderTypeId
+  // Get filtered data based on selected provider types
+  const selectedProviderTypes = onboardingData?.providerTypes.filter(
+    (type) => selectedProviderTypeIds.includes(type.id)
+  ) || [];
+
+  // Collect all requirements and services from selected types
+  const allRequirementsForSelectedTypes = selectedProviderTypeIds.flatMap(
+    (typeId) => onboardingData?.requirements[typeId] || []
   );
-  const requirementsForSelectedType =
-    (selectedProviderTypeId && onboardingData?.requirements[selectedProviderTypeId]) || [];
-  const servicesForSelectedType =
-    (selectedProviderTypeId && onboardingData?.services[selectedProviderTypeId]) || [];
+  // Remove duplicates by requirement ID
+  const uniqueRequirementsForSelectedTypes = allRequirementsForSelectedTypes.filter(
+    (requirement, index, array) => 
+      array.findIndex(r => r.id === requirement.id) === index
+  );
 
-  // Update form state when provider type changes
+  const allServicesForSelectedTypes = selectedProviderTypeIds.flatMap(
+    (typeId) => onboardingData?.services[typeId] || []
+  );
+  // Remove duplicates by service ID  
+  const uniqueServicesForSelectedTypes = allServicesForSelectedTypes.filter(
+    (service, index, array) => 
+      array.findIndex(s => s.id === service.id) === index
+  );
+
+  // Update form state when provider types change
   useEffect(() => {
-    if (selectedProviderTypeId && onboardingData) {
-      // Set requirements in form state
-      const requirements = onboardingData.requirements[selectedProviderTypeId] || [];
+    if (selectedProviderTypeIds.length > 0 && onboardingData) {
+      // Set requirements in form state from all selected types
       methods.setValue(
         'regulatoryRequirements.requirements',
-        requirements.map((req, idx) => ({
+        uniqueRequirementsForSelectedTypes.map((req, idx) => ({
           requirementTypeId: req.id,
           index: idx,
         }))
       );
 
-      // Reset services selection when provider type changes
+      // Reset services selection when provider types change
       methods.setValue('services.availableServices', []);
 
-      // Store the full service objects for reference in services section
-      methods.setValue(
-        'services.loadedServices',
-        onboardingData.services[selectedProviderTypeId] || []
-      );
+      // Store the full service objects for reference in services section (all services from selected types)
+      methods.setValue('services.loadedServices', uniqueServicesForSelectedTypes);
 
-      toast({
-        title: 'Provider type selected',
-        description: `Data for ${selectedProviderType?.name} has been loaded.`,
-      });
+      if (selectedProviderTypes.length === 1) {
+        toast({
+          title: 'Provider type selected',
+          description: `Data for ${selectedProviderTypes[0].name} has been loaded.`,
+        });
+      } else if (selectedProviderTypes.length > 1) {
+        toast({
+          title: 'Provider types selected',
+          description: `Data for ${selectedProviderTypes.length} provider types has been loaded.`,
+        });
+      }
     }
-  }, [selectedProviderTypeId, onboardingData, methods, toast, selectedProviderType]);
+  }, [selectedProviderTypeIds, onboardingData, methods, toast, selectedProviderTypes, uniqueRequirementsForSelectedTypes, uniqueServicesForSelectedTypes]);
 
   // Watch for validation errors - only update on submission
   useEffect(() => {
@@ -199,7 +218,7 @@ export function ProviderOnboardingForm() {
     },
   });
 
-  const onSubmit: SubmitHandler<ServiceProviderFormType> = (data) => {
+  const onSubmit: SubmitHandler<ProviderFormType> = (data) => {
     setShowConfirmDialog(true);
   };
 
@@ -341,9 +360,10 @@ export function ProviderOnboardingForm() {
           <Separator className="my-4" />
           <ProviderTypeSection
             providerTypes={onboardingData.providerTypes}
-            selectedProviderType={selectedProviderType}
-            requirementsCount={requirementsForSelectedType.length}
-            servicesCount={servicesForSelectedType.length}
+            selectedProviderTypes={selectedProviderTypes}
+            totalRequirementsCount={uniqueRequirementsForSelectedTypes.length}
+            totalServicesCount={uniqueServicesForSelectedTypes.length}
+            multipleSelection={true}
           />
         </Card>
 
@@ -354,8 +374,8 @@ export function ProviderOnboardingForm() {
           </p>
           <Separator className="my-4" />
           <ServicesSection
-            availableServices={servicesForSelectedType}
-            selectedProviderTypeId={selectedProviderTypeId}
+            availableServices={uniqueServicesForSelectedTypes}
+            selectedProviderTypeId={selectedProviderTypeIds[0] || ''}
           />
         </Card>
 
@@ -366,8 +386,8 @@ export function ProviderOnboardingForm() {
           </p>
           <Separator className="my-4" />
           <RegulatoryRequirementsSection
-            requirements={requirementsForSelectedType}
-            selectedProviderTypeId={selectedProviderTypeId}
+            requirements={uniqueRequirementsForSelectedTypes}
+            selectedProviderTypeId={selectedProviderTypeIds[0] || ''}
           />
         </Card>
 

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { SerializedServiceProvider } from '@/features/providers/hooks/types';
+import { SerializedProvider } from '@/features/providers/hooks/types';
 
 /**
  * Hook to fetch a provider by user ID
@@ -8,7 +8,7 @@ import { SerializedServiceProvider } from '@/features/providers/hooks/types';
  * @returns Query result containing the provider data or null if not found
  */
 export function useProviderByUserId(userId: string | undefined) {
-  return useQuery<SerializedServiceProvider | null>({
+  return useQuery<SerializedProvider | null>({
     queryKey: ['providerByUserId', userId],
     queryFn: async () => {
       if (!userId) return null;
@@ -17,17 +17,17 @@ export function useProviderByUserId(userId: string | undefined) {
         const response = await fetch(`/api/providers/user/${userId}`);
 
         if (response.status === 404) {
-          // Not found means the user is not a service provider
+          // Not found means the user is not a provider
           return null;
         }
 
         if (!response.ok) {
-          throw new Error('Failed to fetch service provider');
+          throw new Error('Failed to fetch provider');
         }
 
         return await response.json();
       } catch (error) {
-        console.error('Error fetching service provider by user ID:', error);
+        console.error('Error fetching provider by user ID:', error);
         throw error;
       }
     },

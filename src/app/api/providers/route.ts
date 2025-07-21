@@ -2,8 +2,41 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getServerSession } from 'next-auth';
 
-import { registerServiceProvider } from '@/features/providers/lib/actions/register-provider';
+import { registerProvider } from '@/features/providers/lib/actions/register-provider';
+import { serializeProvider } from '@/features/providers/lib/helper';
+import { searchProviders } from '@/features/providers/lib/search';
 import { prisma } from '@/lib/prisma';
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    
+    // Get search parameters
+    const search = searchParams.get('search') || undefined;
+    const typeIds = searchParams.get('typeIds')?.split(',').filter(Boolean);
+    const status = searchParams.get('status') || 'APPROVED';
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = parseInt(searchParams.get('offset') || '0');
+    const includeServices = searchParams.get('includeServices') !== 'false';
+    const includeRequirements = searchParams.get('includeRequirements') === 'true';
+
+    // Use optimized search function
+    const result = await searchProviders({
+      search,
+      typeIds,
+      status,
+      limit,
+      offset,
+      includeServices,
+      includeRequirements,
+    });
+
+    return NextResponse.json(result);
+  } catch (error: any) {
+    console.error('Error searching providers:', error);
+    return NextResponse.json({ error: 'Failed to search providers' }, { status: 500 });
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,11 +78,16 @@ export async function POST(request: NextRequest) {
       formData.append('imageUrl', data.basicInfo.image);
     }
 
-    // Add provider type
-    if (data.serviceProviderTypeId) {
-      formData.append('serviceProviderTypeId', data.serviceProviderTypeId);
+    // Add provider types (support multiple types)
+    if (data.providerTypeIds && Array.isArray(data.providerTypeIds) && data.providerTypeIds.length > 0) {
+      data.providerTypeIds.forEach((typeId: string) => {
+        formData.append('providerTypeIds', typeId);
+      });
+    } else if (data.providerTypeId) {
+      // Backward compatibility for single type
+      formData.append('providerTypeIds', data.providerTypeId);
     } else {
-      return NextResponse.json({ error: 'Provider type is required' }, { status: 400 });
+      return NextResponse.json({ error: 'At least one provider type is required' }, { status: 400 });
     }
 
     // Add languages
@@ -99,7 +137,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use the service layer function
-    const result = await registerServiceProvider({}, formData);
+    const result = await registerProvider({}, formData);
 
     if (result.success) {
       return NextResponse.json({

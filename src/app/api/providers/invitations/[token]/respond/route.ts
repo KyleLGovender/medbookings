@@ -93,11 +93,11 @@ export async function POST(request: Request, { params }: { params: { token: stri
     }
 
     // Find or create service provider for the current user
-    let serviceProvider = await prisma.serviceProvider.findUnique({
+    let provider = await prisma.provider.findUnique({
       where: { userId: currentUser.id },
     });
 
-    if (!serviceProvider) {
+    if (!provider) {
       return NextResponse.json(
         {
           message:
@@ -132,9 +132,9 @@ export async function POST(request: Request, { params }: { params: { token: stri
       // Check if connection already exists
       const existingConnection = await prisma.organizationProviderConnection.findUnique({
         where: {
-          organizationId_serviceProviderId: {
+          organizationId_providerId: {
             organizationId: invitation.organizationId,
-            serviceProviderId: serviceProvider.id,
+            providerId: provider.id,
           },
         },
       });
@@ -154,7 +154,7 @@ export async function POST(request: Request, { params }: { params: { token: stri
         const connection = await tx.organizationProviderConnection.create({
           data: {
             organizationId: invitation.organizationId,
-            serviceProviderId: serviceProvider!.id,
+            providerId: provider!.id,
             status: 'ACCEPTED',
             acceptedAt: new Date(),
           },

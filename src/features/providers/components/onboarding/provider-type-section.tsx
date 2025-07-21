@@ -2,6 +2,7 @@
 
 import { useFormContext } from 'react-hook-form';
 
+import { Checkbox } from '@/components/ui/checkbox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import {
   Select,
@@ -17,47 +18,87 @@ interface ProviderTypeSectionProps {
     name: string;
     description: string | null;
   }>;
-  selectedProviderType?: {
+  selectedProviderTypes?: Array<{
     id: string;
     name: string;
     description: string | null;
-  };
-  requirementsCount: number;
-  servicesCount: number;
+  }>;
+  totalRequirementsCount: number;
+  totalServicesCount: number;
+  multipleSelection?: boolean;
 }
 
 export function ProviderTypeSection({
   providerTypes,
-  selectedProviderType,
-  requirementsCount,
-  servicesCount,
+  selectedProviderTypes,
+  totalRequirementsCount,
+  totalServicesCount,
+  multipleSelection = true,
 }: ProviderTypeSectionProps) {
   const { control } = useFormContext();
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Select the type of healthcare services you provide. This will determine the regulatory
-        requirements for your application.
+        {multipleSelection 
+          ? 'Select one or more types of healthcare services you provide. This will determine the regulatory requirements for your application.'
+          : 'Select the type of healthcare services you provide. This will determine the regulatory requirements for your application.'
+        }
       </p>
 
       {providerTypes.length === 0 ? (
         <p className="text-muted-foreground">No provider types available.</p>
+      ) : multipleSelection ? (
+        <FormField
+          control={control}
+          name="providerTypeIds"
+          render={({ field }) => (
+            <FormItem className="space-y-4">
+              <FormLabel>Healthcare Service Types</FormLabel>
+              <div className="space-y-3">
+                {providerTypes.map((type) => (
+                  <div key={type.id} className="flex items-start space-x-3">
+                    <Checkbox
+                      id={type.id}
+                      checked={field.value?.includes(type.id) || false}
+                      onCheckedChange={(checked) => {
+                        const currentValues = field.value || [];
+                        if (checked) {
+                          field.onChange([...currentValues, type.id]);
+                        } else {
+                          field.onChange(currentValues.filter((id: string) => id !== type.id));
+                        }
+                      }}
+                    />
+                    <div className="grid gap-1.5 leading-none">
+                      <label
+                        htmlFor={type.id}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {type.name}
+                      </label>
+                      {type.description && (
+                        <p className="text-xs text-muted-foreground">{type.description}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       ) : (
         <FormField
           control={control}
-          name="serviceProviderTypeId"
+          name="providerTypeId"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Provider Type *</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a provider type">
-                      {field.value && selectedProviderType
-                        ? selectedProviderType.name
-                        : 'Select a provider type'}
-                    </SelectValue>
+                    <SelectValue placeholder="Select a provider type" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -79,30 +120,50 @@ export function ProviderTypeSection({
         />
       )}
 
-      {selectedProviderType && (
+      {((multipleSelection && selectedProviderTypes && selectedProviderTypes.length > 0) ||
+        (!multipleSelection && selectedProviderTypes && selectedProviderTypes.length > 0)) && (
         <div className="rounded-md border bg-background">
           <div className="space-y-3 p-4">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-primary" />
-              <p className="font-medium">{selectedProviderType.name} Selected</p>
+              <p className="font-medium">
+                {selectedProviderTypes!.length === 1
+                  ? `${selectedProviderTypes![0].name} Selected`
+                  : `${selectedProviderTypes!.length} Provider Types Selected`}
+              </p>
             </div>
-            {selectedProviderType.description && (
+            
+            {selectedProviderTypes!.length === 1 && selectedProviderTypes![0].description && (
               <p className="pl-4 text-sm text-muted-foreground">
-                {selectedProviderType.description}
+                {selectedProviderTypes![0].description}
               </p>
             )}
-            {requirementsCount > 0 && (
+            
+            {selectedProviderTypes!.length > 1 && (
+              <div className="pl-4">
+                <p className="text-sm font-medium text-muted-foreground">Selected Types:</p>
+                <ul className="mt-2 space-y-1">
+                  {selectedProviderTypes!.map((type) => (
+                    <li key={type.id} className="text-sm text-muted-foreground">
+                      • {type.name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {totalRequirementsCount > 0 && (
               <div className="pl-4">
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-medium">Regulatory Requirements:</span> {requirementsCount}{' '}
-                  requirements loaded.
+                  <span className="font-medium">Regulatory Requirements:</span> {totalRequirementsCount}{' '}
+                  unique requirements loaded.
                 </p>
               </div>
             )}
-            {servicesCount > 0 && (
+            {totalServicesCount > 0 && (
               <div className="pl-4">
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-medium">Available Services:</span> {servicesCount} services
+                  <span className="font-medium">Available Services:</span> {totalServicesCount} services
                   available.
                 </p>
               </div>

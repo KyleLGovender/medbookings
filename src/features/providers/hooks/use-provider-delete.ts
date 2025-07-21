@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 /**
- * Hook for deleting a service provider
+ * Hook for deleting a provider
  * @param options Optional mutation options including onSuccess and onError callbacks
  * @returns Mutation object for deleting a provider
  */

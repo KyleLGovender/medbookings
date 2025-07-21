@@ -12,7 +12,7 @@ const defaultMeetSettings = {
 };
 
 export async function GET(req: NextRequest) {
-  const { code, state: serviceProviderId } = Object.fromEntries(req.nextUrl.searchParams);
+  const { code, state: providerId } = Object.fromEntries(req.nextUrl.searchParams);
 
   const oauth2Client = new google.auth.OAuth2(
     env.GOOGLE_CLIENT_ID,
@@ -43,23 +43,23 @@ export async function GET(req: NextRequest) {
 
   // Store everything in CalendarIntegration
   await prisma.calendarIntegration.upsert({
-    where: { serviceProviderId },
+    where: { providerId },
     update: {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
       expiresAt: new Date(tokens.expiry_date!),
-      provider: 'GOOGLE',
+      calendarProvider: 'GOOGLE',
       googleEmail: userProfile.data.emailAddresses?.[0].value,
       calendarId: calendarList.data.items?.[0].id,
       grantedScopes: tokens.scope?.split(' '),
       meetSettings: defaultMeetSettings,
     },
     create: {
-      serviceProviderId,
+      providerId,
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
       expiresAt: new Date(tokens.expiry_date!),
-      provider: 'GOOGLE',
+      calendarProvider: 'GOOGLE',
       googleEmail: userProfile.data.emailAddresses?.[0].value,
       calendarId: calendarList.data.items?.[0].id,
       grantedScopes: tokens.scope?.split(' '),

@@ -13,11 +13,11 @@ export async function GET(request: Request) {
     }
 
     // Find the service provider for the current user
-    const serviceProvider = await prisma.serviceProvider.findUnique({
+    const provider = await prisma.provider.findUnique({
       where: { userId: currentUser.id },
     });
 
-    if (!serviceProvider) {
+    if (!provider) {
       return NextResponse.json(
         {
           message: 'Service provider profile not found',
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 
     // Build where clause
     const whereClause: any = {
-      serviceProviderId: serviceProvider.id,
+      providerId: provider.id,
     };
 
     if (status && ['PENDING', 'ACCEPTED', 'REJECTED', 'SUSPENDED'].includes(status)) {

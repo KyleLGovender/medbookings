@@ -46,18 +46,18 @@ export class SearchPerformanceService {
     const optimizationSuggestions: string[] = [];
 
     try {
-      // Step 1: Use compound index on ServiceAvailabilityConfig (serviceProviderId, isActive, price)
+      // Step 1: Use compound index on ServiceAvailabilityConfig (providerId, isActive, price)
       indexesUsed.push('ServiceAvailabilityConfig_compound_idx');
 
       const serviceConfigsQuery = prisma.serviceAvailabilityConfig.findMany({
         where: {
-          serviceProvider: {
-            status: 'ACTIVE', // Uses index on ServiceProvider.status
+          provider: {
+            status: 'ACTIVE', // Uses index on Provider.status
           },
           ...(params.serviceTypeIds
             ? {
                 service: {
-                  serviceProviderTypeId: { in: params.serviceTypeIds }, // Uses index on Service.serviceProviderTypeId
+                  providerTypeId: { in: params.serviceTypeIds }, // Uses index on Service.providerTypeId
                 },
               }
             : {}),
@@ -72,12 +72,12 @@ export class SearchPerformanceService {
         },
         select: {
           id: true,
-          serviceProviderId: true,
+          providerId: true,
           serviceId: true,
           locationId: true,
           price: true,
           duration: true,
-          serviceProvider: {
+          provider: {
             select: {
               id: true,
               showPrice: true, // Provider-level price display setting
@@ -87,10 +87,14 @@ export class SearchPerformanceService {
                   name: true,
                 },
               },
-              serviceProviderType: {
+              typeAssignments: {
                 select: {
-                  id: true,
-                  name: true,
+                  providerType: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
                 },
               },
             },
@@ -99,7 +103,7 @@ export class SearchPerformanceService {
             select: {
               id: true,
               name: true,
-              serviceProviderTypeId: true,
+              providerTypeId: true,
             },
           },
           location: {
@@ -129,7 +133,7 @@ export class SearchPerformanceService {
         },
         select: {
           id: true,
-          serviceProviderId: true,
+          providerId: true,
           locationId: true,
           startTime: true,
           endTime: true,
@@ -172,11 +176,11 @@ export class SearchPerformanceService {
 
       // Build lookup maps for efficient joining
       serviceConfigs.forEach((config) => {
-        const providerId = config.serviceProviderId;
+        const providerId = config.providerId;
 
         if (!providerMap.has(providerId)) {
           providerMap.set(providerId, {
-            provider: config.serviceProvider,
+            provider: config.provider,
             services: [],
             locations: new Set(),
           });
@@ -185,10 +189,10 @@ export class SearchPerformanceService {
         providerMap.get(providerId).services.push({
           serviceId: config.service.id,
           serviceName: config.service.name,
-          serviceProviderTypeId: config.service.serviceProviderTypeId,
+          providerTypeId: config.service.providerTypeId,
           duration: config.duration,
           price: config.price,
-          showPrice: config.serviceProvider.showPrice,
+          showPrice: config.provider.showPrice,
         });
 
         if (config.location) {
@@ -200,7 +204,7 @@ export class SearchPerformanceService {
       // Step 4: Efficient slot aggregation
       const providerSlots = new Map();
       availabilities.forEach((availability) => {
-        const providerId = availability.serviceProviderId;
+        const providerId = availability.providerId;
 
         if (!providerSlots.has(providerId)) {
           providerSlots.set(providerId, {
@@ -271,7 +275,7 @@ export class SearchPerformanceService {
         results.push({
           providerId,
           providerName: providerData.provider.user.name || 'Unknown Provider',
-          providerType: providerData.provider.serviceProviderType.name,
+          providerType: providerData.provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
           distance,
           location: primaryLocation
             ? {
@@ -354,7 +358,7 @@ export class SearchPerformanceService {
    * Optimized slot search with proper indexing
    */
   async optimizedSlotSearch(params: {
-    serviceProviderId?: string;
+    providerId?: string;
     serviceIds?: string[];
     dateRange?: { startDate: Date; endDate: Date };
     timeRange?: { startHour: number; endHour: number };
@@ -391,12 +395,12 @@ export class SearchPerformanceService {
       }
 
       // Add provider filter through availability relationship
-      if (params.serviceProviderId) {
+      if (params.providerId) {
         whereClause.availability = {
-          serviceProviderId: params.serviceProviderId,
+          providerId: params.providerId,
           status: AvailabilityStatus.ACCEPTED,
         };
-        indexesUsed.push('Availability_serviceProviderId_idx');
+        indexesUsed.push('Availability_providerId_idx');
       }
 
       const slots = await prisma.calculatedAvailabilitySlot.findMany({
@@ -408,7 +412,7 @@ export class SearchPerformanceService {
           serviceId: true,
           availability: {
             select: {
-              serviceProviderId: true,
+              providerId: true,
             },
           },
           service: {
@@ -475,7 +479,7 @@ export class SearchPerformanceService {
       recommendedIndexes: [
         {
           table: 'ServiceAvailabilityConfig',
-          columns: ['serviceProviderId', 'isActive', 'price'],
+          columns: ['providerId', 'isActive', 'price'],
           reason: 'Optimizes provider service filtering with price range queries',
           priority: 'high',
         },
@@ -487,7 +491,7 @@ export class SearchPerformanceService {
         },
         {
           table: 'Availability',
-          columns: ['serviceProviderId', 'status', 'startTime'],
+          columns: ['providerId', 'status', 'startTime'],
           reason: 'Optimizes provider availability lookups',
           priority: 'high',
         },
@@ -504,8 +508,8 @@ export class SearchPerformanceService {
           priority: 'medium',
         },
         {
-          table: 'ServiceProvider',
-          columns: ['status', 'serviceProviderTypeId'],
+          table: 'Provider',
+          columns: ['status', 'providerTypeId'],
           reason: 'Optimizes provider filtering by status and type',
           priority: 'medium',
         },
@@ -580,7 +584,7 @@ export async function optimizedProviderSearch(params: {
  * Optimized slot search with performance metrics
  */
 export async function optimizedSlotSearch(params: {
-  serviceProviderId?: string;
+  providerId?: string;
   serviceIds?: string[];
   dateRange?: { startDate: Date; endDate: Date };
   timeRange?: { startHour: number; endHour: number };

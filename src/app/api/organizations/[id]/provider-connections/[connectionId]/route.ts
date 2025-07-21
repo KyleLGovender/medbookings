@@ -67,7 +67,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
         ...(status === 'ACCEPTED' && { suspendedAt: null }),
       },
       include: {
-        serviceProvider: {
+        provider: {
           include: {
             user: {
               select: {
@@ -77,11 +77,15 @@ export async function PUT(request: Request, { params }: RouteParams) {
                 image: true,
               },
             },
-            serviceProviderType: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
+            typeAssignments: {
+              include: {
+                providerType: {
+                  select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                  },
+                },
               },
             },
           },
@@ -134,7 +138,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     // Check if provider has any active availability with this organization
     const activeAvailabilities = await prisma.availability.findMany({
       where: {
-        serviceProviderId: existingConnection.serviceProviderId,
+        providerId: existingConnection.providerId,
         organizationId: params.id,
         endTime: {
           gte: new Date(),

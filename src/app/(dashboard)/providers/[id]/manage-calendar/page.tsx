@@ -321,7 +321,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
             <DialogTitle>Create Availability</DialogTitle>
           </DialogHeader>
           <AvailabilityCreationForm
-            serviceProviderId={params.id}
+            providerId={params.id}
             onSuccess={handleCreateSuccess}
             onCancel={handleCreateCancel}
           />

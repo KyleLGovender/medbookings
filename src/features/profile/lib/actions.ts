@@ -8,10 +8,10 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function checkServiceProvider(userId: string) {
-  const serviceProvider = await prisma.serviceProvider.findFirst({
+  const provider = await prisma.provider.findFirst({
     where: { userId },
   });
-  return !!serviceProvider;
+  return !!provider;
 }
 
 export async function deleteUser() {

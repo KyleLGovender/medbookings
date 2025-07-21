@@ -51,7 +51,7 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
   const isOwner = userId === provider.userId;
 
   // For provider type, use a generic label since we don't have the actual type name
-  const providerTypeName = provider.serviceProviderType?.name || 'Healthcare Provider';
+  const providerTypeName = provider.providerType?.name || 'Healthcare Provider';
 
   return (
     <div className="space-y-8">
@@ -99,10 +99,10 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
           <h3 className="font-medium">Provider Type</h3>
           <p>{providerTypeName}</p>
 
-          {provider.serviceProviderType?.description && (
+          {provider.providerType?.description && (
             <div className="mt-4">
               <h3 className="font-medium">Description</h3>
-              <p className="text-muted-foreground">{provider.serviceProviderType.description}</p>
+              <p className="text-muted-foreground">{provider.providerType.description}</p>
             </div>
           )}
         </div>

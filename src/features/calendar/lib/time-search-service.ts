@@ -137,7 +137,7 @@ export class TimeSearchService {
   async searchSlotsByTime(
     params: TimeSearchParams,
     additionalFilters?: {
-      serviceProviderId?: string;
+      providerId?: string;
       serviceId?: string;
       locationId?: string;
       isOnlineAvailable?: boolean;
@@ -176,7 +176,7 @@ export class TimeSearchService {
       }
 
       const optimizedResults = await optimizedSlotSearch({
-        serviceProviderId: additionalFilters?.serviceProviderId,
+        providerId: additionalFilters?.providerId,
         serviceIds: additionalFilters?.serviceId ? [additionalFilters.serviceId] : undefined,
         dateRange: searchDateRange,
         timeRange: timeRangeHours,
@@ -192,7 +192,7 @@ export class TimeSearchService {
         dayOfWeek: slot.startTime.getDay(),
         timeOfDay: this.dateToTimeString(slot.startTime),
         isWeekend: this.isWeekend(slot.startTime),
-        providerId: slot.availability.serviceProviderId,
+        providerId: slot.availability.providerId,
         serviceId: slot.serviceId,
         locationId: slot.locationId,
         price: slot.price,
@@ -249,9 +249,9 @@ export class TimeSearchService {
             status: SlotStatus.AVAILABLE,
             ...dateFilter,
             ...(Object.keys(durationFilter).length > 0 ? { duration: durationFilter } : {}),
-            ...(additionalFilters?.serviceProviderId
+            ...(additionalFilters?.providerId
               ? {
-                  availability: { serviceProviderId: additionalFilters.serviceProviderId },
+                  availability: { providerId: additionalFilters.providerId },
                 }
               : {}),
             ...(additionalFilters?.serviceId ? { serviceId: additionalFilters.serviceId } : {}),
@@ -263,9 +263,9 @@ export class TimeSearchService {
               : {}),
             availability: {
               status: AvailabilityStatus.ACCEPTED,
-              ...(additionalFilters?.serviceProviderId
+              ...(additionalFilters?.providerId
                 ? {
-                    serviceProviderId: additionalFilters.serviceProviderId,
+                    providerId: additionalFilters.providerId,
                   }
                 : {}),
             },
@@ -273,7 +273,7 @@ export class TimeSearchService {
           include: {
             availability: {
               include: {
-                serviceProvider: true,
+                provider: true,
               },
             },
             service: true,
@@ -296,7 +296,7 @@ export class TimeSearchService {
             dayOfWeek: slot.startTime.getDay(),
             timeOfDay: this.dateToTimeString(slot.startTime),
             isWeekend: this.isWeekend(slot.startTime),
-            providerId: slot.availability.serviceProviderId,
+            providerId: slot.availability.providerId,
             serviceId: slot.serviceId,
             locationId: slot.availability.locationId || undefined,
             price: 0, // Price not available on slot, would need to get from serviceConfig
@@ -401,7 +401,7 @@ export class TimeSearchService {
    */
   async findOptimalTimeSlots(
     params: TimeSearchParams & {
-      serviceProviderId?: string;
+      providerId?: string;
       serviceId?: string;
       requiredDuration: number;
       maxResults?: number;
@@ -419,7 +419,7 @@ export class TimeSearchService {
       const { requiredDuration, maxResults = 10, ...timeParams } = params;
 
       const searchResult = await this.searchSlotsByTime(timeParams, {
-        serviceProviderId: params.serviceProviderId,
+        providerId: params.providerId,
         serviceId: params.serviceId,
       });
 
@@ -502,7 +502,7 @@ export class TimeSearchService {
   async getAvailabilityHeatmap(
     dateRange: { startDate: Date; endDate: Date },
     filters?: {
-      serviceProviderId?: string;
+      providerId?: string;
       serviceId?: string;
       locationId?: string;
     }
@@ -566,7 +566,7 @@ export class TimeSearchService {
 export async function searchSlotsByTime(
   params: TimeSearchParams,
   additionalFilters?: {
-    serviceProviderId?: string;
+    providerId?: string;
     serviceId?: string;
     locationId?: string;
     isOnlineAvailable?: boolean;
@@ -581,7 +581,7 @@ export async function searchSlotsByTime(
  */
 export async function findOptimalTimeSlots(
   params: TimeSearchParams & {
-    serviceProviderId?: string;
+    providerId?: string;
     serviceId?: string;
     requiredDuration: number;
     maxResults?: number;
@@ -605,7 +605,7 @@ export async function findOptimalTimeSlots(
 export async function getAvailabilityHeatmap(
   dateRange: { startDate: Date; endDate: Date },
   filters?: {
-    serviceProviderId?: string;
+    providerId?: string;
     serviceId?: string;
     locationId?: string;
   }

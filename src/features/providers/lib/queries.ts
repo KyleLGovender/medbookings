@@ -1,8 +1,8 @@
 'use server';
 
-import { Service, ServiceProvider } from '@prisma/client';
+import { Service, Provider } from '@prisma/client';
 
-import { serializeServiceProvider } from '@/features/providers/lib/helper';
+import { serializeProvider } from '@/features/providers/lib/helper';
 import { prisma } from '@/lib/prisma';
 
 // Define a serialized service type that has number instead of Decimal
@@ -14,8 +14,8 @@ interface SerializedService extends Omit<Service, 'defaultPrice'> {
   }>;
 }
 
-export async function getServiceProviderByUserId(userId: string): Promise<ServiceProvider | null> {
-  const provider = await prisma.serviceProvider.findUnique({
+export async function getProviderByUserId(userId: string): Promise<Provider | null> {
+  const provider = await prisma.provider.findUnique({
     where: {
       userId,
     },
@@ -26,10 +26,15 @@ export async function getServiceProviderByUserId(userId: string): Promise<Servic
           email: true,
         },
       },
-      serviceProviderType: {
-        select: {
-          name: true,
-          description: true,
+      typeAssignments: {
+        include: {
+          providerType: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
         },
       },
       requirementSubmissions: {
@@ -43,16 +48,16 @@ export async function getServiceProviderByUserId(userId: string): Promise<Servic
 
   if (!provider) return null;
 
-  const serialized = serializeServiceProvider(provider);
+  const serialized = serializeProvider(provider);
   return serialized;
 }
 
-export async function getServiceProviderByServiceProviderId(
-  serviceProviderId: string
-): Promise<ServiceProvider | null> {
-  const provider = await prisma.serviceProvider.findUnique({
+export async function getProviderByProviderId(
+  providerId: string
+): Promise<Provider | null> {
+  const provider = await prisma.provider.findUnique({
     where: {
-      id: serviceProviderId,
+      id: providerId,
     },
     include: {
       services: true,
@@ -61,10 +66,15 @@ export async function getServiceProviderByServiceProviderId(
           email: true,
         },
       },
-      serviceProviderType: {
-        select: {
-          name: true,
-          description: true,
+      typeAssignments: {
+        include: {
+          providerType: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
         },
       },
       requirementSubmissions: {
@@ -77,20 +87,25 @@ export async function getServiceProviderByServiceProviderId(
 
   if (!provider) return null;
 
-  const serialized = serializeServiceProvider(provider);
+  const serialized = serializeProvider(provider);
   return serialized;
 }
 
-export async function getApprovedServiceProviders() {
-  const providers = await prisma.serviceProvider.findMany({
+export async function getApprovedProviders() {
+  const providers = await prisma.provider.findMany({
     where: {
       status: 'APPROVED', // Only fetch approved providers
     },
     include: {
-      serviceProviderType: {
-        select: {
-          name: true,
-          description: true,
+      typeAssignments: {
+        include: {
+          providerType: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
         },
       },
       services: true,
@@ -110,25 +125,25 @@ export async function getApprovedServiceProviders() {
     },
   });
 
-  return providers.map((provider) => serializeServiceProvider(provider));
+  return providers.map((provider) => serializeProvider(provider));
 }
 
-export async function getServiceProviderServices(
-  serviceProviderId: string
+export async function getProviderServices(
+  providerId: string
 ): Promise<SerializedService[]> {
   try {
     const services = await prisma.service.findMany({
       where: {
         providers: {
           some: {
-            id: serviceProviderId,
+            id: providerId,
           },
         },
       },
       include: {
         availabilityConfigs: {
           where: {
-            serviceProviderId,
+            providerId,
           },
         },
       },

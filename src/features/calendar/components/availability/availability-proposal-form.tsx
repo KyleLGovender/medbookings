@@ -62,7 +62,7 @@ interface LocationData {
 
 interface AvailabilityProposalFormProps {
   organizationId: string;
-  serviceProviderId: string;
+  providerId: string;
   locationId?: string;
   connectionId?: string;
   providerName?: string;
@@ -93,7 +93,7 @@ type FormValues = ProposalFormData;
  * - Additional settings (confirmation requirements)
  *
  * @param organizationId - The ID of the organization creating the proposal
- * @param serviceProviderId - The ID of the target service provider
+ * @param providerId - The ID of the target service provider
  * @param locationId - Optional pre-selected location ID
  * @param connectionId - Optional provider connection ID
  * @param providerName - Optional provider name for display
@@ -102,7 +102,7 @@ type FormValues = ProposalFormData;
  */
 export function AvailabilityProposalForm({
   organizationId,
-  serviceProviderId,
+  providerId,
   locationId,
   connectionId,
   providerName,
@@ -128,7 +128,7 @@ export function AvailabilityProposalForm({
     data: availableServices,
     isLoading: isServicesLoading,
     error: servicesError,
-  } = useProviderAssociatedServices(serviceProviderId);
+  } = useProviderAssociatedServices(providerId);
 
   // Fetch organization locations
   const organizationIds = userOrganizations.map(
@@ -144,7 +144,7 @@ export function AvailabilityProposalForm({
       }).and(createAvailabilityDataSchema)
     ),
     defaultValues: {
-      serviceProviderId,
+      providerId,
       organizationId,
       locationId: locationId || undefined,
       connectionId,
@@ -566,7 +566,7 @@ export function AvailabilityProposalForm({
               <div className="py-8 text-center text-destructive">Failed to load services.</div>
             ) : (
               <ServiceSelectionSection
-                serviceProviderId={serviceProviderId}
+                providerId={providerId}
                 organizationId={organizationId}
                 availableServices={(availableServices || []).map((s) => ({
                   ...s,

@@ -3,19 +3,19 @@
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
-import { approveServiceProvider } from '@/features/providers/lib/actions/administer-provider';
+import { approveProvider } from '@/features/providers/lib/actions/administer-provider';
 
-interface ApproveServiceProviderButtonProps {
-  serviceProviderId: string;
+interface ApproveProviderButtonProps {
+  providerId: string;
 }
 
-export function ApproveServiceProviderButton({
-  serviceProviderId,
-}: ApproveServiceProviderButtonProps) {
+export function ApproveProviderButton({
+  providerId,
+}: ApproveProviderButtonProps) {
   const router = useRouter();
 
   const handleApprove = async () => {
-    const result = await approveServiceProvider(serviceProviderId);
+    const result = await approveProvider(providerId);
     if (result.success) {
       router.refresh();
     }

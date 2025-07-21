@@ -7,7 +7,7 @@ export interface SlotGenerationOptions {
   availabilityId: string;
   startTime: Date;
   endTime: Date;
-  serviceProviderId: string;
+  providerId: string;
   organizationId: string;
   locationId?: string;
   schedulingRule: SchedulingRule;
@@ -55,7 +55,7 @@ export async function generateSlotsForAvailability(
         availabilityId: options.availabilityId,
         serviceId: service.serviceId,
         serviceConfigId: 'default-config-id',
-        serviceProviderId: options.serviceProviderId,
+        providerId: options.providerId,
         organizationId: options.organizationId,
         locationId: options.locationId,
         startTime: slot.startTime,
@@ -100,7 +100,7 @@ export async function generateSlotsForMultipleAvailability(
     id: string;
     startTime: Date;
     endTime: Date;
-    serviceProviderId: string;
+    providerId: string;
     organizationId: string;
     locationId?: string;
     schedulingRule: SchedulingRule;
@@ -121,7 +121,7 @@ export async function generateSlotsForMultipleAvailability(
         availabilityId: availability.id,
         startTime: availability.startTime,
         endTime: availability.endTime,
-        serviceProviderId: availability.serviceProviderId,
+        providerId: availability.providerId,
         organizationId: availability.organizationId,
         locationId: availability.locationId,
         schedulingRule: availability.schedulingRule,
@@ -188,7 +188,7 @@ export async function regenerateSlotsForAvailability(
       availabilityId: availability.id,
       startTime: availability.startTime,
       endTime: availability.endTime,
-      serviceProviderId: availability.serviceProviderId,
+      providerId: availability.providerId,
       organizationId: availability.organizationId || '',
       locationId: availability.locationId || undefined,
       schedulingRule: availability.schedulingRule as SchedulingRule,

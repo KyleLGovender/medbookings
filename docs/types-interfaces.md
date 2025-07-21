@@ -229,7 +229,7 @@ export const CalendarViewType = {
   slots: 'slots',
 } as const;
 
-export const ServiceProviderCalendarViewType = {
+export const ProviderCalendarViewType = {
   day: 'day',
   week: 'week',
   schedule: 'schedule',
@@ -237,8 +237,8 @@ export const ServiceProviderCalendarViewType = {
 
 export type CalendarViewType = (typeof CalendarViewType)[keyof typeof CalendarViewType];
 
-export type ServiceProviderCalendarViewType =
-  (typeof ServiceProviderCalendarViewType)[keyof typeof ServiceProviderCalendarViewType];
+export type ProviderCalendarViewType =
+  (typeof ProviderCalendarViewType)[keyof typeof ProviderCalendarViewType];
 
 export interface TimeRange {
   earliestTime: number; // 24-hour format (e.g., 9 for 9:00)
@@ -254,7 +254,7 @@ export interface TimeRange {
 export interface Availability extends PrismaAvailability {}
 
 export interface AvailabilityWithRelations extends PrismaAvailability {
-  serviceProvider: {
+  provider: {
     id: string;
     name: string;
     user: {
@@ -409,7 +409,7 @@ export interface SerializedService {
   metadata?: Record<string, any>;
 }
 
-export interface SerializedServiceProvider {
+export interface SerializedProvider {
   id: string;
   name: string;
   bio?: string;
@@ -420,7 +420,7 @@ export interface SerializedServiceProvider {
   languages: string[];
   isActive: boolean;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
-  serviceProviderTypeId: string;
+  providerTypeId: string;
   services: SerializedService[];
   locations: any[];
   rating?: number;
@@ -508,7 +508,7 @@ export type ValidationConfig =
 ### Provider Data Types
 
 ```typescript
-export type ServiceProviderTypeData = {
+export type ProviderTypeData = {
   id: string;
   name: string;
   description?: string;
@@ -601,7 +601,7 @@ export type InvitationAction = z.infer<typeof InvitationActionSchema>;
 export interface OrganizationProviderConnection {
   id: string;
   organizationId: string;
-  serviceProviderId: string;
+  providerId: string;
   status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'TERMINATED';
   role: 'MEMBER' | 'ADMIN' | 'OWNER';
   startDate: Date;
@@ -619,7 +619,7 @@ export type OrganizationConnectionWithDetails = OrganizationProviderConnection &
     logo?: string;
     address?: string;
   };
-  serviceProvider: {
+  provider: {
     id: string;
     name: string;
     email: string;
@@ -1001,7 +1001,7 @@ declare module 'vcards-js' {
 ```typescript
 import vCards from 'vcards-js';
 
-function generateVCard(provider: ServiceProvider) {
+function generateVCard(provider: Provider) {
   const vCard = vCards();
   vCard.firstName = provider.name.split(' ')[0];
   vCard.lastName = provider.name.split(' ').slice(1).join(' ');
@@ -1024,13 +1024,13 @@ import {
   BookingStatus,
   Organization,
   SchedulingRule,
-  ServiceProvider,
+  Provider,
   User,
   UserRole,
 } from '@prisma/client';
 
 // Extended types with relations
-type ServiceProviderWithRelations = ServiceProvider & {
+type ProviderWithRelations = Provider & {
   user: User;
   services: Service[];
   bookings: Booking[];
@@ -1040,7 +1040,7 @@ type ServiceProviderWithRelations = ServiceProvider & {
 
 type BookingWithRelations = Booking & {
   patient: User;
-  provider: ServiceProvider;
+  provider: Provider;
   service: Service;
   organization?: Organization;
 };
@@ -1058,8 +1058,8 @@ function isAdmin(user: User): user is User & { role: 'ADMIN' | 'SUPER_ADMIN' } {
   return user.role === 'ADMIN' || user.role === 'SUPER_ADMIN';
 }
 
-function isServiceProvider(user: User): boolean {
-  return Boolean(user.serviceProvider);
+function isProvider(user: User): boolean {
+  return Boolean(user.provider);
 }
 
 // API response type guards
@@ -1101,7 +1101,7 @@ const providerRegistrationSchema = z.object({
     website: z.string().url().optional(),
     languages: z.array(z.string()).min(1),
   }),
-  serviceProviderTypeId: z.string().uuid(),
+  providerTypeId: z.string().uuid(),
   services: z.object({
     availableServices: z.array(z.string().uuid()).min(1),
     serviceConfigs: z
@@ -1147,7 +1147,7 @@ type ProviderRegistration = z.infer<typeof providerRegistrationSchema>;
    ```typescript
    // Preferred
    type Status = 'pending' | 'approved' | 'rejected';
-   type UserWithProvider = User & { provider: ServiceProvider };
+   type UserWithProvider = User & { provider: Provider };
    ```
 
 3. **Use Enums for Constants**
@@ -1181,9 +1181,9 @@ type ProviderRegistration = z.infer<typeof providerRegistrationSchema>;
 ```typescript
 /**
  * Represents a service provider in the system
- * @interface ServiceProvider
+ * @interface Provider
  */
-interface ServiceProvider {
+interface Provider {
   /** Unique identifier for the provider */
   id: string;
 
