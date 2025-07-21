@@ -5,10 +5,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-import { sendGuestVCardToServiceProvider } from './server-helper';
+import { sendGuestVCardToProvider } from './server-helper';
 import { BookingView } from '@/features/calendar/lib/types';
 
-export async function sendServiceProviderPatientsDetailsByWhatsapp(
+export async function sendProviderPatientsDetailsByWhatsapp(
   bookingId: string
 ): Promise<{ success?: boolean; error?: string; message?: string }> {
   try {
@@ -26,7 +26,7 @@ export async function sendServiceProviderPatientsDetailsByWhatsapp(
             serviceConfig: true,
             availability: {
               include: {
-                serviceProvider: true
+                provider: true
               }
             }
           },
@@ -34,7 +34,7 @@ export async function sendServiceProviderPatientsDetailsByWhatsapp(
       },
     });
 
-    if (!booking || booking.slot?.availability?.serviceProvider?.userId !== session.user.id) {
+    if (!booking || booking.slot?.availability?.provider?.userId !== session.user.id) {
       return { error: 'Unauthorized access to booking' };
     }
 
@@ -67,17 +67,17 @@ export async function sendServiceProviderPatientsDetailsByWhatsapp(
           isInPerson: booking.slot?.serviceConfig.isInPerson || false,
           location: booking.slot?.serviceConfig.locationId || undefined,
         },
-        serviceProvider: {
-          id: booking.slot?.availability?.serviceProvider?.id || '',
-          name: booking.slot?.availability?.serviceProvider?.name || '',
-          whatsapp: booking.slot?.availability?.serviceProvider?.whatsapp || undefined,
-          image: booking.slot?.availability?.serviceProvider?.image || undefined,
+        provider: {
+          id: booking.slot?.availability?.provider?.id || '',
+          name: booking.slot?.availability?.provider?.name || '',
+          whatsapp: booking.slot?.availability?.provider?.whatsapp || undefined,
+          image: booking.slot?.availability?.provider?.image || undefined,
         },
       },
     };
 
-    await sendGuestVCardToServiceProvider(bookingView);
-    console.log('[Action] sendGuestVCardToServiceProvider completed.');
+    await sendGuestVCardToProvider(bookingView);
+    console.log('[Action] sendGuestVCardToProvider completed.');
 
     // Return success with a message
     return { success: true, message: 'Patient details sent successfully via WhatsApp!' };

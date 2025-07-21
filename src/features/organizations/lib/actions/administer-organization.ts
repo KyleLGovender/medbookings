@@ -238,13 +238,17 @@ export async function getAdminOrganization(organizationId: string) {
         },
         providerConnections: {
           include: {
-            serviceProvider: {
+            provider: {
               include: {
                 user: {
                   select: { name: true, email: true },
                 },
-                serviceProviderType: {
-                  select: { name: true },
+                typeAssignments: {
+                  include: {
+                    providerType: {
+                      select: { name: true },
+                    },
+                  },
                 },
               },
             },

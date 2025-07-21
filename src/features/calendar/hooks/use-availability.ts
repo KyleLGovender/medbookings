@@ -53,7 +53,7 @@ export function useAvailabilitySearch(params: AvailabilitySearchParams) {
     queryFn: async () => {
       const searchParams = new URLSearchParams();
 
-      if (params.serviceProviderId) searchParams.set('serviceProviderId', params.serviceProviderId);
+      if (params.providerId) searchParams.set('providerId', params.providerId);
       if (params.organizationId) searchParams.set('organizationId', params.organizationId);
       if (params.locationId) searchParams.set('locationId', params.locationId);
       if (params.serviceId) searchParams.set('serviceId', params.serviceId);
@@ -74,16 +74,16 @@ export function useAvailabilitySearch(params: AvailabilitySearchParams) {
   });
 }
 
-export function useProviderAvailability(serviceProviderId: string | undefined) {
+export function useProviderAvailability(providerId: string | undefined) {
   return useQuery({
-    queryKey: ['availability', 'provider', serviceProviderId],
+    queryKey: ['availability', 'provider', providerId],
     queryFn: async () => {
-      if (!serviceProviderId) {
-        throw new Error('Service provider ID is required');
+      if (!providerId) {
+        throw new Error('Provider ID is required');
       }
 
       const response = await fetch(
-        `/api/calendar/availability?serviceProviderId=${serviceProviderId}`
+        `/api/calendar/availability?providerId=${providerId}`
       );
 
       if (!response.ok) {
@@ -93,7 +93,7 @@ export function useProviderAvailability(serviceProviderId: string | undefined) {
 
       return response.json();
     },
-    enabled: !!serviceProviderId,
+    enabled: !!providerId,
   });
 }
 
@@ -167,7 +167,7 @@ export function useCreateAvailability(options?: {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['availability'] });
       queryClient.invalidateQueries({
-        queryKey: ['availability', 'provider', variables.serviceProviderId],
+        queryKey: ['availability', 'provider', variables.providerId],
       });
 
       if (variables.organizationId) {

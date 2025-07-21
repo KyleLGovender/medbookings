@@ -193,7 +193,7 @@ export function ProviderCalendarView({
   }, [currentDate, viewMode]);
 
   const { data: availabilityData, isLoading: isAvailabilityLoading } = useAvailabilitySearch({
-    serviceProviderId: providerId,
+    providerId: providerId,
     startDate: dateRange.start,
     endDate: dateRange.end,
     ...(statusFilter !== 'ALL' && { status: statusFilter }),
@@ -309,7 +309,7 @@ export function ProviderCalendarView({
     return {
       providerId,
       providerName: provider.name,
-      providerType: provider.serviceProviderType?.name || 'Healthcare Provider',
+      providerType: 'Healthcare Provider', // TODO: Update provider data to include typeAssignments
       workingHours: { start: '09:00', end: '17:00' }, // Default working hours
       events,
       stats: {

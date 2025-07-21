@@ -7,9 +7,9 @@ import env from '@/config/env/server';
 
 export async function GET(req: NextRequest) {
   const token = await getToken({ req });
-  const serviceProviderId = req.nextUrl.searchParams.get('serviceProviderId');
+  const providerId = req.nextUrl.searchParams.get('providerId');
 
-  if (!token || !serviceProviderId) {
+  if (!token || !providerId) {
     return new Response('Unauthorized', { status: 401 });
   }
 
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/userinfo.profile',
     ],
-    state: serviceProviderId,
+    state: providerId,
   });
 
   return Response.redirect(url);

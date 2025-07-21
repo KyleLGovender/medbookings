@@ -6,13 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { useOrganizationByUserId } from '@/features/organizations/hooks/use-organization-by-user-id';
 import { UserProfile } from '@/features/profile/types/types';
-import { SerializedServiceProvider } from '@/features/providers/hooks/types';
+import { SerializedProvider } from '@/features/providers/hooks/types';
 
 import { DeleteAccountButton } from './delete-account-button';
 
 interface ProfileClientProps {
   profile: UserProfile;
-  provider?: SerializedServiceProvider | null;
+  provider?: SerializedProvider | null;
   isProfileLoading: boolean;
   profileError: Error | null;
   hasServiceProvider: boolean;
@@ -91,8 +91,8 @@ export function ProfileClient({
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center space-y-4">
-                {provider?.serviceProviderType?.name && (
-                  <p className="text-lg font-semibold">{provider.serviceProviderType.name}</p>
+                {provider?.providerType?.name && (
+                  <p className="text-lg font-semibold">{provider.providerType.name}</p>
                 )}
                 <p className="text-sm text-muted-foreground">
                   {provider?.status ? (

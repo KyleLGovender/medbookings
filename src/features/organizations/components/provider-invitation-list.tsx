@@ -162,7 +162,7 @@ export function ProviderInvitationList({
                     <span>{invitation.email}</span>
                     {invitation.connection && (
                       <span className="text-sm text-muted-foreground">
-                        Connected (Provider ID: {invitation.connection.serviceProviderId})
+                        Connected (Provider ID: {invitation.connection.providerId})
                       </span>
                     )}
                   </div>

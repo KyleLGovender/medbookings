@@ -1,5 +1,5 @@
 /**
- * Helper functions for service providers
+ * Helper functions for providers
  */
 import { Decimal } from '@prisma/client/runtime/library';
 

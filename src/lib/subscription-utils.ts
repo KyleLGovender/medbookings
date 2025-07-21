@@ -4,25 +4,25 @@ import { Subscription, SubscriptionStatus, SubscriptionType } from '@prisma/clie
 /**
  * Subscription utility functions that handle the polymorphic constraint properly
  * These utilities ensure that subscription queries and operations respect the
- * database constraint: exactly one of organizationId, locationId, or serviceProviderId is set
+ * database constraint: exactly one of organizationId, locationId, or providerId is set
  */
 
 export type SubscriptionEntity = 
   | { type: 'organization'; id: string }
   | { type: 'location'; id: string }
-  | { type: 'serviceProvider'; id: string };
+  | { type: 'provider'; id: string };
 
 export interface SubscriptionWithRelations extends Subscription {
   plan?: any;
   organization?: any;
   location?: any;
-  serviceProvider?: any;
+  provider?: any;
   payments?: any[];
   usageRecords?: any[];
 }
 
 /**
- * Get subscriptions for a specific entity (organization, location, or service provider)
+ * Get subscriptions for a specific entity (organization, location, or provider)
  */
 export async function getSubscriptionsForEntity(
   entity: SubscriptionEntity,
@@ -41,17 +41,17 @@ export async function getSubscriptionsForEntity(
     case 'organization':
       whereClause.organizationId = entity.id;
       whereClause.locationId = null;
-      whereClause.serviceProviderId = null;
+      whereClause.providerId = null;
       break;
     case 'location':
       whereClause.organizationId = null;
       whereClause.locationId = entity.id;
-      whereClause.serviceProviderId = null;
+      whereClause.providerId = null;
       break;
-    case 'serviceProvider':
+    case 'provider':
       whereClause.organizationId = null;
       whereClause.locationId = null;
-      whereClause.serviceProviderId = entity.id;
+      whereClause.providerId = entity.id;
       break;
   }
 
@@ -68,7 +68,7 @@ export async function getSubscriptionsForEntity(
     plan: true,
     organization: true,
     location: true,
-    serviceProvider: true,
+    provider: true,
     payments: {
       orderBy: { createdAt: 'desc' as const },
       take: 10
@@ -132,7 +132,7 @@ export async function createSubscriptionForEntity(
     // Initialize all polymorphic fields to null
     organizationId: null,
     locationId: null,
-    serviceProviderId: null,
+    providerId: null,
   };
 
   // Set the appropriate entity field
@@ -143,8 +143,8 @@ export async function createSubscriptionForEntity(
     case 'location':
       subscriptionData.locationId = entity.id;
       break;
-    case 'serviceProvider':
-      subscriptionData.serviceProviderId = entity.id;
+    case 'provider':
+      subscriptionData.providerId = entity.id;
       break;
   }
 
@@ -154,7 +154,7 @@ export async function createSubscriptionForEntity(
       plan: true,
       organization: true,
       location: true,
-      serviceProvider: true,
+      provider: true,
     }
   });
 }
@@ -170,7 +170,7 @@ export async function updateSubscriptionEntity(
   const updateData: any = {
     organizationId: null,
     locationId: null,
-    serviceProviderId: null,
+    providerId: null,
   };
 
   // Set the new entity field
@@ -181,8 +181,8 @@ export async function updateSubscriptionEntity(
     case 'location':
       updateData.locationId = newEntity.id;
       break;
-    case 'serviceProvider':
-      updateData.serviceProviderId = newEntity.id;
+    case 'provider':
+      updateData.providerId = newEntity.id;
       break;
   }
 
@@ -193,7 +193,7 @@ export async function updateSubscriptionEntity(
       plan: true,
       organization: true,
       location: true,
-      serviceProvider: true,
+      provider: true,
     }
   });
 }
@@ -208,8 +208,8 @@ export function getSubscriptionEntity(subscription: Subscription): SubscriptionE
   if (subscription.locationId) {
     return { type: 'location', id: subscription.locationId };
   }
-  if (subscription.serviceProviderId) {
-    return { type: 'serviceProvider', id: subscription.serviceProviderId };
+  if (subscription.providerId) {
+    return { type: 'provider', id: subscription.providerId };
   }
   return null;
 }
@@ -220,12 +220,12 @@ export function getSubscriptionEntity(subscription: Subscription): SubscriptionE
 export function validatePolymorphicConstraint(subscription: {
   organizationId: string | null;
   locationId: string | null;
-  serviceProviderId: string | null;
+  providerId: string | null;
 }): boolean {
   const setFields = [
     subscription.organizationId,
     subscription.locationId,
-    subscription.serviceProviderId
+    subscription.providerId
   ].filter(Boolean);
 
   return setFields.length === 1;
@@ -254,7 +254,7 @@ export async function getAllSubscriptions(options?: {
     plan: true,
     organization: true,
     location: true,
-    serviceProvider: true,
+    provider: true,
   } : undefined;
 
   return await prisma.subscription.findMany({
@@ -286,7 +286,7 @@ export async function cancelSubscription(
       plan: true,
       organization: true,
       location: true,
-      serviceProvider: true,
+      provider: true,
     }
   });
 }
@@ -311,8 +311,8 @@ export async function getSubscriptionStats(entity: SubscriptionEntity): Promise<
     case 'location':
       whereClause.locationId = entity.id;
       break;
-    case 'serviceProvider':
-      whereClause.serviceProviderId = entity.id;
+    case 'provider':
+      whereClause.providerId = entity.id;
       break;
   }
 

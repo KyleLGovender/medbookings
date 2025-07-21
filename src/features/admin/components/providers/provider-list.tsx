@@ -26,8 +26,8 @@ import {
 } from '@/components/ui/table';
 import type { AdminApprovalStatus, AdminProviderListSelect } from '@/features/admin/types';
 import {
-  useApproveServiceProvider,
-  useRejectServiceProvider,
+  useApproveProvider,
+  useRejectProvider,
 } from '@/features/providers/hooks/use-admin-provider-approval';
 import { useAdminProviders } from '@/features/providers/hooks/use-admin-providers';
 
@@ -57,8 +57,8 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
     error,
   } = useAdminProviders(statusFilter === 'all' ? undefined : (statusFilter as AdminApprovalStatus));
 
-  const approveProviderMutation = useApproveServiceProvider();
-  const rejectProviderMutation = useRejectServiceProvider();
+  const approveProviderMutation = useApproveProvider();
+  const rejectProviderMutation = useRejectProvider();
 
   const filteredProviders = providers?.filter((provider: AdminProviderListSelect) => {
     if (!searchQuery) return true;
@@ -66,7 +66,9 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
     return (
       provider.user?.name?.toLowerCase().includes(query) ||
       provider.user?.email?.toLowerCase().includes(query) ||
-      provider.serviceProviderType?.name?.toLowerCase().includes(query)
+      provider.typeAssignments?.some(assignment => 
+        assignment.providerType?.name?.toLowerCase().includes(query)
+      )
     );
   });
 
@@ -84,7 +86,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
 
   const handleReject = async (reason: string) => {
     await rejectProviderMutation.mutateAsync({
-      serviceProviderId: rejectionModal.providerId,
+      providerId: rejectionModal.providerId,
       rejectionReason: reason,
     });
   };
@@ -112,7 +114,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
       <Card>
         <CardHeader>
           <CardTitle>Provider Management</CardTitle>
-          <CardDescription>Review and manage service provider applications</CardDescription>
+          <CardDescription>Review and manage provider applications</CardDescription>
         </CardHeader>
         <CardContent>
           {/* Filters */}
@@ -191,9 +193,13 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">
-                            {provider.serviceProviderType?.name || 'Unknown'}
-                          </Badge>
+                          <div className="flex flex-wrap gap-1">
+                            {provider.typeAssignments?.map((assignment, index) => (
+                              <Badge key={index} variant="outline">
+                                {assignment.providerType?.name || 'Unknown'}
+                              </Badge>
+                            )) || <Badge variant="outline">Unknown</Badge>}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={

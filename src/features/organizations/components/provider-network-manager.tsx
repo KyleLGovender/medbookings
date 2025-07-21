@@ -63,9 +63,9 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
-      connection.serviceProvider.name.toLowerCase().includes(query) ||
-      connection.serviceProvider.email.toLowerCase().includes(query) ||
-      connection.serviceProvider.serviceProviderType?.name.toLowerCase().includes(query)
+      connection.provider.name.toLowerCase().includes(query) ||
+      connection.provider.email.toLowerCase().includes(query) ||
+      connection.provider.providerType?.name.toLowerCase().includes(query)
     );
   });
 

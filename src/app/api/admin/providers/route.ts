@@ -32,8 +32,12 @@ export async function GET(
         user: {
           select: { id: true, email: true, name: true },
         },
-        providerType: {
-          select: { name: true },
+        typeAssignments: {
+          include: {
+            providerType: {
+              select: { name: true },
+            },
+          },
         },
         requirementSubmissions: {
           select: {

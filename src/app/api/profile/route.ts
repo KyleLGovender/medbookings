@@ -96,12 +96,12 @@ export async function DELETE() {
   }
 
   try {
-    // Check if user has a service provider profile
-    const serviceProvider = await prisma.serviceProvider.findFirst({
+    // Check if user has a provider profile
+    const provider = await prisma.provider.findFirst({
       where: { userId: session.user.id },
     });
 
-    if (serviceProvider) {
+    if (provider) {
       return NextResponse.json(
         {
           success: false,

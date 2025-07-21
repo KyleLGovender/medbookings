@@ -29,7 +29,7 @@ export interface BookingView {
       isInPerson: boolean;
       location?: string;
     };
-    serviceProvider: {
+    provider: {
       id: string;
       name: string;
       whatsapp?: string;

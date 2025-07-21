@@ -10,19 +10,19 @@ export async function PUT(req: NextRequest) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const serviceProvider = await prisma.serviceProvider.findFirst({
+  const provider = await prisma.provider.findFirst({
     where: { userId: token.sub },
     include: { calendarIntegration: true },
   });
 
-  if (!serviceProvider?.calendarIntegration) {
+  if (!provider?.calendarIntegration) {
     return new Response('No calendar integration found', { status: 404 });
   }
 
   const meetSettings = await req.json();
 
   await prisma.calendarIntegration.update({
-    where: { id: serviceProvider.calendarIntegration.id },
+    where: { id: provider.calendarIntegration.id },
     data: { meetSettings },
   });
 

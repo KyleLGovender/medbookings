@@ -254,4 +254,3 @@ export function useRejectProvider(options?: {
 // Backward compatibility exports for hooks
 export const useApproveServiceProvider = useApproveProvider;
 export const useRejectServiceProvider = useRejectProvider;
-export const useSuspendServiceProvider = useSuspendProvider;

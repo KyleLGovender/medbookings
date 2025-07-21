@@ -10,7 +10,7 @@ const createSubscriptionSchema = z.object({
   // Polymorphic relationship - exactly one must be provided
   organizationId: z.string().optional(),
   locationId: z.string().optional(), 
-  serviceProviderId: z.string().optional(),
+  providerId: z.string().optional(),
   // Subscription details
   type: z.enum(['BASE', 'WEBSITE_HOSTING', 'REVIEW_PROMOTION', 'PREMIUM_ANALYTICS', 'CUSTOM']).default('BASE'),
   status: z.enum(['ACTIVE', 'PAST_DUE', 'CANCELLED', 'EXPIRED', 'TRIALING']),
@@ -21,10 +21,10 @@ const createSubscriptionSchema = z.object({
   stripeSubscriptionId: z.string().optional(),
 }).refine((data) => {
   // Ensure exactly one of the polymorphic fields is set
-  const setFields = [data.organizationId, data.locationId, data.serviceProviderId].filter(Boolean);
+  const setFields = [data.organizationId, data.locationId, data.providerId].filter(Boolean);
   return setFields.length === 1;
 }, {
-  message: "Exactly one of organizationId, locationId, or serviceProviderId must be provided",
+  message: "Exactly one of organizationId, locationId, or providerId must be provided",
   path: ["polymorphicRelation"]
 });
 
@@ -67,11 +67,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (validatedData.serviceProviderId) {
-      const serviceProvider = await prisma.serviceProvider.findUnique({
-        where: { id: validatedData.serviceProviderId }
+    if (validatedData.providerId) {
+      const provider = await prisma.provider.findUnique({
+        where: { id: validatedData.providerId }
       });
-      if (!serviceProvider) {
+      if (!provider) {
         return NextResponse.json(
           { error: 'Service provider not found' },
           { status: 404 }
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         planId: validatedData.planId,
         organizationId: validatedData.organizationId,
         locationId: validatedData.locationId,
-        serviceProviderId: validatedData.serviceProviderId,
+        providerId: validatedData.providerId,
         type: validatedData.type,
         status: validatedData.status,
         startDate: validatedData.startDate,
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
         plan: true,
         organization: true,
         location: true,
-        serviceProvider: true,
+        provider: true,
       }
     });
 
@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const organizationId = searchParams.get('organizationId');
     const locationId = searchParams.get('locationId');
-    const serviceProviderId = searchParams.get('serviceProviderId');
+    const providerId = searchParams.get('providerId');
 
     // Build where clause based on provided filters
     const whereClause: any = {};
@@ -162,8 +162,8 @@ export async function GET(request: NextRequest) {
     if (locationId) {
       whereClause.locationId = locationId;
     }
-    if (serviceProviderId) {
-      whereClause.serviceProviderId = serviceProviderId;
+    if (providerId) {
+      whereClause.providerId = providerId;
     }
 
     const subscriptions = await prisma.subscription.findMany({
@@ -172,7 +172,7 @@ export async function GET(request: NextRequest) {
         plan: true,
         organization: true,
         location: true,
-        serviceProvider: true,
+        provider: true,
       },
       orderBy: {
         createdAt: 'desc'
