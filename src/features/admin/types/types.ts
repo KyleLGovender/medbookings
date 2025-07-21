@@ -188,9 +188,13 @@ export type AdminOrganizationSelect = Prisma.OrganizationGetPayload<{
                 phone: true;
               };
             };
-            providerType: {
-              select: {
-                name: true;
+            typeAssignments: {
+              include: {
+                providerType: {
+                  select: {
+                    name: true;
+                  };
+                };
               };
             };
           };
@@ -218,10 +222,14 @@ export type AdminProviderSelect = Prisma.ProviderGetPayload<{
         whatsapp: true;
       };
     };
-    providerType: {
-      select: {
-        id: true;
-        name: true;
+    typeAssignments: {
+      include: {
+        providerType: {
+          select: {
+            id: true;
+            name: true;
+          };
+        };
       };
     };
     services: {
@@ -267,9 +275,13 @@ export type AdminProviderListSelect = Prisma.ProviderGetPayload<{
         email: true;
       };
     };
-    providerType: {
-      select: {
-        name: true;
+    typeAssignments: {
+      include: {
+        providerType: {
+          select: {
+            name: true;
+          };
+        };
       };
     };
     requirementSubmissions: {
@@ -342,9 +354,11 @@ export interface OrganizationProviderConnection {
       email: string;
       phone?: string;
     };
-    providerType: {
-      name: string;
-    };
+    typeAssignments: {
+      providerType: {
+        name: string;
+      };
+    }[];
   };
 }
 

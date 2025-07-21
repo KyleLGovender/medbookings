@@ -375,7 +375,7 @@ export function ProviderOnboardingForm() {
           <Separator className="my-4" />
           <ServicesSection
             availableServices={uniqueServicesForSelectedTypes}
-            selectedProviderTypeIds={selectedProviderTypeIds}
+            selectedProviderTypeId={selectedProviderTypeIds[0] || ''}
           />
         </Card>
 
@@ -387,7 +387,7 @@ export function ProviderOnboardingForm() {
           <Separator className="my-4" />
           <RegulatoryRequirementsSection
             requirements={uniqueRequirementsForSelectedTypes}
-            selectedProviderTypeIds={selectedProviderTypeIds}
+            selectedProviderTypeId={selectedProviderTypeIds[0] || ''}
           />
         </Card>
 

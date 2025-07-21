@@ -54,12 +54,6 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
             email: true,
           },
         },
-        providerType: {
-          select: {
-            name: true,
-            description: true,
-          },
-        },
         typeAssignments: {
           include: {
             providerType: {
@@ -96,7 +90,9 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
     if (JSON.stringify(languages) !== JSON.stringify(currentProvider.languages)) {
       updateData.languages = languages;
     }
-    if (providerTypeId && providerTypeId !== currentProvider.providerTypeId) {
+    // Get current provider type ID from type assignments (for legacy compatibility)
+    const currentProviderTypeId = currentProvider.typeAssignments?.[0]?.providerTypeId;
+    if (providerTypeId && providerTypeId !== currentProviderTypeId) {
       updateData.providerTypeId = providerTypeId;
     }
     if (showPrice !== currentProvider.showPrice) {
@@ -138,12 +134,6 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
         user: {
           select: {
             email: true,
-          },
-        },
-        providerType: {
-          select: {
-            name: true,
-            description: true,
           },
         },
         typeAssignments: {
@@ -432,10 +422,15 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
             email: true,
           },
         },
-        providerType: {
-          select: {
-            name: true,
-            description: true,
+        typeAssignments: {
+          include: {
+            providerType: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
           },
         },
         requirementSubmissions: {

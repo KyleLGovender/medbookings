@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
           accessToken: token.accessToken as string,
           refreshToken: token.refreshToken as string,
           expiresAt: new Date(Date.now() + 3600 * 1000), // 1 hour from now
-          provider: 'GOOGLE',
+          calendarProvider: 'GOOGLE',
           googleEmail: token.email as string,
         },
         create: {
@@ -112,7 +112,7 @@ export async function GET(req: NextRequest) {
           accessToken: token.accessToken as string,
           refreshToken: token.refreshToken as string,
           expiresAt: new Date(Date.now() + 3600 * 1000),
-          provider: 'GOOGLE',
+          calendarProvider: 'GOOGLE',
           googleEmail: token.email as string,
         },
       });

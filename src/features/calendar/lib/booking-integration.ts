@@ -56,7 +56,7 @@ export class BookingIntegrationService {
         include: {
           availability: {
             include: {
-              serviceProvider: true,
+              provider: true,
               organization: true,
               location: true,
             },
@@ -260,7 +260,7 @@ export class BookingIntegrationService {
    * Find available slots that match booking criteria with scheduling rule support
    */
   async findCompatibleSlots(
-    serviceProviderId: string,
+    providerId: string,
     serviceId: string,
     preferredDate: Date,
     duration: number,
@@ -290,7 +290,7 @@ export class BookingIntegrationService {
         where: {
           serviceId,
           availability: {
-            serviceProviderId,
+            providerId: providerId,
             status: AvailabilityStatus.ACCEPTED,
           },
           startTime: {
@@ -403,7 +403,7 @@ export class BookingIntegrationService {
               service: true,
               availability: {
                 include: {
-                  serviceProvider: true,
+                  provider: true,
                   organization: true,
                   location: true,
                 },
@@ -490,7 +490,7 @@ export class BookingIntegrationService {
         status: { in: ['CONFIRMED', 'PENDING'] },
         slot: {
           availability: {
-            serviceProviderId: slot.availability.serviceProviderId,
+            providerId: slot.availability.providerId,
           },
           startTime: {
             lt: endTime,
@@ -582,7 +582,7 @@ export async function validateBooking(
  * Find available slots compatible with scheduling rules
  */
 export async function findAvailableSlots(
-  serviceProviderId: string,
+  providerId: string,
   serviceId: string,
   preferredDate: Date,
   duration: number,
@@ -604,7 +604,7 @@ export async function findAvailableSlots(
 > {
   const service = new BookingIntegrationService();
   return await service.findCompatibleSlots(
-    serviceProviderId,
+    providerId,
     serviceId,
     preferredDate,
     duration,

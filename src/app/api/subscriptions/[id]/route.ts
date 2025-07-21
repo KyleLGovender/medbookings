@@ -10,7 +10,7 @@ const updateSubscriptionSchema = z.object({
   // Polymorphic relationship - exactly one must be provided if updating
   organizationId: z.string().optional(),
   locationId: z.string().optional(), 
-  serviceProviderId: z.string().optional(),
+  providerId: z.string().optional(),
   // Subscription details
   type: z.enum(['BASE', 'WEBSITE_HOSTING', 'REVIEW_PROMOTION', 'PREMIUM_ANALYTICS', 'CUSTOM']).optional(),
   status: z.enum(['ACTIVE', 'PAST_DUE', 'CANCELLED', 'EXPIRED', 'TRIALING']).optional(),
@@ -23,7 +23,7 @@ const updateSubscriptionSchema = z.object({
   stripeSubscriptionId: z.string().optional(),
 }).refine((data) => {
   // If any polymorphic field is being updated, ensure exactly one is set
-  const polymorphicFields = [data.organizationId, data.locationId, data.serviceProviderId];
+  const polymorphicFields = [data.organizationId, data.locationId, data.providerId];
   const definedFields = polymorphicFields.filter(field => field !== undefined);
   
   // If no polymorphic fields are being updated, that's fine
@@ -35,7 +35,7 @@ const updateSubscriptionSchema = z.object({
   const setFields = polymorphicFields.filter(field => field !== undefined && field !== null);
   return setFields.length === 1;
 }, {
-  message: "If updating entity relationship, exactly one of organizationId, locationId, or serviceProviderId must be provided",
+  message: "If updating entity relationship, exactly one of organizationId, locationId, or providerId must be provided",
   path: ["polymorphicRelation"]
 });
 
@@ -59,7 +59,7 @@ export async function GET(
         plan: true,
         organization: true,
         location: true,
-        serviceProvider: true,
+        provider: true,
         payments: {
           orderBy: { createdAt: 'desc' },
           take: 10
@@ -143,11 +143,11 @@ export async function PATCH(
       }
     }
 
-    if (validatedData.serviceProviderId) {
-      const serviceProvider = await prisma.serviceProvider.findUnique({
-        where: { id: validatedData.serviceProviderId }
+    if (validatedData.providerId) {
+      const provider = await prisma.provider.findUnique({
+        where: { id: validatedData.providerId }
       });
-      if (!serviceProvider) {
+      if (!provider) {
         return NextResponse.json(
           { error: 'Service provider not found' },
           { status: 404 }
@@ -173,20 +173,20 @@ export async function PATCH(
     // If updating the polymorphic relationship, we need to clear the other fields
     if (validatedData.organizationId !== undefined || 
         validatedData.locationId !== undefined || 
-        validatedData.serviceProviderId !== undefined) {
+        validatedData.providerId !== undefined) {
       
       // Clear all polymorphic fields first
       updateData.organizationId = null;
       updateData.locationId = null;
-      updateData.serviceProviderId = null;
+      updateData.providerId = null;
       
       // Then set the one that was provided
       if (validatedData.organizationId) {
         updateData.organizationId = validatedData.organizationId;
       } else if (validatedData.locationId) {
         updateData.locationId = validatedData.locationId;
-      } else if (validatedData.serviceProviderId) {
-        updateData.serviceProviderId = validatedData.serviceProviderId;
+      } else if (validatedData.providerId) {
+        updateData.providerId = validatedData.providerId;
       }
     }
 
@@ -198,7 +198,7 @@ export async function PATCH(
         plan: true,
         organization: true,
         location: true,
-        serviceProvider: true,
+        provider: true,
       }
     });
 
@@ -262,7 +262,7 @@ export async function DELETE(
         plan: true,
         organization: true,
         location: true,
-        serviceProvider: true,
+        provider: true,
       }
     });
 

@@ -34,10 +34,10 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 interface AvailabilityProposalsListProps {
-  serviceProviderId: string;
+  providerId: string;
 }
 
-export function AvailabilityProposalsList({ serviceProviderId }: AvailabilityProposalsListProps) {
+export function AvailabilityProposalsList({ providerId }: AvailabilityProposalsListProps) {
   const { toast } = useToast();
 
   // Fetch pending proposals for the provider
@@ -45,7 +45,7 @@ export function AvailabilityProposalsList({ serviceProviderId }: AvailabilityPro
     data: allAvailability = [],
     isLoading,
     error,
-  } = useProviderAvailability(serviceProviderId);
+  } = useProviderAvailability(providerId);
 
   // Filter for pending proposals only
   const pendingProposals = allAvailability.filter(
@@ -303,7 +303,7 @@ function ProposalCard({
                         {serviceConfig.duration} min
                       </span>
                     </div>
-                    {proposal.serviceProvider.showPrice && (
+                    {proposal.provider.showPrice && (
                       <span className="font-medium">${serviceConfig.price.toString()}</span>
                     )}
                   </div>

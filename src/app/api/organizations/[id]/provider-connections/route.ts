@@ -47,7 +47,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     const connections = await prisma.organizationProviderConnection.findMany({
       where: whereClause,
       include: {
-        serviceProvider: {
+        provider: {
           include: {
             user: {
               select: {
@@ -57,11 +57,15 @@ export async function GET(request: Request, { params }: RouteParams) {
                 image: true,
               },
             },
-            serviceProviderType: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
+            typeAssignments: {
+              include: {
+                providerType: {
+                  select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                  },
+                },
               },
             },
           },

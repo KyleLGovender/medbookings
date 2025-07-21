@@ -82,7 +82,7 @@ type FormValues = CreateAvailabilityData;
  * - Service selection and configuration
  * - Additional settings (confirmation requirements)
  *
- * @param providerId - The ID of the service provider
+ * @param providerId - The ID of the provider
  * @param organizationId - Optional organization ID for organization-created availability
  * @param locationId - Optional pre-selected location ID
  * @param onSuccess - Callback fired when availability is created successfully

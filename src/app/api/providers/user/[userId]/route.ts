@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
   }
 
   try {
-    const serviceProvider = await prisma.serviceProvider.findUnique({
+    const provider = await prisma.provider.findUnique({
       where: { userId },
       include: {
         services: true,
@@ -20,10 +20,14 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
             email: true,
           },
         },
-        serviceProviderType: {
-          select: {
-            name: true,
-            description: true,
+        typeAssignments: {
+          include: {
+            providerType: {
+              select: {
+                name: true,
+                description: true,
+              },
+            },
           },
         },
         requirementSubmissions: {
@@ -34,12 +38,12 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
       },
     });
 
-    if (!serviceProvider) {
+    if (!provider) {
       return NextResponse.json(null, { status: 404 });
     }
 
     // Serialize the provider data to handle Decimal values and dates
-    const serializedProvider = serializeServiceProvider(serviceProvider);
+    const serializedProvider = serializeServiceProvider(provider);
 
     return NextResponse.json(serializedProvider);
   } catch (error) {

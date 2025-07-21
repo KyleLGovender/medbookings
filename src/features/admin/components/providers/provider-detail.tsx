@@ -7,9 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { RequirementSubmissionCard } from '@/features/providers/components/requirement-submission-card';
 import {
   useApproveRequirement,
-  useApproveServiceProvider,
+  useApproveProvider,
   useRejectRequirement,
-  useRejectServiceProvider,
+  useRejectProvider,
 } from '@/features/providers/hooks/use-admin-provider-approval';
 import { useAdminProvider } from '@/features/providers/hooks/use-admin-providers';
 
@@ -37,8 +37,8 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
     name: '',
   });
 
-  const approveProviderMutation = useApproveServiceProvider();
-  const rejectProviderMutation = useRejectServiceProvider();
+  const approveProviderMutation = useApproveProvider();
+  const rejectProviderMutation = useRejectProvider();
   const approveRequirementMutation = useApproveRequirement();
   const rejectRequirementMutation = useRejectRequirement();
 
@@ -74,7 +74,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
   const handleReject = async (reason: string) => {
     if (rejectionModal.type === 'provider') {
       await rejectProviderMutation.mutateAsync({
-        serviceProviderId: rejectionModal.id,
+        providerId: rejectionModal.id,
         rejectionReason: reason,
       });
     } else {
@@ -171,11 +171,13 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                 <p className="text-sm">{provider?.user?.whatsapp || 'N/A'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Provider Type</label>
-                <div className="text-sm">
-                  <Badge variant="outline">
-                    {provider?.serviceProviderType?.name || 'Unknown'}
-                  </Badge>
+                <label className="text-sm font-medium text-muted-foreground">Provider Types</label>
+                <div className="flex flex-wrap gap-1">
+                  {provider?.typeAssignments?.map((assignment: any, index: number) => (
+                    <Badge key={index} variant="outline">
+                      {assignment.providerType?.name || 'Unknown'}
+                    </Badge>
+                  )) || <Badge variant="outline">Unknown</Badge>}
                 </div>
               </div>
               <div>

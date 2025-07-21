@@ -19,11 +19,11 @@ export async function PUT(request: Request, { params }: { params: { connectionId
     }
 
     // Find the service provider for the current user
-    const serviceProvider = await prisma.serviceProvider.findUnique({
+    const provider = await prisma.provider.findUnique({
       where: { userId: currentUser.id },
     });
 
-    if (!serviceProvider) {
+    if (!provider) {
       return NextResponse.json(
         {
           message: 'Service provider profile not found',
@@ -52,7 +52,7 @@ export async function PUT(request: Request, { params }: { params: { connectionId
     const connection = await prisma.organizationProviderConnection.findFirst({
       where: {
         id: connectionId,
-        serviceProviderId: serviceProvider.id,
+        providerId: provider.id,
       },
       include: {
         organization: {
@@ -149,11 +149,11 @@ export async function DELETE(request: Request, { params }: { params: { connectio
     }
 
     // Find the service provider for the current user
-    const serviceProvider = await prisma.serviceProvider.findUnique({
+    const provider = await prisma.provider.findUnique({
       where: { userId: currentUser.id },
     });
 
-    if (!serviceProvider) {
+    if (!provider) {
       return NextResponse.json(
         {
           message: 'Service provider profile not found',
@@ -166,7 +166,7 @@ export async function DELETE(request: Request, { params }: { params: { connectio
     const connection = await prisma.organizationProviderConnection.findFirst({
       where: {
         id: connectionId,
-        serviceProviderId: serviceProvider.id,
+        providerId: provider.id,
       },
       include: {
         organization: {

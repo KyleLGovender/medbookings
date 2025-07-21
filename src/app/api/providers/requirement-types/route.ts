@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch provider type with its requirements
-    const providerType = await prisma.serviceProviderType.findUnique({
+    const providerType = await prisma.providerType.findUnique({
       where: { id: providerTypeId },
       include: {
         requirements: {
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     // If providerId is provided, fetch the provider's requirement submissions
     let requirementSubmissions = null;
     if (providerId) {
-      const provider = await prisma.serviceProvider.findUnique({
+      const provider = await prisma.provider.findUnique({
         where: { id: providerId },
         include: {
           requirementSubmissions: {

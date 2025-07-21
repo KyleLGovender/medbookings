@@ -124,7 +124,7 @@ export function OrganizationCalendarView({
         // Get availability for this provider from organization availability data
         const providerAvailability = availabilityData.filter(
           (availability: AvailabilityWithRelations) =>
-            availability.serviceProviderId === provider.id
+            availability.providerId === provider.id
         );
 
         // Transform availability into calendar events

@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import twilio from 'twilio';
 
 import env from '@/config/env/server';
-import { sendGuestVCardToServiceProvider } from '@/features/communications/lib/server-helper';
+import { sendGuestVCardToProvider } from '@/features/communications/lib/server-helper';
 import { type BookingView } from '@/features/calendar/lib/types';
 import { prisma } from '@/lib/prisma';
 
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
               serviceConfig: true,
               availability: {
                 include: {
-                  serviceProvider: true
+                  provider: true
                 }
               }
             } 
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Associated booking not found' }, { status: 404 }); // Or 400
       }
 
-      const providerWhatsappNormalized = normalizePhoneNumber(booking.slot?.availability?.serviceProvider?.whatsapp || '');
+      const providerWhatsappNormalized = normalizePhoneNumber(booking.slot?.availability?.provider?.whatsapp || '');
 
       // Verify the sender is the correct provider for this booking ID
       if (!providerWhatsappNormalized || fromNumberNormalized !== providerWhatsappNormalized) {
@@ -173,17 +173,17 @@ export async function POST(request: NextRequest) {
             isInPerson: booking.slot.serviceConfig.isInPerson,
             location: booking.slot.serviceConfig.locationId ?? undefined,
           },
-          serviceProvider: {
-            id: booking.slot.availability?.serviceProvider?.id || '',
-            name: booking.slot.availability?.serviceProvider?.name || '',
-            whatsapp: booking.slot.availability?.serviceProvider?.whatsapp,
-            image: booking.slot.availability?.serviceProvider?.image,
+          provider: {
+            id: booking.slot.availability?.provider?.id || '',
+            name: booking.slot.availability?.provider?.name || '',
+            whatsapp: booking.slot.availability?.provider?.whatsapp,
+            image: booking.slot.availability?.provider?.image,
           },
         },
       };
 
       // 6. Call the Core Logic
-      await sendGuestVCardToServiceProvider(bookingView); // Assume this throws on error
+      await sendGuestVCardToProvider(bookingView); // Assume this throws on error
 
       console.log(`[WHATSAPP CALLBACK] vCard sent successfully for booking ${booking.id}.`);
       // Return success acknowledgment to Twilio

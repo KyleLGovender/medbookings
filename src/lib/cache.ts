@@ -45,18 +45,18 @@ class MemoryCache<T> {
   // Clean up expired entries
   cleanup(): void {
     const now = Date.now();
-    for (const [key, entry] of this.cache.entries()) {
+    this.cache.forEach((entry, key) => {
       if (now > entry.expires) {
         this.cache.delete(key);
       }
-    }
+    });
   }
 }
 
 // Cache instances for different data types
 export const providerTypeStatsCache = new MemoryCache<Array<{ typeId: string; typeName: string; count: number }>>(30); // 30 min TTL
 export const providerSearchCache = new MemoryCache<any>(10); // 10 min TTL for search results
-export const providersByTypeCache = new MemoryCache<any[]>(20); // 20 min TTL
+export const providersByTypeCache = new MemoryCache<any>(20); // 20 min TTL
 
 // Cache key generators
 export function generateSearchCacheKey(
@@ -90,11 +90,11 @@ export function invalidateProviderCaches(): void {
 export function invalidateProviderTypeCache(typeId?: string): void {
   if (typeId) {
     // Clear specific type-related caches
-    for (const key of providersByTypeCache['cache'].keys()) {
+    providersByTypeCache['cache'].forEach((_, key) => {
       if (key.includes(typeId)) {
         providersByTypeCache.delete(key);
       }
-    }
+    });
   }
   
   // Always clear stats cache when provider types change

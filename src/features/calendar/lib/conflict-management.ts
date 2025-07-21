@@ -67,7 +67,7 @@ export class ConflictManager {
    */
   async detectAndResolveConflicts(
     newSlots: any[],
-    serviceProviderId: string,
+    providerId: string,
     availabilityId: string
   ): Promise<ConflictResolutionResult> {
     const conflicts: AvailabilityConflict[] = [];
@@ -76,7 +76,7 @@ export class ConflictManager {
     let resolvedConflictsCount = 0;
 
     for (const slot of newSlots) {
-      const slotConflicts = await this.detectSlotConflicts(slot, serviceProviderId, availabilityId);
+      const slotConflicts = await this.detectSlotConflicts(slot, providerId, availabilityId);
 
       if (slotConflicts.length === 0) {
         validSlots.push(slot);
@@ -85,7 +85,7 @@ export class ConflictManager {
         const resolutionResult = await this.attemptConflictResolution(
           slot,
           slotConflicts,
-          serviceProviderId
+          providerId
         );
 
         if (resolutionResult.resolved) {
@@ -126,7 +126,7 @@ export class ConflictManager {
    */
   async detectSlotConflicts(
     slot: any,
-    serviceProviderId: string,
+    providerId: string,
     availabilityId: string
   ): Promise<SlotConflictDetails[]> {
     const conflicts: SlotConflictDetails[] = [];
@@ -142,7 +142,7 @@ export class ConflictManager {
         slot,
         bufferedStartTime,
         bufferedEndTime,
-        serviceProviderId
+        providerId
       );
       conflicts.push(...overlappingConflicts);
     }
@@ -153,7 +153,7 @@ export class ConflictManager {
         slot,
         bufferedStartTime,
         bufferedEndTime,
-        serviceProviderId
+        providerId
       );
       conflicts.push(...calendarConflicts);
     }
@@ -181,7 +181,7 @@ export class ConflictManager {
         slot,
         bufferedStartTime,
         bufferedEndTime,
-        serviceProviderId
+        providerId
       );
       conflicts.push(...providerConflicts);
     }
@@ -196,12 +196,12 @@ export class ConflictManager {
     slot: any,
     startTime: Date,
     endTime: Date,
-    serviceProviderId: string
+    providerId: string
   ): Promise<SlotConflictDetails[]> {
     const overlappingSlots = await prisma.calculatedAvailabilitySlot.findMany({
       where: {
         availability: {
-          serviceProviderId,
+          providerId: providerId,
         },
         startTime: {
           lt: endTime,
@@ -241,12 +241,12 @@ export class ConflictManager {
     slot: any,
     startTime: Date,
     endTime: Date,
-    serviceProviderId: string
+    providerId: string
   ): Promise<SlotConflictDetails[]> {
     const blockingEvents = await prisma.calendarEvent.findMany({
       where: {
         calendarIntegration: {
-          serviceProviderId: serviceProviderId,
+          providerId: providerId,
         },
         startTime: {
           lt: endTime,
@@ -333,8 +333,8 @@ export class ConflictManager {
       where: {
         availability: {
           locationId,
-          serviceProviderId: {
-            not: slot.serviceProviderId,
+          providerId: {
+            not: slot.providerId,
           },
         },
         startTime: {
@@ -350,7 +350,7 @@ export class ConflictManager {
       include: {
         availability: {
           include: {
-            serviceProvider: true,
+            provider: true,
           },
         },
         booking: true,
@@ -363,7 +363,7 @@ export class ConflictManager {
       conflictType: 'LOCATION_CONFLICT' as const,
       conflictingEntityId: conflictingSlot.id,
       conflictingEntityType: 'slot' as const,
-      description: `Location conflict with ${conflictingSlot.availability.serviceProvider?.name}`,
+      description: `Location conflict with ${conflictingSlot.availability.provider?.name}`,
       severity: conflictingSlot.booking ? ('critical' as const) : ('medium' as const),
       canAutoResolve: false,
       suggestedResolution: 'Use different location or time',
@@ -377,12 +377,12 @@ export class ConflictManager {
     slot: any,
     startTime: Date,
     endTime: Date,
-    serviceProviderId: string
+    providerId: string
   ): Promise<SlotConflictDetails[]> {
     // Check if provider has any availability during this time
     const providerAvailability = await prisma.availability.findMany({
       where: {
-        serviceProviderId,
+        providerId: providerId,
         startTime: {
           lte: startTime,
         },
@@ -399,7 +399,7 @@ export class ConflictManager {
           startTime: slot.startTime,
           endTime: slot.endTime,
           conflictType: 'PROVIDER_UNAVAILABLE' as const,
-          conflictingEntityId: serviceProviderId,
+          conflictingEntityId: providerId,
           conflictingEntityType: 'availability' as const,
           description: 'Provider has no availability during this time',
           severity: 'critical' as const,
@@ -418,7 +418,7 @@ export class ConflictManager {
   private async attemptConflictResolution(
     slot: any,
     conflicts: SlotConflictDetails[],
-    serviceProviderId: string
+    providerId: string
   ): Promise<{
     resolved: boolean;
     modifiedSlot?: any;
@@ -516,12 +516,12 @@ export class ConflictManager {
  */
 export async function detectSlotConflicts(
   slots: any[],
-  serviceProviderId: string,
+  providerId: string,
   availabilityId: string,
   options?: ConflictDetectionOptions
 ): Promise<ConflictResolutionResult> {
   const manager = new ConflictManager(options);
-  return await manager.detectAndResolveConflicts(slots, serviceProviderId, availabilityId);
+  return await manager.detectAndResolveConflicts(slots, providerId, availabilityId);
 }
 
 /**
@@ -530,7 +530,7 @@ export async function detectSlotConflicts(
 export async function analyzeTimeSlotConflicts(
   startTime: Date,
   endTime: Date,
-  serviceProviderId: string,
+  providerId: string,
   locationId?: string
 ): Promise<{
   hasConflicts: boolean;
@@ -544,12 +544,12 @@ export async function analyzeTimeSlotConflicts(
     endTime,
     duration: Math.floor((endTime.getTime() - startTime.getTime()) / (60 * 1000)),
     locationId,
-    serviceProviderId,
+    providerId: providerId,
   };
 
   const conflicts = await manager.detectSlotConflicts(
     mockSlot,
-    serviceProviderId,
+    providerId,
     'mock-availability-id'
   );
 

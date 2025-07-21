@@ -23,8 +23,8 @@ export async function sendBookingNotifications(booking: BookingView) {
   try {
     const notificationPromises = [];
 
-    const templateVariablesServiceProvider = JSON.stringify({
-      1: booking.slot.serviceProvider.name,
+    const templateVariablesProvider = JSON.stringify({
+      1: booking.slot.provider.name,
       2: `${booking.slot.startTime.toLocaleDateString()} at ${booking.slot.startTime.toLocaleTimeString()}`,
       3: `${booking.slot.serviceConfig.duration} minutes`,
       4: `R${booking.slot.serviceConfig.price}`,
@@ -34,20 +34,20 @@ export async function sendBookingNotifications(booking: BookingView) {
     });
 
     // Send provider whatsapp notification
-    if (booking.slot.serviceProvider.whatsapp) {
+    if (booking.slot.provider.whatsapp) {
       notificationPromises.push(
         twilioClient.messages.create({
           from: `whatsapp:${TwilioWhatsappNumber}`,
           contentSid: 'HX7b7542c849bf762b63fc38dcb069f6f1',
-          contentVariables: templateVariablesServiceProvider,
-          to: `whatsapp:${booking.slot.serviceProvider.whatsapp}`,
+          contentVariables: templateVariablesProvider,
+          to: `whatsapp:${booking.slot.provider.whatsapp}`,
         })
       );
     }
 
     const templateVariablesPatient = JSON.stringify({
       1: booking.guestInfo.name,
-      2: booking.slot.serviceProvider.name,
+      2: booking.slot.provider.name,
       3: `${booking.slot.startTime.toLocaleDateString()} at ${booking.slot.startTime.toLocaleTimeString()}`,
       4: `${booking.slot.serviceConfig.duration} minutes`,
       5: `R${booking.slot.serviceConfig.price}`,
@@ -85,8 +85,8 @@ export async function sendBookingConfirmation(booking: BookingView) {
   try {
     const notificationPromises = [];
 
-    const templateVariablesServiceProvider = JSON.stringify({
-      1: booking.slot.serviceProvider.name,
+    const templateVariablesProvider = JSON.stringify({
+      1: booking.slot.provider.name,
       2: booking.id,
       3: `${booking.slot.startTime.toLocaleDateString()} at ${booking.slot.startTime.toLocaleTimeString()}`,
       4: `${booking.slot.serviceConfig.duration} minutes`,
@@ -98,20 +98,20 @@ export async function sendBookingConfirmation(booking: BookingView) {
     });
 
     // Send provider whatsapp notification with option to request vCard
-    if (booking.slot.serviceProvider.whatsapp) {
+    if (booking.slot.provider.whatsapp) {
       notificationPromises.push(
         twilioClient.messages.create({
           from: `whatsapp:${TwilioWhatsappNumber}`,
           contentSid: 'HXd4581d3971aba1d4c6343c97e5c5cf2e',
-          contentVariables: templateVariablesServiceProvider,
-          to: `whatsapp:${booking.slot.serviceProvider.whatsapp}`,
+          contentVariables: templateVariablesProvider,
+          to: `whatsapp:${booking.slot.provider.whatsapp}`,
         })
       );
     }
 
     const templateVariablesPatient = JSON.stringify({
       1: booking.guestInfo.name,
-      2: booking.slot.serviceProvider.name,
+      2: booking.slot.provider.name,
       3: booking.id,
       4: `${booking.slot.startTime.toLocaleDateString()} at ${booking.slot.startTime.toLocaleTimeString()}`,
       5: `${booking.slot.serviceConfig.duration} minutes`,
@@ -145,7 +145,7 @@ export async function sendBookingConfirmation(booking: BookingView) {
   }
 }
 
-export async function sendGuestVCardToServiceProvider(booking: BookingView) {
+export async function sendGuestVCardToProvider(booking: BookingView) {
   try {
     // Create vCard for guest
     const vCard = vCardsJS();
@@ -165,7 +165,7 @@ export async function sendGuestVCardToServiceProvider(booking: BookingView) {
       // Capture the result of the Twilio API call
       const message = await twilioClient.messages.create({
         from: `whatsapp:${TwilioWhatsappNumber}`,
-        to: `whatsapp:${booking.slot.serviceProvider.whatsapp}`,
+        to: `whatsapp:${booking.slot.provider.whatsapp}`,
         mediaUrl: [url],
       });
 

@@ -31,7 +31,8 @@
       "Bash(chmod:*)",
       "mcp__filesystem-server__read_multiple_files",
       "Bash(npm test:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(npx prisma generate:*)"
     ],
     "deny": []
   },

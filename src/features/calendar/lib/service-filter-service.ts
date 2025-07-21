@@ -123,10 +123,16 @@ export class ServiceFilterService {
       // Build the where clause for service configs
       const whereClause: any = {
         isActive: includeInactive ? undefined : true,
-        serviceProvider: {
+        provider: {
           status: 'ACTIVE',
           ...(providerTypeIds && providerTypeIds.length > 0
-            ? { serviceProviderTypeId: { in: providerTypeIds } }
+            ? { 
+                typeAssignments: {
+                  some: {
+                    providerTypeId: { in: providerTypeIds }
+                  }
+                }
+              }
             : {}),
           ...(additionalFilters?.providerId ? { id: additionalFilters.providerId } : {}),
         },
@@ -166,10 +172,14 @@ export class ServiceFilterService {
         where: whereClause,
         include: {
           service: true,
-          serviceProvider: {
+          provider: {
             include: {
               user: true,
-              serviceProviderType: true,
+              typeAssignments: {
+                include: {
+                  providerType: true,
+                },
+              },
               availabilities: {
                 where: {
                   status: AvailabilityStatus.ACCEPTED,
@@ -203,7 +213,7 @@ export class ServiceFilterService {
           },
           location: true,
         },
-        orderBy: [{ service: { name: 'asc' } }, { serviceProvider: { user: { name: 'asc' } } }],
+        orderBy: [{ service: { name: 'asc' } }, { provider: { user: { name: 'asc' } } }],
       });
 
       // Filter by service categories if specified
@@ -213,7 +223,7 @@ export class ServiceFilterService {
           serviceCategories.some(
             (category) =>
               config.service.name.toLowerCase().includes(category.toLowerCase()) ||
-              config.service.serviceProviderTypeId.toLowerCase().includes(category.toLowerCase())
+              config.provider.typeAssignments?.[0]?.providerType?.name?.toLowerCase().includes(category.toLowerCase()) || false
           )
         );
       }
@@ -222,7 +232,7 @@ export class ServiceFilterService {
       if (specializations && specializations.length > 0) {
         filteredConfigs = filteredConfigs.filter((config) =>
           specializations.some((spec) =>
-            config.serviceProvider.serviceProviderTypeId.toLowerCase().includes(spec.toLowerCase())
+            config.provider.typeAssignments?.[0]?.providerType?.name?.toLowerCase().includes(spec.toLowerCase()) || false
           )
         );
       }
@@ -230,7 +240,7 @@ export class ServiceFilterService {
       // Convert to service results
       const services: ServiceResult[] = filteredConfigs.map((config) => {
         // Get all slots for this service/provider combination
-        const allSlots = config.serviceProvider.availabilities
+        const allSlots = config.provider.availabilities
           .flatMap((avail) => avail.calculatedSlots)
           .filter((slot) => slot.serviceId === config.serviceId);
 
@@ -239,7 +249,7 @@ export class ServiceFilterService {
         // Get all locations for this service
         const locations = Array.from(
           new Map(
-            config.serviceProvider.availabilities
+            config.provider.availabilities
               .filter((avail) =>
                 avail.calculatedSlots.some((slot) => slot.serviceId === config.serviceId)
               )
@@ -261,19 +271,19 @@ export class ServiceFilterService {
           serviceDescription: config.service.description || undefined,
           serviceCategory: this.categorizeService(config.service.name),
           serviceType: {
-            id: config.service.serviceProviderTypeId,
-            name: config.service.serviceProviderTypeId,
-            category: this.categorizeServiceType(config.service.serviceProviderTypeId),
+            id: config.provider.typeAssignments?.[0]?.providerType?.id || 'unknown',
+            name: config.provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
+            category: this.categorizeServiceType(config.provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider'),
           },
           provider: {
-            id: config.serviceProvider.id,
-            name: config.serviceProvider.user.name || 'Unknown Provider',
-            type: config.serviceProvider.serviceProviderType.name,
-            specialization: config.serviceProvider.serviceProviderType.name,
+            id: config.provider.id,
+            name: config.provider.user.name || 'Unknown Provider',
+            type: config.provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
+            specialization: config.provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
           },
           pricing: {
             price: config.price.toNumber(),
-            showPrice: config.serviceProvider.showPrice, // Use provider-level setting
+            showPrice: config.provider.showPrice, // Use provider-level setting
             defaultDuration: config.duration,
           },
           availability: {
@@ -393,11 +403,11 @@ export class ServiceFilterService {
   > {
     try {
       const serviceTypes = await prisma.service.groupBy({
-        by: ['serviceProviderTypeId'],
+        by: ['providerTypeId'],
         where: {
           availabilityConfigs: {
             some: {
-              serviceProvider: {
+              provider: {
                 status: 'ACTIVE',
               },
             },
@@ -408,21 +418,21 @@ export class ServiceFilterService {
         },
       });
 
-      const serviceTypeDetails = await prisma.serviceProviderType.findMany({
+      const serviceTypeDetails = await prisma.providerType.findMany({
         where: {
-          id: { in: serviceTypes.map((st) => st.serviceProviderTypeId) },
+          id: { in: serviceTypes.map((st) => st.providerTypeId) },
         },
         include: {
           services: {
             include: {
               availabilityConfigs: {
                 where: {
-                  serviceProvider: {
+                  provider: {
                     status: 'ACTIVE',
                   },
                 },
                 include: {
-                  serviceProvider: true,
+                  provider: true,
                 },
               },
             },
@@ -433,7 +443,7 @@ export class ServiceFilterService {
       return serviceTypeDetails.map((serviceType) => {
         const providerIds = new Set(
           serviceType.services.flatMap((service) =>
-            service.availabilityConfigs.map((config) => config.serviceProviderId)
+            service.availabilityConfigs.map((config) => config.providerId)
           )
         );
 
@@ -487,7 +497,7 @@ export class ServiceFilterService {
               },
             },
             {
-              serviceProviderType: {
+              providerType: {
                 name: {
                   contains: searchQuery,
                   mode: 'insensitive',

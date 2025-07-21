@@ -154,13 +154,17 @@ export class LocationSearchService {
       // Fallback to original implementation for edge cases
 
       // First, get all providers with their locations and services
-      const providers = await prisma.serviceProvider.findMany({
+      const providers = await prisma.provider.findMany({
         where: {
           status: 'ACTIVE',
         },
         include: {
           user: true,
-          serviceProviderType: true,
+          typeAssignments: {
+            include: {
+              providerType: true,
+            },
+          },
           availabilityConfigs: {
             include: {
               service: true,
@@ -294,7 +298,7 @@ export class LocationSearchService {
             results.push({
               providerId: provider.id,
               providerName: provider.user.name || 'Unknown Provider',
-              providerType: provider.serviceProviderType.name,
+              providerType: provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
               distance: Math.round(distance * 10) / 10, // Round to 1 decimal place
               coordinates: locationCoords,
               location: {
@@ -357,7 +361,7 @@ export class LocationSearchService {
             results.push({
               providerId: provider.id,
               providerName: provider.user.name || 'Unknown Provider',
-              providerType: provider.serviceProviderType.name,
+              providerType: provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
               distance: 0, // Online services have no distance
               coordinates: coordinates, // Use search coordinates for online providers
               location: undefined, // No physical location

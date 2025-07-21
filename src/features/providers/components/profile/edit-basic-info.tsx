@@ -88,9 +88,8 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
   // Update form values when provider data is loaded
   useEffect(() => {
     if (provider) {
-      // Get provider type IDs from the new relationship structure
-      const providerTypeIds = provider.typeAssignments?.map(assignment => assignment.providerTypeId) || 
-                              (provider.providerTypeId ? [provider.providerTypeId] : []);
+      // Get provider type IDs from the available data
+      const providerTypeIds = provider.providerTypeId ? [provider.providerTypeId] : [];
       const legacyProviderTypeId = provider.providerTypeId || '';
 
       // Set form values including provider type IDs
@@ -165,7 +164,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
 
       // Handle multiple provider types
       const selectedProviderTypeIds = data.providerTypeIds || [];
-      selectedProviderTypeIds.forEach(typeId => {
+      selectedProviderTypeIds.forEach((typeId: string) => {
         formData.append('providerTypeIds', typeId);
       });
       
@@ -274,15 +273,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
             <div className="space-y-6">
               <h3 className="mb-2 font-medium">Current Types</h3>
               <div className="mb-4">
-                {provider?.typeAssignments?.length ? (
-                  <div className="flex flex-wrap gap-2">
-                    {provider.typeAssignments.map(assignment => (
-                      <Badge key={assignment.providerTypeId} variant="secondary">
-                        {assignment.providerType.name}
-                      </Badge>
-                    ))}
-                  </div>
-                ) : provider?.providerType ? (
+                {provider?.providerType ? (
                   <Badge variant="secondary">
                     {provider.providerType.name}
                   </Badge>
@@ -292,10 +283,16 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
               </div>
 
               <ProviderTypeSection
-                providerTypes={providerTypes || []}
-                selectedProviderTypes={providerTypes?.filter(type => 
+                providerTypes={(providerTypes || []).map(type => ({
+                  ...type,
+                  description: type.description ?? null
+                }))}
+                selectedProviderTypes={(providerTypes?.filter(type => 
                   methods.watch('providerTypeIds')?.includes(type.id)
-                ) || []}
+                ) || []).map(type => ({
+                  ...type,
+                  description: type.description ?? null
+                }))}
                 totalRequirementsCount={0}
                 totalServicesCount={0}
                 multipleSelection={true}

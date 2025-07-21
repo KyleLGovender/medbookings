@@ -394,4 +394,3 @@ export async function getProviderRequirementSubmissions(providerId: string) {
 export const approveServiceProvider = approveProvider;
 export const rejectServiceProvider = rejectProvider;
 export const suspendServiceProvider = suspendProvider;
-export const deleteServiceProvider = deleteProvider;

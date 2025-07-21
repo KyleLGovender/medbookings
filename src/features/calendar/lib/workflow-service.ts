@@ -43,7 +43,7 @@ export async function processAvailabilityAcceptance(
     const availability = await prisma.availability.findUnique({
       where: { id: availabilityId },
       include: {
-        serviceProvider: true,
+        provider: true,
         organization: true,
         location: true,
         createdBy: true,
@@ -61,7 +61,7 @@ export async function processAvailabilityAcceptance(
     }
 
     // Verify user can accept this proposal
-    if (currentUser.id !== availability.serviceProviderId) {
+    if (currentUser.id !== availability.providerId) {
       return { success: false, error: 'Only the assigned provider can accept this proposal' };
     }
 
@@ -78,7 +78,7 @@ export async function processAvailabilityAcceptance(
         acceptedAt: new Date(),
       },
       include: {
-        serviceProvider: true,
+        provider: true,
         organization: true,
         location: true,
         createdBy: true,
@@ -98,7 +98,7 @@ export async function processAvailabilityAcceptance(
         availabilityId: updatedAvailability.id,
         startTime: updatedAvailability.startTime,
         endTime: updatedAvailability.endTime,
-        serviceProviderId: updatedAvailability.serviceProviderId,
+        providerId: updatedAvailability.providerId,
         organizationId: updatedAvailability.organizationId || '',
         locationId: updatedAvailability.locationId || undefined,
         schedulingRule: updatedAvailability.schedulingRule as SchedulingRule,
@@ -167,7 +167,7 @@ export async function processAvailabilityRejection(
     const availability = await prisma.availability.findUnique({
       where: { id: availabilityId },
       include: {
-        serviceProvider: true,
+        provider: true,
         organization: true,
         location: true,
         createdBy: true,
@@ -185,7 +185,7 @@ export async function processAvailabilityRejection(
     }
 
     // Verify user can reject this proposal
-    if (currentUser.id !== availability.serviceProviderId) {
+    if (currentUser.id !== availability.providerId) {
       return { success: false, error: 'Only the assigned provider can reject this proposal' };
     }
 
@@ -201,7 +201,7 @@ export async function processAvailabilityRejection(
         // Note: rejectionReason field would need to be added to schema if needed
       },
       include: {
-        serviceProvider: true,
+        provider: true,
         organization: true,
         location: true,
         createdBy: true,
@@ -264,7 +264,7 @@ export async function processAvailabilityCancellation(
     const availability = await prisma.availability.findUnique({
       where: { id: availabilityId },
       include: {
-        serviceProvider: true,
+        provider: true,
         organization: true,
         location: true,
         createdBy: true,
@@ -287,7 +287,7 @@ export async function processAvailabilityCancellation(
 
     // Check permissions
     const canCancel =
-      currentUser.id === availability.serviceProviderId ||
+      currentUser.id === availability.providerId ||
       currentUser.id === availability.createdById ||
       currentUser.role === 'ADMIN' ||
       currentUser.role === 'SUPER_ADMIN';
@@ -326,7 +326,7 @@ export async function processAvailabilityCancellation(
         status: AvailabilityStatus.CANCELLED,
       },
       include: {
-        serviceProvider: true,
+        provider: true,
         organization: true,
         location: true,
         createdBy: true,
@@ -354,7 +354,7 @@ export async function processAvailabilityCancellation(
         {
           id: currentUser.id,
           name: currentUser.name || 'User',
-          role: currentUser.id === availability.serviceProviderId ? 'PROVIDER' : 'ORGANIZATION',
+          role: currentUser.id === availability.providerId ? 'PROVIDER' : 'ORGANIZATION',
         }
       );
     } catch (notificationError) {
@@ -393,7 +393,7 @@ export async function processRecurringSeriesAcceptance(
     const masterAvailability = await prisma.availability.findUnique({
       where: { id: masterAvailabilityId },
       include: {
-        serviceProvider: true,
+        provider: true,
         organization: true,
         createdBy: true,
       },
@@ -408,7 +408,7 @@ export async function processRecurringSeriesAcceptance(
     }
 
     // Verify permission
-    if (currentUser.id !== masterAvailability.serviceProviderId) {
+    if (currentUser.id !== masterAvailability.providerId) {
       return { success: false, error: 'Only the assigned provider can accept this series' };
     }
 
@@ -456,7 +456,7 @@ export async function processRecurringSeriesAcceptance(
           availabilityId: availability.id,
           startTime: availability.startTime,
           endTime: availability.endTime,
-          serviceProviderId: availability.serviceProviderId,
+          providerId: availability.providerId,
           organizationId: availability.organizationId || '',
           locationId: availability.locationId || undefined,
           schedulingRule: availability.schedulingRule as SchedulingRule,
@@ -522,7 +522,7 @@ export async function getWorkflowStatistics(
     const whereClause =
       entityType === 'organization'
         ? { organizationId: entityId }
-        : { serviceProviderId: entityId };
+        : { providerId: entityId };
 
     const [
       totalProposals,

@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { addDays, addMonths, differenceInMinutes, startOfMonth, endOfMonth } from 'date-fns';
 
 export interface AvailabilityValidationOptions {
-  serviceProviderId: string;
+  providerId: string;
   startTime: Date;
   endTime: Date;
   excludeAvailabilityId?: string; // For update operations
@@ -67,7 +67,7 @@ async function validateOverlaps(
   
   // Get all existing availabilities for this provider
   const whereClause: any = {
-    serviceProviderId: options.serviceProviderId,
+    providerId: options.providerId,
     // Only check against accepted/pending availabilities (not cancelled/rejected)
     status: { in: ['ACCEPTED', 'PENDING'] },
   };

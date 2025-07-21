@@ -104,7 +104,7 @@ function generateProposalNotifications(
   const notifications: NotificationPayload[] = [];
 
   // Notify the provider about the new proposal
-  if (availability.serviceProvider) {
+  if (availability.provider) {
     const startTime = `${availability.startTime.toLocaleDateString()} ${availability.startTime.toLocaleTimeString(
       [],
       { hour: '2-digit', minute: '2-digit' }
@@ -116,9 +116,9 @@ function generateProposalNotifications(
     const organizationName = availability.organization?.name || 'An organization';
 
     notifications.push({
-      recipientId: availability.serviceProvider.id,
-      recipientEmail: availability.serviceProvider.email,
-      recipientName: availability.serviceProvider.name,
+      recipientId: availability.provider.id,
+      recipientEmail: availability.provider.email,
+      recipientName: availability.provider.name,
       type: 'email',
       subject: `New Availability Proposal from ${organizationName}`,
       message:
@@ -137,9 +137,9 @@ function generateProposalNotifications(
 
     // Also send in-app notification
     notifications.push({
-      recipientId: availability.serviceProvider.id,
-      recipientEmail: availability.serviceProvider.email,
-      recipientName: availability.serviceProvider.name,
+      recipientId: availability.provider.id,
+      recipientEmail: availability.provider.email,
+      recipientName: availability.provider.name,
       type: 'in_app',
       subject: 'New Availability Proposal',
       message: `${organizationName} sent you an availability proposal for ${startTime}`,
@@ -168,7 +168,7 @@ function generateAcceptanceNotifications(
       [],
       { hour: '2-digit', minute: '2-digit' }
     )}`;
-    const providerName = availability.serviceProvider?.name;
+    const providerName = availability.provider?.name;
 
     notifications.push({
       recipientId: availability.createdBy.id,
@@ -185,7 +185,7 @@ function generateAcceptanceNotifications(
       actionUrl: `/dashboard/organizations/${availability.organizationId}/availability`,
       metadata: {
         availabilityId: availability.id,
-        serviceProviderId: availability.serviceProviderId,
+        serviceProviderId: availability.providerId,
         notificationType: 'availability_accepted',
       },
     });
@@ -201,7 +201,7 @@ function generateAcceptanceNotifications(
       actionUrl: `/dashboard/organizations/${availability.organizationId}/availability`,
       metadata: {
         availabilityId: availability.id,
-        serviceProviderId: availability.serviceProviderId,
+        serviceProviderId: availability.providerId,
         notificationType: 'availability_accepted',
         priority: 'high',
       },
@@ -223,7 +223,7 @@ function generateRejectionNotifications(
       [],
       { hour: '2-digit', minute: '2-digit' }
     )}`;
-    const providerName = availability.serviceProvider?.name;
+    const providerName = availability.provider?.name;
 
     let message =
       `${providerName} has declined your availability proposal.\n\n` +
@@ -246,7 +246,7 @@ function generateRejectionNotifications(
       actionUrl: `/dashboard/organizations/${availability.organizationId}/availability`,
       metadata: {
         availabilityId: availability.id,
-        serviceProviderId: availability.serviceProviderId,
+        serviceProviderId: availability.providerId,
         notificationType: 'availability_rejected',
         rejectionReason,
       },
@@ -263,7 +263,7 @@ function generateRejectionNotifications(
       actionUrl: `/dashboard/organizations/${availability.organizationId}/availability`,
       metadata: {
         availabilityId: availability.id,
-        serviceProviderId: availability.serviceProviderId,
+        serviceProviderId: availability.providerId,
         notificationType: 'availability_rejected',
         priority: 'normal',
         rejectionReason,
@@ -287,11 +287,11 @@ function generateCancellationNotifications(
   const bookedSlots = availability.calculatedSlots?.filter((slot) => slot.booking)?.length || 0;
 
   // Notify the provider if organization cancelled
-  if (availability.serviceProvider && actionBy.id !== availability.serviceProvider.id) {
+  if (availability.provider && actionBy.id !== availability.provider.id) {
     notifications.push({
-      recipientId: availability.serviceProvider.id,
-      recipientEmail: availability.serviceProvider.email,
-      recipientName: availability.serviceProvider.name,
+      recipientId: availability.provider.id,
+      recipientEmail: availability.provider.email,
+      recipientName: availability.provider.name,
       type: 'email',
       subject: `Availability Cancelled - ${availability.organization?.name}`,
       message:
@@ -313,7 +313,7 @@ function generateCancellationNotifications(
     availability.createdBy &&
     actionBy.id !== availability.createdBy.id
   ) {
-    const providerName = availability.serviceProvider?.name;
+    const providerName = availability.provider?.name;
 
     notifications.push({
       recipientId: availability.createdBy.id,
@@ -327,7 +327,7 @@ function generateCancellationNotifications(
         'You may need to contact affected patients directly.',
       metadata: {
         availabilityId: availability.id,
-        serviceProviderId: availability.serviceProviderId,
+        serviceProviderId: availability.providerId,
         notificationType: 'availability_cancelled',
         bookedSlots,
       },

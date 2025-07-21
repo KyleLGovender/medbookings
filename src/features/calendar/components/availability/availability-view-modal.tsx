@@ -146,7 +146,7 @@ export function AvailabilityViewModal({
                     {availability.createdBy?.name || 'Unknown'}
                   </div>
                   <div className="text-xs text-gray-600">
-                    {availability.serviceProviderId === availability.createdBy?.id
+                    {availability.providerId === availability.createdBy?.id
                       ? 'Provider (Self)'
                       : 'Organization Role'}
                   </div>
@@ -157,7 +157,7 @@ export function AvailabilityViewModal({
                 <label className="text-sm font-medium">Provider</label>
                 <div className="rounded-md border bg-gray-50 p-3">
                   <div className="text-sm font-medium">
-                    {availability.serviceProvider?.name || 'Unknown Provider'}
+                    {availability.provider?.name || 'Unknown Provider'}
                   </div>
                   <div className="text-xs text-gray-600">Service Provider</div>
                 </div>
