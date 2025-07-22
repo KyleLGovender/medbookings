@@ -32,7 +32,8 @@
       "mcp__filesystem-server__read_multiple_files",
       "Bash(npm test:*)",
       "Bash(npx tsx:*)",
-      "Bash(npx prisma generate:*)"
+      "Bash(npx prisma generate:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   },
