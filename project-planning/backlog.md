@@ -1,11 +1,17 @@
 # MedBookings MVP Project Plan
 
 ## 🚀 Current Sprint (In Progress)
+- [ ] Standardize feature type definitions across bulletproof-react structure - Refactor all features to define types consistently in feature-specific types folders instead of mixed Prisma imports
+  - **Type:** Technical Debt
+  - **Impact:** Eliminates developer confusion from inconsistent type definitions, prevents circular dependencies, improves maintainability
+  - **Files:** All features in `@src/features/` types folders, based on `@prisma/schema.prisma`
+  - **Added:** 2025-01-21
 - [ ] Implement user roles system (guest, user, provider, organization manager, admin)
 
 ## 📋 Ready for Development (Prioritized)
 
 ## 🔥 High Priority Issues & Tasks
+
 
 
 ## 📊 Medium Priority Issues & Tasks
@@ -20,27 +26,6 @@
 
 
 ## ✅ Recently Completed
-- [x] Move development to staging database. Will require alignment of current prisma models etc.
-- [x] Refactor data model relationships from 1-to-n to many-to-many where appropriate - Enable users to have multiple service provider roles and review other entity relationships for flexibility (Prisma schema, migrations, API endpoints)
-- [x] Change ServiceProvider to Provider throughout the codebase
-- [x] Fix all build errors and get system building cleanly
-- [x] Remove/clean up non-MVP code to focus on core functionality
-- [x] Provider onboarding layout... long form... some weird issue with two vertical scrolling windows. Quite annoying.
-- [x] Figure out why there is no loading when a button is clicked sometimes.
-- [x] Resolve sidebar mobile view.
-- [x] Update sidebar navigation.
-- [x] URL parameters not filtering into Admin providers and organizations pages. <http://localhost:3000/admin/providers?status=PENDING>
-- [x] Implement status labels throughout the entire project
-- [x] Improve Navigation within Admin Dashboard
-- [x] Implement breadcrumbs in Dashboard
-- [x] Update information shown in provider and organization admin views
-- [x] Remove all types built on Prisma/Zod
-- [x] Remove all references for headless UI
-- [x] Implement side bar dashboard layout
-- [x] Implement loading page throughout app
-- [x] Implement TanStack Query as the default pattern for interacting with the database
-- [x] Figure out top margin or padding in Dashboard layout views.
-- [x] Make side bar in view by default.
 
 ## 📝 Quick Capture (New Issues)
 - [ ] Populate provider and organization and user email addresses with the associated Google email. Not possible to edit.
@@ -52,14 +37,14 @@
 ---
 
 ## 📊 Project Health
-- **Total Active Issues**: 9
-- **High Priority**: 0
+- **Total Active Issues**: 10
+- **High Priority**: 1
 - **Medium Priority**: 6
 - **Low Priority**: 1
-- **Current Sprint**: 0
+- **Current Sprint**: 1
 - **Ready for Dev**: 0
 - **Recently Completed**: 14
-- **Last Updated**: 2025-01-17
+- **Last Updated**: 2025-01-21
 
 ---
 

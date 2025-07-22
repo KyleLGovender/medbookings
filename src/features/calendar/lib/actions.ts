@@ -15,6 +15,7 @@ import {
   AvailabilityWithRelations,
   BillingEntity,
   CreateAvailabilityData,
+  includeAvailabilityRelations,
   SchedulingRule,
   UpdateAvailabilityData,
 } from '@/features/calendar/types/types';
@@ -28,32 +29,6 @@ import { generateRecurringInstances } from './recurrence-utils';
 import { generateSlotsForMultipleAvailability } from './slot-generation';
 import { validateAvailability, validateRecurringAvailability, validateAvailabilityUpdate } from './availability-validation';
 
-// Helper function to include common relations
-const includeAvailabilityRelations = {
-  serviceProvider: true,
-  organization: true,
-  location: true,
-  providerConnection: true,
-  createdBy: true,
-  createdByMembership: true,
-  acceptedBy: true,
-  defaultSubscription: true,
-  availableServices: {
-    include: {
-      service: true,
-      serviceProvider: true,
-      location: true,
-    },
-  },
-  calculatedSlots: {
-    include: {
-      service: true,
-      booking: true,
-      billedToSubscription: true,
-      blockedByCalendarEvent: true,
-    },
-  },
-};
 
 /**
  * Create new availability period

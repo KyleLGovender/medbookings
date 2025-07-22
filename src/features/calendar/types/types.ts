@@ -11,7 +11,7 @@ import {
 } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
-import { Service, Provider } from '@/features/providers/types';
+import { Provider, Service } from '@/features/providers/types';
 
 // =============================================================================
 // ENUMS
@@ -113,6 +113,12 @@ export interface OrganizationCalendarData {
   };
 }
 
+// =============================================================================
+// CALENDAR VIEW TYPES
+// =============================================================================
+
+export type CalendarViewMode = 'day' | '3-day' | 'week' | 'month';
+
 export interface OrganizationCalendarViewProps {
   organizationId: string;
   onProviderClick?: (provider: OrganizationProvider) => void;
@@ -122,7 +128,7 @@ export interface OrganizationCalendarViewProps {
   onManageProvider?: (provider: OrganizationProvider) => void;
   onGapClick?: (gap: CoverageGap) => void;
   onRecommendationClick?: (recommendation: string) => void;
-  viewMode?: 'day' | 'week' | 'month';
+  viewMode?: CalendarViewMode;
   initialDate?: Date;
   showCoverageGaps?: boolean;
 }
@@ -604,6 +610,37 @@ export interface AvailabilityBillingContext {
   estimatedSlots: number;
   estimatedCost: number;
 }
+
+// =============================================================================
+// PRISMA INCLUDE CONFIGURATIONS
+// =============================================================================
+
+// Helper function to include common availability relations
+export const includeAvailabilityRelations = {
+  serviceProvider: true,
+  organization: true,
+  location: true,
+  providerConnection: true,
+  createdBy: true,
+  createdByMembership: true,
+  acceptedBy: true,
+  defaultSubscription: true,
+  availableServices: {
+    include: {
+      service: true,
+      serviceProvider: true,
+      location: true,
+    },
+  },
+  calculatedSlots: {
+    include: {
+      service: true,
+      booking: true,
+      billedToSubscription: true,
+      blockedByCalendarEvent: true,
+    },
+  },
+};
 
 // =============================================================================
 // UTILITY TYPES AND HELPERS

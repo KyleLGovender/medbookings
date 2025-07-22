@@ -46,6 +46,7 @@ import {
 
 import { useOrganizationAvailability } from '../hooks/use-availability';
 import {
+  CalendarViewMode,
   OrganizationCalendarData,
   OrganizationCalendarViewProps,
   OrganizationMonthViewProps,
@@ -53,7 +54,6 @@ import {
   OrganizationWeekViewProps,
 } from '../types/types';
 
-type ViewMode = 'day' | 'week' | 'month';
 
 export function OrganizationCalendarView({
   organizationId,
@@ -69,7 +69,7 @@ export function OrganizationCalendarView({
   showCoverageGaps = true,
 }: OrganizationCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(initialDate);
-  const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode);
+  const [viewMode, setViewMode] = useState<CalendarViewMode>(initialViewMode);
   const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
   const [filters, setFilters] = useState({
     showOnlyActive: true,
@@ -271,6 +271,9 @@ export function OrganizationCalendarView({
       case 'day':
         newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
         break;
+      case '3-day':
+        newDate.setDate(newDate.getDate() + (direction === 'next' ? 3 : -3));
+        break;
       case 'week':
         newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
         break;
@@ -291,6 +294,11 @@ export function OrganizationCalendarView({
           month: 'long',
           day: 'numeric',
         });
+      case '3-day':
+        const startOf3Day = new Date(currentDate);
+        const endOf3Day = new Date(currentDate);
+        endOf3Day.setDate(startOf3Day.getDate() + 2);
+        return `${startOf3Day.toLocaleDateString([], { month: 'short', day: 'numeric' })} - ${endOf3Day.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}`;
       case 'week':
         const startOfWeek = new Date(currentDate);
         startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
@@ -458,12 +466,13 @@ export function OrganizationCalendarView({
                 <Switch checked={showUtilizationOnly} onCheckedChange={setShowUtilizationOnly} />
               </div>
 
-              <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)}>
+              <Select value={viewMode} onValueChange={(value: CalendarViewMode) => setViewMode(value)}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="day">Day</SelectItem>
+                  <SelectItem value="3-day">3-Day</SelectItem>
                   <SelectItem value="week">Week</SelectItem>
                   <SelectItem value="month">Month</SelectItem>
                 </SelectContent>
@@ -588,6 +597,17 @@ export function OrganizationCalendarView({
 
               {viewMode === 'day' && (
                 <OrganizationDayView
+                  currentDate={currentDate}
+                  providers={displayedProviders}
+                  onEventClick={onEventClick}
+                  onTimeSlotClick={onTimeSlotClick}
+                  getEventStyle={getEventStyle}
+                  showUtilizationOnly={showUtilizationOnly}
+                />
+              )}
+
+              {viewMode === '3-day' && (
+                <OrganizationWeekView
                   currentDate={currentDate}
                   providers={displayedProviders}
                   onEventClick={onEventClick}

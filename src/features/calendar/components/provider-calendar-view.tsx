@@ -25,6 +25,7 @@ import {
   AvailabilityWithRelations,
   CalculatedAvailabilitySlotWithRelations,
   CalendarEvent,
+  CalendarViewMode,
   SchedulingRule,
 } from '@/features/calendar/types/types';
 import { useProvider } from '@/features/providers/hooks/use-provider';
@@ -63,11 +64,10 @@ export interface ProviderCalendarViewProps {
   onCreateAvailability?: () => void;
   onEditEvent?: (event: CalendarEvent) => void;
   onDateClick?: (date: Date) => void;
-  viewMode?: 'day' | '3-day' | 'week' | 'month';
+  viewMode?: CalendarViewMode;
   initialDate?: Date;
 }
 
-type ViewMode = 'day' | '3-day' | 'week' | 'month';
 
 export function ProviderCalendarView({
   providerId,
@@ -80,7 +80,7 @@ export function ProviderCalendarView({
   initialDate = new Date(),
 }: ProviderCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(initialDate);
-  const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode);
+  const [viewMode, setViewMode] = useState<CalendarViewMode>(initialViewMode);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<AvailabilityStatus | 'ALL'>('ALL');
   
@@ -527,7 +527,7 @@ export function ProviderCalendarView({
 
             {/* Controls */}
             <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:space-x-2 sm:space-y-0">
-              <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)}>
+              <Select value={viewMode} onValueChange={(value: CalendarViewMode) => setViewMode(value)}>
                 <SelectTrigger className="w-full sm:w-32">
                   <SelectValue />
                 </SelectTrigger>
