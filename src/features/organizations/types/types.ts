@@ -1,115 +1,236 @@
-import type {
+// =============================================================================
+// ORGANIZATIONS FEATURE TYPES
+// =============================================================================
+// All type definitions for the organizations feature in one place
+// Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
+import {
   Organization,
+  OrganizationMembership,
   OrganizationProviderConnection,
-  ProviderInvitation,
-  ProviderInvitationStatus,
   User,
 } from '@prisma/client';
-import { z } from 'zod';
 
-export const organizationRegistrationSchema = z.object({
-  organization: z.object({
-    name: z.string().min(1, 'Organization name is required'),
-    description: z.string().optional(),
-    email: z.string().email('Invalid email address').optional().or(z.literal('')),
-    phone: z.string().optional(),
-    website: z.string().url('Invalid website URL').optional().or(z.literal('')),
-    logo: z.string().optional(), // URL to logo in Vercel Blob
-    billingModel: z.enum(['CONSOLIDATED', 'PER_LOCATION', 'HYBRID']),
-  }),
-  locations: z
-    .array(
-      z.object({
-        name: z.string().min(1, 'Location name is required'),
-        googlePlaceId: z.string().min(1, 'Please select a location from Google Maps'),
-        formattedAddress: z.string().min(1, 'Address is required'),
-        coordinates: z.object({
-          lat: z.number(),
-          lng: z.number(),
-        }),
-        searchTerms: z.array(z.string()).optional(),
-        phone: z.string().optional(),
-        email: z.string().email('Invalid email address').optional().or(z.literal('')),
-      })
-    )
-    .optional()
-    .default([]),
-});
+// =============================================================================
+// ENUMS
+// =============================================================================
 
-export type OrganizationRegistrationData = z.infer<typeof organizationRegistrationSchema>;
-
-/**
- * Schema for organization basic information updates
- */
-export const organizationBasicInfoSchema = z.object({
-  name: z.string().min(1, 'Organization name is required'),
-  description: z.string().optional(),
-  email: z.string().email('Invalid email address').optional().or(z.literal('')),
-  phone: z.string().optional(),
-  website: z.string().url('Invalid website URL').optional().or(z.literal('')),
-  logo: z.string().optional(), // URL to logo in Vercel Blob
-});
-
-export type OrganizationBasicInfoData = z.infer<typeof organizationBasicInfoSchema>;
-
-export interface GooglePlaceResult {
-  place_id: string;
-  formatted_address: string;
-  geometry: {
-    location: {
-      lat: number;
-      lng: number;
-    };
-  };
-  address_components: Array<{
-    long_name: string;
-    short_name: string;
-    types: string[];
-  }>;
-  name?: string;
+// Organization-related enums (matching Prisma schema)
+export enum OrganizationStatus {
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  SUSPENDED = 'SUSPENDED',
 }
 
-export const locationSchema = z.object({
-  id: z.string().optional(), // Existing locations will have an ID
-  name: z.string().min(1, 'Location name is required'),
-  googlePlaceId: z.string().min(1, 'Please select a location from Google Maps'),
-  formattedAddress: z.string().min(1, 'Address is required'),
-  coordinates: z.object({
-    lat: z.number(),
-    lng: z.number(),
-  }),
-  searchTerms: z.array(z.string()).optional(),
-  phone: z.string().optional(),
-  email: z.string().email('Invalid email address').optional().or(z.literal('')),
-});
+export enum MembershipRole {
+  ADMIN = 'ADMIN',
+  MANAGER = 'MANAGER',
+  MEMBER = 'MEMBER',
+}
 
-export const organizationLocationsSchema = z.object({
-  locations: z.array(locationSchema).optional().default([]),
-});
+export enum MembershipStatus {
+  PENDING = 'PENDING',
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+}
 
-export type OrganizationLocationsData = z.infer<typeof organizationLocationsSchema>;
+// =============================================================================
+// BASE INTERFACES
+// =============================================================================
 
-// Provider invitation schemas
-export const ProviderInvitationSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  customMessage: z.string().optional(),
-});
+// Organization-related base interfaces
+export interface BasicOrganizationInfo {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  status: OrganizationStatus;
+  isActive: boolean;
+}
 
-export type ProviderInvitationData = z.infer<typeof ProviderInvitationSchema>;
+export interface OrganizationLocation {
+  id: string;
+  name: string;
+  formattedAddress: string;
+  phone?: string;
+  email?: string;
+  createdAt: string;
+  googlePlaceId?: string;
+}
 
-// Extended invitation type with relations
-export type ProviderInvitationWithDetails = ProviderInvitation & {
-  organization: Organization;
-  invitedBy: User;
-  connection?: OrganizationProviderConnection | null;
+export interface OrganizationProviderConnection {
+  id: string;
+  createdAt: string;
+  provider: {
+    status: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      phone?: string;
+    };
+    typeAssignments: {
+      providerType: {
+        name: string;
+      };
+    }[];
+  };
+}
+
+// =============================================================================
+// COMPLEX INTERFACES
+// =============================================================================
+
+// Organization with full relations
+export interface OrganizationWithRelations extends Organization {
+  approvedBy?: User;
+  memberships: Array<{
+    id: string;
+    role: MembershipRole;
+    status: MembershipStatus;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+    };
+  }>;
+  locations: OrganizationLocation[];
+  providerConnections: OrganizationProviderConnection[];
+  _count?: {
+    memberships: number;
+    locations: number;
+    providerConnections: number;
+  };
+}
+
+// =============================================================================
+// FORM AND INPUT TYPES
+// =============================================================================
+
+export interface CreateOrganizationData {
+  name: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  description?: string;
+}
+
+export interface UpdateOrganizationData extends Partial<CreateOrganizationData> {
+  id: string;
+}
+
+export interface CreateMembershipData {
+  organizationId: string;
+  userId: string;
+  role: MembershipRole;
+}
+
+export interface CreateLocationData {
+  organizationId: string;
+  name: string;
+  formattedAddress: string;
+  phone?: string;
+  email?: string;
+  googlePlaceId?: string;
+}
+
+// =============================================================================
+// API RESPONSE TYPES
+// =============================================================================
+
+export interface OrganizationApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+// =============================================================================
+// UTILITY TYPES
+// =============================================================================
+
+export type OrganizationStatusType = keyof typeof OrganizationStatus;
+export type MembershipRoleType = keyof typeof MembershipRole;
+export type MembershipStatusType = keyof typeof MembershipStatus;
+
+// =============================================================================
+// PRISMA INCLUDE CONFIGURATIONS
+// =============================================================================
+
+// Helper configuration for including organization relations
+export const includeOrganizationRelations = {
+  approvedBy: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  },
+  memberships: {
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  },
+  locations: {
+    select: {
+      id: true,
+      name: true,
+      formattedAddress: true,
+      phone: true,
+      email: true,
+      createdAt: true,
+      googlePlaceId: true,
+    },
+  },
+  providerConnections: {
+    include: {
+      provider: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+            },
+          },
+          typeAssignments: {
+            include: {
+              providerType: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  _count: {
+    select: {
+      memberships: true,
+      locations: true,
+      providerConnections: true,
+    },
+  },
 };
 
-// Schema for managing invitations (cancel, resend)
-export const InvitationActionSchema = z.object({
-  action: z.enum(['cancel', 'resend']),
+// =============================================================================
+// DEFAULT CONFIGURATIONS
+// =============================================================================
+
+export const getDefaultOrganizationData = (): Partial<CreateOrganizationData> => ({
+  name: '',
+  email: '',
+  phone: '',
+  website: '',
+  description: '',
 });
-
-export type InvitationAction = z.infer<typeof InvitationActionSchema>;
-
-// Export Prisma types for convenience
-export type { ProviderInvitation, ProviderInvitationStatus };

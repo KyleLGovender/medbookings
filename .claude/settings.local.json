@@ -33,7 +33,8 @@
       "Bash(npm test:*)",
       "Bash(npx tsx:*)",
       "Bash(npx prisma generate:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(touch:*)"
     ],
     "deny": []
   },
