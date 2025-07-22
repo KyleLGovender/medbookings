@@ -61,9 +61,74 @@ export const providerSearchParamsSchema = z.object({
 });
 
 // =============================================================================
+// FORM VALIDATION SCHEMAS (moved from hooks/types.ts)
+// =============================================================================
+
+export const basicInfoSchema = z.object({
+  name: z.string().min(2, 'Full name must be at least 2 characters'),
+  bio: z
+    .string()
+    .min(50, 'Bio must be at least 50 characters')
+    .max(500, 'Bio must be less than 500 characters'),
+  image: z.string().min(1, 'Profile image is required'),
+  languages: z.array(z.string()).min(1, 'Please select at least one language'),
+  website: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
+  email: z.string().email('Please enter a valid email address'),
+  whatsapp: z.string().min(10, 'Please enter a valid WhatsApp number'),
+  showPrice: z.boolean().default(true),
+  providerTypeIds: z.array(z.string()).min(1, 'Please select at least one provider type'),
+  providerTypeId: z.string().optional(), // Backward compatibility
+});
+
+export const providerTypeSchema = z.object({});
+
+export const regulatoryRequirementsSchema = z.object({
+  requirements: z
+    .array(
+      z.object({
+        requirementTypeId: z.string(),
+        value: z.any().optional(),
+        documentMetadata: z.record(z.any()).optional(), // For storing document URLs and other metadata
+        otherValue: z.string().optional(),
+      })
+    )
+    .min(1, 'Please complete all required regulatory requirements'),
+});
+
+export const servicesSchema = z.object({
+  availableServices: z.array(z.string()).min(1, 'Please select at least one service'),
+  loadedServices: z.array(z.any()).optional(), // For storing available services
+  serviceConfigs: z
+    .record(
+      z.object({
+        duration: z.coerce.number().min(1, 'Duration must be at least 1 minute'),
+        price: z.coerce.number().min(0, 'Price cannot be negative'),
+      })
+    )
+    .optional(),
+});
+
+// Combined schema for the entire form
+export const providerFormSchema = z.object({
+  basicInfo: basicInfoSchema,
+  providerType: providerTypeSchema,
+  providerTypeIds: z.array(z.string()).min(1, 'Please select at least one provider type'),
+  // Keep the old single field for backward compatibility
+  providerTypeId: z.string().optional(),
+  regulatoryRequirements: regulatoryRequirementsSchema,
+  services: servicesSchema,
+  termsAccepted: z.boolean().refine((val) => val === true, {
+    message: 'You must accept the terms and conditions',
+  }),
+});
+
+// =============================================================================
 // INFERRED TYPES
 // =============================================================================
 
 export type CreateProviderInput = z.infer<typeof createProviderSchema>;
 export type UpdateProviderInput = z.infer<typeof updateProviderSchema>;
 export type ProviderSearchParams = z.infer<typeof providerSearchParamsSchema>;
+
+// Type for the entire form data (moved from hooks/types.ts)
+export type ProviderFormType = z.infer<typeof providerFormSchema>;

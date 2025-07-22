@@ -6,8 +6,8 @@
 import {
   Provider,
   ProviderType,
-  RequirementType,
-  RequirementSubmission,
+  RequirementType as PrismaRequirementType,
+  RequirementSubmission as PrismaRequirementSubmission,
   Service,
   User,
 } from '@prisma/client';
@@ -30,6 +30,57 @@ export enum RequirementSubmissionStatus {
   REJECTED = 'REJECTED',
 }
 
+// Enum for requirement validation types (matching Prisma schema)
+export enum RequirementValidationType {
+  BOOLEAN = 'BOOLEAN', // Yes/No or True/False answers
+  DOCUMENT = 'DOCUMENT', // Document upload required
+  TEXT = 'TEXT', // Free text input
+  DATE = 'DATE', // Regular date input
+  FUTURE_DATE = 'FUTURE_DATE', // Date that must be in the future (e.g., expiry dates)
+  PAST_DATE = 'PAST_DATE', // Date that must be in the past (e.g., graduation date)
+  NUMBER = 'NUMBER', // Numeric input
+  PREDEFINED_LIST = 'PREDEFINED_LIST', // Selection from a predefined list of options
+}
+
+// Enum for requirements validation status (matching Prisma schema)
+export enum RequirementsValidationStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+/**
+ * Supported languages for service providers
+ * This should match the Languages enum from the Prisma schema
+ */
+export const SUPPORTED_LANGUAGES = [
+  'English',
+  'IsiZulu',
+  'IsiXhosa',
+  'Afrikaans',
+  'Sepedi',
+  'Setswana',
+  'Sesotho',
+  'IsiNdebele',
+  'SiSwati',
+  'Tshivenda',
+  'Xitsonga',
+  'Portuguese',
+  'French',
+  'Hindi',
+  'German',
+  'Mandarin',
+] as const;
+
+/**
+ * Type for supported languages
+ */
+export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
+
 // =============================================================================
 // BASE INTERFACES
 // =============================================================================
@@ -44,6 +95,32 @@ export interface BasicProviderInfo {
   status: ProviderStatus;
   isActive: boolean;
 }
+
+// Types moved from provider-types.ts
+export type ProviderTypeData = {
+  id: string;
+  name: string;
+  description: string | null;
+};
+
+export type RequirementTypeData = {
+  id: string;
+  name: string;
+  description: string | null;
+  validationType: string;
+  isRequired: boolean;
+  validationConfig: any;
+  displayPriority?: number;
+};
+
+export type ServiceTypeData = {
+  id: string;
+  name: string;
+  description: string | null;
+  defaultDuration: number;
+  defaultPrice: number | string;
+  displayPriority: number;
+};
 
 export interface ProviderTypeInfo {
   id: string;
@@ -77,11 +154,158 @@ export interface ProviderWithRelations extends Provider {
     status: RequirementSubmissionStatus;
     notes?: string;
     validatedAt?: Date;
-    requirementType: RequirementType;
+    requirementType: PrismaRequirementType;
     validatedBy?: User;
   }>;
   approvedBy?: User;
 }
+
+// Serialized types (moved from hooks/types.ts)
+export interface SerializedService {
+  id: string;
+  name: string;
+  description?: string | null;
+  defaultDuration: number | null;
+  defaultPrice: number | null;
+  displayPriority: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SerializedProvider {
+  id: string;
+  userId: string;
+  name: string;
+  bio: string | null;
+  image: string | null;
+  email: string;
+  whatsapp: string | null;
+  website: string | null;
+  languages: string[];
+  showPrice: boolean;
+  billingType: string | null;
+  status: string;
+  providerTypeId: string;
+  createdAt: string;
+  updatedAt: string;
+  services: SerializedService[];
+  providerType: {
+    name: string;
+    description: string | null;
+  };
+  requirementSubmissions?: Array<{
+    id: string;
+    requirementTypeId: string;
+    documentUrl: string | null;
+    documentMetadata: Record<string, any> | null;
+    createdAt: string;
+    updatedAt: string;
+    status?: RequirementsValidationStatus;
+    requirementType?: {
+      id: string;
+      name: string;
+      description: string | null;
+      validationType: string;
+    };
+  }>;
+  user: {
+    email: string;
+  };
+}
+
+// =============================================================================
+// VALIDATION CONFIGURATION TYPES
+// =============================================================================
+
+// Types for validation configurations (moved from hooks/types.ts)
+export interface ValidationConfigBase {
+  helpText?: string;
+  validationError?: string;
+  placeholder?: string;
+}
+
+export interface BooleanValidationConfig extends ValidationConfigBase {
+  trueLabel?: string;
+  falseLabel?: string;
+  defaultValue?: boolean | null;
+}
+
+export interface DocumentValidationConfig extends ValidationConfigBase {
+  acceptedFileTypes?: string[];
+  maxFileSize?: number; // in bytes
+  requiredFileFormat?: string;
+}
+
+export interface TextValidationConfig extends ValidationConfigBase {
+  minLength?: number;
+  maxLength?: number;
+  regex?: string;
+  regexErrorMessage?: string;
+}
+
+export interface DateValidationConfig extends ValidationConfigBase {
+  minDate?: string;
+  maxDate?: string;
+  dateFormat?: string;
+}
+
+export interface NumberValidationConfig extends ValidationConfigBase {
+  min?: number;
+  max?: number;
+  step?: number;
+  isInteger?: boolean;
+}
+
+export interface PredefinedListValidationConfig extends ValidationConfigBase {
+  options: Array<{ value: string; label: string }>;
+  allowOther?: boolean;
+  otherLabel?: string;
+  otherValidation?: {
+    required?: boolean;
+    minLength?: number;
+    maxLength?: number;
+  };
+}
+
+// Union type for all validation configurations
+export type ValidationConfig =
+  | BooleanValidationConfig
+  | DocumentValidationConfig
+  | TextValidationConfig
+  | DateValidationConfig
+  | NumberValidationConfig
+  | PredefinedListValidationConfig;
+
+// Type for requirement type (used in forms and components)
+export type RequirementType = {
+  id: string;
+  name: string;
+  description?: string | null;
+  validationType: RequirementValidationType | string;
+  isRequired: boolean;
+  validationConfig?: ValidationConfig;
+  displayPriority?: number;
+  index: number;
+  existingSubmission?: {
+    documentUrl: string | null;
+    documentMetadata: Record<string, any> | null;
+  };
+};
+
+// Type for requirement submission
+export type RequirementSubmission = {
+  id?: string;
+  requirementTypeId: string;
+  providerId?: string;
+  status?: RequirementsValidationStatus;
+  documentMetadata?: Record<string, any> | null; // Includes document URLs in the value field
+  expiresAt?: Date | null;
+  notes?: string | null;
+  validatedAt?: Date | null;
+  validatedById?: string | null;
+  value?: string | boolean | number | null; // For form submissions
+  otherValue?: string; // For "other" option in predefined lists
+};
 
 // =============================================================================
 // FORM AND INPUT TYPES

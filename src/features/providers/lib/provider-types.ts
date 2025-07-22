@@ -1,31 +1,7 @@
 'use server';
 
+import { ProviderTypeData, RequirementTypeData, ServiceTypeData } from '@/features/providers/types/types';
 import { prisma } from '@/lib/prisma';
-
-export type ProviderTypeData = {
-  id: string;
-  name: string;
-  description: string | null;
-};
-
-export type RequirementTypeData = {
-  id: string;
-  name: string;
-  description: string | null;
-  validationType: string;
-  isRequired: boolean;
-  validationConfig: any;
-  displayPriority?: number;
-};
-
-export type ServiceTypeData = {
-  id: string;
-  name: string;
-  description: string | null;
-  defaultDuration: number;
-  defaultPrice: number | string;
-  displayPriority: number;
-};
 
 /**
  * Fetches all provider types from the database
