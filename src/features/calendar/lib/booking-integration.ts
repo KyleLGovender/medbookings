@@ -1,41 +1,14 @@
-import { AvailabilityStatus, SchedulingRule, SlotStatus } from '@/features/calendar/types/types';
+import {
+  AvailabilityStatus,
+  BookingCompatibilityCheck,
+  BookingValidationResult,
+  SchedulingRule,
+  SlotBookingRequest,
+  SlotStatus,
+} from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
 
 import { isSlotValidForSchedulingRule } from './scheduling-rules';
-
-export interface BookingValidationResult {
-  isValid: boolean;
-  slot?: any;
-  availability?: any;
-  conflicts: string[];
-  warnings: string[];
-  schedulingRuleCompliant: boolean;
-  requiresConfirmation: boolean;
-  estimatedDuration: number;
-  price: number;
-}
-
-export interface SlotBookingRequest {
-  slotId: string;
-  customerId?: string; // For registered users
-  customerName: string; // For guest bookings
-  customerEmail: string;
-  customerPhone?: string;
-  notes?: string;
-  preferredStartTime?: Date; // If different from slot default
-}
-
-export interface BookingCompatibilityCheck {
-  slotId: string;
-  requestedStartTime?: Date;
-  requestedDuration?: number;
-  schedulingRule: SchedulingRule;
-  schedulingInterval?: number;
-  isCompatible: boolean;
-  adjustedStartTime?: Date;
-  adjustedEndTime?: Date;
-  reason?: string;
-}
 
 /**
  * Service for integrating booking functionality with new scheduling rules

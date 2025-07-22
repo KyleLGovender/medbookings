@@ -464,6 +464,265 @@ export interface GoogleCalendarIntegration {
 }
 
 // =============================================================================
+// SERVICE LAYER TYPES (moved from lib files)
+// =============================================================================
+
+// Location Search Service Types
+export interface LocationSearchParams {
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  maxDistance: number;
+  serviceTypes?: string[];
+  preferredDate?: Date;
+  preferredTime?: string;
+  duration?: number;
+  isOnlineAvailable?: boolean;
+  priceRange?: {
+    min?: number;
+    max?: number;
+  };
+}
+
+export interface ProviderLocationResult {
+  providerId: string;
+  providerName: string;
+  providerType: string;
+  distance: number;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  location?: {
+    id: string;
+    name: string;
+    address: string;
+    coordinates: {
+      lat: number;
+      lng: number;
+    };
+  };
+  availableServices: Array<{
+    serviceId: string;
+    serviceName: string;
+    duration: number;
+    price: number;
+    showPrice: boolean;
+  }>;
+  nearestAvailableSlot?: {
+    slotId: string;
+    startTime: Date;
+    endTime: Date;
+    isOnlineAvailable: boolean;
+    price: number;
+  };
+  totalAvailableSlots: number;
+}
+
+// Time Search Service Types  
+export interface TimeSearchParams {
+  dateRange?: {
+    startDate: Date;
+    endDate: Date;
+  };
+  specificDate?: Date;
+  timeRange?: {
+    startTime: string; // Format: "HH:MM" (24-hour)
+    endTime: string; // Format: "HH:MM" (24-hour)
+  };
+  preferredTimes?: string[]; // Array of preferred times ["09:00", "14:30"]
+  timeFlexibility?: number; // Minutes of flexibility around preferred times
+  dayOfWeek?: number[]; // 0-6 (Sunday-Saturday)
+  excludeWeekends?: boolean;
+  excludeHolidays?: boolean;
+  minDuration?: number; // Minimum appointment duration in minutes
+  maxDuration?: number; // Maximum appointment duration in minutes
+}
+
+export interface TimeFilteredSlot {
+  slotId: string;
+  startTime: Date;
+  endTime: Date;
+  duration: number;
+  dayOfWeek: number;
+  timeOfDay: string;
+  isWeekend: boolean;
+  providerId: string;
+  serviceId: string;
+  locationId?: string;
+  price: number;
+  isOnlineAvailable: boolean;
+  status: string;
+}
+
+export interface TimeSearchResult {
+  totalSlotsFound: number;
+  slotsInTimeRange: TimeFilteredSlot[];
+  availableDates: Date[];
+  availableTimeSlots: Array<{
+    time: string;
+    slotCount: number;
+    avgPrice: number;
+  }>;
+  dayOfWeekStats: Array<{
+    dayOfWeek: number;
+    dayName: string;
+    slotCount: number;
+    earliestTime: string;
+    latestTime: string;
+  }>;
+}
+
+// Availability Validation Types (moved from availability-validation.ts)
+export interface AvailabilityValidationOptions {
+  providerId: string;
+  startTime: Date;
+  endTime: Date;
+  excludeAvailabilityId?: string; // For update operations
+  instances?: Array<{ startTime: Date; endTime: Date }>; // For recurring validation
+}
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+}
+
+// Slot Generation Types (moved from slot-generation.ts)
+export interface SlotGenerationOptions {
+  availabilityId: string;
+  startTime: Date;
+  endTime: Date;
+  providerId: string;
+  organizationId: string;
+  locationId?: string;
+  schedulingRule: SchedulingRule;
+  schedulingInterval?: number;
+  services: Array<{
+    serviceId: string;
+    duration: number;
+    price: number;
+  }>;
+}
+
+export interface SlotGenerationResult {
+  success: boolean;
+  slotsGenerated: number;
+  errors?: string[];
+}
+
+// Workflow Service Types
+export interface WorkflowResult {
+  success: boolean;
+  availability?: AvailabilityWithRelations;
+  slotsGenerated?: number;
+  error?: string;
+  notifications?: {
+    sent: number;
+    failed: number;
+  };
+}
+
+// Booking Integration Types
+export interface BookingValidationResult {
+  isValid: boolean;
+  slot?: any;
+  availability?: any;
+  conflicts: string[];
+  warnings: string[];
+  schedulingRuleCompliant: boolean;
+  requiresConfirmation: boolean;
+  estimatedDuration: number;
+  price: number;
+}
+
+export interface SlotBookingRequest {
+  slotId: string;
+  customerId?: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  notes?: string;
+  preferredStartTime?: Date;
+}
+
+export interface BookingCompatibilityCheck {
+  slotId: string;
+  requestedStartTime?: Date;
+  requestedDuration?: number;
+  schedulingRule: SchedulingRule;
+  schedulingInterval?: number;
+  isCompatible: boolean;
+  adjustedStartTime?: Date;
+  adjustedEndTime?: Date;
+  reason?: string;
+}
+
+// Slot Cleanup Service Types
+export interface CleanupOptions {
+  preserveBookedSlots?: boolean;
+  notifyAffectedCustomers?: boolean;
+  createCancellationRecords?: boolean;
+  cleanupOrphanedSlots?: boolean;
+}
+
+export interface CleanupResult {
+  totalSlotsProcessed: number;
+  slotsDeleted: number;
+  slotsMarkedUnavailable: number;
+  bookingsAffected: number;
+  customersNotified: number;
+  errors: string[];
+  warnings: string[];
+  processingTimeMs: number;
+}
+
+export interface SeriesCleanupResult extends CleanupResult {
+  availabilitiesProcessed: number;
+  availabilitiesDeleted: number;
+  seriesId: string;
+}
+
+// Communication Service Type (moved from types.ts)
+export interface BookingView {
+  id: string;
+  status: string;
+  notificationPreferences: {
+    whatsapp: boolean;
+  };
+  guestInfo: {
+    name: string;
+    whatsapp?: string;
+  };
+  slot: {
+    id: string;
+    startTime: Date;
+    endTime: Date;
+    status: string;
+    service: {
+      id: string;
+      name: string;
+      description?: string;
+      displayPriority?: number;
+    };
+    serviceConfig: {
+      id: string;
+      price: number;
+      duration: number;
+      isOnlineAvailable: boolean;
+      isInPerson: boolean;
+      location?: string;
+    };
+    provider: {
+      id: string;
+      name: string;
+      whatsapp?: string;
+      image?: string;
+    };
+  };
+}
+
+// =============================================================================
 // SEARCH AND FILTERING TYPES
 // =============================================================================
 
@@ -596,7 +855,7 @@ export interface SlotGenerationRequest {
   forceRegenerate?: boolean;
 }
 
-export interface SlotGenerationResult {
+export interface SlotGenerationResultDetailed {
   availabilityId: string;
   slotsGenerated: number;
   slotsConflicted: number;

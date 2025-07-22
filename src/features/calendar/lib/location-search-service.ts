@@ -1,61 +1,14 @@
 import { Prisma } from '@prisma/client';
 
-import { AvailabilityStatus, SlotStatus } from '@/features/calendar/types/types';
+import {
+  AvailabilityStatus,
+  LocationSearchParams,
+  ProviderLocationResult,
+  SlotStatus,
+} from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
 
 import { optimizedProviderSearch } from './search-performance-service';
-
-export interface LocationSearchParams {
-  coordinates: {
-    lat: number;
-    lng: number;
-  };
-  maxDistance: number; // in kilometers
-  serviceTypes?: string[];
-  preferredDate?: Date;
-  preferredTime?: string;
-  duration?: number;
-  isOnlineAvailable?: boolean;
-  priceRange?: {
-    min?: number;
-    max?: number;
-  };
-}
-
-export interface ProviderLocationResult {
-  providerId: string;
-  providerName: string;
-  providerType: string;
-  distance: number; // in kilometers
-  coordinates: {
-    lat: number;
-    lng: number;
-  };
-  location?: {
-    id: string;
-    name: string;
-    address: string;
-    coordinates: {
-      lat: number;
-      lng: number;
-    };
-  };
-  availableServices: Array<{
-    serviceId: string;
-    serviceName: string;
-    duration: number;
-    price: number;
-    showPrice: boolean;
-  }>;
-  nearestAvailableSlot?: {
-    slotId: string;
-    startTime: Date;
-    endTime: Date;
-    isOnlineAvailable: boolean;
-    price: number;
-  };
-  totalAvailableSlots: number;
-}
 
 /**
  * Service for location-based provider search using geographical distance calculations

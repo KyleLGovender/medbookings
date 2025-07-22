@@ -1,29 +1,11 @@
-import { AvailabilityStatus, SlotStatus } from '@/features/calendar/types/types';
+import {
+  AvailabilityStatus,
+  CleanupOptions,
+  CleanupResult,
+  SeriesCleanupResult,
+  SlotStatus,
+} from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
-
-export interface CleanupOptions {
-  preserveBookedSlots?: boolean;
-  notifyAffectedCustomers?: boolean;
-  createCancellationRecords?: boolean;
-  cleanupOrphanedSlots?: boolean;
-}
-
-export interface CleanupResult {
-  totalSlotsProcessed: number;
-  slotsDeleted: number;
-  slotsMarkedUnavailable: number;
-  bookingsAffected: number;
-  customersNotified: number;
-  errors: string[];
-  warnings: string[];
-  processingTimeMs: number;
-}
-
-export interface SeriesCleanupResult extends CleanupResult {
-  availabilitiesProcessed: number;
-  availabilitiesDeleted: number;
-  seriesId: string;
-}
 
 /**
  * Service for cleaning up slots when availability is deleted or modified

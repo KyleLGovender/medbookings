@@ -1,4 +1,4 @@
-import { BookingView } from '@/features/calendar/lib/types';
+import { BookingView } from '@/features/calendar/types/types';
 
 export class TemplateService {
   static getBookingConfirmationTemplate(

@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import twilio from 'twilio';
 
 import env from '@/config/env/server';
-import { type BookingView } from '@/features/calendar/lib/types';
+import { type BookingView } from '@/features/calendar/types/types';
 import { sendGuestVCardToProvider } from '@/features/communications/lib/server-helper';
 import { prisma } from '@/lib/prisma';
 

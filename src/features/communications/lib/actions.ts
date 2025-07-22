@@ -2,7 +2,7 @@
 
 import { getServerSession } from 'next-auth';
 
-import { BookingView } from '@/features/calendar/lib/types';
+import { BookingView } from '@/features/calendar/types/types';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
