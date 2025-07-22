@@ -6,7 +6,6 @@
 import {
   Organization,
   OrganizationMembership,
-  OrganizationProviderConnection,
   User,
 } from '@prisma/client';
 
@@ -34,6 +33,20 @@ export enum MembershipStatus {
   INACTIVE = 'INACTIVE',
 }
 
+export enum ProviderInvitationStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  REJECTED = 'REJECTED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum InvitationAction {
+  ACCEPT = 'ACCEPT',
+  REJECT = 'REJECT',
+  CANCEL = 'CANCEL',
+  RESEND = 'RESEND',
+}
+
 // =============================================================================
 // BASE INTERFACES
 // =============================================================================
@@ -49,32 +62,50 @@ export interface BasicOrganizationInfo {
   isActive: boolean;
 }
 
+// Types moved from hooks files
 export interface OrganizationLocation {
-  id: string;
+  id?: string;
   name: string;
-  formattedAddress: string;
+  organizationId?: string;
+  formattedAddress?: string;
   phone?: string;
   email?: string;
-  createdAt: string;
+  createdAt?: string | Date;
   googlePlaceId?: string;
+  coordinates?: any;
+  searchTerms?: string[];
+  [key: string]: any; // Allow other properties from the API response
 }
 
 export interface OrganizationProviderConnection {
   id: string;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'SUSPENDED';
+  acceptedAt: string | null;
+  suspendedAt: string | null;
   createdAt: string;
-  provider: {
-    status: string;
+  serviceProvider: {
+    id: string;
+    name: string;
+    email: string;
+    whatsapp: string | null;
+    website: string | null;
+    bio: string | null;
+    image: string | null;
     user: {
       id: string;
-      name: string;
+      name: string | null;
       email: string;
-      phone?: string;
+      image: string | null;
     };
-    typeAssignments: {
-      providerType: {
-        name: string;
-      };
-    }[];
+    serviceProviderType: {
+      id: string;
+      name: string;
+      description: string | null;
+    } | null;
+  };
+  invitation?: {
+    id: string;
+    [key: string]: any;
   };
 }
 
@@ -114,6 +145,16 @@ export interface CreateOrganizationData {
   phone?: string;
   website?: string;
   description?: string;
+  logo?: string;
+}
+
+// Alias for backward compatibility
+export type OrganizationBasicInfoData = CreateOrganizationData;
+
+export interface OrganizationRegistrationData extends CreateOrganizationData {
+  termsAccepted: boolean;
+  billingType?: 'monthly' | 'yearly';
+  [key: string]: any; // Allow additional registration fields
 }
 
 export interface UpdateOrganizationData extends Partial<CreateOrganizationData> {
@@ -133,6 +174,41 @@ export interface CreateLocationData {
   phone?: string;
   email?: string;
   googlePlaceId?: string;
+}
+
+export interface OrganizationLocationsData {
+  locations: OrganizationLocation[];
+}
+
+export interface ProviderInvitationWithDetails {
+  id: string;
+  email: string;
+  status: ProviderInvitationStatus;
+  customMessage?: string;
+  createdAt: string | Date;
+  expiresAt: string | Date;
+  acceptedAt?: string | Date;
+  rejectedAt?: string | Date;
+  cancelledAt?: string | Date;
+  organization: {
+    id: string;
+    name: string;
+  };
+  provider?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  connection?: {
+    providerId: string;
+    status: string;
+    [key: string]: any;
+  };
+  invitedBy?: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 // =============================================================================

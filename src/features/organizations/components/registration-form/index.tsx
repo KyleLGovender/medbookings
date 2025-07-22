@@ -11,10 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Progress } from '@/components/ui/progress';
 import { useRegisterOrganization } from '@/features/organizations/hooks/use-register-organization';
-import {
-  OrganizationRegistrationData,
-  organizationRegistrationSchema,
-} from '@/features/organizations/types/types';
+import { OrganizationRegistrationData } from '@/features/organizations/types/types';
+import { organizationRegistrationSchema } from '@/features/organizations/types/schemas';
 import { useToast } from '@/hooks/use-toast';
 
 import { BillingConfigurationStep } from './billing-configuration-step';
@@ -75,14 +73,14 @@ export function OrganizationRegistrationForm() {
           `locations.${i}.formattedAddress`,
         ]);
         if (!isLocationValid) {
-          console.log(`Location ${i} validation failed:`, form.formState.errors.locations?.[i]);
+          console.log(`Location ${i} validation failed:`, (form.formState.errors.locations as any)?.[i]);
           return false;
         }
       }
       return true;
     }
 
-    return await form.trigger(fieldsToValidate);
+    return await form.trigger(fieldsToValidate as string[]);
   };
 
   const goToStep = async (stepNumber: number) => {

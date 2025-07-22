@@ -29,12 +29,33 @@ export const createMembershipSchema = z.object({
 });
 
 export const createLocationSchema = z.object({
+  id: z.string().uuid().optional(),
   organizationId: z.string().uuid(),
   name: z.string().min(1, 'Location name is required'),
   formattedAddress: z.string().min(1, 'Address is required'),
   phone: z.string().optional().or(z.literal('')),
   email: z.string().email('Invalid email format').optional().or(z.literal('')),
-  googlePlaceId: z.string().optional().or(z.literal('')),
+  googlePlaceId: z.string().min(1, 'Google Place ID is required'),
+  coordinates: z.any().optional(),
+  searchTerms: z.array(z.string()).optional(),
+});
+
+// Additional schemas referenced by components
+export const organizationBasicInfoSchema = createOrganizationSchema;
+
+export const organizationRegistrationSchema = createOrganizationSchema.extend({
+  termsAccepted: z.boolean().refine((val) => val === true, {
+    message: 'You must accept the terms and conditions',
+  }),
+});
+
+export const organizationLocationsSchema = z.object({
+  locations: z.array(createLocationSchema),
+});
+
+export const ProviderInvitationSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  customMessage: z.string().optional().or(z.literal('')),
 });
 
 export const organizationStatusSchema = z.enum(['PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED']);
@@ -106,5 +127,6 @@ export type CreateOrganizationInput = z.infer<typeof createOrganizationSchema>;
 export type UpdateOrganizationInput = z.infer<typeof updateOrganizationSchema>;
 export type CreateMembershipInput = z.infer<typeof createMembershipSchema>;
 export type CreateLocationInput = z.infer<typeof createLocationSchema>;
+export type ProviderInvitationData = z.infer<typeof ProviderInvitationSchema>;
 export type OrganizationSearchParams = z.infer<typeof organizationSearchParamsSchema>;
 export type MembershipSearchParams = z.infer<typeof membershipSearchParamsSchema>;

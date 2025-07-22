@@ -31,6 +31,7 @@ import { Separator } from '@/components/ui/separator';
 import { TimePicker } from '@/components/ui/time-picker';
 import { CustomRecurrenceModal } from '@/features/calendar/components/availability/custom-recurrence-modal';
 import { ServiceSelectionSection } from '@/features/calendar/components/availability/service-selection-section';
+import { OrganizationLocation } from '@/features/organizations/types/types';
 import { useCreateAvailability } from '@/features/calendar/hooks/use-availability';
 import {
   createRecurrencePattern,
@@ -50,11 +51,7 @@ import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-u
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
 
-interface LocationData {
-  id: string;
-  name: string;
-  formattedAddress?: string;
-}
+// Using centralized OrganizationLocation type instead of local interface
 
 interface AvailabilityCreationFormProps {
   providerId: string;
@@ -172,7 +169,7 @@ export function AvailabilityCreationForm({
   // Memoize selected location to avoid repeated lookups
   const selectedLocation = useMemo(() => {
     if (!watchLocationId) return null;
-    return availableLocations.find((loc: LocationData) => loc.id === watchLocationId) || null;
+    return availableLocations.filter(loc => loc.id).find((loc: OrganizationLocation) => loc.id === watchLocationId) || null;
   }, [watchLocationId, availableLocations]);
 
   const onSubmit = async (data: FormValues) => {
@@ -528,8 +525,8 @@ export function AvailabilityCreationForm({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {availableLocations.map((location: LocationData) => (
-                            <SelectItem key={location.id} value={location.id}>
+                          {availableLocations.filter(location => location.id).map((location: OrganizationLocation) => (
+                            <SelectItem key={location.id} value={location.id!}>
                               {location.name}
                             </SelectItem>
                           ))}

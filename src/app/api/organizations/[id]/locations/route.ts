@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { z } from 'zod';
 
-import { organizationLocationsSchema } from '@/features/organizations/types/types';
+import { organizationLocationsSchema } from '@/features/organizations/types/schemas';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -149,10 +149,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             name: loc.name,
             googlePlaceId: loc.googlePlaceId,
             formattedAddress: loc.formattedAddress,
-            coordinates: loc.coordinates,
-            searchTerms: loc.searchTerms,
-            phone: loc.phone,
-            email: loc.email,
+            coordinates: loc.coordinates || {},
+            searchTerms: loc.searchTerms || [],
+            phone: loc.phone || null,
+            email: loc.email || null,
           })),
         });
       }

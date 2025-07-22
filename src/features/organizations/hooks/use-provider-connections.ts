@@ -1,43 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-export interface OrganizationProviderConnection {
-  id: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'SUSPENDED';
-  acceptedAt: string | null;
-  suspendedAt: string | null;
-  createdAt: string;
-  serviceProvider: {
-    id: string;
-    name: string;
-    email: string;
-    whatsapp: string | null;
-    website: string | null;
-    bio: string | null;
-    image: string | null;
-    user: {
-      id: string;
-      name: string | null;
-      email: string;
-      image: string | null;
-    };
-    serviceProviderType: {
-      id: string;
-      name: string;
-      description: string | null;
-    } | null;
-  };
-  invitation: {
-    id: string;
-    email: string;
-    customMessage: string | null;
-    createdAt: string;
-    invitedBy: {
-      id: string;
-      name: string | null;
-      email: string;
-    } | null;
-  } | null;
-}
+import { OrganizationProviderConnection } from '@/features/organizations/types/types';
 
 interface UseOrganizationProviderConnectionsOptions {
   onSuccess?: (data: { connections: OrganizationProviderConnection[] }) => void;

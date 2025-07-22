@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { registerOrganization } from '@/features/organizations/lib/actions';
-import { organizationRegistrationSchema } from '@/features/organizations/types/types';
+import { organizationRegistrationSchema } from '@/features/organizations/types/schemas';
 
 /**
  * POST /api/organizations

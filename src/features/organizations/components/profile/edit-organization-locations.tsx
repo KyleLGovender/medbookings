@@ -25,10 +25,8 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { GoogleMapsLocationPicker } from '@/features/organizations/components/google-maps-location-picker';
 import { useUpdateOrganizationLocations } from '@/features/organizations/hooks/use-organization-updates';
-import {
-  OrganizationLocationsData,
-  organizationLocationsSchema,
-} from '@/features/organizations/types/types';
+import { OrganizationLocationsData } from '@/features/organizations/types/types';
+import { organizationLocationsSchema } from '@/features/organizations/types/schemas';
 import { toast } from '@/hooks/use-toast';
 // Assuming Location type exists
 import { isDevelopment } from '@/lib/constants';
@@ -292,7 +290,7 @@ export function EditOrganizationLocations({
                     onLocationSelect={(locationData) => handleLocationSelect(index, locationData)}
                     initialLocation={{
                       coordinates: form.getValues(`locations.${index}.coordinates`),
-                      formattedAddress: form.getValues(`locations.${index}.formattedAddress`),
+                      formattedAddress: form.getValues(`locations.${index}.formattedAddress`) || '',
                     }}
                   />
 

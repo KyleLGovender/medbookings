@@ -23,7 +23,7 @@ import { useSendProviderInvitation } from '@/features/organizations/hooks/use-pr
 import {
   ProviderInvitationData,
   ProviderInvitationSchema,
-} from '@/features/organizations/types/types';
+} from '@/features/organizations/types/schemas';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProviderInvitationFormProps {

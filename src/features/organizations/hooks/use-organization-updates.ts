@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 
-import { OrganizationBasicInfoData } from '@/features/organizations/types/types';
+import { OrganizationBasicInfoData, OrganizationLocation } from '@/features/organizations/types/types';
 
 interface UpdateOrganizationBasicInfoParams {
   organizationId: string;
@@ -89,16 +89,7 @@ export function useUpdateOrganizationBilling(options?: {
 
 interface UpdateOrganizationLocationsParams {
   organizationId: string;
-  locations: Array<{
-    id?: string;
-    name: string;
-    googlePlaceId: string;
-    formattedAddress: string;
-    coordinates: { lat: number; lng: number };
-    searchTerms?: string[];
-    phone?: string;
-    email?: string;
-  }>;
+  locations: OrganizationLocation[];
 }
 
 /**

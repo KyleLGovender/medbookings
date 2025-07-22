@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { z } from 'zod';
 
-import { ProviderInvitationSchema } from '@/features/organizations/types/types';
+import { ProviderInvitationSchema } from '@/features/organizations/types/schemas';
 import { getCurrentUser } from '@/lib/auth';
 import {
   generateInvitationEmail,
