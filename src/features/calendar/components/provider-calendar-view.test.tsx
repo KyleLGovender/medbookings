@@ -1,8 +1,8 @@
 /**
  * Unit tests for ProviderCalendarView responsive stats layout
  */
-
 import { render, screen } from '@testing-library/react';
+
 import { ProviderCalendarView } from './provider-calendar-view';
 
 // Mock the hooks and dependencies
@@ -11,13 +11,13 @@ jest.mock('../hooks/use-availability', () => ({
 }));
 
 jest.mock('@/features/providers/hooks/use-provider', () => ({
-  useProvider: jest.fn(() => ({ 
-    data: { 
-      id: '1', 
+  useProvider: jest.fn(() => ({
+    data: {
+      id: '1',
       name: 'Dr. Test Provider',
-      specialty: 'Cardiology' 
-    }, 
-    isLoading: false 
+      specialty: 'Cardiology',
+    },
+    isLoading: false,
   })),
 }));
 
@@ -116,7 +116,7 @@ describe('ProviderCalendarView Stats Layout', () => {
 
       // All stat numbers should have both mobile and desktop text sizes
       const statNumbers = screen.getAllByText(/\d+/);
-      statNumbers.forEach(stat => {
+      statNumbers.forEach((stat) => {
         if (stat.classList.contains('font-bold')) {
           expect(stat).toHaveClass('text-lg');
           expect(stat).toHaveClass('md:text-2xl');
@@ -128,7 +128,7 @@ describe('ProviderCalendarView Stats Layout', () => {
       render(<ProviderCalendarView {...mockProps} />);
 
       const labels = ['Utilization', 'Booked Hours', 'Pending', 'Completed'];
-      labels.forEach(label => {
+      labels.forEach((label) => {
         const labelElement = screen.getByText(label);
         expect(labelElement).toHaveClass('text-xs');
         expect(labelElement).toHaveClass('text-muted-foreground');
@@ -142,7 +142,7 @@ describe('ProviderCalendarView Stats Layout', () => {
 
       // Should display percentage for utilization
       expect(screen.getByText(/\d+%/)).toBeInTheDocument();
-      
+
       // Should display numeric values for other stats
       expect(screen.getAllByText(/\d+/).length).toBeGreaterThan(0);
     });
@@ -150,8 +150,8 @@ describe('ProviderCalendarView Stats Layout', () => {
     it('should handle loading states gracefully', () => {
       // This would test loading states when the data is loading
       render(<ProviderCalendarView {...mockProps} />);
-      
-      // Basic render test - more sophisticated loading state testing would 
+
+      // Basic render test - more sophisticated loading state testing would
       // require mocking the loading states in the hooks
       expect(screen.getByText('Dr. Test Provider')).toBeInTheDocument();
     });

@@ -131,9 +131,8 @@ export function ProviderOnboardingForm() {
   const selectedProviderTypeIds = methods.watch('providerTypeIds') || [];
 
   // Get filtered data based on selected provider types
-  const selectedProviderTypes = onboardingData?.providerTypes.filter(
-    (type) => selectedProviderTypeIds.includes(type.id)
-  ) || [];
+  const selectedProviderTypes =
+    onboardingData?.providerTypes.filter((type) => selectedProviderTypeIds.includes(type.id)) || [];
 
   // Collect all requirements and services from selected types
   const allRequirementsForSelectedTypes = selectedProviderTypeIds.flatMap(
@@ -141,17 +140,15 @@ export function ProviderOnboardingForm() {
   );
   // Remove duplicates by requirement ID
   const uniqueRequirementsForSelectedTypes = allRequirementsForSelectedTypes.filter(
-    (requirement, index, array) => 
-      array.findIndex(r => r.id === requirement.id) === index
+    (requirement, index, array) => array.findIndex((r) => r.id === requirement.id) === index
   );
 
   const allServicesForSelectedTypes = selectedProviderTypeIds.flatMap(
     (typeId) => onboardingData?.services[typeId] || []
   );
-  // Remove duplicates by service ID  
+  // Remove duplicates by service ID
   const uniqueServicesForSelectedTypes = allServicesForSelectedTypes.filter(
-    (service, index, array) => 
-      array.findIndex(s => s.id === service.id) === index
+    (service, index, array) => array.findIndex((s) => s.id === service.id) === index
   );
 
   // Update form state when provider types change
@@ -184,7 +181,15 @@ export function ProviderOnboardingForm() {
         });
       }
     }
-  }, [selectedProviderTypeIds, onboardingData, methods, toast, selectedProviderTypes, uniqueRequirementsForSelectedTypes, uniqueServicesForSelectedTypes]);
+  }, [
+    selectedProviderTypeIds,
+    onboardingData,
+    methods,
+    toast,
+    selectedProviderTypes,
+    uniqueRequirementsForSelectedTypes,
+    uniqueServicesForSelectedTypes,
+  ]);
 
   // Watch for validation errors - only update on submission
   useEffect(() => {

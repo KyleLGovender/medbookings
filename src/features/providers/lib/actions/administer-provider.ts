@@ -25,16 +25,16 @@ export async function approveProvider(providerId: string) {
       const pendingCount = requirementCheck.data?.pendingRequirements?.length ?? 0;
       const assignedTypes = requirementCheck.data?.assignedTypes ?? 0;
       const pendingByType = requirementCheck.data?.pendingByType ?? [];
-      
+
       let errorMessage = `Cannot approve provider: ${pendingCount} required requirement(s) still pending approval across ${assignedTypes} provider type(s).`;
-      
+
       if (pendingByType.length > 0) {
         errorMessage += '\n\nPending by type:\n';
         pendingByType.forEach((typeInfo: any) => {
           errorMessage += `• ${typeInfo.typeName}: ${typeInfo.pendingCount} requirement(s)\n`;
         });
       }
-      
+
       return {
         success: false,
         error: errorMessage,
@@ -298,8 +298,7 @@ export async function checkAllRequiredRequirementsApproved(providerId: string) {
 
     // Remove duplicates (same requirement may be required by multiple types)
     const uniqueRequiredRequirements = allRequiredRequirements.filter(
-      (requirement, index, array) => 
-        array.findIndex(r => r.id === requirement.id) === index
+      (requirement, index, array) => array.findIndex((r) => r.id === requirement.id) === index
     );
 
     const approvedSubmissions = provider.requirementSubmissions.filter(
@@ -317,13 +316,18 @@ export async function checkAllRequiredRequirementsApproved(providerId: string) {
     );
 
     // Group pending requirements by provider type for better error messaging
-    const pendingByType = provider.typeAssignments.map(assignment => ({
-      typeName: assignment.providerType.name,
-      typeId: assignment.providerType.id,
-      pendingRequirements: assignment.providerType.requirements.filter(
-        requirement => !approvedSubmissions.some(submission => submission.requirementTypeId === requirement.id)
-      ),
-    })).filter(typeInfo => typeInfo.pendingRequirements.length > 0);
+    const pendingByType = provider.typeAssignments
+      .map((assignment) => ({
+        typeName: assignment.providerType.name,
+        typeId: assignment.providerType.id,
+        pendingRequirements: assignment.providerType.requirements.filter(
+          (requirement) =>
+            !approvedSubmissions.some(
+              (submission) => submission.requirementTypeId === requirement.id
+            )
+        ),
+      }))
+      .filter((typeInfo) => typeInfo.pendingRequirements.length > 0);
 
     return {
       success: true,
@@ -337,11 +341,11 @@ export async function checkAllRequiredRequirementsApproved(providerId: string) {
           name: req.name,
           description: req.description,
         })),
-        pendingByType: pendingByType.map(typeInfo => ({
+        pendingByType: pendingByType.map((typeInfo) => ({
           typeName: typeInfo.typeName,
           typeId: typeInfo.typeId,
           pendingCount: typeInfo.pendingRequirements.length,
-          pendingRequirements: typeInfo.pendingRequirements.map(req => ({
+          pendingRequirements: typeInfo.pendingRequirements.map((req) => ({
             id: req.id,
             name: req.name,
             description: req.description,

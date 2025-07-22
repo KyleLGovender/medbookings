@@ -15,6 +15,7 @@ import { AvailabilityProposalsList } from '@/features/calendar/components/availa
 // import { EnhancedCalendarView } from '@/features/calendar/availability/components/enhanced-calendar-view';
 // Import our comprehensive availability management components
 import { ProviderCalendarView } from '@/features/calendar/components/provider-calendar-view';
+
 // import { VisualIndicatorsConfig } from '@/features/calendar/availability/components/visual-indicators-config';
 
 // Mock data types - these would typically come from props or API

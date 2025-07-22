@@ -20,16 +20,19 @@ export async function registerProvider(prevState: any, formData: FormData) {
     const email = formData.get('email') as string;
     const whatsapp = formData.get('whatsapp') as string;
     const website = (formData.get('website') as string) || null;
-    
+
     // Handle provider types (multiple or single for backward compatibility)
     const multipleProviderTypeIds = formData.getAll('providerTypeIds') as string[];
     const singleProviderTypeId = formData.get('providerTypeId') as string;
-    
+
     // Use multiple types if provided, otherwise fall back to single type
-    const providerTypeIds = multipleProviderTypeIds.length > 0 
-      ? multipleProviderTypeIds 
-      : singleProviderTypeId ? [singleProviderTypeId] : [];
-      
+    const providerTypeIds =
+      multipleProviderTypeIds.length > 0
+        ? multipleProviderTypeIds
+        : singleProviderTypeId
+          ? [singleProviderTypeId]
+          : [];
+
     if (providerTypeIds.length === 0) {
       return {
         success: false,
@@ -103,7 +106,7 @@ export async function registerProvider(prevState: any, formData: FormData) {
           set: languages,
         },
         typeAssignments: {
-          create: providerTypeIds.map(typeId => ({
+          create: providerTypeIds.map((typeId) => ({
             providerTypeId: typeId,
           })),
         },

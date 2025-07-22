@@ -3,8 +3,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 import twilio from 'twilio';
 
 import env from '@/config/env/server';
-import { sendGuestVCardToProvider } from '@/features/communications/lib/server-helper';
 import { type BookingView } from '@/features/calendar/lib/types';
+import { sendGuestVCardToProvider } from '@/features/communications/lib/server-helper';
 import { prisma } from '@/lib/prisma';
 
 // Helper function to normalize phone numbers to E.164 format (reuse from previous example)
@@ -101,16 +101,16 @@ export async function POST(request: NextRequest) {
       const booking = await prisma.booking.findUnique({
         where: { id: bookingId },
         include: {
-          slot: { 
-            include: { 
-              service: true, 
+          slot: {
+            include: {
+              service: true,
               serviceConfig: true,
               availability: {
                 include: {
-                  provider: true
-                }
-              }
-            } 
+                  provider: true,
+                },
+              },
+            },
           },
         },
       });
@@ -121,7 +121,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Associated booking not found' }, { status: 404 }); // Or 400
       }
 
-      const providerWhatsappNormalized = normalizePhoneNumber(booking.slot?.availability?.provider?.whatsapp || '');
+      const providerWhatsappNormalized = normalizePhoneNumber(
+        booking.slot?.availability?.provider?.whatsapp || ''
+      );
 
       // Verify the sender is the correct provider for this booking ID
       if (!providerWhatsappNormalized || fromNumberNormalized !== providerWhatsappNormalized) {

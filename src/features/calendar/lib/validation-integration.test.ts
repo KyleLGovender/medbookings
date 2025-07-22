@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { AvailabilityStatus, SchedulingRule } from '@/features/calendar/types/types';
+
 import { createAvailability, updateAvailability } from './actions';
-import { SchedulingRule, AvailabilityStatus } from '@/features/calendar/types/types';
 
 // Mock dependencies
 vi.mock('@/lib/auth', () => ({
@@ -186,7 +188,7 @@ describe('Validation Integration Tests', () => {
       };
       const mockPrisma = await import('@/lib/prisma');
       (mockPrisma.prisma.serviceProvider.findUnique as any).mockResolvedValue(mockServiceProvider);
-      
+
       // Mock existing overlapping availability
       (mockPrisma.prisma.availability.findMany as any).mockResolvedValue([
         {
@@ -237,7 +239,7 @@ describe('Validation Integration Tests', () => {
       };
       const mockPrisma = await import('@/lib/prisma');
       (mockPrisma.prisma.serviceProvider.findUnique as any).mockResolvedValue(mockServiceProvider);
-      
+
       // Mock existing availability that would overlap with recurring instances
       (mockPrisma.prisma.availability.findMany as any).mockResolvedValue([
         {
@@ -293,7 +295,7 @@ describe('Validation Integration Tests', () => {
       };
       const mockPrisma = await import('@/lib/prisma');
       (mockPrisma.prisma.serviceProvider.findUnique as any).mockResolvedValue(mockServiceProvider);
-      
+
       // Mock no existing availability (no overlaps)
       (mockPrisma.prisma.availability.findMany as any).mockResolvedValue([]);
 
@@ -365,9 +367,11 @@ describe('Validation Integration Tests', () => {
         endTime: new Date('2024-01-01T15:00:00Z'),
         calculatedSlots: [],
       };
-      
+
       const mockPrisma = await import('@/lib/prisma');
-      (mockPrisma.prisma.availability.findUnique as any).mockResolvedValue(mockExistingAvailability);
+      (mockPrisma.prisma.availability.findUnique as any).mockResolvedValue(
+        mockExistingAvailability
+      );
       (mockPrisma.prisma.availability.findMany as any).mockResolvedValue([]);
 
       const updateData = {
@@ -402,10 +406,12 @@ describe('Validation Integration Tests', () => {
         endTime: new Date('2024-01-01T15:00:00Z'),
         calculatedSlots: [],
       };
-      
+
       const mockPrisma = await import('@/lib/prisma');
-      (mockPrisma.prisma.availability.findUnique as any).mockResolvedValue(mockExistingAvailability);
-      
+      (mockPrisma.prisma.availability.findUnique as any).mockResolvedValue(
+        mockExistingAvailability
+      );
+
       // Mock other availability that would overlap
       (mockPrisma.prisma.availability.findMany as any).mockResolvedValue([
         {
@@ -448,14 +454,14 @@ describe('Validation Integration Tests', () => {
         endTime: new Date('2024-01-01T15:00:00Z'),
         calculatedSlots: [],
       };
-      
+
       // Mock updated availability
       const mockUpdatedAvailability = {
         ...mockExistingAvailability,
         startTime: new Date('2024-01-01T16:00:00Z'),
         endTime: new Date('2024-01-01T17:00:00Z'),
       };
-      
+
       const mockPrisma = await import('@/lib/prisma');
       (mockPrisma.prisma.availability.findUnique as any)
         .mockResolvedValueOnce(mockExistingAvailability)

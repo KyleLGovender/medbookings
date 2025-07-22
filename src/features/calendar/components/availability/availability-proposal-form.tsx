@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Organization } from '@prisma/client';
 import { Clock, MapPin, Repeat, Send, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -52,7 +53,6 @@ import { useOrganizationLocations } from '@/features/organizations/hooks/use-org
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
-import { Organization } from '@prisma/client';
 
 interface LocationData {
   id: string;
@@ -131,17 +131,17 @@ export function AvailabilityProposalForm({
   } = useProviderAssociatedServices(providerId);
 
   // Fetch organization locations
-  const organizationIds = userOrganizations.map(
-    (org: Organization) => org.id
-  );
+  const organizationIds = userOrganizations.map((org: Organization) => org.id);
   const { data: availableLocations = [], isLoading: isLocationsLoading } =
     useOrganizationLocations(organizationIds);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(
-      z.object({
-        proposalNote: z.string().optional(),
-      }).and(createAvailabilityDataSchema)
+      z
+        .object({
+          proposalNote: z.string().optional(),
+        })
+        .and(createAvailabilityDataSchema)
     ),
     defaultValues: {
       providerId,
@@ -195,7 +195,7 @@ export function AvailabilityProposalForm({
     try {
       // Remove proposalNote from the data before sending to API
       const { proposalNote, ...availabilityData } = data;
-      
+
       // Note: In a real implementation, the proposalNote would be stored
       // in a separate field or in the availability metadata
       await createMutation.mutateAsync(availabilityData);
@@ -272,7 +272,8 @@ export function AvailabilityProposalForm({
                       />
                     </FormControl>
                     <FormDescription>
-                      This message will be sent to the provider along with the availability proposal.
+                      This message will be sent to the provider along with the availability
+                      proposal.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -591,9 +592,7 @@ export function AvailabilityProposalForm({
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>Requires Confirmation</FormLabel>
-                      <FormDescription>
-                        Provider must approve each booking manually
-                      </FormDescription>
+                      <FormDescription>Provider must approve each booking manually</FormDescription>
                     </div>
                   </FormItem>
                 )}

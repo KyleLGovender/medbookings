@@ -82,9 +82,7 @@ export function useProviderAvailability(providerId: string | undefined) {
         throw new Error('Provider ID is required');
       }
 
-      const response = await fetch(
-        `/api/calendar/availability?providerId=${providerId}`
-      );
+      const response = await fetch(`/api/calendar/availability?providerId=${providerId}`);
 
       if (!response.ok) {
         const error = await response.json();
@@ -189,7 +187,10 @@ export function useCreateAvailability(options?: {
 }
 
 export function useUpdateAvailability(options?: {
-  onSuccess?: (data: AvailabilityWithRelations, variables: UpdateAvailabilityData & { scope?: 'single' | 'future' | 'all' }) => void;
+  onSuccess?: (
+    data: AvailabilityWithRelations,
+    variables: UpdateAvailabilityData & { scope?: 'single' | 'future' | 'all' }
+  ) => void;
   onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
@@ -267,12 +268,20 @@ export function useUpdateAvailability(options?: {
 }
 
 export function useCancelAvailability(options?: {
-  onSuccess?: (variables: { id: string; reason?: string; scope?: 'single' | 'future' | 'all' }) => void;
+  onSuccess?: (variables: {
+    id: string;
+    reason?: string;
+    scope?: 'single' | 'future' | 'all';
+  }) => void;
   onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, { id: string; reason?: string; scope?: 'single' | 'future' | 'all' }>({
+  return useMutation<
+    void,
+    Error,
+    { id: string; reason?: string; scope?: 'single' | 'future' | 'all' }
+  >({
     mutationFn: async ({ id, reason, scope }) => {
       const response = await fetch('/api/calendar/availability/cancel', {
         method: 'PUT',
@@ -309,7 +318,7 @@ export function useDeleteAvailability(options?: {
       if (scope) {
         searchParams.set('scope', scope);
       }
-      
+
       const response = await fetch(`/api/calendar/availability/delete?${searchParams.toString()}`, {
         method: 'DELETE',
       });

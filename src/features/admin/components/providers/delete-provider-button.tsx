@@ -22,9 +22,7 @@ interface DeleteProviderButtonProps {
   providerId: string;
 }
 
-export function DeleteProviderButton({
-  providerId,
-}: DeleteProviderButtonProps) {
+export function DeleteProviderButton({ providerId }: DeleteProviderButtonProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const { navigate } = useNavigation();
 
@@ -64,8 +62,8 @@ export function DeleteProviderButton({
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your provider profile
-            and all associated data.
+            This action cannot be undone. This will permanently delete your provider profile and all
+            associated data.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

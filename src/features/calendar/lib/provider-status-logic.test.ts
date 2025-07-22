@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createAvailability } from './actions';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { AvailabilityStatus, SchedulingRule } from '@/features/calendar/types/types';
+
+import { createAvailability } from './actions';
 
 // Mock dependencies
 vi.mock('@/lib/auth', () => ({
@@ -101,7 +103,7 @@ describe('Provider Status Logic Tests', () => {
 
       expect(result.success).toBe(true);
       expect(result.data?.status).toBe(AvailabilityStatus.ACCEPTED);
-      
+
       // Verify ServiceProvider lookup was called with correct user ID
       expect(mockPrisma.prisma.serviceProvider.findUnique).toHaveBeenCalledWith({
         where: { userId: 'user-provider-123' },
@@ -166,7 +168,7 @@ describe('Provider Status Logic Tests', () => {
 
       expect(result.success).toBe(true);
       expect(result.data?.status).toBe(AvailabilityStatus.PENDING);
-      
+
       // Verify ServiceProvider lookup was called
       expect(mockPrisma.prisma.serviceProvider.findUnique).toHaveBeenCalledWith({
         where: { userId: 'user-provider-123' },
@@ -239,7 +241,7 @@ describe('Provider Status Logic Tests', () => {
 
       expect(result.success).toBe(true);
       expect(result.data?.status).toBe(AvailabilityStatus.PENDING);
-      
+
       // Verify ServiceProvider lookup was called
       expect(mockPrisma.prisma.serviceProvider.findUnique).toHaveBeenCalledWith({
         where: { userId: 'user-org-456' },
@@ -321,7 +323,7 @@ describe('Provider Status Logic Tests', () => {
 
       expect(result.success).toBe(true);
       expect(result.data?.status).toBe(AvailabilityStatus.ACCEPTED);
-      
+
       // Verify ServiceProvider lookup was called
       expect(mockPrisma.prisma.serviceProvider.findUnique).toHaveBeenCalledWith({
         where: { userId: 'user-dual-789' },
@@ -393,7 +395,7 @@ describe('Provider Status Logic Tests', () => {
 
       expect(result.success).toBe(true);
       expect(result.data?.status).toBe(AvailabilityStatus.PENDING);
-      
+
       // Verify ServiceProvider lookup was called
       expect(mockPrisma.prisma.serviceProvider.findUnique).toHaveBeenCalledWith({
         where: { userId: 'user-admin-999' },

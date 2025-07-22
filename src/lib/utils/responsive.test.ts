@@ -1,17 +1,16 @@
 /**
  * Unit tests for responsive utility functions
  */
-
 import {
+  BREAKPOINTS,
+  getAllowedCalendarViewModes,
   getDeviceType,
   getScreenSize,
-  isMobileDevice,
-  isTabletDevice,
   isDesktopDevice,
-  shouldTreatIPadAsMobile,
+  isMobileDevice,
   isMobileForUI,
-  getAllowedCalendarViewModes,
-  BREAKPOINTS,
+  isTabletDevice,
+  shouldTreatIPadAsMobile,
 } from './responsive';
 
 // Mock window object for testing

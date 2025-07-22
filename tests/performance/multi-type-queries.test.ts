@@ -2,9 +2,13 @@
  * Performance tests for complex multi-type queries
  * Tests query performance with realistic data volumes and complex filtering
  */
-
-import { searchProviders, getProvidersByType, getProviderTypeStats } from '../../src/features/providers/lib/search';
 import { PrismaClient } from '@prisma/client';
+
+import {
+  getProviderTypeStats,
+  getProvidersByType,
+  searchProviders,
+} from '../../src/features/providers/lib/search';
 
 // Mock Prisma
 jest.mock('../../src/lib/prisma', () => ({
@@ -51,21 +55,25 @@ function generateMockProviders(count: number) {
         },
       },
       // Some providers have multiple types
-      ...(i % 3 === 0 ? [{
-        id: `assignment-${i}-2`,
-        providerTypeId: `type-${(i + 1) % 5}`,
-        providerType: {
-          id: `type-${(i + 1) % 5}`,
-          name: `Provider Type ${(i + 1) % 5}`,
-          description: `Description for type ${(i + 1) % 5}`,
-        },
-      }] : []),
+      ...(i % 3 === 0
+        ? [
+            {
+              id: `assignment-${i}-2`,
+              providerTypeId: `type-${(i + 1) % 5}`,
+              providerType: {
+                id: `type-${(i + 1) % 5}`,
+                name: `Provider Type ${(i + 1) % 5}`,
+                description: `Description for type ${(i + 1) % 5}`,
+              },
+            },
+          ]
+        : []),
     ],
     services: [
       {
         id: `service-${i}`,
         name: `Service ${i}`,
-        defaultPrice: 100 + (i * 10),
+        defaultPrice: 100 + i * 10,
         defaultDuration: 30,
       },
     ],
@@ -95,14 +103,14 @@ describe('Multi-Type Query Performance Tests', () => {
       (mockPrisma.provider.count as jest.Mock).mockResolvedValue(10000);
 
       const startTime = process.hrtime.bigint();
-      
+
       const result = await searchProviders({
         search: 'Dr',
         typeIds: ['type-1', 'type-2'],
         limit: 50,
         offset: 0,
       });
-      
+
       const endTime = process.hrtime.bigint();
       const durationMs = Number(endTime - startTime) / 1_000_000;
 
@@ -113,11 +121,13 @@ describe('Multi-Type Query Performance Tests', () => {
 
     it('should handle complex multi-type filtering efficiently', async () => {
       const complexProviderSet = generateMockProviders(5000);
-      (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue(complexProviderSet.slice(0, 20));
+      (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue(
+        complexProviderSet.slice(0, 20)
+      );
       (mockPrisma.provider.count as jest.Mock).mockResolvedValue(5000);
 
       const startTime = process.hrtime.bigint();
-      
+
       const result = await searchProviders({
         search: 'Provider',
         typeIds: ['type-0', 'type-1', 'type-2', 'type-3', 'type-4'], // All 5 types
@@ -127,7 +137,7 @@ describe('Multi-Type Query Performance Tests', () => {
         includeServices: true,
         includeRequirements: false,
       });
-      
+
       const endTime = process.hrtime.bigint();
       const durationMs = Number(endTime - startTime) / 1_000_000;
 
@@ -141,12 +151,12 @@ describe('Multi-Type Query Performance Tests', () => {
       (mockPrisma.provider.count as jest.Mock).mockResolvedValue(50000);
 
       const startTime = process.hrtime.bigint();
-      
+
       const result = await searchProviders({
         limit: 100,
         offset: 49900, // Very deep pagination
       });
-      
+
       const endTime = process.hrtime.bigint();
       const durationMs = Number(endTime - startTime) / 1_000_000;
 
@@ -169,9 +179,9 @@ describe('Multi-Type Query Performance Tests', () => {
       (mockPrisma.providerType.findMany as jest.Mock).mockResolvedValue(typeData);
 
       const startTime = process.hrtime.bigint();
-      
+
       const result = await getProviderTypeStats();
-      
+
       const endTime = process.hrtime.bigint();
       const durationMs = Number(endTime - startTime) / 1_000_000;
 
@@ -189,9 +199,9 @@ describe('Multi-Type Query Performance Tests', () => {
       (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue(typeProviders.slice(0, 10));
 
       const startTime = process.hrtime.bigint();
-      
+
       const result = await getProvidersByType('type-0', 10);
-      
+
       const endTime = process.hrtime.bigint();
       const durationMs = Number(endTime - startTime) / 1_000_000;
 
@@ -207,7 +217,7 @@ describe('Multi-Type Query Performance Tests', () => {
       (mockPrisma.provider.count as jest.Mock).mockResolvedValue(1000);
 
       const startTime = process.hrtime.bigint();
-      
+
       // Simulate 10 concurrent searches
       const searchPromises = Array.from({ length: 10 }, (_, i) =>
         searchProviders({
@@ -219,12 +229,12 @@ describe('Multi-Type Query Performance Tests', () => {
       );
 
       const results = await Promise.all(searchPromises);
-      
+
       const endTime = process.hrtime.bigint();
       const durationMs = Number(endTime - startTime) / 1_000_000;
 
       expect(results).toHaveLength(10);
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.providers).toHaveLength(20);
       });
       expect(durationMs).toBeLessThan(500); // All 10 searches should complete within 500ms
@@ -245,14 +255,14 @@ describe('Multi-Type Query Performance Tests', () => {
       ]);
 
       const startTime = process.hrtime.bigint();
-      
+
       // Run different types of queries concurrently
       const [searchResult, typeResult, statsResult] = await Promise.all([
         searchProviders({ search: 'test', limit: 20 }),
         getProvidersByType('type-1', 10),
         getProviderTypeStats(),
       ]);
-      
+
       const endTime = process.hrtime.bigint();
       const durationMs = Number(endTime - startTime) / 1_000_000;
 
@@ -270,12 +280,12 @@ describe('Multi-Type Query Performance Tests', () => {
       (mockPrisma.provider.count as jest.Mock).mockResolvedValue(5000);
 
       const initialMemory = process.memoryUsage().heapUsed;
-      
+
       const result = await searchProviders({
         limit: 5000, // Request all data
         offset: 0,
       });
-      
+
       const finalMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = finalMemory - initialMemory;
 
@@ -291,7 +301,7 @@ describe('Multi-Type Query Performance Tests', () => {
       (mockPrisma.provider.count as jest.Mock).mockResolvedValue(2000);
 
       const startTime = process.hrtime.bigint();
-      
+
       // Complex search with all possible filters
       const result = await searchProviders({
         search: 'Dr Specialist Expert', // Multi-word search
@@ -302,7 +312,7 @@ describe('Multi-Type Query Performance Tests', () => {
         includeServices: true,
         includeRequirements: true, // Include all related data
       });
-      
+
       const endTime = process.hrtime.bigint();
       const durationMs = Number(endTime - startTime) / 1_000_000;
 
@@ -317,12 +327,12 @@ describe('Multi-Type Query Performance Tests', () => {
       (mockPrisma.provider.count as jest.Mock).mockResolvedValue(0);
 
       const startTime = process.hrtime.bigint();
-      
+
       const result = await searchProviders({
         search: 'non-existent-term',
         typeIds: ['non-existent-type'],
       });
-      
+
       const endTime = process.hrtime.bigint();
       const durationMs = Number(endTime - startTime) / 1_000_000;
 
@@ -337,12 +347,12 @@ describe('Multi-Type Query Performance Tests', () => {
       (mockPrisma.provider.count as jest.Mock).mockResolvedValue(1000);
 
       const startTime = process.hrtime.bigint();
-      
+
       const result = await searchProviders({
         search: 'D', // Single character - potentially matches many records
         limit: 50,
       });
-      
+
       const endTime = process.hrtime.bigint();
       const durationMs = Number(endTime - startTime) / 1_000_000;
 

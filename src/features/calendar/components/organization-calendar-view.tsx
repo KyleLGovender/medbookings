@@ -54,7 +54,6 @@ import {
   OrganizationWeekViewProps,
 } from '../types/types';
 
-
 export function OrganizationCalendarView({
   organizationId,
   onProviderClick,
@@ -123,8 +122,7 @@ export function OrganizationCalendarView({
 
         // Get availability for this provider from organization availability data
         const providerAvailability = availabilityData.filter(
-          (availability: AvailabilityWithRelations) =>
-            availability.providerId === provider.id
+          (availability: AvailabilityWithRelations) => availability.providerId === provider.id
         );
 
         // Transform availability into calendar events
@@ -402,7 +400,7 @@ export function OrganizationCalendarView({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-center md:grid-cols-3 lg:grid-cols-5 md:gap-4">
+            <div className="grid grid-cols-2 gap-3 text-center md:grid-cols-3 md:gap-4 lg:grid-cols-5">
               <div>
                 <div className="text-lg font-bold text-blue-600 md:text-2xl">
                   {calendarData.stats.averageUtilization}%
@@ -466,7 +464,10 @@ export function OrganizationCalendarView({
                 <Switch checked={showUtilizationOnly} onCheckedChange={setShowUtilizationOnly} />
               </div>
 
-              <Select value={viewMode} onValueChange={(value: CalendarViewMode) => setViewMode(value)}>
+              <Select
+                value={viewMode}
+                onValueChange={(value: CalendarViewMode) => setViewMode(value)}
+              >
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>

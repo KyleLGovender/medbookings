@@ -21,13 +21,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { AvailabilityCreationForm } from '@/features/calendar/components/availability/availability-creation-form';
 import { AvailabilityEditForm } from '@/features/calendar/components/availability/availability-edit-form';
 import { AvailabilityViewModal } from '@/features/calendar/components/availability/availability-view-modal';
-import { SeriesActionDialog, SeriesActionScope } from '@/features/calendar/components/availability/series-action-dialog';
+import {
+  SeriesActionDialog,
+  SeriesActionScope,
+} from '@/features/calendar/components/availability/series-action-dialog';
 import { ProviderCalendarView } from '@/features/calendar/components/provider-calendar-view';
 import {
   useAcceptAvailabilityProposal,
   useCancelAvailability,
   useDeleteAvailability,
-  useRejectAvailabilityProposal
+  useRejectAvailabilityProposal,
 } from '@/features/calendar/hooks/use-availability';
 import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
 import { useToast } from '@/hooks/use-toast';
@@ -246,10 +249,10 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
 
   const handleCancelConfirm = () => {
     if (selectedEvent) {
-      cancelMutation.mutate({ 
-        id: selectedEvent.id, 
+      cancelMutation.mutate({
+        id: selectedEvent.id,
         reason: cancellationReason,
-        scope: pendingSeriesScope || 'single'
+        scope: pendingSeriesScope || 'single',
       });
     }
     setShowCancelDialog(false);
@@ -273,7 +276,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
 
   const handleSeriesAction = (scope: SeriesActionScope) => {
     setShowSeriesActionDialog(false);
-    
+
     if (!selectedEvent) return;
 
     switch (seriesActionType) {
@@ -346,7 +349,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
 
       {/* Event Details Modal */}
       <Dialog open={showEventDetailsModal} onOpenChange={setShowEventDetailsModal}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Event Details</DialogTitle>
           </DialogHeader>
@@ -355,7 +358,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="font-medium text-lg">{selectedEvent.title}</div>
+                    <div className="text-lg font-medium">{selectedEvent.title}</div>
                     <div className="text-sm text-gray-600">
                       {selectedEvent.startTime.toLocaleString([], {
                         weekday: 'long',
@@ -380,7 +383,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
                         <Button
                           variant="outline"
                           size="sm"
-                          className="border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-400"
+                          className="border-blue-300 bg-blue-50 text-blue-700 hover:border-blue-400 hover:bg-blue-100"
                           onClick={handleEditEvent}
                         >
                           <Edit className="mr-2 h-4 w-4" />
@@ -389,7 +392,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
                         <Button
                           variant="outline"
                           size="sm"
-                          className="border-red-300 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-400"
+                          className="border-red-300 bg-red-50 text-red-700 hover:border-red-400 hover:bg-red-100"
                           onClick={handleDeleteEvent}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
@@ -399,7 +402,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:border-orange-400"
+                            className="border-orange-300 bg-orange-50 text-orange-700 hover:border-orange-400 hover:bg-orange-100"
                             onClick={handleCancelEvent}
                             disabled={cancelMutation.isPending}
                           >
@@ -416,7 +419,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
                             <Button
                               variant="outline"
                               size="sm"
-                              className="border-green-300 bg-green-50 text-green-700 hover:bg-green-100 hover:border-green-400"
+                              className="border-green-300 bg-green-50 text-green-700 hover:border-green-400 hover:bg-green-100"
                               onClick={handleAcceptEvent}
                               disabled={acceptMutation.isPending}
                             >
@@ -426,7 +429,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
                             <Button
                               variant="outline"
                               size="sm"
-                              className="border-red-300 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-400"
+                              className="border-red-300 bg-red-50 text-red-700 hover:border-red-400 hover:bg-red-100"
                               onClick={handleRejectEvent}
                               disabled={rejectMutation.isPending}
                             >
@@ -440,7 +443,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:border-orange-400"
+                            className="border-orange-300 bg-orange-50 text-orange-700 hover:border-orange-400 hover:bg-orange-100"
                             onClick={handleCancelEvent}
                             disabled={cancelMutation.isPending}
                           >
@@ -454,79 +457,91 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:border-gray-400"
+                            className="border-gray-300 bg-gray-50 text-gray-700 hover:border-gray-400 hover:bg-gray-100"
                             onClick={handleViewDetails}
                           >
                             <Calendar className="mr-2 h-4 w-4" />
                             View Details
                           </Button>
                         )}
-                        
+
                         {/* Default fallback for other statuses */}
-                        {selectedEvent.status !== AvailabilityStatus.PENDING && 
-                         selectedEvent.status !== AvailabilityStatus.ACCEPTED && 
-                         selectedEvent.status !== AvailabilityStatus.REJECTED && 
-                         selectedEvent.status !== AvailabilityStatus.CANCELLED && (
-                          <div className="px-2 py-1.5 text-xs text-gray-500">
-                            No actions available for status: {selectedEvent.status}
-                          </div>
-                        )}
+                        {selectedEvent.status !== AvailabilityStatus.PENDING &&
+                          selectedEvent.status !== AvailabilityStatus.ACCEPTED &&
+                          selectedEvent.status !== AvailabilityStatus.REJECTED &&
+                          selectedEvent.status !== AvailabilityStatus.CANCELLED && (
+                            <div className="px-2 py-1.5 text-xs text-gray-500">
+                              No actions available for status: {selectedEvent.status}
+                            </div>
+                          )}
                       </>
                     )}
                   </div>
                 </div>
-                
+
                 {/* Creator Information */}
                 <div className="rounded-lg border bg-gray-50 p-4">
-                  <div className="text-sm font-medium text-gray-700 mb-2">
-                    {selectedEvent.isProviderCreated ? 'Provider Created' : `${selectedEvent.organization?.name || 'Organization'} Created`}
+                  <div className="mb-2 text-sm font-medium text-gray-700">
+                    {selectedEvent.isProviderCreated
+                      ? 'Provider Created'
+                      : `${selectedEvent.organization?.name || 'Organization'} Created`}
                   </div>
                   <div className="text-sm">
                     {selectedEvent.createdBy && (
                       <>
-                        <div className="text-xs text-gray-600 mb-1">
-                          Created by
-                        </div>
-                        <div className="text-sm font-medium">
-                          {selectedEvent.createdBy.name}
-                        </div>
+                        <div className="mb-1 text-xs text-gray-600">Created by</div>
+                        <div className="text-sm font-medium">{selectedEvent.createdBy.name}</div>
                       </>
                     )}
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {selectedEvent.service && (
                     <div className="space-y-2">
                       <div className="text-sm font-medium text-gray-700">Service Details</div>
-                      <div className="text-sm"><strong>Service:</strong> {selectedEvent.service.name}</div>
+                      <div className="text-sm">
+                        <strong>Service:</strong> {selectedEvent.service.name}
+                      </div>
                       {selectedEvent.service.duration && (
-                        <div className="text-sm"><strong>Duration:</strong> {selectedEvent.service.duration} minutes</div>
+                        <div className="text-sm">
+                          <strong>Duration:</strong> {selectedEvent.service.duration} minutes
+                        </div>
                       )}
                       {selectedEvent.service.price && (
-                        <div className="text-sm"><strong>Price:</strong> R{selectedEvent.service.price}</div>
+                        <div className="text-sm">
+                          <strong>Price:</strong> R{selectedEvent.service.price}
+                        </div>
                       )}
                     </div>
                   )}
-                  
+
                   <div className="space-y-2">
                     <div className="text-sm font-medium text-gray-700">Additional Information</div>
                     {selectedEvent.location && (
                       <div className="text-sm">
-                        <strong>Location:</strong> {selectedEvent.location.isOnline ? 'Online' : selectedEvent.location.name}
+                        <strong>Location:</strong>{' '}
+                        {selectedEvent.location.isOnline ? 'Online' : selectedEvent.location.name}
                       </div>
                     )}
                     {selectedEvent.customer && (
-                      <div className="text-sm"><strong>Customer:</strong> {selectedEvent.customer.name}</div>
+                      <div className="text-sm">
+                        <strong>Customer:</strong> {selectedEvent.customer.name}
+                      </div>
                     )}
                     <div className="text-sm">
-                      <strong>Status:</strong> <span className="capitalize">{selectedEvent.status.toLowerCase().replace('_', ' ')}</span>
+                      <strong>Status:</strong>{' '}
+                      <span className="capitalize">
+                        {selectedEvent.status.toLowerCase().replace('_', ' ')}
+                      </span>
                     </div>
                     {selectedEvent.isRecurring && (
                       <div className="text-sm">
                         <strong>Recurring:</strong> Yes
                         {selectedEvent.seriesId && (
-                          <div className="text-xs text-gray-600">Series ID: {selectedEvent.seriesId}</div>
+                          <div className="text-xs text-gray-600">
+                            Series ID: {selectedEvent.seriesId}
+                          </div>
                         )}
                       </div>
                     )}

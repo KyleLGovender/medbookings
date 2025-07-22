@@ -21,8 +21,6 @@ import { dayOfWeekOptions } from '@/features/calendar/lib/recurrence-utils';
 import { customRecurrenceDataSchema } from '@/features/calendar/types/schemas';
 import { CustomRecurrenceData, DayOfWeek } from '@/features/calendar/types/types';
 
-
-
 interface CustomRecurrenceModalProps {
   isOpen: boolean;
   onClose: () => void;

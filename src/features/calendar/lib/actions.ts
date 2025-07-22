@@ -15,20 +15,23 @@ import {
   AvailabilityWithRelations,
   BillingEntity,
   CreateAvailabilityData,
-  includeAvailabilityRelations,
   SchedulingRule,
   UpdateAvailabilityData,
+  includeAvailabilityRelations,
 } from '@/features/calendar/types/types';
 import { UserRole } from '@/features/profile/types/types';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+import {
+  validateAvailability,
+  validateAvailabilityUpdate,
+  validateRecurringAvailability,
+} from './availability-validation';
 import { notifyAvailabilityProposed } from './notification-service';
-import { processAvailabilityAcceptance, processAvailabilityRejection } from './workflow-service';
 import { generateRecurringInstances } from './recurrence-utils';
 import { generateSlotsForMultipleAvailability } from './slot-generation';
-import { validateAvailability, validateRecurringAvailability, validateAvailabilityUpdate } from './availability-validation';
-
+import { processAvailabilityAcceptance, processAvailabilityRejection } from './workflow-service';
 
 /**
  * Create new availability period
@@ -77,7 +80,7 @@ export async function createAvailability(
     const currentUserProvider = await prisma.provider.findUnique({
       where: { userId: currentUser.id },
     });
-    
+
     const isProviderCreated = currentUserProvider?.id === validatedData.providerId;
     const initialStatus = isProviderCreated
       ? AvailabilityStatus.ACCEPTED
@@ -119,25 +122,35 @@ export async function createAvailability(
       }
 
       // For custom recurrence, validate days are provided
-      if (validatedData.recurrencePattern.option === 'custom' && 
-          (!validatedData.recurrencePattern.customDays || validatedData.recurrencePattern.customDays.length === 0)) {
-        return { success: false, error: 'Custom recurrence requires at least one day to be selected' };
+      if (
+        validatedData.recurrencePattern.option === 'custom' &&
+        (!validatedData.recurrencePattern.customDays ||
+          validatedData.recurrencePattern.customDays.length === 0)
+      ) {
+        return {
+          success: false,
+          error: 'Custom recurrence requires at least one day to be selected',
+        };
       }
     }
 
     // Generate recurring instances if needed
-    const instances = validatedData.isRecurring && validatedData.recurrencePattern
-      ? generateRecurringInstances(
-          validatedData.recurrencePattern,
-          validatedData.startTime,
-          validatedData.endTime,
-          365 // Max 365 instances to prevent excessive generation
-        )
-      : [{ startTime: validatedData.startTime, endTime: validatedData.endTime }];
+    const instances =
+      validatedData.isRecurring && validatedData.recurrencePattern
+        ? generateRecurringInstances(
+            validatedData.recurrencePattern,
+            validatedData.startTime,
+            validatedData.endTime,
+            365 // Max 365 instances to prevent excessive generation
+          )
+        : [{ startTime: validatedData.startTime, endTime: validatedData.endTime }];
 
     // Validate we don't have too many instances
     if (instances.length > 365) {
-      return { success: false, error: 'Too many recurring instances. Maximum 365 instances allowed.' };
+      return {
+        success: false,
+        error: 'Too many recurring instances. Maximum 365 instances allowed.',
+      };
     }
 
     // Comprehensive availability validation

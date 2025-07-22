@@ -2,11 +2,13 @@
  * Unit tests for subscription creation and retrieval API endpoints
  * Testing polymorphic constraint validation and proper error handling
  */
-
-import { POST, GET } from './route';
 import { NextRequest } from 'next/server';
+
 import { getServerSession } from 'next-auth/next';
+
 import { prisma } from '@/lib/prisma';
+
+import { GET, POST } from './route';
 
 // Mock dependencies
 jest.mock('next-auth/next');
@@ -37,7 +39,7 @@ const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 describe('/api/subscriptions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Default mock for authenticated user
     mockGetServerSession.mockResolvedValue({
       user: { id: 'user123', email: 'test@example.com' },
@@ -59,7 +61,7 @@ describe('/api/subscriptions', () => {
       mockPrisma.location.findUnique.mockResolvedValue({ id: 'loc123' } as any);
       mockPrisma.serviceProvider.findUnique.mockResolvedValue({ id: 'provider123' } as any);
       mockPrisma.subscriptionPlan.findUnique.mockResolvedValue({ id: 'plan123' } as any);
-      
+
       // Mock successful subscription creation
       mockPrisma.subscription.create.mockResolvedValue({
         id: 'sub123',
@@ -160,7 +162,8 @@ describe('/api/subscriptions', () => {
       expect(data.details).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            message: 'Exactly one of organizationId, locationId, or serviceProviderId must be provided',
+            message:
+              'Exactly one of organizationId, locationId, or serviceProviderId must be provided',
           }),
         ])
       );
@@ -186,7 +189,8 @@ describe('/api/subscriptions', () => {
       expect(data.details).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            message: 'Exactly one of organizationId, locationId, or serviceProviderId must be provided',
+            message:
+              'Exactly one of organizationId, locationId, or serviceProviderId must be provided',
           }),
         ])
       );
@@ -213,7 +217,8 @@ describe('/api/subscriptions', () => {
       expect(data.details).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            message: 'Exactly one of organizationId, locationId, or serviceProviderId must be provided',
+            message:
+              'Exactly one of organizationId, locationId, or serviceProviderId must be provided',
           }),
         ])
       );
@@ -399,7 +404,9 @@ describe('/api/subscriptions', () => {
     });
 
     it('should retrieve subscriptions filtered by service provider ID', async () => {
-      const request = new NextRequest('http://localhost/api/subscriptions?serviceProviderId=provider123');
+      const request = new NextRequest(
+        'http://localhost/api/subscriptions?serviceProviderId=provider123'
+      );
 
       const response = await GET(request);
       const data = await response.json();

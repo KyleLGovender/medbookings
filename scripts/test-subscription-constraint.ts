@@ -5,7 +5,6 @@
  * Tests that subscription creation fails when multiple IDs are set
  * and succeeds when exactly one ID is set
  */
-
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -32,7 +31,7 @@ async function testSubscriptionConstraint(): Promise<void> {
           includedSlots: 30,
           tierPricing: { '31-100': 5, '101+': 3 },
           isActive: true,
-        }
+        },
       });
       console.log('✅ Test plan created');
     }
@@ -55,7 +54,7 @@ async function testSubscriptionConstraint(): Promise<void> {
           description: 'Test organization for constraint testing',
           status: 'APPROVED',
           billingModel: 'CONSOLIDATED',
-        }
+        },
       });
       testOrganizationId = org.id;
       console.log('✅ Test organization created');
@@ -75,9 +74,11 @@ async function testSubscriptionConstraint(): Promise<void> {
           billingCycleStart: new Date(),
           billingCycleEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           currentMonthSlots: 0,
-        }
+        },
       });
-      console.log(`✅ SUCCESS: Subscription created with organization ID only: ${subscription1.id}`);
+      console.log(
+        `✅ SUCCESS: Subscription created with organization ID only: ${subscription1.id}`
+      );
     } catch (error) {
       console.log(`❌ UNEXPECTED FAILURE: ${error}`);
     }
@@ -96,12 +97,12 @@ async function testSubscriptionConstraint(): Promise<void> {
           billingCycleStart: new Date(),
           billingCycleEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           currentMonthSlots: 0,
-        }
+        },
       });
-      console.log(`❌ CONSTRAINT VIOLATION: Subscription creation should have failed!`);
+      console.log('❌ CONSTRAINT VIOLATION: Subscription creation should have failed!');
     } catch (error) {
       if (error instanceof Error && error.message.includes('subscription_polymorphic_constraint')) {
-        console.log(`✅ SUCCESS: Constraint properly prevented multiple entity IDs`);
+        console.log('✅ SUCCESS: Constraint properly prevented multiple entity IDs');
       } else {
         console.log(`❌ UNEXPECTED ERROR: ${error}`);
       }
@@ -121,12 +122,12 @@ async function testSubscriptionConstraint(): Promise<void> {
           billingCycleStart: new Date(),
           billingCycleEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           currentMonthSlots: 0,
-        }
+        },
       });
-      console.log(`❌ CONSTRAINT VIOLATION: Subscription creation should have failed!`);
+      console.log('❌ CONSTRAINT VIOLATION: Subscription creation should have failed!');
     } catch (error) {
       if (error instanceof Error && error.message.includes('subscription_polymorphic_constraint')) {
-        console.log(`✅ SUCCESS: Constraint properly prevented orphaned subscription`);
+        console.log('✅ SUCCESS: Constraint properly prevented orphaned subscription');
       } else {
         console.log(`❌ UNEXPECTED ERROR: ${error}`);
       }
@@ -147,7 +148,7 @@ async function testSubscriptionConstraint(): Promise<void> {
             billingCycleStart: new Date(),
             billingCycleEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
             currentMonthSlots: 0,
-          }
+          },
         });
         console.log(`✅ SUCCESS: Subscription created with location ID only: ${subscription4.id}`);
       } catch (error) {
@@ -170,9 +171,11 @@ async function testSubscriptionConstraint(): Promise<void> {
             billingCycleStart: new Date(),
             billingCycleEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
             currentMonthSlots: 0,
-          }
+          },
         });
-        console.log(`✅ SUCCESS: Subscription created with service provider ID only: ${subscription5.id}`);
+        console.log(
+          `✅ SUCCESS: Subscription created with service provider ID only: ${subscription5.id}`
+        );
       } catch (error) {
         console.log(`❌ UNEXPECTED FAILURE: ${error}`);
       }
@@ -183,7 +186,6 @@ async function testSubscriptionConstraint(): Promise<void> {
     console.log('❌ Multiple entity ID subscriptions: Should fail (tested)');
     console.log('❌ No entity ID subscriptions: Should fail (tested)');
     console.log('\n✅ Polymorphic constraint is working correctly!');
-
   } catch (error) {
     console.error('💥 Testing failed:', error);
     process.exit(1);

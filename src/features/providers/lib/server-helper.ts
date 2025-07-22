@@ -18,10 +18,7 @@ const twilioClient = twilio(accountSid, authToken);
  * @param name - The name of the provider
  * @param whatsappNumber - The WhatsApp number to send the message to
  */
-export async function sendProviderWhatsappConfirmation(
-  name: string,
-  whatsappNumber: string
-) {
+export async function sendProviderWhatsappConfirmation(name: string, whatsappNumber: string) {
   try {
     if (!whatsappNumber) {
       console.log('No WhatsApp number provided');

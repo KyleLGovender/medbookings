@@ -40,10 +40,9 @@ export function ProviderTypeSection({
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        {multipleSelection 
+        {multipleSelection
           ? 'Select one or more types of healthcare services you provide. This will determine the regulatory requirements for your application.'
-          : 'Select the type of healthcare services you provide. This will determine the regulatory requirements for your application.'
-        }
+          : 'Select the type of healthcare services you provide. This will determine the regulatory requirements for your application.'}
       </p>
 
       {providerTypes.length === 0 ? (
@@ -132,13 +131,13 @@ export function ProviderTypeSection({
                   : `${selectedProviderTypes!.length} Provider Types Selected`}
               </p>
             </div>
-            
+
             {selectedProviderTypes!.length === 1 && selectedProviderTypes![0].description && (
               <p className="pl-4 text-sm text-muted-foreground">
                 {selectedProviderTypes![0].description}
               </p>
             )}
-            
+
             {selectedProviderTypes!.length > 1 && (
               <div className="pl-4">
                 <p className="text-sm font-medium text-muted-foreground">Selected Types:</p>
@@ -151,20 +150,20 @@ export function ProviderTypeSection({
                 </ul>
               </div>
             )}
-            
+
             {totalRequirementsCount > 0 && (
               <div className="pl-4">
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-medium">Regulatory Requirements:</span> {totalRequirementsCount}{' '}
-                  unique requirements loaded.
+                  <span className="font-medium">Regulatory Requirements:</span>{' '}
+                  {totalRequirementsCount} unique requirements loaded.
                 </p>
               </div>
             )}
             {totalServicesCount > 0 && (
               <div className="pl-4">
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-medium">Available Services:</span> {totalServicesCount} services
-                  available.
+                  <span className="font-medium">Available Services:</span> {totalServicesCount}{' '}
+                  services available.
                 </p>
               </div>
             )}

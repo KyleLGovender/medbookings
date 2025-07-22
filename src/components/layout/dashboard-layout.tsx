@@ -26,7 +26,7 @@ import { isMobileForUI } from '@/lib/utils/responsive';
 // Helper function for smart breadcrumb truncation
 function truncateForMobile(text: string, maxLength: number = 15): string {
   if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength - 3) + '...';
+  return `${text.substring(0, maxLength - 3)}...`;
 }
 
 // Helper function to determine if breadcrumb should be collapsed for mobile
@@ -183,10 +183,7 @@ function DynamicBreadcrumb() {
                   {item.label}
                 </BreadcrumbPage>
               ) : (
-                <BreadcrumbLink 
-                  href={item.href} 
-                  className={isMobile ? 'text-xs' : 'text-sm'}
-                >
+                <BreadcrumbLink href={item.href} className={isMobile ? 'text-xs' : 'text-sm'}>
                   {item.label}
                 </BreadcrumbLink>
               )}

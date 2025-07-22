@@ -1,7 +1,8 @@
 import sgMail from '@sendgrid/mail';
+import { put } from '@vercel/blob';
 import twilio from 'twilio';
 import vCardsJS from 'vcards-js';
-import { put } from '@vercel/blob';
+
 import env from '@/config/env/server';
 import { BookingView } from '@/features/calendar/lib/types';
 

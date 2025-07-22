@@ -66,7 +66,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
     return (
       provider.user?.name?.toLowerCase().includes(query) ||
       provider.user?.email?.toLowerCase().includes(query) ||
-      provider.typeAssignments?.some(assignment => 
+      provider.typeAssignments?.some((assignment) =>
         assignment.providerType?.name?.toLowerCase().includes(query)
       )
     );
@@ -202,12 +202,17 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <StatusBadge status={
-                            provider.status === 'PENDING_APPROVAL' ? 'PENDING' :
-                            provider.status === 'REJECTED' ? 'REJECTED' :
-                            provider.status === 'SUSPENDED' ? 'SUSPENDED' :
-                            'APPROVED'
-                          } />
+                          <StatusBadge
+                            status={
+                              provider.status === 'PENDING_APPROVAL'
+                                ? 'PENDING'
+                                : provider.status === 'REJECTED'
+                                  ? 'REJECTED'
+                                  : provider.status === 'SUSPENDED'
+                                    ? 'SUSPENDED'
+                                    : 'APPROVED'
+                            }
+                          />
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">

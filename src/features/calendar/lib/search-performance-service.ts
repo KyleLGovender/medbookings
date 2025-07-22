@@ -275,7 +275,8 @@ export class SearchPerformanceService {
         results.push({
           providerId,
           providerName: providerData.provider.user.name || 'Unknown Provider',
-          providerType: providerData.provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
+          providerType:
+            providerData.provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
           distance,
           location: primaryLocation
             ? {

@@ -1,5 +1,6 @@
+import { addDays, addMonths, differenceInMinutes, endOfMonth, startOfMonth } from 'date-fns';
+
 import { prisma } from '@/lib/prisma';
-import { addDays, addMonths, differenceInMinutes, startOfMonth, endOfMonth } from 'date-fns';
 
 export interface AvailabilityValidationOptions {
   providerId: string;
@@ -21,7 +22,7 @@ export async function validateAvailability(
   options: AvailabilityValidationOptions
 ): Promise<ValidationResult> {
   const errors: string[] = [];
-  
+
   // Basic time validation
   if (options.endTime <= options.startTime) {
     errors.push('End time must be after start time');
@@ -60,11 +61,9 @@ export async function validateAvailability(
 /**
  * Validate overlaps across ALL provider availabilities
  */
-async function validateOverlaps(
-  options: AvailabilityValidationOptions
-): Promise<string[]> {
+async function validateOverlaps(options: AvailabilityValidationOptions): Promise<string[]> {
   const errors: string[] = [];
-  
+
   // Get all existing availabilities for this provider
   const whereClause: any = {
     providerId: options.providerId,
@@ -94,15 +93,15 @@ async function validateOverlaps(
   ];
 
   for (const instance of instancesToCheck) {
-    const overlappingAvailabilities = existingAvailabilities.filter(existing => 
+    const overlappingAvailabilities = existingAvailabilities.filter((existing) =>
       hasTimeOverlap(instance.startTime, instance.endTime, existing.startTime, existing.endTime)
     );
 
     if (overlappingAvailabilities.length > 0) {
-      const overlappingTimes = overlappingAvailabilities.map(av => 
-        `${av.startTime.toISOString()} - ${av.endTime.toISOString()}`
-      ).join(', ');
-      
+      const overlappingTimes = overlappingAvailabilities
+        .map((av) => `${av.startTime.toISOString()} - ${av.endTime.toISOString()}`)
+        .join(', ');
+
       errors.push(
         `Availability from ${instance.startTime.toISOString()} to ${instance.endTime.toISOString()} overlaps with existing availability: ${overlappingTimes}`
       );
@@ -115,12 +114,7 @@ async function validateOverlaps(
 /**
  * Check if two time ranges overlap
  */
-function hasTimeOverlap(
-  start1: Date,
-  end1: Date,
-  start2: Date,
-  end2: Date
-): boolean {
+function hasTimeOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
   return start1 < end2 && end1 > start2;
 }
 
@@ -152,8 +146,15 @@ export async function validateRecurringAvailability(
     for (let j = i + 1; j < options.instances.length; j++) {
       const instance1 = options.instances[i];
       const instance2 = options.instances[j];
-      
-      if (hasTimeOverlap(instance1.startTime, instance1.endTime, instance2.startTime, instance2.endTime)) {
+
+      if (
+        hasTimeOverlap(
+          instance1.startTime,
+          instance1.endTime,
+          instance2.startTime,
+          instance2.endTime
+        )
+      ) {
         errors.push(
           `Recurring instances overlap with each other: ${instance1.startTime.toISOString()} - ${instance1.endTime.toISOString()} and ${instance2.startTime.toISOString()} - ${instance2.endTime.toISOString()}`
         );

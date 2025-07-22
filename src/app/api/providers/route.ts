@@ -10,7 +10,7 @@ import { prisma } from '@/lib/prisma';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     // Get search parameters
     const search = searchParams.get('search') || undefined;
     const typeIds = searchParams.get('typeIds')?.split(',').filter(Boolean);
@@ -79,7 +79,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Add provider types (support multiple types)
-    if (data.providerTypeIds && Array.isArray(data.providerTypeIds) && data.providerTypeIds.length > 0) {
+    if (
+      data.providerTypeIds &&
+      Array.isArray(data.providerTypeIds) &&
+      data.providerTypeIds.length > 0
+    ) {
       data.providerTypeIds.forEach((typeId: string) => {
         formData.append('providerTypeIds', typeId);
       });
@@ -87,7 +91,10 @@ export async function POST(request: NextRequest) {
       // Backward compatibility for single type
       formData.append('providerTypeIds', data.providerTypeId);
     } else {
-      return NextResponse.json({ error: 'At least one provider type is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'At least one provider type is required' },
+        { status: 400 }
+      );
     }
 
     // Add languages

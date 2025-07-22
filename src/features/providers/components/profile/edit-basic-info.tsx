@@ -167,7 +167,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
       selectedProviderTypeIds.forEach((typeId: string) => {
         formData.append('providerTypeIds', typeId);
       });
-      
+
       // Also include the legacy single type for backward compatibility
       const selectedProviderTypeId = data.providerTypeId || provider.providerTypeId || '';
       formData.append('providerTypeId', selectedProviderTypeId);
@@ -274,24 +274,24 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
               <h3 className="mb-2 font-medium">Current Types</h3>
               <div className="mb-4">
                 {provider?.providerType ? (
-                  <Badge variant="secondary">
-                    {provider.providerType.name}
-                  </Badge>
+                  <Badge variant="secondary">{provider.providerType.name}</Badge>
                 ) : (
                   <p className="text-muted-foreground">Not specified</p>
                 )}
               </div>
 
               <ProviderTypeSection
-                providerTypes={(providerTypes || []).map(type => ({
+                providerTypes={(providerTypes || []).map((type) => ({
                   ...type,
-                  description: type.description ?? null
+                  description: type.description ?? null,
                 }))}
-                selectedProviderTypes={(providerTypes?.filter(type => 
-                  methods.watch('providerTypeIds')?.includes(type.id)
-                ) || []).map(type => ({
+                selectedProviderTypes={(
+                  providerTypes?.filter((type) =>
+                    methods.watch('providerTypeIds')?.includes(type.id)
+                  ) || []
+                ).map((type) => ({
                   ...type,
-                  description: type.description ?? null
+                  description: type.description ?? null,
                 }))}
                 totalRequirementsCount={0}
                 totalServicesCount={0}

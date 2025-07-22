@@ -2,11 +2,13 @@
  * Unit tests for subscription update API endpoint
  * Testing polymorphic constraint validation and proper error handling for updates
  */
-
-import { GET, PATCH, DELETE } from './route';
 import { NextRequest } from 'next/server';
+
 import { getServerSession } from 'next-auth/next';
+
 import { prisma } from '@/lib/prisma';
+
+import { DELETE, GET, PATCH } from './route';
 
 // Mock dependencies
 jest.mock('next-auth/next');
@@ -36,10 +38,10 @@ const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 
 describe('/api/subscriptions/[id]', () => {
   const mockParams = { params: { id: 'sub123' } };
-  
+
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Default mock for authenticated user
     mockGetServerSession.mockResolvedValue({
       user: { id: 'user123', email: 'test@example.com' },
@@ -110,7 +112,7 @@ describe('/api/subscriptions/[id]', () => {
       mockPrisma.location.findUnique.mockResolvedValue({ id: 'loc456' } as any);
       mockPrisma.serviceProvider.findUnique.mockResolvedValue({ id: 'provider456' } as any);
       mockPrisma.subscriptionPlan.findUnique.mockResolvedValue({ id: 'plan456' } as any);
-      
+
       // Mock successful subscription update
       mockPrisma.subscription.update.mockResolvedValue({
         id: 'sub123',
@@ -238,7 +240,8 @@ describe('/api/subscriptions/[id]', () => {
       expect(data.details).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            message: 'If updating entity relationship, exactly one of organizationId, locationId, or serviceProviderId must be provided',
+            message:
+              'If updating entity relationship, exactly one of organizationId, locationId, or serviceProviderId must be provided',
           }),
         ])
       );
@@ -264,7 +267,8 @@ describe('/api/subscriptions/[id]', () => {
       expect(data.details).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            message: 'If updating entity relationship, exactly one of organizationId, locationId, or serviceProviderId must be provided',
+            message:
+              'If updating entity relationship, exactly one of organizationId, locationId, or serviceProviderId must be provided',
           }),
         ])
       );

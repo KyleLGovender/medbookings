@@ -1,6 +1,6 @@
 'use server';
 
-import { Service, Provider } from '@prisma/client';
+import { Provider, Service } from '@prisma/client';
 
 import { serializeProvider } from '@/features/providers/lib/helper';
 import { prisma } from '@/lib/prisma';
@@ -52,9 +52,7 @@ export async function getProviderByUserId(userId: string): Promise<Provider | nu
   return serialized;
 }
 
-export async function getProviderByProviderId(
-  providerId: string
-): Promise<Provider | null> {
+export async function getProviderByProviderId(providerId: string): Promise<Provider | null> {
   const provider = await prisma.provider.findUnique({
     where: {
       id: providerId,
@@ -128,9 +126,7 @@ export async function getApprovedProviders() {
   return providers.map((provider) => serializeProvider(provider));
 }
 
-export async function getProviderServices(
-  providerId: string
-): Promise<SerializedService[]> {
+export async function getProviderServices(providerId: string): Promise<SerializedService[]> {
   try {
     const services = await prisma.service.findMany({
       where: {

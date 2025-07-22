@@ -105,22 +105,22 @@
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground;
   }
-  
+
   /* Prevent horizontal scrollbars globally */
   html {
     overflow-x: hidden;
   }
-  
+
   /* Dashboard layout specific overflow handling */
   body:has([data-sidebar-layout]) {
     overflow: hidden;
     height: 100vh;
   }
-  
+
   /* General layout should allow normal scrolling */
   body:not(:has([data-sidebar-layout])) {
     overflow-x: hidden;

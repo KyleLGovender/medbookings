@@ -18,15 +18,15 @@ export default function UnauthorizedPage() {
               </div>
               <CardTitle className="text-2xl font-bold">Access Denied</CardTitle>
               <CardDescription className="text-base">
-                You don't have the required permissions to access this page.
+                You don&apos;t have the required permissions to access this page.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-lg bg-muted/50 p-4">
                 <h3 className="mb-2 font-semibold">What happened?</h3>
                 <p className="text-sm text-muted-foreground">
-                  This page requires administrative privileges that your account doesn't currently
-                  have.
+                  This page requires administrative privileges that your account doesn&apos;t
+                  currently have.
                 </p>
               </div>
 

@@ -471,7 +471,10 @@ export async function processRecurringSeriesAcceptance(
         if (slotResult.success) {
           totalSlotsGenerated += slotResult.slotsGenerated;
         } else {
-          console.error(`Failed to generate slots for availability ${availability.id}:`, slotResult.errors);
+          console.error(
+            `Failed to generate slots for availability ${availability.id}:`,
+            slotResult.errors
+          );
         }
       }
     } catch (slotError) {
@@ -520,9 +523,7 @@ export async function getWorkflowStatistics(
 }> {
   try {
     const whereClause =
-      entityType === 'organization'
-        ? { organizationId: entityId }
-        : { providerId: entityId };
+      entityType === 'organization' ? { organizationId: entityId } : { providerId: entityId };
 
     const [
       totalProposals,

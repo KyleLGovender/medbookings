@@ -1,7 +1,4 @@
-import {
-  AvailabilityStatus,
-  AvailabilityWithRelations,
-} from '@/features/calendar/types/types';
+import { AvailabilityStatus, AvailabilityWithRelations } from '@/features/calendar/types/types';
 
 export interface NotificationPayload {
   recipientId: string;

@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+
 import { ApprovalEntityType } from './enums';
 
 // Basic Admin Action Types
@@ -63,15 +64,9 @@ export interface ServerActionResult<T = void> {
   error?: string;
 }
 
-export type ApproveProviderAction = (
-  providerId: string
-) => Promise<ServerActionResult>;
-export type SuspendProviderAction = (
-  providerId: string
-) => Promise<ServerActionResult>;
-export type DeleteProviderAction = (
-  providerId: string
-) => Promise<ServerActionResult>;
+export type ApproveProviderAction = (providerId: string) => Promise<ServerActionResult>;
+export type SuspendProviderAction = (providerId: string) => Promise<ServerActionResult>;
+export type DeleteProviderAction = (providerId: string) => Promise<ServerActionResult>;
 export type RejectProviderAction = (
   providerId: string,
   reason: string

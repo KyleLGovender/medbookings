@@ -298,7 +298,8 @@ export class LocationSearchService {
             results.push({
               providerId: provider.id,
               providerName: provider.user.name || 'Unknown Provider',
-              providerType: provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
+              providerType:
+                provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
               distance: Math.round(distance * 10) / 10, // Round to 1 decimal place
               coordinates: locationCoords,
               location: {
@@ -361,7 +362,8 @@ export class LocationSearchService {
             results.push({
               providerId: provider.id,
               providerName: provider.user.name || 'Unknown Provider',
-              providerType: provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
+              providerType:
+                provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
               distance: 0, // Online services have no distance
               coordinates: coordinates, // Use search coordinates for online providers
               location: undefined, // No physical location

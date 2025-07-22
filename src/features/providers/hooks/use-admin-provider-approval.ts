@@ -3,12 +3,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
-  approveRequirementAction,
   approveProviderAction,
+  approveRequirementAction,
   checkAllRequiredRequirementsApprovedAction,
   getProviderRequirementSubmissionsAction,
-  rejectRequirementAction,
   rejectProviderAction,
+  rejectRequirementAction,
 } from '../lib/server-actions';
 
 /**

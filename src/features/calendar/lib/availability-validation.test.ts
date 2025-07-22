@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { 
-  validateAvailability, 
-  validateRecurringAvailability, 
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import {
+  canUpdateAvailability,
+  validateAvailability,
   validateAvailabilityUpdate,
-  canUpdateAvailability 
+  validateRecurringAvailability,
 } from './availability-validation';
 
 // Mock Prisma
@@ -123,7 +124,9 @@ describe('Availability Validation', () => {
       });
 
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('Cannot create availability more than 3 months in the future');
+      expect(result.errors).toContain(
+        'Cannot create availability more than 3 months in the future'
+      );
     });
 
     it('should reject overlapping availability', async () => {
@@ -298,7 +301,9 @@ describe('Availability Validation', () => {
       });
 
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('Cannot create availability more than 3 months in the future');
+      expect(result.errors).toContain(
+        'Cannot create availability more than 3 months in the future'
+      );
     });
   });
 

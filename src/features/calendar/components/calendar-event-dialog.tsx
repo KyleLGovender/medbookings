@@ -26,11 +26,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import {
-  AvailabilityStatus,
-  CalendarEvent,
-  SlotStatus,
-} from '@/features/calendar/types/types';
+import { AvailabilityStatus, CalendarEvent, SlotStatus } from '@/features/calendar/types/types';
 
 interface CalendarEventDialogProps {
   event: CalendarEvent | null;

@@ -26,7 +26,10 @@ export async function POST(
     // Validate request body
     const validation = rejectProviderRequestSchema.safeParse(body);
     if (!validation.success) {
-      return NextResponse.json({ success: false, error: 'Rejection reason is required' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Rejection reason is required' },
+        { status: 400 }
+      );
     }
 
     const { reason } = validation.data;

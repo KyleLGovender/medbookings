@@ -54,7 +54,9 @@ class MemoryCache<T> {
 }
 
 // Cache instances for different data types
-export const providerTypeStatsCache = new MemoryCache<Array<{ typeId: string; typeName: string; count: number }>>(30); // 30 min TTL
+export const providerTypeStatsCache = new MemoryCache<
+  Array<{ typeId: string; typeName: string; count: number }>
+>(30); // 30 min TTL
 export const providerSearchCache = new MemoryCache<any>(10); // 10 min TTL for search results
 export const providersByTypeCache = new MemoryCache<any>(20); // 20 min TTL
 
@@ -96,24 +98,27 @@ export function invalidateProviderTypeCache(typeId?: string): void {
       }
     });
   }
-  
+
   // Always clear stats cache when provider types change
   providerTypeStatsCache.clear();
 }
 
 // Periodic cleanup (run every 5 minutes)
-setInterval(() => {
-  providerTypeStatsCache.cleanup();
-  providerSearchCache.cleanup();
-  providersByTypeCache.cleanup();
-}, 5 * 60 * 1000);
+setInterval(
+  () => {
+    providerTypeStatsCache.cleanup();
+    providerSearchCache.cleanup();
+    providersByTypeCache.cleanup();
+  },
+  5 * 60 * 1000
+);
 
 // Cached wrapper functions
 export async function getCachedProviderTypeStats(
   fetcher: () => Promise<Array<{ typeId: string; typeName: string; count: number }>>
 ): Promise<Array<{ typeId: string; typeName: string; count: number }>> {
   const cacheKey = 'provider-type-stats';
-  
+
   // Try to get from cache
   const cached = providerTypeStatsCache.get(cacheKey);
   if (cached) {
@@ -122,10 +127,10 @@ export async function getCachedProviderTypeStats(
 
   // Fetch fresh data
   const data = await fetcher();
-  
+
   // Store in cache
   providerTypeStatsCache.set(cacheKey, data);
-  
+
   return data;
 }
 
@@ -141,10 +146,10 @@ export async function getCachedProviderSearch<T>(
 
   // Fetch fresh data
   const data = await fetcher();
-  
+
   // Store in cache with shorter TTL for search results
   providerSearchCache.set(cacheKey, data, 5); // 5 minutes for search results
-  
+
   return data;
 }
 
@@ -160,9 +165,9 @@ export async function getCachedProvidersByType<T>(
 
   // Fetch fresh data
   const data = await fetcher();
-  
+
   // Store in cache
   providersByTypeCache.set(cacheKey, data);
-  
+
   return data;
 }

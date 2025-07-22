@@ -29,7 +29,10 @@ export async function POST(
     });
 
     if (!submission) {
-      return NextResponse.json({ success: false, error: 'Requirement submission not found' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'Requirement submission not found' },
+        { status: 404 }
+      );
     }
 
     // Verify the submission belongs to the specified provider

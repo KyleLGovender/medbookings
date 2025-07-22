@@ -9,9 +9,7 @@ interface ApproveProviderButtonProps {
   providerId: string;
 }
 
-export function ApproveProviderButton({
-  providerId,
-}: ApproveProviderButtonProps) {
+export function ApproveProviderButton({ providerId }: ApproveProviderButtonProps) {
   const router = useRouter();
 
   const handleApprove = async () => {

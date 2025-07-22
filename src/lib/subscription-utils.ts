@@ -1,5 +1,6 @@
-import { prisma } from '@/lib/prisma';
 import { Subscription, SubscriptionStatus, SubscriptionType } from '@prisma/client';
+
+import { prisma } from '@/lib/prisma';
 
 /**
  * Subscription utility functions that handle the polymorphic constraint properly
@@ -7,7 +8,7 @@ import { Subscription, SubscriptionStatus, SubscriptionType } from '@prisma/clie
  * database constraint: exactly one of organizationId, locationId, or providerId is set
  */
 
-export type SubscriptionEntity = 
+export type SubscriptionEntity =
   | { type: 'organization'; id: string }
   | { type: 'location'; id: string }
   | { type: 'provider'; id: string };
@@ -33,10 +34,10 @@ export async function getSubscriptionsForEntity(
   }
 ): Promise<SubscriptionWithRelations[]> {
   const includeRelations = options?.includeRelations ?? false;
-  
+
   // Build where clause based on entity type
   const whereClause: any = {};
-  
+
   switch (entity.type) {
     case 'organization':
       whereClause.organizationId = entity.id;
@@ -64,27 +65,29 @@ export async function getSubscriptionsForEntity(
   }
 
   // Build include clause
-  const include = includeRelations ? {
-    plan: true,
-    organization: true,
-    location: true,
-    provider: true,
-    payments: {
-      orderBy: { createdAt: 'desc' as const },
-      take: 10
-    },
-    usageRecords: {
-      orderBy: { createdAt: 'desc' as const },
-      take: 10
-    }
-  } : undefined;
+  const include = includeRelations
+    ? {
+        plan: true,
+        organization: true,
+        location: true,
+        provider: true,
+        payments: {
+          orderBy: { createdAt: 'desc' as const },
+          take: 10,
+        },
+        usageRecords: {
+          orderBy: { createdAt: 'desc' as const },
+          take: 10,
+        },
+      }
+    : undefined;
 
   return await prisma.subscription.findMany({
     where: whereClause,
     include,
     orderBy: {
-      createdAt: 'desc'
-    }
+      createdAt: 'desc',
+    },
   });
 }
 
@@ -96,7 +99,7 @@ export async function getActiveSubscriptionForEntity(
 ): Promise<SubscriptionWithRelations | null> {
   const subscriptions = await getSubscriptionsForEntity(entity, {
     includeRelations: true,
-    status: 'ACTIVE'
+    status: 'ACTIVE',
   });
 
   return subscriptions[0] || null;
@@ -155,7 +158,7 @@ export async function createSubscriptionForEntity(
       organization: true,
       location: true,
       provider: true,
-    }
+    },
   });
 }
 
@@ -194,7 +197,7 @@ export async function updateSubscriptionEntity(
       organization: true,
       location: true,
       provider: true,
-    }
+    },
   });
 }
 
@@ -225,7 +228,7 @@ export function validatePolymorphicConstraint(subscription: {
   const setFields = [
     subscription.organizationId,
     subscription.locationId,
-    subscription.providerId
+    subscription.providerId,
   ].filter(Boolean);
 
   return setFields.length === 1;
@@ -242,7 +245,7 @@ export async function getAllSubscriptions(options?: {
   offset?: number;
 }): Promise<SubscriptionWithRelations[]> {
   const whereClause: any = {};
-  
+
   if (options?.status) {
     whereClause.status = options.status;
   }
@@ -250,18 +253,20 @@ export async function getAllSubscriptions(options?: {
     whereClause.type = options.type;
   }
 
-  const include = options?.includeRelations ? {
-    plan: true,
-    organization: true,
-    location: true,
-    provider: true,
-  } : undefined;
+  const include = options?.includeRelations
+    ? {
+        plan: true,
+        organization: true,
+        location: true,
+        provider: true,
+      }
+    : undefined;
 
   return await prisma.subscription.findMany({
     where: whereClause,
     include,
     orderBy: {
-      createdAt: 'desc'
+      createdAt: 'desc',
     },
     take: options?.limit,
     skip: options?.offset,
@@ -287,7 +292,7 @@ export async function cancelSubscription(
       organization: true,
       location: true,
       provider: true,
-    }
+    },
   });
 }
 
@@ -303,7 +308,7 @@ export async function getSubscriptionStats(entity: SubscriptionEntity): Promise<
   trialing: number;
 }> {
   const whereClause: any = {};
-  
+
   switch (entity.type) {
     case 'organization':
       whereClause.organizationId = entity.id;

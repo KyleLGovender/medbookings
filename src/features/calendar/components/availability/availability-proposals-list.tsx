@@ -41,11 +41,7 @@ export function AvailabilityProposalsList({ providerId }: AvailabilityProposalsL
   const { toast } = useToast();
 
   // Fetch pending proposals for the provider
-  const {
-    data: allAvailability = [],
-    isLoading,
-    error,
-  } = useProviderAvailability(providerId);
+  const { data: allAvailability = [], isLoading, error } = useProviderAvailability(providerId);
 
   // Filter for pending proposals only
   const pendingProposals = allAvailability.filter(

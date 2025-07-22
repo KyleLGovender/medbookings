@@ -2,15 +2,15 @@
  * Integration tests for multi-type provider scenarios
  * Tests the complete workflow from registration to approval with multiple provider types
  */
+import { NextRequest } from 'next/server';
 
 import { PrismaClient } from '@prisma/client';
-import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 
-// Import API handlers
-import { GET as searchProviders, POST as createProvider } from '../../src/app/api/providers/route';
-import { GET as getProvider } from '../../src/app/api/providers/[id]/route';
 import { PUT as updateProviderBasicInfo } from '../../src/app/api/providers/[id]/basic-info/route';
+import { GET as getProvider } from '../../src/app/api/providers/[id]/route';
+// Import API handlers
+import { POST as createProvider, GET as searchProviders } from '../../src/app/api/providers/route';
 
 // Mock dependencies
 jest.mock('next-auth', () => ({
@@ -54,7 +54,7 @@ const mockProviderTypes = [
     description: 'Primary healthcare provider',
   },
   {
-    id: 'psych-type-id', 
+    id: 'psych-type-id',
     name: 'Psychologist',
     description: 'Mental health specialist',
   },
@@ -115,7 +115,7 @@ describe('Multi-Type Provider Integration Tests', () => {
     it('should register provider with multiple types successfully', async () => {
       // Mock user lookup
       (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      
+
       // Mock provider creation
       (mockPrisma.provider.create as jest.Mock).mockResolvedValue(mockProvider);
 
@@ -153,10 +153,7 @@ describe('Multi-Type Provider Integration Tests', () => {
         expect.objectContaining({
           data: expect.objectContaining({
             typeAssignments: {
-              create: [
-                { providerTypeId: 'gp-type-id' },
-                { providerTypeId: 'psych-type-id' },
-              ],
+              create: [{ providerTypeId: 'gp-type-id' }, { providerTypeId: 'psych-type-id' }],
             },
           }),
         })
@@ -292,9 +289,7 @@ describe('Multi-Type Provider Integration Tests', () => {
       (mockPrisma.provider.findMany as jest.Mock).mockResolvedValue([mockProvider]);
       (mockPrisma.provider.count as jest.Mock).mockResolvedValue(100);
 
-      const request = new NextRequest(
-        'http://localhost/api/providers?limit=10&offset=20'
-      );
+      const request = new NextRequest('http://localhost/api/providers?limit=10&offset=20');
 
       const response = await searchProviders(request);
       const responseBody = await response.json();

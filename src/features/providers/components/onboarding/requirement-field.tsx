@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { DocumentUploader } from '@/components/document-uploader';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -12,8 +13,6 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-
-import { DocumentUploader } from '@/components/document-uploader';
 
 interface RequirementFieldProps {
   requirement: {
@@ -56,9 +55,9 @@ export function RequirementField({ requirement, onChange }: RequirementFieldProp
 
     case 'DOCUMENT':
       return (
-        <DocumentUploader 
-          onUpload={handleChange} 
-          acceptedFormats={requirement.acceptedFormats} 
+        <DocumentUploader
+          onUpload={handleChange}
+          acceptedFormats={requirement.acceptedFormats}
           purpose={`requirement-${requirement.id}`}
         />
       );

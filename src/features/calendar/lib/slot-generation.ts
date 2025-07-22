@@ -1,6 +1,8 @@
-import { prisma } from '@/lib/prisma';
 import { addMinutes } from 'date-fns';
+
 import { SchedulingRule } from '@/features/calendar/types/types';
+import { prisma } from '@/lib/prisma';
+
 import { generateTimeSlots } from './scheduling-rules';
 
 export interface SlotGenerationOptions {

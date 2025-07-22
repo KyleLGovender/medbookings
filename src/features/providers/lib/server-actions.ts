@@ -3,12 +3,12 @@
 import { revalidatePath } from 'next/cache';
 
 import {
-  approveRequirement,
   approveProvider,
+  approveRequirement,
   checkAllRequiredRequirementsApproved,
   getProviderRequirementSubmissions,
-  rejectRequirement,
   rejectProvider,
+  rejectRequirement,
 } from './actions/administer-provider';
 
 // Server action for approving a requirement
@@ -67,10 +67,7 @@ export async function approveProviderAction(providerId: string) {
 }
 
 // Server action for rejecting a provider
-export async function rejectProviderAction(
-  providerId: string,
-  rejectionReason: string
-) {
+export async function rejectProviderAction(providerId: string, rejectionReason: string) {
   const result = await rejectProvider(providerId, rejectionReason);
 
   if (result.success) {

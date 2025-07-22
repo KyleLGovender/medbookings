@@ -23,8 +23,7 @@ export async function GET(
 
     // Validate status parameter against enum values
     const whereClause =
-      statusParam &&
-      Object.values(ProviderStatus).includes(statusParam as ProviderStatus)
+      statusParam && Object.values(ProviderStatus).includes(statusParam as ProviderStatus)
         ? { status: statusParam as ProviderStatus }
         : {};
 

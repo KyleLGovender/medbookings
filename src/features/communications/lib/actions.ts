@@ -2,11 +2,11 @@
 
 import { getServerSession } from 'next-auth';
 
+import { BookingView } from '@/features/calendar/lib/types';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 import { sendGuestVCardToProvider } from './server-helper';
-import { BookingView } from '@/features/calendar/lib/types';
 
 export async function sendProviderPatientsDetailsByWhatsapp(
   bookingId: string
@@ -26,9 +26,9 @@ export async function sendProviderPatientsDetailsByWhatsapp(
             serviceConfig: true,
             availability: {
               include: {
-                provider: true
-              }
-            }
+                provider: true,
+              },
+            },
           },
         },
       },

@@ -1,8 +1,4 @@
-import {
-  AvailabilityConflict,
-  SchedulingRule,
-  SlotStatus,
-} from '@/features/calendar/types/types';
+import { AvailabilityConflict, SchedulingRule, SlotStatus } from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
 
 import { isSlotValidForSchedulingRule } from './scheduling-rules';
@@ -547,11 +543,7 @@ export async function analyzeTimeSlotConflicts(
     providerId: providerId,
   };
 
-  const conflicts = await manager.detectSlotConflicts(
-    mockSlot,
-    providerId,
-    'mock-availability-id'
-  );
+  const conflicts = await manager.detectSlotConflicts(mockSlot, providerId, 'mock-availability-id');
 
   const suggestions = conflicts.map((c) => c.suggestedResolution).filter(Boolean) as string[];
 

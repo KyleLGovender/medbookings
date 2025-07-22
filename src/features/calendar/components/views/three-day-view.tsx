@@ -25,10 +25,10 @@ export function ThreeDayView({
   const getDaysArray = () => {
     const prevDay = new Date(currentDate);
     prevDay.setDate(currentDate.getDate() - 1);
-    
+
     const nextDay = new Date(currentDate);
     nextDay.setDate(currentDate.getDate() + 1);
-    
+
     return [prevDay, currentDate, nextDay];
   };
 
@@ -96,7 +96,7 @@ export function ThreeDayView({
             {days.map((day, index) => {
               const isToday = day.toDateString() === new Date().toDateString();
               const isSelected = day.toDateString() === currentDate.toDateString();
-              
+
               return (
                 <button
                   key={index}
@@ -108,7 +108,9 @@ export function ThreeDayView({
                 >
                   <span>
                     {day.toLocaleDateString([], { weekday: 'short' })}{' '}
-                    <span className={`font-semibold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
+                    <span
+                      className={`font-semibold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}
+                    >
                       {day.getDate()}
                     </span>
                   </span>

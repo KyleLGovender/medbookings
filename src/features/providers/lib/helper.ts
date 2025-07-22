@@ -38,9 +38,8 @@ export function serializeProvider(provider: any): any {
         updatedAt: assignment.updatedAt?.toISOString(),
       })),
       // Also provide a legacy providerType for backward compatibility
-      providerType: provider.typeAssignments.length > 0 
-        ? provider.typeAssignments[0].providerType 
-        : null,
+      providerType:
+        provider.typeAssignments.length > 0 ? provider.typeAssignments[0].providerType : null,
       // Provide all types as an array
       providerTypes: provider.typeAssignments.map((assignment: any) => assignment.providerType),
     }),

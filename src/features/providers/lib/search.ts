@@ -2,15 +2,17 @@
  * Optimized provider search queries using the new n:n relationship structure
  */
 import { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
-import { serializeProvider } from './helper';
+
 import {
-  generateSearchCacheKey,
   generateProvidersByTypeCacheKey,
+  generateSearchCacheKey,
   getCachedProviderSearch,
-  getCachedProvidersByType,
   getCachedProviderTypeStats,
+  getCachedProvidersByType,
 } from '@/lib/cache';
+import { prisma } from '@/lib/prisma';
+
+import { serializeProvider } from './helper';
 
 interface ProviderSearchOptions {
   search?: string;
@@ -36,7 +38,9 @@ interface ProviderSearchResult {
  * Optimized provider search that efficiently joins through assignment table
  * Uses the new indexes on ProviderTypeAssignment for fast filtering
  */
-export async function searchProviders(options: ProviderSearchOptions): Promise<ProviderSearchResult> {
+export async function searchProviders(
+  options: ProviderSearchOptions
+): Promise<ProviderSearchResult> {
   const {
     search,
     typeIds = [],
@@ -49,7 +53,7 @@ export async function searchProviders(options: ProviderSearchOptions): Promise<P
 
   // Generate cache key for this search
   const cacheKey = generateSearchCacheKey(search, typeIds, status, limit, offset);
-  
+
   // Use cached search with optimized fetcher
   return getCachedProviderSearch(cacheKey, async () => {
     return performProviderSearch(options);
@@ -59,7 +63,9 @@ export async function searchProviders(options: ProviderSearchOptions): Promise<P
 /**
  * Internal function that performs the actual search without caching
  */
-async function performProviderSearch(options: ProviderSearchOptions): Promise<ProviderSearchResult> {
+async function performProviderSearch(
+  options: ProviderSearchOptions
+): Promise<ProviderSearchResult> {
   const {
     search,
     typeIds = [],
@@ -161,7 +167,7 @@ async function performProviderSearch(options: ProviderSearchOptions): Promise<Pr
   ]);
 
   // Serialize providers for JSON response
-  const serializedProviders = providers.map(provider => serializeProvider(provider));
+  const serializedProviders = providers.map((provider) => serializeProvider(provider));
 
   return {
     providers: serializedProviders,
@@ -180,7 +186,7 @@ async function performProviderSearch(options: ProviderSearchOptions): Promise<Pr
  */
 export async function getProvidersByType(typeId: string, limit = 10): Promise<any[]> {
   const cacheKey = generateProvidersByTypeCacheKey(typeId, limit);
-  
+
   return getCachedProvidersByType(cacheKey, async () => {
     return performGetProvidersByType(typeId, limit);
   });
@@ -222,14 +228,16 @@ async function performGetProvidersByType(typeId: string, limit: number): Promise
     take: limit,
   });
 
-  return providers.map(provider => serializeProvider(provider));
+  return providers.map((provider) => serializeProvider(provider));
 }
 
 /**
  * Get provider type statistics using optimized aggregation
  * Uses the indexed assignment table for fast counts
  */
-export async function getProviderTypeStats(): Promise<Array<{ typeId: string; typeName: string; count: number }>> {
+export async function getProviderTypeStats(): Promise<
+  Array<{ typeId: string; typeName: string; count: number }>
+> {
   return getCachedProviderTypeStats(async () => {
     return performGetProviderTypeStats();
   });
@@ -238,7 +246,9 @@ export async function getProviderTypeStats(): Promise<Array<{ typeId: string; ty
 /**
  * Internal function that performs the actual stats calculation without caching
  */
-async function performGetProviderTypeStats(): Promise<Array<{ typeId: string; typeName: string; count: number }>> {
+async function performGetProviderTypeStats(): Promise<
+  Array<{ typeId: string; typeName: string; count: number }>
+> {
   const stats = await prisma.providerTypeAssignment.groupBy({
     by: ['providerTypeId'],
     where: {
@@ -252,7 +262,7 @@ async function performGetProviderTypeStats(): Promise<Array<{ typeId: string; ty
   });
 
   // Get type names in a separate optimized query
-  const typeIds = stats.map(stat => stat.providerTypeId);
+  const typeIds = stats.map((stat) => stat.providerTypeId);
   const types = await prisma.providerType.findMany({
     where: {
       id: {
@@ -266,9 +276,9 @@ async function performGetProviderTypeStats(): Promise<Array<{ typeId: string; ty
   });
 
   // Combine stats with type names
-  const typeMap = new Map(types.map(type => [type.id, type.name]));
-  
-  return stats.map(stat => ({
+  const typeMap = new Map(types.map((type) => [type.id, type.name]));
+
+  return stats.map((stat) => ({
     typeId: stat.providerTypeId,
     typeName: typeMap.get(stat.providerTypeId) || 'Unknown',
     count: stat._count.providerId,
@@ -316,7 +326,7 @@ export async function searchProvidersWithAllTypes(
     },
   });
 
-  const matchingProviderIds = providerIds.map(group => group.providerId);
+  const matchingProviderIds = providerIds.map((group) => group.providerId);
 
   if (matchingProviderIds.length === 0) {
     return {

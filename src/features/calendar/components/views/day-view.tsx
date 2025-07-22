@@ -1,4 +1,4 @@
-import { AvailabilityStatus, CalendarEvent } from "@/features/calendar/types/types";
+import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
 
 // Week View Component
 interface DayViewProps {

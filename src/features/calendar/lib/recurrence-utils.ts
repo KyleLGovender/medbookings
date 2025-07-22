@@ -177,18 +177,18 @@ export function generateRecurringInstances(
   maxInstances: number = 365
 ): Array<{ startTime: Date; endTime: Date }> {
   const instances: Array<{ startTime: Date; endTime: Date }> = [];
-  
+
   // Always include the original instance
   instances.push({ startTime, endTime });
-  
+
   // If no recurrence, return just the original instance
   if (pattern.option === RecurrenceOption.NONE) {
     return instances;
   }
-  
+
   // Calculate the duration between start and end
   const duration = endTime.getTime() - startTime.getTime();
-  
+
   // Parse end date if provided
   let endDate: Date | null = null;
   if (pattern.endDate) {
@@ -196,50 +196,55 @@ export function generateRecurringInstances(
     // Set end date to end of day to include the full day
     endDate.setHours(23, 59, 59, 999);
   }
-  
+
   let currentDate = new Date(startTime);
   let instanceCount = 1; // Start with 1 since we already have the original
-  
+
   while (instanceCount < maxInstances) {
     let nextDate: Date | null = null;
-    
+
     switch (pattern.option) {
       case RecurrenceOption.DAILY:
         nextDate = new Date(currentDate);
         nextDate.setDate(nextDate.getDate() + 1);
         break;
-        
+
       case RecurrenceOption.WEEKLY:
         nextDate = new Date(currentDate);
         nextDate.setDate(nextDate.getDate() + 7);
         break;
-        
+
       case RecurrenceOption.CUSTOM:
         if (pattern.customDays && pattern.customDays.length > 0) {
           nextDate = getNextCustomDay(currentDate, pattern.customDays);
         }
         break;
     }
-    
+
     if (!nextDate) break;
-    
+
     // Check if we've exceeded the end date
     if (endDate && nextDate > endDate) {
       break;
     }
-    
+
     // Create the new instance with the same time but different date
     const nextStartTime = new Date(nextDate);
-    nextStartTime.setHours(startTime.getHours(), startTime.getMinutes(), startTime.getSeconds(), startTime.getMilliseconds());
-    
+    nextStartTime.setHours(
+      startTime.getHours(),
+      startTime.getMinutes(),
+      startTime.getSeconds(),
+      startTime.getMilliseconds()
+    );
+
     const nextEndTime = new Date(nextStartTime.getTime() + duration);
-    
+
     instances.push({ startTime: nextStartTime, endTime: nextEndTime });
-    
+
     currentDate = nextDate;
     instanceCount++;
   }
-  
+
   return instances;
 }
 
@@ -249,10 +254,10 @@ export function generateRecurringInstances(
 function getNextCustomDay(currentDate: Date, customDays: DayOfWeek[]): Date | null {
   const sortedDays = [...customDays].sort((a, b) => a - b);
   const currentDayOfWeek = currentDate.getDay();
-  
+
   // Find the next day in the current week
-  const nextDayThisWeek = sortedDays.find(day => day > currentDayOfWeek);
-  
+  const nextDayThisWeek = sortedDays.find((day) => day > currentDayOfWeek);
+
   if (nextDayThisWeek !== undefined) {
     // Next occurrence is later this week
     const nextDate = new Date(currentDate);
@@ -292,7 +297,7 @@ export function calculateDayAvailabilityHours(
 
   for (const event of dayEvents) {
     const lastMerged = mergedEvents[mergedEvents.length - 1];
-    
+
     if (lastMerged && event.startTime <= lastMerged.endTime) {
       // Overlapping events - extend the end time if needed
       if (event.endTime > lastMerged.endTime) {
@@ -327,12 +332,12 @@ export function getDayStatusStyle(statusBreakdown: Record<string, number>): {
   borderColor: string;
 } {
   const statuses = Object.keys(statusBreakdown);
-  
+
   if (statuses.length === 0) {
     return {
       backgroundColor: 'bg-gray-100',
       textColor: 'text-gray-600',
-      borderColor: 'border-gray-300'
+      borderColor: 'border-gray-300',
     };
   }
 
@@ -344,31 +349,31 @@ export function getDayStatusStyle(statusBreakdown: Record<string, number>): {
         return {
           backgroundColor: 'bg-yellow-100',
           textColor: 'text-yellow-800',
-          borderColor: 'border-yellow-300'
+          borderColor: 'border-yellow-300',
         };
       case 'ACCEPTED':
         return {
           backgroundColor: 'bg-green-100',
           textColor: 'text-green-800',
-          borderColor: 'border-green-300'
+          borderColor: 'border-green-300',
         };
       case 'CANCELLED':
         return {
           backgroundColor: 'bg-gray-100',
           textColor: 'text-gray-600',
-          borderColor: 'border-gray-300'
+          borderColor: 'border-gray-300',
         };
       case 'REJECTED':
         return {
           backgroundColor: 'bg-red-100',
           textColor: 'text-red-800',
-          borderColor: 'border-red-300'
+          borderColor: 'border-red-300',
         };
       default:
         return {
           backgroundColor: 'bg-blue-100',
           textColor: 'text-blue-800',
-          borderColor: 'border-blue-300'
+          borderColor: 'border-blue-300',
         };
     }
   }
@@ -377,6 +382,6 @@ export function getDayStatusStyle(statusBreakdown: Record<string, number>): {
   return {
     backgroundColor: 'bg-purple-100',
     textColor: 'text-purple-800',
-    borderColor: 'border-purple-300'
+    borderColor: 'border-purple-300',
   };
 }

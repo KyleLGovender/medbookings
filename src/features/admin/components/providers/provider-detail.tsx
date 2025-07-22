@@ -6,10 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RequirementSubmissionCard } from '@/features/providers/components/requirement-submission-card';
 import {
-  useApproveRequirement,
   useApproveProvider,
-  useRejectRequirement,
+  useApproveRequirement,
   useRejectProvider,
+  useRejectRequirement,
 } from '@/features/providers/hooks/use-admin-provider-approval';
 import { useAdminProvider } from '@/features/providers/hooks/use-admin-providers';
 
@@ -281,22 +281,25 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div className="rounded-lg bg-green-50 p-2 text-center dark:bg-green-900/20">
                     <div className="font-semibold text-green-700 dark:text-green-300">
-                      {provider?.requirementSubmissions?.filter((req: any) => req.status === 'APPROVED')
-                        .length || 0}
+                      {provider?.requirementSubmissions?.filter(
+                        (req: any) => req.status === 'APPROVED'
+                      ).length || 0}
                     </div>
                     <div className="text-green-600 dark:text-green-400">Approved</div>
                   </div>
                   <div className="rounded-lg bg-yellow-50 p-2 text-center dark:bg-yellow-900/20">
                     <div className="font-semibold text-yellow-700 dark:text-yellow-300">
-                      {provider?.requirementSubmissions?.filter((req: any) => req.status === 'PENDING')
-                        .length || 0}
+                      {provider?.requirementSubmissions?.filter(
+                        (req: any) => req.status === 'PENDING'
+                      ).length || 0}
                     </div>
                     <div className="text-yellow-600 dark:text-yellow-400">Pending</div>
                   </div>
                   <div className="rounded-lg bg-red-50 p-2 text-center dark:bg-red-900/20">
                     <div className="font-semibold text-red-700 dark:text-red-300">
-                      {provider?.requirementSubmissions?.filter((req: any) => req.status === 'REJECTED')
-                        .length || 0}
+                      {provider?.requirementSubmissions?.filter(
+                        (req: any) => req.status === 'REJECTED'
+                      ).length || 0}
                     </div>
                     <div className="text-red-600 dark:text-red-400">Rejected</div>
                   </div>

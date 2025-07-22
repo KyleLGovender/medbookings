@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Organization } from '@prisma/client';
 import { AlertTriangle, Calendar, Clock, MapPin, Repeat, Save } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
@@ -45,10 +46,8 @@ import {
 } from '@/features/calendar/types/types';
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
-
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useToast } from '@/hooks/use-toast';
-import { Organization } from '@prisma/client';
 
 interface LocationData {
   id: string;
@@ -83,9 +82,7 @@ export function AvailabilityEditForm({
   const { data: userOrganizations = [] } = useCurrentUserOrganizations();
 
   // Fetch organization locations
-  const organizationIds = userOrganizations.map(
-    (org: Organization) => org.id
-  );
+  const organizationIds = userOrganizations.map((org: Organization) => org.id);
   const { data: availableLocations = [], isLoading: isLocationsLoading } =
     useOrganizationLocations(organizationIds);
 

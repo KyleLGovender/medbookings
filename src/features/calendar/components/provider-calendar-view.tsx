@@ -15,9 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ThreeDayView } from '@/features/calendar/components/views/3-day-view';
 import { DayView } from '@/features/calendar/components/views/day-view';
 import { MonthView } from '@/features/calendar/components/views/month-view';
+import { ThreeDayView } from '@/features/calendar/components/views/three-day-view';
 import { WeekView } from '@/features/calendar/components/views/week-view';
 import { useAvailabilitySearch } from '@/features/calendar/hooks/use-availability';
 import {
@@ -29,9 +29,6 @@ import {
   SchedulingRule,
 } from '@/features/calendar/types/types';
 import { useProvider } from '@/features/providers/hooks/use-provider';
-
-
-
 
 // Client-safe enum (matches Prisma BookingStatus)
 enum BookingStatus {
@@ -68,7 +65,6 @@ export interface ProviderCalendarViewProps {
   initialDate?: Date;
 }
 
-
 export function ProviderCalendarView({
   providerId,
   onEventClick,
@@ -83,29 +79,31 @@ export function ProviderCalendarView({
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialViewMode);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<AvailabilityStatus | 'ALL'>('ALL');
-  
+
   // Modal state (context menu removed - modal now handled by parent)
 
   // Calculate total hours for a day
   const calculateDayHours = (events: CalendarEvent[]) => {
-    const availabilityEvents = events.filter(event => event.type === 'availability');
+    const availabilityEvents = events.filter((event) => event.type === 'availability');
     if (availabilityEvents.length === 0) return 0;
 
     // Sort events by start time
-    const sortedEvents = availabilityEvents.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
-    
+    const sortedEvents = availabilityEvents.sort(
+      (a, b) => a.startTime.getTime() - b.startTime.getTime()
+    );
+
     // Merge overlapping events to avoid double counting
     const mergedEvents = [];
     let currentEvent = sortedEvents[0];
-    
+
     for (let i = 1; i < sortedEvents.length; i++) {
       const nextEvent = sortedEvents[i];
-      
+
       // If events overlap, merge them
       if (currentEvent.endTime >= nextEvent.startTime) {
         currentEvent = {
           ...currentEvent,
-          endTime: new Date(Math.max(currentEvent.endTime.getTime(), nextEvent.endTime.getTime()))
+          endTime: new Date(Math.max(currentEvent.endTime.getTime(), nextEvent.endTime.getTime())),
         };
       } else {
         mergedEvents.push(currentEvent);
@@ -113,7 +111,7 @@ export function ProviderCalendarView({
       }
     }
     mergedEvents.push(currentEvent);
-    
+
     // Calculate total hours
     return mergedEvents.reduce((total, event) => {
       const duration = (event.endTime.getTime() - event.startTime.getTime()) / (1000 * 60 * 60);
@@ -123,18 +121,18 @@ export function ProviderCalendarView({
 
   // Get status breakdown for a day
   const getStatusBreakdown = (events: CalendarEvent[]) => {
-    const availabilityEvents = events.filter(event => event.type === 'availability');
+    const availabilityEvents = events.filter((event) => event.type === 'availability');
     const breakdown = {
       [AvailabilityStatus.PENDING]: 0,
       [AvailabilityStatus.ACCEPTED]: 0,
       [AvailabilityStatus.CANCELLED]: 0,
       [AvailabilityStatus.REJECTED]: 0,
     };
-    
-    availabilityEvents.forEach(event => {
+
+    availabilityEvents.forEach((event) => {
       breakdown[event.status as AvailabilityStatus]++;
     });
-    
+
     return breakdown;
   };
 
@@ -142,17 +140,17 @@ export function ProviderCalendarView({
   const getHoursSummaryStyle = (events: CalendarEvent[]) => {
     const breakdown = getStatusBreakdown(events);
     const total = Object.values(breakdown).reduce((sum, count) => sum + count, 0);
-    
+
     if (total === 0) return 'text-gray-400';
-    
+
     const acceptedRatio = breakdown[AvailabilityStatus.ACCEPTED] / total;
     const pendingRatio = breakdown[AvailabilityStatus.PENDING] / total;
     const rejectedRatio = breakdown[AvailabilityStatus.REJECTED] / total;
-    
+
     if (acceptedRatio > 0.7) return 'text-green-600 bg-green-50';
     if (pendingRatio > 0.5) return 'text-yellow-600 bg-yellow-50';
     if (rejectedRatio > 0.3) return 'text-red-600 bg-red-50';
-    
+
     return 'text-blue-600 bg-blue-50';
   };
 
@@ -204,7 +202,6 @@ export function ProviderCalendarView({
   // Transform availability data into calendar events
   const calendarData: ProviderCalendarData | null = useMemo(() => {
     if (!provider || !availabilityData) return null;
-
 
     // Transform availability records into calendar events
     const events: CalendarEvent[] = [];
@@ -421,8 +418,6 @@ export function ProviderCalendarView({
     }
   };
 
-
-
   if (isLoading) {
     return (
       <Card>
@@ -527,7 +522,10 @@ export function ProviderCalendarView({
 
             {/* Controls */}
             <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:space-x-2 sm:space-y-0">
-              <Select value={viewMode} onValueChange={(value: CalendarViewMode) => setViewMode(value)}>
+              <Select
+                value={viewMode}
+                onValueChange={(value: CalendarViewMode) => setViewMode(value)}
+              >
                 <SelectTrigger className="w-full sm:w-32">
                   <SelectValue />
                 </SelectTrigger>
@@ -662,12 +660,6 @@ export function ProviderCalendarView({
           </div>
         </CardContent>
       </Card>
-
     </div>
   );
 }
-
-
-
-
-

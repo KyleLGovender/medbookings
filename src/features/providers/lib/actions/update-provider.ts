@@ -100,17 +100,20 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
     }
 
     // Handle provider type assignments
-    const currentTypeIds = currentProvider.typeAssignments.map(assignment => assignment.providerTypeId);
-    const newTypeIds = providerTypeIds.length > 0 ? providerTypeIds : 
-                       (providerTypeId ? [providerTypeId] : []);
-    
+    const currentTypeIds = currentProvider.typeAssignments.map(
+      (assignment) => assignment.providerTypeId
+    );
+    const newTypeIds =
+      providerTypeIds.length > 0 ? providerTypeIds : providerTypeId ? [providerTypeId] : [];
+
     // Check if type assignments changed
-    const typeAssignmentsChanged = JSON.stringify(currentTypeIds.sort()) !== JSON.stringify(newTypeIds.sort());
-    
+    const typeAssignmentsChanged =
+      JSON.stringify(currentTypeIds.sort()) !== JSON.stringify(newTypeIds.sort());
+
     if (typeAssignmentsChanged && newTypeIds.length > 0) {
       updateData.typeAssignments = {
         deleteMany: {}, // Remove all existing assignments
-        create: newTypeIds.map(typeId => ({
+        create: newTypeIds.map((typeId) => ({
           providerTypeId: typeId,
         })),
       };

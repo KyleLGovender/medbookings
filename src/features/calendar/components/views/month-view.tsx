@@ -1,4 +1,4 @@
-import { AvailabilityStatus, CalendarEvent } from "@/features/calendar/types/types";
+import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
 
 // Month View Component
 interface MonthViewProps {
@@ -18,7 +18,6 @@ export function MonthView({
   onEditEvent,
   getEventStyle,
 }: MonthViewProps) {
-
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const firstDayOfCalendar = new Date(firstDayOfMonth);
 
@@ -38,7 +37,6 @@ export function MonthView({
       (event) => new Date(event.startTime).toDateString() === date.toDateString()
     );
   };
-
 
   return (
     <>
@@ -75,7 +73,7 @@ export function MonthView({
                 </time>
                 <div className="mt-2 space-y-1">
                   {dayEvents.map((event) => (
-                    <div 
+                    <div
                       key={event.id}
                       className={`cursor-pointer rounded border p-1 text-xs shadow-sm transition-shadow hover:shadow-md ${getEventStyle(event)}`}
                       onClick={(e) => {
@@ -83,7 +81,7 @@ export function MonthView({
                         onEventClick?.(event, e);
                       }}
                     >
-                      <div className="font-medium truncate">{event.title}</div>
+                      <div className="truncate font-medium">{event.title}</div>
                       <div className="text-xs opacity-75">
                         {event.startTime.toLocaleTimeString([], {
                           hour: '2-digit',
@@ -106,7 +104,6 @@ export function MonthView({
           })}
         </div>
       </div>
-
     </>
   );
 }

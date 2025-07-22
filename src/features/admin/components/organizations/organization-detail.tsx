@@ -428,11 +428,13 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
-                              {connection.provider?.typeAssignments?.map((assignment: any, index: number) => (
-                                <Badge key={index} variant="outline">
-                                  {assignment.providerType?.name || 'Unknown'}
-                                </Badge>
-                              )) || <Badge variant="outline">Unknown</Badge>}
+                              {connection.provider?.typeAssignments?.map(
+                                (assignment: any, index: number) => (
+                                  <Badge key={index} variant="outline">
+                                    {assignment.providerType?.name || 'Unknown'}
+                                  </Badge>
+                                )
+                              ) || <Badge variant="outline">Unknown</Badge>}
                             </div>
                           </TableCell>
                           <TableCell>

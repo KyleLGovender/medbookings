@@ -7,7 +7,7 @@ import {
   Organization,
   OrganizationMembership,
   OrganizationProviderConnection,
-  User
+  User,
 } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 

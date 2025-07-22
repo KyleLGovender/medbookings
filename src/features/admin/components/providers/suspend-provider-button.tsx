@@ -9,9 +9,7 @@ interface SuspendProviderButtonProps {
   providerId: string;
 }
 
-export function SuspendProviderButton({
-  providerId,
-}: SuspendProviderButtonProps) {
+export function SuspendProviderButton({ providerId }: SuspendProviderButtonProps) {
   const router = useRouter();
 
   const handleSuspend = async () => {

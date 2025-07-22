@@ -1,9 +1,9 @@
 /**
  * Unit tests for ThreeDayView component
  */
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ThreeDayView, CalendarEvent } from './3-day-view';
+import { CalendarEvent, ThreeDayView } from './three-day-view';
 
 // Mock date to ensure consistent testing
 const mockDate = new Date('2024-01-15T10:00:00');
@@ -148,14 +148,7 @@ describe('ThreeDayView', () => {
 
   describe('Time configuration', () => {
     it('should respect custom start and end hours', () => {
-      render(
-        <ThreeDayView 
-          {...mockProps} 
-          startHour={8} 
-          endHour={18} 
-          timeSlotDuration={60}
-        />
-      );
+      render(<ThreeDayView {...mockProps} startHour={8} endHour={18} timeSlotDuration={60} />);
 
       expect(screen.getByText('08:00')).toBeInTheDocument();
       expect(screen.getByText('18:00')).toBeInTheDocument();
@@ -176,7 +169,7 @@ describe('ThreeDayView', () => {
 
       const eventElement = screen.getByText('Test Appointment');
       const dragEvent = new DragEvent('dragstart', { bubbles: true });
-      
+
       fireEvent(eventElement, dragEvent);
 
       // Would need more sophisticated testing for actual drag and drop behavior
@@ -212,7 +205,7 @@ describe('ThreeDayView', () => {
 
       // Check for proper button roles and clickable elements
       const dayHeaders = screen.getAllByText(/\d+/);
-      dayHeaders.forEach(header => {
+      dayHeaders.forEach((header) => {
         expect(header.closest('div')).toHaveClass('cursor-pointer');
       });
     });

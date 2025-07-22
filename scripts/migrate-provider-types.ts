@@ -4,7 +4,6 @@
  * Data migration script for ServiceProvider type relationship changes
  * Migrates existing single-type assignments to the new n:n ServiceProviderTypeAssignment table
  */
-
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -14,11 +13,13 @@ async function migrateProviderTypes(): Promise<void> {
 
   try {
     // Step 1: Find all service providers with existing type assignments
-    const providersWithTypes = await prisma.$queryRaw<Array<{
-      id: string;
-      name: string;
-      serviceProviderTypeId: string;
-    }>>`
+    const providersWithTypes = await prisma.$queryRaw<
+      Array<{
+        id: string;
+        name: string;
+        serviceProviderTypeId: string;
+      }>
+    >`
       SELECT id, name, "serviceProviderTypeId" 
       FROM "ServiceProvider" 
       WHERE "serviceProviderTypeId" IS NOT NULL
@@ -46,7 +47,7 @@ async function migrateProviderTypes(): Promise<void> {
 
     // Step 3: Create assignments in the new table
     console.log('\n🔄 Creating assignments in ServiceProviderTypeAssignment table...');
-    
+
     let migratedCount = 0;
     for (const provider of providersWithTypes) {
       try {
@@ -85,21 +86,23 @@ async function migrateProviderTypes(): Promise<void> {
 
     // Step 4: Verify migration results
     console.log('\n📊 Verifying migration results...');
-    
+
     const totalAssignments = await prisma.$queryRaw<Array<{ count: number }>>`
       SELECT COUNT(*) as count FROM "ServiceProviderTypeAssignment"
     `;
-    
+
     console.log(`✅ Total assignments in new table: ${totalAssignments[0].count}`);
     console.log(`✅ Successfully migrated: ${migratedCount} providers`);
 
     // Step 5: Show detailed results
     console.log('\n📋 Migration Summary:');
-    const assignments = await prisma.$queryRaw<Array<{
-      providerName: string;
-      typeName: string;
-      assignmentId: string;
-    }>>`
+    const assignments = await prisma.$queryRaw<
+      Array<{
+        providerName: string;
+        typeName: string;
+        assignmentId: string;
+      }>
+    >`
       SELECT 
         sp.name as "providerName",
         spt.name as "typeName",
@@ -110,13 +113,16 @@ async function migrateProviderTypes(): Promise<void> {
       ORDER BY sp.name, spt.name
     `;
 
-    assignments.forEach(assignment => {
-      console.log(`  • ${assignment.providerName} → ${assignment.typeName} (${assignment.assignmentId})`);
+    assignments.forEach((assignment) => {
+      console.log(
+        `  • ${assignment.providerName} → ${assignment.typeName} (${assignment.assignmentId})`
+      );
     });
 
     console.log('\n🎯 Migration completed successfully!');
-    console.log('   You can now apply the schema migration to remove the old serviceProviderTypeId column.');
-
+    console.log(
+      '   You can now apply the schema migration to remove the old serviceProviderTypeId column.'
+    );
   } catch (error) {
     console.error('💥 Migration failed:', error);
     process.exit(1);

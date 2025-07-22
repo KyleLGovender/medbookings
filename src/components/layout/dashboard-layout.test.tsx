@@ -1,10 +1,14 @@
 /**
  * Unit tests for DashboardLayout breadcrumb functionality
  */
+import { usePathname } from 'next/navigation';
 
 import { render, screen } from '@testing-library/react';
-import { usePathname } from 'next/navigation';
+
 import * as responsive from '@/lib/utils/responsive';
+
+// Import the component after mocking
+import { DashboardLayout } from './dashboard-layout';
 
 // Mock Next.js navigation
 jest.mock('next/navigation', () => ({
@@ -40,9 +44,6 @@ jest.mock('@/lib/auth/session', () => ({
 const mockUsePathname = usePathname as jest.MockedFunction<typeof usePathname>;
 const mockResponsive = responsive as jest.Mocked<typeof responsive>;
 
-// Import the component after mocking
-import { DashboardLayout } from './dashboard-layout';
-
 describe('DashboardLayout Breadcrumbs', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -68,7 +69,7 @@ describe('DashboardLayout Breadcrumbs', () => {
 
     it('should show provider name when available on desktop', () => {
       const mockProvider = { name: 'Dr. John Smith' };
-      
+
       jest.doMock('@/features/providers/hooks/use-provider', () => ({
         useProvider: jest.fn(() => ({ data: mockProvider, isLoading: false })),
       }));
@@ -100,14 +101,14 @@ describe('DashboardLayout Breadcrumbs', () => {
       // Should show Dashboard and last item with ellipsis
       expect(screen.getByText('Dashboard')).toBeInTheDocument();
       expect(screen.getByText('Settings')).toBeInTheDocument();
-      
+
       // Should show ellipsis for collapsed items
       expect(screen.getByText('More')).toBeInTheDocument(); // sr-only text in BreadcrumbEllipsis
     });
 
     it('should truncate long provider names on mobile', () => {
       const mockProvider = { name: 'Dr. Very Long Provider Name That Should Be Truncated' };
-      
+
       jest.doMock('@/features/providers/hooks/use-provider', () => ({
         useProvider: jest.fn(() => ({ data: mockProvider, isLoading: false })),
       }));
@@ -152,7 +153,7 @@ describe('DashboardLayout Breadcrumbs', () => {
       // Should show all items for short paths
       expect(screen.getByText('Dashboard')).toBeInTheDocument();
       expect(screen.getByText('Settings')).toBeInTheDocument();
-      
+
       // Should not show ellipsis
       expect(screen.queryByText('More')).not.toBeInTheDocument();
     });
@@ -161,7 +162,7 @@ describe('DashboardLayout Breadcrumbs', () => {
   describe('Organization breadcrumbs', () => {
     it('should handle organization names correctly', () => {
       const mockOrganization = { name: 'Test Medical Center' };
-      
+
       jest.doMock('@/features/organizations/hooks/use-admin-organizations', () => ({
         useAdminOrganization: jest.fn(() => ({ data: mockOrganization, isLoading: false })),
       }));
@@ -180,7 +181,7 @@ describe('DashboardLayout Breadcrumbs', () => {
 
     it('should truncate organization names on mobile', () => {
       const mockOrganization = { name: 'Very Long Organization Name That Should Be Truncated' };
-      
+
       jest.doMock('@/features/organizations/hooks/use-admin-organizations', () => ({
         useAdminOrganization: jest.fn(() => ({ data: mockOrganization, isLoading: false })),
       }));

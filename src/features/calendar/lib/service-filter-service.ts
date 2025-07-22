@@ -126,12 +126,12 @@ export class ServiceFilterService {
         provider: {
           status: 'ACTIVE',
           ...(providerTypeIds && providerTypeIds.length > 0
-            ? { 
+            ? {
                 typeAssignments: {
                   some: {
-                    providerTypeId: { in: providerTypeIds }
-                  }
-                }
+                    providerTypeId: { in: providerTypeIds },
+                  },
+                },
               }
             : {}),
           ...(additionalFilters?.providerId ? { id: additionalFilters.providerId } : {}),
@@ -223,7 +223,10 @@ export class ServiceFilterService {
           serviceCategories.some(
             (category) =>
               config.service.name.toLowerCase().includes(category.toLowerCase()) ||
-              config.provider.typeAssignments?.[0]?.providerType?.name?.toLowerCase().includes(category.toLowerCase()) || false
+              config.provider.typeAssignments?.[0]?.providerType?.name
+                ?.toLowerCase()
+                .includes(category.toLowerCase()) ||
+              false
           )
         );
       }
@@ -231,8 +234,11 @@ export class ServiceFilterService {
       // Filter by specializations if specified
       if (specializations && specializations.length > 0) {
         filteredConfigs = filteredConfigs.filter((config) =>
-          specializations.some((spec) =>
-            config.provider.typeAssignments?.[0]?.providerType?.name?.toLowerCase().includes(spec.toLowerCase()) || false
+          specializations.some(
+            (spec) =>
+              config.provider.typeAssignments?.[0]?.providerType?.name
+                ?.toLowerCase()
+                .includes(spec.toLowerCase()) || false
           )
         );
       }
@@ -273,13 +279,16 @@ export class ServiceFilterService {
           serviceType: {
             id: config.provider.typeAssignments?.[0]?.providerType?.id || 'unknown',
             name: config.provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
-            category: this.categorizeServiceType(config.provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider'),
+            category: this.categorizeServiceType(
+              config.provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider'
+            ),
           },
           provider: {
             id: config.provider.id,
             name: config.provider.user.name || 'Unknown Provider',
             type: config.provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
-            specialization: config.provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
+            specialization:
+              config.provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
           },
           pricing: {
             price: config.price.toNumber(),

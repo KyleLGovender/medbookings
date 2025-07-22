@@ -1,8 +1,8 @@
 /**
  * Unit tests for OrganizationCalendarView responsive stats layout
  */
-
 import { render, screen } from '@testing-library/react';
+
 import { OrganizationCalendarView } from './organization-calendar-view';
 
 // Mock the hooks and dependencies
@@ -11,13 +11,13 @@ jest.mock('../hooks/use-availability', () => ({
 }));
 
 jest.mock('@/features/organizations/hooks/use-admin-organizations', () => ({
-  useAdminOrganization: jest.fn(() => ({ 
-    data: { 
-      id: '1', 
+  useAdminOrganization: jest.fn(() => ({
+    data: {
+      id: '1',
       name: 'Test Medical Center',
-      type: 'Hospital' 
-    }, 
-    isLoading: false 
+      type: 'Hospital',
+    },
+    isLoading: false,
   })),
 }));
 
@@ -129,13 +129,13 @@ describe('OrganizationCalendarView Stats Layout', () => {
       // All 5 stats should be rendered
       const statLabels = [
         'Avg Utilization',
-        'Active Providers', 
+        'Active Providers',
         'Pending',
         'Booked Hours',
-        'Coverage Gaps'
+        'Coverage Gaps',
       ];
 
-      statLabels.forEach(label => {
+      statLabels.forEach((label) => {
         expect(screen.getByText(label)).toBeInTheDocument();
       });
     });
@@ -145,7 +145,7 @@ describe('OrganizationCalendarView Stats Layout', () => {
 
       // All stat numbers should have responsive text sizing
       const statNumbers = screen.getAllByText(/\d+/);
-      statNumbers.forEach(stat => {
+      statNumbers.forEach((stat) => {
         if (stat.classList.contains('font-bold')) {
           expect(stat).toHaveClass('text-lg');
           expect(stat).toHaveClass('md:text-2xl');
@@ -185,10 +185,10 @@ describe('OrganizationCalendarView Stats Layout', () => {
         'Active Providers',
         'Pending',
         'Booked Hours',
-        'Coverage Gaps'
+        'Coverage Gaps',
       ];
 
-      labels.forEach(label => {
+      labels.forEach((label) => {
         const labelElement = screen.getByText(label);
         expect(labelElement).toHaveClass('text-xs');
         expect(labelElement).toHaveClass('text-muted-foreground');
@@ -227,7 +227,7 @@ describe('OrganizationCalendarView Stats Layout', () => {
       render(<OrganizationCalendarView {...mockProps} />);
 
       const statsContainer = screen.getByText('Avg Utilization').closest('.grid');
-      
+
       // Should have all breakpoint classes for smooth transitions
       expect(statsContainer.className).toContain('grid-cols-2');
       expect(statsContainer.className).toContain('md:grid-cols-3');

@@ -2,9 +2,9 @@
  * Integration tests for approval workflow with multiple provider types
  * Tests that approval logic correctly validates requirements from ALL assigned types
  */
+import { PrismaClient } from '@prisma/client';
 
 import { checkAllRequiredRequirementsApproved } from '../../src/features/providers/lib/actions/administer-provider';
-import { PrismaClient } from '@prisma/client';
 
 // Mock Prisma
 jest.mock('../../src/lib/prisma', () => ({
@@ -91,7 +91,9 @@ describe('Approval Workflow with Multiple Types', () => {
         ],
       };
 
-      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(providerWithDuplicateRequirements);
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(
+        providerWithDuplicateRequirements
+      );
 
       const result = await checkAllRequiredRequirementsApproved('provider-123');
 
@@ -165,7 +167,9 @@ describe('Approval Workflow with Multiple Types', () => {
         ],
       };
 
-      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(providerWithRejectedRequirement);
+      (mockPrisma.provider.findUnique as jest.Mock).mockResolvedValue(
+        providerWithRejectedRequirement
+      );
 
       const result = await checkAllRequiredRequirementsApproved('provider-123');
 
@@ -179,7 +183,7 @@ describe('Approval Workflow with Multiple Types', () => {
     it('should handle provider removing one type and resubmitting', async () => {
       // Provider starts with both GP and Psychologist types
       const initialProvider = mockMultiTypeProvider;
-      
+
       // Provider removes Psychologist type, keeping only GP
       const modifiedProvider = {
         ...mockMultiTypeProvider,
@@ -291,7 +295,7 @@ describe('Approval Workflow with Multiple Types', () => {
 
       expect(result.success).toBe(true);
       expect(result.data?.allRequiredApproved).toBe(false);
-      
+
       // Should have pending requirements grouped by type
       // (Note: The actual implementation details depend on the function's return structure)
       expect(result.data?.totalApproved).toBe(1); // Only HPCSA approved

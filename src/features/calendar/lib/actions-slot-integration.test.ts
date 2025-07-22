@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { AvailabilityStatus, SchedulingRule } from '@/features/calendar/types/types';
+
 import { createAvailability } from './actions';
-import { SchedulingRule, AvailabilityStatus } from '@/features/calendar/types/types';
 
 // Mock dependencies
 vi.mock('@/lib/auth', () => ({
