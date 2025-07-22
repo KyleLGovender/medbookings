@@ -722,6 +722,175 @@ export interface BookingView {
   };
 }
 
+// Notification Service Types (moved from notification-service.ts)
+export interface NotificationPayload {
+  recipientId: string;
+  recipientEmail: string;
+  recipientName: string;
+  type: 'email' | 'sms' | 'in_app';
+  subject: string;
+  message: string;
+  actionUrl?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface AvailabilityNotificationContext {
+  availability: AvailabilityWithRelations;
+  previousStatus?: AvailabilityStatus;
+  newStatus: AvailabilityStatus;
+  actionBy: {
+    id: string;
+    name: string;
+    role: string;
+  };
+  rejectionReason?: string;
+}
+
+// Service Filter Types (moved from service-filter-service.ts)
+export interface ServiceFilterParams {
+  serviceTypeIds?: string[]; // Service type IDs (e.g., "consultation", "imaging")
+  serviceIds?: string[]; // Specific service IDs
+  serviceNames?: string[]; // Service names for text-based filtering
+  serviceCategories?: string[]; // Service categories
+  providerTypeIds?: string[]; // Healthcare provider types
+  specializations?: string[]; // Provider specializations
+  priceRange?: {
+    min?: number;
+    max?: number;
+  };
+  durationRange?: {
+    min?: number; // minutes
+    max?: number; // minutes
+  };
+  excludeServices?: string[]; // Service IDs to exclude
+  includeInactive?: boolean; // Include inactive services (default: false)
+}
+
+export interface ServiceResult {
+  serviceId: string;
+  serviceName: string;
+  serviceDescription?: string;
+  serviceCategory?: string;
+  serviceType: {
+    id: string;
+    name: string;
+    category?: string;
+  };
+  provider: {
+    id: string;
+    name: string;
+    type: string;
+    specialization?: string;
+  };
+  pricing: {
+    price: number;
+    showPrice: boolean;
+    defaultDuration: number;
+    minDuration?: number;
+    maxDuration?: number;
+  };
+  availability: {
+    hasSlots: boolean;
+    nextAvailableSlot?: Date;
+    totalSlots: number;
+    locations: Array<{
+      locationId?: string;
+      locationName?: string;
+      isOnline: boolean;
+    }>;
+  };
+  rating?: number;
+  reviewCount?: number;
+}
+
+export interface ServiceFilterResult {
+  services: ServiceResult[];
+  totalCount: number;
+  serviceTypes: Array<{
+    id: string;
+    name: string;
+    count: number;
+    category?: string;
+  }>;
+  providerTypes: Array<{
+    id: string;
+    name: string;
+    count: number;
+  }>;
+  priceRange: {
+    min: number;
+    max: number;
+    average: number;
+  };
+  durationRange: {
+    min: number;
+    max: number;
+    average: number;
+  };
+  categories: Array<{
+    name: string;
+    count: number;
+    services: string[];
+  }>;
+}
+
+// Conflict Management Types (moved from conflict-management.ts)
+export interface ConflictDetectionOptions {
+  checkOverlappingSlots?: boolean;
+  checkCalendarEvents?: boolean;
+  checkSchedulingRules?: boolean;
+  checkLocationConflicts?: boolean;
+  checkProviderAvailability?: boolean;
+  bufferTimeMinutes?: number; // Buffer time between appointments
+}
+
+export interface ConflictResolutionResult {
+  originalSlotsCount: number;
+  validSlotsCount: number;
+  conflictedSlotsCount: number;
+  resolvedConflictsCount: number;
+  conflicts: AvailabilityConflict[];
+  validSlots: any[];
+  conflictedSlots: any[];
+}
+
+export interface SlotConflictDetails {
+  slotId?: string;
+  startTime: Date;
+  endTime: Date;
+  conflictType:
+    | 'OVERLAPPING_SLOTS'
+    | 'CALENDAR_EVENT'
+    | 'SCHEDULING_RULE'
+    | 'LOCATION_CONFLICT'
+    | 'PROVIDER_UNAVAILABLE';
+  conflictingEntityId?: string;
+  conflictingEntityType?: 'slot' | 'event' | 'availability' | 'location';
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  canAutoResolve: boolean;
+  suggestedResolution?: string;
+}
+
+// Search Performance Types (moved from search-performance-service.ts)
+export interface SearchPerformanceOptions {
+  enableCaching?: boolean;
+  useIndexHints?: boolean;
+  limitResults?: number;
+  enableParallelQueries?: boolean;
+  optimizeForDistance?: boolean;
+  prefetchRelations?: boolean;
+}
+
+export interface PerformanceMetrics {
+  queryExecutionTime: number;
+  totalResults: number;
+  indexesUsed: string[];
+  cacheHitRatio?: number;
+  memoryUsage?: number;
+  optimizationSuggestions: string[];
+}
+
 // =============================================================================
 // SEARCH AND FILTERING TYPES
 // =============================================================================

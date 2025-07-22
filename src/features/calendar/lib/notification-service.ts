@@ -1,27 +1,4 @@
-import { AvailabilityStatus, AvailabilityWithRelations } from '@/features/calendar/types/types';
-
-export interface NotificationPayload {
-  recipientId: string;
-  recipientEmail: string;
-  recipientName: string;
-  type: 'email' | 'sms' | 'in_app';
-  subject: string;
-  message: string;
-  actionUrl?: string;
-  metadata?: Record<string, any>;
-}
-
-export interface AvailabilityNotificationContext {
-  availability: AvailabilityWithRelations;
-  previousStatus?: AvailabilityStatus;
-  newStatus: AvailabilityStatus;
-  actionBy: {
-    id: string;
-    name: string;
-    role: string;
-  };
-  rejectionReason?: string;
-}
+import { AvailabilityStatus, AvailabilityWithRelations, NotificationPayload, AvailabilityNotificationContext } from '@/features/calendar/types/types';
 
 /**
  * Generate notifications for availability status changes

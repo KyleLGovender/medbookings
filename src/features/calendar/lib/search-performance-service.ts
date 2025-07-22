@@ -1,23 +1,6 @@
-import { AvailabilityStatus, SlotStatus } from '@/features/calendar/types/types';
+import { AvailabilityStatus, SlotStatus, SearchPerformanceOptions, PerformanceMetrics } from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
 
-export interface SearchPerformanceOptions {
-  enableCaching?: boolean;
-  useIndexHints?: boolean;
-  limitResults?: number;
-  enableParallelQueries?: boolean;
-  optimizeForDistance?: boolean;
-  prefetchRelations?: boolean;
-}
-
-export interface PerformanceMetrics {
-  queryExecutionTime: number;
-  totalResults: number;
-  indexesUsed: string[];
-  cacheHitRatio?: number;
-  memoryUsage?: number;
-  optimizationSuggestions: string[];
-}
 
 /**
  * Service for optimizing search query performance using database indexes and caching
