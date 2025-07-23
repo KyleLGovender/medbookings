@@ -25,7 +25,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import type { AdminProviderListSelect } from '@/features/admin/types/types';
-import type { AdminApprovalStatus } from '@/features/admin/types/enums';
+import type { AdminApprovalStatus } from '@/features/admin/types/types';
 import {
   useApproveProvider,
   useRejectProvider,

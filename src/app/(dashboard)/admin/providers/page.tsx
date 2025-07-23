@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { ProviderList } from '@/features/admin/components/providers';
 import type { AdminProvidersPageProps } from '@/features/admin/types/types';
-import { AdminApprovalStatus } from '@/features/admin/types/enums';
+import { AdminApprovalStatus } from '@/features/admin/types/types';
 import { getCurrentUser } from '@/lib/auth';
 
 export default async function AdminProvidersPage({ searchParams }: AdminProvidersPageProps) {
