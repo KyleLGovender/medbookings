@@ -36,7 +36,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { useManageConnection } from '@/features/providers/hooks/use-organization-connections';
-import type { OrganizationConnectionWithDetails } from '@/features/providers/types';
+import type { OrganizationConnectionWithDetails } from '@/features/providers/types/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface ConnectionCardProps {

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { OrganizationList } from '@/features/admin/components/organizations';
-import type { AdminOrganizationsPageProps } from '@/features/admin/types';
+import type { AdminOrganizationsPageProps } from '@/features/admin/types/types';
 import { AdminApprovalStatus } from '@/features/admin/types/enums';
 import { getCurrentUser } from '@/lib/auth';
 

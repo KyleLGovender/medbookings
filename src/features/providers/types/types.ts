@@ -4,12 +4,17 @@
 // All type definitions for the providers feature in one place
 // Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
 import {
-  Provider,
+  ConnectionStatus,
+  OrganizationProviderConnection,
+  ProviderInvitation,
+  ProviderInvitationStatus,
+  Provider as PrismaProvider,
   ProviderType,
   RequirementType as PrismaRequirementType,
   RequirementSubmission as PrismaRequirementSubmission,
-  Service,
+  Service as PrismaService,
   User,
+  Organization,
 } from '@prisma/client';
 
 // =============================================================================
@@ -345,6 +350,59 @@ export interface ProviderApiResponse<T = any> {
 
 export type ProviderStatusType = keyof typeof ProviderStatus;
 export type RequirementStatusType = keyof typeof RequirementSubmissionStatus;
+
+// =============================================================================
+// PROVIDER INVITATION AND CONNECTION TYPES (moved from barrel export)
+// =============================================================================
+
+// Provider invitation types
+export type ProviderInvitationWithOrganization = ProviderInvitation & {
+  organization: Organization;
+  invitedBy?: {
+    name: string | null;
+    email: string;
+  } | null;
+  connection?: {
+    id: string;
+    status: ConnectionStatus;
+    acceptedAt: Date | null;
+  } | null;
+};
+
+export type OrganizationConnectionWithDetails = OrganizationProviderConnection & {
+  organization: Organization;
+  invitation?: {
+    id: string;
+    customMessage: string | null;
+    createdAt: Date;
+    invitedBy: {
+      name: string | null;
+      email: string;
+    } | null;
+  } | null;
+};
+
+// Enhanced Provider interface
+export interface Provider extends PrismaProvider {
+  showPrice: boolean; // Whether to display prices to patients looking to book
+}
+
+// Enhanced Service interface
+export interface Service {
+  id: string;
+  name: string;
+  description?: string | null;
+  price: number;
+  duration: number;
+}
+
+// Re-export Prisma types for convenience
+export type {
+  ConnectionStatus,
+  OrganizationProviderConnection,
+  ProviderInvitation,
+  ProviderInvitationStatus,
+};
 
 // =============================================================================
 // PRISMA INCLUDE CONFIGURATIONS

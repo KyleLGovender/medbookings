@@ -132,3 +132,22 @@ export type ProviderSearchParams = z.infer<typeof providerSearchParamsSchema>;
 
 // Type for the entire form data (moved from hooks/types.ts)
 export type ProviderFormType = z.infer<typeof providerFormSchema>;
+
+// =============================================================================
+// PROVIDER INVITATION AND CONNECTION SCHEMAS (moved from barrel export)
+// =============================================================================
+
+// Schema for accepting/rejecting invitations
+export const InvitationResponseSchema = z.object({
+  action: z.enum(['accept', 'reject']),
+  rejectionReason: z.string().optional(),
+});
+
+export type InvitationResponse = z.infer<typeof InvitationResponseSchema>;
+
+// Schema for connection management
+export const ConnectionUpdateSchema = z.object({
+  status: z.enum(['ACCEPTED', 'SUSPENDED'] as const),
+});
+
+export type ConnectionUpdate = z.infer<typeof ConnectionUpdateSchema>;

@@ -28,6 +28,7 @@
 ## ✅ Recently Completed
 
 ## 📝 Quick Capture (New Issues)
+- [ ] Implement tRPC
 - [ ] Populate provider and organization and user email addresses with the associated Google email. Not possible to edit.
 - [ ] Implement testing throughout the application
 - [ ] Remove Calendar from Menu based on user logged in

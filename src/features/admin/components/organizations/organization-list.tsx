@@ -23,7 +23,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { AdminApprovalStatus, AdminOrganizationListSelect } from '@/features/admin/types';
+import type { AdminOrganizationListSelect } from '@/features/admin/types/types';
+import type { AdminApprovalStatus } from '@/features/admin/types/enums';
 import {
   useApproveOrganization,
   useRejectOrganization,

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { Service } from '@/features/providers/types';
+import { Service } from '@/features/providers/types/types';
 
 export function useProviderAssociatedServices(providerId: string | undefined) {
   return useQuery<Service[]>({

@@ -11,7 +11,7 @@ import {
 } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
-import { Provider, Service } from '@/features/providers/types';
+import { Provider, Service } from '@/features/providers/types/types';
 
 // =============================================================================
 // ENUMS
