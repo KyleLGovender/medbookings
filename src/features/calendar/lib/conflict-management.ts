@@ -1,44 +1,8 @@
-import { AvailabilityConflict, SchedulingRule, SlotStatus } from '@/features/calendar/types/types';
+import { AvailabilityConflict, SchedulingRule, SlotStatus, ConflictDetectionOptions, ConflictResolutionResult, SlotConflictDetails } from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
 
 import { isSlotValidForSchedulingRule } from './scheduling-rules';
 
-export interface ConflictDetectionOptions {
-  checkOverlappingSlots?: boolean;
-  checkCalendarEvents?: boolean;
-  checkSchedulingRules?: boolean;
-  checkLocationConflicts?: boolean;
-  checkProviderAvailability?: boolean;
-  bufferTimeMinutes?: number; // Buffer time between appointments
-}
-
-export interface ConflictResolutionResult {
-  originalSlotsCount: number;
-  validSlotsCount: number;
-  conflictedSlotsCount: number;
-  resolvedConflictsCount: number;
-  conflicts: AvailabilityConflict[];
-  validSlots: any[];
-  conflictedSlots: any[];
-}
-
-export interface SlotConflictDetails {
-  slotId?: string;
-  startTime: Date;
-  endTime: Date;
-  conflictType:
-    | 'OVERLAPPING_SLOTS'
-    | 'CALENDAR_EVENT'
-    | 'SCHEDULING_RULE'
-    | 'LOCATION_CONFLICT'
-    | 'PROVIDER_UNAVAILABLE';
-  conflictingEntityId?: string;
-  conflictingEntityType?: 'slot' | 'event' | 'availability' | 'location';
-  description: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  canAutoResolve: boolean;
-  suggestedResolution?: string;
-}
 
 /**
  * Comprehensive slot conflict management system

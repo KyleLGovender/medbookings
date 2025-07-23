@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { CreateAvailabilityData } from '@/features/calendar/types/types';
-import { Service } from '@/features/providers/types';
+import { Service } from '@/features/providers/types/types';
 
 interface ServiceSelectionSectionProps {
   providerId: string;

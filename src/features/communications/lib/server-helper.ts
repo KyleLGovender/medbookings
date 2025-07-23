@@ -4,7 +4,7 @@ import twilio from 'twilio';
 import vCardsJS from 'vcards-js';
 
 import env from '@/config/env/server';
-import { BookingView } from '@/features/calendar/lib/types';
+import { BookingView } from '@/features/calendar/types/types';
 
 // Load environment variables
 const accountSid = env.TWILIO_ACCOUNT_SID;

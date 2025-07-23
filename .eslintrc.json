@@ -19,6 +19,9 @@
     }
   },
   "rules": {
+    // =============================================================================
+    // TYPE ORGANIZATION ENFORCEMENT RULES
+    // =============================================================================
     "prefer-arrow-callback": ["error"],
     "prefer-template": ["error"],
     "semi": ["error"],
@@ -50,7 +53,42 @@
         "packageDir": ["./"]
       }
     ],
-    "@next/next/no-img-element": "off"
+    "@next/next/no-img-element": "off",
+    
+    // =============================================================================
+    // TYPE ORGANIZATION LINTING RULES
+    // =============================================================================
+    
+    // Prevent barrel exports in type files
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "ExportAllDeclaration",
+        "message": "Barrel exports are not allowed in type files. Use direct imports instead."
+      }
+    ],
+    
+    // Enforce proper type file naming - prevent index files in types directories
+    "check-file/folder-naming-convention": [
+      "error",
+      {
+        "src/features/*/types/": "KEBAB_CASE"
+      }
+    ],
+    
+    // Additional type organization rules
+    "import/no-restricted-paths": [
+      "error",
+      {
+        "zones": [
+          {
+            "target": "./src/**/*",
+            "from": "./src/features/*/types/index.{ts,tsx}",
+            "message": "Import directly from types.ts, schemas.ts, or guards.ts instead of index files"
+          }
+        ]
+      }
+    ]
   },
   "ignorePatterns": [
     "prisma/**/*",

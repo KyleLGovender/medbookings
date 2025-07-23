@@ -4,7 +4,7 @@ import type {
   AdminApiErrorResponse,
   AdminApiResponse,
   AdminRouteParams,
-} from '@/features/admin/types';
+} from '@/features/admin/types/types';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 

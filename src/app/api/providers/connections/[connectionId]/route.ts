@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { ConnectionUpdateSchema } from '@/features/providers/types';
+import { ConnectionUpdateSchema } from '@/features/providers/types/schemas';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 

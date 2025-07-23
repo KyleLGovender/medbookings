@@ -2,9 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   InvitationAction,
-  ProviderInvitationData,
   ProviderInvitationWithDetails,
 } from '@/features/organizations/types/types';
+import { ProviderInvitationData } from '@/features/organizations/types/schemas';
 
 interface SendProviderInvitationParams {
   organizationId: string;

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { ProviderStatus } from '@prisma/client';
 
-import type { AdminApiResponse, AdminProviderListSelect } from '@/features/admin/types';
+import type { AdminApiResponse, AdminProviderListSelect } from '@/features/admin/types/types';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 

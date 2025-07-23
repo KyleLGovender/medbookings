@@ -1,31 +1,13 @@
 import { addMinutes } from 'date-fns';
 
-import { SchedulingRule } from '@/features/calendar/types/types';
+import {
+  SchedulingRule,
+  SlotGenerationOptions,
+  SlotGenerationResult,
+} from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
 
 import { generateTimeSlots } from './scheduling-rules';
-
-export interface SlotGenerationOptions {
-  availabilityId: string;
-  startTime: Date;
-  endTime: Date;
-  providerId: string;
-  organizationId: string;
-  locationId?: string;
-  schedulingRule: SchedulingRule;
-  schedulingInterval?: number;
-  services: Array<{
-    serviceId: string;
-    duration: number;
-    price: number;
-  }>;
-}
-
-export interface SlotGenerationResult {
-  success: boolean;
-  slotsGenerated: number;
-  errors?: string[];
-}
 
 /**
  * Generate CalculatedAvailabilitySlots for a given availability

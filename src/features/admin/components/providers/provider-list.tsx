@@ -24,7 +24,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { AdminApprovalStatus, AdminProviderListSelect } from '@/features/admin/types';
+import type { AdminProviderListSelect } from '@/features/admin/types/types';
+import type { AdminApprovalStatus } from '@/features/admin/types/types';
 import {
   useApproveProvider,
   useRejectProvider,

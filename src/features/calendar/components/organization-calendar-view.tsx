@@ -39,10 +39,8 @@ import {
   CalendarEvent,
 } from '@/features/calendar/types/types';
 import { useOrganization } from '@/features/organizations/hooks/use-organization';
-import {
-  OrganizationProviderConnection,
-  useOrganizationProviderConnections,
-} from '@/features/organizations/hooks/use-provider-connections';
+import { useOrganizationProviderConnections } from '@/features/organizations/hooks/use-provider-connections';
+import { OrganizationProviderConnection } from '@/features/organizations/types/types';
 
 import { useOrganizationAvailability } from '../hooks/use-availability';
 import {

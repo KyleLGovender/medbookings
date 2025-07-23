@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { InvitationResponseSchema } from '@/features/providers/types';
+import { InvitationResponseSchema } from '@/features/providers/types/schemas';
 import { getCurrentUser } from '@/lib/auth';
 import { isInvitationExpired } from '@/lib/invitation-utils';
 import { prisma } from '@/lib/prisma';

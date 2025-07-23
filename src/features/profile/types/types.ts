@@ -1,3 +1,23 @@
+// =============================================================================
+// PROFILE FEATURE TYPES
+// =============================================================================
+// All type definitions for the profile feature in one place
+// Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+export enum UserRole {
+  USER = 'USER',
+  ADMIN = 'ADMIN',
+  SUPER_ADMIN = 'SUPER_ADMIN',
+}
+
+// =============================================================================
+// BASE INTERFACES
+// =============================================================================
+
 export interface UserProfile {
   id: string;
   name: string | null;
@@ -8,11 +28,9 @@ export interface UserProfile {
   role: UserRole;
 }
 
-export enum UserRole {
-  USER = 'USER',
-  ADMIN = 'ADMIN',
-  SUPER_ADMIN = 'SUPER_ADMIN',
-}
+// =============================================================================
+// API REQUEST/RESPONSE TYPES
+// =============================================================================
 
 export interface UpdateProfileRequest {
   name?: string;

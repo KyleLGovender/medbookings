@@ -43,7 +43,7 @@ export function LocationSetupStep() {
   const updateFormErrors = () => {
     // Collect location errors
     const locationErrors = form.formState.errors.locations
-      ? (form.formState.errors.locations as any[]).flatMap((locationError, index) => {
+      ? (form.formState.errors.locations as unknown as any[]).flatMap((locationError, index) => {
           if (!locationError) return [];
 
           return Object.entries(locationError).map(([field, error]) => {
@@ -92,7 +92,7 @@ export function LocationSetupStep() {
     console.log('Form values after location select:', form.getValues(`locations.${locationIndex}`));
     console.log(
       'Form errors after location select:',
-      form.formState.errors.locations?.[locationIndex]
+      (form.formState.errors.locations as any)?.[locationIndex]
     );
   };
 
@@ -256,13 +256,13 @@ export function LocationSetupStep() {
                   />
 
                   {/* Show validation errors for this location */}
-                  {form.formState.errors.locations?.[index] && (
+                  {(form.formState.errors.locations as any)?.[index] && (
                     <Alert variant="destructive">
                       <AlertCircle className="h-4 w-4" />
                       <AlertTitle>Location {index + 1} Errors</AlertTitle>
                       <AlertDescription>
                         <ul className="list-disc space-y-1 pl-5">
-                          {Object.entries(form.formState.errors.locations[index] || {}).map(
+                          {Object.entries((form.formState.errors.locations as any)?.[index] || {}).map(
                             ([field, error]) => (
                               <li key={field} className="text-sm">
                                 <strong>{field}:</strong>{' '}
@@ -334,7 +334,7 @@ export function LocationSetupStep() {
                       </div>
                       <div>
                         Errors:{' '}
-                        {JSON.stringify(form.formState.errors.locations?.[index] || {}, null, 2)}
+                        {JSON.stringify((form.formState.errors.locations as any)?.[index] || {}, null, 2)}
                       </div>
                     </div>
                   )}

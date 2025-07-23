@@ -1,115 +1,557 @@
-import type {
+// =============================================================================
+// ORGANIZATIONS FEATURE TYPES
+// =============================================================================
+// All type definitions for the organizations feature in one place
+// Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
+import {
   Organization,
-  OrganizationProviderConnection,
-  ProviderInvitation,
-  ProviderInvitationStatus,
+  OrganizationMembership,
+  Prisma,
   User,
 } from '@prisma/client';
-import { z } from 'zod';
 
-export const organizationRegistrationSchema = z.object({
-  organization: z.object({
-    name: z.string().min(1, 'Organization name is required'),
-    description: z.string().optional(),
-    email: z.string().email('Invalid email address').optional().or(z.literal('')),
-    phone: z.string().optional(),
-    website: z.string().url('Invalid website URL').optional().or(z.literal('')),
-    logo: z.string().optional(), // URL to logo in Vercel Blob
-    billingModel: z.enum(['CONSOLIDATED', 'PER_LOCATION', 'HYBRID']),
-  }),
-  locations: z
-    .array(
-      z.object({
-        name: z.string().min(1, 'Location name is required'),
-        googlePlaceId: z.string().min(1, 'Please select a location from Google Maps'),
-        formattedAddress: z.string().min(1, 'Address is required'),
-        coordinates: z.object({
-          lat: z.number(),
-          lng: z.number(),
-        }),
-        searchTerms: z.array(z.string()).optional(),
-        phone: z.string().optional(),
-        email: z.string().email('Invalid email address').optional().or(z.literal('')),
-      })
-    )
-    .optional()
-    .default([]),
-});
+// =============================================================================
+// ENUMS
+// =============================================================================
 
-export type OrganizationRegistrationData = z.infer<typeof organizationRegistrationSchema>;
-
-/**
- * Schema for organization basic information updates
- */
-export const organizationBasicInfoSchema = z.object({
-  name: z.string().min(1, 'Organization name is required'),
-  description: z.string().optional(),
-  email: z.string().email('Invalid email address').optional().or(z.literal('')),
-  phone: z.string().optional(),
-  website: z.string().url('Invalid website URL').optional().or(z.literal('')),
-  logo: z.string().optional(), // URL to logo in Vercel Blob
-});
-
-export type OrganizationBasicInfoData = z.infer<typeof organizationBasicInfoSchema>;
-
-export interface GooglePlaceResult {
-  place_id: string;
-  formatted_address: string;
-  geometry: {
-    location: {
-      lat: number;
-      lng: number;
-    };
-  };
-  address_components: Array<{
-    long_name: string;
-    short_name: string;
-    types: string[];
-  }>;
-  name?: string;
+// Organization-related enums (matching Prisma schema)
+export enum OrganizationStatus {
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  SUSPENDED = 'SUSPENDED',
 }
 
-export const locationSchema = z.object({
-  id: z.string().optional(), // Existing locations will have an ID
-  name: z.string().min(1, 'Location name is required'),
-  googlePlaceId: z.string().min(1, 'Please select a location from Google Maps'),
-  formattedAddress: z.string().min(1, 'Address is required'),
-  coordinates: z.object({
-    lat: z.number(),
-    lng: z.number(),
-  }),
-  searchTerms: z.array(z.string()).optional(),
-  phone: z.string().optional(),
-  email: z.string().email('Invalid email address').optional().or(z.literal('')),
-});
+export enum MembershipRole {
+  ADMIN = 'ADMIN',
+  MANAGER = 'MANAGER',
+  MEMBER = 'MEMBER',
+}
 
-export const organizationLocationsSchema = z.object({
-  locations: z.array(locationSchema).optional().default([]),
-});
+export enum MembershipStatus {
+  PENDING = 'PENDING',
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+}
 
-export type OrganizationLocationsData = z.infer<typeof organizationLocationsSchema>;
+export enum ProviderInvitationStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  REJECTED = 'REJECTED',
+  CANCELLED = 'CANCELLED',
+}
 
-// Provider invitation schemas
-export const ProviderInvitationSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  customMessage: z.string().optional(),
-});
+export enum InvitationAction {
+  ACCEPT = 'ACCEPT',
+  REJECT = 'REJECT',
+  CANCEL = 'CANCEL',
+  RESEND = 'RESEND',
+}
 
-export type ProviderInvitationData = z.infer<typeof ProviderInvitationSchema>;
+// =============================================================================
+// BASE INTERFACES
+// =============================================================================
 
-// Extended invitation type with relations
-export type ProviderInvitationWithDetails = ProviderInvitation & {
-  organization: Organization;
-  invitedBy: User;
-  connection?: OrganizationProviderConnection | null;
+// Organization-related base interfaces
+export interface BasicOrganizationInfo {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  status: OrganizationStatus;
+  isActive: boolean;
+}
+
+// Types moved from hooks files
+export interface OrganizationLocation {
+  id?: string;
+  name: string;
+  organizationId?: string;
+  formattedAddress?: string;
+  phone?: string;
+  email?: string;
+  createdAt?: string | Date;
+  googlePlaceId?: string;
+  coordinates?: any;
+  searchTerms?: string[];
+  [key: string]: any; // Allow other properties from the API response
+}
+
+export interface OrganizationProviderConnection {
+  id: string;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'SUSPENDED';
+  acceptedAt: string | null;
+  suspendedAt: string | null;
+  createdAt: string;
+  serviceProvider: {
+    id: string;
+    name: string;
+    email: string;
+    whatsapp: string | null;
+    website: string | null;
+    bio: string | null;
+    image: string | null;
+    user: {
+      id: string;
+      name: string | null;
+      email: string;
+      image: string | null;
+    };
+    serviceProviderType: {
+      id: string;
+      name: string;
+      description: string | null;
+    } | null;
+  };
+  invitation?: {
+    id: string;
+    [key: string]: any;
+  };
+}
+
+// =============================================================================
+// COMPLEX INTERFACES
+// =============================================================================
+
+// Organization with full relations
+export interface OrganizationWithRelations extends Organization {
+  approvedBy?: User;
+  memberships: Array<{
+    id: string;
+    role: MembershipRole;
+    status: MembershipStatus;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+    };
+  }>;
+  locations: OrganizationLocation[];
+  providerConnections: OrganizationProviderConnection[];
+  _count?: {
+    memberships: number;
+    locations: number;
+    providerConnections: number;
+  };
+}
+
+// =============================================================================
+// FORM AND INPUT TYPES
+// =============================================================================
+
+export interface CreateOrganizationData {
+  name: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  description?: string;
+  logo?: string;
+}
+
+// Alias for backward compatibility
+export type OrganizationBasicInfoData = CreateOrganizationData;
+
+export interface OrganizationRegistrationData extends CreateOrganizationData {
+  termsAccepted: boolean;
+  billingType?: 'monthly' | 'yearly';
+  [key: string]: any; // Allow additional registration fields
+}
+
+export interface UpdateOrganizationData extends Partial<CreateOrganizationData> {
+  id: string;
+}
+
+export interface CreateMembershipData {
+  organizationId: string;
+  userId: string;
+  role: MembershipRole;
+}
+
+export interface CreateLocationData {
+  organizationId: string;
+  name: string;
+  formattedAddress: string;
+  phone?: string;
+  email?: string;
+  googlePlaceId?: string;
+}
+
+export interface OrganizationLocationsData {
+  locations: OrganizationLocation[];
+}
+
+export interface ProviderInvitationWithDetails {
+  id: string;
+  email: string;
+  status: ProviderInvitationStatus;
+  customMessage?: string;
+  createdAt: string | Date;
+  expiresAt: string | Date;
+  acceptedAt?: string | Date;
+  rejectedAt?: string | Date;
+  cancelledAt?: string | Date;
+  organization: {
+    id: string;
+    name: string;
+  };
+  provider?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  connection?: {
+    providerId: string;
+    status: string;
+    [key: string]: any;
+  };
+  invitedBy?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+// =============================================================================
+// API RESPONSE TYPES
+// =============================================================================
+
+export interface OrganizationApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+// =============================================================================
+// UTILITY TYPES
+// =============================================================================
+
+export type OrganizationStatusType = keyof typeof OrganizationStatus;
+export type MembershipRoleType = keyof typeof MembershipRole;
+export type MembershipStatusType = keyof typeof MembershipStatus;
+
+// =============================================================================
+// PRISMA INCLUDE CONFIGURATIONS
+// =============================================================================
+
+// Helper configuration for including organization relations
+export const includeOrganizationRelations = {
+  approvedBy: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  },
+  memberships: {
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  },
+  locations: {
+    select: {
+      id: true,
+      name: true,
+      formattedAddress: true,
+      phone: true,
+      email: true,
+      createdAt: true,
+      googlePlaceId: true,
+    },
+  },
+  providerConnections: {
+    include: {
+      provider: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+            },
+          },
+          typeAssignments: {
+            include: {
+              providerType: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  _count: {
+    select: {
+      memberships: true,
+      locations: true,
+      providerConnections: true,
+    },
+  },
 };
 
-// Schema for managing invitations (cancel, resend)
-export const InvitationActionSchema = z.object({
-  action: z.enum(['cancel', 'resend']),
+// =============================================================================
+// DEFAULT CONFIGURATIONS
+// =============================================================================
+
+export const getDefaultOrganizationData = (): Partial<CreateOrganizationData> => ({
+  name: '',
+  email: '',
+  phone: '',
+  website: '',
+  description: '',
 });
 
-export type InvitationAction = z.infer<typeof InvitationActionSchema>;
+// =============================================================================
+// PRISMA-DERIVED TYPES
+// =============================================================================
 
-// Export Prisma types for convenience
-export type { ProviderInvitation, ProviderInvitationStatus };
+// Organization with comprehensive relations for detailed views
+export type OrganizationDetailSelect = Prisma.OrganizationGetPayload<{
+  include: {
+    memberships: {
+      include: {
+        user: {
+          select: {
+            id: true;
+            name: true;
+            email: true;
+            phone: true;
+            image: true;
+          };
+        };
+      };
+    };
+    locations: {
+      select: {
+        id: true;
+        name: true;
+        formattedAddress: true;
+        phone: true;
+        email: true;
+        googlePlaceId: true;
+        coordinates: true;
+        createdAt: true;
+      };
+    };
+    providerConnections: {
+      include: {
+        provider: {
+          include: {
+            user: {
+              select: {
+                id: true;
+                name: true;
+                email: true;
+                phone: true;
+              };
+            };
+            typeAssignments: {
+              include: {
+                providerType: {
+                  select: {
+                    id: true;
+                    name: true;
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+    providerInvitations: {
+      include: {
+        invitedBy: {
+          select: {
+            id: true;
+            name: true;
+            email: true;
+          };
+        };
+      };
+    };
+    subscriptions: {
+      include: {
+        plan: {
+          select: {
+            id: true;
+            name: true;
+            basePrice: true;
+            currency: true;
+            interval: true;
+          };
+        };
+      };
+    };
+    approvedBy: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+      };
+    };
+    _count: {
+      select: {
+        memberships: true;
+        locations: true;
+        providerConnections: true;
+        providerInvitations: true;
+      };
+    };
+  };
+}>;
+
+// Organization for list views (minimal relations)
+export type OrganizationListSelect = Prisma.OrganizationGetPayload<{
+  include: {
+    _count: {
+      select: {
+        memberships: true;
+        locations: true;
+        providerConnections: true;
+      };
+    };
+  };
+}>;
+
+// Organization with basic info for dropdowns and selectors
+export type OrganizationBasicSelect = Prisma.OrganizationGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    email: true;
+    status: true;
+    billingModel: true;
+  };
+}>;
+
+// Location with organization context
+export type LocationDetailSelect = Prisma.LocationGetPayload<{
+  include: {
+    organization: {
+      select: {
+        id: true;
+        name: true;
+        billingModel: true;
+      };
+    };
+    subscriptions: {
+      include: {
+        plan: {
+          select: {
+            id: true;
+            name: true;
+            basePrice: true;
+            currency: true;
+          };
+        };
+      };
+    };
+    availabilities: {
+      select: {
+        id: true;
+        title: true;
+        startTime: true;
+        endTime: true;
+        status: true;
+        provider: {
+          include: {
+            user: {
+              select: {
+                id: true;
+                name: true;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}>;
+
+// Organization membership with user and organization context
+export type MembershipDetailSelect = Prisma.OrganizationMembershipGetPayload<{
+  include: {
+    user: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+        phone: true;
+        image: true;
+        role: true;
+      };
+    };
+    organization: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+      };
+    };
+  };
+}>;
+
+// Provider connection with full context
+export type ProviderConnectionDetailSelect = Prisma.OrganizationProviderConnectionGetPayload<{
+  include: {
+    organization: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+        billingModel: true;
+      };
+    };
+    provider: {
+      include: {
+        user: {
+          select: {
+            id: true;
+            name: true;
+            email: true;
+            phone: true;
+          };
+        };
+        typeAssignments: {
+          include: {
+            providerType: {
+              select: {
+                id: true;
+                name: true;
+                category: true;
+              };
+            };
+          };
+        };
+        services: {
+          select: {
+            id: true;
+            name: true;
+            description: true;
+          };
+        };
+      };
+    };
+    availabilities: {
+      select: {
+        id: true;
+        title: true;
+        startTime: true;
+        endTime: true;
+        status: true;
+      };
+    };
+  };
+}>;

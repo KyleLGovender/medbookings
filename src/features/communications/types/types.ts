@@ -1,4 +1,42 @@
-import { BookingView } from '@/features/calendar/lib/types';
+// =============================================================================
+// COMMUNICATIONS FEATURE TYPES
+// =============================================================================
+// All type definitions for the communications feature in one place
+// Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
+
+import { BookingView } from '@/features/calendar/types/types';
+
+// =============================================================================
+// ENUMS AND CONSTANTS
+// =============================================================================
+
+export const NotificationChannel = {
+  EMAIL: 'EMAIL',
+  SMS: 'SMS',
+  WHATSAPP: 'WHATSAPP',
+} as const;
+
+export type NotificationChannel = (typeof NotificationChannel)[keyof typeof NotificationChannel];
+
+export const TemplateType = {
+  BOOKING_CONFIRMATION: 'BOOKING_CONFIRMATION',
+  BOOKING_UPDATE: 'BOOKING_UPDATE',
+  BOOKING_CANCELLATION: 'BOOKING_CANCELLATION',
+} as const;
+
+export type TemplateType = (typeof TemplateType)[keyof typeof TemplateType];
+
+export const NotificationType = {
+  BOOKING_CONFIRMATION: 'BOOKING_CONFIRMATION',
+  BOOKING_UPDATE: 'BOOKING_UPDATE',
+  BOOKING_CANCELLATION: 'BOOKING_CANCELLATION',
+} as const;
+
+export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
+
+// =============================================================================
+// BASE INTERFACES
+// =============================================================================
 
 export interface NotificationContent {
   subject?: string;
@@ -25,40 +63,18 @@ export interface NotificationTemplate {
   content: string;
 }
 
-export const NotificationChannel = {
-  EMAIL: 'EMAIL',
-  SMS: 'SMS',
-  WHATSAPP: 'WHATSAPP',
-} as const;
-
-export type NotificationChannel = (typeof NotificationChannel)[keyof typeof NotificationChannel];
-
 export interface NotificationOptions {
   channels?: NotificationChannel[];
   priority?: 'high' | 'normal' | 'low';
   retry?: boolean;
 }
 
-// Enum for template types
-export const TemplateType = {
-  BOOKING_CONFIRMATION: 'BOOKING_CONFIRMATION',
-  BOOKING_UPDATE: 'BOOKING_UPDATE',
-  BOOKING_CANCELLATION: 'BOOKING_CANCELLATION',
-} as const;
-
-export type TemplateType = (typeof TemplateType)[keyof typeof TemplateType];
+// =============================================================================
+// COMPLEX INTERFACES
+// =============================================================================
 
 export interface TemplateData {
   booking?: BookingView;
   recipientName?: string;
   [key: string]: unknown;
 }
-
-// Add after TemplateType definition
-export const NotificationType = {
-  BOOKING_CONFIRMATION: 'BOOKING_CONFIRMATION',
-  BOOKING_UPDATE: 'BOOKING_UPDATE',
-  BOOKING_CANCELLATION: 'BOOKING_CANCELLATION',
-} as const;
-
-export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];

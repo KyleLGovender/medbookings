@@ -2,6 +2,7 @@ import {
   AvailabilityStatus,
   AvailabilityWithRelations,
   SchedulingRule,
+  WorkflowResult,
 } from '@/features/calendar/types/types';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -12,17 +13,6 @@ import {
   notifyAvailabilityRejected,
 } from './notification-service';
 import { generateSlotsForAvailability } from './slot-generation';
-
-export interface WorkflowResult {
-  success: boolean;
-  availability?: AvailabilityWithRelations;
-  slotsGenerated?: number;
-  error?: string;
-  notifications?: {
-    sent: number;
-    failed: number;
-  };
-}
 
 /**
  * Complete workflow for accepting an availability proposal

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { AdminAction, ApprovalEntityType } from './enums';
+import { AdminAction, ApprovalEntityType } from './types';
 
 // Form validation schemas
 export const rejectionReasonSchema = z.object({

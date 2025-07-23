@@ -1,60 +1,13 @@
-import { AvailabilityStatus, SlotStatus } from '@/features/calendar/types/types';
+import {
+  AvailabilityStatus,
+  SlotStatus,
+  TimeFilteredSlot,
+  TimeSearchParams,
+  TimeSearchResult,
+} from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
 
 import { optimizedSlotSearch } from './search-performance-service';
-
-export interface TimeSearchParams {
-  dateRange?: {
-    startDate: Date;
-    endDate: Date;
-  };
-  specificDate?: Date;
-  timeRange?: {
-    startTime: string; // Format: "HH:MM" (24-hour)
-    endTime: string; // Format: "HH:MM" (24-hour)
-  };
-  preferredTimes?: string[]; // Array of preferred times ["09:00", "14:30"]
-  timeFlexibility?: number; // Minutes of flexibility around preferred times
-  dayOfWeek?: number[]; // 0-6 (Sunday-Saturday)
-  excludeWeekends?: boolean;
-  excludeHolidays?: boolean;
-  minDuration?: number; // Minimum appointment duration in minutes
-  maxDuration?: number; // Maximum appointment duration in minutes
-}
-
-export interface TimeFilteredSlot {
-  slotId: string;
-  startTime: Date;
-  endTime: Date;
-  duration: number;
-  dayOfWeek: number;
-  timeOfDay: string; // "HH:MM" format
-  isWeekend: boolean;
-  providerId: string;
-  serviceId: string;
-  locationId?: string;
-  price: number;
-  isOnlineAvailable: boolean;
-  status: string;
-}
-
-export interface TimeSearchResult {
-  totalSlotsFound: number;
-  slotsInTimeRange: TimeFilteredSlot[];
-  availableDates: Date[];
-  availableTimeSlots: Array<{
-    time: string;
-    slotCount: number;
-    avgPrice: number;
-  }>;
-  dayOfWeekStats: Array<{
-    dayOfWeek: number;
-    dayName: string;
-    slotCount: number;
-    earliestTime: string;
-    latestTime: string;
-  }>;
-}
 
 /**
  * Service for time-based filtering and search of availability slots

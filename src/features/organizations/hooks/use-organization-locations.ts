@@ -1,11 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-export interface OrganizationLocation {
-  id: string;
-  name: string;
-  organizationId: string;
-  [key: string]: any; // Allow other properties from the API response
-}
+import { OrganizationLocation } from '@/features/organizations/types/types';
 
 /**
  * Hook to fetch locations for multiple organizations

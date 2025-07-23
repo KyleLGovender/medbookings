@@ -1,19 +1,10 @@
 import { addDays, addMonths, differenceInMinutes, endOfMonth, startOfMonth } from 'date-fns';
 
+import {
+  AvailabilityValidationOptions,
+  ValidationResult,
+} from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
-
-export interface AvailabilityValidationOptions {
-  providerId: string;
-  startTime: Date;
-  endTime: Date;
-  excludeAvailabilityId?: string; // For update operations
-  instances?: Array<{ startTime: Date; endTime: Date }>; // For recurring validation
-}
-
-export interface ValidationResult {
-  isValid: boolean;
-  errors: string[];
-}
 
 /**
  * Comprehensive availability validation
