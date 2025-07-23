@@ -6,6 +6,7 @@
 import {
   Organization,
   OrganizationMembership,
+  Prisma,
   User,
 } from '@prisma/client';
 
@@ -310,3 +311,247 @@ export const getDefaultOrganizationData = (): Partial<CreateOrganizationData> =>
   website: '',
   description: '',
 });
+
+// =============================================================================
+// PRISMA-DERIVED TYPES
+// =============================================================================
+
+// Organization with comprehensive relations for detailed views
+export type OrganizationDetailSelect = Prisma.OrganizationGetPayload<{
+  include: {
+    memberships: {
+      include: {
+        user: {
+          select: {
+            id: true;
+            name: true;
+            email: true;
+            phone: true;
+            image: true;
+          };
+        };
+      };
+    };
+    locations: {
+      select: {
+        id: true;
+        name: true;
+        formattedAddress: true;
+        phone: true;
+        email: true;
+        googlePlaceId: true;
+        coordinates: true;
+        createdAt: true;
+      };
+    };
+    providerConnections: {
+      include: {
+        provider: {
+          include: {
+            user: {
+              select: {
+                id: true;
+                name: true;
+                email: true;
+                phone: true;
+              };
+            };
+            typeAssignments: {
+              include: {
+                providerType: {
+                  select: {
+                    id: true;
+                    name: true;
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+    providerInvitations: {
+      include: {
+        invitedBy: {
+          select: {
+            id: true;
+            name: true;
+            email: true;
+          };
+        };
+      };
+    };
+    subscriptions: {
+      include: {
+        plan: {
+          select: {
+            id: true;
+            name: true;
+            basePrice: true;
+            currency: true;
+            interval: true;
+          };
+        };
+      };
+    };
+    approvedBy: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+      };
+    };
+    _count: {
+      select: {
+        memberships: true;
+        locations: true;
+        providerConnections: true;
+        providerInvitations: true;
+      };
+    };
+  };
+}>;
+
+// Organization for list views (minimal relations)
+export type OrganizationListSelect = Prisma.OrganizationGetPayload<{
+  include: {
+    _count: {
+      select: {
+        memberships: true;
+        locations: true;
+        providerConnections: true;
+      };
+    };
+  };
+}>;
+
+// Organization with basic info for dropdowns and selectors
+export type OrganizationBasicSelect = Prisma.OrganizationGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    email: true;
+    status: true;
+    billingModel: true;
+  };
+}>;
+
+// Location with organization context
+export type LocationDetailSelect = Prisma.LocationGetPayload<{
+  include: {
+    organization: {
+      select: {
+        id: true;
+        name: true;
+        billingModel: true;
+      };
+    };
+    subscriptions: {
+      include: {
+        plan: {
+          select: {
+            id: true;
+            name: true;
+            basePrice: true;
+            currency: true;
+          };
+        };
+      };
+    };
+    availabilities: {
+      select: {
+        id: true;
+        title: true;
+        startTime: true;
+        endTime: true;
+        status: true;
+        provider: {
+          include: {
+            user: {
+              select: {
+                id: true;
+                name: true;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}>;
+
+// Organization membership with user and organization context
+export type MembershipDetailSelect = Prisma.OrganizationMembershipGetPayload<{
+  include: {
+    user: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+        phone: true;
+        image: true;
+        role: true;
+      };
+    };
+    organization: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+      };
+    };
+  };
+}>;
+
+// Provider connection with full context
+export type ProviderConnectionDetailSelect = Prisma.OrganizationProviderConnectionGetPayload<{
+  include: {
+    organization: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+        billingModel: true;
+      };
+    };
+    provider: {
+      include: {
+        user: {
+          select: {
+            id: true;
+            name: true;
+            email: true;
+            phone: true;
+          };
+        };
+        typeAssignments: {
+          include: {
+            providerType: {
+              select: {
+                id: true;
+                name: true;
+                category: true;
+              };
+            };
+          };
+        };
+        services: {
+          select: {
+            id: true;
+            name: true;
+            description: true;
+          };
+        };
+      };
+    };
+    availabilities: {
+      select: {
+        id: true;
+        title: true;
+        startTime: true;
+        endTime: true;
+        status: true;
+      };
+    };
+  };
+}>;

@@ -6,6 +6,7 @@
 import {
   ConnectionStatus,
   OrganizationProviderConnection,
+  Prisma,
   ProviderInvitation,
   ProviderInvitationStatus,
   Provider as PrismaProvider,
@@ -435,3 +436,249 @@ export const getDefaultProviderData = (): Partial<CreateProviderData> => ({
   serviceIds: [],
   requirementSubmissions: [],
 });
+
+// =============================================================================
+// PRISMA-DERIVED TYPES
+// =============================================================================
+
+// Provider with comprehensive relations for detailed views
+export type ProviderDetailSelect = Prisma.ProviderGetPayload<{
+  include: {
+    user: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+        phone: true;
+        whatsapp: true;
+        image: true;
+        role: true;
+      };
+    };
+    typeAssignments: {
+      include: {
+        providerType: {
+          select: {
+            id: true;
+            name: true;
+            description: true;
+            category: true;
+            isActive: true;
+          };
+        };
+      };
+    };
+    services: {
+      include: {
+        providerType: {
+          select: {
+            id: true;
+            name: true;
+            category: true;
+            description: true;
+          };
+        };
+      };
+    };
+    requirementSubmissions: {
+      include: {
+        requirementType: {
+          select: {
+            id: true;
+            name: true;
+            description: true;
+            category: true;
+            isRequired: true;
+            allowedFileTypes: true;
+            maxFileSize: true;
+          };
+        };
+        validatedBy: {
+          select: {
+            id: true;
+            name: true;
+            email: true;
+          };
+        };
+      };
+    };
+    organizationConnections: {
+      include: {
+        organization: {
+          select: {
+            id: true;
+            name: true;
+            email: true;
+            status: true;
+          };
+        };
+      };
+    };
+    approvedBy: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+      };
+    };
+    subscriptions: {
+      include: {
+        plan: {
+          select: {
+            id: true;
+            name: true;
+            basePrice: true;
+            currency: true;
+            interval: true;
+            includedSlots: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+// Provider for list views (minimal relations)
+export type ProviderListSelect = Prisma.ProviderGetPayload<{
+  include: {
+    user: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+        image: true;
+      };
+    };
+    typeAssignments: {
+      include: {
+        providerType: {
+          select: {
+            id: true;
+            name: true;
+          };
+        };
+      };
+    };
+    _count: {
+      select: {
+        services: true;
+        requirementSubmissions: true;
+        organizationConnections: true;
+      };
+    };
+  };
+}>;
+
+// Provider with basic info for dropdowns and selectors
+export type ProviderBasicSelect = Prisma.ProviderGetPayload<{
+  include: {
+    user: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+      };
+    };
+    typeAssignments: {
+      include: {
+        providerType: {
+          select: {
+            name: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+// Service with relations for provider service management
+export type ServiceDetailSelect = Prisma.ServiceGetPayload<{
+  include: {
+    providerType: {
+      select: {
+        id: true;
+        name: true;
+        category: true;
+        description: true;
+      };
+    };
+    providers: {
+      include: {
+        user: {
+          select: {
+            id: true;
+            name: true;
+          };
+        };
+      };
+    };
+    availabilityConfigs: {
+      select: {
+        id: true;
+        duration: true;
+        price: true;
+        isOnlineAvailable: true;
+        locationId: true;
+      };
+    };
+  };
+}>;
+
+// Requirement submission with relations for compliance tracking
+export type RequirementSubmissionDetailSelect = Prisma.RequirementSubmissionGetPayload<{
+  include: {
+    requirementType: {
+      select: {
+        id: true;
+        name: true;
+        description: true;
+        category: true;
+        isRequired: true;
+        allowedFileTypes: true;
+        maxFileSize: true;
+        displayPriority: true;
+      };
+    };
+    provider: {
+      include: {
+        user: {
+          select: {
+            id: true;
+            name: true;
+            email: true;
+          };
+        };
+      };
+    };
+    validatedBy: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+      };
+    };
+  };
+}>;
+
+// Provider invitation with relations
+export type ProviderInvitationDetailSelect = Prisma.ProviderInvitationGetPayload<{
+  include: {
+    organization: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+        description: true;
+        logo: true;
+        website: true;
+      };
+    };
+    invitedBy: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+      };
+    };
+  };
+}>;

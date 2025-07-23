@@ -7,6 +7,7 @@ import {
   Organization,
   OrganizationMembership,
   OrganizationProviderConnection,
+  Prisma,
   User,
 } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -1125,3 +1126,270 @@ export const getDefaultExportConfig = (): ExportConfig => ({
     anonymizeCustomerData: false,
   },
 });
+
+// =============================================================================
+// PRISMA-DERIVED TYPES
+// =============================================================================
+
+// Availability with comprehensive relations for detailed views
+export type AvailabilityDetailSelect = Prisma.AvailabilityGetPayload<{
+  include: {
+    provider: {
+      include: {
+        user: {
+          select: {
+            id: true;
+            name: true;
+            email: true;
+            phone: true;
+          };
+        };
+        typeAssignments: {
+          include: {
+            providerType: {
+              select: {
+                id: true;
+                name: true;
+              };
+            };
+          };
+        };
+      };
+    };
+    organization: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+      };
+    };
+    location: {
+      select: {
+        id: true;
+        name: true;
+        formattedAddress: true;
+        phone: true;
+        email: true;
+      };
+    };
+    providerConnection: {
+      select: {
+        id: true;
+        status: true;
+        defaultBilledBy: true;
+      };
+    };
+    createdBy: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+      };
+    };
+    acceptedBy: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+      };
+    };
+    defaultSubscription: {
+      select: {
+        id: true;
+        status: true;
+        type: true;
+        plan: {
+          select: {
+            id: true;
+            name: true;
+            basePrice: true;
+            currency: true;
+          };
+        };
+      };
+    };
+    availableServices: {
+      include: {
+        service: {
+          select: {
+            id: true;
+            name: true;
+            description: true;
+            serviceType: {
+              select: {
+                id: true;
+                name: true;
+                category: true;
+              };
+            };
+          };
+        };
+      };
+    };
+    calculatedSlots: {
+      select: {
+        id: true;
+        startTime: true;
+        endTime: true;
+        status: true;
+        booking: {
+          select: {
+            id: true;
+            status: true;
+            guestName: true;
+            guestEmail: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+// Availability for list views (minimal relations)
+export type AvailabilityListSelect = Prisma.AvailabilityGetPayload<{
+  include: {
+    provider: {
+      include: {
+        user: {
+          select: {
+            id: true;
+            name: true;
+          };
+        };
+      };
+    };
+    organization: {
+      select: {
+        id: true;
+        name: true;
+      };
+    };
+    location: {
+      select: {
+        id: true;
+        name: true;
+        formattedAddress: true;
+      };
+    };
+    _count: {
+      select: {
+        calculatedSlots: true;
+        availableServices: true;
+      };
+    };
+  };
+}>;
+
+// Calculated slot with full relations for booking views
+export type CalculatedSlotDetailSelect = Prisma.CalculatedAvailabilitySlotGetPayload<{
+  include: {
+    availability: {
+      include: {
+        provider: {
+          include: {
+            user: {
+              select: {
+                id: true;
+                name: true;
+                email: true;
+                phone: true;
+              };
+            };
+          };
+        };
+        organization: {
+          select: {
+            id: true;
+            name: true;
+            email: true;
+          };
+        };
+        location: {
+          select: {
+            id: true;
+            name: true;
+            formattedAddress: true;
+            phone: true;
+          };
+        };
+      };
+    };
+    service: {
+      select: {
+        id: true;
+        name: true;
+        description: true;
+        serviceType: {
+          select: {
+            id: true;
+            name: true;
+            category: true;
+          };
+        };
+      };
+    };
+    serviceConfig: {
+      select: {
+        id: true;
+        duration: true;
+        price: true;
+        isOnlineAvailable: true;
+      };
+    };
+    booking: {
+      select: {
+        id: true;
+        status: true;
+        guestName: true;
+        guestEmail: true;
+        guestPhone: true;
+        notes: true;
+        createdAt: true;
+      };
+    };
+    billedToSubscription: {
+      select: {
+        id: true;
+        status: true;
+        type: true;
+      };
+    };
+  };
+}>;
+
+// Service availability config with relations
+export type ServiceConfigDetailSelect = Prisma.ServiceAvailabilityConfigGetPayload<{
+  include: {
+    service: {
+      select: {
+        id: true;
+        name: true;
+        description: true;
+        serviceType: {
+          select: {
+            id: true;
+            name: true;
+            category: true;
+          };
+        };
+      };
+    };
+    provider: {
+      include: {
+        user: {
+          select: {
+            id: true;
+            name: true;
+          };
+        };
+      };
+    };
+    location: {
+      select: {
+        id: true;
+        name: true;
+        formattedAddress: true;
+      };
+    };
+  };
+}>;
