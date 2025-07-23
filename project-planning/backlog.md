@@ -6,6 +6,7 @@
   - **Impact:** Eliminates developer confusion from inconsistent type definitions, prevents circular dependencies, improves maintainability
   - **Files:** All features in `@src/features/` types folders, based on `@prisma/schema.prisma`
   - **Added:** 2025-01-21
+- [ ] Implement tRPC
 - [ ] Implement user roles system (guest, user, provider, organization manager, admin)
 
 ## 📋 Ready for Development (Prioritized)
@@ -28,7 +29,6 @@
 ## ✅ Recently Completed
 
 ## 📝 Quick Capture (New Issues)
-- [ ] Implement tRPC
 - [ ] Populate provider and organization and user email addresses with the associated Google email. Not possible to edit.
 - [ ] Implement testing throughout the application
 - [ ] Remove Calendar from Menu based on user logged in

@@ -1,6 +1,23 @@
 // =============================================================================
 // CALENDAR AVAILABILITY TYPES
 // =============================================================================
+/**
+ * @fileoverview Comprehensive type definitions for the calendar availability feature.
+ * 
+ * This module contains all type definitions related to calendar functionality including:
+ * - Availability management and scheduling
+ * - Slot generation and booking compatibility
+ * - Recurrence patterns and series management
+ * - Provider and organization calendar views
+ * - Service configuration and billing integration
+ * - Search and filtering capabilities
+ * - External integrations (Google Calendar, etc.)
+ * 
+ * The types are organized by complexity: Enums → Base Interfaces → Complex Types → Utility Types
+ * 
+ * @author MedBookings Development Team
+ * @version 1.0.0
+ */
 // All type definitions for the calendar availability feature in one place
 // Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
 import {
@@ -193,43 +210,83 @@ export interface Booking {
   endTime: Date;
 }
 
+/**
+ * Represents a calendar event that can be displayed in calendar views.
+ * Supports different event types including availability slots, bookings, and blocked time.
+ * 
+ * @interface CalendarEvent
+ * 
+ * @example
+ * ```typescript
+ * const availability: CalendarEvent = {
+ *   id: "av-123",
+ *   type: "availability",
+ *   title: "Available for Consultation",
+ *   startTime: new Date("2024-01-15T09:00:00Z"),
+ *   endTime: new Date("2024-01-15T17:00:00Z"),
+ *   status: "ACCEPTED",
+ *   schedulingRule: SchedulingRule.ON_THE_HOUR,
+ *   service: {
+ *     id: "srv-456",
+ *     name: "General Consultation",
+ *     duration: 30,
+ *     price: 150
+ *   }
+ * };
+ * ```
+ */
 export interface CalendarEvent {
+  /** Unique identifier for the calendar event */
   id: string;
+  /** Type of calendar event - determines display style and behavior */
   type: 'availability' | 'booking' | 'blocked';
+  /** Display title for the event */
   title: string;
+  /** Event start time */
   startTime: Date;
+  /** Event end time */
   endTime: Date;
+  /** Current status of the event */
   status: string;
+  /** Scheduling rule for slot generation (availability events only) */
   schedulingRule?: SchedulingRule;
+  /** Whether this event is part of a recurring series */
   isRecurring?: boolean;
+  /** Series identifier for recurring events */
   seriesId?: string;
+  /** Location information where the event takes place */
   location?: {
     id: string;
     name: string;
     isOnline: boolean;
   };
+  /** Service information for the event */
   service?: {
     id: string;
     name: string;
     duration: number;
     price: number;
   };
+  /** Customer information for booking events */
   customer?: {
     id: string;
     name: string;
     email?: string;
   };
+  /** Additional notes or description */
   notes?: string;
-  // Creator information for availabilities
+  /** Information about who created the event */
   createdBy?: {
     id: string;
     name: string;
     type: 'provider' | 'organization';
   };
+  /** Organization context for the event */
   organization?: {
     id: string;
     name: string;
   };
+  /** Whether the event was created by a provider (vs organization admin) */
   isProviderCreated?: boolean;
 }
 
@@ -326,14 +383,41 @@ export interface CalculatedAvailabilitySlotWithRelations extends CalculatedAvail
 // RECURRENCE AND PATTERNS
 // =============================================================================
 
-// Recurrence pattern (Google Calendar style)
+/**
+ * Defines recurrence patterns for repeating availability slots.
+ * Supports Google Calendar-style recurrence options with customizable end dates.
+ * 
+ * @interface RecurrencePattern
+ * 
+ * @example
+ * ```typescript
+ * // Weekly recurrence every Monday for 3 months
+ * const weeklyPattern: RecurrencePattern = {
+ *   option: RecurrenceOption.WEEKLY,
+ *   weeklyDay: DayOfWeek.MONDAY,
+ *   endDate: "2024-04-15"
+ * };
+ * 
+ * // Custom recurrence on specific days
+ * const customPattern: RecurrencePattern = {
+ *   option: RecurrenceOption.CUSTOM,
+ *   customDays: [
+ *     DayOfWeek.MONDAY,
+ *     DayOfWeek.WEDNESDAY,
+ *     DayOfWeek.FRIDAY
+ *   ],
+ *   endDate: "2024-06-30"
+ * };
+ * ```
+ */
 export interface RecurrencePattern {
+  /** Type of recurrence pattern */
   option: RecurrenceOption;
-  // For weekly recurrence (determined from start date)
+  /** Specific day of week for weekly recurrence (auto-determined from start date) */
   weeklyDay?: DayOfWeek;
-  // For custom weekly recurrence
+  /** Array of days for custom weekly recurrence pattern */
   customDays?: DayOfWeek[];
-  // End date for all recurrence types (required for non-NONE options)
+  /** End date for recurrence in YYYY-MM-DD format (required for non-NONE options) */
   endDate?: string; // YYYY-MM-DD format - required for DAILY, WEEKLY, and CUSTOM
 }
 

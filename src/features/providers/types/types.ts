@@ -1,6 +1,23 @@
 // =============================================================================
 // PROVIDERS FEATURE TYPES
 // =============================================================================
+/**
+ * @fileoverview Comprehensive type definitions for the providers feature.
+ * 
+ * This module defines all types related to healthcare service providers including:
+ * - Provider onboarding and registration
+ * - Requirement submission and validation
+ * - Service configuration and offerings
+ * - Organization connections and invitations
+ * - Provider types and specializations
+ * - Regulatory compliance tracking
+ * 
+ * The types support the complete provider lifecycle from initial registration
+ * through approval, service setup, and ongoing compliance management.
+ * 
+ * @author MedBookings Development Team
+ * @version 1.0.0
+ */
 // All type definitions for the providers feature in one place
 // Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
 import {
@@ -298,18 +315,59 @@ export type RequirementType = {
   };
 };
 
-// Type for requirement submission
+/**
+ * Represents a provider's submission for a regulatory or business requirement.
+ * Supports various submission types including documents, forms, and boolean validations.
+ * 
+ * @interface RequirementSubmission
+ * 
+ * @example
+ * ```typescript
+ * // Document submission for medical license
+ * const licenseSubmission: RequirementSubmission = {
+ *   requirementTypeId: "req-medical-license",
+ *   providerId: "provider-123",
+ *   status: RequirementsValidationStatus.PENDING,
+ *   documentMetadata: {
+ *     filename: "medical_license.pdf",
+ *     url: "https://storage.example.com/docs/license.pdf",
+ *     uploadedAt: "2024-01-15T10:30:00Z"
+ *   },
+ *   expiresAt: new Date("2025-12-31"),
+ *   notes: "Medical license valid through 2025"
+ * };
+ * 
+ * // Boolean form submission
+ * const consentSubmission: RequirementSubmission = {
+ *   requirementTypeId: "req-hipaa-consent",
+ *   value: true,
+ *   status: RequirementsValidationStatus.APPROVED,
+ *   validatedAt: new Date()
+ * };
+ * ```
+ */
 export type RequirementSubmission = {
+  /** Unique identifier for the submission (generated on save) */
   id?: string;
+  /** Reference to the requirement type being fulfilled */
   requirementTypeId: string;
+  /** Provider making the submission */
   providerId?: string;
+  /** Current validation status of the submission */
   status?: RequirementsValidationStatus;
+  /** Metadata for document submissions including URLs and file info */
   documentMetadata?: Record<string, any> | null; // Includes document URLs in the value field
+  /** Expiration date for time-sensitive requirements (e.g., licenses) */
   expiresAt?: Date | null;
+  /** Additional notes or comments about the submission */
   notes?: string | null;
+  /** Timestamp when the submission was validated */
   validatedAt?: Date | null;
+  /** ID of the admin user who validated the submission */
   validatedById?: string | null;
+  /** Form value for non-document submissions (text, boolean, number) */
   value?: string | boolean | number | null; // For form submissions
+  /** Additional value for "other" option in predefined lists */
   otherValue?: string; // For "other" option in predefined lists
 };
 
