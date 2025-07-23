@@ -1,7 +1,13 @@
+// =============================================================================
+// ADMIN FEATURE TYPES
+// =============================================================================
+// All type definitions for the admin feature in one place
+// Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
+
 import { Prisma } from '@prisma/client';
 
 // =============================================================================
-// ENUMS (consolidated from enums.ts)
+// ENUMS
 // =============================================================================
 
 export enum AdminAction {
