@@ -146,6 +146,7 @@ export const createAvailabilityDataSchema = baseAvailabilitySchema
 // Update availability data schema
 export const updateAvailabilityDataSchema = baseAvailabilitySchema.partial().extend({
   id: z.string().cuid(),
+  scope: z.enum(['single', 'future', 'all']).optional(), // SeriesActionScope for recurring availability edits
 });
 
 // Availability search parameters schema

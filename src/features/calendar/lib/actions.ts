@@ -469,6 +469,29 @@ export async function updateAvailability(
     // Validate input data
     const validatedData = updateAvailabilityDataSchema.parse(data);
 
+    // Validate scope for recurring availability
+    if (validatedData.scope) {
+      // Check if this is a recurring availability first
+      const targetAvailability = await prisma.availability.findUnique({
+        where: { id: validatedData.id },
+        select: { isRecurring: true, seriesId: true },
+      });
+
+      if (!targetAvailability?.isRecurring) {
+        return { 
+          success: false, 
+          error: 'Scope parameter can only be used with recurring availability' 
+        };
+      }
+
+      if (!['single', 'future', 'all'].includes(validatedData.scope)) {
+        return { 
+          success: false, 
+          error: 'Invalid scope parameter. Must be "single", "future", or "all"' 
+        };
+      }
+    }
+
     // Get existing availability
     const existingAvailability = await prisma.availability.findUnique({
       where: { id: validatedData.id },
@@ -559,19 +582,107 @@ export async function updateAvailability(
     if (validatedData.billingEntity !== undefined)
       updateData.billingEntity = validatedData.billingEntity;
 
-    // Update availability
-    const updatedAvailability = await prisma.availability.update({
-      where: { id: validatedData.id },
-      data: updateData,
-      include: includeAvailabilityRelations,
-    });
-
-    // Update services if provided
-    if (validatedData.services) {
-      // Delete existing service configs
-      await prisma.serviceAvailabilityConfig.deleteMany({
-        where: { availabilities: { some: { id: validatedData.id } } },
+    // Handle scope-based updates for recurring availability
+    let updatedAvailability;
+    
+    if (validatedData.scope && existingAvailability.isRecurring && existingAvailability.seriesId) {
+      const currentDate = new Date(existingAvailability.startTime);
+      
+      switch (validatedData.scope) {
+        case 'single':
+          // Update only this single occurrence
+          updatedAvailability = await prisma.availability.update({
+            where: { id: validatedData.id },
+            data: updateData,
+            include: includeAvailabilityRelations,
+          });
+          break;
+          
+        case 'future':
+          // Update this occurrence and all future occurrences in the series
+          const futureWhere = {
+            seriesId: existingAvailability.seriesId,
+            startTime: { gte: currentDate },
+          };
+          
+          await prisma.availability.updateMany({
+            where: futureWhere,
+            data: updateData,
+          });
+          
+          // Get the updated availability with relations
+          updatedAvailability = await prisma.availability.findUnique({
+            where: { id: validatedData.id },
+            include: includeAvailabilityRelations,
+          });
+          break;
+          
+        case 'all':
+          // Update all occurrences in the series
+          await prisma.availability.updateMany({
+            where: { seriesId: existingAvailability.seriesId },
+            data: updateData,
+          });
+          
+          // Get the updated availability with relations
+          updatedAvailability = await prisma.availability.findUnique({
+            where: { id: validatedData.id },
+            include: includeAvailabilityRelations,
+          });
+          break;
+          
+        default:
+          return { success: false, error: 'Invalid scope parameter' };
+      }
+    } else {
+      // Standard single availability update
+      updatedAvailability = await prisma.availability.update({
+        where: { id: validatedData.id },
+        data: updateData,
+        include: includeAvailabilityRelations,
       });
+    }
+
+    // Update services if provided (scope-aware)
+    if (validatedData.services) {
+      if (validatedData.scope && existingAvailability.isRecurring && existingAvailability.seriesId) {
+        // Handle scope-based service updates
+        const currentDate = new Date(existingAvailability.startTime);
+        let targetAvailabilityIds: string[] = [];
+
+        switch (validatedData.scope) {
+          case 'single':
+            targetAvailabilityIds = [validatedData.id];
+            break;
+          case 'future':
+            const futureAvailabilities = await prisma.availability.findMany({
+              where: {
+                seriesId: existingAvailability.seriesId,
+                startTime: { gte: currentDate },
+              },
+              select: { id: true },
+            });
+            targetAvailabilityIds = futureAvailabilities.map(a => a.id);
+            break;
+          case 'all':
+            const allAvailabilities = await prisma.availability.findMany({
+              where: { seriesId: existingAvailability.seriesId },
+              select: { id: true },
+            });
+            targetAvailabilityIds = allAvailabilities.map(a => a.id);
+            break;
+        }
+
+        // Delete existing service configs for target availabilities
+        await prisma.serviceAvailabilityConfig.deleteMany({
+          where: { availabilities: { some: { id: { in: targetAvailabilityIds } } } },
+        });
+      } else {
+        // Standard single availability service update
+        await prisma.serviceAvailabilityConfig.deleteMany({
+          where: { availabilities: { some: { id: validatedData.id } } },
+        });
+      }
 
       // Create new service configs
       await prisma.serviceAvailabilityConfig.createMany({
