@@ -118,7 +118,7 @@ export function AvailabilityEditForm({
       // Populate form with current values
       form.reset({
         id: availability.id,
-        providerId: availability.serviceProviderId,
+        providerId: availability.providerId,
         organizationId: availability.organizationId || undefined,
         locationId: availability.locationId || undefined,
         startTime: availability.startTime,
@@ -277,7 +277,7 @@ export function AvailabilityEditForm({
                       {availability?.createdBy?.name || 'Unknown'}
                     </div>
                     <div className="text-xs text-gray-600">
-                      {availability?.serviceProviderId === availability?.createdBy?.id
+                      {availability?.providerId === availability?.createdBy?.id
                         ? 'Provider (Self)'
                         : 'Organization Role'}
                     </div>
