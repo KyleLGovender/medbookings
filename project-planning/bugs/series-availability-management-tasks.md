@@ -26,13 +26,13 @@ This document addresses incomplete series management implementation in the MedBo
 
 ## Tasks
 
-- [ ] 1.0 🟡 **HIGH**: Complete Edit Form Series Integration
-  - [ ] 1.1 Add `scope?: SeriesActionScope` prop to `AvailabilityEditFormProps` interface in `availability-edit-form.tsx`
-  - [ ] 1.2 Update form component to accept and store scope parameter from props
-  - [ ] 1.3 Modify form submission logic to include scope in API calls when editing recurring availability
-  - [ ] 1.4 Add scope-aware validation logic for different operation types ('single', 'future', 'all')
-  - [ ] 1.5 Update manage calendar page to pass scope from SeriesActionDialog to edit form
-  - [ ] 1.6 Add error handling for invalid scope values in form submission
+- [x] 1.0 🟡 **HIGH**: Complete Edit Form Series Integration
+  - [x] 1.1 Add `scope?: SeriesActionScope` prop to `AvailabilityEditFormProps` interface in `availability-edit-form.tsx`
+  - [x] 1.2 Update form component to accept and store scope parameter from props
+  - [x] 1.3 Modify form submission logic to include scope in API calls when editing recurring availability
+  - [x] 1.4 Add scope-aware validation logic for different operation types ('single', 'future', 'all')
+  - [x] 1.5 Update manage calendar page to pass scope from SeriesActionDialog to edit form
+  - [x] 1.6 Add error handling for invalid scope values in form submission
   - [ ] 1.7 Test editing single occurrence of recurring availability maintains other instances
   - [ ] 1.8 Test editing entire series propagates changes to all instances correctly
   - [ ] 1.9 Test editing "this and future" affects only current and subsequent instances
