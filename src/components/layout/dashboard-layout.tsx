@@ -85,14 +85,40 @@ function shouldCollapseBreadcrumb(items: any[], isMobile: boolean, isTablet: boo
   return { shouldCollapse: false, collapseStrategy: 'none' };
 }
 
+// Get device-specific breadcrumb styling classes
+function getBreadcrumbClasses(deviceType: 'mobile' | 'tablet' | 'desktop') {
+  switch (deviceType) {
+    case 'mobile':
+      return {
+        list: 'gap-0.5 text-xs leading-tight',
+        item: 'text-xs max-w-[120px] truncate',
+        separator: 'mx-1'
+      };
+    case 'tablet':
+      return {
+        list: 'gap-1 text-sm leading-normal', 
+        item: 'text-sm max-w-[200px] truncate',
+        separator: 'mx-1.5'
+      };
+    default:
+      return {
+        list: 'gap-1.5 text-sm leading-normal',
+        item: 'text-sm',
+        separator: 'mx-2'
+      };
+  }
+}
+
 // Dynamic breadcrumb component
 function DynamicBreadcrumb() {
   const pathname = usePathname();
   const isMobile = isMobileForUI();
   
-  // Get screen width for dynamic truncation and tablet detection
+  // Get screen width for dynamic truncation and device detection
   const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 375;
   const isTablet = screenWidth >= 768 && screenWidth < 1024;
+  const deviceType: 'mobile' | 'tablet' | 'desktop' = isMobile ? 'mobile' : isTablet ? 'tablet' : 'desktop';
+  const classes = getBreadcrumbClasses(deviceType);
 
   // Split pathname and filter out empty strings
   const pathSegments = pathname.split('/').filter(Boolean);
@@ -236,7 +262,7 @@ function DynamicBreadcrumb() {
 
   return (
     <Breadcrumb>
-      <BreadcrumbList className={isMobile ? 'gap-1 text-xs' : 'gap-1.5 text-sm'}>
+      <BreadcrumbList className={classes.list}>
         {displayItems.map((item, index) => (
           <React.Fragment key={item.href}>
             {index > 0 && <BreadcrumbSeparator />}
@@ -251,11 +277,11 @@ function DynamicBreadcrumb() {
             )}
             <BreadcrumbItem>
               {item.isLast ? (
-                <BreadcrumbPage className={isMobile ? 'text-xs' : 'text-sm'}>
+                <BreadcrumbPage className={classes.item}>
                   {item.label}
                 </BreadcrumbPage>
               ) : (
-                <BreadcrumbLink href={item.href} className={isMobile ? 'text-xs' : 'text-sm'}>
+                <BreadcrumbLink href={item.href} className={classes.item}>
                   {item.label}
                 </BreadcrumbLink>
               )}
