@@ -374,47 +374,50 @@ export function ProviderCalendarView({
   };
 
   const getEventStyle = (event: CalendarEvent): string => {
+    // Base style for recurring events with left border indicator
+    const recurringBorder = event.isRecurring ? 'border-l-4 border-l-blue-600' : '';
+    
     switch (event.type) {
       case 'availability':
         // Provider-created availabilities (green tones)
         if (event.isProviderCreated) {
           switch (event.status) {
             case AvailabilityStatus.ACCEPTED:
-              return 'bg-green-100 border-green-400 text-green-800';
+              return `bg-green-100 border-green-400 text-green-800 ${recurringBorder}`;
             case AvailabilityStatus.CANCELLED:
-              return 'bg-green-50 border-green-300 text-green-600';
+              return `bg-green-50 border-green-300 text-green-600 ${recurringBorder}`;
             default:
-              return 'bg-green-100 border-green-400 text-green-800';
+              return `bg-green-100 border-green-400 text-green-800 ${recurringBorder}`;
           }
         }
         // Organization-created availabilities (blue/yellow tones)
         else {
           switch (event.status) {
             case AvailabilityStatus.PENDING:
-              return 'bg-yellow-100 border-yellow-400 text-yellow-800';
+              return `bg-yellow-100 border-yellow-400 text-yellow-800 ${recurringBorder}`;
             case AvailabilityStatus.ACCEPTED:
-              return 'bg-blue-100 border-blue-400 text-blue-800';
+              return `bg-blue-100 border-blue-400 text-blue-800 ${recurringBorder}`;
             case AvailabilityStatus.REJECTED:
-              return 'bg-red-100 border-red-400 text-red-800';
+              return `bg-red-100 border-red-400 text-red-800 ${recurringBorder}`;
             case AvailabilityStatus.CANCELLED:
-              return 'bg-gray-100 border-gray-400 text-gray-800';
+              return `bg-gray-100 border-gray-400 text-gray-800 ${recurringBorder}`;
             default:
-              return 'bg-blue-100 border-blue-400 text-blue-800';
+              return `bg-blue-100 border-blue-400 text-blue-800 ${recurringBorder}`;
           }
         }
       case 'booking':
         switch (event.status) {
           case 'BOOKED':
-            return 'bg-purple-100 border-purple-300 text-purple-800';
+            return `bg-purple-100 border-purple-300 text-purple-800 ${recurringBorder}`;
           case 'PENDING':
-            return 'bg-orange-100 border-orange-300 text-orange-800';
+            return `bg-orange-100 border-orange-300 text-orange-800 ${recurringBorder}`;
           default:
-            return 'bg-purple-100 border-purple-300 text-purple-800';
+            return `bg-purple-100 border-purple-300 text-purple-800 ${recurringBorder}`;
         }
       case 'blocked':
-        return 'bg-red-100 border-red-300 text-red-800';
+        return `bg-red-100 border-red-300 text-red-800 ${recurringBorder}`;
       default:
-        return 'bg-gray-100 border-gray-300 text-gray-800';
+        return `bg-gray-100 border-gray-300 text-gray-800 ${recurringBorder}`;
     }
   };
 
