@@ -306,9 +306,14 @@ export async function getAvailabilityById(
       return { success: false, error: 'Availability not found' };
     }
 
+    // Get current user's provider record for authorization checks
+    const currentUserProvider = await prisma.provider.findUnique({
+      where: { userId: currentUser.id },
+    });
+
     // Check if user has permission to view this availability
     const canView =
-      currentUser.id === availability.providerId ||
+      currentUserProvider?.id === availability.providerId ||
       currentUser.id === availability.createdById ||
       currentUser.role === 'ADMIN' ||
       currentUser.role === 'SUPER_ADMIN';
