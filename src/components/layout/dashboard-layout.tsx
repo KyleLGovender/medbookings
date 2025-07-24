@@ -23,9 +23,41 @@ import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-u
 import { useProvider } from '@/features/providers/hooks/use-provider';
 import { isMobileForUI } from '@/lib/utils/responsive';
 
-// Helper function for smart breadcrumb truncation
-function truncateForMobile(text: string, maxLength: number = 15): string {
+// Enhanced truncation function with dynamic calculation
+function truncateForMobile(text: string, screenWidth: number = 375): string {
+  // Dynamic max length based on screen width
+  const baseLength = Math.floor(screenWidth / 25); // ~15 chars for 375px
+  const maxLength = Math.max(8, Math.min(baseLength, 20));
+  
   if (text.length <= maxLength) return text;
+  
+  // Smart truncation for names
+  if (text.includes('Dr.') || text.includes('Prof.')) {
+    const parts = text.split(' ');
+    if (parts.length >= 2) {
+      const title = parts[0];
+      const lastName = parts[parts.length - 1];
+      if ((title + ' ' + lastName).length <= maxLength) {
+        return `${title} ${lastName}`;
+      }
+    }
+  }
+  
+  // Smart truncation for organization names (preserve key words)
+  if (text.includes('Hospital') || text.includes('Clinic') || text.includes('Medical') || text.includes('Health')) {
+    const parts = text.split(' ');
+    if (parts.length >= 2) {
+      // Try to preserve the first word and important identifier
+      const firstWord = parts[0];
+      const importantWord = parts.find(word => 
+        ['Hospital', 'Clinic', 'Medical', 'Health', 'Center', 'Institute'].includes(word)
+      );
+      if (importantWord && (firstWord + ' ' + importantWord).length <= maxLength) {
+        return `${firstWord} ${importantWord}`;
+      }
+    }
+  }
+  
   return `${text.substring(0, maxLength - 3)}...`;
 }
 
@@ -38,6 +70,9 @@ function shouldCollapseBreadcrumb(items: any[], isMobile: boolean): boolean {
 function DynamicBreadcrumb() {
   const pathname = usePathname();
   const isMobile = isMobileForUI();
+  
+  // Get screen width for dynamic truncation
+  const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 375;
 
   // Split pathname and filter out empty strings
   const pathSegments = pathname.split('/').filter(Boolean);
@@ -98,7 +133,7 @@ function DynamicBreadcrumb() {
     // Special handling for provider UUID (admin routes)
     if (isAdminProviderPage && index === 2) {
       if (provider) {
-        label = isMobile ? truncateForMobile(provider.name) : provider.name;
+        label = isMobile ? truncateForMobile(provider.name, screenWidth) : provider.name;
       } else if (isProviderLoading) {
         label = 'Loading...';
       } else {
@@ -108,7 +143,7 @@ function DynamicBreadcrumb() {
     // Special handling for provider UUID (regular routes)
     else if (isRegularProviderPage && index === 1) {
       if (provider) {
-        label = isMobile ? truncateForMobile(provider.name) : provider.name;
+        label = isMobile ? truncateForMobile(provider.name, screenWidth) : provider.name;
       } else if (isProviderLoading) {
         label = 'Loading...';
       } else {
@@ -118,7 +153,7 @@ function DynamicBreadcrumb() {
     // Special handling for organization UUID (admin routes)
     else if (isAdminOrganizationPage && index === 2) {
       if (organization) {
-        label = isMobile ? truncateForMobile(organization.name) : organization.name;
+        label = isMobile ? truncateForMobile(organization.name, screenWidth) : organization.name;
       } else if (isOrganizationLoading) {
         label = 'Loading...';
       } else {
@@ -128,7 +163,7 @@ function DynamicBreadcrumb() {
     // Special handling for organization UUID (regular routes)
     else if (isRegularOrganizationPage && index === 1) {
       if (organization) {
-        label = isMobile ? truncateForMobile(organization.name) : organization.name;
+        label = isMobile ? truncateForMobile(organization.name, screenWidth) : organization.name;
       } else if (isOrganizationLoading) {
         label = 'Loading...';
       } else {
@@ -140,7 +175,7 @@ function DynamicBreadcrumb() {
         .split('-')
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
-      label = isMobile ? truncateForMobile(fullLabel) : fullLabel;
+      label = isMobile ? truncateForMobile(fullLabel, screenWidth) : fullLabel;
     }
 
     breadcrumbItems.push({
