@@ -38,13 +38,13 @@ This document addresses incomplete series management implementation in the MedBo
   - [ ] 1.9 Test editing "this and future" affects only current and subsequent instances
   - [ ] 1.10 Verify correct API calls include scope parameter in request payload
 
-- [ ] 2.0 🟡 **HIGH**: Add Organization Calendar Series Support
-  - [ ] 2.1 Import `SeriesActionDialog` component in `organization-calendar-view.tsx`
-  - [ ] 2.2 Add series action state management using useState for dialog visibility and selected action
-  - [ ] 2.3 Add `isRecurring` and `seriesId` detection logic for availability events
-  - [ ] 2.4 Update event click handlers to detect recurring availability and show series dialog
-  - [ ] 2.5 Add series-aware context menu options for recurring events
-  - [ ] 2.6 Integrate series dialog with existing edit/delete/cancel operations
+- [x] 2.0 🟡 **HIGH**: Add Organization Calendar Series Support
+  - [x] 2.1 Import `SeriesActionDialog` component in `organization-calendar-view.tsx`
+  - [x] 2.2 Add series action state management using useState for dialog visibility and selected action
+  - [x] 2.3 Add `isRecurring` and `seriesId` detection logic for availability events
+  - [x] 2.4 Update event click handlers to detect recurring availability and show series dialog
+  - [x] 2.5 Add series-aware context menu options for recurring events
+  - [x] 2.6 Integrate series dialog with existing edit/delete/cancel operations
   - [ ] 2.7 Test organization calendar properly detects recurring availability events
   - [ ] 2.8 Test series dialog appears and functions correctly for organization users
   - [ ] 2.9 Test all series scopes (single, future, all) work from organization calendar

@@ -1,3 +1,5 @@
+import { Repeat } from 'lucide-react';
+
 import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
 
 // Month View Component
@@ -81,7 +83,15 @@ export function MonthView({
                         onEventClick?.(event, e);
                       }}
                     >
-                      <div className="truncate font-medium">{event.title}</div>
+                      <div className="truncate font-medium flex items-center gap-1">
+                        {event.title}
+                        {event.isRecurring && (
+                          <Repeat 
+                            className="h-3 w-3 text-blue-500 flex-shrink-0" 
+                            title="Part of recurring series"
+                          />
+                        )}
+                      </div>
                       <div className="text-xs opacity-75">
                         {event.startTime.toLocaleTimeString([], {
                           hour: '2-digit',
