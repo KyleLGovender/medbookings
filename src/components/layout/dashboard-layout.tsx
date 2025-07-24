@@ -15,6 +15,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useAdminOrganization } from '@/features/organizations/hooks/use-admin-organizations';
@@ -23,21 +24,120 @@ import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-u
 import { useProvider } from '@/features/providers/hooks/use-provider';
 import { isMobileForUI } from '@/lib/utils/responsive';
 
-// Helper function for smart breadcrumb truncation
-function truncateForMobile(text: string, maxLength: number = 15): string {
-  if (text.length <= maxLength) return text;
-  return `${text.substring(0, maxLength - 3)}...`;
+// Enhanced truncation function with dynamic calculation and truncation tracking
+function truncateForMobile(text: string, screenWidth: number = 375): { 
+  truncated: string; 
+  isTruncated: boolean; 
+  original: string; 
+} {
+  // Dynamic max length based on screen width
+  const baseLength = Math.floor(screenWidth / 25); // ~15 chars for 375px
+  const maxLength = Math.max(8, Math.min(baseLength, 20));
+  
+  if (text.length <= maxLength) {
+    return { truncated: text, isTruncated: false, original: text };
+  }
+  
+  // Smart truncation for names
+  if (text.includes('Dr.') || text.includes('Prof.')) {
+    const parts = text.split(' ');
+    if (parts.length >= 2) {
+      const title = parts[0];
+      const lastName = parts[parts.length - 1];
+      if ((title + ' ' + lastName).length <= maxLength) {
+        return { 
+          truncated: `${title} ${lastName}`, 
+          isTruncated: true, 
+          original: text 
+        };
+      }
+    }
+  }
+  
+  // Smart truncation for organization names (preserve key words)
+  if (text.includes('Hospital') || text.includes('Clinic') || text.includes('Medical') || text.includes('Health')) {
+    const parts = text.split(' ');
+    if (parts.length >= 2) {
+      // Try to preserve the first word and important identifier
+      const firstWord = parts[0];
+      const importantWord = parts.find(word => 
+        ['Hospital', 'Clinic', 'Medical', 'Health', 'Center', 'Institute'].includes(word)
+      );
+      if (importantWord && (firstWord + ' ' + importantWord).length <= maxLength) {
+        return { 
+          truncated: `${firstWord} ${importantWord}`, 
+          isTruncated: true, 
+          original: text 
+        };
+      }
+    }
+  }
+  
+  return { 
+    truncated: `${text.substring(0, maxLength - 3)}...`, 
+    isTruncated: true, 
+    original: text 
+  };
 }
 
-// Helper function to determine if breadcrumb should be collapsed for mobile
-function shouldCollapseBreadcrumb(items: any[], isMobile: boolean): boolean {
-  return isMobile && items.length > 3;
+// Enhanced function to determine if breadcrumb should be collapsed based on content
+function shouldCollapseBreadcrumb(items: any[], isMobile: boolean, isTablet: boolean): {
+  shouldCollapse: boolean;
+  collapseStrategy: 'none' | 'middle' | 'aggressive';
+} {
+  if (!isMobile && !isTablet) return { shouldCollapse: false, collapseStrategy: 'none' };
+  
+  // Calculate estimated content width
+  const estimatedWidth = items.reduce((total, item) => {
+    return total + (item.label.length * 8) + 20; // ~8px per char + spacing
+  }, 0);
+  
+  const availableWidth = isMobile ? 300 : 600; // Conservative estimates
+  
+  if (estimatedWidth > availableWidth) {
+    return {
+      shouldCollapse: true,
+      collapseStrategy: items.length > 4 ? 'aggressive' : 'middle'
+    };
+  }
+  
+  return { shouldCollapse: false, collapseStrategy: 'none' };
+}
+
+// Get device-specific breadcrumb styling classes
+function getBreadcrumbClasses(deviceType: 'mobile' | 'tablet' | 'desktop') {
+  switch (deviceType) {
+    case 'mobile':
+      return {
+        list: 'gap-0.5 text-xs leading-tight',
+        item: 'text-xs max-w-[120px] truncate',
+        separator: 'mx-1'
+      };
+    case 'tablet':
+      return {
+        list: 'gap-1 text-sm leading-normal', 
+        item: 'text-sm max-w-[200px] truncate',
+        separator: 'mx-1.5'
+      };
+    default:
+      return {
+        list: 'gap-1.5 text-sm leading-normal',
+        item: 'text-sm',
+        separator: 'mx-2'
+      };
+  }
 }
 
 // Dynamic breadcrumb component
 function DynamicBreadcrumb() {
   const pathname = usePathname();
   const isMobile = isMobileForUI();
+  
+  // Get screen width for dynamic truncation and device detection
+  const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 375;
+  const isTablet = screenWidth >= 768 && screenWidth < 1024;
+  const deviceType: 'mobile' | 'tablet' | 'desktop' = isMobile ? 'mobile' : isTablet ? 'tablet' : 'desktop';
+  const classes = getBreadcrumbClasses(deviceType);
 
   // Split pathname and filter out empty strings
   const pathSegments = pathname.split('/').filter(Boolean);
@@ -85,6 +185,8 @@ function DynamicBreadcrumb() {
     label: 'Dashboard',
     href: '/dashboard',
     isLast: pathSegments.length === 0,
+    isTruncated: false,
+    originalLabel: 'Dashboard',
   });
 
   // Add path segments
@@ -94,45 +196,87 @@ function DynamicBreadcrumb() {
     const isLast = index === pathSegments.length - 1;
 
     let label;
+    let isTruncated = false;
+    let originalLabel = '';
 
     // Special handling for provider UUID (admin routes)
     if (isAdminProviderPage && index === 2) {
       if (provider) {
-        label = isMobile ? truncateForMobile(provider.name) : provider.name;
+        if (isMobile) {
+          const truncationResult = truncateForMobile(provider.name, screenWidth);
+          label = truncationResult.truncated;
+          isTruncated = truncationResult.isTruncated;
+          originalLabel = truncationResult.original;
+        } else {
+          label = provider.name;
+          originalLabel = provider.name;
+        }
       } else if (isProviderLoading) {
         label = 'Loading...';
+        originalLabel = 'Loading...';
       } else {
         label = 'Provider';
+        originalLabel = 'Provider';
       }
     }
     // Special handling for provider UUID (regular routes)
     else if (isRegularProviderPage && index === 1) {
       if (provider) {
-        label = isMobile ? truncateForMobile(provider.name) : provider.name;
+        if (isMobile) {
+          const truncationResult = truncateForMobile(provider.name, screenWidth);
+          label = truncationResult.truncated;
+          isTruncated = truncationResult.isTruncated;
+          originalLabel = truncationResult.original;
+        } else {
+          label = provider.name;
+          originalLabel = provider.name;
+        }
       } else if (isProviderLoading) {
         label = 'Loading...';
+        originalLabel = 'Loading...';
       } else {
         label = 'Provider';
+        originalLabel = 'Provider';
       }
     }
     // Special handling for organization UUID (admin routes)
     else if (isAdminOrganizationPage && index === 2) {
       if (organization) {
-        label = isMobile ? truncateForMobile(organization.name) : organization.name;
+        if (isMobile) {
+          const truncationResult = truncateForMobile(organization.name, screenWidth);
+          label = truncationResult.truncated;
+          isTruncated = truncationResult.isTruncated;
+          originalLabel = truncationResult.original;
+        } else {
+          label = organization.name;
+          originalLabel = organization.name;
+        }
       } else if (isOrganizationLoading) {
         label = 'Loading...';
+        originalLabel = 'Loading...';
       } else {
         label = 'Organization';
+        originalLabel = 'Organization';
       }
     }
     // Special handling for organization UUID (regular routes)
     else if (isRegularOrganizationPage && index === 1) {
       if (organization) {
-        label = isMobile ? truncateForMobile(organization.name) : organization.name;
+        if (isMobile) {
+          const truncationResult = truncateForMobile(organization.name, screenWidth);
+          label = truncationResult.truncated;
+          isTruncated = truncationResult.isTruncated;
+          originalLabel = truncationResult.original;
+        } else {
+          label = organization.name;
+          originalLabel = organization.name;
+        }
       } else if (isOrganizationLoading) {
         label = 'Loading...';
+        originalLabel = 'Loading...';
       } else {
         label = 'Organization';
+        originalLabel = 'Organization';
       }
     } else {
       // Convert segment to readable label
@@ -140,58 +284,109 @@ function DynamicBreadcrumb() {
         .split('-')
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
-      label = isMobile ? truncateForMobile(fullLabel) : fullLabel;
+      
+      if (isMobile) {
+        const truncationResult = truncateForMobile(fullLabel, screenWidth);
+        label = truncationResult.truncated;
+        isTruncated = truncationResult.isTruncated;
+        originalLabel = truncationResult.original;
+      } else {
+        label = fullLabel;
+        originalLabel = fullLabel;
+      }
     }
 
     breadcrumbItems.push({
       label,
       href: currentPath,
       isLast,
+      isTruncated,
+      originalLabel,
     });
   });
 
-  // Implement breadcrumb collapsing for mobile
-  const shouldCollapse = shouldCollapseBreadcrumb(breadcrumbItems, isMobile);
+  // Implement enhanced breadcrumb collapsing
+  const collapseResult = shouldCollapseBreadcrumb(breadcrumbItems, isMobile, isTablet);
   let displayItems = breadcrumbItems;
 
-  if (shouldCollapse) {
-    // Show: Dashboard > ... > Current Page
-    displayItems = [
-      breadcrumbItems[0], // Dashboard
-      breadcrumbItems[breadcrumbItems.length - 1], // Current page
-    ];
+  if (collapseResult.shouldCollapse) {
+    if (collapseResult.collapseStrategy === 'aggressive') {
+      // Show: Dashboard > ... > Current Page
+      displayItems = [
+        breadcrumbItems[0], // Dashboard
+        breadcrumbItems[breadcrumbItems.length - 1], // Current page
+      ];
+    } else if (collapseResult.collapseStrategy === 'middle') {
+      // Show: Dashboard > ... > Second-to-last > Current Page
+      if (breadcrumbItems.length > 3) {
+        displayItems = [
+          breadcrumbItems[0], // Dashboard
+          breadcrumbItems[breadcrumbItems.length - 2], // Second-to-last
+          breadcrumbItems[breadcrumbItems.length - 1], // Current page
+        ];
+      } else {
+        // Fallback to aggressive strategy
+        displayItems = [
+          breadcrumbItems[0], // Dashboard
+          breadcrumbItems[breadcrumbItems.length - 1], // Current page
+        ];
+      }
+    }
   }
 
   return (
-    <Breadcrumb>
-      <BreadcrumbList className={isMobile ? 'gap-1 text-xs' : 'gap-1.5 text-sm'}>
-        {displayItems.map((item, index) => (
-          <React.Fragment key={item.href}>
-            {index > 0 && <BreadcrumbSeparator />}
-            {/* Show ellipsis for collapsed breadcrumbs */}
-            {shouldCollapse && index === 1 && breadcrumbItems.length > 2 && (
-              <React.Fragment>
-                <BreadcrumbItem>
-                  <BreadcrumbEllipsis />
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-              </React.Fragment>
-            )}
-            <BreadcrumbItem>
-              {item.isLast ? (
-                <BreadcrumbPage className={isMobile ? 'text-xs' : 'text-sm'}>
-                  {item.label}
-                </BreadcrumbPage>
-              ) : (
-                <BreadcrumbLink href={item.href} className={isMobile ? 'text-xs' : 'text-sm'}>
-                  {item.label}
-                </BreadcrumbLink>
+    <TooltipProvider>
+      <Breadcrumb>
+        <BreadcrumbList className={classes.list}>
+          {displayItems.map((item, index) => (
+            <React.Fragment key={item.href}>
+              {index > 0 && <BreadcrumbSeparator />}
+              {/* Show ellipsis for collapsed breadcrumbs */}
+              {collapseResult.shouldCollapse && index === 1 && breadcrumbItems.length > displayItems.length && (
+                <React.Fragment>
+                  <BreadcrumbItem>
+                    <BreadcrumbEllipsis />
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                </React.Fragment>
               )}
-            </BreadcrumbItem>
-          </React.Fragment>
-        ))}
-      </BreadcrumbList>
-    </Breadcrumb>
+              <BreadcrumbItem>
+                {item.isTruncated ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      {item.isLast ? (
+                        <BreadcrumbPage className={classes.item} aria-label={`Current page: ${item.originalLabel}`}>
+                          {item.label}
+                        </BreadcrumbPage>
+                      ) : (
+                        <BreadcrumbLink href={item.href} className={classes.item} aria-label={`Navigate to: ${item.originalLabel}`}>
+                          {item.label}
+                        </BreadcrumbLink>
+                      )}
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{item.originalLabel}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <>
+                    {item.isLast ? (
+                      <BreadcrumbPage className={classes.item}>
+                        {item.label}
+                      </BreadcrumbPage>
+                    ) : (
+                      <BreadcrumbLink href={item.href} className={classes.item}>
+                        {item.label}
+                      </BreadcrumbLink>
+                    )}
+                  </>
+                )}
+              </BreadcrumbItem>
+            </React.Fragment>
+          ))}
+        </BreadcrumbList>
+      </Breadcrumb>
+    </TooltipProvider>
   );
 }
 
