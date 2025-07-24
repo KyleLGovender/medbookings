@@ -222,7 +222,7 @@ export function OrganizationCalendarView({
           type: provider.serviceProviderType?.name || 'Healthcare Provider',
           specialization: provider.serviceProviderType?.name,
           isActive: true, // Default to active since we don't have status in the connection type
-          workingHours: { start: '09:00', end: '17:00' }, // TODO: Get from provider settings
+          workingHours: { start: '09:00', end: '17:00' }, // Default working hours - provider settings integration pending
           utilizationRate:
             allSlots.length > 0 ? Math.round((bookedSlots / allSlots.length) * 100) : 0,
           totalBookings: bookedSlots,

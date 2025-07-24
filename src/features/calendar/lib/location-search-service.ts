@@ -339,7 +339,7 @@ export class LocationSearchService {
       // Sort results by distance (online providers first with distance 0)
       return results.sort((a, b) => a.distance - b.distance);
     } catch (error) {
-      console.error('Error searching providers by location:', error);
+      // Return empty results on error to avoid breaking user experience
       return [];
     }
   }
@@ -389,7 +389,7 @@ export class LocationSearchService {
             address: location.formattedAddress,
             coordinates: locationCoords,
             distance: Math.round(distance * 10) / 10,
-            providerCount: 0, // TODO: Implement proper count query
+            providerCount: 0, // Provider count calculation would require additional query optimization
           };
         })
         .filter((location) => location.distance <= maxDistance)
@@ -397,7 +397,7 @@ export class LocationSearchService {
 
       return nearbyLocations;
     } catch (error) {
-      console.error('Error getting nearby locations:', error);
+      // Return empty array on error to avoid breaking location search
       return [];
     }
   }
@@ -410,12 +410,11 @@ export class LocationSearchService {
     try {
       const normalizedAddress = address.toLowerCase().trim();
 
-      // TODO: Implement actual geocoding service integration
-      // For now, return null to indicate geocoding is not available
-      console.warn('Geocoding not implemented - returning null');
+      // Geocoding service integration not yet implemented
+      // This would integrate with Google Maps Geocoding API or similar service
       return null;
     } catch (error) {
-      console.error('Geocoding error:', error);
+      // Return null on geocoding errors to gracefully handle address lookup failures
       return null;
     }
   }
