@@ -480,9 +480,14 @@ export async function updateAvailability(
       return { success: false, error: 'Availability not found' };
     }
 
+    // Get current user's provider record for authorization checks
+    const currentUserProvider = await prisma.provider.findUnique({
+      where: { userId: currentUser.id },
+    });
+
     // Check permissions
     const canUpdate =
-      currentUser.id === existingAvailability.providerId ||
+      currentUserProvider?.id === existingAvailability.providerId ||
       currentUser.id === existingAvailability.createdById ||
       currentUser.role === 'ADMIN' ||
       currentUser.role === 'SUPER_ADMIN';
