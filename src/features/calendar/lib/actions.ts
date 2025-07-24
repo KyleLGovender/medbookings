@@ -49,9 +49,14 @@ export async function createAvailability(
     // Validate input data
     const validatedData = createAvailabilityDataSchema.parse(data);
 
+    // Get current user's provider record for authorization checks
+    const currentUserProvider = await prisma.provider.findUnique({
+      where: { userId: currentUser.id },
+    });
+
     // Check if user has permission to create availability for this provider
     const canCreateForProvider =
-      currentUser.id === validatedData.providerId ||
+      currentUserProvider?.id === validatedData.providerId ||
       currentUser.role === UserRole.ADMIN ||
       currentUser.role === UserRole.SUPER_ADMIN;
 
@@ -76,11 +81,7 @@ export async function createAvailability(
     }
 
     // Determine initial status based on context
-    // Check if current user is the service provider by comparing ServiceProvider IDs
-    const currentUserProvider = await prisma.provider.findUnique({
-      where: { userId: currentUser.id },
-    });
-
+    // Check if current user is the service provider by comparing Provider IDs
     const isProviderCreated = currentUserProvider?.id === validatedData.providerId;
     const initialStatus = isProviderCreated
       ? AvailabilityStatus.ACCEPTED
