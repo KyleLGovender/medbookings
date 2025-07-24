@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
   Calendar as CalendarIcon,
@@ -68,6 +68,7 @@ export function OrganizationCalendarView({
   const [currentDate, setCurrentDate] = useState(initialDate);
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialViewMode);
   const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
   const [filters, setFilters] = useState({
     showOnlyActive: true,
     showOnlyWithBookings: false,
@@ -75,6 +76,26 @@ export function OrganizationCalendarView({
     selectedSpecialization: 'all',
   });
   const [showUtilizationOnly, setShowUtilizationOnly] = useState(false);
+
+  // Mobile detection and view mode handling
+  useEffect(() => {
+    const checkIsMobile = () => {
+      const mobile = window.innerWidth < 640; // sm breakpoint
+      setIsMobile(mobile);
+
+      // If switching to mobile and current view is not allowed, switch to day view
+      if (mobile && (viewMode === 'week' || viewMode === 'month')) {
+        setViewMode('day');
+      }
+    };
+
+    // Check initial state
+    checkIsMobile();
+
+    // Listen for window resize
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, [viewMode]);
 
   // Fetch real data from APIs
   const { data: organization, isLoading: isOrgLoading } = useOrganization(organizationId);
@@ -475,8 +496,12 @@ export function OrganizationCalendarView({
                 <SelectContent>
                   <SelectItem value="day">Day</SelectItem>
                   <SelectItem value="3-day">3-Day</SelectItem>
-                  <SelectItem value="week">Week</SelectItem>
-                  <SelectItem value="month">Month</SelectItem>
+                  <SelectItem value="week" className="hidden sm:block">
+                    Week
+                  </SelectItem>
+                  <SelectItem value="month" className="hidden sm:block">
+                    Month
+                  </SelectItem>
                 </SelectContent>
               </Select>
 

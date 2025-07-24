@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Repeat } from 'lucide-react';
 
@@ -79,6 +79,27 @@ export function ProviderCalendarView({
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialViewMode);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<AvailabilityStatus | 'ALL'>('ALL');
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Mobile detection and view mode handling
+  useEffect(() => {
+    const checkIsMobile = () => {
+      const mobile = window.innerWidth < 640; // sm breakpoint
+      setIsMobile(mobile);
+
+      // If switching to mobile and current view is not allowed, switch to day view
+      if (mobile && (viewMode === 'week' || viewMode === 'month')) {
+        setViewMode('day');
+      }
+    };
+
+    // Check initial state
+    checkIsMobile();
+
+    // Listen for window resize
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, [viewMode]);
 
   // Modal state (context menu removed - modal now handled by parent)
 
@@ -167,6 +188,13 @@ export function ProviderCalendarView({
         // Set start to beginning of day
         start.setHours(0, 0, 0, 0);
         // Set end to end of day
+        end.setHours(23, 59, 59, 999);
+        break;
+      case '3-day':
+        // Set start to beginning of current day
+        start.setHours(0, 0, 0, 0);
+        // Set end to end of day + 2 days
+        end.setDate(start.getDate() + 2);
         end.setHours(23, 59, 59, 999);
         break;
       case 'week':
@@ -326,6 +354,9 @@ export function ProviderCalendarView({
     switch (viewMode) {
       case 'day':
         newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
+        break;
+      case '3-day':
+        newDate.setDate(newDate.getDate() + (direction === 'next' ? 3 : -3));
         break;
       case 'week':
         newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
@@ -534,8 +565,13 @@ export function ProviderCalendarView({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="day">Day</SelectItem>
-                  <SelectItem value="week">Week</SelectItem>
-                  <SelectItem value="month">Month</SelectItem>
+                  <SelectItem value="3-day">3 Days</SelectItem>
+                  <SelectItem value="week" className="hidden sm:block">
+                    Week
+                  </SelectItem>
+                  <SelectItem value="month" className="hidden sm:block">
+                    Month
+                  </SelectItem>
                 </SelectContent>
               </Select>
 

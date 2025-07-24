@@ -9,19 +9,7 @@
 
 ## 🔥 High Priority Issues & Tasks
 
-- [ ] **Bug Fix**: Provider-created availabilities default to PENDING instead of ACCEPTED - `src/features/calendar/availability/lib/actions.ts:97`
-  - **Issue**: Logic determines provider-created availability using `currentUser.id === validatedData.serviceProviderId`, incorrectly comparing a User ID to a ServiceProvider ID. This results in `isProviderCreated` being `false`, so the created availability is given a `PENDING` status.
-  - **Impact**: Providers see their own availabilities as pending proposals, blocking slot generation and booking flows until manually accepted. This degrades user experience and causes scheduling errors.
-  - **Implementation**: 
-    1. Fetch the `ServiceProvider` record for the current user (`prisma.serviceProvider.findUnique({ where: { userId: currentUser.id } })`).
-    2. Update `isProviderCreated` to compare the fetched provider's `id` to `validatedData.serviceProviderId`.
-    3. If they match, set `isProviderCreated = true` and `initialStatus = AvailabilityStatus.ACCEPTED`; otherwise keep existing behavior.
-    4. Add/adjust unit tests covering provider vs organization creation paths.
-  - **Testing**:
-    - Create availability via provider UI ➜ API should return `status: ACCEPTED`.
-    - Create availability proposal via organization UI ➜ API should return `status: PENDING`.
-    - Regression: Existing organization acceptance workflow still functions.
-  - **Estimated Time**: 1–2 hours
+
 
   - [ ] **UX/UI**: Hide month/week view options on mobile devices - `src/features/calendar/availability/components/calendar-navigation.tsx`
   - **Issue**: Calendar mobile view doesn't look good - month and week view options should be hidden on mobile devices, only showing day and 3-day options
@@ -40,23 +28,7 @@
 
 
 ## 📊 Medium Priority Issues & Tasks
-- [ ] **Technical Debt**: Missing series vs individual availability management workflow - `src/app/(dashboard)/providers/[id]/manage-calendar/page.tsx:178`
-  - **Issue**: When performing actions (edit, delete, cancel) on availability that is part of a recurring series, the system lacks clear UI to specify whether the action applies to the individual occurrence or the entire series. Context menus and action buttons operate on single availabilities only, without considering series relationships.
-  - **Impact**: Users cannot properly manage recurring availability series, leading to confusion about which occurrences are affected by changes. This breaks expected calendar behavior and forces users to manually edit each occurrence individually.
-  - **Implementation**:
-    1. Detect when an availability is part of a series (check `isRecurring` and `seriesId` properties).
-    2. Add series-aware context menu options that show "Edit this occurrence" vs "Edit entire series" when applicable.
-    3. Create a series action dialog component that prompts users to choose scope: "This occurrence only", "This and future occurrences", or "All occurrences in series".
-    4. Update edit, delete, and cancel operations to accept a `scope` parameter and handle series-wide operations.
-    5. Leverage existing `DragDropCalendar` component's `SeriesUpdateOptions` pattern for consistency.
-    6. Add series management to organization calendar views as well.
-  - **Testing**:
-    - Create recurring availability ➜ verify context menu shows series options.
-    - Edit single occurrence ➜ verify only that occurrence changes.
-    - Edit entire series ➜ verify all occurrences in series change.
-    - Delete series ➜ verify all future occurrences are removed.
-    - Test with existing bookings on some occurrences.
-  - **Estimated Time**: 4-6 hours
+
 
 
 - [ ] **Technical Debt**: Comprehensive cleanup of provider calendar components as reference pattern - `src/features/calendar/availability/components/provider-calendar-view.tsx:1`
