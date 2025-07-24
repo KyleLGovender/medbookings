@@ -49,9 +49,14 @@ export async function createAvailability(
     // Validate input data
     const validatedData = createAvailabilityDataSchema.parse(data);
 
+    // Get current user's provider record for authorization checks
+    const currentUserProvider = await prisma.provider.findUnique({
+      where: { userId: currentUser.id },
+    });
+
     // Check if user has permission to create availability for this provider
     const canCreateForProvider =
-      currentUser.id === validatedData.providerId ||
+      currentUserProvider?.id === validatedData.providerId ||
       currentUser.role === UserRole.ADMIN ||
       currentUser.role === UserRole.SUPER_ADMIN;
 
@@ -76,11 +81,7 @@ export async function createAvailability(
     }
 
     // Determine initial status based on context
-    // Check if current user is the service provider by comparing ServiceProvider IDs
-    const currentUserProvider = await prisma.provider.findUnique({
-      where: { userId: currentUser.id },
-    });
-
+    // Check if current user is the service provider by comparing Provider IDs
     const isProviderCreated = currentUserProvider?.id === validatedData.providerId;
     const initialStatus = isProviderCreated
       ? AvailabilityStatus.ACCEPTED
@@ -305,9 +306,14 @@ export async function getAvailabilityById(
       return { success: false, error: 'Availability not found' };
     }
 
+    // Get current user's provider record for authorization checks
+    const currentUserProvider = await prisma.provider.findUnique({
+      where: { userId: currentUser.id },
+    });
+
     // Check if user has permission to view this availability
     const canView =
-      currentUser.id === availability.providerId ||
+      currentUserProvider?.id === availability.providerId ||
       currentUser.id === availability.createdById ||
       currentUser.role === 'ADMIN' ||
       currentUser.role === 'SUPER_ADMIN';
@@ -357,7 +363,7 @@ export async function searchAvailability(
     const where: any = {};
 
     if (validatedParams.providerId) {
-      where.serviceProviderId = validatedParams.providerId;
+      where.providerId = validatedParams.providerId;
     }
 
     if (validatedParams.organizationId) {
@@ -410,6 +416,11 @@ export async function searchAvailability(
 
     // Add permission filters
     if (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
+      // Get current user's provider record for authorization
+      const currentUserProvider = await prisma.provider.findUnique({
+        where: { userId: currentUser.id },
+      });
+
       // Get user's organizations
       const userOrganizations = await prisma.organizationMembership.findMany({
         where: { userId: currentUser.id },
@@ -419,7 +430,7 @@ export async function searchAvailability(
       const organizationIds = userOrganizations.map((m) => m.organizationId);
 
       where.OR = [
-        { serviceProviderId: currentUser.id },
+        ...(currentUserProvider ? [{ providerId: currentUserProvider.id }] : []),
         { createdById: currentUser.id },
         ...(organizationIds.length > 0 ? [{ organizationId: { in: organizationIds } }] : []),
       ];
@@ -474,9 +485,14 @@ export async function updateAvailability(
       return { success: false, error: 'Availability not found' };
     }
 
+    // Get current user's provider record for authorization checks
+    const currentUserProvider = await prisma.provider.findUnique({
+      where: { userId: currentUser.id },
+    });
+
     // Check permissions
     const canUpdate =
-      currentUser.id === existingAvailability.providerId ||
+      currentUserProvider?.id === existingAvailability.providerId ||
       currentUser.id === existingAvailability.createdById ||
       currentUser.role === 'ADMIN' ||
       currentUser.role === 'SUPER_ADMIN';
@@ -625,9 +641,14 @@ export async function deleteAvailability(
       return { success: false, error: 'Availability not found' };
     }
 
+    // Get current user's provider record for authorization checks
+    const currentUserProvider = await prisma.provider.findUnique({
+      where: { userId: currentUser.id },
+    });
+
     // Check permissions
     const canDelete =
-      currentUser.id === existingAvailability.providerId ||
+      currentUserProvider?.id === existingAvailability.providerId ||
       currentUser.id === existingAvailability.createdById ||
       currentUser.role === 'ADMIN' ||
       currentUser.role === 'SUPER_ADMIN';
@@ -722,9 +743,14 @@ export async function cancelAvailability(
       return { success: false, error: 'Availability not found' };
     }
 
+    // Get current user's provider record for authorization checks
+    const currentUserProvider = await prisma.provider.findUnique({
+      where: { userId: currentUser.id },
+    });
+
     // Check permissions
     const canCancel =
-      currentUser.id === existingAvailability.providerId ||
+      currentUserProvider?.id === existingAvailability.providerId ||
       currentUser.id === existingAvailability.createdById ||
       currentUser.role === 'ADMIN' ||
       currentUser.role === 'SUPER_ADMIN';
