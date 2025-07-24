@@ -61,9 +61,28 @@ function truncateForMobile(text: string, screenWidth: number = 375): string {
   return `${text.substring(0, maxLength - 3)}...`;
 }
 
-// Helper function to determine if breadcrumb should be collapsed for mobile
-function shouldCollapseBreadcrumb(items: any[], isMobile: boolean): boolean {
-  return isMobile && items.length > 3;
+// Enhanced function to determine if breadcrumb should be collapsed based on content
+function shouldCollapseBreadcrumb(items: any[], isMobile: boolean, isTablet: boolean): {
+  shouldCollapse: boolean;
+  collapseStrategy: 'none' | 'middle' | 'aggressive';
+} {
+  if (!isMobile && !isTablet) return { shouldCollapse: false, collapseStrategy: 'none' };
+  
+  // Calculate estimated content width
+  const estimatedWidth = items.reduce((total, item) => {
+    return total + (item.label.length * 8) + 20; // ~8px per char + spacing
+  }, 0);
+  
+  const availableWidth = isMobile ? 300 : 600; // Conservative estimates
+  
+  if (estimatedWidth > availableWidth) {
+    return {
+      shouldCollapse: true,
+      collapseStrategy: items.length > 4 ? 'aggressive' : 'middle'
+    };
+  }
+  
+  return { shouldCollapse: false, collapseStrategy: 'none' };
 }
 
 // Dynamic breadcrumb component
@@ -71,8 +90,9 @@ function DynamicBreadcrumb() {
   const pathname = usePathname();
   const isMobile = isMobileForUI();
   
-  // Get screen width for dynamic truncation
+  // Get screen width for dynamic truncation and tablet detection
   const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 375;
+  const isTablet = screenWidth >= 768 && screenWidth < 1024;
 
   // Split pathname and filter out empty strings
   const pathSegments = pathname.split('/').filter(Boolean);
@@ -185,16 +205,33 @@ function DynamicBreadcrumb() {
     });
   });
 
-  // Implement breadcrumb collapsing for mobile
-  const shouldCollapse = shouldCollapseBreadcrumb(breadcrumbItems, isMobile);
+  // Implement enhanced breadcrumb collapsing
+  const collapseResult = shouldCollapseBreadcrumb(breadcrumbItems, isMobile, isTablet);
   let displayItems = breadcrumbItems;
 
-  if (shouldCollapse) {
-    // Show: Dashboard > ... > Current Page
-    displayItems = [
-      breadcrumbItems[0], // Dashboard
-      breadcrumbItems[breadcrumbItems.length - 1], // Current page
-    ];
+  if (collapseResult.shouldCollapse) {
+    if (collapseResult.collapseStrategy === 'aggressive') {
+      // Show: Dashboard > ... > Current Page
+      displayItems = [
+        breadcrumbItems[0], // Dashboard
+        breadcrumbItems[breadcrumbItems.length - 1], // Current page
+      ];
+    } else if (collapseResult.collapseStrategy === 'middle') {
+      // Show: Dashboard > ... > Second-to-last > Current Page
+      if (breadcrumbItems.length > 3) {
+        displayItems = [
+          breadcrumbItems[0], // Dashboard
+          breadcrumbItems[breadcrumbItems.length - 2], // Second-to-last
+          breadcrumbItems[breadcrumbItems.length - 1], // Current page
+        ];
+      } else {
+        // Fallback to aggressive strategy
+        displayItems = [
+          breadcrumbItems[0], // Dashboard
+          breadcrumbItems[breadcrumbItems.length - 1], // Current page
+        ];
+      }
+    }
   }
 
   return (
@@ -204,7 +241,7 @@ function DynamicBreadcrumb() {
           <React.Fragment key={item.href}>
             {index > 0 && <BreadcrumbSeparator />}
             {/* Show ellipsis for collapsed breadcrumbs */}
-            {shouldCollapse && index === 1 && breadcrumbItems.length > 2 && (
+            {collapseResult.shouldCollapse && index === 1 && breadcrumbItems.length > displayItems.length && (
               <React.Fragment>
                 <BreadcrumbItem>
                   <BreadcrumbEllipsis />
