@@ -192,7 +192,10 @@ export interface Location {
   id: string;
   name: string;
   formattedAddress: string;
-  coordinates?: any; // JSON field with lat/lng
+  coordinates?: {
+    lat: number;
+    lng: number;
+  } | null; // JSON field with lat/lng
   phone?: string | null;
   email?: string | null;
 }
@@ -304,7 +307,7 @@ export interface Availability {
   startTime: Date;
   endTime: Date;
   isRecurring: boolean;
-  recurrencePattern?: any | null; // JSON field from Prisma
+  recurrencePattern?: RecurrencePattern | null; // JSON field from Prisma
   seriesId?: string | null;
   status: AvailabilityStatus;
   schedulingRule: SchedulingRule;
@@ -712,8 +715,8 @@ export interface WorkflowResult {
 // Booking Integration Types
 export interface BookingValidationResult {
   isValid: boolean;
-  slot?: any;
-  availability?: any;
+  slot?: CalculatedAvailabilitySlot;
+  availability?: Availability;
   conflicts: string[];
   warnings: string[];
   schedulingRuleCompliant: boolean;
@@ -817,7 +820,7 @@ export interface NotificationPayload {
   subject: string;
   message: string;
   actionUrl?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AvailabilityNotificationContext {
@@ -936,8 +939,8 @@ export interface ConflictResolutionResult {
   conflictedSlotsCount: number;
   resolvedConflictsCount: number;
   conflicts: AvailabilityConflict[];
-  validSlots: any[];
-  conflictedSlots: any[];
+  validSlots: CalculatedAvailabilitySlot[];
+  conflictedSlots: CalculatedAvailabilitySlot[];
 }
 
 export interface SlotConflictDetails {
@@ -1078,7 +1081,7 @@ export interface CreateAvailabilityData {
   startTime: Date;
   endTime: Date;
   isRecurring: boolean;
-  recurrencePattern?: any; // JSON field to match Prisma schema
+  recurrencePattern?: RecurrencePattern; // JSON field to match Prisma schema
   seriesId?: string;
   schedulingRule: SchedulingRule;
   schedulingInterval?: number;

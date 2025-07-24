@@ -1,6 +1,6 @@
 import { Repeat } from 'lucide-react';
 
-import { AvailabilityStatus } from '@/features/calendar/types/types';
+import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
 
 import { WeekViewProps } from './types';
 

@@ -33,6 +33,8 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { CalendarErrorBoundary } from '@/features/calendar/components/error-boundary';
+import { CalendarSkeleton } from '@/features/calendar/components/loading';
 import {
   AvailabilityWithRelations,
   CalculatedAvailabilitySlotWithRelations,
@@ -378,16 +380,7 @@ export function OrganizationCalendarView({
   };
 
   if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 w-1/3 rounded bg-gray-200"></div>
-            <div className="h-64 rounded bg-gray-200"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <CalendarSkeleton />;
   }
 
   if (!calendarData) {
@@ -407,7 +400,8 @@ export function OrganizationCalendarView({
   const displayedProviders = filteredProviders.filter((p) => selectedProviders.includes(p.id));
 
   return (
-    <div className="space-y-6">
+    <CalendarErrorBoundary>
+      <div className="space-y-6">
       {/* Organization Header */}
       <Card>
         <CardHeader>
@@ -711,7 +705,8 @@ export function OrganizationCalendarView({
           onRecommendationClick={onRecommendationClick}
         />
       )} */}
-    </div>
+      </div>
+    </CalendarErrorBoundary>
   );
 }
 

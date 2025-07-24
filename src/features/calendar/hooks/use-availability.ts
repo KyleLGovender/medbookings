@@ -11,17 +11,17 @@ import {
 
 // Add context type definitions at the top of the file
 type UpdateAvailabilityContext = {
-  previousAvailability: any;
+  previousAvailability: AvailabilityWithRelations | null;
   availabilityId: string;
 };
 
 type AcceptAvailabilityContext = {
-  previousAvailability: any;
+  previousAvailability: AvailabilityWithRelations | null;
   availabilityId: string;
 };
 
 type RejectAvailabilityContext = {
-  previousAvailability: any;
+  previousAvailability: AvailabilityWithRelations | null;
   availabilityId: string;
 };
 
@@ -224,11 +224,11 @@ export function useUpdateAvailability(options?: {
       });
 
       // Snapshot the previous value
-      const previousAvailability = queryClient.getQueryData(['availability', variables.id]);
+      const previousAvailability = queryClient.getQueryData(['availability', variables.id]) as AvailabilityWithRelations | null;
 
       // Optimistically update the specific availability
       if (previousAvailability) {
-        queryClient.setQueryData(['availability', variables.id], (old: any) => ({
+        queryClient.setQueryData(['availability', variables.id], (old: AvailabilityWithRelations | undefined) => ({
           ...old,
           ...variables,
         }));
@@ -371,14 +371,14 @@ export function useAcceptAvailabilityProposal(options?: {
       });
 
       // Snapshot the previous value
-      const previousAvailability = queryClient.getQueryData(['availability', variables.id]);
+      const previousAvailability = queryClient.getQueryData(['availability', variables.id]) as AvailabilityWithRelations | null;
 
       // Optimistically update status
       if (previousAvailability) {
-        queryClient.setQueryData(['availability', variables.id], (old: any) => ({
+        queryClient.setQueryData(['availability', variables.id], (old: AvailabilityWithRelations | undefined) => ({
           ...old,
-          status: 'ACTIVE',
-          acceptedAt: new Date().toISOString(),
+          status: 'ACCEPTED' as const,
+          acceptedAt: new Date(),
         }));
       }
 
@@ -437,13 +437,13 @@ export function useRejectAvailabilityProposal(options?: {
       });
 
       // Snapshot the previous value
-      const previousAvailability = queryClient.getQueryData(['availability', variables.id]);
+      const previousAvailability = queryClient.getQueryData(['availability', variables.id]) as AvailabilityWithRelations | null;
 
       // Optimistically update status
       if (previousAvailability) {
-        queryClient.setQueryData(['availability', variables.id], (old: any) => ({
+        queryClient.setQueryData(['availability', variables.id], (old: AvailabilityWithRelations | undefined) => ({
           ...old,
-          status: 'REJECTED',
+          status: 'REJECTED' as const,
         }));
       }
 

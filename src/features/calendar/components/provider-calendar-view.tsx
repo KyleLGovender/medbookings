@@ -19,6 +19,8 @@ import { DayView } from '@/features/calendar/components/views/day-view';
 import { MonthView } from '@/features/calendar/components/views/month-view';
 import { ThreeDayView } from '@/features/calendar/components/views/three-day-view';
 import { WeekView } from '@/features/calendar/components/views/week-view';
+import { CalendarErrorBoundary } from '@/features/calendar/components/error-boundary';
+import { CalendarSkeleton } from '@/features/calendar/components/loading';
 import { useAvailabilitySearch } from '@/features/calendar/hooks/use-availability';
 import {
   AvailabilityStatus,
@@ -333,7 +335,7 @@ export function ProviderCalendarView({
     return {
       providerId,
       providerName: provider.name,
-      providerType: provider.typeAssignments?.[0]?.providerType?.name || 'Healthcare Provider',
+      providerType: 'Healthcare Provider', // TODO: Add type information to SerializedProvider
       workingHours: { start: '09:00', end: '17:00' }, // Default working hours
       events,
       stats: {
@@ -452,16 +454,7 @@ export function ProviderCalendarView({
   };
 
   if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 w-1/3 rounded bg-gray-200"></div>
-            <div className="h-64 rounded bg-gray-200"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <CalendarSkeleton />;
   }
 
   if (!calendarData) {
@@ -478,7 +471,8 @@ export function ProviderCalendarView({
   }
 
   return (
-    <div className="space-y-6">
+    <CalendarErrorBoundary>
+      <div className="space-y-6">
       {/* Header with Provider Info and Stats */}
       <Card>
         <CardHeader>
@@ -636,7 +630,7 @@ export function ProviderCalendarView({
             <MonthView
               currentDate={currentDate}
               events={calendarData.events}
-              onEventClick={onEventClick}
+              onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onDateClick={handleDateClick}
               onEditEvent={onEditEvent}
               getEventStyle={getEventStyle}
@@ -698,6 +692,7 @@ export function ProviderCalendarView({
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </CalendarErrorBoundary>
   );
 }
