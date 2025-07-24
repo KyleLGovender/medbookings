@@ -3,7 +3,6 @@
 // =============================================================================
 // All Zod validation schemas for the profile feature in one place
 // Organized by: Entity Schemas -> Request Schemas -> Response Schemas
-
 import { z } from 'zod';
 
 import { UserRole } from './types';

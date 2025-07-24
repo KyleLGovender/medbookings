@@ -1,13 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { ConnectionUpdate, InvitationResponse } from '@/features/providers/types/schemas';
 import {
   OrganizationConnectionWithDetails,
   ProviderInvitationWithOrganization,
 } from '@/features/providers/types/types';
-import {
-  ConnectionUpdate,
-  InvitationResponse,
-} from '@/features/providers/types/schemas';
 
 /**
  * Hook for fetching provider invitations

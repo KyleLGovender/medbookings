@@ -3,7 +3,6 @@
 // =============================================================================
 // Validation schemas for providers feature forms and API endpoints
 // Organized by: Input Schemas -> Response Schemas -> Utility Schemas
-
 import { z } from 'zod';
 
 // =============================================================================
@@ -17,17 +16,26 @@ export const createProviderSchema = z.object({
   whatsapp: z.string().optional(),
   providerTypeIds: z.array(z.string().uuid()).min(1, 'At least one provider type is required'),
   serviceIds: z.array(z.string().uuid()).min(1, 'At least one service is required'),
-  requirementSubmissions: z.array(z.object({
-    requirementTypeId: z.string().uuid(),
-    notes: z.string().optional(),
-  })).optional(),
+  requirementSubmissions: z
+    .array(
+      z.object({
+        requirementTypeId: z.string().uuid(),
+        notes: z.string().optional(),
+      })
+    )
+    .optional(),
 });
 
 export const updateProviderSchema = createProviderSchema.partial().extend({
   id: z.string().uuid(),
 });
 
-export const providerStatusSchema = z.enum(['PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED']);
+export const providerStatusSchema = z.enum([
+  'PENDING_APPROVAL',
+  'APPROVED',
+  'REJECTED',
+  'SUSPENDED',
+]);
 
 export const requirementStatusSchema = z.enum(['PENDING', 'APPROVED', 'REJECTED']);
 

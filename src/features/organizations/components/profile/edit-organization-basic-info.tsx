@@ -23,8 +23,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useOrganization } from '@/features/organizations/hooks/use-organization';
 import { useUpdateOrganizationBasicInfo } from '@/features/organizations/hooks/use-organization-updates';
-import { OrganizationBasicInfoData } from '@/features/organizations/types/types';
 import { organizationBasicInfoSchema } from '@/features/organizations/types/schemas';
+import { OrganizationBasicInfoData } from '@/features/organizations/types/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface EditOrganizationBasicInfoProps {

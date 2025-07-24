@@ -3,7 +3,6 @@
 // =============================================================================
 // All type definitions for the communications feature in one place
 // Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
-
 import { BookingView } from '@/features/calendar/types/types';
 
 // =============================================================================

@@ -3,7 +3,6 @@
 // =============================================================================
 // All Zod validation schemas for the communications feature in one place
 // Organized by: Entity Schemas -> Request Schemas -> Response Schemas
-
 import { z } from 'zod';
 
 import { NotificationChannel, NotificationType, TemplateType } from './types';
@@ -55,10 +54,12 @@ export const sendNotificationRequestSchema = z.object({
 });
 
 // Template data schema
-export const templateDataSchema = z.object({
-  recipientName: z.string().optional(),
-  booking: z.any().optional(), // BookingView type
-}).passthrough(); // Allow additional properties
+export const templateDataSchema = z
+  .object({
+    recipientName: z.string().optional(),
+    booking: z.any().optional(), // BookingView type
+  })
+  .passthrough(); // Allow additional properties
 
 // =============================================================================
 // RESPONSE SCHEMAS

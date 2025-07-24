@@ -1,36 +1,187 @@
 # MedBookings MVP Project Plan
 
 ## 🚀 Current Sprint (In Progress)
-- [ ] Standardize feature type definitions across bulletproof-react structure - Refactor all features to define types consistently in feature-specific types folders instead of mixed Prisma imports
-  - **Type:** Technical Debt
-  - **Impact:** Eliminates developer confusion from inconsistent type definitions, prevents circular dependencies, improves maintainability
-  - **Files:** All features in `@src/features/` types folders, based on `@prisma/schema.prisma`
-  - **Added:** 2025-01-21
-- [ ] Implement tRPC
-- [ ] Implement user roles system (guest, user, provider, organization manager, admin)
+
 
 ## 📋 Ready for Development (Prioritized)
+- [ ] Implement testing throughout the application
+- [ ] Implement user roles system (guest, user, provider, organization manager, admin)
 
 ## 🔥 High Priority Issues & Tasks
 
+- [ ] **Bug Fix**: Provider-created availabilities default to PENDING instead of ACCEPTED - `src/features/calendar/availability/lib/actions.ts:97`
+  - **Issue**: Logic determines provider-created availability using `currentUser.id === validatedData.serviceProviderId`, incorrectly comparing a User ID to a ServiceProvider ID. This results in `isProviderCreated` being `false`, so the created availability is given a `PENDING` status.
+  - **Impact**: Providers see their own availabilities as pending proposals, blocking slot generation and booking flows until manually accepted. This degrades user experience and causes scheduling errors.
+  - **Implementation**: 
+    1. Fetch the `ServiceProvider` record for the current user (`prisma.serviceProvider.findUnique({ where: { userId: currentUser.id } })`).
+    2. Update `isProviderCreated` to compare the fetched provider's `id` to `validatedData.serviceProviderId`.
+    3. If they match, set `isProviderCreated = true` and `initialStatus = AvailabilityStatus.ACCEPTED`; otherwise keep existing behavior.
+    4. Add/adjust unit tests covering provider vs organization creation paths.
+  - **Testing**:
+    - Create availability via provider UI ➜ API should return `status: ACCEPTED`.
+    - Create availability proposal via organization UI ➜ API should return `status: PENDING`.
+    - Regression: Existing organization acceptance workflow still functions.
+  - **Estimated Time**: 1–2 hours
+
+  - [ ] **UX/UI**: Hide month/week view options on mobile devices - `src/features/calendar/availability/components/calendar-navigation.tsx`
+  - **Issue**: Calendar mobile view doesn't look good - month and week view options should be hidden on mobile devices, only showing day and 3-day options
+  - **Impact**: Poor mobile user experience due to cluttered navigation and inappropriate view options for small screens
+  - **Implementation**: 
+    1. Add mobile device detection logic (consider iPad size threshold)
+    2. Conditionally render view options based on screen size
+    3. Use CSS media queries or JavaScript viewport detection
+    4. Hide month and week buttons on mobile, keep only day and 3-day options
+  - **Testing**: 
+    - Test on various mobile devices and screen sizes
+    - Verify iPad behavior (determine if it should be treated as mobile)
+    - Test responsive breakpoints
+    - Ensure view switching works properly on mobile
+  - **Estimated Time**: 4-6 hours
 
 
 ## 📊 Medium Priority Issues & Tasks
-- [ ] Create database view for direct Booking-ServiceProvider relationships - Improve query performance while maintaining data integrity
-  - **Type:** Database Performance Optimization
-  - **Impact:** Simplifies provider-booking queries without adding redundant foreign keys
-  - **Files:** Database schema, potentially new view migrations
-  - **Added:** 2025-01-18
+- [ ] **Technical Debt**: Missing series vs individual availability management workflow - `src/app/(dashboard)/providers/[id]/manage-calendar/page.tsx:178`
+  - **Issue**: When performing actions (edit, delete, cancel) on availability that is part of a recurring series, the system lacks clear UI to specify whether the action applies to the individual occurrence or the entire series. Context menus and action buttons operate on single availabilities only, without considering series relationships.
+  - **Impact**: Users cannot properly manage recurring availability series, leading to confusion about which occurrences are affected by changes. This breaks expected calendar behavior and forces users to manually edit each occurrence individually.
+  - **Implementation**:
+    1. Detect when an availability is part of a series (check `isRecurring` and `seriesId` properties).
+    2. Add series-aware context menu options that show "Edit this occurrence" vs "Edit entire series" when applicable.
+    3. Create a series action dialog component that prompts users to choose scope: "This occurrence only", "This and future occurrences", or "All occurrences in series".
+    4. Update edit, delete, and cancel operations to accept a `scope` parameter and handle series-wide operations.
+    5. Leverage existing `DragDropCalendar` component's `SeriesUpdateOptions` pattern for consistency.
+    6. Add series management to organization calendar views as well.
+  - **Testing**:
+    - Create recurring availability ➜ verify context menu shows series options.
+    - Edit single occurrence ➜ verify only that occurrence changes.
+    - Edit entire series ➜ verify all occurrences in series change.
+    - Delete series ➜ verify all future occurrences are removed.
+    - Test with existing bookings on some occurrences.
+  - **Estimated Time**: 4-6 hours
+
+
+- [ ] **Technical Debt**: Comprehensive cleanup of provider calendar components as reference pattern - `src/features/calendar/availability/components/provider-calendar-view.tsx:1`
+  - **Issue**: Key provider calendar components contain development artifacts, orphaned code, inconsistent patterns, and architectural issues that prevent them from serving as clean reference patterns. Issues include: unused state management (`selectedEvent` declared but inconsistently used), multiple TODO comments for missing functionality, console.log statements left in production code, duplicated logic across view components, inconsistent error handling patterns, missing TypeScript strict typing, and poor separation of concerns.
+  - **Impact**: Components can't serve as reliable patterns for other calendar implementations. Technical debt accumulates making future development slower and more error-prone. Code quality doesn't meet @CLAUDE.md standards for "high class" implementation.
+  - **Implementation**:
+    1. **Remove Development Artifacts**: Remove all console.log statements, TODO comments, and debug code from production components.
+    2. **Fix State Management**: Properly implement `selectedEvent` state in ProviderCalendarView - either remove unused references or complete the modal implementation for event details.
+    3. **Standardize Error Handling**: Implement consistent error boundaries and loading states following @CLAUDE.md patterns across all calendar components.
+    4. **Type Safety**: Add strict TypeScript typing, remove any 'any' types, ensure all props and interfaces are properly typed.
+    5. **Component Architecture**: Extract reusable sub-components (WeekView, DayView, MonthView) into separate files with proper exports.
+    6. **Code Deduplication**: Consolidate duplicate time calculation, event positioning, and styling logic into shared utilities.
+    7. **API Patterns**: Standardize TanStack Query usage, error handling, and cache invalidation patterns.
+    8. **Accessibility**: Add proper ARIA labels, keyboard navigation, and screen reader support.
+    9. **Performance**: Implement proper memoization for expensive calculations, optimize re-renders.
+    10. **Documentation**: Add comprehensive JSDoc comments explaining component architecture and usage patterns.
+  - **Files to clean**:
+    - `src/features/calendar/availability/components/provider-calendar-view.tsx` - Main calendar component
+    - `src/features/calendar/availability/components/availability-creation-form.tsx` - Form component  
+    - `src/app/(dashboard)/providers/[id]/manage-calendar/page.tsx` - Page orchestration
+    - Extract reusable components: `week-view.tsx`, `day-view.tsx`, `month-view.tsx`
+  - **Testing**:
+    - All existing functionality still works after cleanup.
+    - Components can be imported and used as patterns in other contexts.
+    - No console errors or warnings in browser developer tools.
+    - TypeScript compilation without warnings.
+    - Calendar navigation, event creation, and editing flows work smoothly.
+    - Accessibility testing with screen readers.
+    - Performance testing with large datasets.
+  - **Estimated Time**: 6-8 hours
+
+- [ ] **Technical Debt**: Critical cleanup of availability-creation-form.tsx as reference pattern - `src/features/calendar/availability/components/availability-creation-form.tsx:1`
+  - **Issue**: The availability-creation-form.tsx component needs comprehensive cleanup to serve as a clean reference pattern before it can be used as a template for standardizing the edit form. Current issues include: potential legacy code, inconsistent patterns, TODO comments (line 237), unused variables, complex state management that may not follow CLAUDE.md patterns, and general code quality issues that make it difficult to maintain and use as a reliable reference.
+  - **Impact**: Without a clean reference pattern, attempts to standardize the edit form will propagate existing technical debt and inconsistencies. This prevents the availability forms from serving as reliable patterns for other calendar implementations and makes future development more error-prone.
+  - **Implementation**:
+    1. **Critical Code Review**: Thoroughly review entire component for unnecessary code, legacy patterns, and development artifacts
+    2. **Remove Dead Code**: Remove unused variables, commented code, and any development debugging artifacts
+    3. **Resolve TODOs**: Address the TODO comment at line 237 for organization provider selection - either implement properly or remove
+    4. **State Management Cleanup**: Simplify and standardize state management patterns following CLAUDE.md guidelines
+    5. **Type Safety**: Ensure all types are properly defined, remove any 'any' types (line 99, 486, 487)
+    6. **Component Structure**: Ensure component follows consistent patterns for form handling, validation, and error management
+    7. **Code Organization**: Group related logic together, extract reusable functions if needed
+    8. **Error Handling**: Standardize error handling patterns and loading states
+    9. **Performance**: Review for unnecessary re-renders and optimize form watchers
+    10. **Documentation**: Add JSDoc comments for complex logic and ensure code is self-documenting
+    11. **CLAUDE.md Compliance**: Ensure all patterns follow the standards specified in CLAUDE.md
+    12. **Testing Readiness**: Structure code to be easily testable and maintainable
+  - **Testing**:
+    - All existing functionality works exactly as before
+    - No console errors or warnings
+    - TypeScript compilation without warnings
+    - Form validation works correctly
+    - All form fields and interactions function properly
+    - Custom recurrence modal works correctly
+    - Service selection works as expected
+    - Location selection functions properly
+    - Profile selection works for both provider and organization modes
+  - **Estimated Time**: 4-5 hours
+
+- [ ] **Technical Debt**: Standardize availability-edit-form.tsx to match cleaned creation form pattern - `src/features/calendar/availability/components/availability-edit-form.tsx:1`
+  - **Issue**: The availability-edit-form.tsx component doesn't follow the same comprehensive pattern as the availability-creation-form.tsx. It's missing key sections like profile selection, recurrence settings, location management, and doesn't have the same level of form organization and structure. This inconsistency makes the codebase harder to maintain and creates confusion for developers working with both forms.
+  - **Impact**: Inconsistent form patterns across the availability system create maintenance burden, confuse developers, and make it difficult to ensure feature parity between creation and editing workflows. Users may expect similar functionality in both forms but find missing features in the edit form.
+  - **Implementation**:
+    1. **PREREQUISITE**: Complete cleanup of availability-creation-form.tsx first to ensure clean reference pattern
+    2. **Pattern Analysis**: Study the cleaned creation form structure and identify all sections and patterns
+    3. **Add Missing Sections**: 
+       - Profile selection section (creator type, provider selection) - adapted for edit mode
+       - Recurrence settings section with custom recurrence modal support
+       - Location section with online/physical location management
+       - Proper form organization with consistent separators and headings
+    4. **Adapt for Edit Mode**: Modify sections appropriately for editing:
+       - Profile selection may be read-only or limited based on permissions
+       - Recurrence editing needs series update options (single/series/future)
+       - Location changes may be restricted if bookings exist
+       - Time changes restricted when bookings exist (already implemented)
+    5. **State Management**: Align state management patterns with creation form
+    6. **Form Structure**: Use same form organization, validation, and error handling patterns
+    7. **UI Components**: Use consistent UI components, icons, and styling patterns
+    8. **Form Validation**: Ensure validation rules are consistent between forms
+    9. **Error Handling**: Standardize error handling and loading states
+    10. **Accessibility**: Ensure accessibility patterns match creation form
+    11. **Testing Integration**: Ensure both forms can be tested using similar patterns
+  - **Testing**:
+    - All existing edit functionality continues to work
+    - New sections (profile, recurrence, location) display correctly
+    - Form validation works consistently with creation form
+    - Booking restrictions still apply appropriately
+    - Series editing options work correctly for recurring availabilities
+    - Location changes respect booking constraints
+    - Form submission and error handling work correctly
+    - Accessibility features work properly
+    - Both forms have consistent user experience
+  - **Estimated Time**: 6-8 hours
+  
+
+- [ ] **UX/UI**: Fix compressed breadcrumbs in dashboard layout on mobile - `src/components/layout/dashboard-layout.tsx`
+  - **Issue**: Breadcrumbs in dashboard layout look too compressed on mobile devices, particularly with long provider names like "Dashboard > Providers > Dr Shei Goldberg > Manage Calendar"
+  - **Impact**: Poor mobile navigation experience, breadcrumbs may be unreadable or truncated poorly
+  - **Implementation**:
+    1. Review current breadcrumb responsive classes in dashboard-layout.tsx (line 296)
+    2. Improve text truncation for long provider names
+    3. Consider collapsing middle breadcrumb items on mobile (show "Dashboard > ... > Current Page")
+    4. Add better responsive spacing and text sizing
+    5. Test with various provider name lengths
+  - **Testing**:
+    - Test on various mobile screen sizes
+    - Test with short and long provider names
+    - Verify breadcrumb navigation still works after changes
+    - Test tablet and desktop views aren't affected
+  - **Estimated Time**: 3-4 hours
+
 
 
 ## 🧹 Low Priority / Technical Debt
 
 
 ## ✅ Recently Completed
+- [x] Standardize feature type definitions across bulletproof-react structure - Refactor all features to define types consistently in feature-specific types folders instead of mixed Prisma imports
+  - **Type:** Technical Debt
+  - **Impact:** Eliminates developer confusion from inconsistent type definitions, prevents circular dependencies, improves maintainability
+  - **Files:** All features in `@src/features/` types folders, based on `@prisma/schema.prisma`
+  - **Added:** 2025-01-21
 
 ## 📝 Quick Capture (New Issues)
 - [ ] Populate provider and organization and user email addresses with the associated Google email. Not possible to edit.
-- [ ] Implement testing throughout the application
 - [ ] Remove Calendar from Menu based on user logged in
 - [ ] Protect Calendar routes based on authentication
 - [ ] Review centralized calendar views

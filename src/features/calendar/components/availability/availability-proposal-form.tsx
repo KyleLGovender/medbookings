@@ -182,7 +182,11 @@ export function AvailabilityProposalForm({
   // Memoize selected location to avoid repeated lookups
   const selectedLocation = useMemo(() => {
     if (!watchLocationId) return null;
-    return availableLocations.filter(loc => loc.id).find((loc: OrganizationLocation) => loc.id === watchLocationId) || null;
+    return (
+      availableLocations
+        .filter((loc) => loc.id)
+        .find((loc: OrganizationLocation) => loc.id === watchLocationId) || null
+    );
   }, [watchLocationId, availableLocations]);
 
   const onSubmit = async (data: FormValues) => {
@@ -525,11 +529,13 @@ export function AvailabilityProposalForm({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {availableLocations.filter(location => location.id).map((location: OrganizationLocation) => (
-                            <SelectItem key={location.id} value={location.id!}>
-                              {location.name}
-                            </SelectItem>
-                          ))}
+                          {availableLocations
+                            .filter((location) => location.id)
+                            .map((location: OrganizationLocation) => (
+                              <SelectItem key={location.id} value={location.id!}>
+                                {location.name}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                       <FormDescription id="location-description">

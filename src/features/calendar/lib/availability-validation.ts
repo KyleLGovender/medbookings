@@ -1,9 +1,6 @@
 import { addDays, addMonths, differenceInMinutes, endOfMonth, startOfMonth } from 'date-fns';
 
-import {
-  AvailabilityValidationOptions,
-  ValidationResult,
-} from '@/features/calendar/types/types';
+import { AvailabilityValidationOptions, ValidationResult } from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
 
 /**

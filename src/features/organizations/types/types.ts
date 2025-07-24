@@ -3,12 +3,7 @@
 // =============================================================================
 // All type definitions for the organizations feature in one place
 // Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
-import {
-  Organization,
-  OrganizationMembership,
-  Prisma,
-  User,
-} from '@prisma/client';
+import { Organization, OrganizationMembership, Prisma, User } from '@prisma/client';
 
 // =============================================================================
 // ENUMS

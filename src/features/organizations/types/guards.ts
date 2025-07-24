@@ -2,14 +2,15 @@
 // ORGANIZATIONS FEATURE TYPE GUARDS
 // =============================================================================
 // Runtime type validation for organization-specific types and API responses
-
-import { isValidEmail, isValidPhone, isValidUUID, isValidDateString } from '@/types/guards';
+import { isValidDateString, isValidEmail, isValidPhone, isValidUUID } from '@/types/guards';
 
 // =============================================================================
 // ENUM GUARDS
 // =============================================================================
 
-export function isOrganizationStatus(value: unknown): value is 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUSPENDED' {
+export function isOrganizationStatus(
+  value: unknown
+): value is 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUSPENDED' {
   return (
     typeof value === 'string' &&
     ['PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED'].includes(value)
@@ -17,38 +18,31 @@ export function isOrganizationStatus(value: unknown): value is 'PENDING_APPROVAL
 }
 
 export function isMembershipRole(value: unknown): value is 'ADMIN' | 'MANAGER' | 'MEMBER' {
-  return (
-    typeof value === 'string' &&
-    ['ADMIN', 'MANAGER', 'MEMBER'].includes(value)
-  );
+  return typeof value === 'string' && ['ADMIN', 'MANAGER', 'MEMBER'].includes(value);
 }
 
 export function isMembershipStatus(value: unknown): value is 'PENDING' | 'ACTIVE' | 'INACTIVE' {
+  return typeof value === 'string' && ['PENDING', 'ACTIVE', 'INACTIVE'].includes(value);
+}
+
+export function isProviderInvitationStatus(
+  value: unknown
+): value is 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' {
   return (
-    typeof value === 'string' &&
-    ['PENDING', 'ACTIVE', 'INACTIVE'].includes(value)
+    typeof value === 'string' && ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED'].includes(value)
   );
 }
 
-export function isProviderInvitationStatus(value: unknown): value is 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' {
-  return (
-    typeof value === 'string' &&
-    ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED'].includes(value)
-  );
+export function isInvitationAction(
+  value: unknown
+): value is 'ACCEPT' | 'REJECT' | 'CANCEL' | 'RESEND' {
+  return typeof value === 'string' && ['ACCEPT', 'REJECT', 'CANCEL', 'RESEND'].includes(value);
 }
 
-export function isInvitationAction(value: unknown): value is 'ACCEPT' | 'REJECT' | 'CANCEL' | 'RESEND' {
-  return (
-    typeof value === 'string' &&
-    ['ACCEPT', 'REJECT', 'CANCEL', 'RESEND'].includes(value)
-  );
-}
-
-export function isBillingModel(value: unknown): value is 'CONSOLIDATED' | 'PER_LOCATION' | 'HYBRID' {
-  return (
-    typeof value === 'string' &&
-    ['CONSOLIDATED', 'PER_LOCATION', 'HYBRID'].includes(value)
-  );
+export function isBillingModel(
+  value: unknown
+): value is 'CONSOLIDATED' | 'PER_LOCATION' | 'HYBRID' {
+  return typeof value === 'string' && ['CONSOLIDATED', 'PER_LOCATION', 'HYBRID'].includes(value);
 }
 
 // =============================================================================
@@ -93,7 +87,8 @@ export function isValidUpdateOrganizationData(value: unknown): value is {
     value !== null &&
     'id' in value &&
     isValidUUID((value as any).id) &&
-    (!(value as any).name || (typeof (value as any).name === 'string' && (value as any).name.length > 0)) &&
+    (!(value as any).name ||
+      (typeof (value as any).name === 'string' && (value as any).name.length > 0)) &&
     (!(value as any).email || isValidEmail((value as any).email)) &&
     (!(value as any).phone || isValidPhone((value as any).phone)) &&
     (!(value as any).website || typeof (value as any).website === 'string') &&
@@ -208,9 +203,11 @@ export function isValidLocationUpdate(value: unknown): value is {
     value !== null &&
     'id' in value &&
     isValidUUID((value as any).id) &&
-    (!(value as any).name || (typeof (value as any).name === 'string' && (value as any).name.length > 0)) &&
-    (!(value as any).formattedAddress || 
-      (typeof (value as any).formattedAddress === 'string' && (value as any).formattedAddress.length > 0)) &&
+    (!(value as any).name ||
+      (typeof (value as any).name === 'string' && (value as any).name.length > 0)) &&
+    (!(value as any).formattedAddress ||
+      (typeof (value as any).formattedAddress === 'string' &&
+        (value as any).formattedAddress.length > 0)) &&
     (!(value as any).phone || isValidPhone((value as any).phone)) &&
     (!(value as any).email || isValidEmail((value as any).email)) &&
     (!(value as any).googlePlaceId || typeof (value as any).googlePlaceId === 'string')
@@ -368,17 +365,18 @@ export function isOrganizationListResponse(value: unknown): value is Array<{
 }> {
   return (
     Array.isArray(value) &&
-    value.every((item: unknown) =>
-      typeof item === 'object' &&
-      item !== null &&
-      'id' in item &&
-      'name' in item &&
-      'status' in item &&
-      isValidUUID((item as any).id) &&
-      typeof (item as any).name === 'string' &&
-      isOrganizationStatus((item as any).status) &&
-      (!(item as any).email || isValidEmail((item as any).email)) &&
-      (!(item as any).billingModel || isBillingModel((item as any).billingModel))
+    value.every(
+      (item: unknown) =>
+        typeof item === 'object' &&
+        item !== null &&
+        'id' in item &&
+        'name' in item &&
+        'status' in item &&
+        isValidUUID((item as any).id) &&
+        typeof (item as any).name === 'string' &&
+        isOrganizationStatus((item as any).status) &&
+        (!(item as any).email || isValidEmail((item as any).email)) &&
+        (!(item as any).billingModel || isBillingModel((item as any).billingModel))
     )
   );
 }
@@ -392,25 +390,26 @@ export function isMembershipListResponse(value: unknown): value is Array<{
 }> {
   return (
     Array.isArray(value) &&
-    value.every((item: unknown) =>
-      typeof item === 'object' &&
-      item !== null &&
-      'id' in item &&
-      'role' in item &&
-      'status' in item &&
-      'user' in item &&
-      'organization' in item &&
-      isValidUUID((item as any).id) &&
-      isMembershipRole((item as any).role) &&
-      isMembershipStatus((item as any).status) &&
-      typeof (item as any).user === 'object' &&
-      (item as any).user !== null &&
-      'id' in (item as any).user &&
-      'name' in (item as any).user &&
-      'email' in (item as any).user &&
-      isValidUUID((item as any).user.id) &&
-      typeof (item as any).user.name === 'string' &&
-      isValidEmail((item as any).user.email)
+    value.every(
+      (item: unknown) =>
+        typeof item === 'object' &&
+        item !== null &&
+        'id' in item &&
+        'role' in item &&
+        'status' in item &&
+        'user' in item &&
+        'organization' in item &&
+        isValidUUID((item as any).id) &&
+        isMembershipRole((item as any).role) &&
+        isMembershipStatus((item as any).status) &&
+        typeof (item as any).user === 'object' &&
+        (item as any).user !== null &&
+        'id' in (item as any).user &&
+        'name' in (item as any).user &&
+        'email' in (item as any).user &&
+        isValidUUID((item as any).user.id) &&
+        typeof (item as any).user.name === 'string' &&
+        isValidEmail((item as any).user.email)
     )
   );
 }
@@ -425,18 +424,19 @@ export function isLocationListResponse(value: unknown): value is Array<{
 }> {
   return (
     Array.isArray(value) &&
-    value.every((item: unknown) =>
-      typeof item === 'object' &&
-      item !== null &&
-      'id' in item &&
-      'name' in item &&
-      'organizationId' in item &&
-      isValidUUID((item as any).id) &&
-      typeof (item as any).name === 'string' &&
-      isValidUUID((item as any).organizationId) &&
-      (!(item as any).formattedAddress || typeof (item as any).formattedAddress === 'string') &&
-      (!(item as any).phone || isValidPhone((item as any).phone)) &&
-      (!(item as any).email || isValidEmail((item as any).email))
+    value.every(
+      (item: unknown) =>
+        typeof item === 'object' &&
+        item !== null &&
+        'id' in item &&
+        'name' in item &&
+        'organizationId' in item &&
+        isValidUUID((item as any).id) &&
+        typeof (item as any).name === 'string' &&
+        isValidUUID((item as any).organizationId) &&
+        (!(item as any).formattedAddress || typeof (item as any).formattedAddress === 'string') &&
+        (!(item as any).phone || isValidPhone((item as any).phone)) &&
+        (!(item as any).email || isValidEmail((item as any).email))
     )
   );
 }
@@ -478,15 +478,14 @@ export function isValidLocationSearchParams(value: unknown): value is {
     (!(value as any).name || typeof (value as any).name === 'string') &&
     (!(value as any).organizationId || isValidUUID((value as any).organizationId)) &&
     (!(value as any).hasProviders || typeof (value as any).hasProviders === 'boolean') &&
-    (!(value as any).coordinates || (
-      typeof (value as any).coordinates === 'object' &&
-      (value as any).coordinates !== null &&
-      'lat' in (value as any).coordinates &&
-      'lng' in (value as any).coordinates &&
-      typeof (value as any).coordinates.lat === 'number' &&
-      typeof (value as any).coordinates.lng === 'number'
-    )) &&
-    (!(value as any).maxDistance || 
+    (!(value as any).coordinates ||
+      (typeof (value as any).coordinates === 'object' &&
+        (value as any).coordinates !== null &&
+        'lat' in (value as any).coordinates &&
+        'lng' in (value as any).coordinates &&
+        typeof (value as any).coordinates.lat === 'number' &&
+        typeof (value as any).coordinates.lng === 'number')) &&
+    (!(value as any).maxDistance ||
       (typeof (value as any).maxDistance === 'number' && (value as any).maxDistance > 0))
   );
 }

@@ -10,15 +10,15 @@
 
 /**
  * Generic API response guard that validates the standard API response structure.
- * 
+ *
  * @param value - The unknown value to validate
  * @returns Type predicate indicating if value is a valid API response
- * 
+ *
  * @example
  * ```typescript
  * const response = await fetch('/api/users');
  * const data = await response.json();
- * 
+ *
  * if (isApiResponse(data)) {
  *   if (data.success) {
  *     console.log('Success:', data.data);
@@ -28,7 +28,9 @@
  * }
  * ```
  */
-export function isApiResponse<T>(value: unknown): value is { success: boolean; data?: T; error?: string } {
+export function isApiResponse<T>(
+  value: unknown
+): value is { success: boolean; data?: T; error?: string } {
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -39,21 +41,23 @@ export function isApiResponse<T>(value: unknown): value is { success: boolean; d
 
 /**
  * Validates calendar availability API response structure.
- * 
+ *
  * @param value - The unknown value to validate
  * @returns Type predicate indicating if value is a valid availability response
- * 
+ *
  * @example
  * ```typescript
  * const availabilityData = await fetchAvailability(id);
- * 
+ *
  * if (isAvailabilityResponse(availabilityData)) {
  *   console.log(`Availability ${availabilityData.id} is ${availabilityData.status}`);
  *   console.log(`Time slot: ${availabilityData.startTime} - ${availabilityData.endTime}`);
  * }
  * ```
  */
-export function isAvailabilityResponse(value: unknown): value is { id: string; status: string; startTime: Date; endTime: Date } {
+export function isAvailabilityResponse(
+  value: unknown
+): value is { id: string; status: string; startTime: Date; endTime: Date } {
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -69,7 +73,9 @@ export function isAvailabilityResponse(value: unknown): value is { id: string; s
 }
 
 // Provider API response guards
-export function isProviderResponse(value: unknown): value is { id: string; status: string; user: { name: string; email: string } } {
+export function isProviderResponse(
+  value: unknown
+): value is { id: string; status: string; user: { name: string; email: string } } {
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -86,7 +92,9 @@ export function isProviderResponse(value: unknown): value is { id: string; statu
 }
 
 // Organization API response guards
-export function isOrganizationResponse(value: unknown): value is { id: string; name: string; status: string; billingModel: string } {
+export function isOrganizationResponse(
+  value: unknown
+): value is { id: string; name: string; status: string; billingModel: string } {
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -107,14 +115,14 @@ export function isOrganizationResponse(value: unknown): value is { id: string; n
 
 /**
  * Validates email address format using RFC-compliant regex pattern.
- * 
+ *
  * @param value - The unknown value to validate
  * @returns Type predicate indicating if value is a valid email string
- * 
+ *
  * @example
  * ```typescript
  * const userInput = "user@example.com";
- * 
+ *
  * if (isValidEmail(userInput)) {
  *   await sendEmail(userInput); // TypeScript knows this is a string
  * } else {
@@ -123,23 +131,20 @@ export function isOrganizationResponse(value: unknown): value is { id: string; n
  * ```
  */
 export function isValidEmail(value: unknown): value is string {
-  return (
-    typeof value === 'string' &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-  );
+  return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 /**
  * Validates UUID format according to RFC 4122 specification.
  * Supports versions 1-5 with proper format validation.
- * 
+ *
  * @param value - The unknown value to validate
  * @returns Type predicate indicating if value is a valid UUID string
- * 
+ *
  * @example
  * ```typescript
  * const userId = "550e8400-e29b-41d4-a716-446655440000";
- * 
+ *
  * if (isValidUUID(userId)) {
  *   const user = await findUserById(userId); // Safe to use as UUID
  * } else {
@@ -156,10 +161,7 @@ export function isValidUUID(value: unknown): value is string {
 
 // Phone number validation guard
 export function isValidPhone(value: unknown): value is string {
-  return (
-    typeof value === 'string' &&
-    /^\+?[\d\s-()]{10,}$/.test(value)
-  );
+  return typeof value === 'string' && /^\+?[\d\s-()]{10,}$/.test(value);
 }
 
 // Date validation guard
@@ -169,10 +171,7 @@ export function isValidDate(value: unknown): value is Date {
 
 // Date string validation guard (ISO format)
 export function isValidDateString(value: unknown): value is string {
-  return (
-    typeof value === 'string' &&
-    !isNaN(Date.parse(value))
-  );
+  return typeof value === 'string' && !isNaN(Date.parse(value));
 }
 
 // =============================================================================
@@ -180,7 +179,9 @@ export function isValidDateString(value: unknown): value is string {
 // =============================================================================
 
 // Provider status validation
-export function isValidProviderStatus(value: unknown): value is 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUSPENDED' {
+export function isValidProviderStatus(
+  value: unknown
+): value is 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUSPENDED' {
   return (
     typeof value === 'string' &&
     ['PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED'].includes(value)
@@ -188,7 +189,9 @@ export function isValidProviderStatus(value: unknown): value is 'PENDING_APPROVA
 }
 
 // Organization status validation
-export function isValidOrganizationStatus(value: unknown): value is 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'SUSPENDED' {
+export function isValidOrganizationStatus(
+  value: unknown
+): value is 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'SUSPENDED' {
   return (
     typeof value === 'string' &&
     ['PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'ACTIVE', 'SUSPENDED'].includes(value)
@@ -196,27 +199,24 @@ export function isValidOrganizationStatus(value: unknown): value is 'PENDING_APP
 }
 
 // Availability status validation
-export function isValidAvailabilityStatus(value: unknown): value is 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' {
+export function isValidAvailabilityStatus(
+  value: unknown
+): value is 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' {
   return (
-    typeof value === 'string' &&
-    ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED'].includes(value)
+    typeof value === 'string' && ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED'].includes(value)
   );
 }
 
 // Billing model validation
-export function isValidBillingModel(value: unknown): value is 'CONSOLIDATED' | 'PER_LOCATION' | 'HYBRID' {
-  return (
-    typeof value === 'string' &&
-    ['CONSOLIDATED', 'PER_LOCATION', 'HYBRID'].includes(value)
-  );
+export function isValidBillingModel(
+  value: unknown
+): value is 'CONSOLIDATED' | 'PER_LOCATION' | 'HYBRID' {
+  return typeof value === 'string' && ['CONSOLIDATED', 'PER_LOCATION', 'HYBRID'].includes(value);
 }
 
 // User role validation
 export function isValidUserRole(value: unknown): value is 'USER' | 'ADMIN' | 'SUPER_ADMIN' {
-  return (
-    typeof value === 'string' &&
-    ['USER', 'ADMIN', 'SUPER_ADMIN'].includes(value)
-  );
+  return typeof value === 'string' && ['USER', 'ADMIN', 'SUPER_ADMIN'].includes(value);
 }
 
 // =============================================================================
@@ -372,18 +372,18 @@ export function isValidStripeWebhook(value: unknown): value is {
 /**
  * Validates and transforms unknown data using a type guard function.
  * Throws an error with a custom message if validation fails.
- * 
+ *
  * @template T - The expected type after validation
  * @param value - The unknown value to validate and transform
  * @param guard - Type guard function that validates the value
  * @param errorMessage - Custom error message to throw on validation failure
  * @returns The validated and transformed value
  * @throws Error when validation fails
- * 
+ *
  * @example
  * ```typescript
  * const userInput: unknown = { email: "user@example.com" };
- * 
+ *
  * const validatedUser = validateAndTransform(
  *   userInput,
  *   isValidUserData,
@@ -406,18 +406,18 @@ export function validateAndTransform<T>(
 /**
  * Validates an array where each element must pass a type guard.
  * Provides detailed error messages including the index of invalid items.
- * 
+ *
  * @template T - The expected type for each array element
  * @param value - The unknown value to validate as an array
  * @param guard - Type guard function to validate each array element
  * @param errorMessage - Base error message for validation failures
  * @returns Array of validated elements
  * @throws Error when validation fails, including specific index information
- * 
+ *
  * @example
  * ```typescript
  * const userIds: unknown = ["uuid1", "uuid2", "invalid-id"];
- * 
+ *
  * try {
  *   const validatedIds = validateArray(
  *     userIds,
@@ -438,7 +438,7 @@ export function validateArray<T>(
   if (!Array.isArray(value)) {
     throw new Error(`${errorMessage}: Expected array`);
   }
-  
+
   const result: T[] = [];
   for (let i = 0; i < value.length; i++) {
     if (!guard(value[i])) {
@@ -446,7 +446,7 @@ export function validateArray<T>(
     }
     result.push(value[i]);
   }
-  
+
   return result;
 }
 

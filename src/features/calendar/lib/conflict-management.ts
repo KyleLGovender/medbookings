@@ -1,8 +1,14 @@
-import { AvailabilityConflict, SchedulingRule, SlotStatus, ConflictDetectionOptions, ConflictResolutionResult, SlotConflictDetails } from '@/features/calendar/types/types';
+import {
+  AvailabilityConflict,
+  ConflictDetectionOptions,
+  ConflictResolutionResult,
+  SchedulingRule,
+  SlotConflictDetails,
+  SlotStatus,
+} from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
 
 import { isSlotValidForSchedulingRule } from './scheduling-rules';
-
 
 /**
  * Comprehensive slot conflict management system

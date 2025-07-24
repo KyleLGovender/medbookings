@@ -3,7 +3,6 @@
 // =============================================================================
 // Validation schemas for organizations feature forms and API endpoints
 // Organized by: Input Schemas -> Response Schemas -> Utility Schemas
-
 import { z } from 'zod';
 
 // =============================================================================
@@ -58,7 +57,12 @@ export const ProviderInvitationSchema = z.object({
   customMessage: z.string().optional().or(z.literal('')),
 });
 
-export const organizationStatusSchema = z.enum(['PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED']);
+export const organizationStatusSchema = z.enum([
+  'PENDING_APPROVAL',
+  'APPROVED',
+  'REJECTED',
+  'SUSPENDED',
+]);
 
 export const membershipRoleSchema = z.enum(['ADMIN', 'MANAGER', 'MEMBER']);
 

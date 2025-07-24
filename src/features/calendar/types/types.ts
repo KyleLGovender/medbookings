@@ -1,9 +1,10 @@
 // =============================================================================
 // CALENDAR AVAILABILITY TYPES
 // =============================================================================
+
 /**
  * @fileoverview Comprehensive type definitions for the calendar availability feature.
- * 
+ *
  * This module contains all type definitions related to calendar functionality including:
  * - Availability management and scheduling
  * - Slot generation and booking compatibility
@@ -12,9 +13,9 @@
  * - Service configuration and billing integration
  * - Search and filtering capabilities
  * - External integrations (Google Calendar, etc.)
- * 
+ *
  * The types are organized by complexity: Enums → Base Interfaces → Complex Types → Utility Types
- * 
+ *
  * @author MedBookings Development Team
  * @version 1.0.0
  */
@@ -132,7 +133,7 @@ export interface OrganizationCalendarData {
 }
 
 // =============================================================================
-// CALENDAR VIEW TYPES  
+// CALENDAR VIEW TYPES
 // =============================================================================
 
 export type CalendarViewMode = 'day' | '3-day' | 'week' | 'month';
@@ -149,7 +150,7 @@ export const ProviderCalendarViewType = {
 } as const;
 
 export type CalendarViewType = (typeof CalendarViewType)[keyof typeof CalendarViewType];
-export type ProviderCalendarViewType = 
+export type ProviderCalendarViewType =
   (typeof ProviderCalendarViewType)[keyof typeof ProviderCalendarViewType];
 
 export interface TimeRange {
@@ -213,9 +214,9 @@ export interface Booking {
 /**
  * Represents a calendar event that can be displayed in calendar views.
  * Supports different event types including availability slots, bookings, and blocked time.
- * 
+ *
  * @interface CalendarEvent
- * 
+ *
  * @example
  * ```typescript
  * const availability: CalendarEvent = {
@@ -386,9 +387,9 @@ export interface CalculatedAvailabilitySlotWithRelations extends CalculatedAvail
 /**
  * Defines recurrence patterns for repeating availability slots.
  * Supports Google Calendar-style recurrence options with customizable end dates.
- * 
+ *
  * @interface RecurrencePattern
- * 
+ *
  * @example
  * ```typescript
  * // Weekly recurrence every Monday for 3 months
@@ -397,7 +398,7 @@ export interface CalculatedAvailabilitySlotWithRelations extends CalculatedAvail
  *   weeklyDay: DayOfWeek.MONDAY,
  *   endDate: "2024-04-15"
  * };
- * 
+ *
  * // Custom recurrence on specific days
  * const customPattern: RecurrencePattern = {
  *   option: RecurrenceOption.CUSTOM,
@@ -605,7 +606,7 @@ export interface ProviderLocationResult {
   totalAvailableSlots: number;
 }
 
-// Time Search Service Types  
+// Time Search Service Types
 export interface TimeSearchParams {
   dateRange?: {
     startDate: Date;

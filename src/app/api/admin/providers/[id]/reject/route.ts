@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { rejectProviderRequestSchema } from '@/features/admin/types/schemas';
 import type {
   AdminApiResponse,
   AdminRouteParams,
   RejectProviderRequest,
 } from '@/features/admin/types/types';
-import { rejectProviderRequestSchema } from '@/features/admin/types/schemas';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 

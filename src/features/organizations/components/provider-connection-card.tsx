@@ -35,8 +35,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import type { OrganizationProviderConnection } from '@/features/organizations/types/types';
 import { useManageOrganizationProviderConnection } from '@/features/organizations/hooks/use-provider-connections';
+import type { OrganizationProviderConnection } from '@/features/organizations/types/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProviderConnectionCardProps {

@@ -3,7 +3,6 @@
 // =============================================================================
 // All type definitions for the invitations feature in one place
 // Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
-
 import {
   InvitationStatus,
   OrganizationInvitation,
@@ -233,7 +232,11 @@ export interface InvitationErrorStateProps {
 // Invitation query options
 export interface InvitationQueryOptions {
   organizationId?: string;
-  status?: InvitationStatus | ProviderInvitationStatus | InvitationStatus[] | ProviderInvitationStatus[];
+  status?:
+    | InvitationStatus
+    | ProviderInvitationStatus
+    | InvitationStatus[]
+    | ProviderInvitationStatus[];
   limit?: number;
   offset?: number;
   includeExpired?: boolean;

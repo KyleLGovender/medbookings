@@ -1,9 +1,10 @@
 // =============================================================================
 // PROVIDERS FEATURE TYPES
 // =============================================================================
+
 /**
  * @fileoverview Comprehensive type definitions for the providers feature.
- * 
+ *
  * This module defines all types related to healthcare service providers including:
  * - Provider onboarding and registration
  * - Requirement submission and validation
@@ -11,10 +12,10 @@
  * - Organization connections and invitations
  * - Provider types and specializations
  * - Regulatory compliance tracking
- * 
+ *
  * The types support the complete provider lifecycle from initial registration
  * through approval, service setup, and ongoing compliance management.
- * 
+ *
  * @author MedBookings Development Team
  * @version 1.0.0
  */
@@ -22,17 +23,17 @@
 // Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
 import {
   ConnectionStatus,
+  Organization,
   OrganizationProviderConnection,
   Prisma,
+  Provider as PrismaProvider,
+  RequirementSubmission as PrismaRequirementSubmission,
+  RequirementType as PrismaRequirementType,
+  Service as PrismaService,
   ProviderInvitation,
   ProviderInvitationStatus,
-  Provider as PrismaProvider,
   ProviderType,
-  RequirementType as PrismaRequirementType,
-  RequirementSubmission as PrismaRequirementSubmission,
-  Service as PrismaService,
   User,
-  Organization,
 } from '@prisma/client';
 
 // =============================================================================
@@ -318,9 +319,9 @@ export type RequirementType = {
 /**
  * Represents a provider's submission for a regulatory or business requirement.
  * Supports various submission types including documents, forms, and boolean validations.
- * 
+ *
  * @interface RequirementSubmission
- * 
+ *
  * @example
  * ```typescript
  * // Document submission for medical license
@@ -336,7 +337,7 @@ export type RequirementType = {
  *   expiresAt: new Date("2025-12-31"),
  *   notes: "Medical license valid through 2025"
  * };
- * 
+ *
  * // Boolean form submission
  * const consentSubmission: RequirementSubmission = {
  *   requirementTypeId: "req-hipaa-consent",

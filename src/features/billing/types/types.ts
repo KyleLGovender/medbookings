@@ -3,7 +3,6 @@
 // =============================================================================
 // All type definitions for the billing feature in one place
 // Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
-
 import {
   BillingEntity,
   BillingInterval,

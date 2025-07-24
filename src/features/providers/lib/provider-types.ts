@@ -1,6 +1,10 @@
 'use server';
 
-import { ProviderTypeData, RequirementTypeData, ServiceTypeData } from '@/features/providers/types/types';
+import {
+  ProviderTypeData,
+  RequirementTypeData,
+  ServiceTypeData,
+} from '@/features/providers/types/types';
 import { prisma } from '@/lib/prisma';
 
 /**

@@ -2,39 +2,40 @@
 // INVITATIONS FEATURE TYPE GUARDS
 // =============================================================================
 // Runtime type validation for invitation-specific types and API responses
-
-import { isValidEmail, isValidUUID, isValidDateString } from '@/types/guards';
+import { isValidDateString, isValidEmail, isValidUUID } from '@/types/guards';
 
 // =============================================================================
 // ENUM GUARDS
 // =============================================================================
 
-export function isInvitationStatus(value: unknown): value is 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED' {
+export function isInvitationStatus(
+  value: unknown
+): value is 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED' {
   return (
     typeof value === 'string' &&
     ['PENDING', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'CANCELLED'].includes(value)
   );
 }
 
-export function isInvitationType(value: unknown): value is 'ORGANIZATION_MEMBERSHIP' | 'PROVIDER_CONNECTION' | 'ADMIN_ACCESS' {
+export function isInvitationType(
+  value: unknown
+): value is 'ORGANIZATION_MEMBERSHIP' | 'PROVIDER_CONNECTION' | 'ADMIN_ACCESS' {
   return (
     typeof value === 'string' &&
     ['ORGANIZATION_MEMBERSHIP', 'PROVIDER_CONNECTION', 'ADMIN_ACCESS'].includes(value)
   );
 }
 
-export function isInvitationAction(value: unknown): value is 'ACCEPT' | 'REJECT' | 'CANCEL' | 'RESEND' | 'EXTEND' {
+export function isInvitationAction(
+  value: unknown
+): value is 'ACCEPT' | 'REJECT' | 'CANCEL' | 'RESEND' | 'EXTEND' {
   return (
-    typeof value === 'string' &&
-    ['ACCEPT', 'REJECT', 'CANCEL', 'RESEND', 'EXTEND'].includes(value)
+    typeof value === 'string' && ['ACCEPT', 'REJECT', 'CANCEL', 'RESEND', 'EXTEND'].includes(value)
   );
 }
 
 export function isMembershipRole(value: unknown): value is 'ADMIN' | 'MANAGER' | 'MEMBER' {
-  return (
-    typeof value === 'string' &&
-    ['ADMIN', 'MANAGER', 'MEMBER'].includes(value)
-  );
+  return typeof value === 'string' && ['ADMIN', 'MANAGER', 'MEMBER'].includes(value);
 }
 
 // =============================================================================
@@ -60,10 +61,9 @@ export function isValidCreateOrganizationInvitationData(value: unknown): value i
     isMembershipRole((value as any).role) &&
     (!(value as any).customMessage || typeof (value as any).customMessage === 'string') &&
     (!(value as any).expiresAt || isValidDateString((value as any).expiresAt)) &&
-    (!(value as any).permissions || (
-      Array.isArray((value as any).permissions) &&
-      (value as any).permissions.every((perm: unknown) => typeof perm === 'string')
-    ))
+    (!(value as any).permissions ||
+      (Array.isArray((value as any).permissions) &&
+        (value as any).permissions.every((perm: unknown) => typeof perm === 'string')))
   );
 }
 
@@ -119,7 +119,8 @@ export function isValidOrganizationInvitationData(value: unknown): value is {
     typeof (value as any).invitedBy.name === 'string' &&
     isValidEmail((value as any).invitedBy.email) &&
     (!(value as any).customMessage || typeof (value as any).customMessage === 'string') &&
-    (!(value as any).organization.description || typeof (value as any).organization.description === 'string') &&
+    (!(value as any).organization.description ||
+      typeof (value as any).organization.description === 'string') &&
     (!(value as any).organization.logo || typeof (value as any).organization.logo === 'string')
   );
 }
@@ -145,14 +146,12 @@ export function isValidCreateProviderInvitationData(value: unknown): value is {
     isValidUUID((value as any).organizationId) &&
     (!(value as any).customMessage || typeof (value as any).customMessage === 'string') &&
     (!(value as any).expiresAt || isValidDateString((value as any).expiresAt)) &&
-    (!(value as any).preferredServices || (
-      Array.isArray((value as any).preferredServices) &&
-      (value as any).preferredServices.every((id: unknown) => isValidUUID(id))
-    )) &&
-    (!(value as any).locationIds || (
-      Array.isArray((value as any).locationIds) &&
-      (value as any).locationIds.every((id: unknown) => isValidUUID(id))
-    ))
+    (!(value as any).preferredServices ||
+      (Array.isArray((value as any).preferredServices) &&
+        (value as any).preferredServices.every((id: unknown) => isValidUUID(id)))) &&
+    (!(value as any).locationIds ||
+      (Array.isArray((value as any).locationIds) &&
+        (value as any).locationIds.every((id: unknown) => isValidUUID(id))))
   );
 }
 
@@ -219,33 +218,34 @@ export function isValidProviderInvitationData(value: unknown): value is {
     isValidEmail((value as any).invitedBy.email) &&
     typeof (value as any).invitedBy.role === 'string' &&
     (!(value as any).customMessage || typeof (value as any).customMessage === 'string') &&
-    (!(value as any).organization.description || typeof (value as any).organization.description === 'string') &&
-    (!(value as any).organization.website || typeof (value as any).organization.website === 'string') &&
-    (!(value as any).organization.locations || (
-      Array.isArray((value as any).organization.locations) &&
-      (value as any).organization.locations.every((loc: unknown) =>
-        typeof loc === 'object' &&
-        loc !== null &&
-        'id' in loc &&
-        'name' in loc &&
-        'formattedAddress' in loc &&
-        isValidUUID((loc as any).id) &&
-        typeof (loc as any).name === 'string' &&
-        typeof (loc as any).formattedAddress === 'string'
-      )
-    )) &&
-    (!(value as any).provider || (
-      typeof (value as any).provider === 'object' &&
-      (value as any).provider !== null &&
-      'id' in (value as any).provider &&
-      'name' in (value as any).provider &&
-      'email' in (value as any).provider &&
-      'status' in (value as any).provider &&
-      isValidUUID((value as any).provider.id) &&
-      typeof (value as any).provider.name === 'string' &&
-      isValidEmail((value as any).provider.email) &&
-      typeof (value as any).provider.status === 'string'
-    ))
+    (!(value as any).organization.description ||
+      typeof (value as any).organization.description === 'string') &&
+    (!(value as any).organization.website ||
+      typeof (value as any).organization.website === 'string') &&
+    (!(value as any).organization.locations ||
+      (Array.isArray((value as any).organization.locations) &&
+        (value as any).organization.locations.every(
+          (loc: unknown) =>
+            typeof loc === 'object' &&
+            loc !== null &&
+            'id' in loc &&
+            'name' in loc &&
+            'formattedAddress' in loc &&
+            isValidUUID((loc as any).id) &&
+            typeof (loc as any).name === 'string' &&
+            typeof (loc as any).formattedAddress === 'string'
+        ))) &&
+    (!(value as any).provider ||
+      (typeof (value as any).provider === 'object' &&
+        (value as any).provider !== null &&
+        'id' in (value as any).provider &&
+        'name' in (value as any).provider &&
+        'email' in (value as any).provider &&
+        'status' in (value as any).provider &&
+        isValidUUID((value as any).provider.id) &&
+        typeof (value as any).provider.name === 'string' &&
+        isValidEmail((value as any).provider.email) &&
+        typeof (value as any).provider.status === 'string'))
   );
 }
 
@@ -288,13 +288,13 @@ export function isValidAcceptInvitationData(value: unknown): value is {
     isValidUUID((value as any).invitationId) &&
     typeof (value as any).token === 'string' &&
     (value as any).token.length > 0 &&
-    (!(value as any).userData || (
-      typeof (value as any).userData === 'object' &&
-      (value as any).userData !== null &&
-      (!(value as any).userData.name || typeof (value as any).userData.name === 'string') &&
-      (!(value as any).userData.phone || typeof (value as any).userData.phone === 'string') &&
-      (!(value as any).userData.preferences || typeof (value as any).userData.preferences === 'object')
-    ))
+    (!(value as any).userData ||
+      (typeof (value as any).userData === 'object' &&
+        (value as any).userData !== null &&
+        (!(value as any).userData.name || typeof (value as any).userData.name === 'string') &&
+        (!(value as any).userData.phone || typeof (value as any).userData.phone === 'string') &&
+        (!(value as any).userData.preferences ||
+          typeof (value as any).userData.preferences === 'object')))
   );
 }
 
@@ -341,14 +341,16 @@ export function isValidBulkInvitationData(value: unknown): value is {
     isInvitationType((value as any).type) &&
     Array.isArray((value as any).invitations) &&
     (value as any).invitations.length > 0 &&
-    (value as any).invitations.every((invitation: unknown) =>
-      typeof invitation === 'object' &&
-      invitation !== null &&
-      'email' in invitation &&
-      isValidEmail((invitation as any).email) &&
-      (!(invitation as any).role || typeof (invitation as any).role === 'string') &&
-      (!(invitation as any).customMessage || typeof (invitation as any).customMessage === 'string') &&
-      (!(invitation as any).metadata || typeof (invitation as any).metadata === 'object')
+    (value as any).invitations.every(
+      (invitation: unknown) =>
+        typeof invitation === 'object' &&
+        invitation !== null &&
+        'email' in invitation &&
+        isValidEmail((invitation as any).email) &&
+        (!(invitation as any).role || typeof (invitation as any).role === 'string') &&
+        (!(invitation as any).customMessage ||
+          typeof (invitation as any).customMessage === 'string') &&
+        (!(invitation as any).metadata || typeof (invitation as any).metadata === 'object')
     ) &&
     (!(value as any).commonMessage || typeof (value as any).commonMessage === 'string') &&
     (!(value as any).expiresAt || isValidDateString((value as any).expiresAt))
@@ -380,15 +382,16 @@ export function isValidBulkInvitationResult(value: unknown): value is {
     typeof (value as any).failedInvitations === 'number' &&
     (value as any).failedInvitations >= 0 &&
     Array.isArray((value as any).results) &&
-    (value as any).results.every((result: unknown) =>
-      typeof result === 'object' &&
-      result !== null &&
-      'email' in result &&
-      'success' in result &&
-      isValidEmail((result as any).email) &&
-      typeof (result as any).success === 'boolean' &&
-      (!(result as any).invitationId || isValidUUID((result as any).invitationId)) &&
-      (!(result as any).error || typeof (result as any).error === 'string')
+    (value as any).results.every(
+      (result: unknown) =>
+        typeof result === 'object' &&
+        result !== null &&
+        'email' in result &&
+        'success' in result &&
+        isValidEmail((result as any).email) &&
+        typeof (result as any).success === 'boolean' &&
+        (!(result as any).invitationId || isValidUUID((result as any).invitationId)) &&
+        (!(result as any).error || typeof (result as any).error === 'string')
     )
   );
 }
@@ -448,37 +451,38 @@ export function isOrganizationInvitationListResponse(value: unknown): value is A
 }> {
   return (
     Array.isArray(value) &&
-    value.every((item: unknown) =>
-      typeof item === 'object' &&
-      item !== null &&
-      'id' in item &&
-      'email' in item &&
-      'status' in item &&
-      'role' in item &&
-      'createdAt' in item &&
-      'expiresAt' in item &&
-      'organization' in item &&
-      'invitedBy' in item &&
-      isValidUUID((item as any).id) &&
-      isValidEmail((item as any).email) &&
-      isInvitationStatus((item as any).status) &&
-      isMembershipRole((item as any).role) &&
-      isValidDateString((item as any).createdAt) &&
-      isValidDateString((item as any).expiresAt) &&
-      typeof (item as any).organization === 'object' &&
-      (item as any).organization !== null &&
-      'id' in (item as any).organization &&
-      'name' in (item as any).organization &&
-      isValidUUID((item as any).organization.id) &&
-      typeof (item as any).organization.name === 'string' &&
-      typeof (item as any).invitedBy === 'object' &&
-      (item as any).invitedBy !== null &&
-      'id' in (item as any).invitedBy &&
-      'name' in (item as any).invitedBy &&
-      'email' in (item as any).invitedBy &&
-      isValidUUID((item as any).invitedBy.id) &&
-      typeof (item as any).invitedBy.name === 'string' &&
-      isValidEmail((item as any).invitedBy.email)
+    value.every(
+      (item: unknown) =>
+        typeof item === 'object' &&
+        item !== null &&
+        'id' in item &&
+        'email' in item &&
+        'status' in item &&
+        'role' in item &&
+        'createdAt' in item &&
+        'expiresAt' in item &&
+        'organization' in item &&
+        'invitedBy' in item &&
+        isValidUUID((item as any).id) &&
+        isValidEmail((item as any).email) &&
+        isInvitationStatus((item as any).status) &&
+        isMembershipRole((item as any).role) &&
+        isValidDateString((item as any).createdAt) &&
+        isValidDateString((item as any).expiresAt) &&
+        typeof (item as any).organization === 'object' &&
+        (item as any).organization !== null &&
+        'id' in (item as any).organization &&
+        'name' in (item as any).organization &&
+        isValidUUID((item as any).organization.id) &&
+        typeof (item as any).organization.name === 'string' &&
+        typeof (item as any).invitedBy === 'object' &&
+        (item as any).invitedBy !== null &&
+        'id' in (item as any).invitedBy &&
+        'name' in (item as any).invitedBy &&
+        'email' in (item as any).invitedBy &&
+        isValidUUID((item as any).invitedBy.id) &&
+        typeof (item as any).invitedBy.name === 'string' &&
+        isValidEmail((item as any).invitedBy.email)
     )
   );
 }
@@ -494,36 +498,36 @@ export function isProviderInvitationListResponse(value: unknown): value is Array
 }> {
   return (
     Array.isArray(value) &&
-    value.every((item: unknown) =>
-      typeof item === 'object' &&
-      item !== null &&
-      'id' in item &&
-      'email' in item &&
-      'status' in item &&
-      'createdAt' in item &&
-      'expiresAt' in item &&
-      'organization' in item &&
-      isValidUUID((item as any).id) &&
-      isValidEmail((item as any).email) &&
-      isInvitationStatus((item as any).status) &&
-      isValidDateString((item as any).createdAt) &&
-      isValidDateString((item as any).expiresAt) &&
-      typeof (item as any).organization === 'object' &&
-      (item as any).organization !== null &&
-      'id' in (item as any).organization &&
-      'name' in (item as any).organization &&
-      isValidUUID((item as any).organization.id) &&
-      typeof (item as any).organization.name === 'string' &&
-      (!(item as any).provider || (
-        typeof (item as any).provider === 'object' &&
-        (item as any).provider !== null &&
-        'id' in (item as any).provider &&
-        'name' in (item as any).provider &&
-        'email' in (item as any).provider &&
-        isValidUUID((item as any).provider.id) &&
-        typeof (item as any).provider.name === 'string' &&
-        isValidEmail((item as any).provider.email)
-      ))
+    value.every(
+      (item: unknown) =>
+        typeof item === 'object' &&
+        item !== null &&
+        'id' in item &&
+        'email' in item &&
+        'status' in item &&
+        'createdAt' in item &&
+        'expiresAt' in item &&
+        'organization' in item &&
+        isValidUUID((item as any).id) &&
+        isValidEmail((item as any).email) &&
+        isInvitationStatus((item as any).status) &&
+        isValidDateString((item as any).createdAt) &&
+        isValidDateString((item as any).expiresAt) &&
+        typeof (item as any).organization === 'object' &&
+        (item as any).organization !== null &&
+        'id' in (item as any).organization &&
+        'name' in (item as any).organization &&
+        isValidUUID((item as any).organization.id) &&
+        typeof (item as any).organization.name === 'string' &&
+        (!(item as any).provider ||
+          (typeof (item as any).provider === 'object' &&
+            (item as any).provider !== null &&
+            'id' in (item as any).provider &&
+            'name' in (item as any).provider &&
+            'email' in (item as any).provider &&
+            isValidUUID((item as any).provider.id) &&
+            typeof (item as any).provider.name === 'string' &&
+            isValidEmail((item as any).provider.email)))
     )
   );
 }
@@ -601,15 +605,16 @@ export function isValidInvitationAnalytics(value: unknown): value is {
     typeof (value as any).byType === 'object' &&
     typeof (value as any).byStatus === 'object' &&
     Array.isArray((value as any).recentActivity) &&
-    (value as any).recentActivity.every((activity: unknown) =>
-      typeof activity === 'object' &&
-      activity !== null &&
-      'date' in activity &&
-      'invitations' in activity &&
-      'acceptances' in activity &&
-      isValidDateString((activity as any).date) &&
-      typeof (activity as any).invitations === 'number' &&
-      typeof (activity as any).acceptances === 'number'
+    (value as any).recentActivity.every(
+      (activity: unknown) =>
+        typeof activity === 'object' &&
+        activity !== null &&
+        'date' in activity &&
+        'invitations' in activity &&
+        'acceptances' in activity &&
+        isValidDateString((activity as any).date) &&
+        typeof (activity as any).invitations === 'number' &&
+        typeof (activity as any).acceptances === 'number'
     )
   );
 }

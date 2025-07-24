@@ -31,7 +31,6 @@ import { Separator } from '@/components/ui/separator';
 import { TimePicker } from '@/components/ui/time-picker';
 import { CustomRecurrenceModal } from '@/features/calendar/components/availability/custom-recurrence-modal';
 import { ServiceSelectionSection } from '@/features/calendar/components/availability/service-selection-section';
-import { OrganizationLocation } from '@/features/organizations/types/types';
 import { useCreateAvailability } from '@/features/calendar/hooks/use-availability';
 import {
   createRecurrencePattern,
@@ -47,6 +46,7 @@ import {
 } from '@/features/calendar/types/types';
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
+import { OrganizationLocation } from '@/features/organizations/types/types';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
@@ -169,7 +169,11 @@ export function AvailabilityCreationForm({
   // Memoize selected location to avoid repeated lookups
   const selectedLocation = useMemo(() => {
     if (!watchLocationId) return null;
-    return availableLocations.filter(loc => loc.id).find((loc: OrganizationLocation) => loc.id === watchLocationId) || null;
+    return (
+      availableLocations
+        .filter((loc) => loc.id)
+        .find((loc: OrganizationLocation) => loc.id === watchLocationId) || null
+    );
   }, [watchLocationId, availableLocations]);
 
   const onSubmit = async (data: FormValues) => {
@@ -525,11 +529,13 @@ export function AvailabilityCreationForm({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {availableLocations.filter(location => location.id).map((location: OrganizationLocation) => (
-                            <SelectItem key={location.id} value={location.id!}>
-                              {location.name}
-                            </SelectItem>
-                          ))}
+                          {availableLocations
+                            .filter((location) => location.id)
+                            .map((location: OrganizationLocation) => (
+                              <SelectItem key={location.id} value={location.id!}>
+                                {location.name}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                       <FormDescription id="location-description">

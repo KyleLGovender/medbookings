@@ -1,6 +1,9 @@
 import { useMutation } from '@tanstack/react-query';
 
-import { OrganizationBasicInfoData, OrganizationLocation } from '@/features/organizations/types/types';
+import {
+  OrganizationBasicInfoData,
+  OrganizationLocation,
+} from '@/features/organizations/types/types';
 
 interface UpdateOrganizationBasicInfoParams {
   organizationId: string;

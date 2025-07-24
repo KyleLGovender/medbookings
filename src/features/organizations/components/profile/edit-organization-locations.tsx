@@ -25,8 +25,8 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { GoogleMapsLocationPicker } from '@/features/organizations/components/google-maps-location-picker';
 import { useUpdateOrganizationLocations } from '@/features/organizations/hooks/use-organization-updates';
-import { OrganizationLocationsData } from '@/features/organizations/types/types';
 import { organizationLocationsSchema } from '@/features/organizations/types/schemas';
+import { OrganizationLocationsData } from '@/features/organizations/types/types';
 import { toast } from '@/hooks/use-toast';
 // Assuming Location type exists
 import { isDevelopment } from '@/lib/constants';

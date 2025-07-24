@@ -3,7 +3,6 @@
 // =============================================================================
 // All Zod validation schemas for the invitations feature in one place
 // Organized by: Entity Schemas -> Request Schemas -> Response Schemas
-
 import { z } from 'zod';
 
 import {
@@ -237,7 +236,9 @@ export type InvitationDataInput = z.infer<typeof invitationDataSchema>;
 export type CreateOrganizationInvitationRequestInput = z.infer<
   typeof createOrganizationInvitationRequestSchema
 >;
-export type CreateProviderInvitationRequestInput = z.infer<typeof createProviderInvitationRequestSchema>;
+export type CreateProviderInvitationRequestInput = z.infer<
+  typeof createProviderInvitationRequestSchema
+>;
 export type AcceptInvitationRequestInput = z.infer<typeof acceptInvitationRequestSchema>;
 export type RejectInvitationRequestInput = z.infer<typeof rejectInvitationRequestSchema>;
 export type ResendInvitationRequestInput = z.infer<typeof resendInvitationRequestSchema>;

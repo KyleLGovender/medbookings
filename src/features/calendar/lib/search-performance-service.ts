@@ -1,6 +1,10 @@
-import { AvailabilityStatus, SlotStatus, SearchPerformanceOptions, PerformanceMetrics } from '@/features/calendar/types/types';
+import {
+  AvailabilityStatus,
+  PerformanceMetrics,
+  SearchPerformanceOptions,
+  SlotStatus,
+} from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
-
 
 /**
  * Service for optimizing search query performance using database indexes and caching

@@ -262,16 +262,16 @@ export function LocationSetupStep() {
                       <AlertTitle>Location {index + 1} Errors</AlertTitle>
                       <AlertDescription>
                         <ul className="list-disc space-y-1 pl-5">
-                          {Object.entries((form.formState.errors.locations as any)?.[index] || {}).map(
-                            ([field, error]) => (
-                              <li key={field} className="text-sm">
-                                <strong>{field}:</strong>{' '}
-                                {typeof error === 'object' && error && 'message' in error
-                                  ? String(error.message)
-                                  : String(error)}
-                              </li>
-                            )
-                          )}
+                          {Object.entries(
+                            (form.formState.errors.locations as any)?.[index] || {}
+                          ).map(([field, error]) => (
+                            <li key={field} className="text-sm">
+                              <strong>{field}:</strong>{' '}
+                              {typeof error === 'object' && error && 'message' in error
+                                ? String(error.message)
+                                : String(error)}
+                            </li>
+                          ))}
                         </ul>
                       </AlertDescription>
                     </Alert>
@@ -334,7 +334,11 @@ export function LocationSetupStep() {
                       </div>
                       <div>
                         Errors:{' '}
-                        {JSON.stringify((form.formState.errors.locations as any)?.[index] || {}, null, 2)}
+                        {JSON.stringify(
+                          (form.formState.errors.locations as any)?.[index] || {},
+                          null,
+                          2
+                        )}
                       </div>
                     </div>
                   )}

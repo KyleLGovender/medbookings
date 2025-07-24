@@ -1,4 +1,9 @@
-import { AvailabilityStatus, AvailabilityWithRelations, NotificationPayload, AvailabilityNotificationContext } from '@/features/calendar/types/types';
+import {
+  AvailabilityNotificationContext,
+  AvailabilityStatus,
+  AvailabilityWithRelations,
+  NotificationPayload,
+} from '@/features/calendar/types/types';
 
 /**
  * Generate notifications for availability status changes

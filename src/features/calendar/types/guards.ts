@@ -2,39 +2,38 @@
 // CALENDAR FEATURE TYPE GUARDS
 // =============================================================================
 // Runtime type validation for calendar-specific types and API responses
-
 import { isValidDate, isValidDateString, isValidUUID } from '@/types/guards';
 
 // =============================================================================
 // ENUM GUARDS
 // =============================================================================
 
-export function isAvailabilityStatus(value: unknown): value is 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' {
+export function isAvailabilityStatus(
+  value: unknown
+): value is 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' {
   return (
-    typeof value === 'string' &&
-    ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED'].includes(value)
+    typeof value === 'string' && ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED'].includes(value)
   );
 }
 
-export function isSchedulingRule(value: unknown): value is 'CONTINUOUS' | 'ON_THE_HOUR' | 'ON_THE_HALF_HOUR' {
+export function isSchedulingRule(
+  value: unknown
+): value is 'CONTINUOUS' | 'ON_THE_HOUR' | 'ON_THE_HALF_HOUR' {
   return (
-    typeof value === 'string' &&
-    ['CONTINUOUS', 'ON_THE_HOUR', 'ON_THE_HALF_HOUR'].includes(value)
+    typeof value === 'string' && ['CONTINUOUS', 'ON_THE_HOUR', 'ON_THE_HALF_HOUR'].includes(value)
   );
 }
 
-export function isSlotStatus(value: unknown): value is 'AVAILABLE' | 'BOOKED' | 'BLOCKED' | 'INVALID' {
-  return (
-    typeof value === 'string' &&
-    ['AVAILABLE', 'BOOKED', 'BLOCKED', 'INVALID'].includes(value)
-  );
+export function isSlotStatus(
+  value: unknown
+): value is 'AVAILABLE' | 'BOOKED' | 'BLOCKED' | 'INVALID' {
+  return typeof value === 'string' && ['AVAILABLE', 'BOOKED', 'BLOCKED', 'INVALID'].includes(value);
 }
 
-export function isRecurrenceOption(value: unknown): value is 'none' | 'daily' | 'weekly' | 'custom' {
-  return (
-    typeof value === 'string' &&
-    ['none', 'daily', 'weekly', 'custom'].includes(value)
-  );
+export function isRecurrenceOption(
+  value: unknown
+): value is 'none' | 'daily' | 'weekly' | 'custom' {
+  return typeof value === 'string' && ['none', 'daily', 'weekly', 'custom'].includes(value);
 }
 
 // =============================================================================
@@ -65,17 +64,18 @@ export function isValidAvailabilityCreationData(value: unknown): value is {
     isValidDate((value as any).endTime) &&
     isValidUUID((value as any).providerId) &&
     Array.isArray((value as any).services) &&
-    (value as any).services.every((service: any) =>
-      typeof service === 'object' &&
-      service !== null &&
-      'serviceId' in service &&
-      'duration' in service &&
-      'price' in service &&
-      isValidUUID(service.serviceId) &&
-      typeof service.duration === 'number' &&
-      service.duration > 0 &&
-      typeof service.price === 'number' &&
-      service.price >= 0
+    (value as any).services.every(
+      (service: any) =>
+        typeof service === 'object' &&
+        service !== null &&
+        'serviceId' in service &&
+        'duration' in service &&
+        'price' in service &&
+        isValidUUID(service.serviceId) &&
+        typeof service.duration === 'number' &&
+        service.duration > 0 &&
+        typeof service.price === 'number' &&
+        service.price >= 0
     ) &&
     (!(value as any).organizationId || isValidUUID((value as any).organizationId)) &&
     (!(value as any).locationId || isValidUUID((value as any).locationId)) &&
@@ -93,7 +93,8 @@ export function isValidAvailabilityUpdateData(value: unknown): value is {
   return (
     typeof value === 'object' &&
     value !== null &&
-    (!(value as any).title || (typeof (value as any).title === 'string' && (value as any).title.length > 0)) &&
+    (!(value as any).title ||
+      (typeof (value as any).title === 'string' && (value as any).title.length > 0)) &&
     (!(value as any).startTime || isValidDate((value as any).startTime)) &&
     (!(value as any).endTime || isValidDate((value as any).endTime)) &&
     (!(value as any).status || isAvailabilityStatus((value as any).status)) &&
@@ -168,10 +169,9 @@ export function isValidRecurrencePattern(value: unknown): value is {
     'option' in value &&
     isRecurrenceOption((value as any).option) &&
     (!(value as any).endDate || isValidDateString((value as any).endDate)) &&
-    (!(value as any).customDays || (
-      Array.isArray((value as any).customDays) &&
-      (value as any).customDays.every((day: unknown) => typeof day === 'string')
-    ))
+    (!(value as any).customDays ||
+      (Array.isArray((value as any).customDays) &&
+        (value as any).customDays.every((day: unknown) => typeof day === 'string')))
   );
 }
 
@@ -223,18 +223,15 @@ export function isValidSearchParams(value: unknown): value is {
     value !== null &&
     (!(value as any).startDate || isValidDateString((value as any).startDate)) &&
     (!(value as any).endDate || isValidDateString((value as any).endDate)) &&
-    (!(value as any).serviceIds || (
-      Array.isArray((value as any).serviceIds) &&
-      (value as any).serviceIds.every((id: unknown) => isValidUUID(id))
-    )) &&
-    (!(value as any).providerIds || (
-      Array.isArray((value as any).providerIds) &&
-      (value as any).providerIds.every((id: unknown) => isValidUUID(id))
-    )) &&
-    (!(value as any).locationIds || (
-      Array.isArray((value as any).locationIds) &&
-      (value as any).locationIds.every((id: unknown) => isValidUUID(id))
-    )) &&
+    (!(value as any).serviceIds ||
+      (Array.isArray((value as any).serviceIds) &&
+        (value as any).serviceIds.every((id: unknown) => isValidUUID(id)))) &&
+    (!(value as any).providerIds ||
+      (Array.isArray((value as any).providerIds) &&
+        (value as any).providerIds.every((id: unknown) => isValidUUID(id)))) &&
+    (!(value as any).locationIds ||
+      (Array.isArray((value as any).locationIds) &&
+        (value as any).locationIds.every((id: unknown) => isValidUUID(id)))) &&
     (!(value as any).organizationId || isValidUUID((value as any).organizationId))
   );
 }
@@ -253,27 +250,28 @@ export function isAvailabilityListResponse(value: unknown): value is Array<{
 }> {
   return (
     Array.isArray(value) &&
-    value.every((item: unknown) =>
-      typeof item === 'object' &&
-      item !== null &&
-      'id' in item &&
-      'title' in item &&
-      'startTime' in item &&
-      'endTime' in item &&
-      'status' in item &&
-      'provider' in item &&
-      isValidUUID((item as any).id) &&
-      typeof (item as any).title === 'string' &&
-      isValidDateString((item as any).startTime) &&
-      isValidDateString((item as any).endTime) &&
-      isAvailabilityStatus((item as any).status) &&
-      typeof (item as any).provider === 'object' &&
-      (item as any).provider !== null &&
-      'user' in (item as any).provider &&
-      typeof (item as any).provider.user === 'object' &&
-      (item as any).provider.user !== null &&
-      'name' in (item as any).provider.user &&
-      typeof (item as any).provider.user.name === 'string'
+    value.every(
+      (item: unknown) =>
+        typeof item === 'object' &&
+        item !== null &&
+        'id' in item &&
+        'title' in item &&
+        'startTime' in item &&
+        'endTime' in item &&
+        'status' in item &&
+        'provider' in item &&
+        isValidUUID((item as any).id) &&
+        typeof (item as any).title === 'string' &&
+        isValidDateString((item as any).startTime) &&
+        isValidDateString((item as any).endTime) &&
+        isAvailabilityStatus((item as any).status) &&
+        typeof (item as any).provider === 'object' &&
+        (item as any).provider !== null &&
+        'user' in (item as any).provider &&
+        typeof (item as any).provider.user === 'object' &&
+        (item as any).provider.user !== null &&
+        'name' in (item as any).provider.user &&
+        typeof (item as any).provider.user.name === 'string'
     )
   );
 }
@@ -288,23 +286,24 @@ export function isSlotSearchResponse(value: unknown): value is Array<{
 }> {
   return (
     Array.isArray(value) &&
-    value.every((item: unknown) =>
-      typeof item === 'object' &&
-      item !== null &&
-      'id' in item &&
-      'startTime' in item &&
-      'endTime' in item &&
-      'status' in item &&
-      'service' in item &&
-      'availability' in item &&
-      isValidUUID((item as any).id) &&
-      isValidDateString((item as any).startTime) &&
-      isValidDateString((item as any).endTime) &&
-      isSlotStatus((item as any).status) &&
-      typeof (item as any).service === 'object' &&
-      (item as any).service !== null &&
-      'name' in (item as any).service &&
-      typeof (item as any).service.name === 'string'
+    value.every(
+      (item: unknown) =>
+        typeof item === 'object' &&
+        item !== null &&
+        'id' in item &&
+        'startTime' in item &&
+        'endTime' in item &&
+        'status' in item &&
+        'service' in item &&
+        'availability' in item &&
+        isValidUUID((item as any).id) &&
+        isValidDateString((item as any).startTime) &&
+        isValidDateString((item as any).endTime) &&
+        isSlotStatus((item as any).status) &&
+        typeof (item as any).service === 'object' &&
+        (item as any).service !== null &&
+        'name' in (item as any).service &&
+        typeof (item as any).service.name === 'string'
     )
   );
 }

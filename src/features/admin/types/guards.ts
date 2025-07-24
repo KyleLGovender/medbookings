@@ -2,38 +2,42 @@
 // ADMIN FEATURE TYPE GUARDS
 // =============================================================================
 // Runtime type validation for admin-specific types and API responses
-
-import { isValidEmail, isValidPhone, isValidUUID, isValidDateString } from '@/types/guards';
+import { isValidDateString, isValidEmail, isValidPhone, isValidUUID } from '@/types/guards';
 
 // =============================================================================
 // ENUM GUARDS
 // =============================================================================
 
 export function isUserRole(value: unknown): value is 'USER' | 'ADMIN' | 'SUPER_ADMIN' {
-  return (
-    typeof value === 'string' &&
-    ['USER', 'ADMIN', 'SUPER_ADMIN'].includes(value)
-  );
+  return typeof value === 'string' && ['USER', 'ADMIN', 'SUPER_ADMIN'].includes(value);
 }
 
-export function isAdminActionType(value: unknown): value is 'APPROVE' | 'REJECT' | 'SUSPEND' | 'ACTIVATE' | 'DELETE' {
+export function isAdminActionType(
+  value: unknown
+): value is 'APPROVE' | 'REJECT' | 'SUSPEND' | 'ACTIVATE' | 'DELETE' {
   return (
     typeof value === 'string' &&
     ['APPROVE', 'REJECT', 'SUSPEND', 'ACTIVATE', 'DELETE'].includes(value)
   );
 }
 
-export function isEntityType(value: unknown): value is 'USER' | 'PROVIDER' | 'ORGANIZATION' | 'LOCATION' | 'SERVICE' {
+export function isEntityType(
+  value: unknown
+): value is 'USER' | 'PROVIDER' | 'ORGANIZATION' | 'LOCATION' | 'SERVICE' {
   return (
     typeof value === 'string' &&
     ['USER', 'PROVIDER', 'ORGANIZATION', 'LOCATION', 'SERVICE'].includes(value)
   );
 }
 
-export function isAuditActionType(value: unknown): value is 'CREATE' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'REJECT' | 'SUSPEND' | 'LOGIN' | 'LOGOUT' {
+export function isAuditActionType(
+  value: unknown
+): value is 'CREATE' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'REJECT' | 'SUSPEND' | 'LOGIN' | 'LOGOUT' {
   return (
     typeof value === 'string' &&
-    ['CREATE', 'UPDATE', 'DELETE', 'APPROVE', 'REJECT', 'SUSPEND', 'LOGIN', 'LOGOUT'].includes(value)
+    ['CREATE', 'UPDATE', 'DELETE', 'APPROVE', 'REJECT', 'SUSPEND', 'LOGIN', 'LOGOUT'].includes(
+      value
+    )
   );
 }
 
@@ -75,7 +79,8 @@ export function isValidUserUpdateData(value: unknown): value is {
     value !== null &&
     'id' in value &&
     isValidUUID((value as any).id) &&
-    (!(value as any).name || (typeof (value as any).name === 'string' && (value as any).name.length > 0)) &&
+    (!(value as any).name ||
+      (typeof (value as any).name === 'string' && (value as any).name.length > 0)) &&
     (!(value as any).email || isValidEmail((value as any).email)) &&
     (!(value as any).phone || isValidPhone((value as any).phone)) &&
     (!(value as any).role || isUserRole((value as any).role)) &&
@@ -209,10 +214,10 @@ export function isValidSystemConfig(value: unknown): value is {
     'value' in value &&
     typeof (value as any).key === 'string' &&
     (value as any).key.length > 0 &&
-    ((value as any).value === null || 
-     typeof (value as any).value === 'string' || 
-     typeof (value as any).value === 'number' || 
-     typeof (value as any).value === 'boolean') &&
+    ((value as any).value === null ||
+      typeof (value as any).value === 'string' ||
+      typeof (value as any).value === 'number' ||
+      typeof (value as any).value === 'boolean') &&
     (!(value as any).description || typeof (value as any).description === 'string') &&
     (!(value as any).isPublic || typeof (value as any).isPublic === 'boolean') &&
     (!(value as any).category || typeof (value as any).category === 'string')
@@ -231,10 +236,10 @@ export function isValidSystemConfigUpdate(value: unknown): value is {
     'value' in value &&
     typeof (value as any).key === 'string' &&
     (value as any).key.length > 0 &&
-    ((value as any).value === null || 
-     typeof (value as any).value === 'string' || 
-     typeof (value as any).value === 'number' || 
-     typeof (value as any).value === 'boolean') &&
+    ((value as any).value === null ||
+      typeof (value as any).value === 'string' ||
+      typeof (value as any).value === 'number' ||
+      typeof (value as any).value === 'boolean') &&
     (!(value as any).description || typeof (value as any).description === 'string')
   );
 }
@@ -256,11 +261,11 @@ export function isValidMetricsFilter(value: unknown): value is {
     (!(value as any).startDate || isValidDateString((value as any).startDate)) &&
     (!(value as any).endDate || isValidDateString((value as any).endDate)) &&
     (!(value as any).entityType || isEntityType((value as any).entityType)) &&
-    (!(value as any).granularity || ['hour', 'day', 'week', 'month'].includes((value as any).granularity)) &&
-    (!(value as any).groupBy || (
-      Array.isArray((value as any).groupBy) &&
-      (value as any).groupBy.every((field: unknown) => typeof field === 'string')
-    ))
+    (!(value as any).granularity ||
+      ['hour', 'day', 'week', 'month'].includes((value as any).granularity)) &&
+    (!(value as any).groupBy ||
+      (Array.isArray((value as any).groupBy) &&
+        (value as any).groupBy.every((field: unknown) => typeof field === 'string')))
   );
 }
 
@@ -367,11 +372,12 @@ export function isValidBroadcastMessage(value: unknown): value is {
     (value as any).title.length > 0 &&
     typeof (value as any).message === 'string' &&
     (value as any).message.length > 0 &&
-    ['all', 'users', 'providers', 'organizations', 'admins'].includes((value as any).recipientType) &&
-    (!(value as any).recipientIds || (
-      Array.isArray((value as any).recipientIds) &&
-      (value as any).recipientIds.every((id: unknown) => isValidUUID(id))
-    )) &&
+    ['all', 'users', 'providers', 'organizations', 'admins'].includes(
+      (value as any).recipientType
+    ) &&
+    (!(value as any).recipientIds ||
+      (Array.isArray((value as any).recipientIds) &&
+        (value as any).recipientIds.every((id: unknown) => isValidUUID(id)))) &&
     (!(value as any).scheduledAt || isValidDateString((value as any).scheduledAt)) &&
     (!(value as any).expiresAt || isValidDateString((value as any).expiresAt))
   );
@@ -392,22 +398,23 @@ export function isUserListResponse(value: unknown): value is Array<{
 }> {
   return (
     Array.isArray(value) &&
-    value.every((item: unknown) =>
-      typeof item === 'object' &&
-      item !== null &&
-      'id' in item &&
-      'name' in item &&
-      'email' in item &&
-      'role' in item &&
-      'isActive' in item &&
-      'createdAt' in item &&
-      isValidUUID((item as any).id) &&
-      typeof (item as any).name === 'string' &&
-      isValidEmail((item as any).email) &&
-      isUserRole((item as any).role) &&
-      typeof (item as any).isActive === 'boolean' &&
-      isValidDateString((item as any).createdAt) &&
-      (!(item as any).lastLoginAt || isValidDateString((item as any).lastLoginAt))
+    value.every(
+      (item: unknown) =>
+        typeof item === 'object' &&
+        item !== null &&
+        'id' in item &&
+        'name' in item &&
+        'email' in item &&
+        'role' in item &&
+        'isActive' in item &&
+        'createdAt' in item &&
+        isValidUUID((item as any).id) &&
+        typeof (item as any).name === 'string' &&
+        isValidEmail((item as any).email) &&
+        isUserRole((item as any).role) &&
+        typeof (item as any).isActive === 'boolean' &&
+        isValidDateString((item as any).createdAt) &&
+        (!(item as any).lastLoginAt || isValidDateString((item as any).lastLoginAt))
     )
   );
 }
@@ -424,24 +431,25 @@ export function isAuditLogListResponse(value: unknown): value is Array<{
 }> {
   return (
     Array.isArray(value) &&
-    value.every((item: unknown) =>
-      typeof item === 'object' &&
-      item !== null &&
-      'id' in item &&
-      'userId' in item &&
-      'userName' in item &&
-      'action' in item &&
-      'entityType' in item &&
-      'entityId' in item &&
-      'timestamp' in item &&
-      isValidUUID((item as any).id) &&
-      isValidUUID((item as any).userId) &&
-      typeof (item as any).userName === 'string' &&
-      isAuditActionType((item as any).action) &&
-      isEntityType((item as any).entityType) &&
-      isValidUUID((item as any).entityId) &&
-      isValidDateString((item as any).timestamp) &&
-      (!(item as any).ipAddress || typeof (item as any).ipAddress === 'string')
+    value.every(
+      (item: unknown) =>
+        typeof item === 'object' &&
+        item !== null &&
+        'id' in item &&
+        'userId' in item &&
+        'userName' in item &&
+        'action' in item &&
+        'entityType' in item &&
+        'entityId' in item &&
+        'timestamp' in item &&
+        isValidUUID((item as any).id) &&
+        isValidUUID((item as any).userId) &&
+        typeof (item as any).userName === 'string' &&
+        isAuditActionType((item as any).action) &&
+        isEntityType((item as any).entityType) &&
+        isValidUUID((item as any).entityId) &&
+        isValidDateString((item as any).timestamp) &&
+        (!(item as any).ipAddress || typeof (item as any).ipAddress === 'string')
     )
   );
 }
@@ -455,20 +463,21 @@ export function isSystemConfigListResponse(value: unknown): value is Array<{
 }> {
   return (
     Array.isArray(value) &&
-    value.every((item: unknown) =>
-      typeof item === 'object' &&
-      item !== null &&
-      'key' in item &&
-      'value' in item &&
-      'isPublic' in item &&
-      typeof (item as any).key === 'string' &&
-      ((item as any).value === null || 
-       typeof (item as any).value === 'string' || 
-       typeof (item as any).value === 'number' || 
-       typeof (item as any).value === 'boolean') &&
-      typeof (item as any).isPublic === 'boolean' &&
-      (!(item as any).description || typeof (item as any).description === 'string') &&
-      (!(item as any).category || typeof (item as any).category === 'string')
+    value.every(
+      (item: unknown) =>
+        typeof item === 'object' &&
+        item !== null &&
+        'key' in item &&
+        'value' in item &&
+        'isPublic' in item &&
+        typeof (item as any).key === 'string' &&
+        ((item as any).value === null ||
+          typeof (item as any).value === 'string' ||
+          typeof (item as any).value === 'number' ||
+          typeof (item as any).value === 'boolean') &&
+        typeof (item as any).isPublic === 'boolean' &&
+        (!(item as any).description || typeof (item as any).description === 'string') &&
+        (!(item as any).category || typeof (item as any).category === 'string')
     )
   );
 }
@@ -495,17 +504,18 @@ export function isValidAdminSearchParams(value: unknown): value is {
     (!(value as any).entityType || isEntityType((value as any).entityType)) &&
     (!(value as any).status || typeof (value as any).status === 'string') &&
     (!(value as any).role || isUserRole((value as any).role)) &&
-    (!(value as any).dateRange || (
-      typeof (value as any).dateRange === 'object' &&
-      (value as any).dateRange !== null &&
-      'start' in (value as any).dateRange &&
-      'end' in (value as any).dateRange &&
-      isValidDateString((value as any).dateRange.start) &&
-      isValidDateString((value as any).dateRange.end)
-    )) &&
+    (!(value as any).dateRange ||
+      (typeof (value as any).dateRange === 'object' &&
+        (value as any).dateRange !== null &&
+        'start' in (value as any).dateRange &&
+        'end' in (value as any).dateRange &&
+        isValidDateString((value as any).dateRange.start) &&
+        isValidDateString((value as any).dateRange.end))) &&
     (!(value as any).sortBy || typeof (value as any).sortBy === 'string') &&
     (!(value as any).sortOrder || ['asc', 'desc'].includes((value as any).sortOrder)) &&
-    (!(value as any).page || (typeof (value as any).page === 'number' && (value as any).page > 0)) &&
-    (!(value as any).limit || (typeof (value as any).limit === 'number' && (value as any).limit > 0))
+    (!(value as any).page ||
+      (typeof (value as any).page === 'number' && (value as any).page > 0)) &&
+    (!(value as any).limit ||
+      (typeof (value as any).limit === 'number' && (value as any).limit > 0))
   );
 }

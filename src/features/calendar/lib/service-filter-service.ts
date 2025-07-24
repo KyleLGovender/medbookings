@@ -1,6 +1,11 @@
-import { AvailabilityStatus, SlotStatus, ServiceFilterParams, ServiceResult, ServiceFilterResult } from '@/features/calendar/types/types';
+import {
+  AvailabilityStatus,
+  ServiceFilterParams,
+  ServiceFilterResult,
+  ServiceResult,
+  SlotStatus,
+} from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
-
 
 /**
  * Service for filtering and searching by service types and characteristics
