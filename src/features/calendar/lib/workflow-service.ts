@@ -50,8 +50,13 @@ export async function processAvailabilityAcceptance(
       return { success: false, error: 'Availability not found' };
     }
 
+    // Get current user's provider record for authorization
+    const currentUserProvider = await prisma.provider.findUnique({
+      where: { userId: currentUser.id },
+    });
+
     // Verify user can accept this proposal
-    if (currentUser.id !== availability.providerId) {
+    if (currentUserProvider?.id !== availability.providerId) {
       return { success: false, error: 'Only the assigned provider can accept this proposal' };
     }
 
