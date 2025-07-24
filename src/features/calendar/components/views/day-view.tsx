@@ -1,17 +1,8 @@
 import { Repeat } from 'lucide-react';
 
-import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
+import { AvailabilityStatus } from '@/features/calendar/types/types';
 
-// Week View Component
-interface DayViewProps {
-  currentDate: Date;
-  events: CalendarEvent[];
-  workingHours: { start: string; end: string };
-  onEventClick?: (event: CalendarEvent) => void;
-  onTimeSlotClick?: (date: Date, hour: number) => void;
-  onDateClick?: (date: Date) => void;
-  getEventStyle: (event: CalendarEvent) => string;
-}
+import { DayViewProps } from './types';
 
 // Day View Component
 export function DayView({
@@ -20,6 +11,7 @@ export function DayView({
   workingHours,
   onEventClick,
   onTimeSlotClick,
+  onDateClick,
   getEventStyle,
 }: DayViewProps) {
   const dayEvents = events.filter((event) => {
@@ -128,7 +120,7 @@ export function DayView({
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          onEventClick?.(event);
+                          onEventClick?.(event, e);
                         }}
                       >
                         <p className="order-1 flex items-center gap-1 font-semibold">

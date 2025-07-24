@@ -77,7 +77,6 @@ export function ProviderCalendarView({
 }: ProviderCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(initialDate);
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialViewMode);
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<AvailabilityStatus | 'ALL'>('ALL');
   const [isMobile, setIsMobile] = useState(false);
 
@@ -607,7 +606,7 @@ export function ProviderCalendarView({
               currentDate={currentDate}
               events={calendarData.events}
               workingHours={calendarData.workingHours}
-              onEventClick={(event) => onEventClick?.(event, {} as React.MouseEvent)}
+              onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
               getEventStyle={getEventStyle}
             />
@@ -617,7 +616,7 @@ export function ProviderCalendarView({
               currentDate={currentDate}
               events={calendarData.events}
               workingHours={calendarData.workingHours}
-              onEventClick={(event) => onEventClick?.(event, {} as React.MouseEvent)}
+              onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
               getEventStyle={getEventStyle}
             />
@@ -627,7 +626,7 @@ export function ProviderCalendarView({
               currentDate={currentDate}
               events={calendarData.events}
               workingHours={calendarData.workingHours}
-              onEventClick={(event) => onEventClick?.(event, {} as React.MouseEvent)}
+              onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
               onDateClick={handleDateClick}
               getEventStyle={getEventStyle}

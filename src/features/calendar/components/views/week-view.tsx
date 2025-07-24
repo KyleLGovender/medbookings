@@ -1,17 +1,8 @@
 import { Repeat } from 'lucide-react';
 
-import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
+import { AvailabilityStatus } from '@/features/calendar/types/types';
 
-// Week View Component
-interface WeekViewProps {
-  currentDate: Date;
-  events: CalendarEvent[];
-  workingHours: { start: string; end: string };
-  onEventClick?: (event: CalendarEvent) => void;
-  onTimeSlotClick?: (date: Date, hour: number) => void;
-  onDateClick?: (date: Date) => void;
-  getEventStyle: (event: CalendarEvent) => string;
-}
+import { WeekViewProps } from './types';
 
 export function WeekView({
   currentDate,
@@ -169,7 +160,7 @@ export function WeekView({
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              onEventClick?.(event);
+                              onEventClick?.(event, e);
                             }}
                           >
                             <p className="order-1 flex items-center gap-1 truncate font-semibold">

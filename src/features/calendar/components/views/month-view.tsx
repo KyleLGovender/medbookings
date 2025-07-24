@@ -1,16 +1,8 @@
 import { Repeat } from 'lucide-react';
 
-import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
+import { AvailabilityStatus } from '@/features/calendar/types/types';
 
-// Month View Component
-interface MonthViewProps {
-  currentDate: Date;
-  events: CalendarEvent[];
-  onEventClick?: (event: CalendarEvent, clickEvent: React.MouseEvent) => void;
-  onDateClick?: (date: Date) => void;
-  onEditEvent?: (event: CalendarEvent) => void;
-  getEventStyle: (event: CalendarEvent) => string;
-}
+import { MonthViewProps } from './types';
 
 export function MonthView({
   currentDate,
