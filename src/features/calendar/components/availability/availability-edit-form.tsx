@@ -160,6 +160,18 @@ export function AvailabilityEditForm({
   const onSubmit = async (data: FormValues) => {
     if (updateMutation.isPending) return;
 
+    // Validate scope for recurring availability
+    if (availability?.isRecurring) {
+      if (!scope || !(['single', 'future', 'all'].includes(scope))) {
+        toast({
+          title: 'Error',
+          description: 'Invalid scope parameter for recurring availability',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       // Include scope parameter for recurring availability edits
