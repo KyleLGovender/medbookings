@@ -285,9 +285,14 @@ export async function processAvailabilityCancellation(
       return { success: false, error: 'Availability not found' };
     }
 
+    // Get current user's provider record for authorization
+    const currentUserProvider = await prisma.provider.findUnique({
+      where: { userId: currentUser.id },
+    });
+
     // Check permissions
     const canCancel =
-      currentUser.id === availability.providerId ||
+      currentUserProvider?.id === availability.providerId ||
       currentUser.id === availability.createdById ||
       currentUser.role === 'ADMIN' ||
       currentUser.role === 'SUPER_ADMIN';
