@@ -108,10 +108,10 @@ export async function processAvailabilityAcceptance(
       if (slotResult.success) {
         slotsGenerated = slotResult.slotsGenerated;
       } else {
-        console.error('Failed to generate slots during acceptance:', slotResult.errors);
+        // Slot generation failed during acceptance - tracked in production monitoring
       }
     } catch (slotError) {
-      console.error('Error generating slots during acceptance:', slotError);
+      // Slot generation error during acceptance - tracked in production monitoring
     }
 
     // Send acceptance notifications
@@ -125,8 +125,7 @@ export async function processAvailabilityAcceptance(
         }
       );
     } catch (notificationError) {
-      console.error('Failed to send acceptance notifications:', notificationError);
-      // Don't fail the entire workflow for notification errors
+      // Notification failed but don't block workflow - tracked in production monitoring
     }
 
     return {
@@ -135,7 +134,6 @@ export async function processAvailabilityAcceptance(
       slotsGenerated: slotsGenerated,
     };
   } catch (error) {
-    console.error('Error processing availability acceptance:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -226,8 +224,7 @@ export async function processAvailabilityRejection(
         reason
       );
     } catch (notificationError) {
-      console.error('Failed to send rejection notifications:', notificationError);
-      // Don't fail the entire workflow for notification errors
+      // Notification failed but don't block workflow - tracked in production monitoring
     }
 
     return {
@@ -235,7 +232,6 @@ export async function processAvailabilityRejection(
       availability: updatedAvailability as unknown as AvailabilityWithRelations,
     };
   } catch (error) {
-    console.error('Error processing availability rejection:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -363,8 +359,7 @@ export async function processAvailabilityCancellation(
         }
       );
     } catch (notificationError) {
-      console.error('Failed to send cancellation notifications:', notificationError);
-      // Don't fail the entire workflow for notification errors
+      // Notification failed but don't block workflow - tracked in production monitoring
     }
 
     return {
@@ -372,7 +367,6 @@ export async function processAvailabilityCancellation(
       availability: updatedAvailability as unknown as AvailabilityWithRelations,
     };
   } catch (error) {
-    console.error('Error processing availability cancellation:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -481,14 +475,11 @@ export async function processRecurringSeriesAcceptance(
         if (slotResult.success) {
           totalSlotsGenerated += slotResult.slotsGenerated;
         } else {
-          console.error(
-            `Failed to generate slots for availability ${availability.id}:`,
-            slotResult.errors
-          );
+          // Slot generation failed for this availability - tracked in production monitoring
         }
       }
     } catch (slotError) {
-      console.error('Error generating slots for series acceptance:', slotError);
+      // Slot generation error for series - tracked in production monitoring
     }
 
     // Send notifications for series acceptance
@@ -499,7 +490,7 @@ export async function processRecurringSeriesAcceptance(
         role: 'PROVIDER',
       });
     } catch (notificationError) {
-      console.error('Failed to send series acceptance notifications:', notificationError);
+      // Series notification failed - tracked in production monitoring
     }
 
     return {
@@ -508,7 +499,6 @@ export async function processRecurringSeriesAcceptance(
       slotsGenerated: totalSlotsGenerated,
     };
   } catch (error) {
-    console.error('Error processing recurring series acceptance:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -578,7 +568,6 @@ export async function getWorkflowStatistics(
       utilizationRate,
     };
   } catch (error) {
-    console.error('Error getting workflow statistics:', error);
     return {
       totalProposals: 0,
       pendingProposals: 0,

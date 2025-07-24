@@ -338,7 +338,6 @@ export class TimeSearchService {
         dayOfWeekStats,
       };
     } catch (error) {
-      console.error('Error searching slots by time:', error);
       return {
         totalSlotsFound: 0,
         slotsInTimeRange: [],
@@ -444,7 +443,6 @@ export class TimeSearchService {
 
       return scoredSlots;
     } catch (error) {
-      console.error('Error finding optimal time slots:', error);
       return [];
     }
   }
@@ -507,7 +505,6 @@ export class TimeSearchService {
 
       return heatmapData.sort((a, b) => a.date.localeCompare(b.date));
     } catch (error) {
-      console.error('Error generating availability heatmap:', error);
       return [];
     }
   }

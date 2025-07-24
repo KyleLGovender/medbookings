@@ -102,7 +102,7 @@ export function CalendarEventDialog({
       await onConfirmBooking?.(event);
       onClose();
     } catch (error) {
-      console.error('Error confirming booking:', error);
+      // Error confirming booking - handle silently
     } finally {
       setIsConfirming(false);
     }

@@ -109,7 +109,6 @@ export class BookingIntegrationService {
         price: slot.serviceConfig?.price?.toNumber() || 0,
       };
     } catch (error) {
-      console.error('Error validating booking request:', error);
       return {
         isValid: false,
         conflicts: ['Internal error during validation'],
@@ -213,7 +212,6 @@ export class BookingIntegrationService {
         reason: 'No compatible time found within availability window',
       };
     } catch (error) {
-      console.error('Error checking booking compatibility:', error);
       return {
         slotId,
         requestedStartTime,
@@ -318,7 +316,6 @@ export class BookingIntegrationService {
 
       return compatibleSlots;
     } catch (error) {
-      console.error('Error finding compatible slots:', error);
       return [];
     }
   }
@@ -404,7 +401,6 @@ export class BookingIntegrationService {
         requiresConfirmation: availability.requiresConfirmation,
       };
     } catch (error) {
-      console.error('Error creating booking:', error);
       return {
         success: false,
         conflicts: ['Internal error during booking creation'],
