@@ -412,8 +412,13 @@ export async function processRecurringSeriesAcceptance(
       return { success: false, error: 'This is not a recurring availability series' };
     }
 
+    // Get current user's provider record for authorization
+    const currentUserProvider = await prisma.provider.findUnique({
+      where: { userId: currentUser.id },
+    });
+
     // Verify permission
-    if (currentUser.id !== masterAvailability.providerId) {
+    if (currentUserProvider?.id !== masterAvailability.providerId) {
       return { success: false, error: 'Only the assigned provider can accept this series' };
     }
 
