@@ -1095,6 +1095,7 @@ export interface CreateAvailabilityData {
 
 export interface UpdateAvailabilityData extends Partial<CreateAvailabilityData> {
   id: string;
+  scope?: 'single' | 'future' | 'all'; // SeriesActionScope for recurring availability edits
 }
 
 // =============================================================================

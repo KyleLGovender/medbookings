@@ -54,6 +54,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
   const [showSeriesActionDialog, setShowSeriesActionDialog] = useState(false);
   const [seriesActionType, setSeriesActionType] = useState<'edit' | 'delete' | 'cancel'>('edit');
   const [pendingSeriesScope, setPendingSeriesScope] = useState<SeriesActionScope | null>(null);
+  const [editFormScope, setEditFormScope] = useState<SeriesActionScope>('single');
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewingAvailabilityId, setViewingAvailabilityId] = useState<string | null>(null);
 
@@ -282,7 +283,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
     switch (seriesActionType) {
       case 'edit':
         // For series editing, pass scope to edit form
-        // TODO: Update edit form to handle scope parameter
+        setEditFormScope(scope);
         setShowEditForm(true);
         break;
       case 'delete':
@@ -340,6 +341,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
           {selectedEvent && (
             <AvailabilityEditForm
               availabilityId={selectedEvent.id}
+              scope={editFormScope}
               onSuccess={handleEditSuccess}
               onCancel={handleEditCancel}
             />

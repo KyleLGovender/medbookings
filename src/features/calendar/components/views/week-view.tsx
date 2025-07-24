@@ -1,3 +1,5 @@
+import { Repeat } from 'lucide-react';
+
 import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
 
 // Week View Component
@@ -170,7 +172,12 @@ export function WeekView({
                               onEventClick?.(event);
                             }}
                           >
-                            <p className="order-1 truncate font-semibold">{event.title}</p>
+                            <p className="order-1 flex items-center gap-1 truncate font-semibold">
+                              {event.title}
+                              {event.isRecurring && (
+                                <Repeat className="h-3 w-3 flex-shrink-0 text-blue-500" />
+                              )}
+                            </p>
                             <p className="text-xs opacity-75">
                               <time dateTime={event.startTime.toISOString()}>
                                 {event.startTime.toLocaleTimeString([], {

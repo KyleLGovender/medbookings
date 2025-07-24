@@ -55,6 +55,7 @@ import { useToast } from '@/hooks/use-toast';
 interface AvailabilityEditFormProps {
   availabilityId: string;
   editMode?: 'single' | 'series' | 'future'; // How to handle recurring series
+  scope?: 'single' | 'future' | 'all'; // SeriesActionScope for recurring availability
   onSuccess?: (data: AvailabilityWithRelations) => void;
   onCancel?: () => void;
 }
@@ -64,6 +65,7 @@ type FormValues = UpdateAvailabilityData;
 export function AvailabilityEditForm({
   availabilityId,
   editMode = 'single',
+  scope = 'single',
   onSuccess,
   onCancel,
 }: AvailabilityEditFormProps) {
@@ -158,9 +160,26 @@ export function AvailabilityEditForm({
   const onSubmit = async (data: FormValues) => {
     if (updateMutation.isPending) return;
 
+    // Validate scope for recurring availability
+    if (availability?.isRecurring) {
+      if (!scope || !['single', 'future', 'all'].includes(scope)) {
+        toast({
+          title: 'Error',
+          description: 'Invalid scope parameter for recurring availability',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
-      await updateMutation.mutateAsync(data);
+      // Include scope parameter for recurring availability edits
+      const updatePayload = {
+        ...data,
+        ...(availability?.isRecurring && { scope }),
+      };
+      await updateMutation.mutateAsync(updatePayload);
     } catch (error) {
       // Error handled by mutation onError callback
     } finally {
