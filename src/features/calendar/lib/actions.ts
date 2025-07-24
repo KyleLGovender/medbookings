@@ -363,7 +363,7 @@ export async function searchAvailability(
     const where: any = {};
 
     if (validatedParams.providerId) {
-      where.serviceProviderId = validatedParams.providerId;
+      where.providerId = validatedParams.providerId;
     }
 
     if (validatedParams.organizationId) {
@@ -416,6 +416,11 @@ export async function searchAvailability(
 
     // Add permission filters
     if (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
+      // Get current user's provider record for authorization
+      const currentUserProvider = await prisma.provider.findUnique({
+        where: { userId: currentUser.id },
+      });
+
       // Get user's organizations
       const userOrganizations = await prisma.organizationMembership.findMany({
         where: { userId: currentUser.id },
@@ -425,7 +430,7 @@ export async function searchAvailability(
       const organizationIds = userOrganizations.map((m) => m.organizationId);
 
       where.OR = [
-        { serviceProviderId: currentUser.id },
+        ...(currentUserProvider ? [{ providerId: currentUserProvider.id }] : []),
         { createdById: currentUser.id },
         ...(organizationIds.length > 0 ? [{ organizationId: { in: organizationIds } }] : []),
       ];
