@@ -336,7 +336,7 @@ export function OrganizationCalendarView({
   const getEventStyle = (event: CalendarEvent): string => {
     // Base style for recurring events with left border indicator
     const recurringBorder = event.isRecurring ? 'border-l-4 border-l-blue-600' : '';
-    
+
     switch (event.type) {
       case 'availability':
         return `bg-green-100 border-green-300 text-green-800 ${recurringBorder}`;

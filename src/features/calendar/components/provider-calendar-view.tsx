@@ -376,7 +376,7 @@ export function ProviderCalendarView({
   const getEventStyle = (event: CalendarEvent): string => {
     // Base style for recurring events with left border indicator
     const recurringBorder = event.isRecurring ? 'border-l-4 border-l-blue-600' : '';
-    
+
     switch (event.type) {
       case 'availability':
         // Provider-created availabilities (green tones)

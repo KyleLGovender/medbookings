@@ -172,13 +172,10 @@ export function WeekView({
                               onEventClick?.(event);
                             }}
                           >
-                            <p className="order-1 truncate font-semibold flex items-center gap-1">
+                            <p className="order-1 flex items-center gap-1 truncate font-semibold">
                               {event.title}
                               {event.isRecurring && (
-                                <Repeat 
-                                  className="h-3 w-3 text-blue-500 flex-shrink-0" 
-                                  title="Part of recurring series"
-                                />
+                                <Repeat className="h-3 w-3 flex-shrink-0 text-blue-500" />
                               )}
                             </p>
                             <p className="text-xs opacity-75">

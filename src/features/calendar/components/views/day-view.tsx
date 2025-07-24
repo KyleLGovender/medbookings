@@ -131,14 +131,9 @@ export function DayView({
                           onEventClick?.(event);
                         }}
                       >
-                        <p className="order-1 font-semibold flex items-center gap-1">
+                        <p className="order-1 flex items-center gap-1 font-semibold">
                           {event.title}
-                          {event.isRecurring && (
-                            <Repeat 
-                              className="h-3 w-3 text-blue-500" 
-                              title="Part of recurring series"
-                            />
-                          )}
+                          {event.isRecurring && <Repeat className="h-3 w-3 text-blue-500" />}
                         </p>
                         <p className="text-xs opacity-75">
                           <time dateTime={event.startTime.toISOString()}>

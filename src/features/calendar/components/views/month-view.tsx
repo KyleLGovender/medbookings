@@ -83,13 +83,10 @@ export function MonthView({
                         onEventClick?.(event, e);
                       }}
                     >
-                      <div className="truncate font-medium flex items-center gap-1">
+                      <div className="flex items-center gap-1 truncate font-medium">
                         {event.title}
                         {event.isRecurring && (
-                          <Repeat 
-                            className="h-3 w-3 text-blue-500 flex-shrink-0" 
-                            title="Part of recurring series"
-                          />
+                          <Repeat className="h-3 w-3 flex-shrink-0 text-blue-500" />
                         )}
                       </div>
                       <div className="text-xs opacity-75">

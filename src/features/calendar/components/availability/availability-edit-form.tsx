@@ -162,7 +162,7 @@ export function AvailabilityEditForm({
 
     // Validate scope for recurring availability
     if (availability?.isRecurring) {
-      if (!scope || !(['single', 'future', 'all'].includes(scope))) {
+      if (!scope || !['single', 'future', 'all'].includes(scope)) {
         toast({
           title: 'Error',
           description: 'Invalid scope parameter for recurring availability',

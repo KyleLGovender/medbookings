@@ -32,8 +32,11 @@ import {
   useDeleteAvailability,
   useRejectAvailabilityProposal,
 } from '@/features/calendar/hooks/use-availability';
-import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
-import { OrganizationProvider } from '@/features/organizations/types/types';
+import {
+  AvailabilityStatus,
+  CalendarEvent,
+  OrganizationProvider,
+} from '@/features/calendar/types/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface OrganizationAvailabilityPageProps {
@@ -61,6 +64,7 @@ export default function OrganizationAvailabilityPage({
   const [editFormScope, setEditFormScope] = useState<SeriesActionScope>('single');
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewingAvailabilityId, setViewingAvailabilityId] = useState<string | null>(null);
+  const [createProviderId, setCreateProviderId] = useState<string | null>(null);
 
   const { toast } = useToast();
 
@@ -135,6 +139,7 @@ export default function OrganizationAvailabilityPage({
   });
 
   const handleCreateAvailability = (providerId?: string) => {
+    setCreateProviderId(providerId || null);
     setShowCreateForm(true);
   };
 
@@ -254,10 +259,18 @@ export default function OrganizationAvailabilityPage({
           <DialogHeader>
             <DialogTitle>Create Availability</DialogTitle>
           </DialogHeader>
-          <AvailabilityCreationForm
-            onSuccess={handleCreateSuccess}
-            onCancel={handleCreateCancel}
-          />
+          {createProviderId ? (
+            <AvailabilityCreationForm
+              providerId={createProviderId}
+              organizationId={params.id}
+              onSuccess={handleCreateSuccess}
+              onCancel={handleCreateCancel}
+            />
+          ) : (
+            <div className="p-4 text-center text-muted-foreground">
+              Please select a provider to create availability
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -321,7 +334,9 @@ export default function OrganizationAvailabilityPage({
               {selectedEvent.isRecurring && (
                 <div>
                   <Label className="text-sm font-medium">Recurring</Label>
-                  <div className="text-sm text-muted-foreground">This is part of a recurring series</div>
+                  <div className="text-sm text-muted-foreground">
+                    This is part of a recurring series
+                  </div>
                 </div>
               )}
 
@@ -336,7 +351,7 @@ export default function OrganizationAvailabilityPage({
                         acceptMutation.mutate({ id: selectedEvent.id });
                       }}
                     >
-                      <Check className="h-4 w-4 mr-1" />
+                      <Check className="mr-1 h-4 w-4" />
                       Accept
                     </Button>
                     <Button
@@ -347,21 +362,21 @@ export default function OrganizationAvailabilityPage({
                         setShowRejectDialog(true);
                       }}
                     >
-                      <X className="h-4 w-4 mr-1" />
+                      <X className="mr-1 h-4 w-4" />
                       Reject
                     </Button>
                   </>
                 )}
                 <Button variant="outline" size="sm" onClick={handleEditEvent}>
-                  <Edit className="h-4 w-4 mr-1" />
+                  <Edit className="mr-1 h-4 w-4" />
                   Edit
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleCancelEvent}>
-                  <Pause className="h-4 w-4 mr-1" />
+                  <Pause className="mr-1 h-4 w-4" />
                   Cancel
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleDeleteEvent}>
-                  <Trash2 className="h-4 w-4 mr-1" />
+                  <Trash2 className="mr-1 h-4 w-4" />
                   Delete
                 </Button>
               </div>
