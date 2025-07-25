@@ -37,7 +37,12 @@
       "Bash(touch:*)",
       "Bash(npx jest:*)",
       "Bash(sed:*)",
-      "mcp__filesystem-server__create_directory"
+      "mcp__filesystem-server__create_directory",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "mcp__firecrawl__firecrawl_search",
+      "mcp__firecrawl__firecrawl_scrape",
+      "Bash(npx playwright:*)"
     ],
     "deny": []
   },

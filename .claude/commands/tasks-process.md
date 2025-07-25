@@ -19,6 +19,8 @@ Please process the task list from: $ARGUMENTS
 - Execute all tasks continuously without stopping for confirmation
 - Use this mode when user explicitly requests "yolo mode"
 - Mark off tasks as completed but proceed immediately to next task without waiting
+- **CRITICAL**: At the end of all tasks, run `npm run build` until it passes successfully
+- **NEVER** create PR automatically - always prompt user for permission first
 
 ## Task Implementation
 
@@ -161,7 +163,7 @@ When working with task lists, the AI must:
    - **Before starting work**: Verify correct branch and announce current working branch
    - Check which sub‑task is next
    - **Default Mode:** After implementing a sub‑task, commit changes, update the file, and then pause for user approval
-   - **YOLO Mode:** After implementing a sub‑task, commit changes, update the file, and immediately proceed to the next task without waiting for approval
+   - **YOLO Mode:** After implementing a sub‑task, commit changes, update the file, and immediately proceed to the next task without waiting for approval. When ALL tasks are complete, run `npm run build` repeatedly until it passes, then ASK USER for permission to create PR.
 
 4. **MCP Tool Usage:**
    - **PostgreSQL Server** (`mcp__postgres-server__query`): Use for database queries, constraint verification, data integrity checks
@@ -190,6 +192,9 @@ When working with task lists, the AI must:
    - The build must pass completely before any PR is created
 
 7. **PR Creation:**
-   - When all tasks in a group are complete AND build passes, create comprehensive PR
-   - Include detailed description, test plan, and file change summary
+   - When all tasks in a group are complete AND build passes, **ASK USER FOR PERMISSION** before creating PR
+   - **NEVER** automatically create PRs without explicit user consent
+   - In YOLO mode: Complete all tasks, verify build passes, then prompt: "All tasks complete and build successful. Would you like me to create a PR?"
+   - Only create PR after user confirms with "yes" or similar affirmative response
+   - Include detailed description, test plan, and file change summary when creating PR
    - Reference original task documentation

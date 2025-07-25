@@ -9,8 +9,21 @@
       "command": "npx",
       "args": [
         "@modelcontextprotocol/server-postgres",
-        "postgresql://nextstarter:supersecret@127.0.0.1:5432/nextstarter"
+        "postgres://default:4eVbPXHul5SL@ep-little-salad-a2w15sf9-pooler.eu-central-1.aws.neon.tech/verceldb?sslmode=require"
       ]
+    },
+    "firecrawl": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "firecrawl-mcp"],
+      "env": {
+        "FIRECRAWL_API_KEY": "fc-b27cf0c76d3d434294e641f3464fc9b7"
+      }
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
     }
   }
 }

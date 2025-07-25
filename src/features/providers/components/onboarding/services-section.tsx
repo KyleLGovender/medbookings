@@ -72,9 +72,6 @@ export function ServicesSection({
     );
   }
 
-  // Debug errors
-  console.log('Service errors:', errors?.services);
-
   return (
     <div className="space-y-6 bg-background">
       <div className="space-y-6">

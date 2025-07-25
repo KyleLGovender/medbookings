@@ -7,10 +7,10 @@
 ----------------------------------------------------------------------------------------
 
 ## 📋 Ready for Development (Prioritized)
-- [ ] Implement testing throughout the application. https://github.com/microsoft/playwright-mcp 
 - [ ] Context 7 documentation
+- [ ] Firecrawl
+- [ ] Implement testing throughout the application. https://github.com/microsoft/playwright-mcp 
 - [ ] Git worktrees
-- [ ] Claude Code Plan Upgrade
 - [ ] Implement user roles system (guest, user, provider, organization manager, admin)
 
 ----------------------------------------------------------------------------------------
@@ -29,6 +29,7 @@
 ----------------------------------------------------------------------------------------
 
 ## ✅ Recently Completed
+- [x] Claude Code Plan Upgrade
 
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------

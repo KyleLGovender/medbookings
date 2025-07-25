@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -128,112 +128,42 @@ export function ProviderOnboardingForm() {
   });
 
   // Watch the selected provider types to orchestrate data flow
-  const selectedProviderTypeIds = methods.watch('providerTypeIds') || [];
-
-  // Get filtered data based on selected provider types
-  const selectedProviderTypes =
-    onboardingData?.providerTypes.filter((type) => selectedProviderTypeIds.includes(type.id)) || [];
-
-  // Collect all requirements and services from selected types
-  const allRequirementsForSelectedTypes = selectedProviderTypeIds.flatMap(
-    (typeId) => onboardingData?.requirements[typeId] || []
-  );
-  // Remove duplicates by requirement ID
-  const uniqueRequirementsForSelectedTypes = allRequirementsForSelectedTypes.filter(
-    (requirement, index, array) => array.findIndex((r) => r.id === requirement.id) === index
+  const watchedProviderTypeIds = methods.watch('providerTypeIds');
+  const selectedProviderTypeIds = useMemo(
+    () => watchedProviderTypeIds || [],
+    [watchedProviderTypeIds]
   );
 
-  const allServicesForSelectedTypes = selectedProviderTypeIds.flatMap(
-    (typeId) => onboardingData?.services[typeId] || []
+  // Get filtered data based on selected provider types - memoized to prevent infinite loops
+  const selectedProviderTypes = useMemo(
+    () =>
+      onboardingData?.providerTypes.filter((type) => selectedProviderTypeIds.includes(type.id)) ||
+      [],
+    [onboardingData?.providerTypes, selectedProviderTypeIds]
   );
-  // Remove duplicates by service ID
-  const uniqueServicesForSelectedTypes = allServicesForSelectedTypes.filter(
-    (service, index, array) => array.findIndex((s) => s.id === service.id) === index
-  );
 
-  // Update form state when provider types change
-  useEffect(() => {
-    if (selectedProviderTypeIds.length > 0 && onboardingData) {
-      // Set requirements in form state from all selected types
-      methods.setValue(
-        'regulatoryRequirements.requirements',
-        uniqueRequirementsForSelectedTypes.map((req, idx) => ({
-          requirementTypeId: req.id,
-          index: idx,
-        }))
-      );
+  // Collect all requirements and services from selected types - memoized to prevent infinite loops
+  const uniqueRequirementsForSelectedTypes = useMemo(() => {
+    const allRequirementsForSelectedTypes = selectedProviderTypeIds.flatMap(
+      (typeId) => onboardingData?.requirements[typeId] || []
+    );
+    // Remove duplicates by requirement ID
+    return allRequirementsForSelectedTypes.filter(
+      (requirement, index, array) => array.findIndex((r) => r.id === requirement.id) === index
+    );
+  }, [selectedProviderTypeIds, onboardingData?.requirements]);
 
-      // Reset services selection when provider types change
-      methods.setValue('services.availableServices', []);
+  const uniqueServicesForSelectedTypes = useMemo(() => {
+    const allServicesForSelectedTypes = selectedProviderTypeIds.flatMap(
+      (typeId) => onboardingData?.services[typeId] || []
+    );
+    // Remove duplicates by service ID
+    return allServicesForSelectedTypes.filter(
+      (service, index, array) => array.findIndex((s) => s.id === service.id) === index
+    );
+  }, [selectedProviderTypeIds, onboardingData?.services]);
 
-      // Store the full service objects for reference in services section (all services from selected types)
-      methods.setValue('services.loadedServices', uniqueServicesForSelectedTypes);
-
-      if (selectedProviderTypes.length === 1) {
-        toast({
-          title: 'Provider type selected',
-          description: `Data for ${selectedProviderTypes[0].name} has been loaded.`,
-        });
-      } else if (selectedProviderTypes.length > 1) {
-        toast({
-          title: 'Provider types selected',
-          description: `Data for ${selectedProviderTypes.length} provider types has been loaded.`,
-        });
-      }
-    }
-  }, [
-    selectedProviderTypeIds,
-    onboardingData,
-    methods,
-    toast,
-    selectedProviderTypes,
-    uniqueRequirementsForSelectedTypes,
-    uniqueServicesForSelectedTypes,
-  ]);
-
-  // Watch for validation errors - only update on submission
-  useEffect(() => {
-    if (methods.formState.isSubmitted && Object.keys(methods.formState.errors).length > 0) {
-      updateFormErrors();
-    }
-  }, [methods.formState.isSubmitted, methods.formState.errors]);
-
-  // TanStack Query mutation
-  const mutation = useMutation({
-    mutationFn: submitProviderApplication,
-    onSuccess: (data) => {
-      toast({
-        title: 'Application submitted successfully!',
-        description:
-          'Your provider application has been submitted for review. You will receive an email confirmation shortly.',
-      });
-
-      // Redirect if provided in the response
-      if (data.redirect) {
-        window.location.href = data.redirect;
-      }
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Submission failed',
-        description:
-          error.message || 'There was an error submitting your application. Please try again.',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const onSubmit: SubmitHandler<ProviderFormType> = (data) => {
-    setShowConfirmDialog(true);
-  };
-
-  const handleConfirmSubmit = () => {
-    setShowConfirmDialog(false);
-    const formData = methods.getValues();
-    mutation.mutate(formData);
-  };
-
-  const updateFormErrors = () => {
+  const updateFormErrors = useCallback(() => {
     // Collect errors from form state
     const errors = Object.entries(methods.formState.errors)
       .flatMap(([key, value]) => {
@@ -289,6 +219,88 @@ export function ProviderOnboardingForm() {
 
     // Set errors directly without checking previous state to avoid loops
     setFormErrors(errors);
+  }, [methods.formState.errors]);
+
+  // Update form state when provider types change
+  useEffect(() => {
+    if (selectedProviderTypeIds.length > 0 && onboardingData) {
+      // Set requirements in form state from all selected types
+      methods.setValue(
+        'regulatoryRequirements.requirements',
+        uniqueRequirementsForSelectedTypes.map((req, idx) => ({
+          requirementTypeId: req.id,
+          index: idx,
+        }))
+      );
+
+      // Reset services selection when provider types change
+      methods.setValue('services.availableServices', []);
+
+      // Store the full service objects for reference in services section (all services from selected types)
+      methods.setValue('services.loadedServices', uniqueServicesForSelectedTypes);
+
+      if (selectedProviderTypes.length === 1) {
+        toast({
+          title: 'Provider type selected',
+          description: `Data for ${selectedProviderTypes[0].name} has been loaded.`,
+        });
+      } else if (selectedProviderTypes.length > 1) {
+        toast({
+          title: 'Provider types selected',
+          description: `Data for ${selectedProviderTypes.length} provider types has been loaded.`,
+        });
+      }
+    }
+  }, [
+    selectedProviderTypeIds,
+    onboardingData,
+    methods,
+    toast,
+    selectedProviderTypes,
+    uniqueRequirementsForSelectedTypes,
+    uniqueServicesForSelectedTypes,
+  ]);
+
+  // Watch for validation errors - only update on submission
+  useEffect(() => {
+    if (methods.formState.isSubmitted && Object.keys(methods.formState.errors).length > 0) {
+      updateFormErrors();
+    }
+  }, [methods.formState.isSubmitted, methods.formState.errors, updateFormErrors]);
+
+  // TanStack Query mutation
+  const mutation = useMutation({
+    mutationFn: submitProviderApplication,
+    onSuccess: (data) => {
+      toast({
+        title: 'Application submitted successfully!',
+        description:
+          'Your provider application has been submitted for review. You will receive an email confirmation shortly.',
+      });
+
+      // Redirect if provided in the response
+      if (data.redirect) {
+        window.location.href = data.redirect;
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Submission failed',
+        description:
+          error.message || 'There was an error submitting your application. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const onSubmit: SubmitHandler<ProviderFormType> = (data) => {
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmSubmit = () => {
+    setShowConfirmDialog(false);
+    const formData = methods.getValues();
+    mutation.mutate(formData);
   };
 
   const handleInvalidSubmit = () => {
