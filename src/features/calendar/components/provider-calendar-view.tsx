@@ -32,6 +32,17 @@ import {
   navigateCalendarDate, 
   getCalendarViewTitle 
 } from '@/features/calendar/lib/calendar-utils';
+import { 
+  usePerformanceMonitor,
+  measureCalendarDataProcessing,
+  measureCalendarRendering,
+  recordCalendarCyclePerformance 
+} from '@/features/calendar/lib/performance-monitor';
+import { 
+  filterEventsInTimeRange,
+  sortEventsForRendering,
+  groupEventsByDate 
+} from '@/features/calendar/lib/virtualization-helpers';
 
 
 export interface ProviderCalendarViewProps {
@@ -59,6 +70,9 @@ export function ProviderCalendarView({
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialViewMode);
   const [statusFilter, setStatusFilter] = useState<AvailabilityStatus | 'ALL'>('ALL');
   const [isMobile, setIsMobile] = useState(false);
+
+  // Performance monitoring
+  usePerformanceMonitor('ProviderCalendarView', [currentDate, viewMode, statusFilter]);
 
   // Mobile detection and view mode handling
   useEffect(() => {
@@ -323,6 +337,33 @@ export function ProviderCalendarView({
     return getEventStyle(event);
   }, []);
 
+  // Optimized event filtering and sorting for large datasets
+  const optimizedEvents = useMemo(() => {
+    if (!filteredEvents.length) return [];
+    
+    // Sort events for optimal rendering performance
+    const sorted = sortEventsForRendering(filteredEvents);
+    
+    // For month view, group events by date for efficient rendering
+    if (viewMode === 'month') {
+      const grouped = groupEventsByDate(sorted);
+      return Array.from(grouped.values()).flat();
+    }
+    
+    return sorted;
+  }, [filteredEvents, viewMode]);
+
+  // Record performance metrics when data changes
+  useEffect(() => {
+    if (calendarData) {
+      recordCalendarCyclePerformance(
+        calendarData.events.length,
+        viewMode,
+        calendarData.dateRange
+      );
+    }
+  }, [calendarData, viewMode]);
+
   if (isLoading) {
     return <CalendarSkeleton />;
   }
@@ -468,7 +509,7 @@ export function ProviderCalendarView({
           {viewMode === 'day' && (
             <DayView
               currentDate={currentDate}
-              events={filteredEvents}
+              events={optimizedEvents}
               workingHours={calendarData.workingHours}
               onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
@@ -478,7 +519,7 @@ export function ProviderCalendarView({
           {viewMode === '3-day' && (
             <ThreeDayView
               currentDate={currentDate}
-              events={filteredEvents}
+              events={optimizedEvents}
               workingHours={calendarData.workingHours}
               onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
@@ -488,7 +529,7 @@ export function ProviderCalendarView({
           {viewMode === 'week' && (
             <WeekView
               currentDate={currentDate}
-              events={filteredEvents}
+              events={optimizedEvents}
               workingHours={calendarData.workingHours}
               onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
@@ -499,7 +540,7 @@ export function ProviderCalendarView({
           {viewMode === 'month' && (
             <MonthView
               currentDate={currentDate}
-              events={filteredEvents}
+              events={optimizedEvents}
               onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onDateClick={handleDateClick}
               onEditEvent={onEditEvent}

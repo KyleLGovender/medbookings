@@ -8,6 +8,12 @@ import {
   CreateAvailabilityData,
   UpdateAvailabilityData,
 } from '@/features/calendar/types/types';
+import { 
+  apiRequest, 
+  shouldRetry, 
+  logApiError,
+  type ApiError 
+} from '@/features/calendar/lib/api-error-handler';
 
 // =============================================================================
 // QUERY KEY FACTORY
@@ -75,24 +81,18 @@ export function useAvailabilityById(availabilityId: string | undefined) {
         throw new Error('Availability ID is required');
       }
 
-      const response = await fetch(`/api/calendar/availability/${availabilityId}`);
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to fetch availability');
-      }
-
-      return response.json();
+      return apiRequest(
+        `/api/calendar/availability/${availabilityId}`,
+        { method: 'GET' },
+        { operation: 'fetch availability by ID', resourceId: availabilityId }
+      );
     },
     enabled: !!availabilityId,
     staleTime: DEFAULT_STALE_TIME,
     gcTime: DEFAULT_CACHE_TIME,
-    retry: (failureCount, error) => {
-      // Don't retry on 404 or client errors (400-499)
-      if (error instanceof Error && error.message.includes('404')) {
-        return false;
-      }
-      return failureCount < 3;
+    retry: shouldRetry,
+    onError: (error) => {
+      logApiError(error as ApiError, { availabilityId });
     },
   });
 }
@@ -112,23 +112,21 @@ export function useAvailabilitySearch(params: AvailabilitySearchParams) {
       if (params.status) searchParams.set('status', params.status);
       if (params.seriesId) searchParams.set('seriesId', params.seriesId);
 
-      const response = await fetch(`/api/calendar/availability?${searchParams.toString()}`);
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to search availability');
-      }
-
-      return response.json();
+      return apiRequest(
+        `/api/calendar/availability?${searchParams.toString()}`,
+        { method: 'GET' },
+        { 
+          operation: 'search availability', 
+          providerId: params.providerId,
+          organizationId: params.organizationId 
+        }
+      );
     },
     staleTime: DEFAULT_STALE_TIME,
     gcTime: DEFAULT_CACHE_TIME,
-    retry: (failureCount, error) => {
-      // Don't retry on client errors (400-499)
-      if (error instanceof Error && /4\d{2}/.test(error.message)) {
-        return false;
-      }
-      return failureCount < 3;
+    retry: shouldRetry,
+    onError: (error) => {
+      logApiError(error as ApiError, { searchParams: params });
     },
   });
 }

@@ -33,11 +33,15 @@ export function MonthView({
 
   return (
     <>
-      <div className="isolate overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/5">
+      <div 
+        className="isolate overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/5"
+        role="grid"
+        aria-label="Calendar month view"
+      >
         {/* Day headers with Tailwind calendar styling */}
         <div className="grid grid-cols-7 gap-px bg-gray-200 text-center text-xs font-semibold leading-6 text-gray-700">
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-            <div key={day} className="bg-white py-2">
+            <div key={day} className="bg-white py-2" role="columnheader">
               {day}
             </div>
           ))}
@@ -56,7 +60,11 @@ export function MonthView({
                 key={index}
                 type="button"
                 onClick={() => onDateClick?.(day)}
-                className={`min-h-[120px] bg-white p-2 text-left transition-colors hover:bg-gray-50 focus:z-10 ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'} ${isToday ? 'bg-blue-50' : ''} ${isSelected ? 'bg-blue-100' : ''} `}
+                className={`min-h-[120px] bg-white p-2 text-left transition-colors hover:bg-gray-50 focus:z-10 focus:ring-2 focus:ring-blue-500 focus:outline-none ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'} ${isToday ? 'bg-blue-50' : ''} ${isSelected ? 'bg-blue-100' : ''} `}
+                role="gridcell"
+                aria-label={`${day.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}${dayEvents.length > 0 ? `, ${dayEvents.length} event${dayEvents.length > 1 ? 's' : ''}` : ''}`}
+                aria-selected={isSelected}
+                tabIndex={isSelected ? 0 : -1}
               >
                 <time
                   dateTime={day.toISOString().split('T')[0]}
@@ -68,10 +76,20 @@ export function MonthView({
                   {dayEvents.map((event) => (
                     <div
                       key={event.id}
-                      className={`cursor-pointer rounded border p-1 text-xs shadow-sm transition-shadow hover:shadow-md ${getEventStyle(event)}`}
+                      className={`cursor-pointer rounded border p-1 text-xs shadow-sm transition-shadow hover:shadow-md focus:ring-2 focus:ring-blue-500 focus:outline-none ${getEventStyle(event)}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         onEventClick?.(event, e);
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${event.title}, ${event.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onEventClick?.(event, e as any);
+                        }
                       }}
                     >
                       <div className="flex items-center gap-1 truncate font-medium">
