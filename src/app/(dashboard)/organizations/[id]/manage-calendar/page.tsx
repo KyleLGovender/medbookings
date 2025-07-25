@@ -77,13 +77,6 @@ export default function OrganizationAvailabilityPage({
       });
       setSelectedEvent(null);
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
   });
 
   const rejectMutation = useRejectAvailabilityProposal({
@@ -95,13 +88,6 @@ export default function OrganizationAvailabilityPage({
       setSelectedEvent(null);
       setRejectionReason('');
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
   });
 
   const deleteMutation = useDeleteAvailability({
@@ -112,13 +98,6 @@ export default function OrganizationAvailabilityPage({
       });
       setSelectedEvent(null);
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
   });
 
   const cancelMutation = useCancelAvailability({
@@ -128,13 +107,6 @@ export default function OrganizationAvailabilityPage({
         description: 'Availability cancelled successfully',
       });
       setSelectedEvent(null);
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
     },
   });
 

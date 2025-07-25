@@ -1,7 +1,10 @@
 # MedBookings MVP Project Plan
 
+----------------------------------------------------------------------------------------
+
 ## 🚀 Current Sprint (In Progress)
 
+----------------------------------------------------------------------------------------
 
 ## 📋 Ready for Development (Prioritized)
 - [ ] Implement testing throughout the application. https://github.com/microsoft/playwright-mcp 
@@ -10,13 +13,38 @@
 - [ ] Claude Code Plan Upgrade
 - [ ] Implement user roles system (guest, user, provider, organization manager, admin)
 
+----------------------------------------------------------------------------------------
+
+## 📝 Quick Capture (New Issues)
+- [ ] Populate provider and organization and user email addresses with the associated Google email. Not possible to edit.
+- [ ] Remove Calendar from Menu based on user logged in
+- [ ] Protect Calendar routes based on authentication
+- [ ] Review centralized calendar views
+- [ ] Location creation doesn't save GP coordinates. Works on location update but not creation.
+- [ ] Implement button loading spinner throughout app
+- [ ] Admin organization doesn't display location well.
+- [ ] Dashboard navigation when not ADMIN. Can't get a list of providers or see yourself in sidebar menu
+- [ ] Personal Profile should reflect Role
+
+----------------------------------------------------------------------------------------
+
+## ✅ Recently Completed
+
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+
+## 🌟 Issues and Bugs Backlog
+
+----------------------------------------------------------------------------------------
+
 ## 🔥 High Priority Issues & Tasks
 
-
+----------------------------------------------------------------------------------------
 
 ## 📊 Medium Priority Issues & Tasks
-
-
 
 - [ ] **Technical Debt**: Comprehensive cleanup of provider calendar components as reference pattern - `src/features/calendar/availability/components/provider-calendar-view.tsx:1`
   - **Issue**: Key provider calendar components contain development artifacts, orphaned code, inconsistent patterns, and architectural issues that prevent them from serving as clean reference patterns. Issues include: unused state management (`selectedEvent` declared but inconsistently used), multiple TODO comments for missing functionality, console.log statements left in production code, duplicated logic across view components, inconsistent error handling patterns, missing TypeScript strict typing, and poor separation of concerns.
@@ -110,22 +138,13 @@
     - Both forms have consistent user experience
   - **Estimated Time**: 6-8 hours
   
+----------------------------------------------------------------------------------------
 
 
-
-## 🧹 Low Priority / Technical Debt
-
-
-## ✅ Recently Completed
+## 🧹 Low Priority Issues & Tasks
 
 
-## 📝 Quick Capture (New Issues)
-- [ ] Populate provider and organization and user email addresses with the associated Google email. Not possible to edit.
-- [ ] Remove Calendar from Menu based on user logged in
-- [ ] Protect Calendar routes based on authentication
-- [ ] Review centralized calendar views
-
----
+----------------------------------------------------------------------------------------
 
 ## 📊 Project Health
 - **Total Active Issues**: 10
@@ -137,9 +156,15 @@
 - **Recently Completed**: 14
 - **Last Updated**: 2025-01-21
 
----
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
 
 # 📋 MVP Roadmap
+
+----------------------------------------------------------------------------------------
 
 ## 🎯 MVP Phase 1: Core Platform (Must-Have for Launch)
 
@@ -169,6 +194,8 @@
 - [x] Implement provider approval management (approve/reject providers)
 - [x] Implement organization approval management (approve/reject organizations)
 - [ ] Basic user management functionality
+
+----------------------------------------------------------------------------------------
 
 ## 🚀 MVP Phase 2: Booking System (Core Business Value)
 
@@ -228,6 +255,8 @@
 - [ ] Build reminder notification system
 - [ ] Create cancellation and modification communications
 
+----------------------------------------------------------------------------------------
+
 ## 🌟 MVP Phase 3: Enhanced Features & Integrations
 
 ### Calendar Integration
@@ -261,6 +290,8 @@
 ### Enhanced Communications
 - [ ] Implement organization invitation emails
 - [ ] Design HTML email templates with branding
+
+----------------------------------------------------------------------------------------
 
 ## 🚀 MVP Phase 4: Advanced Features & Scalability
 
@@ -314,16 +345,11 @@
 - [ ] Build API documentation for integrations
 - [ ] Create onboarding guides for different user types
 
-## 🌟 Issues and Bugs Backlog
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
 
-## 🧹 High Priority / Technical Debt
-- [ ] Refactor data model relationships from 1-to-n to many-to-many where appropriate - Enable users to have multiple service provider roles and review other entity relationships for flexibility (Prisma schema, migrations, API endpoints)
-- [ ] Change ServiceProvider to Provider throughout the codebase
 
-## 📊 Medium Priority Issues
-- [ ] Location creation doesn't save GP coordinates. Works on location update but not creation.
-- [ ] Implement button loading spinner throughout app
-- [ ] Admin organization doesn't display location well.
-- [ ] Dashboard navigation when not ADMIN. Can't get a list of providers or see yourself in sidebar menu
-- [ ] Personal Profile should reflect Role
 

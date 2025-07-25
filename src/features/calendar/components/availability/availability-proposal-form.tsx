@@ -165,13 +165,6 @@ export function AvailabilityProposalForm({
       });
       onSuccess?.(data);
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to send proposal',
-        variant: 'destructive',
-      });
-    },
   });
 
   const watchIsRecurring = form.watch('isRecurring');

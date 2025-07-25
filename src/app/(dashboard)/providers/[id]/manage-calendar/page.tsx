@@ -69,13 +69,6 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
       setShowDeleteDialog(false);
       setSelectedEvent(null);
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
   });
 
   const cancelMutation = useCancelAvailability({
@@ -85,13 +78,6 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
         description: 'Availability cancelled successfully',
       });
       setSelectedEvent(null);
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
     },
   });
 
@@ -103,13 +89,6 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
       });
       setSelectedEvent(null);
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
   });
 
   const rejectMutation = useRejectAvailabilityProposal({
@@ -119,13 +98,6 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
         description: 'Availability proposal rejected',
       });
       setSelectedEvent(null);
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
     },
   });
 

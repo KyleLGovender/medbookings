@@ -91,9 +91,6 @@ export function useAvailabilityById(availabilityId: string | undefined) {
     staleTime: DEFAULT_STALE_TIME,
     gcTime: DEFAULT_CACHE_TIME,
     retry: shouldRetry,
-    onError: (error) => {
-      logApiError(error as ApiError, { availabilityId });
-    },
   });
 }
 
@@ -125,9 +122,6 @@ export function useAvailabilitySearch(params: AvailabilitySearchParams) {
     staleTime: DEFAULT_STALE_TIME,
     gcTime: DEFAULT_CACHE_TIME,
     retry: shouldRetry,
-    onError: (error) => {
-      logApiError(error as ApiError, { searchParams: params });
-    },
   });
 }
 
@@ -221,7 +215,6 @@ export function useAvailabilitySeries(seriesId: string | undefined) {
 // Mutation hooks
 export function useCreateAvailability(options?: {
   onSuccess?: (data: AvailabilityWithRelations, variables: CreateAvailabilityData) => void;
-  onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -263,7 +256,6 @@ export function useCreateAvailability(options?: {
 
       options?.onSuccess?.(data, variables);
     },
-    onError: options?.onError,
   });
 }
 
@@ -272,7 +264,6 @@ export function useUpdateAvailability(options?: {
     data: AvailabilityWithRelations,
     variables: UpdateAvailabilityData & { scope?: 'single' | 'future' | 'all' }
   ) => void;
-  onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -346,7 +337,6 @@ export function useUpdateAvailability(options?: {
         );
       }
 
-      options?.onError?.(error);
     },
   });
 }
@@ -357,7 +347,6 @@ export function useCancelAvailability(options?: {
     reason?: string;
     scope?: 'single' | 'future' | 'all';
   }) => void;
-  onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -386,13 +375,11 @@ export function useCancelAvailability(options?: {
 
       options?.onSuccess?.(variables);
     },
-    onError: options?.onError,
   });
 }
 
 export function useDeleteAvailability(options?: {
   onSuccess?: (variables: { id: string; scope?: 'single' | 'future' | 'all' }) => void;
-  onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -421,13 +408,11 @@ export function useDeleteAvailability(options?: {
 
       options?.onSuccess?.(variables);
     },
-    onError: options?.onError,
   });
 }
 
 export function useAcceptAvailabilityProposal(options?: {
   onSuccess?: (data: AvailabilityWithRelations, variables: { id: string }) => void;
-  onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -490,14 +475,12 @@ export function useAcceptAvailabilityProposal(options?: {
         );
       }
 
-      options?.onError?.(error);
     },
   });
 }
 
 export function useRejectAvailabilityProposal(options?: {
   onSuccess?: (variables: { id: string; reason?: string }) => void;
-  onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -554,7 +537,6 @@ export function useRejectAvailabilityProposal(options?: {
         );
       }
 
-      options?.onError?.(error);
     },
   });
 }

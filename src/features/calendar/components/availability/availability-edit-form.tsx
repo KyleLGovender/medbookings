@@ -98,13 +98,6 @@ export function AvailabilityEditForm({
       });
       onSuccess?.(data);
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to update availability',
-        variant: 'destructive',
-      });
-    },
   });
 
   // Populate form with existing data
@@ -296,10 +289,10 @@ export function AvailabilityEditForm({
                   <label className="text-sm font-medium">Created by</label>
                   <div className="rounded-md border bg-gray-50 p-3">
                     <div className="text-sm font-medium">
-                      {availability?.createdBy?.name || 'Unknown'}
+                      {(availability as AvailabilityWithRelations)?.createdBy?.name || 'Unknown'}
                     </div>
                     <div className="text-xs text-gray-600">
-                      {availability?.providerId === availability?.createdBy?.id
+                      {(availability as AvailabilityWithRelations)?.providerId === (availability as AvailabilityWithRelations)?.createdBy?.id
                         ? 'Provider (Self)'
                         : 'Organization Role'}
                     </div>
@@ -310,7 +303,7 @@ export function AvailabilityEditForm({
                   <label className="text-sm font-medium">Provider</label>
                   <div className="rounded-md border bg-gray-50 p-3">
                     <div className="text-sm font-medium">
-                      {availability?.serviceProvider?.name || 'Unknown Provider'}
+                      {(availability as AvailabilityWithRelations)?.provider?.name || 'Unknown Provider'}
                     </div>
                     <div className="text-xs text-gray-600">Service Provider</div>
                   </div>
@@ -564,8 +557,8 @@ export function AvailabilityEditForm({
 
             {/* Service Selection */}
             <ServiceSelectionSection
-              providerId={availability.providerId}
-              organizationId={availability.organizationId || undefined}
+              providerId={(availability as AvailabilityWithRelations).providerId}
+              organizationId={(availability as AvailabilityWithRelations).organizationId || undefined}
             />
 
             <Separator />

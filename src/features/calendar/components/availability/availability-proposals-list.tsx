@@ -55,13 +55,6 @@ export function AvailabilityProposalsList({ providerId }: AvailabilityProposalsL
         description: 'The availability proposal has been accepted and is now active',
       });
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
   });
 
   const rejectMutation = useRejectAvailabilityProposal({
@@ -69,13 +62,6 @@ export function AvailabilityProposalsList({ providerId }: AvailabilityProposalsL
       toast({
         title: 'Proposal Rejected',
         description: 'The availability proposal has been rejected',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
       });
     },
   });

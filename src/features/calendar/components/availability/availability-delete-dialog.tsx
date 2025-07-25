@@ -46,13 +46,6 @@ export function AvailabilityDeleteDialog({
       setIsOpen(false);
       onSuccess?.();
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
   });
 
   // Calculate booking statistics

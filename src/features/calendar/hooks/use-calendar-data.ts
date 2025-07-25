@@ -255,7 +255,7 @@ export function useInvalidateCalendarData() {
     },
     invalidateSearch: () => {
       queryClient.invalidateQueries({ 
-        predicate: (query) => 
+        predicate: (query: any) => 
           query.queryKey[0] === 'availability' && query.queryKey[1] === 'search'
       });
     },
