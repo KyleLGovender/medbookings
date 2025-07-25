@@ -2,8 +2,8 @@
 
 import { Repeat } from 'lucide-react';
 
-import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
 import { getEventsForDay } from '@/features/calendar/lib/calendar-utils';
+import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
 
 import { ThreeDayViewProps } from './types';
 

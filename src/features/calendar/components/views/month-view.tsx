@@ -1,7 +1,7 @@
 import { Repeat } from 'lucide-react';
 
-import { AvailabilityStatus } from '@/features/calendar/types/types';
 import { getEventsForDay } from '@/features/calendar/lib/calendar-utils';
+import { AvailabilityStatus } from '@/features/calendar/types/types';
 
 import { MonthViewProps } from './types';
 
@@ -33,7 +33,7 @@ export function MonthView({
 
   return (
     <>
-      <div 
+      <div
         className="isolate overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/5"
         role="grid"
         aria-label="Calendar month view"
@@ -60,7 +60,7 @@ export function MonthView({
                 key={index}
                 type="button"
                 onClick={() => onDateClick?.(day)}
-                className={`min-h-[120px] bg-white p-2 text-left transition-colors hover:bg-gray-50 focus:z-10 focus:ring-2 focus:ring-blue-500 focus:outline-none ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'} ${isToday ? 'bg-blue-50' : ''} ${isSelected ? 'bg-blue-100' : ''} `}
+                className={`min-h-[120px] bg-white p-2 text-left transition-colors hover:bg-gray-50 focus:z-10 focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'} ${isToday ? 'bg-blue-50' : ''} ${isSelected ? 'bg-blue-100' : ''} `}
                 role="gridcell"
                 aria-label={`${day.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}${dayEvents.length > 0 ? `, ${dayEvents.length} event${dayEvents.length > 1 ? 's' : ''}` : ''}`}
                 aria-selected={isSelected}
@@ -76,7 +76,7 @@ export function MonthView({
                   {dayEvents.map((event) => (
                     <div
                       key={event.id}
-                      className={`cursor-pointer rounded border p-1 text-xs shadow-sm transition-shadow hover:shadow-md focus:ring-2 focus:ring-blue-500 focus:outline-none ${getEventStyle(event)}`}
+                      className={`cursor-pointer rounded border p-1 text-xs shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${getEventStyle(event)}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         onEventClick?.(event, e);

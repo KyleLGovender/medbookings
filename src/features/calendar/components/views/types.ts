@@ -22,7 +22,7 @@ export interface DayViewProps extends BaseCalendarViewProps {
 }
 
 /**
- * Props for WeekView component  
+ * Props for WeekView component
  */
 export interface WeekViewProps extends BaseCalendarViewProps {
   // WeekView uses all base props
@@ -39,7 +39,8 @@ export interface ThreeDayViewProps extends BaseCalendarViewProps {
  * Props for MonthView component
  * MonthView has some different requirements due to space constraints
  */
-export interface MonthViewProps extends Omit<BaseCalendarViewProps, 'workingHours' | 'onTimeSlotClick'> {
+export interface MonthViewProps
+  extends Omit<BaseCalendarViewProps, 'workingHours' | 'onTimeSlotClick'> {
   // MonthView doesn't need workingHours (shows full day) or timeSlotClick (uses dateClick)
   onEditEvent?: (event: CalendarEvent) => void;
 }

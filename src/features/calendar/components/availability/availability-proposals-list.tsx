@@ -254,13 +254,12 @@ function ProposalCard({
             <div className="rounded bg-muted/50 p-2 text-sm text-muted-foreground">
               <p>Type: {proposal.recurrencePattern.option}</p>
               {proposal.recurrencePattern.weeklyDay !== undefined && (
-                <p>
-                  Weekly on: Day {proposal.recurrencePattern.weeklyDay}
-                </p>
+                <p>Weekly on: Day {proposal.recurrencePattern.weeklyDay}</p>
               )}
-              {proposal.recurrencePattern.customDays && proposal.recurrencePattern.customDays.length > 0 && (
-                <p>Custom days: {proposal.recurrencePattern.customDays.join(', ')}</p>
-              )}
+              {proposal.recurrencePattern.customDays &&
+                proposal.recurrencePattern.customDays.length > 0 && (
+                  <p>Custom days: {proposal.recurrencePattern.customDays.join(', ')}</p>
+                )}
               {proposal.recurrencePattern.endDate && (
                 <p>Ends on: {proposal.recurrencePattern.endDate}</p>
               )}

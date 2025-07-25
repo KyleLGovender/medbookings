@@ -18,12 +18,10 @@ export async function sendAvailabilityStatusNotifications(
   try {
     // In production, this would integrate with email service, SMS service, and in-app notification system
     // For now, notifications are generated but not sent to avoid console noise in production
-    
     // Production implementation would include:
     // await sendEmailNotifications(notifications.filter(n => n.type === 'email'));
     // await sendSMSNotifications(notifications.filter(n => n.type === 'sms'));
     // await sendInAppNotifications(notifications.filter(n => n.type === 'in_app'));
-    
     // Silent success - notifications are prepared but logging is removed for production cleanliness
   } catch (error) {
     // Only log actual errors that need investigation

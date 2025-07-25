@@ -202,7 +202,10 @@ export function AvailabilityEditForm({
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
-            <AlertDescription>Failed to load availability: {error instanceof Error ? error.message : 'Unknown error'}</AlertDescription>
+            <AlertDescription>
+              Failed to load availability:{' '}
+              {error instanceof Error ? error.message : 'Unknown error'}
+            </AlertDescription>
           </Alert>
         </CardContent>
       </Card>
@@ -292,7 +295,8 @@ export function AvailabilityEditForm({
                       {(availability as AvailabilityWithRelations)?.createdBy?.name || 'Unknown'}
                     </div>
                     <div className="text-xs text-gray-600">
-                      {(availability as AvailabilityWithRelations)?.providerId === (availability as AvailabilityWithRelations)?.createdBy?.id
+                      {(availability as AvailabilityWithRelations)?.providerId ===
+                      (availability as AvailabilityWithRelations)?.createdBy?.id
                         ? 'Provider (Self)'
                         : 'Organization Role'}
                     </div>
@@ -303,7 +307,8 @@ export function AvailabilityEditForm({
                   <label className="text-sm font-medium">Provider</label>
                   <div className="rounded-md border bg-gray-50 p-3">
                     <div className="text-sm font-medium">
-                      {(availability as AvailabilityWithRelations)?.provider?.name || 'Unknown Provider'}
+                      {(availability as AvailabilityWithRelations)?.provider?.name ||
+                        'Unknown Provider'}
                     </div>
                     <div className="text-xs text-gray-600">Service Provider</div>
                   </div>
@@ -558,7 +563,9 @@ export function AvailabilityEditForm({
             {/* Service Selection */}
             <ServiceSelectionSection
               providerId={(availability as AvailabilityWithRelations).providerId}
-              organizationId={(availability as AvailabilityWithRelations).organizationId || undefined}
+              organizationId={
+                (availability as AvailabilityWithRelations).organizationId || undefined
+              }
             />
 
             <Separator />

@@ -1,7 +1,11 @@
 import { Repeat } from 'lucide-react';
 
+import {
+  calculateEventPosition,
+  getEventsForDay,
+  getWorkingTimeRange,
+} from '@/features/calendar/lib/calendar-utils';
 import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
-import { getEventsForDay, getWorkingTimeRange, calculateEventPosition } from '@/features/calendar/lib/calendar-utils';
 
 import { DayViewProps } from './types';
 

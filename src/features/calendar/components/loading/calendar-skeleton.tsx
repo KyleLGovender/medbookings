@@ -124,7 +124,7 @@ export function CalendarSkeletonCompact() {
               <Skeleton className="h-8 w-8" />
             </div>
           </div>
-          
+
           <div className="grid grid-cols-7 gap-1">
             {Array.from({ length: 42 }).map((_, i) => (
               <Skeleton key={i} className="h-16 w-full" />

@@ -40,7 +40,7 @@ export class CalendarErrorBoundary extends Component<
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
-    
+
     // In development, log to console for debugging
     if (process.env.NODE_ENV === 'development') {
       console.group('Calendar Error Boundary');
@@ -76,7 +76,7 @@ export class CalendarErrorBoundary extends Component<
               Something went wrong with the calendar component. This could be due to a temporary
               network issue or an unexpected error.
             </p>
-            
+
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="rounded border p-2 text-sm">
                 <summary className="cursor-pointer font-medium">Error Details</summary>
@@ -97,11 +97,7 @@ export class CalendarErrorBoundary extends Component<
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Try Again
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => window.location.reload()}
-              >
+              <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
                 Reload Page
               </Button>
             </div>
@@ -117,13 +113,7 @@ export class CalendarErrorBoundary extends Component<
 /**
  * Default error fallback component for calendar errors
  */
-export function CalendarErrorFallback({ 
-  error, 
-  reset 
-}: { 
-  error: Error; 
-  reset: () => void 
-}) {
+export function CalendarErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <Card className="mx-auto max-w-lg">
       <CardHeader>
@@ -134,10 +124,10 @@ export function CalendarErrorFallback({
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-muted-foreground">
-          The calendar is temporarily unavailable. Please try refreshing the page or contact
-          support if the problem persists.
+          The calendar is temporarily unavailable. Please try refreshing the page or contact support
+          if the problem persists.
         </p>
-        
+
         <div className="flex gap-2">
           <Button onClick={reset} size="sm">
             <RefreshCw className="mr-2 h-4 w-4" />
