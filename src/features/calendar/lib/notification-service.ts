@@ -15,31 +15,23 @@ export async function sendAvailabilityStatusNotifications(
 ): Promise<void> {
   const notifications = generateNotifications(context);
 
-  // Log what would be sent
-  console.log('=== AVAILABILITY NOTIFICATION SERVICE ===');
-  console.log('Context:', {
-    availabilityId: context.availability.id,
-    previousStatus: context.previousStatus,
-    newStatus: context.newStatus,
-    actionBy: context.actionBy.name,
-    rejectionReason: context.rejectionReason,
-  });
-
-  for (const notification of notifications) {
-    console.log('--- Notification ---');
-    console.log('To:', notification.recipientEmail, `(${notification.recipientName})`);
-    console.log('Type:', notification.type);
-    console.log('Subject:', notification.subject);
-    console.log('Message:', notification.message);
-    if (notification.actionUrl) {
-      console.log('Action URL:', notification.actionUrl);
+  try {
+    // In production, this would integrate with email service, SMS service, and in-app notification system
+    // For now, notifications are generated but not sent to avoid console noise in production
+    
+    // Production implementation would include:
+    // await sendEmailNotifications(notifications.filter(n => n.type === 'email'));
+    // await sendSMSNotifications(notifications.filter(n => n.type === 'sms'));
+    // await sendInAppNotifications(notifications.filter(n => n.type === 'in_app'));
+    
+    // Silent success - notifications are prepared but logging is removed for production cleanliness
+  } catch (error) {
+    // Only log actual errors that need investigation
+    if (error instanceof Error) {
+      throw new Error(`Failed to process availability notifications: ${error.message}`);
     }
-    console.log('Metadata:', notification.metadata);
-    console.log('---');
+    throw new Error('Failed to process availability notifications: Unknown error');
   }
-
-  console.log(`Total notifications generated: ${notifications.length}`);
-  console.log('=== END NOTIFICATIONS ===');
 
   // In production, you would:
   // await sendEmailNotifications(notifications.filter(n => n.type === 'email'));

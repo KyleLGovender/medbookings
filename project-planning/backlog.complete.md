@@ -1,6 +1,40 @@
 # MedBookings MVP Project Plan
 
 ## ✅ Completed
+- [x] Standardize feature type definitions across bulletproof-react structure - Refactor all features to define types consistently in feature-specific types folders instead of mixed Prisma imports
+  - **Type:** Technical Debt
+  - **Impact:** Eliminates developer confusion from inconsistent type definitions, prevents circular dependencies, improves maintainability
+  - **Files:** All features in `@src/features/` types folders, based on `@prisma/schema.prisma`
+  - **Added:** 2025-01-21
+- [x] **UX/UI**: Fix compressed breadcrumbs in dashboard layout on mobile - `src/components/layout/dashboard-layout.tsx`
+  - **Issue**: Breadcrumbs in dashboard layout look too compressed on mobile devices, particularly with long provider names like "Dashboard > Providers > Dr Shei Goldberg > Manage Calendar"
+  - **Impact**: Poor mobile navigation experience, breadcrumbs may be unreadable or truncated poorly
+  - **Implementation**:
+    1. Review current breadcrumb responsive classes in dashboard-layout.tsx (line 296)
+    2. Improve text truncation for long provider names
+    3. Consider collapsing middle breadcrumb items on mobile (show "Dashboard > ... > Current Page")
+    4. Add better responsive spacing and text sizing
+    5. Test with various provider name lengths
+  - **Testing**:
+    - Test on various mobile screen sizes
+    - Test with short and long provider names
+    - Verify breadcrumb navigation still works after changes
+    - Test tablet and desktop views aren't affected
+  - **Estimated Time**: 3-4 hours
+- [x] **UX/UI**: Hide month/week view options on mobile devices - `src/features/calendar/availability/components/calendar-navigation.tsx`
+  - **Issue**: Calendar mobile view doesn't look good - month and week view options should be hidden on mobile devices, only showing day and 3-day options
+  - **Impact**: Poor mobile user experience due to cluttered navigation and inappropriate view options for small screens
+  - **Implementation**: 
+    1. Add mobile device detection logic (consider iPad size threshold)
+    2. Conditionally render view options based on screen size
+    3. Use CSS media queries or JavaScript viewport detection
+    4. Hide month and week buttons on mobile, keep only day and 3-day options
+  - **Testing**: 
+    - Test on various mobile devices and screen sizes
+    - Verify iPad behavior (determine if it should be treated as mobile)
+    - Test responsive breakpoints
+    - Ensure view switching works properly on mobile
+  - **Estimated Time**: 4-6 hours
 - [x] **Technical Debt**: Missing series vs individual availability management workflow - `src/app/(dashboard)/providers/[id]/manage-calendar/page.tsx:178`
   - **Issue**: When performing actions (edit, delete, cancel) on availability that is part of a recurring series, the system lacks clear UI to specify whether the action applies to the individual occurrence or the entire series. Context menus and action buttons operate on single availabilities only, without considering series relationships.
   - **Impact**: Users cannot properly manage recurring availability series, leading to confusion about which occurrences are affected by changes. This breaks expected calendar behavior and forces users to manually edit each occurrence individually.

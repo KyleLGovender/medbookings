@@ -152,13 +152,6 @@ export function AvailabilityCreationForm({
       });
       onSuccess?.(data);
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to create availability',
-        variant: 'destructive',
-      });
-    },
   });
 
   const watchIsRecurring = form.watch('isRecurring');

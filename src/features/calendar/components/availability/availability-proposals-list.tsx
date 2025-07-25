@@ -55,13 +55,6 @@ export function AvailabilityProposalsList({ providerId }: AvailabilityProposalsL
         description: 'The availability proposal has been accepted and is now active',
       });
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
   });
 
   const rejectMutation = useRejectAvailabilityProposal({
@@ -69,13 +62,6 @@ export function AvailabilityProposalsList({ providerId }: AvailabilityProposalsL
       toast({
         title: 'Proposal Rejected',
         description: 'The availability proposal has been rejected',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
       });
     },
   });
@@ -266,15 +252,17 @@ function ProposalCard({
               Recurring Schedule
             </h4>
             <div className="rounded bg-muted/50 p-2 text-sm text-muted-foreground">
-              <p>Type: {proposal.recurrencePattern.type}</p>
-              {proposal.recurrencePattern.interval && (
+              <p>Type: {proposal.recurrencePattern.option}</p>
+              {proposal.recurrencePattern.weeklyDay !== undefined && (
                 <p>
-                  Repeat every: {proposal.recurrencePattern.interval}{' '}
-                  {proposal.recurrencePattern.type.toLowerCase()}
+                  Weekly on: Day {proposal.recurrencePattern.weeklyDay}
                 </p>
               )}
-              {proposal.recurrencePattern.count && (
-                <p>Total occurrences: {proposal.recurrencePattern.count}</p>
+              {proposal.recurrencePattern.customDays && proposal.recurrencePattern.customDays.length > 0 && (
+                <p>Custom days: {proposal.recurrencePattern.customDays.join(', ')}</p>
+              )}
+              {proposal.recurrencePattern.endDate && (
+                <p>Ends on: {proposal.recurrencePattern.endDate}</p>
               )}
             </div>
           </div>

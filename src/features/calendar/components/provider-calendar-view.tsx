@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Repeat } from 'lucide-react';
 
@@ -19,40 +19,31 @@ import { DayView } from '@/features/calendar/components/views/day-view';
 import { MonthView } from '@/features/calendar/components/views/month-view';
 import { ThreeDayView } from '@/features/calendar/components/views/three-day-view';
 import { WeekView } from '@/features/calendar/components/views/week-view';
-import { useAvailabilitySearch } from '@/features/calendar/hooks/use-availability';
+import { CalendarErrorBoundary } from '@/features/calendar/components/error-boundary';
+import { CalendarSkeleton } from '@/features/calendar/components/loading';
+import { useCalendarData } from '@/features/calendar/hooks/use-calendar-data';
 import {
   AvailabilityStatus,
-  AvailabilityWithRelations,
-  CalculatedAvailabilitySlotWithRelations,
   CalendarEvent,
   CalendarViewMode,
-  SchedulingRule,
 } from '@/features/calendar/types/types';
-import { useProvider } from '@/features/providers/hooks/use-provider';
+import { 
+  getEventStyle, 
+  navigateCalendarDate, 
+  getCalendarViewTitle 
+} from '@/features/calendar/lib/calendar-utils';
+import { 
+  usePerformanceMonitor,
+  measureCalendarDataProcessing,
+  measureCalendarRendering,
+  recordCalendarCyclePerformance 
+} from '@/features/calendar/lib/performance-monitor';
+import { 
+  filterEventsInTimeRange,
+  sortEventsForRendering,
+  groupEventsByDate 
+} from '@/features/calendar/lib/virtualization-helpers';
 
-// Client-safe enum (matches Prisma BookingStatus)
-enum BookingStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED',
-  COMPLETED = 'COMPLETED',
-  NO_SHOW = 'NO_SHOW',
-}
-
-interface ProviderCalendarData {
-  providerId: string;
-  providerName: string;
-  providerType: string;
-  workingHours: { start: string; end: string };
-  events: CalendarEvent[];
-  stats: {
-    totalAvailabilityHours: number;
-    bookedHours: number;
-    utilizationRate: number;
-    pendingBookings: number;
-    completedBookings: number;
-  };
-}
 
 export interface ProviderCalendarViewProps {
   providerId: string;
@@ -77,9 +68,11 @@ export function ProviderCalendarView({
 }: ProviderCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(initialDate);
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialViewMode);
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<AvailabilityStatus | 'ALL'>('ALL');
   const [isMobile, setIsMobile] = useState(false);
+
+  // Performance monitoring
+  usePerformanceMonitor('ProviderCalendarView', [currentDate, viewMode, statusFilter]);
 
   // Mobile detection and view mode handling
   useEffect(() => {
@@ -103,8 +96,8 @@ export function ProviderCalendarView({
 
   // Modal state (context menu removed - modal now handled by parent)
 
-  // Calculate total hours for a day
-  const calculateDayHours = (events: CalendarEvent[]) => {
+  // Calculate total hours for a day with memoization
+  const calculateDayHours = useCallback((events: CalendarEvent[]) => {
     const availabilityEvents = events.filter((event) => event.type === 'availability');
     if (availabilityEvents.length === 0) return 0;
 
@@ -138,10 +131,10 @@ export function ProviderCalendarView({
       const duration = (event.endTime.getTime() - event.startTime.getTime()) / (1000 * 60 * 60);
       return total + duration;
     }, 0);
-  };
+  }, []);
 
-  // Get status breakdown for a day
-  const getStatusBreakdown = (events: CalendarEvent[]) => {
+  // Get status breakdown for a day with memoization
+  const getStatusBreakdown = useCallback((events: CalendarEvent[]) => {
     const availabilityEvents = events.filter((event) => event.type === 'availability');
     const breakdown = {
       [AvailabilityStatus.PENDING]: 0,
@@ -155,10 +148,10 @@ export function ProviderCalendarView({
     });
 
     return breakdown;
-  };
+  }, []);
 
-  // Get styling based on status mix
-  const getHoursSummaryStyle = (events: CalendarEvent[]) => {
+  // Get styling based on status mix with memoization
+  const getHoursSummaryStyle = useCallback((events: CalendarEvent[]) => {
     const breakdown = getStatusBreakdown(events);
     const total = Object.values(breakdown).reduce((sum, count) => sum + count, 0);
 
@@ -173,296 +166,71 @@ export function ProviderCalendarView({
     if (rejectedRatio > 0.3) return 'text-red-600 bg-red-50';
 
     return 'text-blue-600 bg-blue-50';
-  };
+  }, [getStatusBreakdown]);
 
-  // Fetch real data from API
-  const { data: provider, isLoading: isProviderLoading } = useProvider(providerId);
-
-  // Calculate date range for current view
-  const dateRange = useMemo(() => {
-    const start = new Date(currentDate);
-    const end = new Date(currentDate);
-
-    switch (viewMode) {
-      case 'day':
-        // Set start to beginning of day
-        start.setHours(0, 0, 0, 0);
-        // Set end to end of day
-        end.setHours(23, 59, 59, 999);
-        break;
-      case '3-day':
-        // Set start to beginning of current day
-        start.setHours(0, 0, 0, 0);
-        // Set end to end of day + 2 days
-        end.setDate(start.getDate() + 2);
-        end.setHours(23, 59, 59, 999);
-        break;
-      case 'week':
-        // Monday as first day (1 = Monday, 0 = Sunday)
-        const dayOfWeek = currentDate.getDay();
-        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-        start.setDate(currentDate.getDate() - daysFromMonday);
-        start.setHours(0, 0, 0, 0);
-        end.setDate(start.getDate() + 6);
-        end.setHours(23, 59, 59, 999);
-        break;
-      case 'month':
-        start.setDate(1);
-        start.setHours(0, 0, 0, 0);
-        end.setMonth(start.getMonth() + 1);
-        end.setDate(0);
-        end.setHours(23, 59, 59, 999);
-        break;
-    }
-
-    return { start, end };
-  }, [currentDate, viewMode]);
-
-  const { data: availabilityData, isLoading: isAvailabilityLoading } = useAvailabilitySearch({
-    providerId: providerId,
-    startDate: dateRange.start,
-    endDate: dateRange.end,
-    ...(statusFilter !== 'ALL' && { status: statusFilter }),
+  // Use standardized calendar data hook with optimized caching and memoization
+  const { 
+    data: calendarData, 
+    filteredEvents, 
+    isLoading, 
+    error: calendarError 
+  } = useCalendarData({
+    providerId,
+    currentDate,
+    viewMode,
+    statusFilter,
   });
 
-  const isLoading = isProviderLoading || isAvailabilityLoading;
 
-  // Transform availability data into calendar events
-  const calendarData: ProviderCalendarData | null = useMemo(() => {
-    if (!provider || !availabilityData) return null;
-
-    // Transform availability records into calendar events
-    const events: CalendarEvent[] = [];
-
-    // Add availability blocks
-    availabilityData.forEach((availability: AvailabilityWithRelations) => {
-      // Determine creator information
-      const isProviderCreated =
-        availability.isProviderCreated ||
-        (!availability.organizationId && !availability.createdByMembershipId);
-
-      const event: CalendarEvent = {
-        id: availability.id,
-        type: 'availability' as const,
-        title: availability.availableServices?.[0]?.service?.name || 'General Consultation',
-        startTime: new Date(availability.startTime),
-        endTime: new Date(availability.endTime),
-        status: availability.status,
-        schedulingRule: availability.schedulingRule as SchedulingRule,
-        isRecurring: availability.isRecurring,
-        seriesId: availability.seriesId || undefined,
-        location: availability.location
-          ? {
-              id: availability.location.id,
-              name: availability.location.name,
-              isOnline: !availability.locationId,
-            }
-          : undefined,
-        service: availability.availableServices?.[0]
-          ? {
-              id: availability.availableServices[0].service.id,
-              name: availability.availableServices[0].service.name,
-              duration: availability.availableServices[0].duration || 30,
-              price: Number(availability.availableServices[0].price) || 0,
-            }
-          : undefined,
-        // Creator information
-        isProviderCreated,
-        createdBy: availability.createdBy
-          ? {
-              id: availability.createdBy.id,
-              name: availability.createdBy.name || 'Unknown',
-              type: isProviderCreated ? 'provider' : 'organization',
-            }
-          : undefined,
-        organization: availability.organization
-          ? {
-              id: availability.organization.id,
-              name: availability.organization.name,
-            }
-          : undefined,
-      };
-
-      events.push(event);
-
-      // Add booked slots from this availability's calculated slots
-      availability.calculatedSlots
-        ?.filter((slot) => slot.status === 'BOOKED')
-        .forEach((slot) => {
-          events.push({
-            id: slot.id,
-            type: 'booking' as const,
-            title: slot.service?.name || 'Appointment',
-            startTime: new Date(slot.startTime),
-            endTime: new Date(slot.endTime),
-            status: slot.status,
-            schedulingRule: availability.schedulingRule as SchedulingRule,
-            isRecurring: false,
-            location: slot.serviceConfig?.location
-              ? {
-                  id: slot.serviceConfig.location.id,
-                  name: slot.serviceConfig.location.name,
-                  isOnline: slot.serviceConfig.isOnlineAvailable,
-                }
-              : undefined,
-            service:
-              slot.service && slot.serviceConfig
-                ? {
-                    id: slot.service.id,
-                    name: slot.service.name,
-                    duration: slot.serviceConfig.duration || 30,
-                    price: Number(slot.serviceConfig.price) || 0,
-                  }
-                : undefined,
-            // Customer data will be populated when booking relationship is available
-          });
-        });
-    });
-
-    // Calculate stats from all calculated slots
-    const allSlots = availabilityData.flatMap(
-      (availability: AvailabilityWithRelations) => availability.calculatedSlots || []
-    );
-    const bookedSlots = allSlots.filter(
-      (slot: CalculatedAvailabilitySlotWithRelations) => slot.status === 'BOOKED'
-    ).length;
-    const pendingSlots = allSlots.filter(
-      (slot: CalculatedAvailabilitySlotWithRelations) =>
-        slot.booking?.status === BookingStatus.PENDING
-    ).length;
-
-    return {
-      providerId,
-      providerName: provider.name,
-      providerType: 'Healthcare Provider', // TODO: Update provider data to include typeAssignments
-      workingHours: { start: '09:00', end: '17:00' }, // Default working hours
-      events,
-      stats: {
-        totalAvailabilityHours: availabilityData.length,
-        bookedHours: bookedSlots,
-        utilizationRate:
-          allSlots.length > 0 ? Math.round((bookedSlots / allSlots.length) * 100) : 0,
-        pendingBookings: pendingSlots,
-        completedBookings: bookedSlots,
-      },
-    };
-  }, [provider, availabilityData, providerId]);
-
-  const navigateDate = (direction: 'prev' | 'next') => {
-    const newDate = new Date(currentDate);
-
-    switch (viewMode) {
-      case 'day':
-        newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
-        break;
-      case '3-day':
-        newDate.setDate(newDate.getDate() + (direction === 'next' ? 3 : -3));
-        break;
-      case 'week':
-        newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
-        break;
-      case 'month':
-        newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
-        break;
-    }
-
+  const navigateDate = useCallback((direction: 'prev' | 'next') => {
+    const newDate = navigateCalendarDate(currentDate, direction, viewMode);
     setCurrentDate(newDate);
-  };
+  }, [currentDate, viewMode]);
 
-  const handleDateClick = (date: Date) => {
+  const handleDateClick = useCallback((date: Date) => {
     setCurrentDate(date);
     setViewMode('day');
     onDateClick?.(date);
-  };
+  }, [onDateClick]);
 
-  const getViewTitle = (): string => {
-    switch (viewMode) {
-      case 'day':
-        return currentDate.toLocaleDateString([], {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        });
-      case '3-day':
-        return currentDate.toLocaleDateString([], {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        });
-      case 'week':
-        const startOfWeek = new Date(currentDate);
-        const dayOfWeek = currentDate.getDay();
-        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-        startOfWeek.setDate(currentDate.getDate() - daysFromMonday);
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        return `${startOfWeek.toLocaleDateString([], { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}`;
-      case 'month':
-        return currentDate.toLocaleDateString([], { year: 'numeric', month: 'long' });
+  const getViewTitle = useCallback((): string => {
+    return getCalendarViewTitle(currentDate, viewMode);
+  }, [currentDate, viewMode]);
+
+  // Use shared event styling utility with memoization
+  const getEventStyleLocal = useCallback((event: CalendarEvent): string => {
+    return getEventStyle(event);
+  }, []);
+
+  // Optimized event filtering and sorting for large datasets
+  const optimizedEvents = useMemo(() => {
+    if (!filteredEvents.length) return [];
+    
+    // Sort events for optimal rendering performance
+    const sorted = sortEventsForRendering(filteredEvents);
+    
+    // For month view, group events by date for efficient rendering
+    if (viewMode === 'month') {
+      const grouped = groupEventsByDate(sorted);
+      return Array.from(grouped.values()).flat();
     }
-  };
+    
+    return sorted;
+  }, [filteredEvents, viewMode]);
 
-  const getEventStyle = (event: CalendarEvent): string => {
-    // Base style for recurring events with left border indicator
-    const recurringBorder = event.isRecurring ? 'border-l-4 border-l-blue-600' : '';
-
-    switch (event.type) {
-      case 'availability':
-        // Provider-created availabilities (green tones)
-        if (event.isProviderCreated) {
-          switch (event.status) {
-            case AvailabilityStatus.ACCEPTED:
-              return `bg-green-100 border-green-400 text-green-800 ${recurringBorder}`;
-            case AvailabilityStatus.CANCELLED:
-              return `bg-green-50 border-green-300 text-green-600 ${recurringBorder}`;
-            default:
-              return `bg-green-100 border-green-400 text-green-800 ${recurringBorder}`;
-          }
-        }
-        // Organization-created availabilities (blue/yellow tones)
-        else {
-          switch (event.status) {
-            case AvailabilityStatus.PENDING:
-              return `bg-yellow-100 border-yellow-400 text-yellow-800 ${recurringBorder}`;
-            case AvailabilityStatus.ACCEPTED:
-              return `bg-blue-100 border-blue-400 text-blue-800 ${recurringBorder}`;
-            case AvailabilityStatus.REJECTED:
-              return `bg-red-100 border-red-400 text-red-800 ${recurringBorder}`;
-            case AvailabilityStatus.CANCELLED:
-              return `bg-gray-100 border-gray-400 text-gray-800 ${recurringBorder}`;
-            default:
-              return `bg-blue-100 border-blue-400 text-blue-800 ${recurringBorder}`;
-          }
-        }
-      case 'booking':
-        switch (event.status) {
-          case 'BOOKED':
-            return `bg-purple-100 border-purple-300 text-purple-800 ${recurringBorder}`;
-          case 'PENDING':
-            return `bg-orange-100 border-orange-300 text-orange-800 ${recurringBorder}`;
-          default:
-            return `bg-purple-100 border-purple-300 text-purple-800 ${recurringBorder}`;
-        }
-      case 'blocked':
-        return `bg-red-100 border-red-300 text-red-800 ${recurringBorder}`;
-      default:
-        return `bg-gray-100 border-gray-300 text-gray-800 ${recurringBorder}`;
+  // Record performance metrics when data changes
+  useEffect(() => {
+    if (calendarData) {
+      recordCalendarCyclePerformance(
+        calendarData.events.length,
+        viewMode,
+        calendarData.dateRange
+      );
     }
-  };
+  }, [calendarData, viewMode]);
 
   if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 w-1/3 rounded bg-gray-200"></div>
-            <div className="h-64 rounded bg-gray-200"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <CalendarSkeleton />;
   }
 
   if (!calendarData) {
@@ -479,7 +247,8 @@ export function ProviderCalendarView({
   }
 
   return (
-    <div className="space-y-6">
+    <CalendarErrorBoundary>
+      <div className="space-y-6">
       {/* Header with Provider Info and Stats */}
       <Card>
         <CardHeader>
@@ -605,42 +374,42 @@ export function ProviderCalendarView({
           {viewMode === 'day' && (
             <DayView
               currentDate={currentDate}
-              events={calendarData.events}
+              events={optimizedEvents}
               workingHours={calendarData.workingHours}
-              onEventClick={(event) => onEventClick?.(event, {} as React.MouseEvent)}
+              onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
-              getEventStyle={getEventStyle}
+              getEventStyle={getEventStyleLocal}
             />
           )}
           {viewMode === '3-day' && (
             <ThreeDayView
               currentDate={currentDate}
-              events={calendarData.events}
+              events={optimizedEvents}
               workingHours={calendarData.workingHours}
-              onEventClick={(event) => onEventClick?.(event, {} as React.MouseEvent)}
+              onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
-              getEventStyle={getEventStyle}
+              getEventStyle={getEventStyleLocal}
             />
           )}
           {viewMode === 'week' && (
             <WeekView
               currentDate={currentDate}
-              events={calendarData.events}
+              events={optimizedEvents}
               workingHours={calendarData.workingHours}
-              onEventClick={(event) => onEventClick?.(event, {} as React.MouseEvent)}
+              onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
               onDateClick={handleDateClick}
-              getEventStyle={getEventStyle}
+              getEventStyle={getEventStyleLocal}
             />
           )}
           {viewMode === 'month' && (
             <MonthView
               currentDate={currentDate}
-              events={calendarData.events}
-              onEventClick={onEventClick}
+              events={optimizedEvents}
+              onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onDateClick={handleDateClick}
               onEditEvent={onEditEvent}
-              getEventStyle={getEventStyle}
+              getEventStyle={getEventStyleLocal}
             />
           )}
         </CardContent>
@@ -699,6 +468,7 @@ export function ProviderCalendarView({
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </CalendarErrorBoundary>
   );
 }

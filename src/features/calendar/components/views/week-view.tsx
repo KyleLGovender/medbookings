@@ -1,17 +1,13 @@
 import { Repeat } from 'lucide-react';
 
 import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
+import { 
+  getEventsForDay, 
+  getWorkingTimeRange, 
+  calculateEventGridPosition 
+} from '@/features/calendar/lib/calendar-utils';
 
-// Week View Component
-interface WeekViewProps {
-  currentDate: Date;
-  events: CalendarEvent[];
-  workingHours: { start: string; end: string };
-  onEventClick?: (event: CalendarEvent) => void;
-  onTimeSlotClick?: (date: Date, hour: number) => void;
-  onDateClick?: (date: Date) => void;
-  getEventStyle: (event: CalendarEvent) => string;
-}
+import { WeekViewProps } from './types';
 
 export function WeekView({
   currentDate,
@@ -63,13 +59,10 @@ export function WeekView({
   const workingEndHour = parseInt(workingHours.end.split(':')[0]);
 
   const getEventsForDate = (date: Date) => {
-    return events.filter((event) => {
-      const eventDate = new Date(event.startTime);
-      return eventDate.toDateString() === date.toDateString();
-    });
+    return getEventsForDay(events, date);
   };
 
-  const calculateEventGridPosition = (event: CalendarEvent) => {
+  const calculateEventGridPositionLocal = (event: CalendarEvent) => {
     const startTime = new Date(event.startTime);
     const endTime = new Date(event.endTime);
 
@@ -160,7 +153,7 @@ export function WeekView({
                     style={{ gridTemplateRows: `repeat(${hours.length * 2}, minmax(0, 1fr))` }}
                   >
                     {getEventsForDate(day).map((event) => {
-                      const { gridRow } = calculateEventGridPosition(event);
+                      const { gridRow } = calculateEventGridPositionLocal(event);
                       return (
                         <li key={event.id} className="relative mt-px flex" style={{ gridRow }}>
                           <a
@@ -169,7 +162,7 @@ export function WeekView({
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              onEventClick?.(event);
+                              onEventClick?.(event, e);
                             }}
                           >
                             <p className="order-1 flex items-center gap-1 truncate font-semibold">

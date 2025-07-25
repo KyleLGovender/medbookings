@@ -98,44 +98,39 @@ export function AvailabilityEditForm({
       });
       onSuccess?.(data);
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to update availability',
-        variant: 'destructive',
-      });
-    },
   });
 
   // Populate form with existing data
   useEffect(() => {
     if (availability) {
       // Check for existing bookings
+      const availabilityWithSlots = availability as AvailabilityWithRelations;
       const bookingCount =
-        availability.calculatedSlots?.filter(
+        availabilityWithSlots.calculatedSlots?.filter(
           (slot: CalculatedAvailabilitySlotWithRelations) => slot.booking
         ).length || 0;
       setHasExistingBookings(bookingCount > 0);
 
       // Populate form with current values
+      const availabilityWithId = availability as AvailabilityWithRelations;
       form.reset({
-        id: availability.id,
-        providerId: availability.providerId,
-        organizationId: availability.organizationId || undefined,
-        locationId: availability.locationId || undefined,
-        startTime: availability.startTime,
-        endTime: availability.endTime,
-        isRecurring: availability.isRecurring,
-        recurrencePattern: availability.recurrencePattern || undefined,
-        schedulingRule: availability.schedulingRule,
-        schedulingInterval: availability.schedulingInterval || undefined,
-        isOnlineAvailable: availability.isOnlineAvailable,
-        requiresConfirmation: availability.requiresConfirmation,
-        services: availability.availableServices.map(
+        id: availabilityWithId.id,
+        providerId: availabilityWithId.providerId,
+        organizationId: availabilityWithId.organizationId || undefined,
+        locationId: availabilityWithId.locationId || undefined,
+        startTime: availabilityWithId.startTime,
+        endTime: availabilityWithId.endTime,
+        isRecurring: availabilityWithId.isRecurring,
+        recurrencePattern: availabilityWithId.recurrencePattern || undefined,
+        schedulingRule: availabilityWithId.schedulingRule,
+        schedulingInterval: availabilityWithId.schedulingInterval || undefined,
+        isOnlineAvailable: availabilityWithId.isOnlineAvailable,
+        requiresConfirmation: availabilityWithId.requiresConfirmation,
+        services: availabilityWithId.availableServices?.map(
           (config: ServiceAvailabilityConfigWithRelations) => ({
             serviceId: config.serviceId,
             duration: config.duration,
-            price: config.price,
+            price: Number(config.price),
           })
         ),
       });
@@ -161,7 +156,8 @@ export function AvailabilityEditForm({
     if (updateMutation.isPending) return;
 
     // Validate scope for recurring availability
-    if (availability?.isRecurring) {
+    const typedAvailability = availability as AvailabilityWithRelations;
+    if (typedAvailability?.isRecurring) {
       if (!scope || !['single', 'future', 'all'].includes(scope)) {
         toast({
           title: 'Error',
@@ -177,7 +173,7 @@ export function AvailabilityEditForm({
       // Include scope parameter for recurring availability edits
       const updatePayload = {
         ...data,
-        ...(availability?.isRecurring && { scope }),
+        ...(typedAvailability?.isRecurring && { scope }),
       };
       await updateMutation.mutateAsync(updatePayload);
     } catch (error) {
@@ -206,7 +202,7 @@ export function AvailabilityEditForm({
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
-            <AlertDescription>Failed to load availability: {error.message}</AlertDescription>
+            <AlertDescription>Failed to load availability: {error instanceof Error ? error.message : 'Unknown error'}</AlertDescription>
           </Alert>
         </CardContent>
       </Card>
@@ -238,7 +234,7 @@ export function AvailabilityEditForm({
             Edit Availability
           </CardTitle>
           <div className="flex items-center gap-2">
-            {availability.isRecurring && (
+            {(availability as AvailabilityWithRelations)?.isRecurring && (
               <Badge variant="secondary">
                 <Repeat className="mr-1 h-3 w-3" />
                 Recurring
@@ -267,7 +263,7 @@ export function AvailabilityEditForm({
         )}
 
         {/* Recurring series edit mode selection */}
-        {availability.isRecurring && (
+        {(availability as AvailabilityWithRelations)?.isRecurring && (
           <Alert className="mb-6">
             <Repeat className="h-4 w-4" />
             <AlertTitle>Recurring Availability</AlertTitle>
@@ -293,10 +289,10 @@ export function AvailabilityEditForm({
                   <label className="text-sm font-medium">Created by</label>
                   <div className="rounded-md border bg-gray-50 p-3">
                     <div className="text-sm font-medium">
-                      {availability?.createdBy?.name || 'Unknown'}
+                      {(availability as AvailabilityWithRelations)?.createdBy?.name || 'Unknown'}
                     </div>
                     <div className="text-xs text-gray-600">
-                      {availability?.providerId === availability?.createdBy?.id
+                      {(availability as AvailabilityWithRelations)?.providerId === (availability as AvailabilityWithRelations)?.createdBy?.id
                         ? 'Provider (Self)'
                         : 'Organization Role'}
                     </div>
@@ -307,7 +303,7 @@ export function AvailabilityEditForm({
                   <label className="text-sm font-medium">Provider</label>
                   <div className="rounded-md border bg-gray-50 p-3">
                     <div className="text-sm font-medium">
-                      {availability?.serviceProvider?.name || 'Unknown Provider'}
+                      {(availability as AvailabilityWithRelations)?.provider?.name || 'Unknown Provider'}
                     </div>
                     <div className="text-xs text-gray-600">Service Provider</div>
                   </div>
@@ -561,8 +557,8 @@ export function AvailabilityEditForm({
 
             {/* Service Selection */}
             <ServiceSelectionSection
-              providerId={availability.providerId}
-              organizationId={availability.organizationId || undefined}
+              providerId={(availability as AvailabilityWithRelations).providerId}
+              organizationId={(availability as AvailabilityWithRelations).organizationId || undefined}
             />
 
             <Separator />

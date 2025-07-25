@@ -303,7 +303,6 @@ export class ServiceFilterService {
         })),
       };
     } catch (error) {
-      console.error('Error filtering services:', error);
       return {
         services: [],
         totalCount: 0,
@@ -385,7 +384,6 @@ export class ServiceFilterService {
         };
       });
     } catch (error) {
-      console.error('Error getting available service types:', error);
       return [];
     }
   }
@@ -444,7 +442,6 @@ export class ServiceFilterService {
         serviceIds,
       });
     } catch (error) {
-      console.error('Error searching services:', error);
       return {
         services: [],
         totalCount: 0,

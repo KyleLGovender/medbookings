@@ -8,48 +8,95 @@ import {
   CreateAvailabilityData,
   UpdateAvailabilityData,
 } from '@/features/calendar/types/types';
+import { 
+  apiRequest, 
+  shouldRetry, 
+  logApiError,
+  type ApiError 
+} from '@/features/calendar/lib/api-error-handler';
+
+// =============================================================================
+// QUERY KEY FACTORY
+// =============================================================================
+
+/**
+ * Standardized query key factory for calendar availability queries.
+ * This ensures consistent cache management and type safety.
+ */
+export const availabilityKeys = {
+  all: ['availability'] as const,
+  lists: () => [...availabilityKeys.all, 'list'] as const,
+  list: (filters: Partial<AvailabilitySearchParams>) => 
+    [...availabilityKeys.lists(), filters] as const,
+  details: () => [...availabilityKeys.all, 'detail'] as const,
+  detail: (id: string) => [...availabilityKeys.details(), id] as const,
+  search: (params: AvailabilitySearchParams) => 
+    [...availabilityKeys.all, 'search', params] as const,
+  provider: (providerId: string) => 
+    [...availabilityKeys.all, 'provider', providerId] as const,
+  organization: (organizationId: string) => 
+    [...availabilityKeys.all, 'organization', organizationId] as const,
+  series: (seriesId: string) => 
+    [...availabilityKeys.all, 'series', seriesId] as const,
+} as const;
+
+// =============================================================================
+// SHARED QUERY OPTIONS
+// =============================================================================
+
+/**
+ * Default stale time for availability queries (5 minutes)
+ * Availability data changes infrequently and can be cached for longer
+ */
+const DEFAULT_STALE_TIME = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Default cache time for availability queries (30 minutes)
+ * Keep data in cache longer for better UX
+ */
+const DEFAULT_CACHE_TIME = 30 * 60 * 1000; // 30 minutes
 
 // Add context type definitions at the top of the file
 type UpdateAvailabilityContext = {
-  previousAvailability: any;
+  previousAvailability: AvailabilityWithRelations | null;
   availabilityId: string;
 };
 
 type AcceptAvailabilityContext = {
-  previousAvailability: any;
+  previousAvailability: AvailabilityWithRelations | null;
   availabilityId: string;
 };
 
 type RejectAvailabilityContext = {
-  previousAvailability: any;
+  previousAvailability: AvailabilityWithRelations | null;
   availabilityId: string;
 };
 
 // Query hooks
 export function useAvailabilityById(availabilityId: string | undefined) {
   return useQuery({
-    queryKey: ['availability', availabilityId],
+    queryKey: availabilityId ? availabilityKeys.detail(availabilityId) : ['availability'],
     queryFn: async () => {
       if (!availabilityId) {
         throw new Error('Availability ID is required');
       }
 
-      const response = await fetch(`/api/calendar/availability/${availabilityId}`);
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to fetch availability');
-      }
-
-      return response.json();
+      return apiRequest(
+        `/api/calendar/availability/${availabilityId}`,
+        { method: 'GET' },
+        { operation: 'fetch availability by ID', resourceId: availabilityId }
+      );
     },
     enabled: !!availabilityId,
+    staleTime: DEFAULT_STALE_TIME,
+    gcTime: DEFAULT_CACHE_TIME,
+    retry: shouldRetry,
   });
 }
 
 export function useAvailabilitySearch(params: AvailabilitySearchParams) {
   return useQuery({
-    queryKey: ['availability', 'search', params],
+    queryKey: availabilityKeys.search(params),
     queryFn: async () => {
       const searchParams = new URLSearchParams();
 
@@ -62,21 +109,25 @@ export function useAvailabilitySearch(params: AvailabilitySearchParams) {
       if (params.status) searchParams.set('status', params.status);
       if (params.seriesId) searchParams.set('seriesId', params.seriesId);
 
-      const response = await fetch(`/api/calendar/availability?${searchParams.toString()}`);
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to search availability');
-      }
-
-      return response.json();
+      return apiRequest(
+        `/api/calendar/availability?${searchParams.toString()}`,
+        { method: 'GET' },
+        { 
+          operation: 'search availability', 
+          providerId: params.providerId,
+          organizationId: params.organizationId 
+        }
+      );
     },
+    staleTime: DEFAULT_STALE_TIME,
+    gcTime: DEFAULT_CACHE_TIME,
+    retry: shouldRetry,
   });
 }
 
 export function useProviderAvailability(providerId: string | undefined) {
   return useQuery({
-    queryKey: ['availability', 'provider', providerId],
+    queryKey: providerId ? availabilityKeys.provider(providerId) : ['availability'],
     queryFn: async () => {
       if (!providerId) {
         throw new Error('Provider ID is required');
@@ -92,12 +143,20 @@ export function useProviderAvailability(providerId: string | undefined) {
       return response.json();
     },
     enabled: !!providerId,
+    staleTime: DEFAULT_STALE_TIME,
+    gcTime: DEFAULT_CACHE_TIME,
+    retry: (failureCount, error) => {
+      if (error instanceof Error && /4\d{2}/.test(error.message)) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 }
 
 export function useOrganizationAvailability(organizationId: string | undefined) {
   return useQuery({
-    queryKey: ['availability', 'organization', organizationId],
+    queryKey: organizationId ? availabilityKeys.organization(organizationId) : ['availability'],
     queryFn: async () => {
       if (!organizationId) {
         throw new Error('Organization ID is required');
@@ -113,12 +172,20 @@ export function useOrganizationAvailability(organizationId: string | undefined) 
       return response.json();
     },
     enabled: !!organizationId,
+    staleTime: DEFAULT_STALE_TIME,
+    gcTime: DEFAULT_CACHE_TIME,
+    retry: (failureCount, error) => {
+      if (error instanceof Error && /4\d{2}/.test(error.message)) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 }
 
 export function useAvailabilitySeries(seriesId: string | undefined) {
   return useQuery({
-    queryKey: ['availability', 'series', seriesId],
+    queryKey: seriesId ? availabilityKeys.series(seriesId) : ['availability'],
     queryFn: async () => {
       if (!seriesId) {
         throw new Error('Series ID is required');
@@ -134,13 +201,20 @@ export function useAvailabilitySeries(seriesId: string | undefined) {
       return response.json();
     },
     enabled: !!seriesId,
+    staleTime: DEFAULT_STALE_TIME,
+    gcTime: DEFAULT_CACHE_TIME,
+    retry: (failureCount, error) => {
+      if (error instanceof Error && /4\d{2}/.test(error.message)) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 }
 
 // Mutation hooks
 export function useCreateAvailability(options?: {
   onSuccess?: (data: AvailabilityWithRelations, variables: CreateAvailabilityData) => void;
-  onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -162,27 +236,26 @@ export function useCreateAvailability(options?: {
       return response.json();
     },
     onSuccess: (data, variables) => {
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['availability'] });
+      // Invalidate relevant queries using standardized keys
+      queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
       queryClient.invalidateQueries({
-        queryKey: ['availability', 'provider', variables.providerId],
+        queryKey: availabilityKeys.provider(variables.providerId),
       });
 
       if (variables.organizationId) {
         queryClient.invalidateQueries({
-          queryKey: ['availability', 'organization', variables.organizationId],
+          queryKey: availabilityKeys.organization(variables.organizationId),
         });
       }
 
       if (variables.seriesId) {
         queryClient.invalidateQueries({
-          queryKey: ['availability', 'series', variables.seriesId],
+          queryKey: availabilityKeys.series(variables.seriesId),
         });
       }
 
       options?.onSuccess?.(data, variables);
     },
-    onError: options?.onError,
   });
 }
 
@@ -191,7 +264,6 @@ export function useUpdateAvailability(options?: {
     data: AvailabilityWithRelations,
     variables: UpdateAvailabilityData & { scope?: 'single' | 'future' | 'all' }
   ) => void;
-  onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -220,15 +292,15 @@ export function useUpdateAvailability(options?: {
     onMutate: async (variables) => {
       // Cancel any outgoing refetches for this specific availability
       await queryClient.cancelQueries({
-        queryKey: ['availability', variables.id],
+        queryKey: availabilityKeys.detail(variables.id),
       });
 
       // Snapshot the previous value
-      const previousAvailability = queryClient.getQueryData(['availability', variables.id]);
+      const previousAvailability = queryClient.getQueryData(availabilityKeys.detail(variables.id)) as AvailabilityWithRelations | null;
 
       // Optimistically update the specific availability
       if (previousAvailability) {
-        queryClient.setQueryData(['availability', variables.id], (old: any) => ({
+        queryClient.setQueryData(availabilityKeys.detail(variables.id), (old: AvailabilityWithRelations | undefined) => ({
           ...old,
           ...variables,
         }));
@@ -238,16 +310,19 @@ export function useUpdateAvailability(options?: {
     },
     onSuccess: (data, variables) => {
       // Update the specific availability in cache
-      queryClient.setQueryData(['availability', variables.id], data);
+      queryClient.setQueryData(availabilityKeys.detail(variables.id), data);
 
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ['availability', 'search'] });
-      queryClient.invalidateQueries({ queryKey: ['availability', 'provider'] });
-      queryClient.invalidateQueries({ queryKey: ['availability', 'organization'] });
+      // Invalidate related queries using patterns
+      queryClient.invalidateQueries({ queryKey: availabilityKeys.lists() });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          query.queryKey[0] === 'availability' && 
+          (query.queryKey[1] === 'search' || query.queryKey[1] === 'provider' || query.queryKey[1] === 'organization')
+      });
 
       if (data.seriesId) {
         queryClient.invalidateQueries({
-          queryKey: ['availability', 'series', data.seriesId],
+          queryKey: availabilityKeys.series(data.seriesId),
         });
       }
 
@@ -257,12 +332,11 @@ export function useUpdateAvailability(options?: {
       // Rollback optimistic update
       if (context?.previousAvailability) {
         queryClient.setQueryData(
-          ['availability', context.availabilityId],
+          availabilityKeys.detail(context.availabilityId),
           context.previousAvailability
         );
       }
 
-      options?.onError?.(error);
     },
   });
 }
@@ -273,7 +347,6 @@ export function useCancelAvailability(options?: {
     reason?: string;
     scope?: 'single' | 'future' | 'all';
   }) => void;
-  onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -298,17 +371,15 @@ export function useCancelAvailability(options?: {
     },
     onSuccess: (_, variables) => {
       // Invalidate all availability queries
-      queryClient.invalidateQueries({ queryKey: ['availability'] });
+      queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
 
       options?.onSuccess?.(variables);
     },
-    onError: options?.onError,
   });
 }
 
 export function useDeleteAvailability(options?: {
   onSuccess?: (variables: { id: string; scope?: 'single' | 'future' | 'all' }) => void;
-  onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -330,20 +401,18 @@ export function useDeleteAvailability(options?: {
     },
     onSuccess: (_, variables) => {
       // Invalidate all availability queries
-      queryClient.invalidateQueries({ queryKey: ['availability'] });
+      queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
 
       // Remove the specific availability from cache
-      queryClient.removeQueries({ queryKey: ['availability', variables.id] });
+      queryClient.removeQueries({ queryKey: availabilityKeys.detail(variables.id) });
 
       options?.onSuccess?.(variables);
     },
-    onError: options?.onError,
   });
 }
 
 export function useAcceptAvailabilityProposal(options?: {
   onSuccess?: (data: AvailabilityWithRelations, variables: { id: string }) => void;
-  onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -367,18 +436,18 @@ export function useAcceptAvailabilityProposal(options?: {
     onMutate: async (variables) => {
       // Cancel any outgoing refetches for this specific availability
       await queryClient.cancelQueries({
-        queryKey: ['availability', variables.id],
+        queryKey: availabilityKeys.detail(variables.id),
       });
 
       // Snapshot the previous value
-      const previousAvailability = queryClient.getQueryData(['availability', variables.id]);
+      const previousAvailability = queryClient.getQueryData(availabilityKeys.detail(variables.id)) as AvailabilityWithRelations | null;
 
       // Optimistically update status
       if (previousAvailability) {
-        queryClient.setQueryData(['availability', variables.id], (old: any) => ({
+        queryClient.setQueryData(availabilityKeys.detail(variables.id), (old: AvailabilityWithRelations | undefined) => ({
           ...old,
-          status: 'ACTIVE',
-          acceptedAt: new Date().toISOString(),
+          status: 'ACCEPTED' as const,
+          acceptedAt: new Date(),
         }));
       }
 
@@ -386,12 +455,14 @@ export function useAcceptAvailabilityProposal(options?: {
     },
     onSuccess: (data, variables) => {
       // Update the specific availability in cache
-      queryClient.setQueryData(['availability', variables.id], data);
+      queryClient.setQueryData(availabilityKeys.detail(variables.id), data);
 
-      // Invalidate provider and organization availability lists
-      queryClient.invalidateQueries({ queryKey: ['availability', 'provider'] });
-      queryClient.invalidateQueries({ queryKey: ['availability', 'organization'] });
-      queryClient.invalidateQueries({ queryKey: ['availability', 'search'] });
+      // Invalidate provider and organization availability lists using patterns
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          query.queryKey[0] === 'availability' && 
+          ['provider', 'organization', 'search'].includes(query.queryKey[1] as string)
+      });
 
       options?.onSuccess?.(data, variables);
     },
@@ -399,19 +470,17 @@ export function useAcceptAvailabilityProposal(options?: {
       // Rollback optimistic update
       if (context?.previousAvailability) {
         queryClient.setQueryData(
-          ['availability', context.availabilityId],
+          availabilityKeys.detail(context.availabilityId),
           context.previousAvailability
         );
       }
 
-      options?.onError?.(error);
     },
   });
 }
 
 export function useRejectAvailabilityProposal(options?: {
   onSuccess?: (variables: { id: string; reason?: string }) => void;
-  onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -433,27 +502,29 @@ export function useRejectAvailabilityProposal(options?: {
     onMutate: async (variables) => {
       // Cancel any outgoing refetches for this specific availability
       await queryClient.cancelQueries({
-        queryKey: ['availability', variables.id],
+        queryKey: availabilityKeys.detail(variables.id),
       });
 
       // Snapshot the previous value
-      const previousAvailability = queryClient.getQueryData(['availability', variables.id]);
+      const previousAvailability = queryClient.getQueryData(availabilityKeys.detail(variables.id)) as AvailabilityWithRelations | null;
 
       // Optimistically update status
       if (previousAvailability) {
-        queryClient.setQueryData(['availability', variables.id], (old: any) => ({
+        queryClient.setQueryData(availabilityKeys.detail(variables.id), (old: AvailabilityWithRelations | undefined) => ({
           ...old,
-          status: 'REJECTED',
+          status: 'REJECTED' as const,
         }));
       }
 
       return { previousAvailability, availabilityId: variables.id };
     },
     onSuccess: (_, variables) => {
-      // Invalidate provider and organization availability lists
-      queryClient.invalidateQueries({ queryKey: ['availability', 'provider'] });
-      queryClient.invalidateQueries({ queryKey: ['availability', 'organization'] });
-      queryClient.invalidateQueries({ queryKey: ['availability', 'search'] });
+      // Invalidate provider and organization availability lists using patterns
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          query.queryKey[0] === 'availability' && 
+          ['provider', 'organization', 'search'].includes(query.queryKey[1] as string)
+      });
 
       options?.onSuccess?.(variables);
     },
@@ -461,12 +532,11 @@ export function useRejectAvailabilityProposal(options?: {
       // Rollback optimistic update
       if (context?.previousAvailability) {
         queryClient.setQueryData(
-          ['availability', context.availabilityId],
+          availabilityKeys.detail(context.availabilityId),
           context.previousAvailability
         );
       }
 
-      options?.onError?.(error);
     },
   });
 }

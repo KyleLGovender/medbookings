@@ -329,7 +329,6 @@ export class SearchPerformanceService {
         },
       };
     } catch (error) {
-      console.error('Error in optimized provider search:', error);
       return {
         results: [],
         metrics: {
@@ -438,7 +437,6 @@ export class SearchPerformanceService {
         },
       };
     } catch (error) {
-      console.error('Error in optimized slot search:', error);
       return {
         slots: [],
         metrics: {

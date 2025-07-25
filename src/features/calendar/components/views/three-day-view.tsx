@@ -3,16 +3,9 @@
 import { Repeat } from 'lucide-react';
 
 import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
+import { getEventsForDay } from '@/features/calendar/lib/calendar-utils';
 
-export interface ThreeDayViewProps {
-  currentDate: Date;
-  events: CalendarEvent[];
-  workingHours: { start: string; end: string };
-  onEventClick?: (event: CalendarEvent) => void;
-  onTimeSlotClick?: (date: Date, hour: number) => void;
-  onDateClick?: (date: Date) => void;
-  getEventStyle: (event: CalendarEvent) => string;
-}
+import { ThreeDayViewProps } from './types';
 
 export function ThreeDayView({
   currentDate,
@@ -64,10 +57,7 @@ export function ThreeDayView({
 
   // Filter events for a specific day
   const getEventsForDate = (date: Date) => {
-    return events.filter((event) => {
-      const eventDate = new Date(event.startTime);
-      return eventDate.toDateString() === date.toDateString();
-    });
+    return getEventsForDay(events, date);
   };
 
   // Calculate event position in grid
@@ -182,7 +172,7 @@ export function ThreeDayView({
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              onEventClick?.(event);
+                              onEventClick?.(event, e);
                             }}
                           >
                             <p className="order-1 flex items-center gap-1 truncate font-semibold">

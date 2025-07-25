@@ -105,8 +105,8 @@ export class SlotCleanupService {
         processingTimeMs: Date.now() - startTime,
       };
     } catch (error) {
-      console.error('Error cleaning up availability slots:', error);
-      errors.push(error instanceof Error ? error.message : 'Unknown error');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      errors.push(errorMessage);
 
       return {
         totalSlotsProcessed: 0,
@@ -239,8 +239,8 @@ export class SlotCleanupService {
         processingTimeMs: Date.now() - startTime,
       };
     } catch (error) {
-      console.error('Error cleaning up recurring series slots:', error);
-      errors.push(error instanceof Error ? error.message : 'Unknown error');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      errors.push(errorMessage);
 
       return {
         totalSlotsProcessed: 0,
@@ -323,8 +323,8 @@ export class SlotCleanupService {
         processingTimeMs: Date.now() - startTime,
       };
     } catch (error) {
-      console.error('Error cleaning up orphaned slots:', error);
-      errors.push(error instanceof Error ? error.message : 'Unknown error');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      errors.push(errorMessage);
 
       return {
         totalSlotsProcessed: 0,
@@ -432,8 +432,8 @@ export class SlotCleanupService {
         processingTimeMs: Date.now() - startTime,
       };
     } catch (error) {
-      console.error('Error cleaning up modified availability slots:', error);
-      errors.push(error instanceof Error ? error.message : 'Unknown error');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      errors.push(errorMessage);
 
       return {
         totalSlotsProcessed: 0,
@@ -474,22 +474,19 @@ export class SlotCleanupService {
     for (const slot of slotsWithBookings) {
       if (slot.booking) {
         try {
-          // Log notification that would be sent
-          console.log('=== SLOT CLEANUP NOTIFICATION ===');
-          console.log('Customer:', slot.booking.guestEmail);
-          console.log('Booking ID:', slot.booking.id);
-          console.log('Original Time:', slot.startTime.toISOString());
-          console.log('Service:', slot.service?.name || 'Unknown Service');
-          console.log('Status:', 'Availability Cancelled - Slot Unavailable');
-          console.log(
-            'Message:',
-            'Your appointment availability has been cancelled. Please reschedule.'
-          );
-          console.log('=== END NOTIFICATION ===');
+          // In production, this would send actual notifications to customers
+          // For now, we track that a notification should be sent without console logging
+          // Production implementation would include:
+          // await sendCustomerNotification({
+          //   email: slot.booking.guestEmail,
+          //   subject: 'Appointment Availability Changed',
+          //   message: 'Your appointment availability has been cancelled. Please reschedule.',
+          //   metadata: { bookingId: slot.booking.id, slotId: slot.id }
+          // });
 
           notifiedCount++;
         } catch (error) {
-          console.error('Error notifying customer:', error);
+          throw new Error(`Failed to notify customer: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
     }

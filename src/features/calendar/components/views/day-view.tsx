@@ -1,17 +1,9 @@
 import { Repeat } from 'lucide-react';
 
 import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
+import { getEventsForDay, getWorkingTimeRange, calculateEventPosition } from '@/features/calendar/lib/calendar-utils';
 
-// Week View Component
-interface DayViewProps {
-  currentDate: Date;
-  events: CalendarEvent[];
-  workingHours: { start: string; end: string };
-  onEventClick?: (event: CalendarEvent) => void;
-  onTimeSlotClick?: (date: Date, hour: number) => void;
-  onDateClick?: (date: Date) => void;
-  getEventStyle: (event: CalendarEvent) => string;
-}
+import { DayViewProps } from './types';
 
 // Day View Component
 export function DayView({
@@ -20,14 +12,10 @@ export function DayView({
   workingHours,
   onEventClick,
   onTimeSlotClick,
+  onDateClick,
   getEventStyle,
 }: DayViewProps) {
-  const dayEvents = events.filter((event) => {
-    const eventDate = new Date(event.startTime);
-    const currentDateString = currentDate.toDateString();
-    const eventDateString = eventDate.toDateString();
-    return eventDateString === currentDateString;
-  });
+  const dayEvents = getEventsForDay(events, currentDate);
 
   // Calculate display time range based on events
   const getDisplayTimeRange = () => {
@@ -55,7 +43,7 @@ export function DayView({
     (_, i) => timeRange.start + i
   );
 
-  const calculateEventPosition = (event: CalendarEvent) => {
+  const calculateEventPositionForDay = (event: CalendarEvent) => {
     const startTime = new Date(event.startTime);
     const endTime = new Date(event.endTime);
 
@@ -119,7 +107,7 @@ export function DayView({
                 style={{ gridTemplateRows: `repeat(${hours.length * 2}, minmax(0, 1fr))` }}
               >
                 {dayEvents.map((event) => {
-                  const { gridRow } = calculateEventPosition(event);
+                  const { gridRow } = calculateEventPositionForDay(event);
                   return (
                     <li key={event.id} className="relative mt-px flex" style={{ gridRow }}>
                       <a
@@ -128,7 +116,7 @@ export function DayView({
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          onEventClick?.(event);
+                          onEventClick?.(event, e);
                         }}
                       >
                         <p className="order-1 flex items-center gap-1 font-semibold">

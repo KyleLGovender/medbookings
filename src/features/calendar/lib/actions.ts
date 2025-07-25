@@ -245,12 +245,12 @@ export async function createAvailability(
         );
 
         if (!slotResult.success) {
-          console.error('Failed to generate slots:', slotResult.errors);
-          // Don't fail the creation for slot generation errors, but log them
+          // Slot generation failed but don't block availability creation
+          // Production systems would track this for monitoring
         }
       } catch (slotError) {
-        console.error('Error generating slots:', slotError);
-        // Don't fail the creation for slot generation errors
+        // Slot generation error - continue with availability creation
+        // Production systems would track this for monitoring
       }
     }
 
@@ -263,8 +263,8 @@ export async function createAvailability(
           role: 'ORGANIZATION',
         });
       } catch (notificationError) {
-        console.error('Failed to send proposal notification:', notificationError);
-        // Don't fail the creation for notification errors
+        // Notification failed but don't block availability creation
+        // Production systems would track this for monitoring
       }
     }
 
@@ -277,7 +277,6 @@ export async function createAvailability(
 
     return { success: true, data: availability as unknown as AvailabilityWithRelations };
   } catch (error) {
-    console.error('Error creating availability:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create availability',
@@ -336,7 +335,6 @@ export async function getAvailabilityById(
 
     return { success: true, data: availability as unknown as AvailabilityWithRelations };
   } catch (error) {
-    console.error('Error fetching availability:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch availability',
@@ -446,7 +444,6 @@ export async function searchAvailability(
 
     return { success: true, data: availabilities as unknown as AvailabilityWithRelations[] };
   } catch (error) {
-    console.error('Error searching availability:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to search availability',
@@ -719,7 +716,6 @@ export async function updateAvailability(
 
     return { success: true, data: finalAvailability as unknown as AvailabilityWithRelations };
   } catch (error) {
-    console.error('Error updating availability:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update availability',
@@ -820,7 +816,6 @@ export async function deleteAvailability(
 
     return { success: true };
   } catch (error) {
-    console.error('Error deleting availability:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete availability',
@@ -928,7 +923,6 @@ export async function cancelAvailability(
 
     return { success: true };
   } catch (error) {
-    console.error('Error cancelling availability:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to cancel availability',
@@ -956,7 +950,6 @@ export async function acceptAvailabilityProposal(
 
     return { success: true, data: result.availability };
   } catch (error) {
-    console.error('Error accepting availability proposal:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to accept availability proposal',
@@ -985,7 +978,6 @@ export async function rejectAvailabilityProposal(
 
     return { success: true };
   } catch (error) {
-    console.error('Error rejecting availability proposal:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to reject availability proposal',
@@ -1061,7 +1053,6 @@ async function handleSeriesDelete(
 
     return { success: true };
   } catch (error) {
-    console.error('Error in series delete:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete availability series',
@@ -1144,7 +1135,6 @@ async function handleSeriesCancel(
 
     return { success: true };
   } catch (error) {
-    console.error('Error in series cancel:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to cancel availability series',

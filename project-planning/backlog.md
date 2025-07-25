@@ -1,35 +1,50 @@
 # MedBookings MVP Project Plan
 
+----------------------------------------------------------------------------------------
+
 ## 🚀 Current Sprint (In Progress)
 
+----------------------------------------------------------------------------------------
 
 ## 📋 Ready for Development (Prioritized)
-- [ ] Implement testing throughout the application
+- [ ] Implement testing throughout the application. https://github.com/microsoft/playwright-mcp 
+- [ ] Context 7 documentation
+- [ ] Git worktrees
+- [ ] Claude Code Plan Upgrade
 - [ ] Implement user roles system (guest, user, provider, organization manager, admin)
+
+----------------------------------------------------------------------------------------
+
+## 📝 Quick Capture (New Issues)
+- [ ] Populate provider and organization and user email addresses with the associated Google email. Not possible to edit.
+- [ ] Remove Calendar from Menu based on user logged in
+- [ ] Protect Calendar routes based on authentication
+- [ ] Review centralized calendar views
+- [ ] Location creation doesn't save GP coordinates. Works on location update but not creation.
+- [ ] Implement button loading spinner throughout app
+- [ ] Admin organization doesn't display location well.
+- [ ] Dashboard navigation when not ADMIN. Can't get a list of providers or see yourself in sidebar menu
+- [ ] Personal Profile should reflect Role
+
+----------------------------------------------------------------------------------------
+
+## ✅ Recently Completed
+
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+
+## 🌟 Issues and Bugs Backlog
+
+----------------------------------------------------------------------------------------
 
 ## 🔥 High Priority Issues & Tasks
 
-
-
-  - [ ] **UX/UI**: Hide month/week view options on mobile devices - `src/features/calendar/availability/components/calendar-navigation.tsx`
-  - **Issue**: Calendar mobile view doesn't look good - month and week view options should be hidden on mobile devices, only showing day and 3-day options
-  - **Impact**: Poor mobile user experience due to cluttered navigation and inappropriate view options for small screens
-  - **Implementation**: 
-    1. Add mobile device detection logic (consider iPad size threshold)
-    2. Conditionally render view options based on screen size
-    3. Use CSS media queries or JavaScript viewport detection
-    4. Hide month and week buttons on mobile, keep only day and 3-day options
-  - **Testing**: 
-    - Test on various mobile devices and screen sizes
-    - Verify iPad behavior (determine if it should be treated as mobile)
-    - Test responsive breakpoints
-    - Ensure view switching works properly on mobile
-  - **Estimated Time**: 4-6 hours
-
+----------------------------------------------------------------------------------------
 
 ## 📊 Medium Priority Issues & Tasks
-
-
 
 - [ ] **Technical Debt**: Comprehensive cleanup of provider calendar components as reference pattern - `src/features/calendar/availability/components/provider-calendar-view.tsx:1`
   - **Issue**: Key provider calendar components contain development artifacts, orphaned code, inconsistent patterns, and architectural issues that prevent them from serving as clean reference patterns. Issues include: unused state management (`selectedEvent` declared but inconsistently used), multiple TODO comments for missing functionality, console.log statements left in production code, duplicated logic across view components, inconsistent error handling patterns, missing TypeScript strict typing, and poor separation of concerns.
@@ -49,7 +64,7 @@
     - `src/features/calendar/availability/components/provider-calendar-view.tsx` - Main calendar component
     - `src/features/calendar/availability/components/availability-creation-form.tsx` - Form component  
     - `src/app/(dashboard)/providers/[id]/manage-calendar/page.tsx` - Page orchestration
-    - Extract reusable components: `week-view.tsx`, `day-view.tsx`, `month-view.tsx`
+    - Extract reusable components: `week-view.tsx`, `day-view.tsx`, `month-view.tsx`, `three-day-view.tsx`
   - **Testing**:
     - All existing functionality still works after cleanup.
     - Components can be imported and used as patterns in other contexts.
@@ -123,42 +138,13 @@
     - Both forms have consistent user experience
   - **Estimated Time**: 6-8 hours
   
-
-- [ ] **UX/UI**: Fix compressed breadcrumbs in dashboard layout on mobile - `src/components/layout/dashboard-layout.tsx`
-  - **Issue**: Breadcrumbs in dashboard layout look too compressed on mobile devices, particularly with long provider names like "Dashboard > Providers > Dr Shei Goldberg > Manage Calendar"
-  - **Impact**: Poor mobile navigation experience, breadcrumbs may be unreadable or truncated poorly
-  - **Implementation**:
-    1. Review current breadcrumb responsive classes in dashboard-layout.tsx (line 296)
-    2. Improve text truncation for long provider names
-    3. Consider collapsing middle breadcrumb items on mobile (show "Dashboard > ... > Current Page")
-    4. Add better responsive spacing and text sizing
-    5. Test with various provider name lengths
-  - **Testing**:
-    - Test on various mobile screen sizes
-    - Test with short and long provider names
-    - Verify breadcrumb navigation still works after changes
-    - Test tablet and desktop views aren't affected
-  - **Estimated Time**: 3-4 hours
+----------------------------------------------------------------------------------------
 
 
+## 🧹 Low Priority Issues & Tasks
 
-## 🧹 Low Priority / Technical Debt
 
-
-## ✅ Recently Completed
-- [x] Standardize feature type definitions across bulletproof-react structure - Refactor all features to define types consistently in feature-specific types folders instead of mixed Prisma imports
-  - **Type:** Technical Debt
-  - **Impact:** Eliminates developer confusion from inconsistent type definitions, prevents circular dependencies, improves maintainability
-  - **Files:** All features in `@src/features/` types folders, based on `@prisma/schema.prisma`
-  - **Added:** 2025-01-21
-
-## 📝 Quick Capture (New Issues)
-- [ ] Populate provider and organization and user email addresses with the associated Google email. Not possible to edit.
-- [ ] Remove Calendar from Menu based on user logged in
-- [ ] Protect Calendar routes based on authentication
-- [ ] Review centralized calendar views
-
----
+----------------------------------------------------------------------------------------
 
 ## 📊 Project Health
 - **Total Active Issues**: 10
@@ -170,15 +156,21 @@
 - **Recently Completed**: 14
 - **Last Updated**: 2025-01-21
 
----
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
 
 # 📋 MVP Roadmap
+
+----------------------------------------------------------------------------------------
 
 ## 🎯 MVP Phase 1: Core Platform (Must-Have for Launch)
 
 ### Foundation (Get System Working)
-- [ ] Fix all build errors and get system building cleanly
-- [ ] Remove/clean up non-MVP code to focus on core functionality
+- [x] Fix all build errors and get system building cleanly
+- [x] Remove/clean up non-MVP code to focus on core functionality
 - [ ] Implement user roles system (guest, user, provider, organization manager, admin)
 
 ### Provider Management (Core)
@@ -202,6 +194,8 @@
 - [x] Implement provider approval management (approve/reject providers)
 - [x] Implement organization approval management (approve/reject organizations)
 - [ ] Basic user management functionality
+
+----------------------------------------------------------------------------------------
 
 ## 🚀 MVP Phase 2: Booking System (Core Business Value)
 
@@ -245,7 +239,6 @@
     - [ ] Ability to change view by selecting service or provider
     - [ ] URL params to filter the view so that passing a URL can specify which organization and which provider for which service and which time frame
 
-
 ### Booking System
 - [ ] Create booking slot generation based on availability
 - [ ] Implement booking creation workflow for guests/users
@@ -261,6 +254,8 @@
 - [ ] Implement booking confirmation emails
 - [ ] Build reminder notification system
 - [ ] Create cancellation and modification communications
+
+----------------------------------------------------------------------------------------
 
 ## 🌟 MVP Phase 3: Enhanced Features & Integrations
 
@@ -295,6 +290,8 @@
 ### Enhanced Communications
 - [ ] Implement organization invitation emails
 - [ ] Design HTML email templates with branding
+
+----------------------------------------------------------------------------------------
 
 ## 🚀 MVP Phase 4: Advanced Features & Scalability
 
@@ -348,16 +345,11 @@
 - [ ] Build API documentation for integrations
 - [ ] Create onboarding guides for different user types
 
-## 🌟 Issues and Bugs Backlog
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
 
-## 🧹 High Priority / Technical Debt
-- [ ] Refactor data model relationships from 1-to-n to many-to-many where appropriate - Enable users to have multiple service provider roles and review other entity relationships for flexibility (Prisma schema, migrations, API endpoints)
-- [ ] Change ServiceProvider to Provider throughout the codebase
 
-## 📊 Medium Priority Issues
-- [ ] Location creation doesn't save GP coordinates. Works on location update but not creation.
-- [ ] Implement button loading spinner throughout app
-- [ ] Admin organization doesn't display location well.
-- [ ] Dashboard navigation when not ADMIN. Can't get a list of providers or see yourself in sidebar menu
-- [ ] Personal Profile should reflect Role
 

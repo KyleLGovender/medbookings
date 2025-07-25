@@ -67,7 +67,6 @@ export async function generateSlotsForAvailability(
       errors: errors.length > 0 ? errors : undefined,
     };
   } catch (error) {
-    console.error('Error generating slots:', error);
     return {
       success: false,
       slotsGenerated: 0,
@@ -126,7 +125,6 @@ export async function generateSlotsForMultipleAvailability(
       errors: allErrors.length > 0 ? allErrors : undefined,
     };
   } catch (error) {
-    console.error('Error generating slots for multiple availability:', error);
     return {
       success: false,
       slotsGenerated: 0,
@@ -184,7 +182,6 @@ export async function regenerateSlotsForAvailability(
       })),
     });
   } catch (error) {
-    console.error('Error regenerating slots:', error);
     return {
       success: false,
       slotsGenerated: 0,
