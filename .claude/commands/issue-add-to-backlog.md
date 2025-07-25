@@ -1,20 +1,18 @@
----
-trigger: manual
----
 
-# Rule: Adding Issues to Project Backlog
+Please help me add this issue to the project backlog: $ARGUMENTS
 
 ## Goal
 
-To guide an AI assistant in collecting issue details through structured questions and automatically updating the project backlog with properly categorized and prioritized tasks.
+To collect issue details through structured questions and automatically update the project backlog with properly categorized and prioritized tasks.
 
 ## Process
 
-1. **Receive Initial Issue:** The user describes a bug, feature request, or improvement they've discovered
-2. **Ask Clarifying Questions:** Gather sufficient detail to properly categorize and prioritize the issue
-3. **Determine Priority & Category:** Based on answers, classify the issue appropriately
-4. **Update Backlog:** Automatically add the issue to the correct section in `backlog.md`
-5. **Update Metrics:** Refresh the project health metrics
+1. **Receive Initial Issue:** Use the issue description provided in $ARGUMENTS
+2. **Read Current Backlog:** Use the Read tool to read `/workflow/backlog.md` to understand current structure and priorities
+3. **Ask Clarifying Questions:** Gather sufficient detail to properly categorize and prioritize the issue
+4. **Determine Priority & Category:** Based on answers, classify the issue appropriately
+5. **Update Backlog:** Automatically add the issue to the correct section in `/workflow/backlog.md`
+6. **Update Metrics:** Refresh the project health metrics
 
 ## Clarifying Questions
 
@@ -96,9 +94,9 @@ After collecting information:
 
 ## AI Instructions
 
-When a user mentions an issue:
+When processing the issue from $ARGUMENTS:
 
-1. **Acknowledge:** "I'll help you add this to the backlog. Let me ask a few questions to properly categorize and prioritize it."
+1. **Acknowledge:** "I'll help you add this issue to the backlog. Let me ask a few questions to properly categorize and prioritize it."
 
 2. **Ask Questions:** Go through the clarifying questions systematically - don't ask all at once, but have a natural conversation
 
@@ -106,11 +104,11 @@ When a user mentions an issue:
 
 4. **Confirm:** "Based on our discussion, I'm categorizing this as a [priority] [type] issue. Does that sound right?"
 
-5. **Update Backlog:** Add to appropriate section in `backlog.md`
+5. **Update Backlog:** Add to appropriate section in `/workflow/backlog.md`
 
 6. **Update Metrics:** Refresh project health numbers
 
-7. **Confirm:** "✅ Added to [section] in backlog.md. The issue is now tracked and will be addressed according to its priority."
+7. **Confirm:** "✅ Added to [section] in /workflow/backlog.md. The issue is now tracked and will be addressed according to its priority."
 
 ## Example Interaction
 

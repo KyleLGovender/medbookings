@@ -1,10 +1,13 @@
----
-trigger: manual
----
 
-# Processing a list of tasks
+Please process the task list from: $ARGUMENTS
 
-Guidelines for managing task lists in markdown files to track progress on completing a PRD or Task Spec
+**Initial Steps:**
+1. **Read Task List:** Use the Read tool to read the task list file from the path provided in $ARGUMENTS
+2. **Identify Task Type:** Determine if this is a PRD task list or Issue task list
+3. **Validation:** If the task list is neither a PRD nor an Issue task list, respond with: "This doesn't appear to be a PRD or Issue task list. Please specify a task list type that I can process (PRD or Issue)."
+4. **Set Branch Strategy:** 
+   - For Issue tasks: Create branch with `issue/` prefix
+   - For PRD/Feature tasks: Create branch with `feature/` prefix
 
 ## Execution Modes
 
@@ -14,7 +17,7 @@ Guidelines for managing task lists in markdown files to track progress on comple
 
 ### YOLO Mode (Continuous)
 - Execute all tasks continuously without stopping for confirmation
-- Use this mode when user explicitly requests: "execute tasks using @project-planning/process-tasks.md yolo mode"
+- Use this mode when user explicitly requests "yolo mode"
 - Mark off tasks as completed but proceed immediately to next task without waiting
 
 ## Task Implementation
@@ -27,16 +30,13 @@ Guidelines for managing task lists in markdown files to track progress on comple
 
 When working with generated task files:
 
-1. **Always reference the source bug list** for complete context
-2. **Check the task file header** for the source file reference (e.g., "Generated from: calendar-v20250715-bugs.md")
-3. **Consult the original bug list** when you need:
-   - Detailed issue explanations
-   - Root cause analysis
-   - Time estimates
-   - Specific reproduction steps
-   - Full impact assessments
+1. **Always reference the source specification** for complete context
+2. **Check the task file header** for the source file reference (e.g., "Generated from: user-profile-prd.md" or "Generated from: login-bug-issue.md")
+3. **Consult the original specification** when you need:
+   - For Issues: Detailed problem explanations, reproduction steps, impact assessments
+   - For PRDs: Feature requirements, user stories, acceptance criteria
 
-The task files contain actionable implementation steps, but the source bug lists contain the complete problem context.
+The task files contain actionable implementation steps, but the source specifications contain the complete context.
 
 ## Task List Maintenance
 
@@ -55,12 +55,12 @@ The task files contain actionable implementation steps, but the source bug lists
 
 When implementing tasks, follow this Git workflow:
 
-1. **Create Branch:**
+1. **Create Branch (based on task type):**
    ```bash
-   # For bug fixes (from @project-planning/bugs/ directory)
-   git checkout -b bugs/task-name-or-description
+   # For issue/bug fixes (from /workflow/issues/ task lists)
+   git checkout -b issue/task-name-or-description
    
-   # For feature development (from @project-planning/prd/ directory)
+   # For feature development (from /workflow/prds/ task lists)
    git checkout -b feature/task-name-or-description
    ```
 
@@ -100,12 +100,13 @@ When implementing tasks, follow this Git workflow:
    
    Co-Authored-By: Claude <noreply@anthropic.com>"
    
-   # Push to remote (use appropriate branch prefix)
-   git push -u origin bugs/task-name        # For bug fixes
+   # Push to remote (use appropriate branch prefix based on task type)
+   git push -u origin issue/task-name       # For issue fixes
    git push -u origin feature/task-name     # For features
    
-   # Create PR with comprehensive description
-   gh pr create --title "feat: [Task Group] - [Description]" --body "[detailed PR description]"
+   # Create PR with comprehensive description (adjust title based on task type)
+   gh pr create --title "fix: [Task Group] - [Description]" --body "[detailed PR description]"    # For issues
+   gh pr create --title "feat: [Task Group] - [Description]" --body "[detailed PR description]"   # For features
    ```
 
 5. **User Review Process (Only to be done by Developer. Never to be done by AI):**
@@ -121,8 +122,8 @@ When implementing tasks, follow this Git workflow:
    # Update local master with merged changes
    git pull origin master
    
-   # Delete local branch (use appropriate branch prefix)
-   git branch -d bugs/task-name          # For bug fixes
+   # Delete local branch (use appropriate branch prefix based on task type)
+   git branch -d issue/task-name         # For issue fixes
    git branch -d feature/task-name       # For features
    ```
 

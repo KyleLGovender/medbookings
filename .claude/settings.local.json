@@ -36,7 +36,8 @@
       "Bash(mkdir:*)",
       "Bash(touch:*)",
       "Bash(npx jest:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "mcp__filesystem-server__create_directory"
     ],
     "deny": []
   },
