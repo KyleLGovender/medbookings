@@ -402,284 +402,286 @@ export function OrganizationCalendarView({
   return (
     <CalendarErrorBoundary>
       <div className="space-y-6">
-      {/* Organization Header */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="rounded-lg bg-blue-100 p-2">
-                <Users className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <CardTitle className="text-xl">{calendarData.organizationName}</CardTitle>
-                <p className="text-sm text-muted-foreground">Healthcare Provider Calendar</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-center md:grid-cols-3 md:gap-4 lg:grid-cols-5">
-              <div>
-                <div className="text-lg font-bold text-blue-600 md:text-2xl">
-                  {calendarData.stats.averageUtilization}%
+        {/* Organization Header */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="rounded-lg bg-blue-100 p-2">
+                  <Users className="h-6 w-6 text-blue-600" />
                 </div>
-                <div className="text-xs text-muted-foreground">Avg Utilization</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold text-green-600 md:text-2xl">
-                  {calendarData.stats.activeProviders}
+                <div>
+                  <CardTitle className="text-xl">{calendarData.organizationName}</CardTitle>
+                  <p className="text-sm text-muted-foreground">Healthcare Provider Calendar</p>
                 </div>
-                <div className="text-xs text-muted-foreground">Active Providers</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold text-orange-600 md:text-2xl">
-                  {calendarData.stats.totalPendingBookings}
-                </div>
-                <div className="text-xs text-muted-foreground">Pending</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold text-purple-600 md:text-2xl">
-                  {Math.round(calendarData.stats.totalBookedHours)}
-                </div>
-                <div className="text-xs text-muted-foreground">Booked Hours</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold text-red-600 md:text-2xl">
-                  {calendarData.stats.coverageGaps}
-                </div>
-                <div className="text-xs text-muted-foreground">Coverage Gaps</div>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* Controls and Filters */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <h2 className="min-w-[200px] text-center text-lg font-semibold">
-                  {getViewTitle()}
-                </h2>
-                <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
               </div>
 
-              <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
-                Today
-              </Button>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm">Utilization View</span>
-                <Switch checked={showUtilizationOnly} onCheckedChange={setShowUtilizationOnly} />
-              </div>
-
-              <Select
-                value={viewMode}
-                onValueChange={(value: CalendarViewMode) => setViewMode(value)}
-              >
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="day">Day</SelectItem>
-                  <SelectItem value="3-day">3-Day</SelectItem>
-                  <SelectItem value="week" className="hidden sm:block">
-                    Week
-                  </SelectItem>
-                  <SelectItem value="month" className="hidden sm:block">
-                    Month
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button variant="outline" size="sm">
-                <Filter className="mr-2 h-4 w-4" />
-                Filter
-              </Button>
-
-              {onCreateAvailability && (
-                <Button size="sm" onClick={() => onCreateAvailability()}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Availability
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          <div className="grid grid-cols-12 gap-4">
-            {/* Provider Sidebar */}
-            <div className="col-span-3 space-y-2">
-              <div className="mb-4 flex items-center justify-between">
-                <h4 className="text-sm font-medium">Providers ({displayedProviders.length})</h4>
-                <Button variant="ghost" size="sm" onClick={toggleAllProviders}>
-                  {selectedProviders.length === filteredProviders.length ? 'None' : 'All'}
-                </Button>
-              </div>
-
-              <div className="max-h-[600px] space-y-2 overflow-y-auto">
-                {filteredProviders.map((provider) => (
-                  <div
-                    key={provider.id}
-                    className={`flex cursor-pointer items-center space-x-3 rounded-lg border p-2 transition-colors ${
-                      selectedProviders.includes(provider.id)
-                        ? 'border-blue-200 bg-blue-50'
-                        : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
-                    } `}
-                    onClick={() => toggleProvider(provider.id)}
-                  >
-                    <Checkbox
-                      checked={selectedProviders.includes(provider.id)}
-                      onChange={() => {}}
-                    />
-
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="text-xs">
-                        {provider.name
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')}
-                      </AvatarFallback>
-                    </Avatar>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{provider.name}</div>
-                      <div className="truncate text-xs text-muted-foreground">{provider.type}</div>
-                      {showUtilizationOnly && (
-                        <div className="mt-1 flex items-center space-x-1">
-                          <div className="text-xs font-medium">
-                            {Math.round(provider.utilizationRate)}%
-                          </div>
-                          <div
-                            className={`rounded px-1 py-0.5 text-xs ${
-                              provider.utilizationRate > 80
-                                ? 'bg-green-100 text-green-700'
-                                : provider.utilizationRate > 60
-                                  ? 'bg-yellow-100 text-yellow-700'
-                                  : 'bg-red-100 text-red-700'
-                            } `}
-                          >
-                            {provider.utilizationRate > 80
-                              ? 'High'
-                              : provider.utilizationRate > 60
-                                ? 'Med'
-                                : 'Low'}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                          <MoreVertical className="h-3 w-3" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onProviderClick?.(provider)}>
-                          <Eye className="mr-2 h-3 w-3" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onManageProvider?.(provider)}>
-                          <Settings className="mr-2 h-3 w-3" />
-                          Manage
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onCreateAvailability?.(provider.id)}>
-                          <Plus className="mr-2 h-3 w-3" />
-                          Add Availability
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              <div className="grid grid-cols-2 gap-3 text-center md:grid-cols-3 md:gap-4 lg:grid-cols-5">
+                <div>
+                  <div className="text-lg font-bold text-blue-600 md:text-2xl">
+                    {calendarData.stats.averageUtilization}%
                   </div>
-                ))}
+                  <div className="text-xs text-muted-foreground">Avg Utilization</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-green-600 md:text-2xl">
+                    {calendarData.stats.activeProviders}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Active Providers</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-orange-600 md:text-2xl">
+                    {calendarData.stats.totalPendingBookings}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Pending</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-purple-600 md:text-2xl">
+                    {Math.round(calendarData.stats.totalBookedHours)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Booked Hours</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-red-600 md:text-2xl">
+                    {calendarData.stats.coverageGaps}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Coverage Gaps</div>
+                </div>
               </div>
             </div>
+          </CardHeader>
+        </Card>
 
-            {/* Calendar Grid */}
-            <div className="col-span-9">
-              {viewMode === 'week' && (
-                <OrganizationWeekView
-                  currentDate={currentDate}
-                  providers={displayedProviders}
-                  onEventClick={onEventClick}
-                  onTimeSlotClick={onTimeSlotClick}
-                  getEventStyle={getEventStyle}
-                  showUtilizationOnly={showUtilizationOnly}
-                />
-              )}
+        {/* Controls and Filters */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <h2 className="min-w-[200px] text-center text-lg font-semibold">
+                    {getViewTitle()}
+                  </h2>
+                  <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
 
-              {viewMode === 'day' && (
-                <OrganizationDayView
-                  currentDate={currentDate}
-                  providers={displayedProviders}
-                  onEventClick={onEventClick}
-                  onTimeSlotClick={onTimeSlotClick}
-                  getEventStyle={getEventStyle}
-                  showUtilizationOnly={showUtilizationOnly}
-                />
-              )}
+                <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
+                  Today
+                </Button>
+              </div>
 
-              {viewMode === '3-day' && (
-                <OrganizationWeekView
-                  currentDate={currentDate}
-                  providers={displayedProviders}
-                  onEventClick={onEventClick}
-                  onTimeSlotClick={onTimeSlotClick}
-                  getEventStyle={getEventStyle}
-                  showUtilizationOnly={showUtilizationOnly}
-                />
-              )}
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm">Utilization View</span>
+                  <Switch checked={showUtilizationOnly} onCheckedChange={setShowUtilizationOnly} />
+                </div>
 
-              {viewMode === 'month' && (
-                <OrganizationMonthView
-                  currentDate={currentDate}
-                  providers={displayedProviders}
-                  onEventClick={onEventClick}
-                  getEventStyle={getEventStyle}
-                />
-              )}
+                <Select
+                  value={viewMode}
+                  onValueChange={(value: CalendarViewMode) => setViewMode(value)}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="day">Day</SelectItem>
+                    <SelectItem value="3-day">3-Day</SelectItem>
+                    <SelectItem value="week" className="hidden sm:block">
+                      Week
+                    </SelectItem>
+                    <SelectItem value="month" className="hidden sm:block">
+                      Month
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button variant="outline" size="sm">
+                  <Filter className="mr-2 h-4 w-4" />
+                  Filter
+                </Button>
+
+                {onCreateAvailability && (
+                  <Button size="sm" onClick={() => onCreateAvailability()}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Availability
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardHeader>
 
-      {/* Legend */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Legend</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
-            <div className="flex items-center space-x-2">
-              <div className="h-4 w-4 rounded border border-green-300 bg-green-100"></div>
-              <span>Available</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="h-4 w-4 rounded border border-blue-300 bg-blue-100"></div>
-              <span>Booked</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="h-4 w-4 rounded border border-orange-300 bg-orange-100"></div>
-              <span>Pending</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="h-4 w-4 rounded border border-red-300 bg-red-100"></div>
-              <span>Blocked</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          <CardContent>
+            <div className="grid grid-cols-12 gap-4">
+              {/* Provider Sidebar */}
+              <div className="col-span-3 space-y-2">
+                <div className="mb-4 flex items-center justify-between">
+                  <h4 className="text-sm font-medium">Providers ({displayedProviders.length})</h4>
+                  <Button variant="ghost" size="sm" onClick={toggleAllProviders}>
+                    {selectedProviders.length === filteredProviders.length ? 'None' : 'All'}
+                  </Button>
+                </div>
 
-      {/* Coverage Gaps Analysis - Temporarily disabled to avoid server imports */}
-      {/* {showCoverageGaps && (
+                <div className="max-h-[600px] space-y-2 overflow-y-auto">
+                  {filteredProviders.map((provider) => (
+                    <div
+                      key={provider.id}
+                      className={`flex cursor-pointer items-center space-x-3 rounded-lg border p-2 transition-colors ${
+                        selectedProviders.includes(provider.id)
+                          ? 'border-blue-200 bg-blue-50'
+                          : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+                      } `}
+                      onClick={() => toggleProvider(provider.id)}
+                    >
+                      <Checkbox
+                        checked={selectedProviders.includes(provider.id)}
+                        onChange={() => {}}
+                      />
+
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="text-xs">
+                          {provider.name
+                            .split(' ')
+                            .map((n) => n[0])
+                            .join('')}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium">{provider.name}</div>
+                        <div className="truncate text-xs text-muted-foreground">
+                          {provider.type}
+                        </div>
+                        {showUtilizationOnly && (
+                          <div className="mt-1 flex items-center space-x-1">
+                            <div className="text-xs font-medium">
+                              {Math.round(provider.utilizationRate)}%
+                            </div>
+                            <div
+                              className={`rounded px-1 py-0.5 text-xs ${
+                                provider.utilizationRate > 80
+                                  ? 'bg-green-100 text-green-700'
+                                  : provider.utilizationRate > 60
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : 'bg-red-100 text-red-700'
+                              } `}
+                            >
+                              {provider.utilizationRate > 80
+                                ? 'High'
+                                : provider.utilizationRate > 60
+                                  ? 'Med'
+                                  : 'Low'}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            <MoreVertical className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => onProviderClick?.(provider)}>
+                            <Eye className="mr-2 h-3 w-3" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onManageProvider?.(provider)}>
+                            <Settings className="mr-2 h-3 w-3" />
+                            Manage
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onCreateAvailability?.(provider.id)}>
+                            <Plus className="mr-2 h-3 w-3" />
+                            Add Availability
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Calendar Grid */}
+              <div className="col-span-9">
+                {viewMode === 'week' && (
+                  <OrganizationWeekView
+                    currentDate={currentDate}
+                    providers={displayedProviders}
+                    onEventClick={onEventClick}
+                    onTimeSlotClick={onTimeSlotClick}
+                    getEventStyle={getEventStyle}
+                    showUtilizationOnly={showUtilizationOnly}
+                  />
+                )}
+
+                {viewMode === 'day' && (
+                  <OrganizationDayView
+                    currentDate={currentDate}
+                    providers={displayedProviders}
+                    onEventClick={onEventClick}
+                    onTimeSlotClick={onTimeSlotClick}
+                    getEventStyle={getEventStyle}
+                    showUtilizationOnly={showUtilizationOnly}
+                  />
+                )}
+
+                {viewMode === '3-day' && (
+                  <OrganizationWeekView
+                    currentDate={currentDate}
+                    providers={displayedProviders}
+                    onEventClick={onEventClick}
+                    onTimeSlotClick={onTimeSlotClick}
+                    getEventStyle={getEventStyle}
+                    showUtilizationOnly={showUtilizationOnly}
+                  />
+                )}
+
+                {viewMode === 'month' && (
+                  <OrganizationMonthView
+                    currentDate={currentDate}
+                    providers={displayedProviders}
+                    onEventClick={onEventClick}
+                    getEventStyle={getEventStyle}
+                  />
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Legend */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Legend</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
+              <div className="flex items-center space-x-2">
+                <div className="h-4 w-4 rounded border border-green-300 bg-green-100"></div>
+                <span>Available</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="h-4 w-4 rounded border border-blue-300 bg-blue-100"></div>
+                <span>Booked</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="h-4 w-4 rounded border border-orange-300 bg-orange-100"></div>
+                <span>Pending</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="h-4 w-4 rounded border border-red-300 bg-red-100"></div>
+                <span>Blocked</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Coverage Gaps Analysis - Temporarily disabled to avoid server imports */}
+        {/* {showCoverageGaps && (
         <CoverageGapsPanel
           providers={displayedProviders}
           startDate={(() => {

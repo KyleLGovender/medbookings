@@ -3,17 +3,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
+  type ApiError,
+  apiRequest,
+  logApiError,
+  shouldRetry,
+} from '@/features/calendar/lib/api-error-handler';
+import {
   AvailabilitySearchParams,
   AvailabilityWithRelations,
   CreateAvailabilityData,
   UpdateAvailabilityData,
 } from '@/features/calendar/types/types';
-import { 
-  apiRequest, 
-  shouldRetry, 
-  logApiError,
-  type ApiError 
-} from '@/features/calendar/lib/api-error-handler';
 
 // =============================================================================
 // QUERY KEY FACTORY
@@ -26,18 +26,16 @@ import {
 export const availabilityKeys = {
   all: ['availability'] as const,
   lists: () => [...availabilityKeys.all, 'list'] as const,
-  list: (filters: Partial<AvailabilitySearchParams>) => 
+  list: (filters: Partial<AvailabilitySearchParams>) =>
     [...availabilityKeys.lists(), filters] as const,
   details: () => [...availabilityKeys.all, 'detail'] as const,
   detail: (id: string) => [...availabilityKeys.details(), id] as const,
-  search: (params: AvailabilitySearchParams) => 
+  search: (params: AvailabilitySearchParams) =>
     [...availabilityKeys.all, 'search', params] as const,
-  provider: (providerId: string) => 
-    [...availabilityKeys.all, 'provider', providerId] as const,
-  organization: (organizationId: string) => 
+  provider: (providerId: string) => [...availabilityKeys.all, 'provider', providerId] as const,
+  organization: (organizationId: string) =>
     [...availabilityKeys.all, 'organization', organizationId] as const,
-  series: (seriesId: string) => 
-    [...availabilityKeys.all, 'series', seriesId] as const,
+  series: (seriesId: string) => [...availabilityKeys.all, 'series', seriesId] as const,
 } as const;
 
 // =============================================================================
@@ -112,10 +110,10 @@ export function useAvailabilitySearch(params: AvailabilitySearchParams) {
       return apiRequest(
         `/api/calendar/availability?${searchParams.toString()}`,
         { method: 'GET' },
-        { 
-          operation: 'search availability', 
+        {
+          operation: 'search availability',
           providerId: params.providerId,
-          organizationId: params.organizationId 
+          organizationId: params.organizationId,
         }
       );
     },
@@ -296,14 +294,19 @@ export function useUpdateAvailability(options?: {
       });
 
       // Snapshot the previous value
-      const previousAvailability = queryClient.getQueryData(availabilityKeys.detail(variables.id)) as AvailabilityWithRelations | null;
+      const previousAvailability = queryClient.getQueryData(
+        availabilityKeys.detail(variables.id)
+      ) as AvailabilityWithRelations | null;
 
       // Optimistically update the specific availability
       if (previousAvailability) {
-        queryClient.setQueryData(availabilityKeys.detail(variables.id), (old: AvailabilityWithRelations | undefined) => ({
-          ...old,
-          ...variables,
-        }));
+        queryClient.setQueryData(
+          availabilityKeys.detail(variables.id),
+          (old: AvailabilityWithRelations | undefined) => ({
+            ...old,
+            ...variables,
+          })
+        );
       }
 
       return { previousAvailability, availabilityId: variables.id };
@@ -314,10 +317,12 @@ export function useUpdateAvailability(options?: {
 
       // Invalidate related queries using patterns
       queryClient.invalidateQueries({ queryKey: availabilityKeys.lists() });
-      queryClient.invalidateQueries({ 
-        predicate: (query) => 
-          query.queryKey[0] === 'availability' && 
-          (query.queryKey[1] === 'search' || query.queryKey[1] === 'provider' || query.queryKey[1] === 'organization')
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === 'availability' &&
+          (query.queryKey[1] === 'search' ||
+            query.queryKey[1] === 'provider' ||
+            query.queryKey[1] === 'organization'),
       });
 
       if (data.seriesId) {
@@ -336,7 +341,6 @@ export function useUpdateAvailability(options?: {
           context.previousAvailability
         );
       }
-
     },
   });
 }
@@ -440,15 +444,20 @@ export function useAcceptAvailabilityProposal(options?: {
       });
 
       // Snapshot the previous value
-      const previousAvailability = queryClient.getQueryData(availabilityKeys.detail(variables.id)) as AvailabilityWithRelations | null;
+      const previousAvailability = queryClient.getQueryData(
+        availabilityKeys.detail(variables.id)
+      ) as AvailabilityWithRelations | null;
 
       // Optimistically update status
       if (previousAvailability) {
-        queryClient.setQueryData(availabilityKeys.detail(variables.id), (old: AvailabilityWithRelations | undefined) => ({
-          ...old,
-          status: 'ACCEPTED' as const,
-          acceptedAt: new Date(),
-        }));
+        queryClient.setQueryData(
+          availabilityKeys.detail(variables.id),
+          (old: AvailabilityWithRelations | undefined) => ({
+            ...old,
+            status: 'ACCEPTED' as const,
+            acceptedAt: new Date(),
+          })
+        );
       }
 
       return { previousAvailability, availabilityId: variables.id };
@@ -458,10 +467,10 @@ export function useAcceptAvailabilityProposal(options?: {
       queryClient.setQueryData(availabilityKeys.detail(variables.id), data);
 
       // Invalidate provider and organization availability lists using patterns
-      queryClient.invalidateQueries({ 
-        predicate: (query) => 
-          query.queryKey[0] === 'availability' && 
-          ['provider', 'organization', 'search'].includes(query.queryKey[1] as string)
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === 'availability' &&
+          ['provider', 'organization', 'search'].includes(query.queryKey[1] as string),
       });
 
       options?.onSuccess?.(data, variables);
@@ -474,7 +483,6 @@ export function useAcceptAvailabilityProposal(options?: {
           context.previousAvailability
         );
       }
-
     },
   });
 }
@@ -506,24 +514,29 @@ export function useRejectAvailabilityProposal(options?: {
       });
 
       // Snapshot the previous value
-      const previousAvailability = queryClient.getQueryData(availabilityKeys.detail(variables.id)) as AvailabilityWithRelations | null;
+      const previousAvailability = queryClient.getQueryData(
+        availabilityKeys.detail(variables.id)
+      ) as AvailabilityWithRelations | null;
 
       // Optimistically update status
       if (previousAvailability) {
-        queryClient.setQueryData(availabilityKeys.detail(variables.id), (old: AvailabilityWithRelations | undefined) => ({
-          ...old,
-          status: 'REJECTED' as const,
-        }));
+        queryClient.setQueryData(
+          availabilityKeys.detail(variables.id),
+          (old: AvailabilityWithRelations | undefined) => ({
+            ...old,
+            status: 'REJECTED' as const,
+          })
+        );
       }
 
       return { previousAvailability, availabilityId: variables.id };
     },
     onSuccess: (_, variables) => {
       // Invalidate provider and organization availability lists using patterns
-      queryClient.invalidateQueries({ 
-        predicate: (query) => 
-          query.queryKey[0] === 'availability' && 
-          ['provider', 'organization', 'search'].includes(query.queryKey[1] as string)
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === 'availability' &&
+          ['provider', 'organization', 'search'].includes(query.queryKey[1] as string),
       });
 
       options?.onSuccess?.(variables);
@@ -536,7 +549,6 @@ export function useRejectAvailabilityProposal(options?: {
           context.previousAvailability
         );
       }
-
     },
   });
 }

@@ -1,10 +1,10 @@
 /**
  * @fileoverview Standardized API error handling for calendar operations
- * 
+ *
  * This module provides consistent error handling patterns across all calendar
  * API calls, including proper error classification, retry strategies, and
  * user-friendly error messages.
- * 
+ *
  * @author MedBookings Development Team
  */
 
@@ -46,33 +46,33 @@ const ERROR_MESSAGES = {
   // Authentication & Authorization
   '401': 'Please log in to access calendar data',
   '403': 'You do not have permission to perform this action',
-  
+
   // Not Found
   '404': 'The requested calendar data was not found',
-  
+
   // Client Errors
   '400': 'Invalid request. Please check your input and try again',
   '409': 'This action conflicts with existing data',
   '422': 'The provided data is invalid',
-  
+
   // Server Errors
   '500': 'Server error. Please try again later',
   '502': 'Service temporarily unavailable',
   '503': 'Service temporarily unavailable',
   '504': 'Request timeout. Please try again',
-  
+
   // Network Errors
-  'NETWORK_ERROR': 'Network connection error. Please check your internet connection',
-  'TIMEOUT': 'Request timeout. Please try again',
-  
+  NETWORK_ERROR: 'Network connection error. Please check your internet connection',
+  TIMEOUT: 'Request timeout. Please try again',
+
   // Calendar-specific errors
-  'AVAILABILITY_CONFLICT': 'This availability conflicts with existing schedule',
-  'BOOKING_FULL': 'This time slot is no longer available',
-  'INVALID_TIME_RANGE': 'Invalid time range specified',
-  'RECURRING_SERIES_ERROR': 'Error processing recurring availability series',
-  
+  AVAILABILITY_CONFLICT: 'This availability conflicts with existing schedule',
+  BOOKING_FULL: 'This time slot is no longer available',
+  INVALID_TIME_RANGE: 'Invalid time range specified',
+  RECURRING_SERIES_ERROR: 'Error processing recurring availability series',
+
   // Default fallback
-  'UNKNOWN': 'An unexpected error occurred. Please try again',
+  UNKNOWN: 'An unexpected error occurred. Please try again',
 } as const;
 
 // =============================================================================
@@ -81,13 +81,13 @@ const ERROR_MESSAGES = {
 
 /**
  * Creates a standardized API error with proper classification
- * 
+ *
  * @param response - Fetch response object
  * @param context - Error context information
  * @returns Standardized ApiError
  */
 export async function createApiError(
-  response: Response | null, 
+  response: Response | null,
   context: ErrorContext
 ): Promise<ApiError> {
   let status = 0;
@@ -107,7 +107,7 @@ export async function createApiError(
   }
 
   status = response.status;
-  
+
   // Try to parse error response
   try {
     errorData = await response.json();
@@ -119,16 +119,14 @@ export async function createApiError(
 
   // Determine if error is retryable
   const retryable = isRetryableError(status, code);
-  
+
   // Get user-friendly message
   const userMessage = getUserMessage(code, status, context);
-  
+
   // Create detailed error message for developers
   const developerMessage = `API Error: ${context.operation} failed - ${code} (${status})${
     context.resourceId ? ` for resource ${context.resourceId}` : ''
-  }${
-    context.providerId ? ` (provider: ${context.providerId})` : ''
-  }${
+  }${context.providerId ? ` (provider: ${context.providerId})` : ''}${
     context.organizationId ? ` (organization: ${context.organizationId})` : ''
   }`;
 
@@ -144,7 +142,7 @@ export async function createApiError(
 
 /**
  * Determines if an error should be retried
- * 
+ *
  * @param status - HTTP status code
  * @param code - Error code
  * @returns True if the error is retryable
@@ -154,29 +152,29 @@ function isRetryableError(status: number, code: string): boolean {
   if (status === 0 || code === 'NETWORK_ERROR' || code === 'TIMEOUT') {
     return true;
   }
-  
+
   // Server errors (5xx) are generally retryable
   if (status >= ERROR_RANGES.SERVER_ERROR.min && status <= ERROR_RANGES.SERVER_ERROR.max) {
     return true;
   }
-  
+
   // Specific retryable server errors
   if (['502', '503', '504'].includes(code)) {
     return true;
   }
-  
+
   // Client errors (4xx) are generally not retryable
   if (status >= ERROR_RANGES.CLIENT_ERROR.min && status <= ERROR_RANGES.CLIENT_ERROR.max) {
     return false;
   }
-  
+
   // Default to not retryable for unknown errors
   return false;
 }
 
 /**
  * Gets user-friendly error message
- * 
+ *
  * @param code - Error code
  * @param status - HTTP status code
  * @param context - Error context
@@ -187,22 +185,22 @@ function getUserMessage(code: string, status: number, context: ErrorContext): st
   if (code in ERROR_MESSAGES) {
     return ERROR_MESSAGES[code as keyof typeof ERROR_MESSAGES];
   }
-  
+
   // Check for HTTP status codes
   const statusString = status.toString();
   if (statusString in ERROR_MESSAGES) {
     return ERROR_MESSAGES[statusString as keyof typeof ERROR_MESSAGES];
   }
-  
+
   // Context-specific messages
   if (context.operation.includes('create') && status === 409) {
     return 'This availability conflicts with existing schedule';
   }
-  
+
   if (context.operation.includes('book') && status === 409) {
     return 'This time slot is no longer available';
   }
-  
+
   // Default fallback
   return ERROR_MESSAGES.UNKNOWN;
 }
@@ -223,7 +221,7 @@ export const RETRY_CONFIG = {
 
 /**
  * Calculates delay for exponential backoff
- * 
+ *
  * @param attempt - Current attempt number (0-based)
  * @returns Delay in milliseconds
  */
@@ -234,7 +232,7 @@ export function calculateRetryDelay(attempt: number): number {
 
 /**
  * Retry function for TanStack Query
- * 
+ *
  * @param failureCount - Number of failed attempts
  * @param error - The error that occurred
  * @returns True if should retry, false otherwise
@@ -244,12 +242,12 @@ export function shouldRetry(failureCount: number, error: unknown): boolean {
   if (failureCount >= RETRY_CONFIG.maxAttempts) {
     return false;
   }
-  
+
   // If it's our ApiError type, use the retryable flag
   if (error && typeof error === 'object' && 'retryable' in error) {
     return (error as ApiError).retryable;
   }
-  
+
   // For other errors, be conservative and don't retry
   return false;
 }
@@ -260,7 +258,7 @@ export function shouldRetry(failureCount: number, error: unknown): boolean {
 
 /**
  * Enhanced fetch wrapper with standardized error handling
- * 
+ *
  * @param url - Request URL
  * @param options - Fetch options
  * @param context - Error context
@@ -272,7 +270,7 @@ export async function apiRequest<T = any>(
   context: ErrorContext
 ): Promise<T> {
   let response: Response | null = null;
-  
+
   try {
     response = await fetch(url, {
       headers: {
@@ -281,18 +279,18 @@ export async function apiRequest<T = any>(
       },
       ...options,
     });
-    
+
     if (!response.ok) {
       throw await createApiError(response, context);
     }
-    
+
     return await response.json();
   } catch (error) {
     // If it's already our ApiError, re-throw it
     if (error && typeof error === 'object' && 'code' in error) {
       throw error;
     }
-    
+
     // Handle network errors or JSON parsing errors
     throw await createApiError(null, context);
   }
@@ -304,7 +302,7 @@ export async function apiRequest<T = any>(
 
 /**
  * Logs API errors for monitoring and debugging
- * 
+ *
  * @param error - The error to log
  * @param context - Additional context
  */
@@ -319,7 +317,7 @@ export function logApiError(error: ApiError, context?: Record<string, any>): voi
       context,
     });
   }
-  
+
   // In production, you would send to your error monitoring service
   // Example: Sentry, LogRocket, Datadog, etc.
   // errorMonitoringService.captureError(error, context);
@@ -331,7 +329,7 @@ export function logApiError(error: ApiError, context?: Record<string, any>): voi
 
 /**
  * Determines if an error should break the error boundary
- * 
+ *
  * @param error - The error to check
  * @returns True if error should be caught by error boundary
  */
@@ -340,12 +338,12 @@ export function shouldCatchInErrorBoundary(error: unknown): boolean {
   if (error && typeof error === 'object' && 'code' in error) {
     return true;
   }
-  
+
   // Catch network errors
   if (error instanceof TypeError && error.message.includes('fetch')) {
     return true;
   }
-  
+
   // Don't catch programming errors (let them bubble up)
   return false;
 }

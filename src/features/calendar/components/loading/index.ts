@@ -1,1 +1,5 @@
-export { CalendarSkeleton, CalendarSkeletonCompact, CalendarEventListSkeleton } from './calendar-skeleton';
+export {
+  CalendarSkeleton,
+  CalendarSkeletonCompact,
+  CalendarEventListSkeleton,
+} from './calendar-skeleton';

@@ -486,7 +486,9 @@ export class SlotCleanupService {
 
           notifiedCount++;
         } catch (error) {
-          throw new Error(`Failed to notify customer: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          throw new Error(
+            `Failed to notify customer: ${error instanceof Error ? error.message : 'Unknown error'}`
+          );
         }
       }
     }

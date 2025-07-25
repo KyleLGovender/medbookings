@@ -1,9 +1,9 @@
 /**
  * @fileoverview Performance monitoring for calendar operations
- * 
+ *
  * This module provides performance monitoring capabilities for calendar
  * operations, including rendering times, data processing, and user interactions.
- * 
+ *
  * @author MedBookings Development Team
  */
 
@@ -42,14 +42,14 @@ class PerformanceTracker {
 
   constructor() {
     // Enable performance monitoring in development and with feature flag
-    this.isEnabled = 
-      process.env.NODE_ENV === 'development' || 
+    this.isEnabled =
+      process.env.NODE_ENV === 'development' ||
       process.env.NEXT_PUBLIC_ENABLE_PERFORMANCE_MONITORING === 'true';
   }
 
   /**
    * Starts timing a performance metric
-   * 
+   *
    * @param name - Unique name for the metric
    * @param metadata - Additional metadata to store
    */
@@ -72,7 +72,7 @@ class PerformanceTracker {
 
   /**
    * Stops timing a performance metric and calculates duration
-   * 
+   *
    * @param name - Name of the metric to stop
    * @returns The completed metric or null if not found
    */
@@ -96,7 +96,10 @@ class PerformanceTracker {
 
     // Log slow operations in development
     if (process.env.NODE_ENV === 'development' && metric.duration > 100) {
-      console.warn(`Slow calendar operation detected: ${name} took ${metric.duration.toFixed(2)}ms`, metric.metadata);
+      console.warn(
+        `Slow calendar operation detected: ${name} took ${metric.duration.toFixed(2)}ms`,
+        metric.metadata
+      );
     }
 
     return metric;
@@ -104,7 +107,7 @@ class PerformanceTracker {
 
   /**
    * Gets a completed metric by name
-   * 
+   *
    * @param name - Name of the metric
    * @returns The metric or null if not found
    */
@@ -114,7 +117,7 @@ class PerformanceTracker {
 
   /**
    * Gets all completed metrics
-   * 
+   *
    * @returns Array of all metrics
    */
   getAllMetrics(): PerformanceMetric[] {
@@ -130,7 +133,7 @@ class PerformanceTracker {
 
   /**
    * Records a calendar performance snapshot
-   * 
+   *
    * @param data - Calendar performance data
    */
   recordCalendarPerformance(data: CalendarPerformanceData): void {
@@ -165,7 +168,7 @@ export const performanceTracker = new PerformanceTracker();
 
 /**
  * Times a function execution and returns both result and duration
- * 
+ *
  * @param name - Name for the performance metric
  * @param fn - Function to time
  * @param metadata - Additional metadata
@@ -177,11 +180,11 @@ export async function timeFunction<T>(
   metadata?: Record<string, any>
 ): Promise<{ result: T; duration: number }> {
   performanceTracker.start(name, metadata);
-  
+
   try {
     const result = await fn();
     const metric = performanceTracker.end(name);
-    
+
     return {
       result,
       duration: metric?.duration || 0,
@@ -194,16 +197,13 @@ export async function timeFunction<T>(
 
 /**
  * React hook for measuring component render performance
- * 
+ *
  * @param componentName - Name of the component
  * @param dependencies - Dependencies that trigger re-measurement
  */
-export function usePerformanceMonitor(
-  componentName: string,
-  dependencies: any[] = []
-): void {
+export function usePerformanceMonitor(componentName: string, dependencies: any[] = []): void {
   const React = require('react');
-  
+
   React.useEffect(() => {
     const metricName = `${componentName}-render`;
     performanceTracker.start(metricName, {
@@ -219,7 +219,7 @@ export function usePerformanceMonitor(
 
 /**
  * Decorator for timing class methods
- * 
+ *
  * @param metricName - Name for the performance metric
  */
 export function timed(metricName?: string) {
@@ -254,7 +254,7 @@ export function timed(metricName?: string) {
 
 /**
  * Measures calendar data processing performance
- * 
+ *
  * @param eventCount - Number of events being processed
  * @param viewMode - Current view mode
  * @param processingFn - Function that processes the data
@@ -265,16 +265,12 @@ export async function measureCalendarDataProcessing<T>(
   viewMode: string,
   processingFn: () => T | Promise<T>
 ): Promise<{ result: T; duration: number }> {
-  return timeFunction(
-    'calendar-data-processing',
-    processingFn,
-    { eventCount, viewMode }
-  );
+  return timeFunction('calendar-data-processing', processingFn, { eventCount, viewMode });
 }
 
 /**
  * Measures calendar rendering performance
- * 
+ *
  * @param eventCount - Number of events being rendered
  * @param viewMode - Current view mode
  * @param renderFn - Function that performs the rendering
@@ -285,16 +281,12 @@ export async function measureCalendarRendering<T>(
   viewMode: string,
   renderFn: () => T | Promise<T>
 ): Promise<{ result: T; duration: number }> {
-  return timeFunction(
-    'calendar-rendering',
-    renderFn,
-    { eventCount, viewMode }
-  );
+  return timeFunction('calendar-rendering', renderFn, { eventCount, viewMode });
 }
 
 /**
  * Records overall calendar performance after a complete render cycle
- * 
+ *
  * @param eventCount - Number of events rendered
  * @param viewMode - Current view mode
  * @param dateRange - Date range being displayed
@@ -337,7 +329,7 @@ export const PERFORMANCE_THRESHOLDS = {
 
 /**
  * Checks if performance metrics exceed warning thresholds
- * 
+ *
  * @param renderTime - Render time in milliseconds
  * @param dataProcessingTime - Data processing time in milliseconds
  * @returns Performance warnings if any
@@ -350,21 +342,33 @@ export function checkPerformanceThresholds(
   const totalTime = renderTime + dataProcessingTime;
 
   if (renderTime > PERFORMANCE_THRESHOLDS.RENDER_TIME_ERROR) {
-    warnings.push(`Critical: Calendar rendering took ${renderTime.toFixed(2)}ms (threshold: ${PERFORMANCE_THRESHOLDS.RENDER_TIME_ERROR}ms)`);
+    warnings.push(
+      `Critical: Calendar rendering took ${renderTime.toFixed(2)}ms (threshold: ${PERFORMANCE_THRESHOLDS.RENDER_TIME_ERROR}ms)`
+    );
   } else if (renderTime > PERFORMANCE_THRESHOLDS.RENDER_TIME_WARNING) {
-    warnings.push(`Warning: Calendar rendering took ${renderTime.toFixed(2)}ms (threshold: ${PERFORMANCE_THRESHOLDS.RENDER_TIME_WARNING}ms)`);
+    warnings.push(
+      `Warning: Calendar rendering took ${renderTime.toFixed(2)}ms (threshold: ${PERFORMANCE_THRESHOLDS.RENDER_TIME_WARNING}ms)`
+    );
   }
 
   if (dataProcessingTime > PERFORMANCE_THRESHOLDS.DATA_PROCESSING_ERROR) {
-    warnings.push(`Critical: Data processing took ${dataProcessingTime.toFixed(2)}ms (threshold: ${PERFORMANCE_THRESHOLDS.DATA_PROCESSING_ERROR}ms)`);
+    warnings.push(
+      `Critical: Data processing took ${dataProcessingTime.toFixed(2)}ms (threshold: ${PERFORMANCE_THRESHOLDS.DATA_PROCESSING_ERROR}ms)`
+    );
   } else if (dataProcessingTime > PERFORMANCE_THRESHOLDS.DATA_PROCESSING_WARNING) {
-    warnings.push(`Warning: Data processing took ${dataProcessingTime.toFixed(2)}ms (threshold: ${PERFORMANCE_THRESHOLDS.DATA_PROCESSING_WARNING}ms)`);
+    warnings.push(
+      `Warning: Data processing took ${dataProcessingTime.toFixed(2)}ms (threshold: ${PERFORMANCE_THRESHOLDS.DATA_PROCESSING_WARNING}ms)`
+    );
   }
 
   if (totalTime > PERFORMANCE_THRESHOLDS.TOTAL_CYCLE_ERROR) {
-    warnings.push(`Critical: Total calendar cycle took ${totalTime.toFixed(2)}ms (threshold: ${PERFORMANCE_THRESHOLDS.TOTAL_CYCLE_ERROR}ms)`);
+    warnings.push(
+      `Critical: Total calendar cycle took ${totalTime.toFixed(2)}ms (threshold: ${PERFORMANCE_THRESHOLDS.TOTAL_CYCLE_ERROR}ms)`
+    );
   } else if (totalTime > PERFORMANCE_THRESHOLDS.TOTAL_CYCLE_WARNING) {
-    warnings.push(`Warning: Total calendar cycle took ${totalTime.toFixed(2)}ms (threshold: ${PERFORMANCE_THRESHOLDS.TOTAL_CYCLE_WARNING}ms)`);
+    warnings.push(
+      `Warning: Total calendar cycle took ${totalTime.toFixed(2)}ms (threshold: ${PERFORMANCE_THRESHOLDS.TOTAL_CYCLE_WARNING}ms)`
+    );
   }
 
   return warnings;

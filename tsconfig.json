@@ -13,7 +13,6 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "types": ["jest"],
     "plugins": [
       {
         "name": "next"
@@ -31,7 +30,6 @@
     ".next/types/**/*.ts",
     "next.config.mjs",
     "prisma/**/*.mts",
-    "scripts/**/*.js"
   ],
   "exclude": ["node_modules"]
 }

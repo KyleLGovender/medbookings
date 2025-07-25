@@ -1,13 +1,14 @@
 'use client';
 
 import { useMemo } from 'react';
+
 import { useQuery } from '@tanstack/react-query';
 
-import { useProvider } from '@/features/providers/hooks/use-provider';
-import { 
-  useAvailabilitySearch,
+import {
   availabilityKeys,
+  useAvailabilitySearch,
 } from '@/features/calendar/hooks/use-availability';
+import { calculateDateRange } from '@/features/calendar/lib/calendar-utils';
 import {
   AvailabilityStatus,
   AvailabilityWithRelations,
@@ -16,7 +17,7 @@ import {
   CalendarViewMode,
   SchedulingRule,
 } from '@/features/calendar/types/types';
-import { calculateDateRange } from '@/features/calendar/lib/calendar-utils';
+import { useProvider } from '@/features/providers/hooks/use-provider';
 
 // =============================================================================
 // TYPES
@@ -62,7 +63,7 @@ enum BookingStatus {
  * Standardized hook for fetching and transforming calendar data.
  * Provides consistent caching, error handling, and data transformation
  * for all calendar components.
- * 
+ *
  * @param params - Calendar data parameters
  * @returns Calendar data with loading and error states
  */
@@ -75,17 +76,17 @@ export function useCalendarData(params: CalendarDataParams) {
   }, [currentDate, viewMode]);
 
   // Fetch provider data with standardized caching
-  const { 
-    data: provider, 
+  const {
+    data: provider,
     isLoading: isProviderLoading,
-    error: providerError 
+    error: providerError,
   } = useProvider(providerId);
 
   // Fetch availability data with standardized caching
-  const { 
-    data: availabilityData, 
+  const {
+    data: availabilityData,
     isLoading: isAvailabilityLoading,
-    error: availabilityError 
+    error: availabilityError,
   } = useAvailabilitySearch({
     providerId,
     startDate: dateRange.start,
@@ -218,8 +219,8 @@ export function useCalendarData(params: CalendarDataParams) {
   // Memoize filtered events for performance
   const filteredEvents = useMemo(() => {
     if (!calendarData?.events) return [];
-    
-    return calendarData.events.filter(event => {
+
+    return calendarData.events.filter((event) => {
       const eventDate = new Date(event.startTime);
       return eventDate >= dateRange.start && eventDate <= dateRange.end;
     });
@@ -254,9 +255,9 @@ export function useInvalidateCalendarData() {
       queryClient.invalidateQueries({ queryKey: availabilityKeys.provider(providerId) });
     },
     invalidateSearch: () => {
-      queryClient.invalidateQueries({ 
-        predicate: (query: any) => 
-          query.queryKey[0] === 'availability' && query.queryKey[1] === 'search'
+      queryClient.invalidateQueries({
+        predicate: (query: any) =>
+          query.queryKey[0] === 'availability' && query.queryKey[1] === 'search',
       });
     },
   };

@@ -1,11 +1,11 @@
 import { Repeat } from 'lucide-react';
 
-import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
-import { 
-  getEventsForDay, 
-  getWorkingTimeRange, 
-  calculateEventGridPosition 
+import {
+  calculateEventGridPosition,
+  getEventsForDay,
+  getWorkingTimeRange,
 } from '@/features/calendar/lib/calendar-utils';
+import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
 
 import { WeekViewProps } from './types';
 

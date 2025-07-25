@@ -37,7 +37,7 @@ export function CalendarError({
 
   const getErrorTitle = () => {
     if (title) return title;
-    
+
     switch (type) {
       case 'network':
         return 'Connection Error';
@@ -52,7 +52,7 @@ export function CalendarError({
 
   const getErrorDescription = () => {
     if (description) return description;
-    
+
     switch (type) {
       case 'network':
         return 'Unable to connect to the server. Please check your internet connection and try again.';
@@ -65,11 +65,8 @@ export function CalendarError({
     }
   };
 
-  const errorMessage = typeof error === 'string' 
-    ? error 
-    : error instanceof Error 
-    ? error.message 
-    : null;
+  const errorMessage =
+    typeof error === 'string' ? error : error instanceof Error ? error.message : null;
 
   return (
     <Card className="mx-auto max-w-lg">
@@ -80,10 +77,8 @@ export function CalendarError({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-muted-foreground">
-          {getErrorDescription()}
-        </p>
-        
+        <p className="text-muted-foreground">{getErrorDescription()}</p>
+
         {errorMessage && (
           <div className="rounded border border-destructive/20 bg-destructive/5 p-3">
             <p className="text-sm text-destructive">{errorMessage}</p>
@@ -97,11 +92,7 @@ export function CalendarError({
               Try Again
             </Button>
             {type === 'network' && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => window.location.reload()}
-              >
+              <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
                 <Wifi className="mr-2 h-4 w-4" />
                 Reload Page
               </Button>
@@ -121,14 +112,17 @@ export function CalendarErrorInline({
   onRetry,
   className = '',
 }: Pick<CalendarErrorProps, 'error' | 'onRetry'> & { className?: string }) {
-  const errorMessage = typeof error === 'string' 
-    ? error 
-    : error instanceof Error 
-    ? error.message 
-    : 'An error occurred';
+  const errorMessage =
+    typeof error === 'string'
+      ? error
+      : error instanceof Error
+        ? error.message
+        : 'An error occurred';
 
   return (
-    <div className={`flex items-center gap-3 rounded border border-destructive/20 bg-destructive/5 p-3 ${className}`}>
+    <div
+      className={`flex items-center gap-3 rounded border border-destructive/20 bg-destructive/5 p-3 ${className}`}
+    >
       <AlertTriangle className="h-4 w-4 text-destructive" />
       <span className="flex-1 text-sm text-destructive">{errorMessage}</span>
       {onRetry && (

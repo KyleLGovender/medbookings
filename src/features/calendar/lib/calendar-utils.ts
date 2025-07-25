@@ -1,18 +1,17 @@
 /**
  * @fileoverview Shared utility functions for calendar components
- * 
+ *
  * This module contains reusable utility functions for:
  * - Event positioning and layout calculations
  * - Event styling and visual appearance
  * - Time calculations and date manipulations
  * - Calendar grid calculations
- * 
+ *
  * These utilities are used across all calendar view components to ensure
  * consistent behavior and reduce code duplication.
- * 
+ *
  * @author MedBookings Development Team
  */
-
 import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
 
 // =============================================================================
@@ -22,7 +21,7 @@ import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/typ
 /**
  * Calculates the appropriate CSS classes for styling a calendar event
  * based on its type, status, and properties.
- * 
+ *
  * @param event - The calendar event to style
  * @returns CSS class string for styling the event
  */
@@ -92,12 +91,12 @@ export interface EventPosition {
  */
 export interface TimeRange {
   start: number; // Start hour (24-hour format)
-  end: number;   // End hour (24-hour format)
+  end: number; // End hour (24-hour format)
 }
 
 /**
  * Calculates the grid position for an event in a time-based calendar view
- * 
+ *
  * @param event - The calendar event to position
  * @param timeRange - The visible time range for the calendar
  * @returns Grid positioning information for CSS Grid
@@ -120,19 +119,19 @@ export function calculateEventPosition(event: CalendarEvent, timeRange: TimeRang
 
 /**
  * Calculates the grid position for an event in a multi-day calendar view
- * 
+ *
  * @param event - The calendar event to position
  * @param timeRange - The visible time range for the calendar
  * @param dayIndex - The day index (0-based) for multi-day views
  * @returns Grid positioning information for CSS Grid with column positioning
  */
 export function calculateEventGridPosition(
-  event: CalendarEvent, 
-  timeRange: TimeRange, 
+  event: CalendarEvent,
+  timeRange: TimeRange,
   dayIndex: number
 ): EventPosition {
   const basePosition = calculateEventPosition(event, timeRange);
-  
+
   return {
     ...basePosition,
     gridColumn: `${dayIndex + 1}`,
@@ -145,7 +144,7 @@ export function calculateEventGridPosition(
 
 /**
  * Gets the working time range for a calendar view
- * 
+ *
  * @param workingHours - Working hours configuration
  * @returns TimeRange object with start and end hours
  */
@@ -161,16 +160,19 @@ export function getWorkingTimeRange(workingHours: { start: string; end: string }
 
 /**
  * Filters events to only include those within the working hours range
- * 
+ *
  * @param events - Array of calendar events to filter
  * @param timeRange - The time range to filter by
  * @returns Filtered array of events within the time range
  */
-export function getEventsInTimeRange(events: CalendarEvent[], timeRange: TimeRange): CalendarEvent[] {
+export function getEventsInTimeRange(
+  events: CalendarEvent[],
+  timeRange: TimeRange
+): CalendarEvent[] {
   return events.filter((event) => {
     const startHour = new Date(event.startTime).getHours();
     const endHour = new Date(event.endTime).getHours();
-    
+
     // Event overlaps with time range if:
     // - Event starts before range ends AND
     // - Event ends after range starts
@@ -180,7 +182,7 @@ export function getEventsInTimeRange(events: CalendarEvent[], timeRange: TimeRan
 
 /**
  * Checks if an event is happening during a specific hour
- * 
+ *
  * @param event - The calendar event to check
  * @param hour - The hour to check (24-hour format)
  * @returns True if the event is active during the specified hour
@@ -188,7 +190,7 @@ export function getEventsInTimeRange(events: CalendarEvent[], timeRange: TimeRan
 export function isEventActiveAtHour(event: CalendarEvent, hour: number): boolean {
   const eventDate = new Date(event.startTime);
   const eventEndTime = new Date(event.endTime);
-  
+
   return eventDate.getHours() <= hour && eventEndTime.getHours() > hour;
 }
 
@@ -198,7 +200,7 @@ export function isEventActiveAtHour(event: CalendarEvent, hour: number): boolean
 
 /**
  * Sets a date to the start of the day (00:00:00.000)
- * 
+ *
  * @param date - The date to modify
  * @returns New date set to start of day
  */
@@ -210,7 +212,7 @@ export function setToStartOfDay(date: Date): Date {
 
 /**
  * Sets a date to the end of the day (23:59:59.999)
- * 
+ *
  * @param date - The date to modify
  * @returns New date set to end of day
  */
@@ -222,13 +224,13 @@ export function setToEndOfDay(date: Date): Date {
 
 /**
  * Calculates the date range for different calendar view modes
- * 
+ *
  * @param currentDate - The current selected date
  * @param viewMode - The calendar view mode
  * @returns Object with start and end dates for the view
  */
 export function calculateDateRange(
-  currentDate: Date, 
+  currentDate: Date,
   viewMode: 'day' | '3-day' | 'week' | 'month'
 ): { start: Date; end: Date } {
   const start = new Date(currentDate);
@@ -240,13 +242,13 @@ export function calculateDateRange(
         start: setToStartOfDay(start),
         end: setToEndOfDay(end),
       };
-      
+
     case '3-day':
       start.setHours(0, 0, 0, 0);
       end.setDate(start.getDate() + 2);
       end.setHours(23, 59, 59, 999);
       break;
-      
+
     case 'week':
       // Monday as first day (1 = Monday, 0 = Sunday)
       const dayOfWeek = currentDate.getDay();
@@ -256,7 +258,7 @@ export function calculateDateRange(
       end.setDate(start.getDate() + 6);
       end.setHours(23, 59, 59, 999);
       break;
-      
+
     case 'month':
       start.setDate(1);
       start.setHours(0, 0, 0, 0);
@@ -271,15 +273,13 @@ export function calculateDateRange(
 
 /**
  * Gets the events for a specific day
- * 
+ *
  * @param events - Array of calendar events
  * @param date - The date to get events for
  * @returns Array of events occurring on the specified date
  */
 export function getEventsForDay(events: CalendarEvent[], date: Date): CalendarEvent[] {
-  return events.filter(
-    (event) => new Date(event.startTime).toDateString() === date.toDateString()
-  );
+  return events.filter((event) => new Date(event.startTime).toDateString() === date.toDateString());
 }
 
 // =============================================================================
@@ -288,7 +288,7 @@ export function getEventsForDay(events: CalendarEvent[], date: Date): CalendarEv
 
 /**
  * Navigates to the next or previous period based on view mode
- * 
+ *
  * @param currentDate - The current selected date
  * @param direction - Navigation direction ('prev' or 'next')
  * @param viewMode - The calendar view mode
@@ -307,10 +307,10 @@ export function navigateCalendarDate(
       newDate.setDate(newDate.getDate() + increment);
       break;
     case '3-day':
-      newDate.setDate(newDate.getDate() + (increment * 3));
+      newDate.setDate(newDate.getDate() + increment * 3);
       break;
     case 'week':
-      newDate.setDate(newDate.getDate() + (increment * 7));
+      newDate.setDate(newDate.getDate() + increment * 7);
       break;
     case 'month':
       newDate.setMonth(newDate.getMonth() + increment);
@@ -322,7 +322,7 @@ export function navigateCalendarDate(
 
 /**
  * Gets the title string for a calendar view
- * 
+ *
  * @param currentDate - The current selected date
  * @param viewMode - The calendar view mode
  * @returns Formatted title string for the view
@@ -340,7 +340,7 @@ export function getCalendarViewTitle(
         month: 'long',
         day: 'numeric',
       });
-      
+
     case 'week':
       const startOfWeek = new Date(currentDate);
       const dayOfWeek = currentDate.getDay();
@@ -349,7 +349,7 @@ export function getCalendarViewTitle(
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(startOfWeek.getDate() + 6);
       return `${startOfWeek.toLocaleDateString([], { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}`;
-      
+
     case 'month':
       return currentDate.toLocaleDateString([], { year: 'numeric', month: 'long' });
   }
