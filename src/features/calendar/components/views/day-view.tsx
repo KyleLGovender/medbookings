@@ -1,6 +1,7 @@
 import { Repeat } from 'lucide-react';
 
 import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
+import { getEventsForDay, getWorkingTimeRange, calculateEventPosition } from '@/features/calendar/lib/calendar-utils';
 
 import { DayViewProps } from './types';
 
@@ -14,12 +15,7 @@ export function DayView({
   onDateClick,
   getEventStyle,
 }: DayViewProps) {
-  const dayEvents = events.filter((event) => {
-    const eventDate = new Date(event.startTime);
-    const currentDateString = currentDate.toDateString();
-    const eventDateString = eventDate.toDateString();
-    return eventDateString === currentDateString;
-  });
+  const dayEvents = getEventsForDay(events, currentDate);
 
   // Calculate display time range based on events
   const getDisplayTimeRange = () => {
@@ -47,7 +43,7 @@ export function DayView({
     (_, i) => timeRange.start + i
   );
 
-  const calculateEventPosition = (event: CalendarEvent) => {
+  const calculateEventPositionForDay = (event: CalendarEvent) => {
     const startTime = new Date(event.startTime);
     const endTime = new Date(event.endTime);
 
@@ -111,7 +107,7 @@ export function DayView({
                 style={{ gridTemplateRows: `repeat(${hours.length * 2}, minmax(0, 1fr))` }}
               >
                 {dayEvents.map((event) => {
-                  const { gridRow } = calculateEventPosition(event);
+                  const { gridRow } = calculateEventPositionForDay(event);
                   return (
                     <li key={event.id} className="relative mt-px flex" style={{ gridRow }}>
                       <a

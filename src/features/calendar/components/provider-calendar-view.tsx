@@ -30,6 +30,12 @@ import {
   CalendarViewMode,
   SchedulingRule,
 } from '@/features/calendar/types/types';
+import { 
+  getEventStyle, 
+  calculateDateRange, 
+  navigateCalendarDate, 
+  getCalendarViewTitle 
+} from '@/features/calendar/lib/calendar-utils';
 import { useProvider } from '@/features/providers/hooks/use-provider';
 
 // Client-safe enum (matches Prisma BookingStatus)
@@ -179,44 +185,9 @@ export function ProviderCalendarView({
   // Fetch real data from API
   const { data: provider, isLoading: isProviderLoading } = useProvider(providerId);
 
-  // Calculate date range for current view
+  // Calculate date range for current view using shared utility
   const dateRange = useMemo(() => {
-    const start = new Date(currentDate);
-    const end = new Date(currentDate);
-
-    switch (viewMode) {
-      case 'day':
-        // Set start to beginning of day
-        start.setHours(0, 0, 0, 0);
-        // Set end to end of day
-        end.setHours(23, 59, 59, 999);
-        break;
-      case '3-day':
-        // Set start to beginning of current day
-        start.setHours(0, 0, 0, 0);
-        // Set end to end of day + 2 days
-        end.setDate(start.getDate() + 2);
-        end.setHours(23, 59, 59, 999);
-        break;
-      case 'week':
-        // Monday as first day (1 = Monday, 0 = Sunday)
-        const dayOfWeek = currentDate.getDay();
-        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-        start.setDate(currentDate.getDate() - daysFromMonday);
-        start.setHours(0, 0, 0, 0);
-        end.setDate(start.getDate() + 6);
-        end.setHours(23, 59, 59, 999);
-        break;
-      case 'month':
-        start.setDate(1);
-        start.setHours(0, 0, 0, 0);
-        end.setMonth(start.getMonth() + 1);
-        end.setDate(0);
-        end.setHours(23, 59, 59, 999);
-        break;
-    }
-
-    return { start, end };
+    return calculateDateRange(currentDate, viewMode);
   }, [currentDate, viewMode]);
 
   const { data: availabilityData, isLoading: isAvailabilityLoading } = useAvailabilitySearch({
@@ -350,23 +321,7 @@ export function ProviderCalendarView({
   }, [provider, availabilityData, providerId]);
 
   const navigateDate = (direction: 'prev' | 'next') => {
-    const newDate = new Date(currentDate);
-
-    switch (viewMode) {
-      case 'day':
-        newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
-        break;
-      case '3-day':
-        newDate.setDate(newDate.getDate() + (direction === 'next' ? 3 : -3));
-        break;
-      case 'week':
-        newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
-        break;
-      case 'month':
-        newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
-        break;
-    }
-
+    const newDate = navigateCalendarDate(currentDate, direction, viewMode);
     setCurrentDate(newDate);
   };
 
@@ -377,80 +332,12 @@ export function ProviderCalendarView({
   };
 
   const getViewTitle = (): string => {
-    switch (viewMode) {
-      case 'day':
-        return currentDate.toLocaleDateString([], {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        });
-      case '3-day':
-        return currentDate.toLocaleDateString([], {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        });
-      case 'week':
-        const startOfWeek = new Date(currentDate);
-        const dayOfWeek = currentDate.getDay();
-        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-        startOfWeek.setDate(currentDate.getDate() - daysFromMonday);
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        return `${startOfWeek.toLocaleDateString([], { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}`;
-      case 'month':
-        return currentDate.toLocaleDateString([], { year: 'numeric', month: 'long' });
-    }
+    return getCalendarViewTitle(currentDate, viewMode);
   };
 
-  const getEventStyle = (event: CalendarEvent): string => {
-    // Base style for recurring events with left border indicator
-    const recurringBorder = event.isRecurring ? 'border-l-4 border-l-blue-600' : '';
-
-    switch (event.type) {
-      case 'availability':
-        // Provider-created availabilities (green tones)
-        if (event.isProviderCreated) {
-          switch (event.status) {
-            case AvailabilityStatus.ACCEPTED:
-              return `bg-green-100 border-green-400 text-green-800 ${recurringBorder}`;
-            case AvailabilityStatus.CANCELLED:
-              return `bg-green-50 border-green-300 text-green-600 ${recurringBorder}`;
-            default:
-              return `bg-green-100 border-green-400 text-green-800 ${recurringBorder}`;
-          }
-        }
-        // Organization-created availabilities (blue/yellow tones)
-        else {
-          switch (event.status) {
-            case AvailabilityStatus.PENDING:
-              return `bg-yellow-100 border-yellow-400 text-yellow-800 ${recurringBorder}`;
-            case AvailabilityStatus.ACCEPTED:
-              return `bg-blue-100 border-blue-400 text-blue-800 ${recurringBorder}`;
-            case AvailabilityStatus.REJECTED:
-              return `bg-red-100 border-red-400 text-red-800 ${recurringBorder}`;
-            case AvailabilityStatus.CANCELLED:
-              return `bg-gray-100 border-gray-400 text-gray-800 ${recurringBorder}`;
-            default:
-              return `bg-blue-100 border-blue-400 text-blue-800 ${recurringBorder}`;
-          }
-        }
-      case 'booking':
-        switch (event.status) {
-          case 'BOOKED':
-            return `bg-purple-100 border-purple-300 text-purple-800 ${recurringBorder}`;
-          case 'PENDING':
-            return `bg-orange-100 border-orange-300 text-orange-800 ${recurringBorder}`;
-          default:
-            return `bg-purple-100 border-purple-300 text-purple-800 ${recurringBorder}`;
-        }
-      case 'blocked':
-        return `bg-red-100 border-red-300 text-red-800 ${recurringBorder}`;
-      default:
-        return `bg-gray-100 border-gray-300 text-gray-800 ${recurringBorder}`;
-    }
+  // Use shared event styling utility
+  const getEventStyleLocal = (event: CalendarEvent): string => {
+    return getEventStyle(event);
   };
 
   if (isLoading) {
@@ -602,7 +489,7 @@ export function ProviderCalendarView({
               workingHours={calendarData.workingHours}
               onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
-              getEventStyle={getEventStyle}
+              getEventStyle={getEventStyleLocal}
             />
           )}
           {viewMode === '3-day' && (
@@ -612,7 +499,7 @@ export function ProviderCalendarView({
               workingHours={calendarData.workingHours}
               onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
-              getEventStyle={getEventStyle}
+              getEventStyle={getEventStyleLocal}
             />
           )}
           {viewMode === 'week' && (
@@ -623,7 +510,7 @@ export function ProviderCalendarView({
               onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
               onDateClick={handleDateClick}
-              getEventStyle={getEventStyle}
+              getEventStyle={getEventStyleLocal}
             />
           )}
           {viewMode === 'month' && (
@@ -633,7 +520,7 @@ export function ProviderCalendarView({
               onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onDateClick={handleDateClick}
               onEditEvent={onEditEvent}
-              getEventStyle={getEventStyle}
+              getEventStyle={getEventStyleLocal}
             />
           )}
         </CardContent>

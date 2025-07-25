@@ -4,7 +4,8 @@
 
 
 ## 📋 Ready for Development (Prioritized)
-- [ ] Implement testing throughout the application
+- [ ] Implement testing throughout the application. https://github.com/microsoft/playwright-mcp 
+- [ ] https://github.com/Jpisnice/shadcn-ui-mcp-server
 - [ ] Implement user roles system (guest, user, provider, organization manager, admin)
 
 ## 🔥 High Priority Issues & Tasks
