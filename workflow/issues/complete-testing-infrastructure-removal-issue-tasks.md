@@ -18,7 +18,7 @@
 ## Tasks
 
 - [ ] 1.0 Remove All Test Files and Scripts
-  - [ ] 1.1 Delete all 7 unit test files from `src/lib/utils/` and `src/features/calendar/lib/`
+  - [x] 1.1 Delete all 7 unit test files from `src/lib/utils/` and `src/features/calendar/lib/`
   - [ ] 1.2 Delete all 5 component test files from `src/features/auth/components/`, `src/components/layout/`, and `src/features/calendar/components/`
   - [ ] 1.3 Delete 2 API test files from `src/app/api/subscriptions/`
   - [ ] 1.4 Delete middleware test file `src/middleware.test.ts`
