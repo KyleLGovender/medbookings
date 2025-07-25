@@ -64,17 +64,17 @@ This document addresses comprehensive cleanup of provider calendar components to
   - [x] 3.9 Update all calendar components to use consistent error handling
   - [x] 3.10 Verify TypeScript compilation without warnings or 'any' types
 
-- [ ] 4.0 🔵 **MEDIUM**: Code Deduplication and Shared Utilities
-  - [ ] 4.1 Audit all calendar components for repeated code patterns
-  - [ ] 4.2 Create calendar-utils.ts with shared utility functions
-  - [ ] 4.3 Extract calculateTimeSlots function for time calculation logic
-  - [ ] 4.4 Extract getEventPosition function for event positioning logic
-  - [ ] 4.5 Extract getEventStyles function for event styling logic
-  - [ ] 4.6 Create utility functions for date manipulation and formatting
-  - [ ] 4.7 Update all calendar components to use shared utilities
-  - [ ] 4.8 Remove duplicate code from individual components
-  - [ ] 4.9 Test that shared utilities work correctly in all contexts
-  - [ ] 4.10 Verify no functionality regressions after deduplication
+- [x] 4.0 🔵 **MEDIUM**: Code Deduplication and Shared Utilities ✅ COMPLETED
+  - [x] 4.1 Audit all calendar components for repeated code patterns
+  - [x] 4.2 Create calendar-utils.ts with shared utility functions
+  - [x] 4.3 Extract calculateTimeSlots function for time calculation logic
+  - [x] 4.4 Extract getEventPosition function for event positioning logic
+  - [x] 4.5 Extract getEventStyles function for event styling logic
+  - [x] 4.6 Create utility functions for date manipulation and formatting
+  - [x] 4.7 Update all calendar components to use shared utilities
+  - [x] 4.8 Remove duplicate code from individual components
+  - [x] 4.9 Test that shared utilities work correctly in all contexts
+  - [x] 4.10 Verify no functionality regressions after deduplication
 
 - [ ] 5.0 🔵 **MEDIUM**: API Patterns and Performance Optimization
   - [ ] 5.1 Standardize TanStack Query usage patterns across calendar hooks
@@ -228,11 +228,11 @@ Duplicate time calculation, event positioning, and styling logic across calendar
 - Event positioning works correctly in all view modes
 
 #### Acceptance Criteria
-- [ ] Duplicate code identified and extracted
-- [ ] Shared utility functions created
-- [ ] Components updated to use shared utilities
-- [ ] Consistent time and date calculations
-- [ ] Centralized event positioning and styling
+- [x] Duplicate code identified and extracted
+- [x] Shared utility functions created
+- [x] Components updated to use shared utilities
+- [x] Consistent time and date calculations
+- [x] Centralized event positioning and styling
 
 ---
 

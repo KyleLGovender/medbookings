@@ -1,6 +1,11 @@
 import { Repeat } from 'lucide-react';
 
 import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
+import { 
+  getEventsForDay, 
+  getWorkingTimeRange, 
+  calculateEventGridPosition 
+} from '@/features/calendar/lib/calendar-utils';
 
 import { WeekViewProps } from './types';
 
@@ -54,13 +59,10 @@ export function WeekView({
   const workingEndHour = parseInt(workingHours.end.split(':')[0]);
 
   const getEventsForDate = (date: Date) => {
-    return events.filter((event) => {
-      const eventDate = new Date(event.startTime);
-      return eventDate.toDateString() === date.toDateString();
-    });
+    return getEventsForDay(events, date);
   };
 
-  const calculateEventGridPosition = (event: CalendarEvent) => {
+  const calculateEventGridPositionLocal = (event: CalendarEvent) => {
     const startTime = new Date(event.startTime);
     const endTime = new Date(event.endTime);
 
@@ -151,7 +153,7 @@ export function WeekView({
                     style={{ gridTemplateRows: `repeat(${hours.length * 2}, minmax(0, 1fr))` }}
                   >
                     {getEventsForDate(day).map((event) => {
-                      const { gridRow } = calculateEventGridPosition(event);
+                      const { gridRow } = calculateEventGridPositionLocal(event);
                       return (
                         <li key={event.id} className="relative mt-px flex" style={{ gridRow }}>
                           <a

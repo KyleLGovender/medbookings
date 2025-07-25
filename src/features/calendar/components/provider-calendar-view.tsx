@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Repeat } from 'lucide-react';
 
@@ -21,46 +21,18 @@ import { ThreeDayView } from '@/features/calendar/components/views/three-day-vie
 import { WeekView } from '@/features/calendar/components/views/week-view';
 import { CalendarErrorBoundary } from '@/features/calendar/components/error-boundary';
 import { CalendarSkeleton } from '@/features/calendar/components/loading';
-import { useAvailabilitySearch } from '@/features/calendar/hooks/use-availability';
+import { useCalendarData } from '@/features/calendar/hooks/use-calendar-data';
 import {
   AvailabilityStatus,
-  AvailabilityWithRelations,
-  CalculatedAvailabilitySlotWithRelations,
   CalendarEvent,
   CalendarViewMode,
-  SchedulingRule,
 } from '@/features/calendar/types/types';
 import { 
   getEventStyle, 
-  calculateDateRange, 
   navigateCalendarDate, 
   getCalendarViewTitle 
 } from '@/features/calendar/lib/calendar-utils';
-import { useProvider } from '@/features/providers/hooks/use-provider';
 
-// Client-safe enum (matches Prisma BookingStatus)
-enum BookingStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED',
-  COMPLETED = 'COMPLETED',
-  NO_SHOW = 'NO_SHOW',
-}
-
-interface ProviderCalendarData {
-  providerId: string;
-  providerName: string;
-  providerType: string;
-  workingHours: { start: string; end: string };
-  events: CalendarEvent[];
-  stats: {
-    totalAvailabilityHours: number;
-    bookedHours: number;
-    utilizationRate: number;
-    pendingBookings: number;
-    completedBookings: number;
-  };
-}
 
 export interface ProviderCalendarViewProps {
   providerId: string;
@@ -110,8 +82,8 @@ export function ProviderCalendarView({
 
   // Modal state (context menu removed - modal now handled by parent)
 
-  // Calculate total hours for a day
-  const calculateDayHours = (events: CalendarEvent[]) => {
+  // Calculate total hours for a day with memoization
+  const calculateDayHours = useCallback((events: CalendarEvent[]) => {
     const availabilityEvents = events.filter((event) => event.type === 'availability');
     if (availabilityEvents.length === 0) return 0;
 
@@ -145,10 +117,10 @@ export function ProviderCalendarView({
       const duration = (event.endTime.getTime() - event.startTime.getTime()) / (1000 * 60 * 60);
       return total + duration;
     }, 0);
-  };
+  }, []);
 
-  // Get status breakdown for a day
-  const getStatusBreakdown = (events: CalendarEvent[]) => {
+  // Get status breakdown for a day with memoization
+  const getStatusBreakdown = useCallback((events: CalendarEvent[]) => {
     const availabilityEvents = events.filter((event) => event.type === 'availability');
     const breakdown = {
       [AvailabilityStatus.PENDING]: 0,
@@ -162,10 +134,10 @@ export function ProviderCalendarView({
     });
 
     return breakdown;
-  };
+  }, []);
 
-  // Get styling based on status mix
-  const getHoursSummaryStyle = (events: CalendarEvent[]) => {
+  // Get styling based on status mix with memoization
+  const getHoursSummaryStyle = useCallback((events: CalendarEvent[]) => {
     const breakdown = getStatusBreakdown(events);
     const total = Object.values(breakdown).reduce((sum, count) => sum + count, 0);
 
@@ -180,26 +152,22 @@ export function ProviderCalendarView({
     if (rejectedRatio > 0.3) return 'text-red-600 bg-red-50';
 
     return 'text-blue-600 bg-blue-50';
-  };
+  }, [getStatusBreakdown]);
 
-  // Fetch real data from API
-  const { data: provider, isLoading: isProviderLoading } = useProvider(providerId);
-
-  // Calculate date range for current view using shared utility
-  const dateRange = useMemo(() => {
-    return calculateDateRange(currentDate, viewMode);
-  }, [currentDate, viewMode]);
-
-  const { data: availabilityData, isLoading: isAvailabilityLoading } = useAvailabilitySearch({
-    providerId: providerId,
-    startDate: dateRange.start,
-    endDate: dateRange.end,
-    ...(statusFilter !== 'ALL' && { status: statusFilter }),
+  // Use standardized calendar data hook with optimized caching and memoization
+  const { 
+    data: calendarData, 
+    filteredEvents, 
+    isLoading, 
+    error: calendarError 
+  } = useCalendarData({
+    providerId,
+    currentDate,
+    viewMode,
+    statusFilter,
   });
 
-  const isLoading = isProviderLoading || isAvailabilityLoading;
-
-  // Transform availability data into calendar events
+  // Transform availability data into calendar events with optimized memoization
   const calendarData: ProviderCalendarData | null = useMemo(() => {
     if (!provider || !availabilityData) return null;
 
@@ -320,25 +288,40 @@ export function ProviderCalendarView({
     };
   }, [provider, availabilityData, providerId]);
 
-  const navigateDate = (direction: 'prev' | 'next') => {
+  // Memoize date range calculation for better performance
+  const memoizedDateRange = useMemo(() => {
+    return calculateDateRange(currentDate, viewMode);
+  }, [currentDate, viewMode]);
+
+  // Memoize event filtering for current view
+  const filteredEvents = useMemo(() => {
+    if (!calendarData?.events) return [];
+    
+    return calendarData.events.filter(event => {
+      const eventDate = new Date(event.startTime);
+      return eventDate >= memoizedDateRange.start && eventDate <= memoizedDateRange.end;
+    });
+  }, [calendarData?.events, memoizedDateRange]);
+
+  const navigateDate = useCallback((direction: 'prev' | 'next') => {
     const newDate = navigateCalendarDate(currentDate, direction, viewMode);
     setCurrentDate(newDate);
-  };
+  }, [currentDate, viewMode]);
 
-  const handleDateClick = (date: Date) => {
+  const handleDateClick = useCallback((date: Date) => {
     setCurrentDate(date);
     setViewMode('day');
     onDateClick?.(date);
-  };
+  }, [onDateClick]);
 
-  const getViewTitle = (): string => {
+  const getViewTitle = useCallback((): string => {
     return getCalendarViewTitle(currentDate, viewMode);
-  };
+  }, [currentDate, viewMode]);
 
-  // Use shared event styling utility
-  const getEventStyleLocal = (event: CalendarEvent): string => {
+  // Use shared event styling utility with memoization
+  const getEventStyleLocal = useCallback((event: CalendarEvent): string => {
     return getEventStyle(event);
-  };
+  }, []);
 
   if (isLoading) {
     return <CalendarSkeleton />;
@@ -485,7 +468,7 @@ export function ProviderCalendarView({
           {viewMode === 'day' && (
             <DayView
               currentDate={currentDate}
-              events={calendarData.events}
+              events={filteredEvents}
               workingHours={calendarData.workingHours}
               onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
@@ -495,7 +478,7 @@ export function ProviderCalendarView({
           {viewMode === '3-day' && (
             <ThreeDayView
               currentDate={currentDate}
-              events={calendarData.events}
+              events={filteredEvents}
               workingHours={calendarData.workingHours}
               onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
@@ -505,7 +488,7 @@ export function ProviderCalendarView({
           {viewMode === 'week' && (
             <WeekView
               currentDate={currentDate}
-              events={calendarData.events}
+              events={filteredEvents}
               workingHours={calendarData.workingHours}
               onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onTimeSlotClick={onTimeSlotClick}
@@ -516,7 +499,7 @@ export function ProviderCalendarView({
           {viewMode === 'month' && (
             <MonthView
               currentDate={currentDate}
-              events={calendarData.events}
+              events={filteredEvents}
               onEventClick={(event, clickEvent) => onEventClick?.(event, clickEvent || {} as React.MouseEvent)}
               onDateClick={handleDateClick}
               onEditEvent={onEditEvent}

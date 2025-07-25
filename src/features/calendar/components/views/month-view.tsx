@@ -1,6 +1,7 @@
 import { Repeat } from 'lucide-react';
 
 import { AvailabilityStatus } from '@/features/calendar/types/types';
+import { getEventsForDay } from '@/features/calendar/lib/calendar-utils';
 
 import { MonthViewProps } from './types';
 
@@ -26,10 +27,8 @@ export function MonthView({
     return day;
   });
 
-  const getEventsForDay = (date: Date) => {
-    return events.filter(
-      (event) => new Date(event.startTime).toDateString() === date.toDateString()
-    );
+  const getEventsForDayLocal = (date: Date) => {
+    return getEventsForDay(events, date);
   };
 
   return (
@@ -47,7 +46,7 @@ export function MonthView({
         {/* Calendar days with Tailwind calendar styling */}
         <div className="grid grid-cols-7 gap-px bg-gray-200 text-sm">
           {days.map((day, index) => {
-            const dayEvents = getEventsForDay(day);
+            const dayEvents = getEventsForDayLocal(day);
             const isCurrentMonth = day.getMonth() === currentDate.getMonth();
             const isToday = day.toDateString() === new Date().toDateString();
             const isSelected = day.toDateString() === currentDate.toDateString();

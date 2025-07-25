@@ -5,7 +5,9 @@
 
 ## 📋 Ready for Development (Prioritized)
 - [ ] Implement testing throughout the application. https://github.com/microsoft/playwright-mcp 
-- [ ] https://github.com/Jpisnice/shadcn-ui-mcp-server
+- [ ] Context 7 documentation
+- [ ] Git worktrees
+- [ ] Claude Code Plan Upgrade
 - [ ] Implement user roles system (guest, user, provider, organization manager, admin)
 
 ## 🔥 High Priority Issues & Tasks

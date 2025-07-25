@@ -3,6 +3,7 @@
 import { Repeat } from 'lucide-react';
 
 import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
+import { getEventsForDay } from '@/features/calendar/lib/calendar-utils';
 
 import { ThreeDayViewProps } from './types';
 
@@ -56,10 +57,7 @@ export function ThreeDayView({
 
   // Filter events for a specific day
   const getEventsForDate = (date: Date) => {
-    return events.filter((event) => {
-      const eventDate = new Date(event.startTime);
-      return eventDate.toDateString() === date.toDateString();
-    });
+    return getEventsForDay(events, date);
   };
 
   // Calculate event position in grid
