@@ -41,12 +41,12 @@
   - [x] 3.4 Update provider profile display components to use custom pricing/duration
   - [x] 3.5 Modify API endpoints to return ServiceAvailabilityConfig data with proper fallbacks
 
-- [ ] 4.0 Fix Edit Services Page to Handle Missing Configurations
-  - [ ] 4.1 Update useProviderTypeServices hook to handle missing ServiceAvailabilityConfig records
-  - [ ] 4.2 Implement logic to create default ServiceAvailabilityConfig records when they don't exist
-  - [ ] 4.3 Fix form initialization in edit-services.tsx to work with both existing and missing configs
-  - [ ] 4.4 Update useUpdateProviderServices hook to create/update ServiceAvailabilityConfig records
-  - [ ] 4.5 Ensure proper error handling and loading states for the edit services page
+- [x] 4.0 Fix Edit Services Page to Handle Missing Configurations
+  - [x] 4.1 Update useProviderTypeServices hook to handle missing ServiceAvailabilityConfig records
+  - [x] 4.2 Implement logic to create default ServiceAvailabilityConfig records when they don't exist
+  - [x] 4.3 Fix form initialization in edit-services.tsx to work with both existing and missing configs
+  - [x] 4.4 Update useUpdateProviderServices hook to create/update ServiceAvailabilityConfig records
+  - [x] 4.5 Ensure proper error handling and loading states for the edit services page
 
 - [ ] 5.0 Create Data Migration for Existing Providers
   - [ ] 5.1 Write SQL script to identify providers missing ServiceAvailabilityConfig records
