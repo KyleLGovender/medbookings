@@ -6,7 +6,7 @@ const authFile = 'e2e/.auth/user.json';
 // Simple session mocking - no OAuth complexity
 async function setupSessionMocking(page: any, userInfo: any) {
   // Mock the session API - this is what the app checks for authentication
-  await page.route('**/api/auth/session', async (route) => {
+  await page.route('**/api/auth/session', async (route: any) => {
     const json = {
       user: userInfo,
       expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
@@ -19,7 +19,7 @@ async function setupSessionMocking(page: any, userInfo: any) {
   });
 
   // Mock CSRF token (sometimes needed)
-  await page.route('**/api/auth/csrf', async (route) => {
+  await page.route('**/api/auth/csrf', async (route: any) => {
     await route.fulfill({
       status: 200,
       headers: { 'Content-Type': 'application/json' },

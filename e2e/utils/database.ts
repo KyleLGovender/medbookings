@@ -208,7 +208,6 @@ export async function createTestOrganization(ownerId: string, status: 'PENDING_A
     data: {
       name: 'Test Medical Clinic',
       description: 'A test medical clinic',
-      phoneNumber: '+1234567890',
       email: 'clinic@test.com',
       website: 'https://test-clinic.com',
       status,

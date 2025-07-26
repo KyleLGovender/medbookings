@@ -176,6 +176,7 @@
 ### Availability Management
 - [ ] Design provider calendar view
 - [ ] Enable provider to create and edit availability
+    - [ ] Implement ability to select which provider it is and sync with URL params
     - [ ] Day, 3 Day, Week and Monthly Views
     - [ ] Well defined availability creation form
     - [ ] Availability Edit form
