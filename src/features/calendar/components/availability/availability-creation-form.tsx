@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Organization } from '@prisma/client';
 import { Calendar, Clock, MapPin, Repeat } from 'lucide-react';
-import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,8 +51,6 @@ import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-u
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
 
-// Using centralized OrganizationLocation type instead of local interface
-
 interface AvailabilityCreationFormProps {
   providerId: string;
   organizationId?: string;
@@ -90,9 +88,6 @@ export function AvailabilityCreationForm({
 }: AvailabilityCreationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customRecurrenceModalOpen, setCustomRecurrenceModalOpen] = useState(false);
-  const [currentRecurrenceOption, setCurrentRecurrenceOption] = useState<RecurrenceOption>(
-    RecurrenceOption.NONE
-  );
   const [customRecurrenceData, setCustomRecurrenceData] = useState<
     CustomRecurrenceData | undefined
   >();
@@ -118,7 +113,7 @@ export function AvailabilityCreationForm({
   } = useProviderAssociatedServices(selectedProviderId);
 
   // Fetch organization locations
-  const organizationIds = userOrganizations.map((org: Organization) => org.id);
+  const organizationIds = userOrganizations.map((org) => org.id);
   const { data: availableLocations = [], isLoading: isLocationsLoading } =
     useOrganizationLocations(organizationIds);
 
@@ -154,8 +149,6 @@ export function AvailabilityCreationForm({
     },
   });
 
-  const watchIsRecurring = form.watch('isRecurring');
-  const watchSchedulingRule = form.watch('schedulingRule');
   const watchIsOnlineAvailable = form.watch('isOnlineAvailable');
   const watchLocationId = form.watch('locationId');
 
@@ -165,7 +158,7 @@ export function AvailabilityCreationForm({
     return (
       availableLocations
         .filter((loc) => loc.id)
-        .find((loc: OrganizationLocation) => loc.id === watchLocationId) || null
+        .find((loc) => loc.id === watchLocationId) || null
     );
   }, [watchLocationId, availableLocations]);
 
@@ -261,12 +254,9 @@ export function AvailabilityCreationForm({
                         </SelectItem>
                       )}
                       {selectedCreatorType === 'organization' && userOrganizations.length > 0 && (
-                        <>
-                          {/* Organization providers will be loaded via organization provider connections */}
-                          <SelectItem value={selectedProviderId || ''} disabled>
-                            Organization providers not yet implemented
-                          </SelectItem>
-                        </>
+                        <SelectItem value="" disabled>
+                          Select an organization first to see providers
+                        </SelectItem>
                       )}
                     </SelectContent>
                   </Select>
@@ -370,7 +360,6 @@ export function AvailabilityCreationForm({
                       <Select
                         onValueChange={(value) => {
                           const option = value as RecurrenceOption;
-                          setCurrentRecurrenceOption(option);
 
                           if (option === RecurrenceOption.CUSTOM) {
                             setCustomRecurrenceModalOpen(true);
@@ -524,7 +513,7 @@ export function AvailabilityCreationForm({
                         <SelectContent>
                           {availableLocations
                             .filter((location) => location.id)
-                            .map((location: OrganizationLocation) => (
+                            .map((location) => (
                               <SelectItem key={location.id} value={location.id!}>
                                 {location.name}
                               </SelectItem>
