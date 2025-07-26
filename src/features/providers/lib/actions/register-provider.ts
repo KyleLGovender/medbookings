@@ -63,6 +63,38 @@ export async function registerProvider(prevState: any, formData: FormData) {
       };
     }
 
+    // Validate that all provider types exist
+    const existingProviderTypes = await prisma.providerType.findMany({
+      where: { id: { in: providerTypeIds } },
+      select: { id: true }
+    });
+    
+    if (existingProviderTypes.length !== providerTypeIds.length) {
+      const foundTypeIds = existingProviderTypes.map(t => t.id);
+      const missingTypes = providerTypeIds.filter(id => !foundTypeIds.includes(id));
+      return {
+        success: false,
+        error: `Provider types not found: ${missingTypes.join(', ')}`,
+      };
+    }
+
+    // Validate that all services exist
+    if (services.length > 0) {
+      const existingServices = await prisma.service.findMany({
+        where: { id: { in: services } },
+        select: { id: true }
+      });
+      
+      if (existingServices.length !== services.length) {
+        const foundServiceIds = existingServices.map(s => s.id);
+        const missingServices = services.filter(id => !foundServiceIds.includes(id));
+        return {
+          success: false,
+          error: `Services not found: ${missingServices.join(', ')}`,
+        };
+      }
+    }
+
     // Process requirements first if any were submitted
     const requirementSubmissions: {
       requirementTypeId: string;

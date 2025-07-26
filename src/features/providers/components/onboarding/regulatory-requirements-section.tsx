@@ -50,6 +50,7 @@ export function RegulatoryRequirementsSection({
       validationType: req.validationType as RequirementValidationType,
       isRequired: req.isRequired,
       validationConfig: req.validationConfig,
+      displayPriority: req.displayPriority,
       index: idx,
     }));
 
@@ -98,7 +99,9 @@ export function RegulatoryRequirementsSection({
       </div>
 
       <div className="space-y-4">
-        {transformedRequirements.map((requirement, index) => (
+        {transformedRequirements
+          .sort((a, b) => (a.displayPriority ?? 999) - (b.displayPriority ?? 999))
+          .map((requirement, index) => (
           <Card key={requirement.id}>
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">

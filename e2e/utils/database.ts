@@ -252,9 +252,16 @@ export async function seedTestData() {
     },
   });
 
-  // Then create requirement types with provider type references
-  const licenseRequirement = await prisma.requirementType.create({
-    data: {
+  // Then create requirement types with provider type references (use upsert to avoid duplicates)
+  const licenseRequirement = await prisma.requirementType.upsert({
+    where: { 
+      name_providerTypeId: {
+        name: 'Medical License',
+        providerTypeId: generalPractitioner.id,
+      }
+    },
+    update: {},
+    create: {
       name: 'Medical License',
       description: 'Valid medical license',
       isRequired: true,
@@ -263,8 +270,15 @@ export async function seedTestData() {
     },
   });
 
-  const insuranceRequirement = await prisma.requirementType.create({
-    data: {
+  const insuranceRequirement = await prisma.requirementType.upsert({
+    where: { 
+      name_providerTypeId: {
+        name: 'Professional Insurance',
+        providerTypeId: generalPractitioner.id,
+      }
+    },
+    update: {},
+    create: {
       name: 'Professional Insurance',
       description: 'Professional liability insurance',
       isRequired: true,
@@ -273,24 +287,29 @@ export async function seedTestData() {
     },
   });
 
-  // Create services
-  await prisma.service.createMany({
-    data: [
-      {
-        name: 'General Consultation',
-        description: 'General medical consultation',
-        defaultPrice: 150.0,
-        defaultDuration: 30,
-        providerTypeId: generalPractitioner.id,
-      },
-      {
-        name: 'Physical Therapy Session',
-        description: 'Physical therapy treatment session',
-        defaultPrice: 120.0,
-        defaultDuration: 45,
-        providerTypeId: physiotherapist.id,
-      },
-    ],
+  // Create services (use upsert to avoid duplicates)
+  await prisma.service.upsert({
+    where: { name: 'General Consultation' },
+    update: {},
+    create: {
+      name: 'General Consultation',
+      description: 'General medical consultation',
+      defaultPrice: 150.0,
+      defaultDuration: 30,
+      providerTypeId: generalPractitioner.id,
+    },
+  });
+
+  await prisma.service.upsert({
+    where: { name: 'Physical Therapy Session' },
+    update: {},
+    create: {
+      name: 'Physical Therapy Session',
+      description: 'Physical therapy treatment session',
+      defaultPrice: 120.0,
+      defaultDuration: 45,
+      providerTypeId: physiotherapist.id,
+    },
   });
 
   return {

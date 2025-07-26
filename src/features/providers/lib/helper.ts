@@ -48,6 +48,9 @@ export function serializeProvider(provider: any): any {
       // Also provide a legacy providerType for backward compatibility
       providerType:
         provider.typeAssignments.length > 0 ? provider.typeAssignments[0].providerType : null,
+      // Provide providerTypeId for hooks that need it
+      providerTypeId:
+        provider.typeAssignments.length > 0 ? provider.typeAssignments[0].providerType?.id : null,
       // Provide all types as an array
       providerTypes: provider.typeAssignments.map((assignment: any) => assignment.providerType),
     }),

@@ -1,118 +1,131 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { SerializedService } from '@/features/providers/types/types';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * GET handler for /api/providers/services
+ * Fetches services for a provider type
+ * Query parameters:
+ * - providerTypeId: ID of the provider type to fetch services for
+ * - providerId: ID of the provider to check which services are configured
+ */
 export async function GET(request: NextRequest) {
   try {
+    // Get query parameters
     const { searchParams } = request.nextUrl;
     const providerTypeId = searchParams.get('providerTypeId');
     const providerId = searchParams.get('providerId');
 
-    let servicesQuery: any = {
-      where: {},
-      orderBy: {
-        name: 'asc',
+    // Validate required parameters
+    if (!providerTypeId) {
+      return NextResponse.json({ error: 'Provider type ID is required' }, { status: 400 });
+    }
+
+    // Fetch provider type with its services
+    const providerType = await prisma.providerType.findUnique({
+      where: { id: providerTypeId },
+      include: {
+        services: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            defaultDuration: true,
+            defaultPrice: true,
+            displayPriority: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: {
+            displayPriority: 'asc',
+          },
+        },
       },
-    };
+    });
 
-    // If provider type ID is provided, filter services for that provider type
-    if (providerTypeId) {
-      servicesQuery.where = {
-        ...servicesQuery.where,
-        serviceProviderTypeId: providerTypeId,
-      };
+    if (!providerType) {
+      return NextResponse.json(
+        { error: `Provider type with ID ${providerTypeId} not found` },
+        { status: 404 }
+      );
     }
 
-    // If provider ID is provided, include whether each service is associated with that provider
-    // and include ServiceAvailabilityConfig data
+    // If providerId is provided, fetch the provider's service configurations
+    let serviceConfigs: Array<{
+      id: string;
+      serviceId: string;
+      duration: number;
+      price: any;
+      isOnlineAvailable: boolean;
+      isInPerson: boolean;
+      locationId: string | null;
+    }> | null = null;
     if (providerId) {
-      servicesQuery.include = {
-        providers: {
-          where: {
-            id: providerId,
-          },
-          select: {
-            id: true,
-          },
-        },
-        serviceConfigs: {
-          where: {
-            providerId: providerId,
-          },
-          select: {
-            id: true,
-            duration: true,
-            price: true,
-            isOnlineAvailable: true,
-            isInPerson: true,
-            locationId: true,
+      const provider = await prisma.provider.findUnique({
+        where: { id: providerId },
+        include: {
+          availabilityConfigs: {
+            select: {
+              id: true,
+              serviceId: true,
+              duration: true,
+              price: true,
+              isOnlineAvailable: true,
+              isInPerson: true,
+              locationId: true,
+            },
           },
         },
-      };
+      });
+
+      if (provider) {
+        serviceConfigs = provider.availabilityConfigs;
+      }
     }
 
-    const services = await prisma.service.findMany(servicesQuery);
+    // Map services and add service config data if available
+    const services: SerializedService[] = providerType.services.map((service, index) => {
+      // Check if this service has been configured by the provider
+      const serviceConfig = serviceConfigs?.find(
+        (config) => config.serviceId === service.id
+      );
 
-    // Convert Decimal to Number for JSON serialization and add isSelected property
-    const serializedServices = services.map((service: any) => {
-      // If we included providers, calculate isSelected
-      const providersArray = Array.isArray(service.providers) ? service.providers : [];
-      const isSelected = providerId ? providersArray.length > 0 : undefined;
-
-      // Get service config if it exists
-      const serviceConfigsArray = Array.isArray(service.serviceConfigs) ? service.serviceConfigs : [];
-      const serviceConfig = serviceConfigsArray.length > 0 ? serviceConfigsArray[0] : null;
-
-      // Determine pricing and duration with fallback logic
+      // Determine if the service is configured by the provider
       const hasCustomConfig = !!serviceConfig;
-      const finalPrice = serviceConfig?.price 
-        ? Number(serviceConfig.price)
+      const currentPrice = serviceConfig?.price 
+        ? Number(serviceConfig.price) 
         : (service.defaultPrice ? Number(service.defaultPrice) : null);
-      const finalDuration = serviceConfig?.duration || service.defaultDuration;
-
-      // Destructure properties safely
-      const {
-        defaultPrice,
-        defaultDuration,
-        createdAt,
-        updatedAt,
-        description,
-        displayPriority,
-        providers, // This may be undefined if not included in the query
-        serviceConfigs, // This may be undefined if not included in the query
-        ...rest
-      } = service;
+      const currentDuration = serviceConfig?.duration || service.defaultDuration;
 
       return {
-        ...rest,
-        defaultPrice: defaultPrice ? Number(defaultPrice) : null,
-        defaultDuration: defaultDuration ? Number(defaultDuration) : null,
-        description: description ?? undefined,
-        createdAt: createdAt ? createdAt.toISOString() : new Date().toISOString(),
-        updatedAt: updatedAt ? updatedAt.toISOString() : new Date().toISOString(),
-        displayPriority,
-        isSelected,
-        // Add computed fields for current effective pricing
-        currentPrice: finalPrice,
-        currentDuration: finalDuration,
+        id: service.id,
+        name: service.name,
+        description: service.description ?? undefined,
+        defaultDuration: service.defaultDuration,
+        defaultPrice: service.defaultPrice ? Number(service.defaultPrice) : null,
+        displayPriority: service.displayPriority,
+        createdAt: service.createdAt ? service.createdAt.toISOString() : undefined,
+        updatedAt: service.updatedAt ? service.updatedAt.toISOString() : undefined,
+        // SerializedService fields for provider services API
+        isSelected: hasCustomConfig,
+        currentPrice,
+        currentDuration,
         hasCustomConfig,
-        // Include custom config details if available
-        ...(serviceConfig && {
-          customConfig: {
-            id: serviceConfig.id,
-            duration: serviceConfig.duration,
-            price: serviceConfig.price ? Number(serviceConfig.price) : null,
-            isOnlineAvailable: serviceConfig.isOnlineAvailable,
-            isInPerson: serviceConfig.isInPerson,
-            locationId: serviceConfig.locationId,
-          },
-        }),
+        customConfig: serviceConfig ? {
+          id: serviceConfig.id,
+          duration: serviceConfig.duration,
+          price: serviceConfig.price ? Number(serviceConfig.price) : null,
+          isOnlineAvailable: serviceConfig.isOnlineAvailable,
+          isInPerson: serviceConfig.isInPerson,
+          locationId: serviceConfig.locationId,
+        } : undefined,
       };
     });
 
-    return NextResponse.json(serializedServices);
+    return NextResponse.json(services);
   } catch (error) {
     console.error('Error fetching services:', error);
     return NextResponse.json({ error: 'Failed to fetch services' }, { status: 500 });

@@ -41,7 +41,7 @@ export default async function EditProviderServicesPage({ params }: EditProviderS
   }
 
   // Check ownership or admin role
-  const isOwner = provider.userId === userId;
+  const isOwner = provider?.userId === userId;
   const isAdmin = session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN';
 
   if (!isOwner && !isAdmin) {

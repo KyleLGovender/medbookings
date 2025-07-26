@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { SerializedService } from '@/features/providers/hooks/types';
+import { SerializedService } from '@/features/providers/types/types';
 
 /**
  * Hook to fetch available services for a provider
  * @param providerId The ID of the provider
  * @returns Query result containing the available services
  */
-export function useProviderTypeServices(providerId: string | undefined) {
+export function useProviderTypeServices(providerId: string | undefined): ReturnType<typeof useQuery<SerializedService[]>> {
   // First, fetch the provider to get its type ID
   const providerQuery = useQuery({
     queryKey: ['provider', providerId],
