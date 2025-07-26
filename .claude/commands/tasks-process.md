@@ -71,16 +71,30 @@ When implementing tasks, follow this Git workflow:
    - Use descriptive commit messages referencing task numbers
    - Example: `feat(task-1.2): add subscription creation API with polymorphic validation`
 
-3. **Before Creating PR - Critical Build Verification:**
+3. **Before Creating PR - Critical Build and Test Verification:**
    ```bash
    # REQUIRED: Verify application compiles successfully
    npm run build
    
    # REQUIRED: Fix any compilation errors before proceeding
-   # Only continue to PR creation after successful build
+   # Only continue after successful build
+   
+   # REQUIRED: Run Playwright e2e tests to verify functionality
+   # Use Playwright MCP tools for better integration and troubleshooting
+   # First take a browser snapshot to understand current state
+   # Then run tests and troubleshoot any failures interactively
+   npx playwright test
+   
+   # REQUIRED: Fix any failing tests before proceeding to PR creation
+   # Use Playwright MCP browser tools to:
+   # - Navigate to failing pages/components
+   # - Take screenshots for debugging
+   # - Interact with elements to reproduce issues
+   # - Verify fixes by running specific test scenarios
+   # Only continue to PR creation after successful build AND passing tests
    ```
 
-4. **After All Tasks Complete and Build Passes:**
+4. **After All Tasks Complete, Build Passes, and Tests Pass:**
    ```bash
    # Stage all changes
    git add .
@@ -163,14 +177,16 @@ When working with task lists, the AI must:
    - **Before starting work**: Verify correct branch and announce current working branch
    - Check which sub‑task is next
    - **Default Mode:** After implementing a sub‑task, commit changes, update the file, and then pause for user approval
-   - **YOLO Mode:** After implementing a sub‑task, commit changes, update the file, and immediately proceed to the next task without waiting for approval. When ALL tasks are complete, run `npm run build` repeatedly until it passes, then ASK USER for permission to create PR.
+   - **YOLO Mode:** After implementing a sub‑task, commit changes, update the file, and immediately proceed to the next task without waiting for approval. When ALL tasks are complete, run `npm run build` repeatedly until it passes, then run `npx playwright test` using MCP browser tools to troubleshoot any failures until tests pass, then ASK USER for permission to create PR.
 
 4. **MCP Tool Usage:**
    - **PostgreSQL Server** (`mcp__postgres-server__query`): Use for database queries, constraint verification, data integrity checks
    - **Filesystem Server** (`mcp__filesystem-server__*`): Use for file operations when available, preferred over traditional file tools
    - **IDE Integration** (`mcp__ide__*`): Use for getting diagnostics and executing code when available
+   - **Playwright Browser** (`mcp__playwright__*`): Use for e2e test troubleshooting, browser automation, and interactive debugging
    - **Preference**: Always prefer MCP tools over traditional command-line equivalents when available
    - **Database Verification**: Use PostgreSQL MCP server to verify migrations, constraints, and data integrity instead of bash commands
+   - **Test Debugging**: Use Playwright MCP tools to interactively debug failing tests, take screenshots, and verify fixes
 
 5. **Interactive Commands Policy:**
    - **NEVER** execute commands that require interactive environments (e.g., `npx prisma migrate dev`, `npm init`, interactive prompts)
@@ -185,16 +201,24 @@ When working with task lists, the AI must:
      - Create migration files manually when needed
      - Use MCP PostgreSQL server for database verification instead of interactive commands
 
-6. **Build Verification:**
+6. **Build and Test Verification:**
    - **CRITICAL**: Before creating any PR, ALWAYS run `npm run build` to verify the application compiles successfully
-   - Fix ALL compilation errors before proceeding to PR creation
-   - This prevents failed CI/CD builds and deployment issues
-   - The build must pass completely before any PR is created
+   - **CRITICAL**: After successful build, run `npx playwright test` to verify end-to-end functionality
+   - **Use Playwright MCP Tools for Test Troubleshooting:**
+     - When tests fail, use `mcp__playwright__browser_navigate` to go to failing pages
+     - Use `mcp__playwright__browser_snapshot` to capture current page state
+     - Use `mcp__playwright__browser_take_screenshot` for visual debugging
+     - Use `mcp__playwright__browser_click`, `mcp__playwright__browser_type` to interact with failing elements
+     - Use `mcp__playwright__browser_evaluate` to run JavaScript and inspect page state
+     - Systematically reproduce test failures and verify fixes through browser automation
+   - Fix ALL compilation errors and test failures before proceeding to PR creation
+   - This prevents failed CI/CD builds, deployment issues, and broken functionality
+   - Both build AND tests must pass completely before any PR is created
 
 7. **PR Creation:**
-   - When all tasks in a group are complete AND build passes, **ASK USER FOR PERMISSION** before creating PR
+   - When all tasks in a group are complete, build passes, AND tests pass, **ASK USER FOR PERMISSION** before creating PR
    - **NEVER** automatically create PRs without explicit user consent
-   - In YOLO mode: Complete all tasks, verify build passes, then prompt: "All tasks complete and build successful. Would you like me to create a PR?"
+   - In YOLO mode: Complete all tasks, verify build passes, run tests, then prompt: "All tasks complete, build successful, and tests passing. Would you like me to create a PR?"
    - Only create PR after user confirms with "yes" or similar affirmative response
    - Include detailed description, test plan, and file change summary when creating PR
    - Reference original task documentation

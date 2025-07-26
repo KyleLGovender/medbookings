@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint with auto-fix
 - `npm run format` - Format code with Prettier
-- `npm test` - Run Jest tests
+- `npx playwright test` - Run Playwright e2e tests
 
 ### Database Operations
 
@@ -61,7 +61,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **UI**: Radix UI + Tailwind CSS + shadcn/ui
 - **State Management**: TanStack Query for server state
 - **Validation**: Zod schemas
-- **Testing**: Jest with Testing Library
+- **Testing**: Playwright for end-to-end testing only
 
 ### Type System Architecture ✅ **RECENTLY COMPLETED**
 

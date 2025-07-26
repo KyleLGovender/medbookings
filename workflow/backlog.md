@@ -3,50 +3,8 @@
 ----------------------------------------------------------------------------------------
 
 ## 🚀 Current Sprint (In Progress)
-
-----------------------------------------------------------------------------------------
-
-## 📋 Ready for Development (Prioritized)
-- [ ] Context 7 documentation
-- [ ] Firecrawl
 - [ ] Implement testing throughout the application. https://github.com/microsoft/playwright-mcp 
-- [ ] Git worktrees
 - [ ] Implement user roles system (guest, user, provider, organization manager, admin)
-
-----------------------------------------------------------------------------------------
-
-## 📝 Quick Capture (New Issues)
-- [ ] Populate provider and organization and user email addresses with the associated Google email. Not possible to edit.
-- [ ] Remove Calendar from Menu based on user logged in
-- [ ] Protect Calendar routes based on authentication
-- [ ] Review centralized calendar views
-- [ ] Location creation doesn't save GP coordinates. Works on location update but not creation.
-- [ ] Implement button loading spinner throughout app
-- [ ] Admin organization doesn't display location well.
-- [ ] Dashboard navigation when not ADMIN. Can't get a list of providers or see yourself in sidebar menu
-- [ ] Personal Profile should reflect Role
-
-----------------------------------------------------------------------------------------
-
-## ✅ Recently Completed
-- [x] Claude Code Plan Upgrade
-
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
-
-## 🌟 Issues and Bugs Backlog
-
-----------------------------------------------------------------------------------------
-
-## 🔥 High Priority Issues & Tasks
-
-----------------------------------------------------------------------------------------
-
-## 📊 Medium Priority Issues & Tasks
-
 - [ ] **Technical Debt**: Critical cleanup of availability-creation-form.tsx as reference pattern - `src/features/calendar/availability/components/availability-creation-form.tsx:1`
   - **Issue**: The availability-creation-form.tsx component needs comprehensive cleanup to serve as a clean reference pattern before it can be used as a template for standardizing the edit form. Current issues include: potential legacy code, inconsistent patterns, TODO comments (line 237), unused variables, complex state management that may not follow CLAUDE.md patterns, and general code quality issues that make it difficult to maintain and use as a reliable reference.
   - **Impact**: Without a clean reference pattern, attempts to standardize the edit form will propagate existing technical debt and inconsistencies. This prevents the availability forms from serving as reliable patterns for other calendar implementations and makes future development more error-prone.
@@ -74,6 +32,50 @@
     - Location selection functions properly
     - Profile selection works for both provider and organization modes
   - **Estimated Time**: 4-5 hours
+
+----------------------------------------------------------------------------------------
+
+## 📋 Ready for Development (Prioritized)
+
+
+----------------------------------------------------------------------------------------
+
+## 📝 Quick Capture (New Issues)
+- [ ] Populate provider and organization and user email addresses with the associated Google email. Not possible to edit.
+- [ ] Remove Calendar from Menu based on user logged in
+- [ ] Protect Calendar routes based on authentication
+- [ ] Review centralized calendar views
+- [ ] Location creation doesn't save GP coordinates. Works on location update but not creation.
+- [ ] Implement button loading spinner throughout app
+- [ ] Admin organization doesn't display location well.
+- [ ] Dashboard navigation when not ADMIN. Can't get a list of providers or see yourself in sidebar menu
+- [ ] Personal Profile should reflect Role
+- [ ] Does Hybrid Billing actually exist?
+- [ ] Provider onboarding default prices... need to make sure the input fields make sense.  Price seems to only accept 5.
+
+----------------------------------------------------------------------------------------
+
+## ✅ Recently Completed
+- [x] Context 7 documentation
+- [x] Firecrawl
+- [x] Claude Code Plan Upgrade
+
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+
+## 🌟 Issues and Bugs Backlog
+
+----------------------------------------------------------------------------------------
+
+## 🔥 High Priority Issues & Tasks
+
+----------------------------------------------------------------------------------------
+
+## 📊 Medium Priority Issues & Tasks
+
 
 - [ ] **Technical Debt**: Standardize availability-edit-form.tsx to match cleaned creation form pattern - `src/features/calendar/availability/components/availability-edit-form.tsx:1`
   - **Issue**: The availability-edit-form.tsx component doesn't follow the same comprehensive pattern as the availability-creation-form.tsx. It's missing key sections like profile selection, recurrence settings, location management, and doesn't have the same level of form organization and structure. This inconsistency makes the codebase harder to maintain and creates confusion for developers working with both forms.

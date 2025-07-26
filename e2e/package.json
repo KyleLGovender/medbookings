@@ -1,0 +1,15 @@
+{
+  "name": "medbookings-e2e",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:auth": "playwright test tests/auth/",
+    "test:provider": "playwright test tests/provider/",
+    "test:cleanup": "playwright test tests/cleanup/",
+    "report": "playwright show-report",
+    "install-browsers": "playwright install"
+  }
+}
