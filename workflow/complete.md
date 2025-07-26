@@ -1,6 +1,10 @@
 # MedBookings MVP Project Plan
 
 ## ✅ Completed
+- [x] Implement user roles system (guest, user, provider, organization manager, admin)
+- [x] Context 7 documentation
+- [x] Firecrawl
+- [x] Claude Code Plan Upgrade
 - [x] **Technical Debt**: Comprehensive cleanup of provider calendar components as reference pattern - `src/features/calendar/availability/components/provider-calendar-view.tsx:1`
   - **Issue**: Key provider calendar components contain development artifacts, orphaned code, inconsistent patterns, and architectural issues that prevent them from serving as clean reference patterns. Issues include: unused state management (`selectedEvent` declared but inconsistently used), multiple TODO comments for missing functionality, console.log statements left in production code, duplicated logic across view components, inconsistent error handling patterns, missing TypeScript strict typing, and poor separation of concerns.
   - **Impact**: Components can't serve as reliable patterns for other calendar implementations. Technical debt accumulates making future development slower and more error-prone. Code quality doesn't meet @CLAUDE.md standards for "high class" implementation.

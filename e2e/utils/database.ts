@@ -1,13 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
 
-// Load test environment variables
-dotenv.config({ path: '.env.test.local' });
+// Load environment variables (prioritize dev environment)
+dotenv.config({ path: '.env.local' });
+dotenv.config(); // fallback to .env
 
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.TEST_DATABASE_URL || 'postgresql://medbookings_test:test_password@localhost:5433/medbookings_test',
+      // Use dev database - same as your running app
+      url: process.env.DATABASE_URL,
     },
   },
 });

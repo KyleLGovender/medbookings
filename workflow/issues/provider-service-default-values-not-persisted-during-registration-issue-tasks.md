@@ -20,12 +20,12 @@
 
 ## Tasks
 
-- [ ] 1.0 Investigate and Document Current Registration Flow
-  - [ ] 1.1 Analyze current provider registration form to understand how service price/duration data is collected
-  - [ ] 1.2 Examine the FormData structure passed to registerProvider server action
-  - [ ] 1.3 Document what fields are expected vs what is actually processed for service configurations
-  - [ ] 1.4 Verify the Provider-Service relationship creation in current registration flow
-  - [ ] 1.5 Identify where service price/duration data is lost in the current flow
+- [x] 1.0 Investigate and Document Current Registration Flow
+  - [x] 1.1 Analyze current provider registration form to understand how service price/duration data is collected
+  - [x] 1.2 Examine the FormData structure passed to registerProvider server action
+  - [x] 1.3 Document what fields are expected vs what is actually processed for service configurations
+  - [x] 1.4 Verify the Provider-Service relationship creation in current registration flow
+  - [x] 1.5 Identify where service price/duration data is lost in the current flow
 
 - [ ] 2.0 Implement ServiceAvailabilityConfig Creation in Registration
   - [ ] 2.1 Update registerProvider server action to extract service configuration data from FormData

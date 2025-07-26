@@ -4,7 +4,6 @@
 
 ## 🚀 Current Sprint (In Progress)
 - [ ] Implement testing throughout the application. https://github.com/microsoft/playwright-mcp 
-- [ ] Implement user roles system (guest, user, provider, organization manager, admin)
 - [ ] **Technical Debt**: Critical cleanup of availability-creation-form.tsx as reference pattern - `src/features/calendar/availability/components/availability-creation-form.tsx:1`
   - **Issue**: The availability-creation-form.tsx component needs comprehensive cleanup to serve as a clean reference pattern before it can be used as a template for standardizing the edit form. Current issues include: potential legacy code, inconsistent patterns, TODO comments (line 237), unused variables, complex state management that may not follow CLAUDE.md patterns, and general code quality issues that make it difficult to maintain and use as a reliable reference.
   - **Impact**: Without a clean reference pattern, attempts to standardize the edit form will propagate existing technical debt and inconsistencies. This prevents the availability forms from serving as reliable patterns for other calendar implementations and makes future development more error-prone.
@@ -90,9 +89,6 @@
 ----------------------------------------------------------------------------------------
 
 ## ✅ Recently Completed
-- [x] Context 7 documentation
-- [x] Firecrawl
-- [x] Claude Code Plan Upgrade
 
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
