@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { cleanTestData, cleanupTestProvider, cleanupTestOrganization } from './database';
 
 /**
  * Mock Google OAuth login by directly setting session
@@ -184,6 +185,48 @@ export async function deleteOrganization(page: Page, organizationId: string) {
   
   // Should redirect to organizations list
   await page.waitForURL('/organizations');
+}
+
+/**
+ * Database-level cleanup functions (complementing UI-based functions above)
+ */
+
+/**
+ * Clean all test data from database
+ */
+export async function cleanupAllTestData() {
+  console.log('🧹 Cleaning all test data from database...');
+  await cleanTestData();
+  console.log('✅ Test data cleanup completed');
+}
+
+/**
+ * Clean specific test provider by email
+ */
+export async function cleanupSpecificProvider(email: string) {
+  console.log(`🧹 Cleaning test provider: ${email}`);
+  const result = await cleanupTestProvider(email);
+  console.log(`✅ Cleaned up ${result.count} provider(s)`);
+  return result;
+}
+
+/**
+ * Clean specific test organization by name
+ */
+export async function cleanupSpecificOrganization(name: string) {
+  console.log(`🧹 Cleaning test organization: ${name}`);
+  const result = await cleanupTestOrganization(name);
+  console.log(`✅ Cleaned up ${result.count} organization(s)`);
+  return result;
+}
+
+/**
+ * Helper to run cleanup before or after tests
+ */
+export async function runTestCleanup(type: 'before' | 'after' = 'after') {
+  console.log(`🧹 Running ${type}-test cleanup...`);
+  await cleanTestData();
+  console.log(`✅ ${type}-test cleanup completed`);
 }
 
 /**

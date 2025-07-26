@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     // If provider ID is provided, include whether each service is associated with that provider
+    // and include ServiceAvailabilityConfig data
     if (providerId) {
       servicesQuery.include = {
         providers: {
@@ -34,6 +35,19 @@ export async function GET(request: NextRequest) {
           },
           select: {
             id: true,
+          },
+        },
+        serviceConfigs: {
+          where: {
+            providerId: providerId,
+          },
+          select: {
+            id: true,
+            duration: true,
+            price: true,
+            isOnlineAvailable: true,
+            isInPerson: true,
+            locationId: true,
           },
         },
       };
@@ -47,6 +61,17 @@ export async function GET(request: NextRequest) {
       const providersArray = Array.isArray(service.providers) ? service.providers : [];
       const isSelected = providerId ? providersArray.length > 0 : undefined;
 
+      // Get service config if it exists
+      const serviceConfigsArray = Array.isArray(service.serviceConfigs) ? service.serviceConfigs : [];
+      const serviceConfig = serviceConfigsArray.length > 0 ? serviceConfigsArray[0] : null;
+
+      // Determine pricing and duration with fallback logic
+      const hasCustomConfig = !!serviceConfig;
+      const finalPrice = serviceConfig?.price 
+        ? Number(serviceConfig.price)
+        : (service.defaultPrice ? Number(service.defaultPrice) : null);
+      const finalDuration = serviceConfig?.duration || service.defaultDuration;
+
       // Destructure properties safely
       const {
         defaultPrice,
@@ -56,6 +81,7 @@ export async function GET(request: NextRequest) {
         description,
         displayPriority,
         providers, // This may be undefined if not included in the query
+        serviceConfigs, // This may be undefined if not included in the query
         ...rest
       } = service;
 
@@ -68,6 +94,21 @@ export async function GET(request: NextRequest) {
         updatedAt: updatedAt ? updatedAt.toISOString() : new Date().toISOString(),
         displayPriority,
         isSelected,
+        // Add computed fields for current effective pricing
+        currentPrice: finalPrice,
+        currentDuration: finalDuration,
+        hasCustomConfig,
+        // Include custom config details if available
+        ...(serviceConfig && {
+          customConfig: {
+            id: serviceConfig.id,
+            duration: serviceConfig.duration,
+            price: serviceConfig.price ? Number(serviceConfig.price) : null,
+            isOnlineAvailable: serviceConfig.isOnlineAvailable,
+            isInPerson: serviceConfig.isInPerson,
+            locationId: serviceConfig.locationId,
+          },
+        }),
       };
     });
 

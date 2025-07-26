@@ -239,19 +239,79 @@ export async function updateProviderServices(prevState: any, formData: FormData)
       },
     });
 
-    // Update or create service configurations
-    for (const serviceId of serviceIds) {
-      if (serviceConfigs[serviceId]) {
-        const config = serviceConfigs[serviceId];
+    // Delete existing ServiceAvailabilityConfig records for services no longer selected
+    await prisma.serviceAvailabilityConfig.deleteMany({
+      where: {
+        providerId: id,
+        serviceId: {
+          notIn: serviceIds,
+        },
+      },
+    });
 
-        // Update the service's default price and duration
-        await prisma.service.update({
-          where: { id: serviceId },
-          data: {
-            defaultPrice: config.price,
-            defaultDuration: config.duration,
+    // Update or create ServiceAvailabilityConfig records for selected services
+    for (const serviceId of serviceIds) {
+      const config = serviceConfigs[serviceId];
+      
+      if (config) {
+        // Try to update existing config first
+        const existingConfig = await prisma.serviceAvailabilityConfig.findFirst({
+          where: {
+            providerId: id,
+            serviceId: serviceId,
           },
         });
+
+        if (existingConfig) {
+          // Update existing config
+          await prisma.serviceAvailabilityConfig.update({
+            where: { id: existingConfig.id },
+            data: {
+              duration: config.duration,
+              price: config.price,
+            },
+          });
+        } else {
+          // Create new config
+          await prisma.serviceAvailabilityConfig.create({
+            data: {
+              providerId: id,
+              serviceId: serviceId,
+              duration: config.duration,
+              price: config.price,
+              isOnlineAvailable: true, // Default to online available
+              isInPerson: false, // Default to not in-person
+            },
+          });
+        }
+      } else {
+        // No config provided, but service is selected - ensure we have a config with defaults
+        const existingConfig = await prisma.serviceAvailabilityConfig.findFirst({
+          where: {
+            providerId: id,
+            serviceId: serviceId,
+          },
+        });
+
+        if (!existingConfig) {
+          // Get service defaults
+          const service = await prisma.service.findUnique({
+            where: { id: serviceId },
+            select: { defaultPrice: true, defaultDuration: true },
+          });
+
+          // Create config with service defaults
+          await prisma.serviceAvailabilityConfig.create({
+            data: {
+              providerId: id,
+              serviceId: serviceId,
+              duration: service?.defaultDuration || 30,
+              price: service?.defaultPrice || 0,
+              isOnlineAvailable: true,
+              isInPerson: false,
+            },
+          });
+        }
       }
     }
 

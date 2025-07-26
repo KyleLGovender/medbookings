@@ -92,14 +92,16 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
 
       // Initialize all available services
       availableServices.forEach((service) => {
-        const providerService = provider.services?.find(
-          (ps: any) => ps.serviceId === service.id || ps.id === service.id
-        );
+        const isSelected = service.isSelected || false;
+        
+        // Use current effective pricing from API (which handles fallbacks)
+        const effectivePrice = service.currentPrice || service.defaultPrice || 0;
+        const effectiveDuration = service.currentDuration || service.defaultDuration || 30;
 
         selectedServices[service.id] = {
-          selected: !!providerService,
-          price: service.defaultPrice || 0,
-          duration: service.defaultDuration || 30,
+          selected: isSelected,
+          price: effectivePrice,
+          duration: effectiveDuration,
         };
       });
 

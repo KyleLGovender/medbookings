@@ -1,24 +1,209 @@
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
 
-// Load test environment variables
-dotenv.config({ path: '.env.test.local' });
+// Load environment variables (prioritize dev environment)
+dotenv.config({ path: '.env.local' });
+dotenv.config(); // fallback to .env
 
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.TEST_DATABASE_URL || 'postgresql://medbookings_test:test_password@localhost:5433/medbookings_test',
+      // Use dev database - same as your running app
+      url: process.env.DATABASE_URL,
     },
   },
 });
 
 /**
- * Clean all test data from database
- * Use carefully - this deletes all data!
+ * Clean ONLY test data from database
+ * Identifies test data by E2E_TEST prefixes and e2e-test email domains
  */
-export async function cleanDatabase() {
+export async function cleanTestData() {
+  console.log('🧹 Cleaning test data from dev database...');
+  
+  // Delete test data in correct order to respect foreign key constraints
+  
+  // 1. Delete test bookings
+  await prisma.booking.deleteMany({
+    where: {
+      OR: [
+        { client: { email: { contains: 'e2e-test' } } },
+        // Add more booking test data identifiers as needed
+      ]
+    }
+  });
+  
+  // 2. Delete test availability slots
+  await prisma.calculatedAvailabilitySlot.deleteMany({
+    where: {
+      serviceConfig: {
+        provider: {
+          user: {
+            OR: [
+              { email: { contains: 'e2e-test' } },
+              { name: { contains: 'E2E_TEST' } }
+            ]
+          }
+        }
+      }
+    }
+  });
+  
+  // 3. Delete test availability
+  await prisma.availability.deleteMany({
+    where: {
+      provider: {
+        user: {
+          OR: [
+            { email: { contains: 'e2e-test' } },
+            { name: { contains: 'E2E_TEST' } }
+          ]
+        }
+      }
+    }
+  });
+  
+  // 4. Delete test service availability configs
+  await prisma.serviceAvailabilityConfig.deleteMany({
+    where: {
+      provider: {
+        user: {
+          OR: [
+            { email: { contains: 'e2e-test' } },
+            { name: { contains: 'E2E_TEST' } }
+          ]
+        }
+      }
+    }
+  });
+  
+  // 5. Delete test requirement submissions
+  await prisma.requirementSubmission.deleteMany({
+    where: {
+      provider: { 
+        user: { 
+          OR: [
+            { email: { contains: 'e2e-test' } },
+            { name: { contains: 'E2E_TEST' } }
+          ]
+        }
+      }
+    }
+  });
+  
+  // 6. Delete test organization connections
+  await prisma.organizationProviderConnection.deleteMany({
+    where: {
+      OR: [
+        { organization: { name: { contains: 'E2E_TEST' } } },
+        { provider: { 
+          user: { 
+            OR: [
+              { email: { contains: 'e2e-test' } },
+              { name: { contains: 'E2E_TEST' } }
+            ]
+          }
+        }}
+      ]
+    }
+  });
+  
+  // 7. Delete test organization memberships
+  await prisma.organizationMembership.deleteMany({
+    where: {
+      OR: [
+        { organization: { name: { contains: 'E2E_TEST' } } },
+        { user: { 
+          OR: [
+            { email: { contains: 'e2e-test' } },
+            { name: { contains: 'E2E_TEST' } }
+          ]
+        }}
+      ]
+    }
+  });
+  
+  // 8. Delete test invitations
+  await prisma.organizationInvitation.deleteMany({
+    where: {
+      OR: [
+        { email: { contains: 'e2e-test' } },
+        { organization: { name: { contains: 'E2E_TEST' } } }
+      ]
+    }
+  });
+  
+  await prisma.providerInvitation.deleteMany({
+    where: {
+      email: { contains: 'e2e-test' }
+    }
+  });
+  
+  // 9. Delete test locations
+  await prisma.location.deleteMany({
+    where: {
+      OR: [
+        { formattedAddress: { contains: 'E2E_TEST' } },
+        { organization: { name: { contains: 'E2E_TEST' } } }
+      ]
+    }
+  });
+  
+  // 10. Delete test providers
+  await prisma.provider.deleteMany({
+    where: {
+      user: {
+        OR: [
+          { email: { contains: 'e2e-test' } },
+          { name: { contains: 'E2E_TEST' } }
+        ]
+      }
+    }
+  });
+  
+  // 11. Delete test organizations
+  await prisma.organization.deleteMany({
+    where: {
+      OR: [
+        { name: { contains: 'E2E_TEST' } },
+        { email: { contains: 'e2e-test' } }
+      ]
+    }
+  });
+  
+  // 12. Delete test accounts
+  await prisma.account.deleteMany({
+    where: {
+      user: {
+        OR: [
+          { email: { contains: 'e2e-test' } },
+          { name: { contains: 'E2E_TEST' } }
+        ]
+      }
+    }
+  });
+  
+  // 13. Delete test users (should be last)
+  await prisma.user.deleteMany({
+    where: {
+      OR: [
+        { email: { contains: 'e2e-test' } },
+        { name: { contains: 'E2E_TEST' } }
+      ]
+    }
+  });
+  
+  console.log('✅ Test data cleanup completed');
+}
+
+/**
+ * Clean all data from database (use with extreme caution!)
+ * This is the nuclear option - only use for development reset
+ */
+export async function cleanAllDatabase() {
+  console.log('💥 WARNING: Cleaning ALL data from database!');
+  
   // Delete in correct order to respect foreign key constraints
-  // Delete leaf tables first (those that reference others)
   await prisma.booking.deleteMany({});
   await prisma.calculatedAvailabilitySlot.deleteMany({});
   await prisma.availability.deleteMany({});
@@ -41,7 +226,6 @@ export async function cleanDatabase() {
   await prisma.providerType.deleteMany({});
   
   await prisma.account.deleteMany({});
-  // Session table doesn't exist in this schema
   await prisma.user.deleteMany({});
 }
 
@@ -125,37 +309,45 @@ export async function seedTestData() {
  * Create test users with different roles
  */
 export async function createTestUsers() {
-  const adminUser = await prisma.user.create({
-    data: {
-      email: 'admin@test.com',
-      name: 'Test Admin',
+  const adminUser = await prisma.user.upsert({
+    where: { email: 'e2e-test-admin@example.com' },
+    update: {},
+    create: {
+      email: 'e2e-test-admin@example.com',
+      name: 'E2E_TEST_Admin',
       role: 'ADMIN',
       emailVerified: new Date(),
     },
   });
 
-  const regularUser = await prisma.user.create({
-    data: {
-      email: 'user@test.com',
-      name: 'Test User',
+  const regularUser = await prisma.user.upsert({
+    where: { email: 'e2e-test-user@example.com' },
+    update: {},
+    create: {
+      email: 'e2e-test-user@example.com',
+      name: 'E2E_TEST_User',
       role: 'USER',
       emailVerified: new Date(),
     },
   });
 
-  const providerUser = await prisma.user.create({
-    data: {
-      email: 'provider@test.com',
-      name: 'Test Provider',
+  const providerUser = await prisma.user.upsert({
+    where: { email: 'e2e-test-provider@example.com' },
+    update: {},
+    create: {
+      email: 'e2e-test-provider@example.com',
+      name: 'E2E_TEST_Provider',
       role: 'USER',
       emailVerified: new Date(),
     },
   });
 
-  const orgOwnerUser = await prisma.user.create({
-    data: {
-      email: 'orgowner@test.com',
-      name: 'Test Org Owner',
+  const orgOwnerUser = await prisma.user.upsert({
+    where: { email: 'e2e-test-orgowner@example.com' },
+    update: {},
+    create: {
+      email: 'e2e-test-orgowner@example.com',
+      name: 'E2E_TEST_Org_Owner',
       role: 'USER',
       emailVerified: new Date(),
     },
@@ -184,8 +376,8 @@ export async function createTestProvider(userId: string, status: 'PENDING_APPROV
   const provider = await prisma.provider.create({
     data: {
       userId,
-      name: 'Dr. John Doe',
-      bio: 'Experienced general practitioner',
+      name: 'E2E_TEST_Dr_John_Doe',
+      bio: '[E2E_TEST] Experienced general practitioner for testing',
       image: 'https://via.placeholder.com/150',
       languages: ['English'],
       status,
@@ -210,10 +402,10 @@ export async function createTestProvider(userId: string, status: 'PENDING_APPROV
 export async function createTestOrganization(ownerId: string, status: 'PENDING_APPROVAL' | 'APPROVED' = 'PENDING_APPROVAL') {
   const organization = await prisma.organization.create({
     data: {
-      name: 'Test Medical Clinic',
-      description: 'A test medical clinic',
-      email: 'clinic@test.com',
-      website: 'https://test-clinic.com',
+      name: 'E2E_TEST_Medical_Clinic',
+      description: '[E2E_TEST] A test medical clinic for e2e testing',
+      email: 'e2e-test-clinic@example.com',
+      website: 'https://e2e-test-clinic.example.com',
       status,
       approvedAt: status === 'APPROVED' ? new Date() : null,
     },
@@ -236,7 +428,8 @@ export async function createTestOrganization(ownerId: string, status: 'PENDING_A
  * Setup complete test environment
  */
 export async function setupTestEnvironment() {
-  await cleanDatabase();
+  // Only clean test data, not all database data
+  await cleanTestData();
   const testData = await seedTestData();
   const testUsers = await createTestUsers();
 
@@ -244,6 +437,66 @@ export async function setupTestEnvironment() {
     ...testData,
     users: testUsers,
   };
+}
+
+/**
+ * Get count of test data records for verification
+ */
+export async function getTestDataCounts() {
+  const testUsers = await prisma.user.count({
+    where: {
+      OR: [
+        { email: { contains: 'e2e-test' } },
+        { name: { contains: 'E2E_TEST' } }
+      ]
+    }
+  });
+
+  const testProviders = await prisma.provider.count({
+    where: {
+      user: {
+        OR: [
+          { email: { contains: 'e2e-test' } },
+          { name: { contains: 'E2E_TEST' } }
+        ]
+      }
+    }
+  });
+
+  const testOrganizations = await prisma.organization.count({
+    where: {
+      OR: [
+        { name: { contains: 'E2E_TEST' } },
+        { email: { contains: 'e2e-test' } }
+      ]
+    }
+  });
+
+  return {
+    users: testUsers,
+    providers: testProviders,
+    organizations: testOrganizations,
+  };
+}
+
+/**
+ * Cleanup specific test provider by email
+ */
+export async function cleanupTestProvider(email: string) {
+  return await prisma.provider.deleteMany({
+    where: {
+      user: { email }
+    }
+  });
+}
+
+/**
+ * Cleanup specific test organization by name
+ */
+export async function cleanupTestOrganization(name: string) {
+  return await prisma.organization.deleteMany({
+    where: { name }
+  });
 }
 
 export { prisma };
