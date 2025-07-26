@@ -5,26 +5,22 @@
  * based on the type of permission violation.
  */
 
-import { Metadata } from 'next';
-import { Suspense } from 'react';
-import Link from 'next/link';
+'use client';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Shield, 
-  Home, 
-  ArrowLeft, 
+import {
   AlertTriangle,
+  ArrowLeft,
+  Building,
+  Home,
   Lock,
-  Users,
-  Building
+  Shield,
+  Users
 } from 'lucide-react';
-
-export const metadata: Metadata = {
-  title: 'Unauthorized Access | MedBookings',
-  description: 'You do not have permission to access this resource'
-};
+import Link from 'next/link';
+import { Suspense } from 'react';
 
 interface UnauthorizedPageProps {
   searchParams: {

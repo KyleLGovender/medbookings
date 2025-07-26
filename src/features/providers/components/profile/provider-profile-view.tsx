@@ -201,7 +201,9 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
 
         {provider.services && provider.services.length > 0 ? (
           <div className="space-y-4">
-            {provider.services.map((service) => {
+            {provider.services
+              .sort((a, b) => (a.displayPriority ?? 999) - (b.displayPriority ?? 999))
+              .map((service) => {
               // Get service configuration with fallback to defaults (client-side logic)
               const customConfig = provider.serviceConfigs?.find(config => config.serviceId === service.id);
               const isCustomConfig = !!customConfig;

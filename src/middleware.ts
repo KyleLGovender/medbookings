@@ -92,10 +92,9 @@ async function checkRoutePermissions(
   }
   
   if (pathname.startsWith('/providers/') && pathname.includes('/edit')) {
-    // Check if user owns the provider account (simplified)
-    return token.providerRole === 'PROVIDER' || 
-           token.role === 'ADMIN' || 
-           token.role === 'SUPER_ADMIN';
+    // For provider edit routes, allow authenticated users through
+    // The page component will handle the specific ownership check
+    return true;
   }
   
   // Default to allowing access for authenticated users

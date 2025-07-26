@@ -3,13 +3,11 @@
 import { useRouter } from 'next/navigation';
 import { ButtonHTMLAttributes } from 'react';
 
-import { VariantProps } from 'class-variance-authority';
-
-import { Button } from '@/components/ui/button';
+import { Button, ButtonProps } from '@/components/ui/button';
 
 interface CancelButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof Button> {
+    Pick<ButtonProps, 'variant' | 'size'> {
   /**
    * The path to navigate to when the button is clicked
    * If not provided, will use router.back() instead
