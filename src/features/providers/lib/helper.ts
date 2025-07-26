@@ -22,6 +22,15 @@ export function serializeProvider(provider: any): any {
             : service.defaultPrice,
       })),
     }),
+    // Serialize serviceConfigs with Decimal prices
+    ...(provider.serviceConfigs && {
+      serviceConfigs: provider.serviceConfigs.map((config: any) => ({
+        ...config,
+        price: config.price instanceof Decimal ? Number(config.price) : config.price,
+        createdAt: config.createdAt?.toISOString(),
+        updatedAt: config.updatedAt?.toISOString(),
+      })),
+    }),
     // Make sure requirementSubmissions is serializable
     ...(provider.requirementSubmissions && {
       requirementSubmissions: provider.requirementSubmissions.map((submission: any) => ({
@@ -51,3 +60,60 @@ export function serializeProvider(provider: any): any {
 
 // Backward compatibility export
 export const serializeServiceProvider = serializeProvider;
+
+/**
+ * Gets service configuration with fallback to default values
+ * @param provider Provider with services and serviceConfigs
+ * @param serviceId ID of the service to get config for
+ * @returns Service configuration with price/duration, falling back to service defaults
+ */
+export function getServiceConfig(provider: any, serviceId: string) {
+  // First try to find custom ServiceAvailabilityConfig
+  const customConfig = provider.serviceConfigs?.find((config: any) => config.serviceId === serviceId);
+  
+  if (customConfig) {
+    return {
+      duration: customConfig.duration,
+      price: customConfig.price,
+      isOnlineAvailable: customConfig.isOnlineAvailable,
+      isInPerson: customConfig.isInPerson,
+      locationId: customConfig.locationId,
+      source: 'custom' as const,
+    };
+  }
+
+  // Fallback to service defaults
+  const service = provider.services?.find((s: any) => s.id === serviceId);
+  
+  if (service) {
+    return {
+      duration: service.defaultDuration,
+      price: service.defaultPrice,
+      isOnlineAvailable: true, // Default assumption for service without config
+      isInPerson: false, // Default assumption for service without config
+      locationId: null,
+      source: 'default' as const,
+    };
+  }
+
+  // Service not found
+  return null;
+}
+
+/**
+ * Gets all service configurations for a provider with fallbacks
+ * @param provider Provider with services and serviceConfigs
+ * @returns Array of service configurations with fallbacks applied
+ */
+export function getAllServiceConfigs(provider: any) {
+  if (!provider.services) return [];
+
+  return provider.services.map((service: any) => {
+    const config = getServiceConfig(provider, service.id);
+    return {
+      serviceId: service.id,
+      service,
+      ...config,
+    };
+  });
+}

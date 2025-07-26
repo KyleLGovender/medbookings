@@ -213,6 +213,18 @@ export interface SerializedProvider {
   createdAt: string;
   updatedAt: string;
   services: SerializedService[];
+  serviceConfigs?: Array<{
+    id: string;
+    serviceId: string;
+    duration: number;
+    price: number;
+    isOnlineAvailable: boolean;
+    isInPerson: boolean;
+    locationId: string | null;
+    createdAt: string;
+    updatedAt: string;
+    service: SerializedService;
+  }>;
   providerType: {
     name: string;
     description: string | null;

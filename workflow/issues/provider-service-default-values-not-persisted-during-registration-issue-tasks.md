@@ -34,12 +34,12 @@
   - [x] 2.4 Implement proper error handling for ServiceAvailabilityConfig creation
   - [x] 2.5 Test registration flow with database verification of created records
 
-- [ ] 3.0 Update Provider Display Logic to Use ServiceAvailabilityConfig
-  - [ ] 3.1 Modify provider detail queries to include ServiceAvailabilityConfig data
-  - [ ] 3.2 Update useProvider hook to fetch and return service configurations
-  - [ ] 3.3 Implement fallback logic: ServiceAvailabilityConfig → Service defaults
-  - [ ] 3.4 Update provider profile display components to use custom pricing/duration
-  - [ ] 3.5 Modify API endpoints to return ServiceAvailabilityConfig data with proper fallbacks
+- [x] 3.0 Update Provider Display Logic to Use ServiceAvailabilityConfig
+  - [x] 3.1 Modify provider detail queries to include ServiceAvailabilityConfig data
+  - [x] 3.2 Update useProvider hook to fetch and return service configurations
+  - [x] 3.3 Implement fallback logic: ServiceAvailabilityConfig → Service defaults
+  - [x] 3.4 Update provider profile display components to use custom pricing/duration
+  - [x] 3.5 Modify API endpoints to return ServiceAvailabilityConfig data with proper fallbacks
 
 - [ ] 4.0 Fix Edit Services Page to Handle Missing Configurations
   - [ ] 4.1 Update useProviderTypeServices hook to handle missing ServiceAvailabilityConfig records
