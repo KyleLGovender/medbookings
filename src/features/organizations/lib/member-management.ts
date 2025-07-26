@@ -74,7 +74,7 @@ export async function inviteOrganizationMember(
 
     // Check if user is already a member
     const existingMembership = organization.memberships.find(
-      membership => membership.user.email.toLowerCase() === email.toLowerCase()
+      membership => membership.user.email?.toLowerCase() === email.toLowerCase()
     );
 
     if (existingMembership) {
@@ -112,13 +112,12 @@ export async function inviteOrganizationMember(
         role,
         token,
         expiresAt,
-        invitedBy: currentUser.user.id,
-        message: message || null,
+        invitedById: currentUser.user.id,
         status: 'PENDING'
       },
       include: {
         organization: true,
-        invitedByUser: true
+        invitedBy: true
       }
     });
 
@@ -159,7 +158,7 @@ export async function acceptOrganizationInvitation(
       where: { token },
       include: {
         organization: true,
-        invitedByUser: true
+        invitedBy: true
       }
     });
 
@@ -188,9 +187,9 @@ export async function acceptOrganizationInvitation(
     // Check if user is already a member
     const existingMembership = await prisma.organizationMembership.findUnique({
       where: {
-        userId_organizationId: {
-          userId: currentUser.user.id,
-          organizationId: invitation.organizationId
+        organizationId_userId: {
+          organizationId: invitation.organizationId,
+          userId: currentUser.user.id
         }
       }
     });
@@ -207,8 +206,7 @@ export async function acceptOrganizationInvitation(
       data: {
         userId: currentUser.user.id,
         organizationId: invitation.organizationId,
-        role: invitation.role,
-        joinedAt: new Date()
+        role: invitation.role
       }
     });
 
@@ -265,8 +263,7 @@ export async function rejectOrganizationInvitation(
     await prisma.organizationInvitation.update({
       where: { id: invitation.id },
       data: {
-        status: 'REJECTED',
-        rejectedAt: new Date()
+        status: 'DECLINED'
       }
     });
 
@@ -463,8 +460,7 @@ export async function cancelInvitation(
     await prisma.organizationInvitation.update({
       where: { id: invitationId },
       data: {
-        status: 'CANCELLED',
-        cancelledAt: new Date()
+        status: 'CANCELLED'
       }
     });
 
@@ -500,7 +496,7 @@ async function getUserPermissions(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {
-      serviceProvider: true,
+      provider: true,
       organizationMemberships: true
     }
   });
@@ -513,8 +509,8 @@ async function getUserPermissions(userId: string) {
       organizationId: membership.organizationId,
       role: membership.role as OrganizationRole
     })),
-    providerRole: user.serviceProvider ? 'PROVIDER' as any : undefined,
-    providerId: user.serviceProvider?.id
+    providerRole: user.provider ? 'PROVIDER' as any : undefined,
+    providerId: user.provider?.id
   };
 }
 
@@ -531,11 +527,10 @@ async function sendInvitationEmail(invitation: any): Promise<void> {
       template: 'organization-invitation',
       data: {
         organizationName: invitation.organization.name,
-        inviterName: `${invitation.invitedByUser.firstName} ${invitation.invitedByUser.lastName}`,
+        inviterName: invitation.invitedBy.name || 'Unknown',
         role: invitation.role,
         inviteUrl,
-        expiresAt: invitation.expiresAt,
-        message: invitation.message
+        expiresAt: invitation.expiresAt
       }
     });
   } catch (error) {

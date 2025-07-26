@@ -7,7 +7,7 @@
 
 import { getServerSession } from 'next-auth';
 import { Session } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import {
   UserPermissions,
@@ -69,7 +69,7 @@ async function loadUserPermissions(email: string): Promise<SessionPermissions | 
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
-        serviceProvider: true,
+        provider: true,
         organizationMemberships: {
           include: {
             organization: true
@@ -95,8 +95,8 @@ async function loadUserPermissions(email: string): Promise<SessionPermissions | 
     }));
     
     // Get provider role
-    const providerRole = user.serviceProvider ? ProviderRole.PROVIDER : undefined;
-    const providerId = user.serviceProvider?.id;
+    const providerRole = user.provider ? ProviderRole.PROVIDER : undefined;
+    const providerId = user.provider?.id;
     
     const userPermissions: UserPermissions = {
       systemRole,
@@ -108,7 +108,7 @@ async function loadUserPermissions(email: string): Promise<SessionPermissions | 
     return {
       user: {
         id: user.id,
-        email: user.email
+        email: user.email || ''
       },
       permissions: userPermissions,
       lastUpdated: new Date()

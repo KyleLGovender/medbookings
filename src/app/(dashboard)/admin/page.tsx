@@ -23,26 +23,25 @@ async function getAdminDashboardData() {
     totalUsers,
     totalProviders,
     totalOrganizations,
-    pendingProviders,
-    pendingOrganizations,
+    pendingProvidersCount,
+    pendingOrganizationsCount,
     activeBookings
   ] = await Promise.all([
     prisma.user.count(),
-    prisma.serviceProvider.count({ where: { status: 'ACTIVE' } }),
+    prisma.provider.count({ where: { status: 'ACTIVE' } }),
     prisma.organization.count({ where: { status: 'ACTIVE' } }),
-    prisma.serviceProvider.count({ where: { status: 'PENDING_APPROVAL' } }),
+    prisma.provider.count({ where: { status: 'PENDING_APPROVAL' } }),
     prisma.organization.count({ where: { status: 'PENDING_APPROVAL' } }),
     prisma.booking.count({ where: { status: 'CONFIRMED' } })
   ]);
 
   // Get pending providers with requirements status
-  const pendingProvidersData = await prisma.serviceProvider.findMany({
+  const pendingProvidersData = await prisma.provider.findMany({
     where: { status: 'PENDING_APPROVAL' },
     include: {
       user: true,
-      providerType: true,
-      requirementSubmissions: {
-        include: { requirementType: true }
+      typeAssignments: {
+        include: { providerType: true }
       }
     },
     orderBy: { createdAt: 'asc' }
@@ -63,30 +62,19 @@ async function getAdminDashboardData() {
 
   // Transform data for component
   const pendingProviders = pendingProvidersData.map(provider => {
-    const totalRequirements = provider.requirementSubmissions.length;
-    const approvedRequirements = provider.requirementSubmissions.filter(
-      req => req.status === 'APPROVED'
-    ).length;
-    const rejectedRequirements = provider.requirementSubmissions.filter(
-      req => req.status === 'REJECTED'
-    ).length;
-
-    let requirementsStatus: 'complete' | 'pending' | 'rejected' = 'pending';
-    if (rejectedRequirements > 0) {
-      requirementsStatus = 'rejected';
-    } else if (totalRequirements > 0 && approvedRequirements === totalRequirements) {
-      requirementsStatus = 'complete';
-    }
+    // Simplified - no requirements for now since schema doesn't have them yet
+    const requirementsStatus: 'complete' | 'pending' | 'rejected' = 'pending';
+    const providerTypeName = provider.typeAssignments[0]?.providerType?.name || 'Unknown';
 
     return {
       id: provider.id,
-      email: provider.user.email,
-      name: `${provider.user.firstName} ${provider.user.lastName}`,
-      providerType: provider.providerType?.name || 'Unknown',
+      email: provider.user.email || 'No email',
+      name: provider.name,
+      providerType: providerTypeName,
       submittedAt: provider.createdAt,
       requirementsStatus,
-      totalRequirements,
-      approvedRequirements
+      totalRequirements: 0,
+      approvedRequirements: 0
     };
   });
 
@@ -96,8 +84,8 @@ async function getAdminDashboardData() {
     return {
       id: org.id,
       name: org.name,
-      type: org.type || 'Healthcare Facility',
-      ownerEmail: owner?.email || 'Unknown',
+      type: 'Healthcare Facility', // Default type since not in schema
+      ownerEmail: owner?.email || 'No email',
       submittedAt: org.createdAt,
       locationsCount: org.locations.length
     };
@@ -108,8 +96,8 @@ async function getAdminDashboardData() {
       totalUsers,
       totalProviders,
       totalOrganizations,
-      pendingProviders,
-      pendingOrganizations,
+      pendingProviders: pendingProvidersCount,
+      pendingOrganizations: pendingOrganizationsCount,
       activeBookings
     },
     pendingProviders,

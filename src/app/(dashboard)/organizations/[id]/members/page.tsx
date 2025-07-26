@@ -46,14 +46,13 @@ async function getOrganizationMemberData(organizationId: string) {
           select: {
             id: true,
             email: true,
-            firstName: true,
-            lastName: true
+            name: true
           }
         }
       },
       orderBy: [
         { role: 'asc' }, // OWNER first, then ADMIN, etc.
-        { joinedAt: 'asc' }
+        { createdAt: 'asc' }
       ]
     }),
     
@@ -63,10 +62,9 @@ async function getOrganizationMemberData(organizationId: string) {
         status: 'PENDING'
       },
       include: {
-        invitedByUser: {
+        invitedBy: {
           select: {
-            firstName: true,
-            lastName: true
+            name: true
           }
         }
       },
@@ -81,10 +79,10 @@ async function getOrganizationMemberData(organizationId: string) {
   // Transform data for component
   const transformedMembers = members.map(member => ({
     id: member.id,
-    email: member.user.email,
-    name: `${member.user.firstName} ${member.user.lastName}`,
+    email: member.user.email || 'No email',
+    name: member.user.name || 'No name',
     role: member.role as any,
-    joinedAt: member.joinedAt || member.createdAt
+    joinedAt: member.createdAt
   }));
 
   const transformedInvitations = pendingInvitations.map(invitation => ({
@@ -93,7 +91,7 @@ async function getOrganizationMemberData(organizationId: string) {
     role: invitation.role as any,
     sentAt: invitation.createdAt,
     expiresAt: invitation.expiresAt,
-    invitedBy: `${invitation.invitedByUser.firstName} ${invitation.invitedByUser.lastName}`
+    invitedBy: invitation.invitedBy.name || 'Unknown'
   }));
 
   return {

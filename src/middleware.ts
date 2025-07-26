@@ -124,11 +124,11 @@ export default withAuth(
     
     // Add permission context to headers for downstream use
     const response = NextResponse.next();
-    response.headers.set('x-user-role', token.role || 'USER');
+    response.headers.set('x-user-role', String(token.role) || 'USER');
     response.headers.set('x-user-id', token.sub || '');
     
     if (token.providerRole) {
-      response.headers.set('x-provider-role', token.providerRole);
+      response.headers.set('x-provider-role', String(token.providerRole));
     }
     
     return response;

@@ -17,8 +17,8 @@ import {
 /**
  * Role hierarchy definitions - roles inherit permissions from lower-level roles
  */
-export const ROLE_HIERARCHIES: Record<UserRole, RoleHierarchy> = {
-  // System roles
+// System role hierarchies
+export const SYSTEM_ROLE_HIERARCHIES: Record<SystemRole, RoleHierarchy> = {
   [SystemRole.SUPER_ADMIN]: {
     role: SystemRole.SUPER_ADMIN,
     inherits: [SystemRole.ADMIN, SystemRole.USER],
@@ -48,9 +48,11 @@ export const ROLE_HIERARCHIES: Record<UserRole, RoleHierarchy> = {
       Permission.VIEW_PROFILE,
       Permission.EDIT_PROFILE
     ]
-  },
-  
-  // Organization roles
+  }
+};
+
+// Organization role hierarchies
+export const ORGANIZATION_ROLE_HIERARCHIES: Record<OrganizationRole, RoleHierarchy> = {
   [OrganizationRole.OWNER]: {
     role: OrganizationRole.OWNER,
     inherits: [OrganizationRole.ADMIN, OrganizationRole.MANAGER, OrganizationRole.STAFF],
@@ -87,9 +89,11 @@ export const ROLE_HIERARCHIES: Record<UserRole, RoleHierarchy> = {
     permissions: [
       Permission.VIEW_ORGANIZATION
     ]
-  },
-  
-  // Provider role
+  }
+};
+
+// Provider role hierarchies
+export const PROVIDER_ROLE_HIERARCHIES: Record<ProviderRole, RoleHierarchy> = {
   [ProviderRole.PROVIDER]: {
     role: ProviderRole.PROVIDER,
     inherits: [],
@@ -107,7 +111,17 @@ export const ROLE_HIERARCHIES: Record<UserRole, RoleHierarchy> = {
  * Get all permissions for a role including inherited permissions
  */
 export function getRolePermissions(role: UserRole): Permission[] {
-  const hierarchy = ROLE_HIERARCHIES[role];
+  let hierarchy: RoleHierarchy | undefined;
+  
+  // Find the role in the appropriate hierarchy
+  if (Object.values(SystemRole).includes(role as SystemRole)) {
+    hierarchy = SYSTEM_ROLE_HIERARCHIES[role as SystemRole];
+  } else if (Object.values(OrganizationRole).includes(role as OrganizationRole)) {
+    hierarchy = ORGANIZATION_ROLE_HIERARCHIES[role as OrganizationRole];
+  } else if (Object.values(ProviderRole).includes(role as ProviderRole)) {
+    hierarchy = PROVIDER_ROLE_HIERARCHIES[role as ProviderRole];
+  }
+  
   if (!hierarchy) return [];
   
   const permissions = new Set(hierarchy.permissions);
@@ -133,7 +147,17 @@ export function roleHasPermission(role: UserRole, permission: Permission): boole
  * Check if a role inherits from another role
  */
 export function roleInheritsFrom(role: UserRole, inheritedRole: UserRole): boolean {
-  const hierarchy = ROLE_HIERARCHIES[role];
+  let hierarchy: RoleHierarchy | undefined;
+  
+  // Find the role in the appropriate hierarchy
+  if (Object.values(SystemRole).includes(role as SystemRole)) {
+    hierarchy = SYSTEM_ROLE_HIERARCHIES[role as SystemRole];
+  } else if (Object.values(OrganizationRole).includes(role as OrganizationRole)) {
+    hierarchy = ORGANIZATION_ROLE_HIERARCHIES[role as OrganizationRole];
+  } else if (Object.values(ProviderRole).includes(role as ProviderRole)) {
+    hierarchy = PROVIDER_ROLE_HIERARCHIES[role as ProviderRole];
+  }
+  
   if (!hierarchy) return false;
   
   if (hierarchy.inherits.includes(inheritedRole)) return true;

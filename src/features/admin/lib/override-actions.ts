@@ -58,7 +58,7 @@ export async function initiateAccountOverride(
     const targetUser = await prisma.user.findUnique({
       where: { email: targetUserEmail.toLowerCase() },
       include: {
-        serviceProvider: true,
+        provider: true,
         organizationMemberships: {
           include: { organization: true }
         }
@@ -91,7 +91,7 @@ export async function initiateAccountOverride(
     const overrideSession: OverrideSession = {
       originalAdminId: currentUser.user.id,
       targetUserId: targetUser.id,
-      targetUserEmail: targetUser.email,
+      targetUserEmail: targetUser.email || targetUserEmail,
       reason,
       startedAt: new Date(),
       expiresAt
@@ -118,8 +118,8 @@ export async function initiateAccountOverride(
     
     // Determine redirect URL based on user type
     let redirectUrl = '/profile';
-    if (targetUser.serviceProvider) {
-      redirectUrl = `/providers/${targetUser.serviceProvider.id}`;
+    if (targetUser.provider) {
+      redirectUrl = `/providers/${targetUser.provider.id}`;
     } else if (targetUser.organizationMemberships.length > 0) {
       redirectUrl = `/organizations/${targetUser.organizationMemberships[0].organizationId}`;
     }
@@ -218,7 +218,7 @@ export async function getCurrentOverrideSession(): Promise<OverrideSession | nul
     if (!currentUser) return null;
     
     // Check if this is an override session
-    for (const [adminId, session] of overrideSessions.entries()) {
+    for (const [adminId, session] of Array.from(overrideSessions.entries())) {
       if (session.targetUserId === currentUser.user.id) {
         // Verify session is still valid
         if (session.expiresAt < new Date()) {
