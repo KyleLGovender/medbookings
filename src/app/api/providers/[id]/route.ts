@@ -23,7 +23,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       },
       include: {
         services: true,
-        serviceConfigs: {
+        availabilityConfigs: {
           include: {
             service: true,
           },

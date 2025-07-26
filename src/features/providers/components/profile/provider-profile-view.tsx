@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { DeleteProviderButton } from '@/features/providers/components/delete-provider-button';
 import { OrganizationConnectionsManager } from '@/features/providers/components/organization-connections-manager';
 import { RequirementSubmissionCard } from '@/features/providers/components/requirement-submission-card';
-import { getServiceConfig } from '@/features/providers/lib/helper';
+// Remove server-side import - will use inline logic
 import { useProvider } from '@/features/providers/hooks/use-provider';
 
 interface ProviderProfileViewProps {
@@ -202,9 +202,14 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
         {provider.services && provider.services.length > 0 ? (
           <div className="space-y-4">
             {provider.services.map((service) => {
-              // Get service configuration with fallback to defaults
-              const config = getServiceConfig(provider, service.id);
-              const isCustomConfig = config?.source === 'custom';
+              // Get service configuration with fallback to defaults (client-side logic)
+              const customConfig = provider.serviceConfigs?.find(config => config.serviceId === service.id);
+              const isCustomConfig = !!customConfig;
+              
+              const effectivePrice = customConfig?.price ?? service.defaultPrice;
+              const effectiveDuration = customConfig?.duration ?? service.defaultDuration;
+              const isOnlineAvailable = customConfig?.isOnlineAvailable ?? true;
+              const isInPerson = customConfig?.isInPerson ?? false;
               
               return (
                 <div key={service.id} className="rounded-md border p-4">
@@ -224,23 +229,23 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
                       <div className="flex items-center">
                         <span className="w-16 text-xs text-muted-foreground">Price:</span>
                         <span className="text-sm font-semibold text-primary">
-                          R{config?.price || 'Varies'}
+                          R{effectivePrice || 'Varies'}
                         </span>
                       </div>
                       <div className="flex items-center">
                         <span className="w-16 text-xs text-muted-foreground">Duration:</span>
-                        <span className="text-sm">{config?.duration || 'Varies'} min</span>
+                        <span className="text-sm">{effectiveDuration || 'Varies'} min</span>
                       </div>
-                      {config && (config.isOnlineAvailable || config.isInPerson) && (
+                      {(isOnlineAvailable || isInPerson) && (
                         <div className="flex items-center">
                           <span className="w-16 text-xs text-muted-foreground">Available:</span>
                           <div className="flex gap-2">
-                            {config.isOnlineAvailable && (
+                            {isOnlineAvailable && (
                               <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800">
                                 Online
                               </span>
                             )}
-                            {config.isInPerson && (
+                            {isInPerson && (
                               <span className="rounded-full bg-purple-100 px-2 py-1 text-xs text-purple-800">
                                 In-Person
                               </span>

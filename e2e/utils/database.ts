@@ -309,37 +309,45 @@ export async function seedTestData() {
  * Create test users with different roles
  */
 export async function createTestUsers() {
-  const adminUser = await prisma.user.create({
-    data: {
-      email: 'admin@test.com',
-      name: 'Test Admin',
+  const adminUser = await prisma.user.upsert({
+    where: { email: 'e2e-test-admin@example.com' },
+    update: {},
+    create: {
+      email: 'e2e-test-admin@example.com',
+      name: 'E2E_TEST_Admin',
       role: 'ADMIN',
       emailVerified: new Date(),
     },
   });
 
-  const regularUser = await prisma.user.create({
-    data: {
-      email: 'user@test.com',
-      name: 'Test User',
+  const regularUser = await prisma.user.upsert({
+    where: { email: 'e2e-test-user@example.com' },
+    update: {},
+    create: {
+      email: 'e2e-test-user@example.com',
+      name: 'E2E_TEST_User',
       role: 'USER',
       emailVerified: new Date(),
     },
   });
 
-  const providerUser = await prisma.user.create({
-    data: {
-      email: 'provider@test.com',
-      name: 'Test Provider',
+  const providerUser = await prisma.user.upsert({
+    where: { email: 'e2e-test-provider@example.com' },
+    update: {},
+    create: {
+      email: 'e2e-test-provider@example.com',
+      name: 'E2E_TEST_Provider',
       role: 'USER',
       emailVerified: new Date(),
     },
   });
 
-  const orgOwnerUser = await prisma.user.create({
-    data: {
-      email: 'orgowner@test.com',
-      name: 'Test Org Owner',
+  const orgOwnerUser = await prisma.user.upsert({
+    where: { email: 'e2e-test-orgowner@example.com' },
+    update: {},
+    create: {
+      email: 'e2e-test-orgowner@example.com',
+      name: 'E2E_TEST_Org_Owner',
       role: 'USER',
       emailVerified: new Date(),
     },
@@ -368,8 +376,8 @@ export async function createTestProvider(userId: string, status: 'PENDING_APPROV
   const provider = await prisma.provider.create({
     data: {
       userId,
-      name: 'Dr. John Doe',
-      bio: 'Experienced general practitioner',
+      name: 'E2E_TEST_Dr_John_Doe',
+      bio: '[E2E_TEST] Experienced general practitioner for testing',
       image: 'https://via.placeholder.com/150',
       languages: ['English'],
       status,
@@ -394,10 +402,10 @@ export async function createTestProvider(userId: string, status: 'PENDING_APPROV
 export async function createTestOrganization(ownerId: string, status: 'PENDING_APPROVAL' | 'APPROVED' = 'PENDING_APPROVAL') {
   const organization = await prisma.organization.create({
     data: {
-      name: 'Test Medical Clinic',
-      description: 'A test medical clinic',
-      email: 'clinic@test.com',
-      website: 'https://test-clinic.com',
+      name: 'E2E_TEST_Medical_Clinic',
+      description: '[E2E_TEST] A test medical clinic for e2e testing',
+      email: 'e2e-test-clinic@example.com',
+      website: 'https://e2e-test-clinic.example.com',
       status,
       approvedAt: status === 'APPROVED' ? new Date() : null,
     },

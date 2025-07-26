@@ -1,7 +1,6 @@
 /**
  * Helper functions for providers
  */
-import { Decimal } from '@prisma/client/runtime/library';
 
 /**
  * Serializes a provider object to ensure it's safe for JSON responses
@@ -17,16 +16,16 @@ export function serializeProvider(provider: any): any {
       services: provider.services.map((service: any) => ({
         ...service,
         defaultPrice:
-          service.defaultPrice instanceof Decimal
+          typeof service.defaultPrice === 'object' && service.defaultPrice !== null
             ? Number(service.defaultPrice)
             : service.defaultPrice,
       })),
     }),
-    // Serialize serviceConfigs with Decimal prices
-    ...(provider.serviceConfigs && {
-      serviceConfigs: provider.serviceConfigs.map((config: any) => ({
+    // Serialize availabilityConfigs with Decimal prices, aliased as serviceConfigs for compatibility
+    ...(provider.availabilityConfigs && {
+      serviceConfigs: provider.availabilityConfigs.map((config: any) => ({
         ...config,
-        price: config.price instanceof Decimal ? Number(config.price) : config.price,
+        price: typeof config.price === 'object' && config.price !== null ? Number(config.price) : config.price,
         createdAt: config.createdAt?.toISOString(),
         updatedAt: config.updatedAt?.toISOString(),
       })),

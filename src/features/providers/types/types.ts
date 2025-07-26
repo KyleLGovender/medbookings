@@ -194,6 +194,19 @@ export interface SerializedService {
   displayPriority: number;
   createdAt?: string;
   updatedAt?: string;
+  // Fields added by provider services API
+  isSelected?: boolean;
+  currentPrice?: number | null;
+  currentDuration?: number | null;
+  hasCustomConfig?: boolean;
+  customConfig?: {
+    id: string;
+    duration: number;
+    price: number | null;
+    isOnlineAvailable: boolean;
+    isInPerson: boolean;
+    locationId: string | null;
+  };
 }
 
 export interface SerializedProvider {

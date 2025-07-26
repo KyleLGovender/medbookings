@@ -2,14 +2,23 @@
 
 ## Relevant Files
 
-- `/src/features/providers/lib/actions/register-provider.ts` - Server action that handles provider registration (needs to create ServiceAvailabilityConfig records)
-- `/src/features/providers/components/profile/edit-services.tsx` - Edit services page component (needs to handle missing configs)
-- `/src/features/providers/hooks/use-provider.ts` - Hook for fetching provider data (needs to include ServiceAvailabilityConfig)
-- `/src/features/providers/hooks/use-provider-type-services.ts` - Hook for fetching provider services (needs to prioritize configs)
-- `/src/features/providers/hooks/use-provider-updates.ts` - Hook for updating provider services (needs ServiceAvailabilityConfig logic)
-- `/src/app/api/providers/[id]/route.ts` - API endpoint for provider details (may need updates)
-- `/src/features/providers/lib/actions/` - Server actions for provider service operations
-- Provider profile display components - Any components showing service pricing/duration
+### ✅ Modified Files
+- `/src/features/providers/lib/actions/register-provider.ts` - Updated to extract serviceConfigs and create ServiceAvailabilityConfig records
+- `/src/features/providers/components/profile/edit-services.tsx` - Fixed form initialization to use current effective pricing
+- `/src/features/providers/components/profile/provider-profile-view.tsx` - Updated to display custom rates with fallback logic
+- `/src/features/providers/hooks/use-provider-type-services.ts` - No changes needed (uses enhanced API)
+- `/src/features/providers/hooks/use-provider-updates.ts` - No changes needed (uses existing server action)
+- `/src/features/providers/lib/actions/update-provider.ts` - Fixed to create/update ServiceAvailabilityConfig instead of modifying Service defaults
+- `/src/app/api/providers/[id]/route.ts` - Updated to include availabilityConfigs in provider queries
+- `/src/app/api/providers/services/route.ts` - Enhanced to include ServiceAvailabilityConfig data with fallbacks
+- `/src/features/providers/lib/helper.ts` - Updated serializer to handle availabilityConfigs and convert Decimal prices
+- `/src/features/providers/types/types.ts` - Added serviceConfigs to SerializedProvider and enhanced SerializedService types
+- `/e2e/utils/database.ts` - Fixed schema references for e2e cleanup functions
+
+### ✅ Created Files
+- `/scripts/migrate-service-configs.sql` - SQL script to identify and migrate missing ServiceAvailabilityConfig records
+- `/scripts/migrate-service-configs.ts` - TypeScript migration script with detailed logging and error handling
+- `/scripts/MIGRATION-README.md` - Comprehensive migration guide and production deployment instructions
 
 ### Notes
 
@@ -48,9 +57,9 @@
   - [x] 4.4 Update useUpdateProviderServices hook to create/update ServiceAvailabilityConfig records
   - [x] 4.5 Ensure proper error handling and loading states for the edit services page
 
-- [ ] 5.0 Create Data Migration for Existing Providers
-  - [ ] 5.1 Write SQL script to identify providers missing ServiceAvailabilityConfig records
-  - [ ] 5.2 Create migration script to generate default configs for existing providers
-  - [ ] 5.3 Use Service.defaultPrice and Service.defaultDuration as initial values
-  - [ ] 5.4 Test migration script on development database
-  - [ ] 5.5 Document migration process and coordinate production deployment
+- [x] 5.0 Create Data Migration for Existing Providers
+  - [x] 5.1 Write SQL script to identify providers missing ServiceAvailabilityConfig records
+  - [x] 5.2 Create migration script to generate default configs for existing providers
+  - [x] 5.3 Use Service.defaultPrice and Service.defaultDuration as initial values
+  - [x] 5.4 Test migration script on development database
+  - [x] 5.5 Document migration process and coordinate production deployment
