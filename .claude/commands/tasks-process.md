@@ -80,18 +80,19 @@ When implementing tasks, follow this Git workflow:
    # Only continue after successful build
    
    # REQUIRED: Run Playwright e2e tests to verify functionality
-   # Use Playwright MCP tools for better integration and troubleshooting
+   # **MUST USE PLAYWRIGHT MCP SERVER** - Never use bash npx playwright test
+   # Use Playwright MCP tools for ALL e2e testing and troubleshooting
    # First take a browser snapshot to understand current state
-   # Then run tests and troubleshoot any failures interactively
-   npx playwright test
+   # Then use MCP browser tools to manually test critical user flows
+   # Verify the availability creation form works end-to-end
    
-   # REQUIRED: Fix any failing tests before proceeding to PR creation
+   # REQUIRED: Fix any failing functionality before proceeding to PR creation
    # Use Playwright MCP browser tools to:
    # - Navigate to failing pages/components
    # - Take screenshots for debugging
    # - Interact with elements to reproduce issues
    # - Verify fixes by running specific test scenarios
-   # Only continue to PR creation after successful build AND passing tests
+   # Only continue to PR creation after successful build AND verified functionality
    ```
 
 4. **After All Tasks Complete, Build Passes, and Tests Pass:**
@@ -177,7 +178,7 @@ When working with task lists, the AI must:
    - **Before starting work**: Verify correct branch and announce current working branch
    - Check which sub‑task is next
    - **Default Mode:** After implementing a sub‑task, commit changes, update the file, and then pause for user approval
-   - **YOLO Mode:** After implementing a sub‑task, commit changes, update the file, and immediately proceed to the next task without waiting for approval. When ALL tasks are complete, run `npm run build` repeatedly until it passes, then run `npx playwright test` using MCP browser tools to troubleshoot any failures until tests pass, then ASK USER for permission to create PR.
+   - **YOLO Mode:** After implementing a sub‑task, commit changes, update the file, and immediately proceed to the next task without waiting for approval. When ALL tasks are complete, run `npm run build` repeatedly until it passes, then use Playwright MCP browser tools to manually test critical functionality and troubleshoot any issues until functionality is verified, then ASK USER for permission to create PR.
 
 4. **MCP Tool Usage:**
    - **PostgreSQL Server** (`mcp__postgres-server__query`): Use for database queries, constraint verification, data integrity checks
@@ -203,17 +204,18 @@ When working with task lists, the AI must:
 
 6. **Build and Test Verification:**
    - **CRITICAL**: Before creating any PR, ALWAYS run `npm run build` to verify the application compiles successfully
-   - **CRITICAL**: After successful build, run `npx playwright test` to verify end-to-end functionality
-   - **Use Playwright MCP Tools for Test Troubleshooting:**
-     - When tests fail, use `mcp__playwright__browser_navigate` to go to failing pages
+   - **CRITICAL**: After successful build, **MUST USE PLAYWRIGHT MCP SERVER** to verify end-to-end functionality
+   - **NEVER use bash `npx playwright test`** - Always use Playwright MCP browser tools
+   - **Use Playwright MCP Tools for Functionality Verification:**
+     - Use `mcp__playwright__browser_navigate` to go to pages and test user flows
      - Use `mcp__playwright__browser_snapshot` to capture current page state
      - Use `mcp__playwright__browser_take_screenshot` for visual debugging
-     - Use `mcp__playwright__browser_click`, `mcp__playwright__browser_type` to interact with failing elements
+     - Use `mcp__playwright__browser_click`, `mcp__playwright__browser_type` to interact with elements
      - Use `mcp__playwright__browser_evaluate` to run JavaScript and inspect page state
-     - Systematically reproduce test failures and verify fixes through browser automation
-   - Fix ALL compilation errors and test failures before proceeding to PR creation
+     - Systematically test critical functionality and verify fixes through browser automation
+   - Fix ALL compilation errors and functionality issues before proceeding to PR creation
    - This prevents failed CI/CD builds, deployment issues, and broken functionality
-   - Both build AND tests must pass completely before any PR is created
+   - Both build AND verified functionality must pass completely before any PR is created
 
 7. **PR Creation:**
    - When all tasks in a group are complete, build passes, AND tests pass, **ASK USER FOR PERMISSION** before creating PR

@@ -32,6 +32,40 @@
     - Location selection functions properly
     - Profile selection works for both provider and organization modes
   - **Estimated Time**: 4-5 hours
+- [ ] **Technical Debt**: Standardize availability-edit-form.tsx to match cleaned creation form pattern - `src/features/calendar/availability/components/availability-edit-form.tsx:1`
+  - **Issue**: The availability-edit-form.tsx component doesn't follow the same comprehensive pattern as the availability-creation-form.tsx. It's missing key sections like profile selection, recurrence settings, location management, and doesn't have the same level of form organization and structure. This inconsistency makes the codebase harder to maintain and creates confusion for developers working with both forms.
+  - **Impact**: Inconsistent form patterns across the availability system create maintenance burden, confuse developers, and make it difficult to ensure feature parity between creation and editing workflows. Users may expect similar functionality in both forms but find missing features in the edit form.
+  - **Implementation**:
+    1. **PREREQUISITE**: Complete cleanup of availability-creation-form.tsx first to ensure clean reference pattern
+    2. **Pattern Analysis**: Study the cleaned creation form structure and identify all sections and patterns
+    3. **Add Missing Sections**: 
+       - Profile selection section (creator type, provider selection) - adapted for edit mode
+       - Recurrence settings section with custom recurrence modal support
+       - Location section with online/physical location management
+       - Proper form organization with consistent separators and headings
+    4. **Adapt for Edit Mode**: Modify sections appropriately for editing:
+       - Profile selection may be read-only or limited based on permissions
+       - Recurrence editing needs series update options (single/series/future)
+       - Location changes may be restricted if bookings exist
+       - Time changes restricted when bookings exist (already implemented)
+    5. **State Management**: Align state management patterns with creation form
+    6. **Form Structure**: Use same form organization, validation, and error handling patterns
+    7. **UI Components**: Use consistent UI components, icons, and styling patterns
+    8. **Form Validation**: Ensure validation rules are consistent between forms
+    9. **Error Handling**: Standardize error handling and loading states
+    10. **Accessibility**: Ensure accessibility patterns match creation form
+    11. **Testing Integration**: Ensure both forms can be tested using similar patterns
+  - **Testing**:
+    - All existing edit functionality continues to work
+    - New sections (profile, recurrence, location) display correctly
+    - Form validation works consistently with creation form
+    - Booking restrictions still apply appropriately
+    - Series editing options work correctly for recurring availabilities
+    - Location changes respect booking constraints
+    - Form submission and error handling work correctly
+    - Accessibility features work properly
+    - Both forms have consistent user experience
+  - **Estimated Time**: 6-8 hours
 
 ----------------------------------------------------------------------------------------
 
@@ -77,40 +111,6 @@
 ## 📊 Medium Priority Issues & Tasks
 
 
-- [ ] **Technical Debt**: Standardize availability-edit-form.tsx to match cleaned creation form pattern - `src/features/calendar/availability/components/availability-edit-form.tsx:1`
-  - **Issue**: The availability-edit-form.tsx component doesn't follow the same comprehensive pattern as the availability-creation-form.tsx. It's missing key sections like profile selection, recurrence settings, location management, and doesn't have the same level of form organization and structure. This inconsistency makes the codebase harder to maintain and creates confusion for developers working with both forms.
-  - **Impact**: Inconsistent form patterns across the availability system create maintenance burden, confuse developers, and make it difficult to ensure feature parity between creation and editing workflows. Users may expect similar functionality in both forms but find missing features in the edit form.
-  - **Implementation**:
-    1. **PREREQUISITE**: Complete cleanup of availability-creation-form.tsx first to ensure clean reference pattern
-    2. **Pattern Analysis**: Study the cleaned creation form structure and identify all sections and patterns
-    3. **Add Missing Sections**: 
-       - Profile selection section (creator type, provider selection) - adapted for edit mode
-       - Recurrence settings section with custom recurrence modal support
-       - Location section with online/physical location management
-       - Proper form organization with consistent separators and headings
-    4. **Adapt for Edit Mode**: Modify sections appropriately for editing:
-       - Profile selection may be read-only or limited based on permissions
-       - Recurrence editing needs series update options (single/series/future)
-       - Location changes may be restricted if bookings exist
-       - Time changes restricted when bookings exist (already implemented)
-    5. **State Management**: Align state management patterns with creation form
-    6. **Form Structure**: Use same form organization, validation, and error handling patterns
-    7. **UI Components**: Use consistent UI components, icons, and styling patterns
-    8. **Form Validation**: Ensure validation rules are consistent between forms
-    9. **Error Handling**: Standardize error handling and loading states
-    10. **Accessibility**: Ensure accessibility patterns match creation form
-    11. **Testing Integration**: Ensure both forms can be tested using similar patterns
-  - **Testing**:
-    - All existing edit functionality continues to work
-    - New sections (profile, recurrence, location) display correctly
-    - Form validation works consistently with creation form
-    - Booking restrictions still apply appropriately
-    - Series editing options work correctly for recurring availabilities
-    - Location changes respect booking constraints
-    - Form submission and error handling work correctly
-    - Accessibility features work properly
-    - Both forms have consistent user experience
-  - **Estimated Time**: 6-8 hours
   
 ----------------------------------------------------------------------------------------
 
@@ -176,6 +176,7 @@
 ### Availability Management
 - [ ] Design provider calendar view
 - [ ] Enable provider to create and edit availability
+    - [ ] Implement ability to select which provider it is and sync with URL params
     - [ ] Day, 3 Day, Week and Monthly Views
     - [ ] Well defined availability creation form
     - [ ] Availability Edit form

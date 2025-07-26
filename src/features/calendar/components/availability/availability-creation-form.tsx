@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Organization } from '@prisma/client';
 import { Calendar, Clock, MapPin, Repeat } from 'lucide-react';
-import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,12 +46,9 @@ import {
 } from '@/features/calendar/types/types';
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
-import { OrganizationLocation } from '@/features/organizations/types/types';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
-
-// Using centralized OrganizationLocation type instead of local interface
 
 interface AvailabilityCreationFormProps {
   providerId: string;
@@ -62,6 +59,17 @@ interface AvailabilityCreationFormProps {
 }
 
 type FormValues = CreateAvailabilityData;
+
+/**
+ * Helper function to update date while preserving time
+ */
+const updateDatePreservingTime = (currentTime: Date, newDate: Date): Date => {
+  const updatedTime = new Date(currentTime);
+  updatedTime.setFullYear(newDate.getFullYear());
+  updatedTime.setMonth(newDate.getMonth());
+  updatedTime.setDate(newDate.getDate());
+  return updatedTime;
+};
 
 /**
  * AvailabilityCreationForm - A comprehensive form for creating provider availability
@@ -90,9 +98,6 @@ export function AvailabilityCreationForm({
 }: AvailabilityCreationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customRecurrenceModalOpen, setCustomRecurrenceModalOpen] = useState(false);
-  const [currentRecurrenceOption, setCurrentRecurrenceOption] = useState<RecurrenceOption>(
-    RecurrenceOption.NONE
-  );
   const [customRecurrenceData, setCustomRecurrenceData] = useState<
     CustomRecurrenceData | undefined
   >();
@@ -154,10 +159,10 @@ export function AvailabilityCreationForm({
     },
   });
 
-  const watchIsRecurring = form.watch('isRecurring');
-  const watchSchedulingRule = form.watch('schedulingRule');
+  // Watch form values for reactive UI updates
   const watchIsOnlineAvailable = form.watch('isOnlineAvailable');
   const watchLocationId = form.watch('locationId');
+  const watchStartTime = form.watch('startTime');
 
   // Memoize selected location to avoid repeated lookups
   const selectedLocation = useMemo(() => {
@@ -165,10 +170,11 @@ export function AvailabilityCreationForm({
     return (
       availableLocations
         .filter((loc) => loc.id)
-        .find((loc: OrganizationLocation) => loc.id === watchLocationId) || null
+        .find((loc) => loc.id === watchLocationId) || null
     );
   }, [watchLocationId, availableLocations]);
 
+  // Form submission handlers
   const onSubmit = async (data: FormValues) => {
     if (createMutation.isPending) return;
 
@@ -177,16 +183,16 @@ export function AvailabilityCreationForm({
       await createMutation.mutateAsync(data);
     } catch (error) {
       // Error handled by mutation onError callback
+      console.error('Failed to create availability:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCustomRecurrenceSave = (data: CustomRecurrenceData) => {
-    const startTime = form.watch('startTime');
     const pattern = createRecurrencePattern(
       RecurrenceOption.CUSTOM,
-      startTime,
+      watchStartTime,
       data.selectedDays,
       data.endDate ? data.endDate.toISOString().split('T')[0] : undefined
     );
@@ -261,12 +267,9 @@ export function AvailabilityCreationForm({
                         </SelectItem>
                       )}
                       {selectedCreatorType === 'organization' && userOrganizations.length > 0 && (
-                        <>
-                          {/* Organization providers will be loaded via organization provider connections */}
-                          <SelectItem value={selectedProviderId || ''} disabled>
-                            Organization providers not yet implemented
-                          </SelectItem>
-                        </>
+                        <SelectItem value="" disabled>
+                          Select an organization first to see providers
+                        </SelectItem>
                       )}
                     </SelectContent>
                   </Select>
@@ -294,18 +297,8 @@ export function AvailabilityCreationForm({
                             const currentStartTime = form.getValues('startTime');
                             const currentEndTime = form.getValues('endTime');
 
-                            const newStartTime = new Date(currentStartTime);
-                            newStartTime.setFullYear(date.getFullYear());
-                            newStartTime.setMonth(date.getMonth());
-                            newStartTime.setDate(date.getDate());
-
-                            const newEndTime = new Date(currentEndTime);
-                            newEndTime.setFullYear(date.getFullYear());
-                            newEndTime.setMonth(date.getMonth());
-                            newEndTime.setDate(date.getDate());
-
-                            form.setValue('startTime', newStartTime);
-                            form.setValue('endTime', newEndTime);
+                            form.setValue('startTime', updateDatePreservingTime(currentStartTime, date));
+                            form.setValue('endTime', updateDatePreservingTime(currentEndTime, date));
                           }
                         }}
                       />
@@ -361,8 +354,7 @@ export function AvailabilityCreationForm({
                 control={form.control}
                 name="recurrencePattern"
                 render={({ field }) => {
-                  const startTime = form.watch('startTime');
-                  const recurrenceOptions = getRecurrenceOptions(startTime);
+                  const recurrenceOptions = getRecurrenceOptions(watchStartTime);
 
                   return (
                     <FormItem>
@@ -370,12 +362,11 @@ export function AvailabilityCreationForm({
                       <Select
                         onValueChange={(value) => {
                           const option = value as RecurrenceOption;
-                          setCurrentRecurrenceOption(option);
 
                           if (option === RecurrenceOption.CUSTOM) {
                             setCustomRecurrenceModalOpen(true);
                           } else {
-                            const pattern = createRecurrencePattern(option, startTime);
+                            const pattern = createRecurrencePattern(option, watchStartTime);
                             field.onChange(pattern);
                             form.setValue('isRecurring', option !== RecurrenceOption.NONE);
                           }
@@ -524,7 +515,7 @@ export function AvailabilityCreationForm({
                         <SelectContent>
                           {availableLocations
                             .filter((location) => location.id)
-                            .map((location: OrganizationLocation) => (
+                            .map((location) => (
                               <SelectItem key={location.id} value={location.id!}>
                                 {location.name}
                               </SelectItem>
