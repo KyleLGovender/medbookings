@@ -59,7 +59,8 @@
       "Bash(TEST_DATABASE_URL=\"postgresql://medbookings_test:test_password@localhost:5433/medbookings_test\" npx playwright test --project=setup \"e2e/fixtures/auth.setup.ts:64:6\" --timeout=30000)",
       "Bash(TEST_DATABASE_URL=\"postgresql://medbookings_test:test_password@localhost:5433/medbookings_test\" npx playwright test --project=setup --timeout=30000)",
       "Bash(TEST_DATABASE_URL=\"postgresql://medbookings_test:test_password@localhost:5433/medbookings_test\" npx playwright test --project=setup \"e2e/fixtures/auth.setup.ts:31:6\" --timeout=30000)",
-      "Bash(TEST_DATABASE_URL=\"postgresql://medbookings_test:test_password@localhost:5433/medbookings_test\" npx playwright test e2e/tests/auth/login.spec.ts --timeout=15000)"
+      "Bash(TEST_DATABASE_URL=\"postgresql://medbookings_test:test_password@localhost:5433/medbookings_test\" npx playwright test e2e/tests/auth/login.spec.ts --timeout=15000)",
+      "Bash(TEST_DATABASE_URL=\"postgresql://medbookings_test:test_password@localhost:5433/medbookings_test\" npx playwright test --project=chromium --grep \"should display login page correctly\" --timeout=10000)"
     ],
     "deny": []
   },

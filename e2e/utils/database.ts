@@ -49,16 +49,20 @@ export async function cleanDatabase() {
  * Seed basic test data
  */
 export async function seedTestData() {
-  // First create provider types
-  const generalPractitioner = await prisma.providerType.create({
-    data: {
+  // First create provider types (use upsert to avoid duplicates)
+  const generalPractitioner = await prisma.providerType.upsert({
+    where: { name: 'General Practitioner' },
+    update: {},
+    create: {
       name: 'General Practitioner',
       description: 'General medical practitioner',
     },
   });
 
-  const physiotherapist = await prisma.providerType.create({
-    data: {
+  const physiotherapist = await prisma.providerType.upsert({
+    where: { name: 'Physiotherapist' },
+    update: {},
+    create: {
       name: 'Physiotherapist',
       description: 'Physical therapy specialist',
     },
