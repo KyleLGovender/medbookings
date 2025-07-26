@@ -19,17 +19,6 @@
     9. **Performance**: Review for unnecessary re-renders and optimize form watchers
     10. **Documentation**: Add JSDoc comments for complex logic and ensure code is self-documenting
     11. **CLAUDE.md Compliance**: Ensure all patterns follow the standards specified in CLAUDE.md
-    12. **Testing Readiness**: Structure code to be easily testable and maintainable
-  - **Testing**:
-    - All existing functionality works exactly as before
-    - No console errors or warnings
-    - TypeScript compilation without warnings
-    - Form validation works correctly
-    - All form fields and interactions function properly
-    - Custom recurrence modal works correctly
-    - Service selection works as expected
-    - Location selection functions properly
-    - Profile selection works for both provider and organization modes
   - **Estimated Time**: 4-5 hours
 - [ ] **Technical Debt**: Standardize availability-edit-form.tsx to match cleaned creation form pattern - `src/features/calendar/availability/components/availability-edit-form.tsx:1`
   - **Issue**: The availability-edit-form.tsx component doesn't follow the same comprehensive pattern as the availability-creation-form.tsx. It's missing key sections like profile selection, recurrence settings, location management, and doesn't have the same level of form organization and structure. This inconsistency makes the codebase harder to maintain and creates confusion for developers working with both forms.
@@ -53,17 +42,6 @@
     8. **Form Validation**: Ensure validation rules are consistent between forms
     9. **Error Handling**: Standardize error handling and loading states
     10. **Accessibility**: Ensure accessibility patterns match creation form
-    11. **Testing Integration**: Ensure both forms can be tested using similar patterns
-  - **Testing**:
-    - All existing edit functionality continues to work
-    - New sections (profile, recurrence, location) display correctly
-    - Form validation works consistently with creation form
-    - Booking restrictions still apply appropriately
-    - Series editing options work correctly for recurring availabilities
-    - Location changes respect booking constraints
-    - Form submission and error handling work correctly
-    - Accessibility features work properly
-    - Both forms have consistent user experience
   - **Estimated Time**: 6-8 hours
 
 ----------------------------------------------------------------------------------------

@@ -27,12 +27,12 @@
   - [x] 1.4 Verify the Provider-Service relationship creation in current registration flow
   - [x] 1.5 Identify where service price/duration data is lost in the current flow
 
-- [ ] 2.0 Implement ServiceAvailabilityConfig Creation in Registration
-  - [ ] 2.1 Update registerProvider server action to extract service configuration data from FormData
-  - [ ] 2.2 Add logic to create ServiceAvailabilityConfig records after Provider creation
-  - [ ] 2.3 Handle online/in-person availability flags in service configurations
-  - [ ] 2.4 Implement proper error handling for ServiceAvailabilityConfig creation
-  - [ ] 2.5 Test registration flow with database verification of created records
+- [x] 2.0 Implement ServiceAvailabilityConfig Creation in Registration
+  - [x] 2.1 Update registerProvider server action to extract service configuration data from FormData
+  - [x] 2.2 Add logic to create ServiceAvailabilityConfig records after Provider creation
+  - [x] 2.3 Handle online/in-person availability flags in service configurations
+  - [x] 2.4 Implement proper error handling for ServiceAvailabilityConfig creation
+  - [x] 2.5 Test registration flow with database verification of created records
 
 - [ ] 3.0 Update Provider Display Logic to Use ServiceAvailabilityConfig
   - [ ] 3.1 Modify provider detail queries to include ServiceAvailabilityConfig data

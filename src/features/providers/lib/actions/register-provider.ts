@@ -21,6 +21,29 @@ export async function registerProvider(prevState: any, formData: FormData) {
     const whatsapp = formData.get('whatsapp') as string;
     const website = (formData.get('website') as string) || null;
 
+    // Extract service configurations from FormData
+    const serviceConfigs: Record<string, { 
+      duration?: number; 
+      price?: number; 
+      isOnlineAvailable?: boolean; 
+      isInPerson?: boolean; 
+    }> = {};
+    for (const serviceId of services) {
+      const duration = formData.get(`serviceConfigs[${serviceId}][duration]`);
+      const price = formData.get(`serviceConfigs[${serviceId}][price]`);
+      const isOnlineAvailable = formData.get(`serviceConfigs[${serviceId}][isOnlineAvailable]`);
+      const isInPerson = formData.get(`serviceConfigs[${serviceId}][isInPerson]`);
+      
+      if (duration || price || isOnlineAvailable || isInPerson) {
+        serviceConfigs[serviceId] = {
+          ...(duration && { duration: parseInt(duration as string, 10) }),
+          ...(price && { price: parseFloat(price as string) }),
+          ...(isOnlineAvailable !== null && { isOnlineAvailable: isOnlineAvailable === 'true' }),
+          ...(isInPerson !== null && { isInPerson: isInPerson === 'true' }),
+        };
+      }
+    }
+
     // Handle provider types (multiple or single for backward compatibility)
     const multipleProviderTypeIds = formData.getAll('providerTypeIds') as string[];
     const singleProviderTypeId = formData.get('providerTypeId') as string;
@@ -139,6 +162,35 @@ export async function registerProvider(prevState: any, formData: FormData) {
         },
       },
     });
+
+    // Create ServiceAvailabilityConfig records for services with custom configurations
+    if (Object.keys(serviceConfigs).length > 0) {
+      try {
+        const serviceAvailabilityConfigs = Object.entries(serviceConfigs).map(([serviceId, config]) => ({
+          serviceId,
+          providerId: provider.id,
+          duration: config.duration || 30, // Default to 30 minutes if not specified
+          price: config.price || 0, // Default to 0 if not specified
+          isOnlineAvailable: config.isOnlineAvailable ?? true, // Default to online available
+          isInPerson: config.isInPerson ?? false, // Default to not in-person unless specified
+        }));
+
+        await prisma.serviceAvailabilityConfig.createMany({
+          data: serviceAvailabilityConfigs,
+        });
+
+        console.log(`Created ${serviceAvailabilityConfigs.length} ServiceAvailabilityConfig records for provider ${provider.id}`);
+      } catch (configError) {
+        console.error('Failed to create ServiceAvailabilityConfig records:', {
+          providerId: provider.id,
+          serviceConfigs,
+          error: configError instanceof Error ? configError.message : 'Unknown error',
+          stack: configError instanceof Error ? configError.stack : undefined,
+        });
+        // Note: We don't want to fail the entire registration if ServiceAvailabilityConfig creation fails
+        // The provider registration should succeed and configs can be created later
+      }
+    }
 
     // Send WhatsApp confirmation
     try {
