@@ -14,6 +14,7 @@ import {
   CreateAvailabilityData,
   UpdateAvailabilityData,
 } from '@/features/calendar/types/types';
+import { api } from '@/utils/api';
 
 // =============================================================================
 // QUERY KEY FACTORY
@@ -72,55 +73,33 @@ type RejectAvailabilityContext = {
 
 // Query hooks
 export function useAvailabilityById(availabilityId: string | undefined) {
-  return useQuery({
-    queryKey: availabilityId ? availabilityKeys.detail(availabilityId) : ['availability'],
-    queryFn: async () => {
-      if (!availabilityId) {
-        throw new Error('Availability ID is required');
-      }
-
-      return apiRequest(
-        `/api/calendar/availability/${availabilityId}`,
-        { method: 'GET' },
-        { operation: 'fetch availability by ID', resourceId: availabilityId }
-      );
-    },
-    enabled: !!availabilityId,
-    staleTime: DEFAULT_STALE_TIME,
-    gcTime: DEFAULT_CACHE_TIME,
-    retry: shouldRetry,
-  });
+  return api.calendar.getById.useQuery(
+    { id: availabilityId || '' },
+    {
+      enabled: !!availabilityId,
+      staleTime: DEFAULT_STALE_TIME,
+      gcTime: DEFAULT_CACHE_TIME,
+    }
+  );
 }
 
 export function useAvailabilitySearch(params: AvailabilitySearchParams) {
-  return useQuery({
-    queryKey: availabilityKeys.search(params),
-    queryFn: async () => {
-      const searchParams = new URLSearchParams();
-
-      if (params.providerId) searchParams.set('providerId', params.providerId);
-      if (params.organizationId) searchParams.set('organizationId', params.organizationId);
-      if (params.locationId) searchParams.set('locationId', params.locationId);
-      if (params.serviceId) searchParams.set('serviceId', params.serviceId);
-      if (params.startDate) searchParams.set('startDate', params.startDate.toISOString());
-      if (params.endDate) searchParams.set('endDate', params.endDate.toISOString());
-      if (params.status) searchParams.set('status', params.status);
-      if (params.seriesId) searchParams.set('seriesId', params.seriesId);
-
-      return apiRequest(
-        `/api/calendar/availability?${searchParams.toString()}`,
-        { method: 'GET' },
-        {
-          operation: 'search availability',
-          providerId: params.providerId,
-          organizationId: params.organizationId,
-        }
-      );
+  return api.calendar.searchAvailability.useQuery(
+    {
+      providerId: params.providerId,
+      organizationId: params.organizationId,
+      locationId: params.locationId,
+      serviceId: params.serviceId,
+      startDate: params.startDate?.toISOString(),
+      endDate: params.endDate?.toISOString(),
+      status: params.status,
+      seriesId: params.seriesId,
     },
-    staleTime: DEFAULT_STALE_TIME,
-    gcTime: DEFAULT_CACHE_TIME,
-    retry: shouldRetry,
-  });
+    {
+      staleTime: DEFAULT_STALE_TIME,
+      gcTime: DEFAULT_CACHE_TIME,
+    }
+  );
 }
 
 export function useProviderAvailability(providerId: string | undefined) {
@@ -214,43 +193,13 @@ export function useAvailabilitySeries(seriesId: string | undefined) {
 export function useCreateAvailability(options?: {
   onSuccess?: (data: AvailabilityWithRelations, variables: CreateAvailabilityData) => void;
 }) {
-  const queryClient = useQueryClient();
+  const utils = api.useUtils();
 
-  return useMutation<AvailabilityWithRelations, Error, CreateAvailabilityData>({
-    mutationFn: async (data) => {
-      const response = await fetch('/api/calendar/availability/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create availability');
-      }
-
-      return response.json();
-    },
+  return api.calendar.create.useMutation({
     onSuccess: (data, variables) => {
-      // Invalidate relevant queries using standardized keys
-      queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
-      queryClient.invalidateQueries({
-        queryKey: availabilityKeys.provider(variables.providerId),
-      });
-
-      if (variables.organizationId) {
-        queryClient.invalidateQueries({
-          queryKey: availabilityKeys.organization(variables.organizationId),
-        });
-      }
-
-      if (variables.seriesId) {
-        queryClient.invalidateQueries({
-          queryKey: availabilityKeys.series(variables.seriesId),
-        });
-      }
+      // Invalidate relevant queries
+      utils.calendar.searchAvailability.invalidate();
+      utils.calendar.getById.invalidate();
 
       options?.onSuccess?.(data, variables);
     },
@@ -383,32 +332,15 @@ export function useCancelAvailability(options?: {
 }
 
 export function useDeleteAvailability(options?: {
-  onSuccess?: (variables: { id: string; scope?: 'single' | 'future' | 'all' }) => void;
+  onSuccess?: (variables: { ids: string[] }) => void;
 }) {
-  const queryClient = useQueryClient();
+  const utils = api.useUtils();
 
-  return useMutation<void, Error, { id: string; scope?: 'single' | 'future' | 'all' }>({
-    mutationFn: async ({ id, scope }) => {
-      const searchParams = new URLSearchParams({ id });
-      if (scope) {
-        searchParams.set('scope', scope);
-      }
-
-      const response = await fetch(`/api/calendar/availability/delete?${searchParams.toString()}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to delete availability');
-      }
-    },
+  return api.calendar.delete.useMutation({
     onSuccess: (_, variables) => {
       // Invalidate all availability queries
-      queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
-
-      // Remove the specific availability from cache
-      queryClient.removeQueries({ queryKey: availabilityKeys.detail(variables.id) });
+      utils.calendar.searchAvailability.invalidate();
+      utils.calendar.getById.invalidate();
 
       options?.onSuccess?.(variables);
     },
