@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQueries } from '@tanstack/react-query';
 
-import { OrganizationLocation } from '@/features/organizations/types/types';
+import { api } from '@/utils/api';
 
 /**
  * Hook to fetch locations for multiple organizations
@@ -8,25 +8,28 @@ import { OrganizationLocation } from '@/features/organizations/types/types';
  * @returns Query result containing all locations from the specified organizations
  */
 export function useOrganizationLocations(organizationIds: string[]) {
-  return useQuery<OrganizationLocation[]>({
-    queryKey: ['organization-locations', organizationIds],
-    queryFn: async () => {
-      if (organizationIds.length === 0) return [];
-
-      const allLocations = await Promise.all(
-        organizationIds.map(async (orgId) => {
-          const response = await fetch(`/api/organizations/${orgId}/locations`);
-          if (!response.ok) return [];
-          const locations = await response.json();
-          return locations.map((location: any) => ({
-            ...location,
-            organizationId: orgId,
-          }));
-        })
-      );
-
-      return allLocations.flat();
-    },
-    enabled: organizationIds.length > 0,
+  const locationQueries = useQueries({
+    queries: organizationIds.map((orgId) => ({
+      queryKey: ['organizations', 'locations', orgId],
+      queryFn: () => api.organizations.getLocations.query({ organizationId: orgId }),
+      enabled: !!orgId,
+    })),
   });
+
+  // Combine all locations into a single array
+  const allLocations = locationQueries
+    .flatMap((query) => query.data || [])
+    .map((location, index) => ({
+      ...location,
+      organizationId: organizationIds[Math.floor(index / (locationQueries[0]?.data?.length || 1))],
+    }));
+
+  const isLoading = locationQueries.some((query) => query.isLoading);
+  const isError = locationQueries.some((query) => query.isError);
+
+  return {
+    data: allLocations,
+    isLoading,
+    isError,
+  };
 }

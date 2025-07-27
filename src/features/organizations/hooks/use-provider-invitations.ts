@@ -1,15 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 
-import { ProviderInvitationData } from '@/features/organizations/types/schemas';
-import {
-  InvitationAction,
-  ProviderInvitationWithDetails,
-} from '@/features/organizations/types/types';
-
-interface SendProviderInvitationParams {
-  organizationId: string;
-  data: ProviderInvitationData;
-}
+import { api } from '@/utils/api';
 
 /**
  * Hook for sending provider invitations
@@ -20,33 +11,13 @@ export function useSendProviderInvitation(options?: {
   onSuccess?: (data: any) => void;
   onError?: (error: Error) => void;
 }) {
-  const queryClient = useQueryClient();
+  const utils = api.useUtils();
 
-  return useMutation<any, Error, SendProviderInvitationParams>({
-    mutationFn: async ({ organizationId, data }) => {
-      if (!organizationId) {
-        throw new Error('Organization ID is required');
-      }
-
-      const response = await fetch(`/api/organizations/${organizationId}/provider-invitations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send invitation');
-      }
-
-      return response.json();
-    },
+  return api.organizations.createProviderInvitation.useMutation({
     onSuccess: (data, variables) => {
       // Invalidate the invitations list to refresh it
-      queryClient.invalidateQueries({
-        queryKey: ['providerInvitations', variables.organizationId],
+      utils.organizations.getProviderInvitations.invalidate({
+        organizationId: variables.organizationId,
       });
       options?.onSuccess?.(data);
     },
@@ -57,35 +28,15 @@ export function useSendProviderInvitation(options?: {
 /**
  * Hook for fetching provider invitations for an organization
  * @param organizationId The organization ID
- * @param status Optional status filter
  * @returns Query object with provider invitations data
  */
-export function useProviderInvitations(organizationId: string, status?: string) {
-  return useQuery<{ invitations: ProviderInvitationWithDetails[] }, Error>({
-    queryKey: ['providerInvitations', organizationId, status],
-    queryFn: async () => {
-      if (!organizationId) {
-        throw new Error('Organization ID is required');
-      }
-
-      const params = new URLSearchParams();
-      if (status) {
-        params.append('status', status);
-      }
-
-      const response = await fetch(
-        `/api/organizations/${organizationId}/provider-invitations?${params.toString()}`
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch invitations');
-      }
-
-      return response.json();
-    },
-    enabled: !!organizationId,
-  });
+export function useProviderInvitations(organizationId: string) {
+  return api.organizations.getProviderInvitations.useQuery(
+    { organizationId },
+    {
+      enabled: !!organizationId,
+    }
+  );
 }
 
 interface ManageInvitationParams {
