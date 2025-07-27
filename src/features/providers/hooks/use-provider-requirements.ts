@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
+import { api } from '@/utils/api';
+
 /**
  * Hook for fetching requirement types for a provider
  * @param providerId The ID of the provider
@@ -29,29 +31,13 @@ export function useProviderRequirementTypes(providerId: string | undefined) {
   });
 
   // Then fetch requirements based on the provider type ID
-  return useQuery({
-    queryKey: ['providerRequirementTypes', providerId, providerQuery.data?.providerTypeId],
-    queryFn: async () => {
-      if (!providerId) {
-        throw new Error('Provider ID is required');
-      }
-
-      // providerId
-      const url = new URL('/api/providers/requirement-types', window.location.origin);
-      url.searchParams.append('providerId', providerId);
-
-      // providerTypeId
-      if (providerQuery.data?.providerTypeId) {
-        url.searchParams.append('providerTypeId', providerQuery.data.providerTypeId);
-      }
-
-      const response = await fetch(url.toString());
-      if (!response.ok) {
-        throw new Error('Failed to fetch requirement types');
-      }
-
-      return response.json();
+  return api.providers.getRequirementTypes.useQuery(
+    {
+      providerId: providerId || '',
+      providerTypeId: providerQuery.data?.providerTypeId,
     },
-    enabled: !!providerId && !!providerQuery.data?.providerTypeId,
-  });
+    {
+      enabled: !!providerId && !!providerQuery.data?.providerTypeId,
+    }
+  );
 }

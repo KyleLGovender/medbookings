@@ -1,27 +1,17 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import {
   DeleteAccountResponse,
   UpdateProfileRequest,
   UpdateProfileResponse,
-  UserProfile,
 } from '@/features/profile/types/types';
+import { api } from '@/utils/api';
 
 // Fetch the user profile
 export function useProfile() {
-  return useQuery<UserProfile>({
-    queryKey: ['profile'],
-    queryFn: async () => {
-      const response = await fetch('/api/profile');
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to fetch profile');
-      }
-      return response.json();
-    },
-  });
+  return api.profile.get.useQuery();
 }
 
 // Update the user profile
