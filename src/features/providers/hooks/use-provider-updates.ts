@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/utils/api';
 
 /**
  * Hook for updating a provider's basic information
@@ -9,27 +9,14 @@ export function useUpdateProviderBasicInfo(options?: {
   onSuccess?: (data: any) => void;
   onError?: (error: Error) => void;
 }) {
-  return useMutation<any, Error, FormData>({
-    mutationFn: async (formData: FormData) => {
-      const providerId = formData.get('id') as string;
-
-      if (!providerId) {
-        throw new Error('Provider ID is required');
-      }
-
-      const response = await fetch(`/api/providers/${providerId}/basic-info`, {
-        method: 'PUT',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update basic information');
-      }
-
-      return response.json();
+  const utils = api.useUtils();
+  
+  return api.providers.update.useMutation({
+    onSuccess: (data, variables) => {
+      // Invalidate provider query
+      utils.providers.getById.invalidate({ id: variables.id });
+      options?.onSuccess?.(data);
     },
-    onSuccess: options?.onSuccess,
     onError: options?.onError,
   });
 }
@@ -43,29 +30,15 @@ export function useUpdateProviderServices(options?: {
   onSuccess?: (data: any) => void;
   onError?: (error: Error) => void;
 }) {
-  const queryClient = useQueryClient();
+  const utils = api.useUtils();
 
-  return useMutation({
-    mutationFn: async (formData: FormData) => {
-      const providerId = formData.get('id') as string;
-
-      if (!providerId) {
-        throw new Error('Provider ID is required for service update');
-      }
-
-      const response = await fetch(`/api/providers/${providerId}/services`, {
-        method: 'PUT',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update services');
-      }
-
-      return response.json();
+  return api.providers.updateServices.useMutation({
+    onSuccess: (data, variables) => {
+      // Invalidate provider and services queries
+      utils.providers.getById.invalidate({ id: variables.id });
+      utils.providers.getProviderServices.invalidate({ id: variables.id });
+      options?.onSuccess?.(data);
     },
-    onSuccess: options?.onSuccess,
     onError: options?.onError,
   });
 }
@@ -79,29 +52,14 @@ export function useUpdateProviderRequirements(options?: {
   onSuccess?: (data: any) => void;
   onError?: (error: Error) => void;
 }) {
-  const queryClient = useQueryClient();
+  const utils = api.useUtils();
 
-  return useMutation({
-    mutationFn: async (formData: FormData) => {
-      const providerId = formData.get('id') as string;
-
-      if (!providerId) {
-        throw new Error('Provider ID is required');
-      }
-
-      const response = await fetch(`/api/providers/${providerId}/requirements`, {
-        method: 'PUT',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update requirements');
-      }
-
-      return response.json();
+  return api.providers.updateRequirements.useMutation({
+    onSuccess: (data, variables) => {
+      // Invalidate provider query
+      utils.providers.getById.invalidate({ id: variables.id });
+      options?.onSuccess?.(data);
     },
-    onSuccess: options?.onSuccess,
     onError: options?.onError,
   });
 }
