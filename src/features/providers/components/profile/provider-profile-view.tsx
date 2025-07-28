@@ -204,62 +204,64 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
             {provider.services
               .sort((a, b) => (a.displayPriority ?? 999) - (b.displayPriority ?? 999))
               .map((service) => {
-              // Get service configuration with fallback to defaults (client-side logic)
-              const customConfig = provider.serviceConfigs?.find(config => config.serviceId === service.id);
-              const isCustomConfig = !!customConfig;
-              
-              const effectivePrice = customConfig?.price ?? service.defaultPrice;
-              const effectiveDuration = customConfig?.duration ?? service.defaultDuration;
-              const isOnlineAvailable = customConfig?.isOnlineAvailable ?? true;
-              const isInPerson = customConfig?.isInPerson ?? false;
-              
-              return (
-                <div key={service.id} className="rounded-md border p-4">
-                  <div className="flex flex-col">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium">{service.name}</h3>
-                      {isCustomConfig && (
-                        <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">
-                          Custom Rates
-                        </span>
+                // Get service configuration with fallback to defaults (client-side logic)
+                const customConfig = provider.serviceConfigs?.find(
+                  (config) => config.serviceId === service.id
+                );
+                const isCustomConfig = !!customConfig;
+
+                const effectivePrice = customConfig?.price ?? service.defaultPrice;
+                const effectiveDuration = customConfig?.duration ?? service.defaultDuration;
+                const isOnlineAvailable = customConfig?.isOnlineAvailable ?? true;
+                const isInPerson = customConfig?.isInPerson ?? false;
+
+                return (
+                  <div key={service.id} className="rounded-md border p-4">
+                    <div className="flex flex-col">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-medium">{service.name}</h3>
+                        {isCustomConfig && (
+                          <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">
+                            Custom Rates
+                          </span>
+                        )}
+                      </div>
+                      {service.description && (
+                        <p className="mt-2 text-sm text-muted-foreground">{service.description}</p>
                       )}
-                    </div>
-                    {service.description && (
-                      <p className="mt-2 text-sm text-muted-foreground">{service.description}</p>
-                    )}
-                    <div className="mt-3 space-y-1">
-                      <div className="flex items-center">
-                        <span className="w-16 text-xs text-muted-foreground">Price:</span>
-                        <span className="text-sm font-semibold text-primary">
-                          R{effectivePrice || 'Varies'}
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="w-16 text-xs text-muted-foreground">Duration:</span>
-                        <span className="text-sm">{effectiveDuration || 'Varies'} min</span>
-                      </div>
-                      {(isOnlineAvailable || isInPerson) && (
+                      <div className="mt-3 space-y-1">
                         <div className="flex items-center">
-                          <span className="w-16 text-xs text-muted-foreground">Available:</span>
-                          <div className="flex gap-2">
-                            {isOnlineAvailable && (
-                              <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800">
-                                Online
-                              </span>
-                            )}
-                            {isInPerson && (
-                              <span className="rounded-full bg-purple-100 px-2 py-1 text-xs text-purple-800">
-                                In-Person
-                              </span>
-                            )}
-                          </div>
+                          <span className="w-16 text-xs text-muted-foreground">Price:</span>
+                          <span className="text-sm font-semibold text-primary">
+                            R{effectivePrice || 'Varies'}
+                          </span>
                         </div>
-                      )}
+                        <div className="flex items-center">
+                          <span className="w-16 text-xs text-muted-foreground">Duration:</span>
+                          <span className="text-sm">{effectiveDuration || 'Varies'} min</span>
+                        </div>
+                        {(isOnlineAvailable || isInPerson) && (
+                          <div className="flex items-center">
+                            <span className="w-16 text-xs text-muted-foreground">Available:</span>
+                            <div className="flex gap-2">
+                              {isOnlineAvailable && (
+                                <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800">
+                                  Online
+                                </span>
+                              )}
+                              {isInPerson && (
+                                <span className="rounded-full bg-purple-100 px-2 py-1 text-xs text-purple-800">
+                                  In-Person
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         ) : (
           <p className="text-muted-foreground">No services listed</p>

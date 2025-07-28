@@ -1,50 +1,210 @@
 /**
  * Reusable component for conditional rendering based on permissions
- * 
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+'use client';
+
+import { ReactNode } from 'react';
+
+import { usePermissions } from '@/hooks/use-permissions';
+import {
+  OrganizationRole,
+  Permission,
+  PermissionCheck,
+  PermissionContext,
+  SystemRole,
+} from '@/types/permissions';
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
  * PermissionGate component that conditionally renders children based on
  * user permissions, roles, and context. Provides flexible permission
  * checking for UI elements.
  */
 
-'use client';
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
 
-import { ReactNode } from 'react';
-import { usePermissions } from '@/hooks/use-permissions';
-import { 
-  Permission, 
-  PermissionContext, 
-  PermissionCheck,
-  SystemRole,
-  OrganizationRole 
-} from '@/types/permissions';
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
 
 interface PermissionGateProps {
   children: ReactNode;
-  
+
   // Permission-based access
   permission?: Permission;
   permissions?: Permission[];
   requireAll?: boolean; // For multiple permissions
-  
+
   // Role-based access
   systemRole?: SystemRole | SystemRole[];
   organizationRole?: OrganizationRole | OrganizationRole[];
-  
+
   // Context for permission checking
   context?: PermissionContext;
-  
+
   // Advanced permission checks
   checks?: PermissionCheck[];
-  
+
   // Custom permission function
   custom?: (permissions: any) => boolean;
-  
+
   // Fallback content when access is denied
   fallback?: ReactNode;
-  
+
   // Loading state
   loading?: ReactNode;
-  
+
   // Debug mode (shows permission info)
   debug?: boolean;
 }
@@ -64,7 +224,7 @@ export function PermissionGate({
   custom,
   fallback = null,
   loading = null,
-  debug = false
+  debug = false,
 }: PermissionGateProps) {
   const {
     hasPermission,
@@ -74,7 +234,7 @@ export function PermissionGate({
     isProvider,
     getOrganizationRole,
     isLoading,
-    permissions: userPermissions
+    permissions: userPermissions,
   } = usePermissions(context);
 
   // Show loading state
@@ -91,7 +251,7 @@ export function PermissionGate({
       systemRole,
       organizationRole,
       context,
-      checks
+      checks,
     });
   }
 
@@ -105,9 +265,9 @@ export function PermissionGate({
   // Check multiple permissions
   if (permissions.length > 0) {
     if (requireAll) {
-      hasAccess = hasAccess && permissions.every(p => hasPermission(p, context));
+      hasAccess = hasAccess && permissions.every((p) => hasPermission(p, context));
     } else {
-      hasAccess = hasAccess && permissions.some(p => hasPermission(p, context));
+      hasAccess = hasAccess && permissions.some((p) => hasPermission(p, context));
     }
   }
 
@@ -115,7 +275,7 @@ export function PermissionGate({
   if (systemRole) {
     const roles = Array.isArray(systemRole) ? systemRole : [systemRole];
     const userSystemRole = userPermissions?.systemRole;
-    
+
     if (userSystemRole) {
       const roleMatches = roles.includes(userSystemRole);
       hasAccess = hasAccess && roleMatches;
@@ -128,7 +288,7 @@ export function PermissionGate({
   if (organizationRole && context?.organizationId) {
     const roles = Array.isArray(organizationRole) ? organizationRole : [organizationRole];
     const userOrgRole = getOrganizationRole(context.organizationId);
-    
+
     if (userOrgRole) {
       const roleMatches = roles.includes(userOrgRole as OrganizationRole);
       hasAccess = hasAccess && roleMatches;
@@ -172,18 +332,20 @@ export function withPermissions<P extends object>(
  */
 
 // Admin-only content
-export function AdminGate({ 
-  children, 
+export function AdminGate({
+  children,
   fallback = null,
-  superAdminOnly = false 
-}: { 
-  children: ReactNode; 
+  superAdminOnly = false,
+}: {
+  children: ReactNode;
   fallback?: ReactNode;
   superAdminOnly?: boolean;
 }) {
   return (
     <PermissionGate
-      systemRole={superAdminOnly ? SystemRole.SUPER_ADMIN : [SystemRole.ADMIN, SystemRole.SUPER_ADMIN]}
+      systemRole={
+        superAdminOnly ? SystemRole.SUPER_ADMIN : [SystemRole.ADMIN, SystemRole.SUPER_ADMIN]
+      }
       fallback={fallback}
     >
       {children}
@@ -192,12 +354,12 @@ export function AdminGate({
 }
 
 // Provider-only content
-export function ProviderGate({ 
-  children, 
+export function ProviderGate({
+  children,
   fallback = null,
-  providerId
-}: { 
-  children: ReactNode; 
+  providerId,
+}: {
+  children: ReactNode;
   fallback?: ReactNode;
   providerId?: string;
 }) {
@@ -216,33 +378,33 @@ export function ProviderGate({
 }
 
 // Organization member content
-export function OrganizationGate({ 
-  children, 
+export function OrganizationGate({
+  children,
   fallback = null,
   organizationId,
-  minimumRole = OrganizationRole.STAFF
-}: { 
-  children: ReactNode; 
+  minimumRole = OrganizationRole.STAFF,
+}: {
+  children: ReactNode;
   fallback?: ReactNode;
   organizationId: string;
   minimumRole?: OrganizationRole;
 }) {
   const { getOrganizationRole } = usePermissions();
-  
+
   return (
     <PermissionGate
       custom={() => {
         const userRole = getOrganizationRole(organizationId);
         if (!userRole) return false;
-        
+
         // Simple role hierarchy check
         const roleHierarchy = {
           [OrganizationRole.STAFF]: 1,
           [OrganizationRole.MANAGER]: 2,
           [OrganizationRole.ADMIN]: 3,
-          [OrganizationRole.OWNER]: 4
+          [OrganizationRole.OWNER]: 4,
         };
-        
+
         return roleHierarchy[userRole as OrganizationRole] >= roleHierarchy[minimumRole];
       }}
       fallback={fallback}
@@ -274,9 +436,9 @@ export function PermissionButton({
   ...permissionProps
 }: PermissionButtonProps) {
   const { hasPermission } = usePermissions(permissionProps.context);
-  
+
   // Check if user has required permissions
-  const hasAccess = permissionProps.permission 
+  const hasAccess = permissionProps.permission
     ? hasPermission(permissionProps.permission, permissionProps.context)
     : true;
 

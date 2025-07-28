@@ -1,41 +1,177 @@
 /**
  * Role-based form field visibility controls and permission-based form components
- * 
+ *
  * Form components that adapt field visibility and functionality based on
  * user permissions and roles.
  */
-
 'use client';
 
-import { ReactNode, HTMLInputTypeAttribute } from 'react';
-import { UseFormReturn, FieldPath, FieldValues } from 'react-hook-form';
+import { HTMLInputTypeAttribute, ReactNode } from 'react';
+
+import { FieldPath, FieldValues, UseFormReturn } from 'react-hook-form';
+
 import { PermissionGate } from '@/components/auth/permission-gate';
-import { usePermissions } from '@/hooks/use-permissions';
-import { 
-  Permission, 
-  PermissionContext,
-  SystemRole,
-  OrganizationRole 
-} from '@/types/permissions';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
+  FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
-  FormDescription,
-  FormMessage
+  FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { usePermissions } from '@/hooks/use-permissions';
+import { OrganizationRole, Permission, PermissionContext, SystemRole } from '@/types/permissions';
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
 
 interface PermissionFieldProps {
   // Permission requirements
@@ -44,7 +180,7 @@ interface PermissionFieldProps {
   organizationRole?: OrganizationRole | OrganizationRole[];
   context?: PermissionContext;
   customCheck?: (permissions: any) => boolean;
-  
+
   // Field configuration
   name: string;
   label?: string;
@@ -52,7 +188,7 @@ interface PermissionFieldProps {
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
-  
+
   // Alternative content when permission is denied
   fallback?: ReactNode;
   hideWhenDenied?: boolean;
@@ -92,12 +228,8 @@ export function PermissionField<T extends FieldValues>({
         render={({ field }) => (
           <FormItem>
             {fieldProps.label && <FormLabel>{fieldProps.label}</FormLabel>}
-            <FormControl>
-              {children}
-            </FormControl>
-            {fieldProps.description && (
-              <FormDescription>{fieldProps.description}</FormDescription>
-            )}
+            <FormControl>{children}</FormControl>
+            {fieldProps.description && <FormDescription>{fieldProps.description}</FormDescription>}
             <FormMessage />
           </FormItem>
         )}
@@ -175,11 +307,7 @@ export function PermissionSelect<T extends FieldValues>({
         </SelectTrigger>
         <SelectContent>
           {options.map((option) => (
-            <SelectItem 
-              key={option.value} 
-              value={option.value}
-              disabled={option.disabled}
-            >
+            <SelectItem key={option.value} value={option.value} disabled={option.disabled}>
               {option.label}
             </SelectItem>
           ))}
@@ -200,19 +328,17 @@ export function PermissionCheckbox<T extends FieldValues>({
 }) {
   return (
     <PermissionField form={form} {...props}>
-      <div className='flex items-center space-x-2'>
+      <div className="flex items-center space-x-2">
         <Checkbox
           id={props.name}
           checked={form.watch(props.name as FieldPath<T>)}
-          onCheckedChange={(checked) => 
-            form.setValue(props.name as FieldPath<T>, checked as any)
-          }
+          onCheckedChange={(checked) => form.setValue(props.name as FieldPath<T>, checked as any)}
           disabled={props.disabled}
         />
         {props.label && (
           <label
             htmlFor={props.name}
-            className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
             {props.label}
           </label>
@@ -232,7 +358,7 @@ interface PermissionButtonProps {
   organizationRole?: OrganizationRole | OrganizationRole[];
   context?: PermissionContext;
   customCheck?: (permissions: any) => boolean;
-  
+
   // Button properties
   children: ReactNode;
   onClick?: () => void;
@@ -241,12 +367,12 @@ interface PermissionButtonProps {
   size?: 'default' | 'sm' | 'lg' | 'icon';
   disabled?: boolean;
   loading?: boolean;
-  
+
   // Permission-based states
   hideWhenDenied?: boolean;
   disableWhenDenied?: boolean;
   fallbackText?: string;
-  
+
   className?: string;
 }
 
@@ -266,25 +392,25 @@ export function PermissionButton({
   hideWhenDenied = false,
   disableWhenDenied = true,
   fallbackText,
-  className = ''
+  className = '',
 }: PermissionButtonProps) {
   const { hasPermission } = usePermissions(context);
-  
+
   // Check if user has required permissions
   let hasAccess = true;
-  
+
   if (permission) {
     hasAccess = hasPermission(permission, context);
   }
-  
+
   if (systemRole) {
     // Add system role check logic here
   }
-  
+
   if (organizationRole) {
     // Add organization role check logic here
   }
-  
+
   if (customCheck) {
     // Add custom check logic here
   }
@@ -294,16 +420,10 @@ export function PermissionButton({
     if (hideWhenDenied) {
       return null;
     }
-    
+
     if (disableWhenDenied) {
       return (
-        <Button
-          type={type}
-          variant={variant}
-          size={size}
-          disabled={true}
-          className={className}
-        >
+        <Button type={type} variant={variant} size={size} disabled={true} className={className}>
           {fallbackText || children}
         </Button>
       );
@@ -331,14 +451,14 @@ interface PermissionSectionProps {
   title?: string;
   description?: string;
   children: ReactNode;
-  
+
   // Permission requirements
   permission?: Permission;
   systemRole?: SystemRole | SystemRole[];
   organizationRole?: OrganizationRole | OrganizationRole[];
   context?: PermissionContext;
   customCheck?: (permissions: any) => boolean;
-  
+
   // Styling
   className?: string;
   collapsible?: boolean;
@@ -356,7 +476,7 @@ export function PermissionSection({
   customCheck,
   className = '',
   collapsible = false,
-  defaultExpanded = true
+  defaultExpanded = true,
 }: PermissionSectionProps) {
   return (
     <PermissionGate
@@ -369,21 +489,11 @@ export function PermissionSection({
       <div className={`space-y-4 ${className}`}>
         {(title || description) && (
           <div>
-            {title && (
-              <h3 className='text-lg font-medium leading-6 text-gray-900'>
-                {title}
-              </h3>
-            )}
-            {description && (
-              <p className='mt-1 text-sm text-gray-600'>
-                {description}
-              </p>
-            )}
+            {title && <h3 className="text-lg font-medium leading-6 text-gray-900">{title}</h3>}
+            {description && <p className="mt-1 text-sm text-gray-600">{description}</p>}
           </div>
         )}
-        <div className='space-y-4'>
-          {children}
-        </div>
+        <div className="space-y-4">{children}</div>
       </div>
     </PermissionGate>
   );
@@ -397,7 +507,7 @@ interface PermissionFormProps<T extends FieldValues> {
   onSubmit: (data: T) => void;
   children: ReactNode;
   className?: string;
-  
+
   // Submit button configuration
   submitLabel?: string;
   submitPermission?: Permission;
@@ -413,18 +523,15 @@ export function PermissionForm<T extends FieldValues>({
   submitLabel = 'Submit',
   submitPermission,
   submitContext,
-  showSubmitButton = true
+  showSubmitButton = true,
 }: PermissionFormProps<T>) {
   return (
-    <form 
-      onSubmit={form.handleSubmit(onSubmit)} 
-      className={`space-y-6 ${className}`}
-    >
+    <form onSubmit={form.handleSubmit(onSubmit)} className={`space-y-6 ${className}`}>
       {children}
-      
+
       {showSubmitButton && (
         <PermissionButton
-          type='submit'
+          type="submit"
           permission={submitPermission}
           context={submitContext}
           disabled={form.formState.isSubmitting}

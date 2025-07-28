@@ -1,6 +1,6 @@
 /**
  * Email communication utilities
- * 
+ *
  * Simplified email sending functionality for the permission system.
  * In production, integrate with services like SendGrid, AWS SES, etc.
  */
@@ -23,18 +23,17 @@ export async function sendEmail(emailData: EmailData): Promise<void> {
       subject: emailData.subject,
       template: emailData.template,
       data: emailData.data,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-    
+
     // Simulate async operation
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     // In production, integrate with email service provider:
     // - SendGrid
     // - AWS SES
     // - Nodemailer
     // - etc.
-    
   } catch (error) {
     console.error('Error sending email:', error);
     throw error;

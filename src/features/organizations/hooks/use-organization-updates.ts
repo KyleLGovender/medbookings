@@ -1,14 +1,5 @@
-import { useMutation } from '@tanstack/react-query';
-
-import {
-  OrganizationBasicInfoData,
-  OrganizationLocation,
-} from '@/features/organizations/types/types';
-
-interface UpdateOrganizationBasicInfoParams {
-  organizationId: string;
-  data: OrganizationBasicInfoData;
-}
+import { OrganizationLocation } from '@/features/organizations/types/types';
+import { api } from '@/utils/api';
 
 /**
  * Hook for updating an organization's basic information
@@ -19,28 +10,14 @@ export function useUpdateOrganizationBasicInfo(options?: {
   onSuccess?: (data: any) => void;
   onError?: (error: Error) => void;
 }) {
-  return useMutation<any, Error, UpdateOrganizationBasicInfoParams>({
-    mutationFn: async ({ organizationId, data }) => {
-      if (!organizationId) {
-        throw new Error('Organization ID is required');
-      }
+  const utils = api.useUtils();
 
-      const response = await fetch(`/api/organizations/${organizationId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update organization');
-      }
-
-      return response.json();
+  return api.organizations.update.useMutation({
+    onSuccess: (data, variables) => {
+      // Invalidate organization query
+      utils.organizations.getById.invalidate({ id: variables.id });
+      options?.onSuccess?.(data);
     },
-    onSuccess: options?.onSuccess,
     onError: options?.onError,
   });
 }

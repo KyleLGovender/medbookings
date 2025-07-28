@@ -25,7 +25,10 @@ export function serializeProvider(provider: any): any {
     ...(provider.availabilityConfigs && {
       serviceConfigs: provider.availabilityConfigs.map((config: any) => ({
         ...config,
-        price: typeof config.price === 'object' && config.price !== null ? Number(config.price) : config.price,
+        price:
+          typeof config.price === 'object' && config.price !== null
+            ? Number(config.price)
+            : config.price,
         createdAt: config.createdAt?.toISOString(),
         updatedAt: config.updatedAt?.toISOString(),
       })),
@@ -71,8 +74,10 @@ export const serializeServiceProvider = serializeProvider;
  */
 export function getServiceConfig(provider: any, serviceId: string) {
   // First try to find custom ServiceAvailabilityConfig
-  const customConfig = provider.serviceConfigs?.find((config: any) => config.serviceId === serviceId);
-  
+  const customConfig = provider.serviceConfigs?.find(
+    (config: any) => config.serviceId === serviceId
+  );
+
   if (customConfig) {
     return {
       duration: customConfig.duration,
@@ -86,7 +91,7 @@ export function getServiceConfig(provider: any, serviceId: string) {
 
   // Fallback to service defaults
   const service = provider.services?.find((s: any) => s.id === serviceId);
-  
+
   if (service) {
     return {
       duration: service.defaultDuration,

@@ -28,12 +28,12 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     // Calendar-focused setup
-    { 
-      name: 'calendar-setup', 
+    {
+      name: 'calendar-setup',
       testMatch: /calendar-auth\.setup\.ts/,
       teardown: 'calendar-cleanup',
     },
-    
+
     // Calendar-focused cleanup
     {
       name: 'calendar-cleanup',
@@ -43,42 +43,42 @@ export default defineConfig({
     // Desktop testing (chromium only for faster calendar development)
     {
       name: 'chromium',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
         storageState: 'e2e/.auth/calendar-provider.json',
       },
       dependencies: ['calendar-setup'],
       testIgnore: [
-        '**/auth/**',           // Skip auth tests
-        '**/admin/**',          // Skip admin tests  
-        '**/providers/**',      // Skip provider onboarding tests
-        '**/organizations/**',  // Skip organization tests
-        '**/cleanup/**',        // Skip general cleanup tests
+        '**/auth/**', // Skip auth tests
+        '**/admin/**', // Skip admin tests
+        '**/providers/**', // Skip provider onboarding tests
+        '**/organizations/**', // Skip organization tests
+        '**/cleanup/**', // Skip general cleanup tests
       ],
       testMatch: [
-        '**/calendar/**',       // Only calendar tests
-        '**/availability/**',   // Availability-related tests
-        '**/booking/**',        // Booking-related tests
+        '**/calendar/**', // Only calendar tests
+        '**/availability/**', // Availability-related tests
+        '**/booking/**', // Booking-related tests
       ],
     },
 
     // Client browser for booking tests
     {
       name: 'client-chromium',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
         storageState: 'e2e/.auth/calendar-client.json',
       },
       dependencies: ['calendar-setup'],
       testMatch: [
-        '**/booking/**',        // Client booking tests
+        '**/booking/**', // Client booking tests
       ],
     },
 
     // Optional: Mobile testing for calendar
     // {
     //   name: 'Mobile Safari',
-    //   use: { 
+    //   use: {
     //     ...devices['iPhone 12'],
     //     storageState: 'e2e/.auth/calendar-client.json',
     //   },

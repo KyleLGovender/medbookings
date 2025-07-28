@@ -1,4 +1,5 @@
-import { test as setup, expect } from '@playwright/test';
+import { expect, test as setup } from '@playwright/test';
+
 import { setupCalendarTestEnvironment } from '../utils/calendar-database';
 import { CALENDAR_TEST_USERS } from './calendar-test-data';
 
@@ -9,12 +10,12 @@ import { CALENDAR_TEST_USERS } from './calendar-test-data';
 
 setup('authenticate calendar provider', async ({ page }) => {
   console.log('Setting up calendar test environment...');
-  
+
   // Setup calendar test data (this cleans old data and creates fresh data)
   const testData = await setupCalendarTestEnvironment();
-  
+
   console.log('✅ Calendar test environment ready');
-  
+
   // Mock authentication for calendar provider
   await page.route('**/api/auth/session', async (route) => {
     const json = {
@@ -32,10 +33,10 @@ setup('authenticate calendar provider', async ({ page }) => {
 
   // Navigate to a protected page to establish session
   await page.goto('/calendar');
-  
+
   // Wait for successful authentication
   await page.waitForTimeout(1000);
-  
+
   // Save authentication state
   await page.context().storageState({ path: 'e2e/.auth/calendar-provider.json' });
   console.log('Auth state saved for calendar provider');
@@ -43,10 +44,10 @@ setup('authenticate calendar provider', async ({ page }) => {
 
 setup('authenticate calendar client', async ({ page }) => {
   // We assume calendar test environment is already set up by the provider setup
-  
+
   // Get the test data (should exist from provider setup)
   const testData = await setupCalendarTestEnvironment();
-  
+
   // Mock authentication for calendar client
   await page.route('**/api/auth/session', async (route) => {
     const json = {
@@ -64,10 +65,10 @@ setup('authenticate calendar client', async ({ page }) => {
 
   // Navigate to a protected page to establish session
   await page.goto('/providers');
-  
+
   // Wait for successful authentication
   await page.waitForTimeout(1000);
-  
+
   // Save authentication state
   await page.context().storageState({ path: 'e2e/.auth/calendar-client.json' });
   console.log('Auth state saved for calendar client');

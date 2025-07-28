@@ -28,9 +28,9 @@ export const CALENDAR_AVAILABILITY_DATA = {
       pattern: 'WEEKLY',
       endDate: '2024-12-31',
       daysOfWeek: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
-    }
+    },
   },
-  
+
   // Single appointment slot
   singleSlot: {
     date: '2024-12-15', // Specific Saturday
@@ -39,7 +39,7 @@ export const CALENDAR_AVAILABILITY_DATA = {
     service: 'General Consultation',
     type: 'ONLINE' as const,
   },
-  
+
   // Evening availability
   eveningSlot: {
     date: '2024-12-10',
@@ -60,7 +60,7 @@ export const CALENDAR_BOOKING_DATA = {
     clientNotes: '[E2E_CALENDAR] Test booking for calendar functionality',
     type: 'ONLINE' as const,
   },
-  
+
   // Back-to-back bookings
   backToBackBooking1: {
     date: '2024-12-04',
@@ -70,7 +70,7 @@ export const CALENDAR_BOOKING_DATA = {
     clientNotes: '[E2E_CALENDAR] First of back-to-back bookings',
     type: 'ONLINE' as const,
   },
-  
+
   backToBackBooking2: {
     date: '2024-12-04',
     startTime: '14:45',
@@ -79,7 +79,7 @@ export const CALENDAR_BOOKING_DATA = {
     clientNotes: '[E2E_CALENDAR] Second of back-to-back bookings',
     type: 'ONLINE' as const,
   },
-  
+
   // Future booking
   futureBooking: {
     date: '2024-12-20',
@@ -109,7 +109,7 @@ export const CALENDAR_TEST_SCENARIOS = {
       'Verify slots are generated correctly',
     ],
   },
-  
+
   // Scenario 2: Client books an appointment
   clientBooking: {
     description: 'Client books an available slot',
@@ -121,7 +121,7 @@ export const CALENDAR_TEST_SCENARIOS = {
       'Verify booking confirmation',
     ],
   },
-  
+
   // Scenario 3: Provider manages calendar
   providerCalendarManagement: {
     description: 'Provider views and manages their calendar',
@@ -132,7 +132,7 @@ export const CALENDAR_TEST_SCENARIOS = {
       'Cancel/reschedule appointments',
     ],
   },
-  
+
   // Scenario 4: Calendar synchronization
   calendarSync: {
     description: 'Test calendar sync features',

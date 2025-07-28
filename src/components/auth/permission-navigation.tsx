@@ -1,23 +1,17 @@
 /**
  * Permission-aware navigation components
- * 
+ *
  * Navigation components that adapt based on user permissions and roles,
  * showing only accessible routes and features.
  */
-
 'use client';
 
-import { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { usePermissions } from '@/hooks/use-permissions';
+import { ReactNode } from 'react';
+
 import { PermissionGate } from '@/components/auth/permission-gate';
-import { 
-  Permission, 
-  SystemRole, 
-  OrganizationRole 
-} from '@/types/permissions';
+import { Badge } from '@/components/ui/badge';
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -26,27 +20,169 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu';
-import { Badge } from '@/components/ui/badge';
+import { usePermissions } from '@/hooks/use-permissions';
+import { cn } from '@/lib/utils';
+import { OrganizationRole, Permission, SystemRole } from '@/types/permissions';
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
 
 interface NavigationItem {
   href: string;
   label: string;
   icon?: ReactNode;
   description?: string;
-  
+
   // Permission requirements
   permission?: Permission;
   systemRole?: SystemRole | SystemRole[];
   organizationRole?: OrganizationRole | OrganizationRole[];
   requiresProvider?: boolean;
   organizationId?: string;
-  
+
   // Custom access check
   customCheck?: (permissions: any) => boolean;
-  
+
   // Nested items
   children?: NavigationItem[];
-  
+
   // Visual styling
   badge?: string;
   highlight?: boolean;
@@ -67,15 +203,15 @@ export function PermissionNavigation({
   items,
   className = '',
   variant = 'horizontal',
-  organizationId
+  organizationId,
 }: PermissionNavigationProps) {
   const pathname = usePathname();
-  const { 
-    hasPermission, 
-    isSystemAdmin, 
-    isProvider, 
+  const {
+    hasPermission,
+    isSystemAdmin,
+    isProvider,
     getOrganizationRole,
-    permissions: userPermissions 
+    permissions: userPermissions,
   } = usePermissions();
 
   const checkAccess = (item: NavigationItem): boolean => {
@@ -101,8 +237,10 @@ export function PermissionNavigation({
     if (item.organizationRole && (item.organizationId || organizationId)) {
       const orgId = item.organizationId || organizationId;
       if (!orgId) return false;
-      
-      const roles = Array.isArray(item.organizationRole) ? item.organizationRole : [item.organizationRole];
+
+      const roles = Array.isArray(item.organizationRole)
+        ? item.organizationRole
+        : [item.organizationRole];
       const userOrgRole = getOrganizationRole(orgId);
       if (!userOrgRole || !roles.includes(userOrgRole as OrganizationRole)) return false;
     }
@@ -114,12 +252,10 @@ export function PermissionNavigation({
   };
 
   const filterAccessibleItems = (items: NavigationItem[]): NavigationItem[] => {
-    return items
-      .filter(checkAccess)
-      .map(item => ({
-        ...item,
-        children: item.children ? filterAccessibleItems(item.children) : undefined
-      }));
+    return items.filter(checkAccess).map((item) => ({
+      ...item,
+      children: item.children ? filterAccessibleItems(item.children) : undefined,
+    }));
   };
 
   const accessibleItems = filterAccessibleItems(items);
@@ -133,11 +269,7 @@ export function PermissionNavigation({
     return (
       <nav className={cn('space-y-2', className)}>
         {accessibleItems.map((item) => (
-          <SidebarNavItem 
-            key={item.href} 
-            item={item} 
-            isActive={isActive(item.href)}
-          />
+          <SidebarNavItem key={item.href} item={item} isActive={isActive(item.href)} />
         ))}
       </nav>
     );
@@ -147,11 +279,7 @@ export function PermissionNavigation({
     return (
       <nav className={cn('space-y-1', className)}>
         {accessibleItems.map((item) => (
-          <VerticalNavItem 
-            key={item.href} 
-            item={item} 
-            isActive={isActive(item.href)}
-          />
+          <VerticalNavItem key={item.href} item={item} isActive={isActive(item.href)} />
         ))}
       </nav>
     );
@@ -165,40 +293,36 @@ export function PermissionNavigation({
           <NavigationMenuItem key={item.href}>
             {item.children ? (
               <>
-                <NavigationMenuTrigger 
-                  className={cn(
-                    isActive(item.href) && 'bg-accent text-accent-foreground'
-                  )}
+                <NavigationMenuTrigger
+                  className={cn(isActive(item.href) && 'bg-accent text-accent-foreground')}
                 >
-                  {item.icon && <span className='mr-2'>{item.icon}</span>}
+                  {item.icon && <span className="mr-2">{item.icon}</span>}
                   {item.label}
                   {item.badge && (
-                    <Badge variant='secondary' className='ml-2 text-xs'>
+                    <Badge variant="secondary" className="ml-2 text-xs">
                       {item.badge}
                     </Badge>
                   )}
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <div className='grid gap-3 p-6 md:w-[400px] lg:w-[500px]'>
+                  <div className="grid gap-3 p-6 md:w-[400px] lg:w-[500px]">
                     {item.children.map((child) => (
                       <NavigationMenuLink key={child.href} asChild>
                         <Link
                           href={child.href}
-                          className='block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground'
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                         >
-                          <div className='flex items-center'>
-                            {child.icon && <span className='mr-2'>{child.icon}</span>}
-                            <div className='text-sm font-medium leading-none'>
-                              {child.label}
-                            </div>
+                          <div className="flex items-center">
+                            {child.icon && <span className="mr-2">{child.icon}</span>}
+                            <div className="text-sm font-medium leading-none">{child.label}</div>
                             {child.badge && (
-                              <Badge variant='secondary' className='ml-auto text-xs'>
+                              <Badge variant="secondary" className="ml-auto text-xs">
                                 {child.badge}
                               </Badge>
                             )}
                           </div>
                           {child.description && (
-                            <p className='line-clamp-2 text-sm leading-snug text-muted-foreground'>
+                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                               {child.description}
                             </p>
                           )}
@@ -217,10 +341,10 @@ export function PermissionNavigation({
                     isActive(item.href) && 'bg-accent text-accent-foreground'
                   )}
                 >
-                  {item.icon && <span className='mr-2'>{item.icon}</span>}
+                  {item.icon && <span className="mr-2">{item.icon}</span>}
                   {item.label}
                   {item.badge && (
-                    <Badge variant='secondary' className='ml-2 text-xs'>
+                    <Badge variant="secondary" className="ml-2 text-xs">
                       {item.badge}
                     </Badge>
                   )}
@@ -240,16 +364,16 @@ export function PermissionNavigation({
 function SidebarNavItem({ item, isActive }: { item: NavigationItem; isActive: boolean }) {
   if (item.children) {
     return (
-      <div className='space-y-1'>
-        <div className='px-3 py-2 text-sm font-medium text-muted-foreground'>
-          {item.icon && <span className='mr-2'>{item.icon}</span>}
+      <div className="space-y-1">
+        <div className="px-3 py-2 text-sm font-medium text-muted-foreground">
+          {item.icon && <span className="mr-2">{item.icon}</span>}
           {item.label}
         </div>
-        <div className='ml-4 space-y-1'>
+        <div className="ml-4 space-y-1">
           {item.children.map((child) => (
-            <SidebarNavItem 
-              key={child.href} 
-              item={child} 
+            <SidebarNavItem
+              key={child.href}
+              item={child}
               isActive={child.href === location.pathname}
             />
           ))}
@@ -266,10 +390,10 @@ function SidebarNavItem({ item, isActive }: { item: NavigationItem; isActive: bo
         isActive && 'bg-accent text-accent-foreground'
       )}
     >
-      {item.icon && <span className='mr-3 h-4 w-4'>{item.icon}</span>}
+      {item.icon && <span className="mr-3 h-4 w-4">{item.icon}</span>}
       {item.label}
       {item.badge && (
-        <Badge variant='secondary' className='ml-auto text-xs'>
+        <Badge variant="secondary" className="ml-auto text-xs">
           {item.badge}
         </Badge>
       )}
@@ -289,15 +413,13 @@ function VerticalNavItem({ item, isActive }: { item: NavigationItem; isActive: b
         isActive && 'bg-accent text-accent-foreground'
       )}
     >
-      {item.icon && <span className='mr-3 h-4 w-4'>{item.icon}</span>}
-      <div className='flex-1'>
+      {item.icon && <span className="mr-3 h-4 w-4">{item.icon}</span>}
+      <div className="flex-1">
         {item.label}
-        {item.description && (
-          <p className='text-xs text-muted-foreground'>{item.description}</p>
-        )}
+        {item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}
       </div>
       {item.badge && (
-        <Badge variant='secondary' className='text-xs'>
+        <Badge variant="secondary" className="text-xs">
           {item.badge}
         </Badge>
       )}
@@ -321,42 +443,42 @@ interface PermissionBreadcrumbProps {
 export function PermissionBreadcrumb({ items, className }: PermissionBreadcrumbProps) {
   const { hasPermission } = usePermissions();
 
-  const accessibleItems = items.filter(item => {
+  const accessibleItems = items.filter((item) => {
     if (!item.permission) return true;
     const context = item.organizationId ? { organizationId: item.organizationId } : undefined;
     return hasPermission(item.permission, context);
   });
 
   return (
-    <nav className={cn('flex', className)} aria-label='Breadcrumb'>
-      <ol className='inline-flex items-center space-x-1 md:space-x-3'>
+    <nav className={cn('flex', className)} aria-label="Breadcrumb">
+      <ol className="inline-flex items-center space-x-1 md:space-x-3">
         {accessibleItems.map((item, index) => (
-          <li key={index} className='inline-flex items-center'>
+          <li key={index} className="inline-flex items-center">
             {index > 0 && (
               <svg
-                className='w-3 h-3 text-gray-400 mx-1'
-                aria-hidden='true'
-                fill='none'
-                viewBox='0 0 6 10'
+                className="mx-1 h-3 w-3 text-gray-400"
+                aria-hidden="true"
+                fill="none"
+                viewBox="0 0 6 10"
               >
                 <path
-                  stroke='currentColor'
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                   strokeWidth={2}
-                  d='m1 9 4-4-4-4'
+                  d="m1 9 4-4-4-4"
                 />
               </svg>
             )}
             {item.href ? (
               <Link
                 href={item.href}
-                className='inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600'
+                className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600"
               >
                 {item.label}
               </Link>
             ) : (
-              <span className='text-sm font-medium text-gray-500'>{item.label}</span>
+              <span className="text-sm font-medium text-gray-500">{item.label}</span>
             )}
           </li>
         ))}

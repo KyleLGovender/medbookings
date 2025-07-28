@@ -14,7 +14,8 @@ export const TEST_PROVIDER_DATA = {
 
 export const TEST_ORGANIZATION_DATA = {
   name: 'E2E_TEST_Sunny_Medical_Clinic',
-  description: '[E2E_TEST] A modern medical clinic providing comprehensive healthcare services to the community.',
+  description:
+    '[E2E_TEST] A modern medical clinic providing comprehensive healthcare services to the community.',
   phoneNumber: '+1-555-9998',
   email: 'e2e-test-info@example.com',
   website: 'https://e2e-test-sunnymedical.example.com',
@@ -64,8 +65,10 @@ export const TEST_USERS = {
 };
 
 export const REJECTION_REASONS = {
-  provider: '[E2E_TEST] Provider credentials do not meet our standards. Please submit updated documentation.',
-  organization: '[E2E_TEST] Organization registration is incomplete. Missing required licensing information.',
+  provider:
+    '[E2E_TEST] Provider credentials do not meet our standards. Please submit updated documentation.',
+  organization:
+    '[E2E_TEST] Organization registration is incomplete. Missing required licensing information.',
   requirement: '[E2E_TEST] Submitted document is not clear or does not show required information.',
 };
 

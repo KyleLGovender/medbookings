@@ -1,21 +1,21 @@
 /**
  * NextAuth session integration with permission caching
- * 
+ *
  * This module provides utilities for integrating the permission system
  * with NextAuth sessions, including caching and session management.
  */
-
 import { getServerSession } from 'next-auth';
 import { Session } from 'next-auth';
+
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import {
-  UserPermissions,
-  SessionPermissions,
-  PermissionContext,
-  SystemRole,
   OrganizationRole,
-  ProviderRole
+  PermissionContext,
+  ProviderRole,
+  SessionPermissions,
+  SystemRole,
+  UserPermissions,
 } from '@/types/permissions';
 
 /**
@@ -36,28 +36,28 @@ const PERMISSION_CACHE_DURATION = 5 * 60 * 1000;
 export async function getCurrentSession(): Promise<EnhancedSession | null> {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return null;
-  
+
   // Check if we have cached permissions
   const cachedPermissions = await getCachedPermissions(session.user.email);
   if (cachedPermissions) {
     return {
       ...session,
-      permissions: cachedPermissions
+      permissions: cachedPermissions,
     };
   }
-  
+
   // Load fresh permissions from database
   const permissions = await loadUserPermissions(session.user.email);
   if (permissions) {
     // Cache the permissions
     await cachePermissions(session.user.email, permissions);
-    
+
     return {
       ...session,
-      permissions
+      permissions,
     };
   }
-  
+
   return session;
 }
 
@@ -72,14 +72,14 @@ async function loadUserPermissions(email: string): Promise<SessionPermissions | 
         provider: true,
         organizationMemberships: {
           include: {
-            organization: true
-          }
-        }
-      }
+            organization: true,
+          },
+        },
+      },
     });
-    
+
     if (!user) return null;
-    
+
     // Determine system role
     let systemRole: SystemRole = SystemRole.USER;
     if (user.role === 'SUPER_ADMIN') {
@@ -87,31 +87,31 @@ async function loadUserPermissions(email: string): Promise<SessionPermissions | 
     } else if (user.role === 'ADMIN') {
       systemRole = SystemRole.ADMIN;
     }
-    
+
     // Get organization roles
-    const organizationRoles = user.organizationMemberships.map(membership => ({
+    const organizationRoles = user.organizationMemberships.map((membership) => ({
       organizationId: membership.organizationId,
-      role: membership.role as OrganizationRole
+      role: membership.role as OrganizationRole,
     }));
-    
+
     // Get provider role
     const providerRole = user.provider ? ProviderRole.PROVIDER : undefined;
     const providerId = user.provider?.id;
-    
+
     const userPermissions: UserPermissions = {
       systemRole,
       organizationRoles,
       providerRole,
-      providerId
+      providerId,
     };
-    
+
     return {
       user: {
         id: user.id,
-        email: user.email || ''
+        email: user.email || '',
       },
       permissions: userPermissions,
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
     };
   } catch (error) {
     console.error('Error loading user permissions:', error);
@@ -122,10 +122,13 @@ async function loadUserPermissions(email: string): Promise<SessionPermissions | 
 /**
  * In-memory cache for permissions (in production, use Redis or similar)
  */
-const permissionCache = new Map<string, {
-  permissions: SessionPermissions;
-  expires: Date;
-}>();
+const permissionCache = new Map<
+  string,
+  {
+    permissions: SessionPermissions;
+    expires: Date;
+  }
+>();
 
 /**
  * Get cached permissions if available and not expired
@@ -133,12 +136,12 @@ const permissionCache = new Map<string, {
 async function getCachedPermissions(email: string): Promise<SessionPermissions | null> {
   const cached = permissionCache.get(email);
   if (!cached) return null;
-  
+
   if (cached.expires < new Date()) {
     permissionCache.delete(email);
     return null;
   }
-  
+
   return cached.permissions;
 }
 
@@ -149,7 +152,7 @@ async function cachePermissions(email: string, permissions: SessionPermissions):
   const expires = new Date(Date.now() + PERMISSION_CACHE_DURATION);
   permissionCache.set(email, {
     permissions,
-    expires
+    expires,
   });
 }
 
@@ -167,10 +170,10 @@ export async function invalidateOrganizationPermissions(organizationId: string):
   try {
     const members = await prisma.organizationMembership.findMany({
       where: { organizationId },
-      include: { user: true }
+      include: { user: true },
     });
-    
-    members.forEach(member => {
+
+    members.forEach((member) => {
       if (member.user.email) {
         permissionCache.delete(member.user.email);
       }
@@ -188,12 +191,12 @@ export async function getUserPermissionsWithContext(
   context?: PermissionContext
 ): Promise<{ permissions: UserPermissions; context?: PermissionContext } | null> {
   if (!session?.permissions) return null;
-  
+
   const result = {
     permissions: session.permissions.permissions,
-    context: context || session.permissions.currentContext
+    context: context || session.permissions.currentContext,
   };
-  
+
   return result;
 }
 
@@ -219,10 +222,10 @@ export async function getCurrentUser(): Promise<{
 } | null> {
   const session = await getCurrentSession();
   if (!session?.permissions) return null;
-  
+
   return {
     user: session.permissions.user,
-    permissions: session.permissions.permissions
+    permissions: session.permissions.permissions,
   };
 }
 
@@ -231,7 +234,7 @@ export async function getCurrentUser(): Promise<{
  */
 export function sessionNeedsRefresh(session: EnhancedSession): boolean {
   if (!session.permissions) return true;
-  
+
   const age = Date.now() - session.permissions.lastUpdated.getTime();
   return age > PERMISSION_CACHE_DURATION;
 }
@@ -239,10 +242,12 @@ export function sessionNeedsRefresh(session: EnhancedSession): boolean {
 /**
  * Refresh session permissions
  */
-export async function refreshSessionPermissions(session: EnhancedSession): Promise<EnhancedSession> {
+export async function refreshSessionPermissions(
+  session: EnhancedSession
+): Promise<EnhancedSession> {
   if (!session.user?.email) return session;
-  
+
   // Invalidate cache and reload
   await invalidateUserPermissions(session.user.email);
-  return await getCurrentSession() || session;
+  return (await getCurrentSession()) || session;
 }

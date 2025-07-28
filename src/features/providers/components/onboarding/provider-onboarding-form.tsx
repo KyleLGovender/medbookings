@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, Send } from 'lucide-react';
 import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 
@@ -23,6 +23,7 @@ import {
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
 import { ProviderFormType, providerFormSchema } from '@/features/providers/hooks/types';
+import { useCreateProvider } from '@/features/providers/hooks/use-create-provider';
 import { useToast } from '@/hooks/use-toast';
 
 import { BasicInfoSection } from './basic-info-section';
@@ -61,24 +62,6 @@ interface OnboardingData {
     }>
   >;
 }
-
-// API mutation function
-const submitProviderApplication = async (data: ProviderFormType) => {
-  const response = await fetch('/api/providers', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to submit application');
-  }
-
-  return response.json();
-};
 
 export function ProviderOnboardingForm() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -268,9 +251,8 @@ export function ProviderOnboardingForm() {
     }
   }, [methods.formState.isSubmitted, methods.formState.errors, updateFormErrors]);
 
-  // TanStack Query mutation
-  const mutation = useMutation({
-    mutationFn: submitProviderApplication,
+  // tRPC mutation
+  const mutation = useCreateProvider({
     onSuccess: (data) => {
       toast({
         title: 'Application submitted successfully!',

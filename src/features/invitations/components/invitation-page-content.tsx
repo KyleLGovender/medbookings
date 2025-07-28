@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { api } from '@/utils/api';
 
 import { ExistingUserInvitationFlow } from './existing-user-invitation-flow';
 import { InvitationErrorState } from './invitation-error-state';
@@ -42,33 +43,26 @@ export function InvitationPageContent({ token }: InvitationPageContentProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchInvitation = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const response = await fetch(`/api/invitations/${token}/validate`);
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to validate invitation');
-        }
-
-        const data = await response.json();
-        setInvitation(data.invitation);
-      } catch (err) {
-        console.error('Error fetching invitation:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load invitation');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (token) {
-      fetchInvitation();
+  // Use tRPC query for invitation validation
+  const invitationQuery = api.invitations.validate.useQuery(
+    { token },
+    {
+      enabled: !!token,
+      retry: false,
     }
-  }, [token]);
+  );
+
+  useEffect(() => {
+    if (invitationQuery.data) {
+      setInvitation(invitationQuery.data.invitation);
+      setIsLoading(false);
+    } else if (invitationQuery.error) {
+      setError(invitationQuery.error.message);
+      setIsLoading(false);
+    } else if (invitationQuery.isLoading) {
+      setIsLoading(true);
+    }
+  }, [invitationQuery.data, invitationQuery.error, invitationQuery.isLoading]);
 
   // Loading state
   if (isLoading || status === 'loading') {
