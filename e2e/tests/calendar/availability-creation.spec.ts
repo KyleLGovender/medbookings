@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { CALENDAR_AVAILABILITY_DATA, CALENDAR_TIME_SLOTS } from '../../fixtures/calendar-test-data';
+import { AVAILABILITY_DATA, TIME_SLOTS } from '../../fixtures/test-data';
 
 test.describe('Calendar Availability Creation', () => {
   test('should display calendar page for provider', async ({ page }) => {
@@ -22,7 +22,7 @@ test.describe('Calendar Availability Creation', () => {
     await page.click('[data-testid="create-availability-button"]');
 
     // Fill in availability form
-    const availabilityData = CALENDAR_AVAILABILITY_DATA.singleSlot;
+    const availabilityData = AVAILABILITY_DATA.singleSlot;
 
     await page.fill('[data-testid="availability-date"]', availabilityData.date);
     await page.fill('[data-testid="availability-start-time"]', availabilityData.startTime);
@@ -57,7 +57,7 @@ test.describe('Calendar Availability Creation', () => {
     await page.click('[data-testid="recurring-availability-toggle"]');
 
     // Fill in weekly recurring availability
-    const weeklyData = CALENDAR_AVAILABILITY_DATA.weeklySchedule;
+    const weeklyData = AVAILABILITY_DATA.weeklySchedule;
 
     await page.fill('[data-testid="availability-start-date"]', weeklyData.date);
     await page.fill('[data-testid="availability-start-time"]', weeklyData.startTime);
@@ -87,10 +87,10 @@ test.describe('Calendar Availability Creation', () => {
     await page.goto('/calendar');
 
     // Navigate to a specific date with availability
-    await page.goto(`/calendar?date=${CALENDAR_AVAILABILITY_DATA.singleSlot.date}`);
+    await page.goto(`/calendar?date=${AVAILABILITY_DATA.singleSlot.date}`);
 
     // Verify time slots are displayed
-    for (const timeSlot of CALENDAR_TIME_SLOTS.morning) {
+    for (const timeSlot of TIME_SLOTS.morning) {
       const slotSelector = `[data-testid="time-slot-${timeSlot}"]`;
 
       // Check if slot exists (might be available or booked)

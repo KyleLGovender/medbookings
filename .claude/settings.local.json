@@ -63,7 +63,8 @@
       "Bash(TEST_DATABASE_URL=\"postgresql://medbookings_test:test_password@localhost:5433/medbookings_test\" npx playwright test --project=chromium --grep \"should display login page correctly\" --timeout=10000)",
       "Bash(awk:*)",
       "mcp__playwright__browser_close",
-      "Bash(npx ts-node:*)"
+      "Bash(npx ts-node:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   },

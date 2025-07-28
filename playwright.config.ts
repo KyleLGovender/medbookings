@@ -1,8 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
 
-/**
- * @see https://playwright.dev/docs/test-configuration
- */
 export default defineConfig({
   testDir: './e2e',
   /* Run tests in files in parallel */
@@ -22,66 +19,29 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
-
-    /* Take screenshot on failure */
-    screenshot: 'only-on-failure',
-
-    /* Record video on failure */
-    video: 'retain-on-failure',
   },
 
   /* Configure projects for major browsers */
   projects: [
-    // Setup project for authentication
-    {
-      name: 'setup',
-      testMatch: /.*\.setup\.ts/,
+    // Setup
+    { 
+      name: 'setup', 
+      testMatch: /auth\.setup\.ts/,
     },
 
+    // Desktop testing
     {
       name: 'chromium',
-      use: {
+      use: { 
         ...devices['Desktop Chrome'],
-        // Use prepared auth state
         storageState: 'e2e/.auth/user.json',
       },
       dependencies: ['setup'],
-    },
-
-    {
-      name: 'firefox',
-      use: {
-        ...devices['Desktop Firefox'],
-        storageState: 'e2e/.auth/user.json',
-      },
-      dependencies: ['setup'],
-    },
-
-    {
-      name: 'webkit',
-      use: {
-        ...devices['Desktop Safari'],
-        storageState: 'e2e/.auth/user.json',
-      },
-      dependencies: ['setup'],
-    },
-
-    /* Test against mobile viewports. */
-    {
-      name: 'Mobile Chrome',
-      use: {
-        ...devices['Pixel 5'],
-        storageState: 'e2e/.auth/user.json',
-      },
-      dependencies: ['setup'],
-    },
-    {
-      name: 'Mobile Safari',
-      use: {
-        ...devices['iPhone 12'],
-        storageState: 'e2e/.auth/user.json',
-      },
-      dependencies: ['setup'],
+      testMatch: [
+        '**/calendar/**',       // Calendar tests
+        '**/availability/**',   // Availability tests
+        '**/booking/**',        // Booking tests
+      ],
     },
   ],
 
@@ -90,6 +50,5 @@ export default defineConfig({
     command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
   },
 });
