@@ -36,7 +36,7 @@ export function useApproveOrganization(callbacks?: MutationCallbacks) {
       callbacks?.onSuccess?.();
     }
     if (mutation.isError) {
-      callbacks?.onError?.(mutation.error as Error);
+      callbacks?.onError?.(mutation.error as unknown as Error);
     }
   }, [mutation.isSuccess, mutation.isError, mutation.error, queryClient, callbacks]);
 
@@ -67,7 +67,7 @@ export function useRejectOrganization(callbacks?: MutationCallbacks) {
       callbacks?.onSuccess?.();
     }
     if (mutation.isError) {
-      callbacks?.onError?.(mutation.error as Error);
+      callbacks?.onError?.(mutation.error as unknown as Error);
     }
   }, [mutation.isSuccess, mutation.isError, mutation.error, queryClient, callbacks]);
 

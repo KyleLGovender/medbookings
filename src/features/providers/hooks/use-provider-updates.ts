@@ -17,7 +17,7 @@ export function useUpdateProviderBasicInfo(options?: {
       utils.providers.getById.invalidate({ id: variables.id });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError,
+    onError: options?.onError as any,
   });
 }
 
@@ -39,7 +39,7 @@ export function useUpdateProviderServices(options?: {
       utils.providers.getProviderServices.invalidate({ id: variables.id });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError,
+    onError: options?.onError as any,
   });
 }
 
@@ -60,6 +60,6 @@ export function useUpdateProviderRequirements(options?: {
       utils.providers.getById.invalidate({ id: variables.id });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError,
+    onError: options?.onError as any,
   });
 }

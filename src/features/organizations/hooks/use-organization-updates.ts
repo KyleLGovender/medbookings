@@ -1,3 +1,5 @@
+import { useMutation } from '@tanstack/react-query';
+
 import { OrganizationLocation } from '@/features/organizations/types/types';
 import { api } from '@/utils/api';
 
@@ -18,7 +20,7 @@ export function useUpdateOrganizationBasicInfo(options?: {
       utils.organizations.getById.invalidate({ id: variables.id });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError,
+    onError: options?.onError as any,
   });
 }
 
@@ -63,7 +65,7 @@ export function useUpdateOrganizationBilling(options?: {
       return response.json();
     },
     onSuccess: options?.onSuccess,
-    onError: options?.onError,
+    onError: options?.onError as any,
   });
 }
 
@@ -103,6 +105,6 @@ export function useUpdateOrganizationLocations(options?: {
       return response.json();
     },
     onSuccess: options?.onSuccess,
-    onError: options?.onError,
+    onError: options?.onError as any,
   });
 }

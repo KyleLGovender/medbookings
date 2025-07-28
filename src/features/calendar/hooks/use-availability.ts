@@ -201,7 +201,9 @@ export function useCreateAvailability(options?: {
       utils.calendar.searchAvailability.invalidate();
       utils.calendar.getById.invalidate();
 
-      options?.onSuccess?.(data, variables);
+      if (data) {
+        options?.onSuccess?.(data, variables as any);
+      }
     },
   });
 }
@@ -332,7 +334,7 @@ export function useCancelAvailability(options?: {
 }
 
 export function useDeleteAvailability(options?: {
-  onSuccess?: (variables: { ids: string[] }) => void;
+  onSuccess?: (variables: { ids: string[]; scope?: 'single' | 'future' | 'all' }) => void;
 }) {
   const utils = api.useUtils();
 

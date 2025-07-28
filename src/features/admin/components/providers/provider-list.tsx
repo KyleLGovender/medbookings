@@ -74,7 +74,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
   });
 
   const handleApprove = async (providerId: string) => {
-    await approveProviderMutation.mutateAsync(providerId);
+    await approveProviderMutation.mutateAsync({ id: providerId });
   };
 
   const handleRejectClick = (providerId: string, providerName: string) => {
@@ -87,8 +87,8 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
 
   const handleReject = async (reason: string) => {
     await rejectProviderMutation.mutateAsync({
-      providerId: rejectionModal.providerId,
-      rejectionReason: reason,
+      id: rejectionModal.providerId,
+      reason: reason,
     });
   };
 

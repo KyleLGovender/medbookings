@@ -148,7 +148,7 @@ export function AvailabilityEditForm({
     return (
       availableLocations
         .filter((loc) => loc.id)
-        .find((loc: OrganizationLocation) => loc.id === watchLocationId) || null
+        .find((loc: any) => loc.id === watchLocationId) || null
     );
   }, [watchLocationId, availableLocations]);
 
@@ -523,7 +523,7 @@ export function AvailabilityEditForm({
                         <SelectContent>
                           {availableLocations
                             .filter((location) => location.id)
-                            .map((location: OrganizationLocation) => (
+                            .map((location: any) => (
                               <SelectItem key={location.id} value={location.id!}>
                                 {location.name}
                               </SelectItem>

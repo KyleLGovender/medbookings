@@ -62,7 +62,7 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
   const rejectOrganizationMutation = useRejectOrganization();
 
   const filteredOrganizations = organizations?.filter(
-    (organization: AdminOrganizationListSelect) => {
+    (organization: any) => {
       if (!searchQuery) return true;
       const query = searchQuery.toLowerCase();
       return (
@@ -181,7 +181,7 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredOrganizations?.map((organization: AdminOrganizationListSelect) => (
+                    filteredOrganizations?.map((organization: any) => (
                       <TableRow key={organization.id}>
                         <TableCell>
                           <div className="flex flex-col">

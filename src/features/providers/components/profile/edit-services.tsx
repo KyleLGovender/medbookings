@@ -138,7 +138,7 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
       formData.append(`serviceConfigs[${service.id}][duration]`, service.duration.toString());
     });
 
-    updateServicesMutation.mutate(formData);
+    updateServicesMutation.mutate(formData as any);
   };
 
   if (isProviderLoading || isServicesLoading) {

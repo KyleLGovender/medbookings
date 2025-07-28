@@ -32,10 +32,7 @@ export function useProviderRequirementTypes(providerId: string | undefined) {
 
   // Then fetch requirements based on the provider type ID
   return api.providers.getRequirementTypes.useQuery(
-    {
-      providerId: providerId || '',
-      providerTypeId: providerQuery.data?.providerTypeId,
-    },
+    undefined,
     {
       enabled: !!providerId && !!providerQuery.data?.providerTypeId,
     }

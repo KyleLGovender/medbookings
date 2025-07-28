@@ -1141,3 +1141,32 @@ async function handleSeriesCancel(
     };
   }
 }
+
+// Export aliases for TRPC compatibility
+export const acceptAvailability = async (ids: string[]) => {
+  const results = await Promise.all(ids.map(id => acceptAvailabilityProposal(id)));
+  const failed = results.filter(r => !r.success);
+  
+  if (failed.length > 0) {
+    return { 
+      success: false, 
+      error: `Failed to accept ${failed.length} availability(s): ${failed.map(f => f.error).join(', ')}`
+    };
+  }
+  
+  return { success: true, data: results.map(r => r.data) };
+};
+
+export const rejectAvailability = async (ids: string[]) => {
+  const results = await Promise.all(ids.map(id => rejectAvailabilityProposal(id)));
+  const failed = results.filter(r => !r.success);
+  
+  if (failed.length > 0) {
+    return { 
+      success: false, 
+      error: `Failed to reject ${failed.length} availability(s): ${failed.map(f => f.error).join(', ')}`
+    };
+  }
+  
+  return { success: true };
+};

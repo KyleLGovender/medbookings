@@ -22,6 +22,6 @@ export function useDeleteProvider(options?: {
       // Call the user-provided onSuccess callback if it exists
       options?.onSuccess?.(data);
     },
-    onError: options?.onError,
+    onError: options?.onError as any,
   });
 }

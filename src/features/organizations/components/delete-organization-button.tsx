@@ -59,7 +59,7 @@ export function DeleteOrganizationButton({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={() => deleteOrganizationMutation(organizationId)}>
+          <AlertDialogAction onClick={() => deleteOrganizationMutation({ id: organizationId })}>
             Continue
           </AlertDialogAction>
         </AlertDialogFooter>

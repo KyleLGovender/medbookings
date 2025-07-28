@@ -202,11 +202,11 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
         {provider.services && provider.services.length > 0 ? (
           <div className="space-y-4">
             {provider.services
-              .sort((a, b) => (a.displayPriority ?? 999) - (b.displayPriority ?? 999))
-              .map((service) => {
+              .sort((a: any, b: any) => (a.displayPriority ?? 999) - (b.displayPriority ?? 999))
+              .map((service: any) => {
                 // Get service configuration with fallback to defaults (client-side logic)
                 const customConfig = provider.serviceConfigs?.find(
-                  (config) => config.serviceId === service.id
+                  (config: any) => config.serviceId === service.id
                 );
                 const isCustomConfig = !!customConfig;
 
@@ -300,7 +300,7 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
                 const priorityB = b.requirementType?.displayPriority ?? 999;
                 return priorityA - priorityB;
               })
-              .map((submission) => (
+              .map((submission: any) => (
                 <RequirementSubmissionCard key={submission.id} submission={submission} />
               ))}
           </div>

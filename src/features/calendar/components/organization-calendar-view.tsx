@@ -138,8 +138,8 @@ export function OrganizationCalendarView({
 
     // Transform provider connections into organization providers
     const providers: OrganizationProvider[] = providerConnections.map(
-      (connection: OrganizationProviderConnection) => {
-        const provider = connection.serviceProvider;
+      (connection: any) => {
+        const provider = connection.provider;
 
         // Get availability for this provider from organization availability data
         const providerAvailability = availabilityData.filter(

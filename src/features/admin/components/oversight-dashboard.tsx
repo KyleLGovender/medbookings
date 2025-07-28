@@ -273,9 +273,9 @@ export function OversightDashboard({
 
     if (type === 'provider') {
       if (action === 'approve') {
-        approveProvider.mutate(id);
+        approveProvider.mutate({ id });
       } else {
-        rejectProvider.mutate({ providerId: id, rejectionReason: actionReason });
+        rejectProvider.mutate({ id, reason: actionReason });
       }
     } else {
       if (action === 'approve') {

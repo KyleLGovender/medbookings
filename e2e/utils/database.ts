@@ -226,65 +226,77 @@ export async function seedTestData() {
     },
   });
 
-  // Then create requirement types with provider type references (use upsert to avoid duplicates)
-  const licenseRequirement = await prisma.requirementType.upsert({
+  // Then create requirement types with provider type references (findFirst or create pattern)
+  let licenseRequirement = await prisma.requirementType.findFirst({
     where: {
-      name_providerTypeId: {
-        name: 'Medical License',
-        providerTypeId: generalPractitioner.id,
-      },
-    },
-    update: {},
-    create: {
       name: 'Medical License',
-      description: 'Valid medical license',
-      isRequired: true,
-      validationType: 'DOCUMENT',
       providerTypeId: generalPractitioner.id,
     },
   });
-
-  const insuranceRequirement = await prisma.requirementType.upsert({
-    where: {
-      name_providerTypeId: {
-        name: 'Professional Insurance',
+  
+  if (!licenseRequirement) {
+    licenseRequirement = await prisma.requirementType.create({
+      data: {
+        name: 'Medical License',
+        description: 'Valid medical license',
+        isRequired: true,
+        validationType: 'DOCUMENT',
         providerTypeId: generalPractitioner.id,
       },
-    },
-    update: {},
-    create: {
+    });
+  }
+
+  let insuranceRequirement = await prisma.requirementType.findFirst({
+    where: {
       name: 'Professional Insurance',
-      description: 'Professional liability insurance',
-      isRequired: true,
-      validationType: 'DOCUMENT',
       providerTypeId: generalPractitioner.id,
     },
   });
+  
+  if (!insuranceRequirement) {
+    insuranceRequirement = await prisma.requirementType.create({
+      data: {
+        name: 'Professional Insurance',
+        description: 'Professional liability insurance',
+        isRequired: true,
+        validationType: 'DOCUMENT',
+        providerTypeId: generalPractitioner.id,
+      },
+    });
+  }
 
-  // Create services (use upsert to avoid duplicates)
-  await prisma.service.upsert({
+  // Create services (findFirst or create pattern)
+  const existingGeneralConsultation = await prisma.service.findFirst({
     where: { name: 'General Consultation' },
-    update: {},
-    create: {
-      name: 'General Consultation',
-      description: 'General medical consultation',
-      defaultPrice: 150.0,
-      defaultDuration: 30,
-      providerTypeId: generalPractitioner.id,
-    },
   });
+  
+  if (!existingGeneralConsultation) {
+    await prisma.service.create({
+      data: {
+        name: 'General Consultation',
+        description: 'General medical consultation',
+        defaultPrice: 150.0,
+        defaultDuration: 30,
+        providerTypeId: generalPractitioner.id,
+      },
+    });
+  }
 
-  await prisma.service.upsert({
+  const existingPhysicalTherapy = await prisma.service.findFirst({
     where: { name: 'Physical Therapy Session' },
-    update: {},
-    create: {
-      name: 'Physical Therapy Session',
-      description: 'Physical therapy treatment session',
-      defaultPrice: 120.0,
-      defaultDuration: 45,
-      providerTypeId: physiotherapist.id,
-    },
   });
+  
+  if (!existingPhysicalTherapy) {
+    await prisma.service.create({
+      data: {
+        name: 'Physical Therapy Session',
+        description: 'Physical therapy treatment session',
+        defaultPrice: 120.0,
+        defaultDuration: 45,
+        providerTypeId: physiotherapist.id,
+      },
+    });
+  }
 
   return {
     requirementTypes: {

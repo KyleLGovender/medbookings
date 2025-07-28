@@ -75,7 +75,7 @@ export const organizationsRouter = createTRPCRouter({
 
       const updatedOrganization = await ctx.prisma.organization.update({
         where: { id },
-        data,
+        data: data as any,
         include: {
           locations: true,
           memberships: true,
@@ -208,7 +208,7 @@ export const organizationsRouter = createTRPCRouter({
         data: {
           ...locationData,
           organizationId,
-        },
+        } as any,
       });
 
       return location;

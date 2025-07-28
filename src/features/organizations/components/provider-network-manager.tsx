@@ -45,18 +45,14 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
     data: connectionsData,
     isLoading: isLoadingConnections,
     error: connectionsError,
-  } = useOrganizationProviderConnections(
-    organizationId,
-    connectionsStatusFilter === 'all' ? undefined : connectionsStatusFilter
-  );
+  } = useOrganizationProviderConnections(organizationId);
 
   const { data: invitationsData, isLoading: isLoadingInvitations } = useProviderInvitations(
-    organizationId,
-    invitationsStatusFilter === 'all' ? undefined : invitationsStatusFilter
+    organizationId
   );
 
-  const connections = connectionsData?.connections || [];
-  const invitations = invitationsData?.invitations || [];
+  const connections = connectionsData || [];
+  const invitations = invitationsData || [];
 
   // Filter data based on search query
   const filteredConnections = connections.filter((connection: any) => {
@@ -272,7 +268,7 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
           ) : (
             <ProviderInvitationList
               organizationId={organizationId}
-              invitations={filteredInvitations}
+              invitations={filteredInvitations as any}
             />
           )}
         </TabsContent>

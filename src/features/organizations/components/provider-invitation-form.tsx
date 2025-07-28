@@ -67,7 +67,7 @@ export function ProviderInvitationForm({ organizationId, onSuccess }: ProviderIn
     setIsSubmitting(true);
     sendInvitationMutation.mutate({
       organizationId,
-      data,
+      ...data,
     });
   };
 

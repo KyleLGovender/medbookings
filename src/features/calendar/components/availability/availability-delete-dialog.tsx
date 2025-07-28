@@ -75,7 +75,7 @@ export function AvailabilityDeleteDialog({
 
     setIsDeleting(true);
     try {
-      await deleteMutation.mutateAsync({ id: availability.id });
+      await deleteMutation.mutateAsync({ ids: [availability.id] });
     } catch (error) {
       // Error handled by mutation
     } finally {

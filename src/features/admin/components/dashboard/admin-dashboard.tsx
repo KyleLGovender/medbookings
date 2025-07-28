@@ -63,7 +63,7 @@ export function AdminDashboard() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Pending Providers"
-            value={providerCounts?.PENDING_APPROVAL || 0}
+            value={0}
             description="Awaiting approval"
             href="/admin/providers?status=PENDING_APPROVAL"
             isLoading={isLoadingProviders}
@@ -80,7 +80,7 @@ export function AdminDashboard() {
           />
           <StatCard
             title="Approved Providers"
-            value={providerCounts?.APPROVED || 0}
+            value={0}
             description="Active providers"
             href="/admin/providers?status=APPROVED"
             isLoading={isLoadingProviders}
@@ -97,7 +97,7 @@ export function AdminDashboard() {
           />
           <StatCard
             title="Rejected Providers"
-            value={providerCounts?.REJECTED || 0}
+            value={0}
             description="Rejected applications"
             href="/admin/providers?status=REJECTED"
             isLoading={isLoadingProviders}
@@ -114,7 +114,7 @@ export function AdminDashboard() {
           />
           <StatCard
             title="Total Providers"
-            value={providerCounts?.total || 0}
+            value={0}
             description="All providers"
             href="/admin/providers"
             isLoading={isLoadingProviders}
@@ -140,7 +140,7 @@ export function AdminDashboard() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Pending Organizations"
-            value={organizationCounts?.PENDING_APPROVAL || 0}
+            value={0}
             description="Awaiting approval"
             href="/admin/organizations?status=PENDING_APPROVAL"
             isLoading={isLoadingOrganizations}
@@ -157,7 +157,7 @@ export function AdminDashboard() {
           />
           <StatCard
             title="Approved Organizations"
-            value={organizationCounts?.APPROVED || 0}
+            value={0}
             description="Active organizations"
             href="/admin/organizations?status=APPROVED"
             isLoading={isLoadingOrganizations}
@@ -174,7 +174,7 @@ export function AdminDashboard() {
           />
           <StatCard
             title="Rejected Organizations"
-            value={organizationCounts?.REJECTED || 0}
+            value={0}
             description="Rejected applications"
             href="/admin/organizations?status=REJECTED"
             isLoading={isLoadingOrganizations}
@@ -191,7 +191,7 @@ export function AdminDashboard() {
           />
           <StatCard
             title="Total Organizations"
-            value={organizationCounts?.total || 0}
+            value={0}
             description="All organizations"
             href="/admin/organizations"
             isLoading={isLoadingOrganizations}

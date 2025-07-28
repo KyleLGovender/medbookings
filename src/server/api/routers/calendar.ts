@@ -23,7 +23,7 @@ export const calendarRouter = createTRPCRouter({
     // Get all services with their provider types for availability filtering
     return ctx.prisma.service.findMany({
       include: {
-        providerTypes: {
+        providerType: {
           select: {
             id: true,
             name: true,
@@ -114,7 +114,14 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const result = await updateAvailability(input);
+      // Convert string dates to Date objects
+      const updateData = {
+        ...input,
+        startTime: input.startTime ? new Date(input.startTime) : undefined,
+        endTime: input.endTime ? new Date(input.endTime) : undefined,
+      };
+      
+      const result = await updateAvailability(updateData);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to update availability');
@@ -128,15 +135,32 @@ export const calendarRouter = createTRPCRouter({
    * Migrated from: DELETE /api/calendar/availability/delete
    */
   delete: protectedProcedure
-    .input(z.object({ ids: z.array(z.string()) }))
+    .input(z.object({ 
+      ids: z.array(z.string()),
+      scope: z.enum(['single', 'future', 'all']).optional()
+    }))
     .mutation(async ({ ctx, input }) => {
-      const result = await deleteAvailability(input.ids);
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to delete availability');
+      // Handle single deletion with scope or bulk deletion
+      if (input.ids.length === 1 && input.scope) {
+        // Single deletion with scope
+        const result = await deleteAvailability(input.ids[0], input.scope);
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to delete availability');
+        }
+        return result;
+      } else {
+        // Bulk deletion (no scope support)
+        const results = await Promise.all(
+          input.ids.map(id => deleteAvailability(id))
+        );
+        
+        const failed = results.filter(r => !r.success);
+        if (failed.length > 0) {
+          throw new Error(`Failed to delete ${failed.length} availability(s)`);
+        }
+        
+        return { success: true };
       }
-
-      return result;
     }),
 
   /**
@@ -146,13 +170,21 @@ export const calendarRouter = createTRPCRouter({
   cancel: protectedProcedure
     .input(z.object({ ids: z.array(z.string()) }))
     .mutation(async ({ ctx, input }) => {
-      const result = await cancelAvailability(input.ids);
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to cancel availability');
+      // Handle multiple cancellations
+      const results = await Promise.all(
+        input.ids.map(id => cancelAvailability(id))
+      );
+      
+      const hasErrors = results.some(result => !result.success);
+      if (hasErrors) {
+        const errorMessages = results
+          .filter(result => !result.success)
+          .map(result => result.error)
+          .join(', ');
+        throw new Error(`Failed to cancel some availability: ${errorMessages}`);
       }
 
-      return result;
+      return { success: true };
     }),
 
   /**
@@ -211,11 +243,10 @@ export const calendarRouter = createTRPCRouter({
       const availabilities = await ctx.prisma.availability.findMany({
         where: {
           providerId: input.providerId,
-          serviceId: input.serviceId,
           locationId: input.locationId,
           startTime: { gte: startDate },
           endTime: { lte: endDate },
-          status: 'AVAILABLE',
+          status: AvailabilityStatus.ACCEPTED,
           ...(input.onlineOnly && { isOnlineAvailable: true }),
         },
         include: {
@@ -226,18 +257,11 @@ export const calendarRouter = createTRPCRouter({
               image: true,
             },
           },
-          service: {
-            select: {
-              id: true,
-              name: true,
-              defaultDuration: true,
-            },
-          },
           location: {
             select: {
               id: true,
               name: true,
-              address: true,
+              formattedAddress: true,
             },
           },
         },
@@ -246,7 +270,7 @@ export const calendarRouter = createTRPCRouter({
 
       // Generate slots from availabilities
       const slots = availabilities.flatMap((availability) => {
-        const slotDuration = input.duration || availability.duration || 30;
+        const slotDuration = input.duration || 30;
         const slots = [];
         let currentTime = new Date(availability.startTime);
         const endTime = new Date(availability.endTime);
@@ -260,9 +284,7 @@ export const calendarRouter = createTRPCRouter({
               startTime: currentTime.toISOString(),
               endTime: slotEnd.toISOString(),
               provider: availability.provider,
-              service: availability.service,
               location: availability.location,
-              price: availability.price,
               isOnlineAvailable: availability.isOnlineAvailable,
             });
           }
@@ -298,11 +320,10 @@ export const calendarRouter = createTRPCRouter({
         where: {
           availabilities: {
             some: {
-              serviceId: input.serviceId,
               locationId: input.locationId,
               startTime: { gte: startDate },
               endTime: { lte: endDate },
-              status: 'AVAILABLE',
+              status: AvailabilityStatus.ACCEPTED,
               ...(input.onlineOnly && { isOnlineAvailable: true }),
             },
           },
@@ -319,11 +340,10 @@ export const calendarRouter = createTRPCRouter({
           },
           availabilities: {
             where: {
-              serviceId: input.serviceId,
               locationId: input.locationId,
               startTime: { gte: startDate },
               endTime: { lte: endDate },
-              status: 'AVAILABLE',
+              status: AvailabilityStatus.ACCEPTED,
               ...(input.onlineOnly && { isOnlineAvailable: true }),
             },
             select: {
@@ -357,40 +377,10 @@ export const calendarRouter = createTRPCRouter({
       const startDate = new Date(input.startDate);
       const endDate = new Date(input.endDate);
 
-      // Find services with availability in the date range
+      // Find all services  
       const services = await ctx.prisma.service.findMany({
-        where: {
-          availabilities: {
-            some: {
-              providerId: input.providerId,
-              locationId: input.locationId,
-              startTime: { gte: startDate },
-              endTime: { lte: endDate },
-              status: 'AVAILABLE',
-              ...(input.onlineOnly && { isOnlineAvailable: true }),
-            },
-          },
-        },
-        include: {
-          availabilities: {
-            where: {
-              providerId: input.providerId,
-              locationId: input.locationId,
-              startTime: { gte: startDate },
-              endTime: { lte: endDate },
-              status: 'AVAILABLE',
-              ...(input.onlineOnly && { isOnlineAvailable: true }),
-            },
-            select: {
-              id: true,
-            },
-          },
-        },
       });
 
-      return services.map((service) => ({
-        ...service,
-        availabilityCount: service.availabilities.length,
-      }));
+      return services;
     }),
 });

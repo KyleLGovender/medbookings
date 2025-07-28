@@ -80,7 +80,7 @@ export function useAdminOrganizationCounts() {
  * @returns Query result with organizations that are pending approval
  */
 export function useAdminOrganizationsPendingApproval() {
-  return api.admin.getOrganizations.useQuery({ status: 'PENDING' });
+  return api.admin.getOrganizations.useQuery({ status: 'PENDING_APPROVAL' });
 }
 
 /**

@@ -121,7 +121,7 @@ export function EditOrganizationBasicInfo({
     setIsSubmitting(true);
     try {
       // Use mutateAsync instead of mutate to properly await the result
-      await updateOrganizationMutation.mutateAsync({ organizationId, data });
+      await updateOrganizationMutation.mutateAsync({ id: organizationId, ...data });
 
       // Manually update the local state to reflect the change immediately
       if (organization) {

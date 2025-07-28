@@ -85,7 +85,7 @@ export default function Header() {
     ...(isAdmin ? [{ label: 'Admin', href: '/admin' }] : []),
     { label: 'Profile', href: '/profile' },
     ...(provider?.id ? [{ label: 'Provider', href: `/providers/${provider.id}` }] : []),
-    ...(organization?.id ? [{ label: 'Organizations', href: '/organizations/' }] : []),
+    ...(organization && organization.length > 0 ? [{ label: 'Organizations', href: '/organizations/' }] : []),
     { label: 'Calendar', href: '/calendar' },
     { label: 'Settings', href: '/settings' },
   ];

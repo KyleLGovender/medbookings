@@ -179,9 +179,21 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
 
       // Add showPrice field
       formData.append('showPrice', data.showPrice.toString());
+      
+      // Add provider ID
+      formData.append('id', provider.id);
 
-      // Use mutateAsync to properly await the result
-      await updateProviderMutation.mutateAsync(formData);
+      // Use mutateAsync to properly await the result  
+      const updateData = {
+        id: provider.id,
+        name: data.name,
+        email: data.email,
+        website: data.website || undefined,
+        whatsapp: data.whatsapp,
+        bio: data.bio,
+        languages: selectedLanguages,
+      };
+      await updateProviderMutation.mutateAsync(updateData);
 
       // Manually update the local state to reflect the change immediately
       if (provider) {

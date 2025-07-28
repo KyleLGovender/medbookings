@@ -66,11 +66,7 @@ export function EditRegulatoryRequirements({
     data: requirementTypes,
     isLoading: isRequirementsLoading,
     error: requirementsError,
-  } = useProviderRequirementTypes(providerId) as {
-    data: RequirementType[];
-    isLoading: boolean;
-    error: Error | null;
-  };
+  } = useProviderRequirementTypes(providerId) as any;
 
   // Set up form with default values
   const methods = useForm<RegulatoryRequirementsFormValues>({
@@ -94,10 +90,10 @@ export function EditRegulatoryRequirements({
     const existingRequirements = provider.requirementSubmissions || [];
 
     // Prepare form data by merging requirement types with existing submissions
-    const requirementsData = requirementTypes.map((req) => {
+    const requirementsData = requirementTypes.map((req: any) => {
       // Find existing submission for this requirement type
       const existingSubmission = existingRequirements.find(
-        (sub) => sub.requirementTypeId === req.id
+        (sub: any) => sub.requirementTypeId === req.id
       );
 
       // Create form entry with proper values
@@ -182,7 +178,7 @@ export function EditRegulatoryRequirements({
       });
 
       // Use mutateAsync to properly await the result
-      await updateRequirementsMutation.mutateAsync(formData);
+      await updateRequirementsMutation.mutateAsync(formData as any);
 
       // Invalidate and refetch provider data
       queryClient.invalidateQueries({ queryKey: ['provider', providerId] });
@@ -251,10 +247,10 @@ export function EditRegulatoryRequirements({
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {requirementTypes.map((requirement: RequirementType, index) => {
+                  {requirementTypes.map((requirement: any, index: number) => {
                     // Find existing submission for this requirement
                     const existingSubmission = provider.requirementSubmissions?.find(
-                      (sub) => sub.requirementTypeId === requirement.id
+                      (sub: any) => sub.requirementTypeId === requirement.id
                     );
 
                     // Get the field name for this requirement

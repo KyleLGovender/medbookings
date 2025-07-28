@@ -224,10 +224,8 @@ export const adminRouter = createTRPCRouter({
         where: { id: input.requirementId },
         data: {
           status: 'APPROVED',
-          reviewedById: ctx.session.user.id,
-          reviewedAt: new Date(),
-          rejectedAt: null,
-          rejectionReason: null,
+          validatedAt: new Date(),
+          validatedById: ctx.session.user.id,
         },
       });
 
@@ -279,10 +277,7 @@ export const adminRouter = createTRPCRouter({
         where: { id: input.requirementId },
         data: {
           status: 'REJECTED',
-          reviewedById: ctx.session.user.id,
-          reviewedAt: new Date(),
-          rejectedAt: new Date(),
-          rejectionReason: input.reason,
+          notes: input.reason,
         },
       });
 

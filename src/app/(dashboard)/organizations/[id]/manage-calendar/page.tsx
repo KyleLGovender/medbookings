@@ -184,8 +184,8 @@ export default function OrganizationAvailabilityPage({
         setShowEditForm(true);
         break;
       case 'delete':
-        // Delete with scope parameter
-        deleteMutation.mutate({ id: selectedEvent.id, scope });
+        // Delete with scope parameter - pass as array with scope
+        deleteMutation.mutate({ ids: [selectedEvent.id], scope });
         break;
       case 'cancel':
         // Cancel with scope parameter

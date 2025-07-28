@@ -19,6 +19,6 @@ export function useCreateProvider(options?: {
       utils.providers.search.invalidate();
       options?.onSuccess?.(data);
     },
-    onError: options?.onError,
+    onError: options?.onError as any,
   });
 }

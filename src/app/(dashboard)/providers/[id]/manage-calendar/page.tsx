@@ -197,7 +197,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
 
   const handleDeleteConfirm = () => {
     if (selectedEvent) {
-      deleteMutation.mutate({ id: selectedEvent.id });
+      deleteMutation.mutate({ ids: [selectedEvent.id] });
     }
   };
 
@@ -260,7 +260,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
         break;
       case 'delete':
         // Delete with scope parameter
-        deleteMutation.mutate({ id: selectedEvent.id, scope });
+        deleteMutation.mutate({ ids: [selectedEvent.id], scope });
         break;
       case 'cancel':
         // Cancel with scope parameter

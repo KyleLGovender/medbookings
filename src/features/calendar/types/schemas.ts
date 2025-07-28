@@ -294,6 +294,9 @@ export const slotGenerationResultSchema = z.object({
   duration: z.number().int().nonnegative(),
 });
 
+// Export alias for TRPC compatibility
+export const availabilityCreateSchema = createAvailabilityDataSchema;
+
 export const availabilitySeriesSchema = z.object({
   seriesId: z.string().cuid(),
   masterAvailabilityId: z.string().cuid(),

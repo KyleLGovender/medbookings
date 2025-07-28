@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { api } from '@/utils/api';
 
@@ -21,7 +21,7 @@ export function useSendProviderInvitation(options?: {
       });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError,
+    onError: options?.onError as any,
   });
 }
 
@@ -92,6 +92,6 @@ export function useManageProviderInvitation(options?: {
       });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError,
+    onError: options?.onError as any,
   });
 }

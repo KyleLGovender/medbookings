@@ -64,7 +64,7 @@ export function DeleteProviderButton({
   });
 
   const handleDelete = () => {
-    deleteProvider(providerId);
+    deleteProvider({ id: providerId });
   };
 
   return (

@@ -54,7 +54,7 @@ export function InvitationPageContent({ token }: InvitationPageContentProps) {
 
   useEffect(() => {
     if (invitationQuery.data) {
-      setInvitation(invitationQuery.data.invitation);
+      setInvitation(invitationQuery.data.invitation as any);
       setIsLoading(false);
     } else if (invitationQuery.error) {
       setError(invitationQuery.error.message);

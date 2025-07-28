@@ -70,7 +70,7 @@ export function useApproveRequirement(options?: {
     onError: (error) => {
       // Call the user-provided onError callback if it exists
       if (options?.onError) {
-        options.onError(error);
+        options.onError(error as any);
       }
     },
   });
@@ -100,7 +100,7 @@ export function useRejectRequirement(options?: {
     onError: (error) => {
       // Call the user-provided onError callback if it exists
       if (options?.onError) {
-        options.onError(error);
+        options.onError(error as any);
       }
     },
   });
@@ -130,7 +130,7 @@ export function useApproveProvider(options?: {
     onError: (error) => {
       // Call the user-provided onError callback if it exists
       if (options?.onError) {
-        options.onError(error);
+        options.onError(error as any);
       }
     },
   });
@@ -160,7 +160,7 @@ export function useRejectProvider(options?: {
     onError: (error) => {
       // Call the user-provided onError callback if it exists
       if (options?.onError) {
-        options.onError(error);
+        options.onError(error as any);
       }
     },
   });
