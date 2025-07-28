@@ -102,32 +102,32 @@ export function RegulatoryRequirementsSection({
         {transformedRequirements
           .sort((a, b) => (a.displayPriority ?? 999) - (b.displayPriority ?? 999))
           .map((requirement, index) => (
-          <Card key={requirement.id}>
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    {requirement.name}
-                    {requirement.isRequired && (
-                      <Badge variant="destructive" className="text-xs">
-                        Required
-                      </Badge>
-                    )}
-                  </CardTitle>
-                  <CardDescription className="mt-1">{requirement.description}</CardDescription>
+            <Card key={requirement.id}>
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      {requirement.name}
+                      {requirement.isRequired && (
+                        <Badge variant="destructive" className="text-xs">
+                          Required
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription className="mt-1">{requirement.description}</CardDescription>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {renderRequirementInput(requirement, {
-                register,
-                watch,
-                setValue,
-                errors,
-              })}
-            </CardContent>
-          </Card>
-        ))}
+              </CardHeader>
+              <CardContent>
+                {renderRequirementInput(requirement, {
+                  register,
+                  watch,
+                  setValue,
+                  errors,
+                })}
+              </CardContent>
+            </Card>
+          ))}
       </div>
     </div>
   );

@@ -1,8 +1,10 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
 
-import { approveOrganizationAction, rejectOrganizationAction } from '../lib/server-actions';
+import { useQueryClient } from '@tanstack/react-query';
+
+import { api } from '@/utils/api';
 
 interface ApproveOrganizationParams {
   organizationId: string;
@@ -25,69 +27,28 @@ interface MutationCallbacks {
  */
 export function useApproveOrganization(callbacks?: MutationCallbacks) {
   const queryClient = useQueryClient();
+  const mutation = api.admin.approveOrganization.useMutation();
 
-  return useMutation({
-    mutationFn: async ({ organizationId }: ApproveOrganizationParams) => {
-      const result = await approveOrganizationAction(organizationId);
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to approve organization');
-      }
-
-      return result.data;
-    },
-    onMutate: async (variables) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({
-        queryKey: ['admin', 'organization', variables.organizationId],
-      });
-
-      // Snapshot the previous value
-      const previousOrganization = queryClient.getQueryData([
-        'admin',
-        'organization',
-        variables.organizationId,
-      ]);
-
-      // Optimistically update to the new value
-      queryClient.setQueryData(['admin', 'organization', variables.organizationId], (old: any) => ({
-        ...old,
-        status: 'APPROVED',
-        approvedAt: new Date().toISOString(),
-      }));
-
-      // Return a context object with the snapshotted value
-      return { previousOrganization, organizationId: variables.organizationId };
-    },
-    onSuccess: (data, variables) => {
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['admin', 'organizations'] });
-      queryClient.invalidateQueries({
-        queryKey: ['admin', 'organization', variables.organizationId],
-      });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'organization-counts'] });
-
-      // Call user-defined success callback
+  // Set up the mutation with callbacks
+  React.useEffect(() => {
+    if (mutation.isSuccess) {
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
       callbacks?.onSuccess?.();
+    }
+    if (mutation.isError) {
+      callbacks?.onError?.(mutation.error as Error);
+    }
+  }, [mutation.isSuccess, mutation.isError, mutation.error, queryClient, callbacks]);
+
+  return {
+    ...mutation,
+    mutate: (params: ApproveOrganizationParams) => {
+      mutation.mutate({ id: params.organizationId });
     },
-    onError: (error: Error, variables, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
-      if (context?.previousOrganization) {
-        queryClient.setQueryData(
-          ['admin', 'organization', context.organizationId],
-          context.previousOrganization
-        );
-      }
-      console.error('Error approving organization:', error);
-      callbacks?.onError?.(error);
+    mutateAsync: async (params: ApproveOrganizationParams) => {
+      return mutation.mutateAsync({ id: params.organizationId });
     },
-    onSettled: (data, error, variables) => {
-      // Always refetch after error or success
-      queryClient.invalidateQueries({
-        queryKey: ['admin', 'organization', variables.organizationId],
-      });
-    },
-  });
+  };
 }
 
 /**
@@ -97,68 +58,26 @@ export function useApproveOrganization(callbacks?: MutationCallbacks) {
  */
 export function useRejectOrganization(callbacks?: MutationCallbacks) {
   const queryClient = useQueryClient();
+  const mutation = api.admin.rejectOrganization.useMutation();
 
-  return useMutation({
-    mutationFn: async ({ organizationId, rejectionReason }: RejectOrganizationParams) => {
-      const result = await rejectOrganizationAction(organizationId, rejectionReason);
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to reject organization');
-      }
-
-      return result.data;
-    },
-    onMutate: async (variables) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({
-        queryKey: ['admin', 'organization', variables.organizationId],
-      });
-
-      // Snapshot the previous value
-      const previousOrganization = queryClient.getQueryData([
-        'admin',
-        'organization',
-        variables.organizationId,
-      ]);
-
-      // Optimistically update to the new value
-      queryClient.setQueryData(['admin', 'organization', variables.organizationId], (old: any) => ({
-        ...old,
-        status: 'REJECTED',
-        rejectedAt: new Date().toISOString(),
-        rejectionReason: variables.rejectionReason,
-      }));
-
-      // Return a context object with the snapshotted value
-      return { previousOrganization, organizationId: variables.organizationId };
-    },
-    onSuccess: (data, variables) => {
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['admin', 'organizations'] });
-      queryClient.invalidateQueries({
-        queryKey: ['admin', 'organization', variables.organizationId],
-      });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'organization-counts'] });
-
-      // Call user-defined success callback
+  // Set up the mutation with callbacks
+  React.useEffect(() => {
+    if (mutation.isSuccess) {
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
       callbacks?.onSuccess?.();
+    }
+    if (mutation.isError) {
+      callbacks?.onError?.(mutation.error as Error);
+    }
+  }, [mutation.isSuccess, mutation.isError, mutation.error, queryClient, callbacks]);
+
+  return {
+    ...mutation,
+    mutate: (params: RejectOrganizationParams) => {
+      mutation.mutate({ id: params.organizationId, reason: params.rejectionReason });
     },
-    onError: (error: Error, variables, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
-      if (context?.previousOrganization) {
-        queryClient.setQueryData(
-          ['admin', 'organization', context.organizationId],
-          context.previousOrganization
-        );
-      }
-      console.error('Error rejecting organization:', error);
-      callbacks?.onError?.(error);
+    mutateAsync: async (params: RejectOrganizationParams) => {
+      return mutation.mutateAsync({ id: params.organizationId, reason: params.rejectionReason });
     },
-    onSettled: (data, error, variables) => {
-      // Always refetch after error or success
-      queryClient.invalidateQueries({
-        queryKey: ['admin', 'organization', variables.organizationId],
-      });
-    },
-  });
+  };
 }

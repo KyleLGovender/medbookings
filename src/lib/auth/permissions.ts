@@ -1,27 +1,27 @@
 /**
  * Core permission checking utilities and role hierarchy logic
- * 
+ *
  * This module provides the core functionality for checking user permissions
  * across the platform, including role-based access control and context-aware
  * permission validation.
  */
-
 import { Session } from 'next-auth';
-import {
-  Permission,
-  PermissionContext,
-  UserPermissions,
-  SystemRole,
-  OrganizationRole,
-  ProviderRole,
-  PermissionCheck
-} from '@/types/permissions';
+
 import {
   getRolePermissions,
-  roleHasPermission,
+  isHigherOrganizationRole,
   isHigherSystemRole,
-  isHigherOrganizationRole
+  roleHasPermission,
 } from '@/lib/auth/roles';
+import {
+  OrganizationRole,
+  Permission,
+  PermissionCheck,
+  PermissionContext,
+  ProviderRole,
+  SystemRole,
+  UserPermissions,
+} from '@/types/permissions';
 
 /**
  * Check if a user has a specific permission in the given context
@@ -35,33 +35,32 @@ export function hasPermission(
   if (roleHasPermission(userPermissions.systemRole, permission)) {
     return true;
   }
-  
+
   // Provider-level permissions
-  if (userPermissions.providerRole && 
-      roleHasPermission(userPermissions.providerRole, permission)) {
+  if (userPermissions.providerRole && roleHasPermission(userPermissions.providerRole, permission)) {
     // Check provider context if required
     if (context?.providerId && userPermissions.providerId !== context.providerId) {
       return false;
     }
     return true;
   }
-  
+
   // Organization-level permissions
   if (context?.organizationId) {
     const orgRole = userPermissions.organizationRoles.find(
-      role => role.organizationId === context.organizationId
+      (role) => role.organizationId === context.organizationId
     );
-    
+
     if (orgRole && roleHasPermission(orgRole.role, permission)) {
       return true;
     }
   } else {
     // Check if user has permission in any organization
-    return userPermissions.organizationRoles.some(orgRole =>
+    return userPermissions.organizationRoles.some((orgRole) =>
       roleHasPermission(orgRole.role, permission)
     );
   }
-  
+
   return false;
 }
 
@@ -72,19 +71,19 @@ export function hasPermissions(
   userPermissions: UserPermissions,
   checks: PermissionCheck[]
 ): boolean {
-  return checks.every(check => {
+  return checks.every((check) => {
     if (check.requireAll && Array.isArray(check.permission)) {
-      return (check.permission as Permission[]).every(permission =>
+      return (check.permission as Permission[]).every((permission) =>
         hasPermission(userPermissions, permission, check.context)
       );
     }
-    
+
     if (Array.isArray(check.permission)) {
-      return (check.permission as Permission[]).some(permission =>
+      return (check.permission as Permission[]).some((permission) =>
         hasPermission(userPermissions, permission, check.context)
       );
     }
-    
+
     return hasPermission(userPermissions, check.permission, check.context);
   });
 }
@@ -93,8 +92,10 @@ export function hasPermissions(
  * Check if user is system admin (ADMIN or SUPER_ADMIN)
  */
 export function isSystemAdmin(userPermissions: UserPermissions): boolean {
-  return userPermissions.systemRole === SystemRole.ADMIN ||
-         userPermissions.systemRole === SystemRole.SUPER_ADMIN;
+  return (
+    userPermissions.systemRole === SystemRole.ADMIN ||
+    userPermissions.systemRole === SystemRole.SUPER_ADMIN
+  );
 }
 
 /**
@@ -112,11 +113,10 @@ export function isOrganizationAdmin(
   organizationId: string
 ): boolean {
   const orgRole = userPermissions.organizationRoles.find(
-    role => role.organizationId === organizationId
+    (role) => role.organizationId === organizationId
   );
-  
-  return orgRole?.role === OrganizationRole.OWNER ||
-         orgRole?.role === OrganizationRole.ADMIN;
+
+  return orgRole?.role === OrganizationRole.OWNER || orgRole?.role === OrganizationRole.ADMIN;
 }
 
 /**
@@ -134,9 +134,9 @@ export function getOrganizationRole(
   organizationId: string
 ): OrganizationRole | null {
   const orgRole = userPermissions.organizationRoles.find(
-    role => role.organizationId === organizationId
+    (role) => role.organizationId === organizationId
   );
-  
+
   return orgRole?.role || null;
 }
 
@@ -148,11 +148,11 @@ export function getOrganizationsWithRole(
   minimumRole: OrganizationRole
 ): string[] {
   return userPermissions.organizationRoles
-    .filter(orgRole => 
-      isHigherOrganizationRole(orgRole.role, minimumRole) ||
-      orgRole.role === minimumRole
+    .filter(
+      (orgRole) =>
+        isHigherOrganizationRole(orgRole.role, minimumRole) || orgRole.role === minimumRole
     )
-    .map(orgRole => orgRole.organizationId);
+    .map((orgRole) => orgRole.organizationId);
 }
 
 /**
@@ -167,28 +167,27 @@ export function canManageUser(
   if (isSuperAdmin(managerPermissions)) {
     return true;
   }
-  
+
   // Admins can manage non-admins
   if (isSystemAdmin(managerPermissions) && !isSystemAdmin(targetUserPermissions)) {
     return true;
   }
-  
+
   // Organization context management
   if (organizationId) {
     const managerRole = getOrganizationRole(managerPermissions, organizationId);
     const targetRole = getOrganizationRole(targetUserPermissions, organizationId);
-    
+
     if (managerRole && targetRole) {
       return isHigherOrganizationRole(managerRole, targetRole);
     }
-    
+
     // Manager has role but target doesn't
     if (managerRole && !targetRole) {
-      return managerRole === OrganizationRole.OWNER ||
-             managerRole === OrganizationRole.ADMIN;
+      return managerRole === OrganizationRole.OWNER || managerRole === OrganizationRole.ADMIN;
     }
   }
-  
+
   return false;
 }
 
@@ -197,16 +196,16 @@ export function canManageUser(
  */
 export function getUserPermissionsFromSession(session: Session | null): UserPermissions | null {
   if (!session?.user) return null;
-  
+
   // This would typically extract from session.user
   // For now, we'll return a basic structure that needs to be populated
   // from the database in the actual implementation
-  
+
   return {
     systemRole: (session.user as any).role || SystemRole.USER,
     organizationRoles: (session.user as any).organizationRoles || [],
     providerRole: (session.user as any).providerRole,
-    providerId: (session.user as any).providerId
+    providerId: (session.user as any).providerId,
   };
 }
 
@@ -249,15 +248,15 @@ export function switchOrganizationContext(
   organizationId: string
 ): PermissionContext | null {
   const hasAccess = userPermissions.organizationRoles.some(
-    role => role.organizationId === organizationId
+    (role) => role.organizationId === organizationId
   );
-  
+
   if (!hasAccess && !isSystemAdmin(userPermissions)) {
     return null;
   }
-  
+
   return {
     organizationId,
-    userId: undefined // Will be set by session management
+    userId: undefined, // Will be set by session management
   };
 }

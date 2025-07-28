@@ -1,18 +1,158 @@
 /**
  * Organization member role management utilities
- * 
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+'use server';
+
+import { revalidatePath } from 'next/cache';
+
+import { getCurrentUser } from '@/features/auth/lib/session-helper';
+import { canManageUser, hasPermission, requirePermission } from '@/lib/auth/permissions';
+import { sendEmail } from '@/lib/communications/email';
+import { prisma } from '@/lib/prisma';
+import { OrganizationRole, Permission } from '@/types/permissions';
+
+/**
+ * Organization member role management utilities
+ *
  * Server actions for managing organization memberships, invitations,
  * and role assignments with proper permission validation.
  */
 
-'use server';
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
 
-import { revalidatePath } from 'next/cache';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/features/auth/lib/session-helper';
-import { requirePermission, hasPermission, canManageUser } from '@/lib/auth/permissions';
-import { Permission, OrganizationRole } from '@/types/permissions';
-import { sendEmail } from '@/lib/communications/email';
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
 
 export interface MemberManagementResult {
   success: boolean;
@@ -43,11 +183,7 @@ export async function inviteOrganizationMember(
     const { email, role, organizationId, message } = invitationData;
 
     // Check permission to invite members
-    requirePermission(
-      currentUser.permissions,
-      Permission.INVITE_MEMBERS,
-      { organizationId }
-    );
+    requirePermission(currentUser.permissions, Permission.INVITE_MEMBERS, { organizationId });
 
     // Validate inputs
     if (!email || !role || !organizationId) {
@@ -63,9 +199,9 @@ export async function inviteOrganizationMember(
       where: { id: organizationId },
       include: {
         memberships: {
-          include: { user: true }
-        }
-      }
+          include: { user: true },
+        },
+      },
     });
 
     if (!organization) {
@@ -74,13 +210,13 @@ export async function inviteOrganizationMember(
 
     // Check if user is already a member
     const existingMembership = organization.memberships.find(
-      membership => membership.user.email?.toLowerCase() === email.toLowerCase()
+      (membership) => membership.user.email?.toLowerCase() === email.toLowerCase()
     );
 
     if (existingMembership) {
-      return { 
-        success: false, 
-        message: 'User is already a member of this organization' 
+      return {
+        success: false,
+        message: 'User is already a member of this organization',
       };
     }
 
@@ -89,14 +225,14 @@ export async function inviteOrganizationMember(
       where: {
         organizationId,
         email: email.toLowerCase(),
-        status: 'PENDING'
-      }
+        status: 'PENDING',
+      },
     });
 
     if (existingInvitation) {
-      return { 
-        success: false, 
-        message: 'Invitation already sent to this email address' 
+      return {
+        success: false,
+        message: 'Invitation already sent to this email address',
       };
     }
 
@@ -113,12 +249,12 @@ export async function inviteOrganizationMember(
         token,
         expiresAt,
         invitedById: currentUser.user.id,
-        status: 'PENDING'
+        status: 'PENDING',
       },
       include: {
         organization: true,
-        invitedBy: true
-      }
+        invitedBy: true,
+      },
     });
 
     // Send invitation email
@@ -129,14 +265,14 @@ export async function inviteOrganizationMember(
     return {
       success: true,
       message: `Invitation sent to ${email}`,
-      data: { invitationId: invitation.id }
+      data: { invitationId: invitation.id },
     };
   } catch (error) {
     console.error('Error inviting organization member:', error);
     return {
       success: false,
       message: 'Failed to send invitation',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -144,9 +280,7 @@ export async function inviteOrganizationMember(
 /**
  * Accept an organization invitation
  */
-export async function acceptOrganizationInvitation(
-  token: string
-): Promise<MemberManagementResult> {
+export async function acceptOrganizationInvitation(token: string): Promise<MemberManagementResult> {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
@@ -158,8 +292,8 @@ export async function acceptOrganizationInvitation(
       where: { token },
       include: {
         organization: true,
-        invitedBy: true
-      }
+        invitedBy: true,
+      },
     });
 
     if (!invitation) {
@@ -167,9 +301,9 @@ export async function acceptOrganizationInvitation(
     }
 
     if (invitation.status !== 'PENDING') {
-      return { 
-        success: false, 
-        message: `Invitation has already been ${invitation.status.toLowerCase()}` 
+      return {
+        success: false,
+        message: `Invitation has already been ${invitation.status.toLowerCase()}`,
       };
     }
 
@@ -178,9 +312,9 @@ export async function acceptOrganizationInvitation(
     }
 
     if (invitation.email.toLowerCase() !== currentUser.user.email.toLowerCase()) {
-      return { 
-        success: false, 
-        message: 'This invitation is not for your email address' 
+      return {
+        success: false,
+        message: 'This invitation is not for your email address',
       };
     }
 
@@ -189,15 +323,15 @@ export async function acceptOrganizationInvitation(
       where: {
         organizationId_userId: {
           organizationId: invitation.organizationId,
-          userId: currentUser.user.id
-        }
-      }
+          userId: currentUser.user.id,
+        },
+      },
     });
 
     if (existingMembership) {
-      return { 
-        success: false, 
-        message: 'You are already a member of this organization' 
+      return {
+        success: false,
+        message: 'You are already a member of this organization',
       };
     }
 
@@ -206,8 +340,8 @@ export async function acceptOrganizationInvitation(
       data: {
         userId: currentUser.user.id,
         organizationId: invitation.organizationId,
-        role: invitation.role
-      }
+        role: invitation.role,
+      },
     });
 
     // Update invitation status
@@ -215,8 +349,8 @@ export async function acceptOrganizationInvitation(
       where: { id: invitation.id },
       data: {
         status: 'ACCEPTED',
-        acceptedAt: new Date()
-      }
+        acceptedAt: new Date(),
+      },
     });
 
     revalidatePath(`/organizations/${invitation.organizationId}/members`);
@@ -225,14 +359,14 @@ export async function acceptOrganizationInvitation(
     return {
       success: true,
       message: `Successfully joined ${invitation.organization.name}`,
-      data: { organizationId: invitation.organizationId }
+      data: { organizationId: invitation.organizationId },
     };
   } catch (error) {
     console.error('Error accepting invitation:', error);
     return {
       success: false,
       message: 'Failed to accept invitation',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -240,13 +374,11 @@ export async function acceptOrganizationInvitation(
 /**
  * Reject an organization invitation
  */
-export async function rejectOrganizationInvitation(
-  token: string
-): Promise<MemberManagementResult> {
+export async function rejectOrganizationInvitation(token: string): Promise<MemberManagementResult> {
   try {
     const invitation = await prisma.organizationInvitation.findUnique({
       where: { token },
-      include: { organization: true }
+      include: { organization: true },
     });
 
     if (!invitation) {
@@ -254,29 +386,29 @@ export async function rejectOrganizationInvitation(
     }
 
     if (invitation.status !== 'PENDING') {
-      return { 
-        success: false, 
-        message: `Invitation has already been ${invitation.status.toLowerCase()}` 
+      return {
+        success: false,
+        message: `Invitation has already been ${invitation.status.toLowerCase()}`,
       };
     }
 
     await prisma.organizationInvitation.update({
       where: { id: invitation.id },
       data: {
-        status: 'DECLINED'
-      }
+        status: 'DECLINED',
+      },
     });
 
     return {
       success: true,
-      message: `Invitation to ${invitation.organization.name} rejected`
+      message: `Invitation to ${invitation.organization.name} rejected`,
     };
   } catch (error) {
     console.error('Error rejecting invitation:', error);
     return {
       success: false,
       message: 'Failed to reject invitation',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -296,16 +428,12 @@ export async function changeMemberRole(
     }
 
     // Check permission to manage members
-    requirePermission(
-      currentUser.permissions,
-      Permission.MANAGE_MEMBERS,
-      { organizationId }
-    );
+    requirePermission(currentUser.permissions, Permission.MANAGE_MEMBERS, { organizationId });
 
     // Get the membership to be modified
     const membership = await prisma.organizationMembership.findUnique({
       where: { id: memberId },
-      include: { user: true }
+      include: { user: true },
     });
 
     if (!membership || membership.organizationId !== organizationId) {
@@ -325,30 +453,30 @@ export async function changeMemberRole(
 
     // Check if current user can manage target user
     if (!canManageUser(currentUser.permissions, targetUserPermissions, organizationId)) {
-      return { 
-        success: false, 
-        message: 'Insufficient permissions to manage this user' 
+      return {
+        success: false,
+        message: 'Insufficient permissions to manage this user',
       };
     }
 
     // Update role
     await prisma.organizationMembership.update({
       where: { id: memberId },
-      data: { role: newRole }
+      data: { role: newRole },
     });
 
     revalidatePath(`/organizations/${organizationId}/members`);
 
     return {
       success: true,
-      message: `Role updated for ${membership.user.email}`
+      message: `Role updated for ${membership.user.email}`,
     };
   } catch (error) {
     console.error('Error changing member role:', error);
     return {
       success: false,
       message: 'Failed to change member role',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -366,15 +494,11 @@ export async function removeMember(
       return { success: false, message: 'Not authenticated' };
     }
 
-    requirePermission(
-      currentUser.permissions,
-      Permission.MANAGE_MEMBERS,
-      { organizationId }
-    );
+    requirePermission(currentUser.permissions, Permission.MANAGE_MEMBERS, { organizationId });
 
     const membership = await prisma.organizationMembership.findUnique({
       where: { id: memberId },
-      include: { user: true }
+      include: { user: true },
     });
 
     if (!membership || membership.organizationId !== organizationId) {
@@ -391,34 +515,34 @@ export async function removeMember(
       const ownerCount = await prisma.organizationMembership.count({
         where: {
           organizationId,
-          role: OrganizationRole.OWNER
-        }
+          role: OrganizationRole.OWNER,
+        },
       });
 
       if (ownerCount <= 1) {
-        return { 
-          success: false, 
-          message: 'Cannot remove the last owner. Transfer ownership first.' 
+        return {
+          success: false,
+          message: 'Cannot remove the last owner. Transfer ownership first.',
         };
       }
     }
 
     await prisma.organizationMembership.delete({
-      where: { id: memberId }
+      where: { id: memberId },
     });
 
     revalidatePath(`/organizations/${organizationId}/members`);
 
     return {
       success: true,
-      message: `${membership.user.email} removed from organization`
+      message: `${membership.user.email} removed from organization`,
     };
   } catch (error) {
     console.error('Error removing member:', error);
     return {
       success: false,
       message: 'Failed to remove member',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -436,14 +560,10 @@ export async function cancelInvitation(
       return { success: false, message: 'Not authenticated' };
     }
 
-    requirePermission(
-      currentUser.permissions,
-      Permission.INVITE_MEMBERS,
-      { organizationId }
-    );
+    requirePermission(currentUser.permissions, Permission.INVITE_MEMBERS, { organizationId });
 
     const invitation = await prisma.organizationInvitation.findUnique({
-      where: { id: invitationId }
+      where: { id: invitationId },
     });
 
     if (!invitation || invitation.organizationId !== organizationId) {
@@ -451,31 +571,31 @@ export async function cancelInvitation(
     }
 
     if (invitation.status !== 'PENDING') {
-      return { 
-        success: false, 
-        message: 'Can only cancel pending invitations' 
+      return {
+        success: false,
+        message: 'Can only cancel pending invitations',
       };
     }
 
     await prisma.organizationInvitation.update({
       where: { id: invitationId },
       data: {
-        status: 'CANCELLED'
-      }
+        status: 'CANCELLED',
+      },
     });
 
     revalidatePath(`/organizations/${organizationId}/members`);
 
     return {
       success: true,
-      message: `Invitation to ${invitation.email} cancelled`
+      message: `Invitation to ${invitation.email} cancelled`,
     };
   } catch (error) {
     console.error('Error cancelling invitation:', error);
     return {
       success: false,
       message: 'Failed to cancel invitation',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -497,20 +617,20 @@ async function getUserPermissions(userId: string) {
     where: { id: userId },
     include: {
       provider: true,
-      organizationMemberships: true
-    }
+      organizationMemberships: true,
+    },
   });
 
   if (!user) return null;
 
   return {
     systemRole: user.role as any,
-    organizationRoles: user.organizationMemberships.map(membership => ({
+    organizationRoles: user.organizationMemberships.map((membership) => ({
       organizationId: membership.organizationId,
-      role: membership.role as OrganizationRole
+      role: membership.role as OrganizationRole,
     })),
-    providerRole: user.provider ? 'PROVIDER' as any : undefined,
-    providerId: user.provider?.id
+    providerRole: user.provider ? ('PROVIDER' as any) : undefined,
+    providerId: user.provider?.id,
   };
 }
 
@@ -520,7 +640,7 @@ async function getUserPermissions(userId: string) {
 async function sendInvitationEmail(invitation: any): Promise<void> {
   try {
     const inviteUrl = `${process.env.NEXTAUTH_URL}/invitation/${invitation.token}`;
-    
+
     await sendEmail({
       to: invitation.email,
       subject: `Invitation to join ${invitation.organization.name}`,
@@ -530,8 +650,8 @@ async function sendInvitationEmail(invitation: any): Promise<void> {
         inviterName: invitation.invitedBy.name || 'Unknown',
         role: invitation.role,
         inviteUrl,
-        expiresAt: invitation.expiresAt
-      }
+        expiresAt: invitation.expiresAt,
+      },
     });
   } catch (error) {
     console.error('Error sending invitation email:', error);

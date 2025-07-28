@@ -1,4 +1,6 @@
 import { createTRPCRouter } from '@/server/trpc';
+
+import { adminRouter } from './routers/admin';
 import { calendarRouter } from './routers/calendar';
 import { debugRouter } from './routers/debug';
 import { invitationsRouter } from './routers/invitations';
@@ -12,6 +14,7 @@ import { providersRouter } from './routers/providers';
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
+  admin: adminRouter,
   calendar: calendarRouter,
   debug: debugRouter,
   invitations: invitationsRouter,

@@ -1,5 +1,5 @@
-import { api } from '@/utils/api';
 import { OrganizationLocation } from '@/features/organizations/types/types';
+import { api } from '@/utils/api';
 
 /**
  * Hook for updating an organization's basic information

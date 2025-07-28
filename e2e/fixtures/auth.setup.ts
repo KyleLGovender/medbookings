@@ -1,5 +1,6 @@
-import { test as setup, expect } from '@playwright/test';
-import { setupTestEnvironment, createTestUsers } from '../utils/database';
+import { expect, test as setup } from '@playwright/test';
+
+import { createTestUsers, setupTestEnvironment } from '../utils/database';
 
 const authFile = 'e2e/.auth/user.json';
 
@@ -11,10 +12,10 @@ async function setupSessionMocking(page: any, userInfo: any) {
       user: userInfo,
       expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     };
-    await route.fulfill({ 
+    await route.fulfill({
       status: 200,
       headers: { 'Content-Type': 'application/json' },
-      json 
+      json,
     });
   });
 
@@ -23,7 +24,7 @@ async function setupSessionMocking(page: any, userInfo: any) {
     await route.fulfill({
       status: 200,
       headers: { 'Content-Type': 'application/json' },
-      json: { csrfToken: 'mock-csrf-token' }
+      json: { csrfToken: 'mock-csrf-token' },
     });
   });
 }
@@ -41,13 +42,13 @@ setup('authenticate', async ({ page }) => {
     image: 'https://via.placeholder.com/40',
   });
 
-  // Navigate to home page first 
+  // Navigate to home page first
   await page.goto('/');
   await page.waitForLoadState('networkidle');
-  
+
   // Save the state with session mocking active - this is what other tests will use
   await page.context().storageState({ path: authFile });
-  
+
   console.log('Auth state saved for regular user');
 });
 

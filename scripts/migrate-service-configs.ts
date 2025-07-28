@@ -1,16 +1,15 @@
 /**
  * Migration Script: Create ServiceAvailabilityConfig records for existing providers
- * 
+ *
  * This script creates default ServiceAvailabilityConfig records for providers
  * who have services but are missing configurations. This fixes the issue where
  * provider service default values were not persisted during registration.
- * 
+ *
  * Usage:
  *   npm run ts-node scripts/migrate-service-configs.ts
  *   or
  *   npx ts-node scripts/migrate-service-configs.ts
  */
-
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -35,7 +34,7 @@ async function main() {
   try {
     // Step 1: Identify providers with missing configurations
     console.log('Step 1: Identifying providers with missing configurations...');
-    
+
     const providersWithServices = await prisma.provider.findMany({
       where: {
         status: {
@@ -53,16 +52,16 @@ async function main() {
 
     // Step 2: Process each provider
     for (const provider of providersWithServices) {
-      const servicesWithoutConfig = provider.services.filter(service => 
-        !provider.availabilityConfigs.some(config => config.serviceId === service.id)
+      const servicesWithoutConfig = provider.services.filter(
+        (service) => !provider.availabilityConfigs.some((config) => config.serviceId === service.id)
       );
 
       if (servicesWithoutConfig.length > 0) {
         stats.providersWithMissingConfigs++;
-        
+
         console.log(`📋 Provider: ${provider.name} (${provider.id})`);
         console.log(`   Missing configs for ${servicesWithoutConfig.length} services:`);
-        
+
         // Step 3: Create missing configurations
         for (const service of servicesWithoutConfig) {
           try {
@@ -92,7 +91,7 @@ async function main() {
 
     // Step 4: Verification
     console.log('Step 4: Verifying migration results...');
-    
+
     const verificationResults = await prisma.provider.findMany({
       where: {
         status: {
@@ -125,7 +124,7 @@ async function main() {
 
     if (stats.errors.length > 0) {
       console.log('\n❌ Errors:');
-      stats.errors.forEach(error => console.log(`   - ${error}`));
+      stats.errors.forEach((error) => console.log(`   - ${error}`));
     }
 
     if (allComplete && stats.configsCreated > 0) {
@@ -134,7 +133,6 @@ async function main() {
     } else if (stats.configsCreated === 0) {
       console.log('\n✨ No migration needed - all providers already have complete configurations.');
     }
-
   } catch (error) {
     console.error('💥 Migration failed:', error);
     process.exit(1);

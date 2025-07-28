@@ -1,15 +1,8 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import {
-  approveProviderAction,
-  approveRequirementAction,
-  checkAllRequiredRequirementsApprovedAction,
-  getProviderRequirementSubmissionsAction,
-  rejectProviderAction,
-  rejectRequirementAction,
-} from '../lib/server-actions';
+import { api } from '@/utils/api';
 
 /**
  * Hook for fetching provider requirement submissions (admin view)
@@ -17,23 +10,13 @@ import {
  * @returns Query result with requirement submissions
  */
 export function useProviderRequirementSubmissions(providerId: string | undefined) {
-  return useQuery({
-    queryKey: ['admin', 'provider-requirement-submissions', providerId],
-    queryFn: async () => {
-      if (!providerId) {
-        throw new Error('Provider ID is required');
-      }
-
-      const result = await getProviderRequirementSubmissionsAction(providerId);
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      return result.data;
-    },
-    enabled: !!providerId,
-  });
+  return api.admin.getProviderById.useQuery(
+    { id: providerId || '' },
+    {
+      enabled: !!providerId,
+      select: (data) => data.requirementSubmissions,
+    }
+  );
 }
 
 /**
@@ -42,23 +25,25 @@ export function useProviderRequirementSubmissions(providerId: string | undefined
  * @returns Query result with approval status
  */
 export function useRequiredRequirementsStatus(providerId: string | undefined) {
-  return useQuery({
-    queryKey: ['admin', 'required-requirements-status', providerId],
-    queryFn: async () => {
-      if (!providerId) {
-        throw new Error('Provider ID is required');
-      }
-
-      const result = await checkAllRequiredRequirementsApprovedAction(providerId);
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      return result.data;
-    },
-    enabled: !!providerId,
-  });
+  return api.admin.getProviderById.useQuery(
+    { id: providerId || '' },
+    {
+      enabled: !!providerId,
+      select: (data) => {
+        const requiredSubmissions = data.requirementSubmissions.filter(
+          (submission) => submission.requirementType.isRequired
+        );
+        const allApproved = requiredSubmissions.every(
+          (submission) => submission.status === 'APPROVED'
+        );
+        return {
+          allRequiredApproved: allApproved,
+          requiredCount: requiredSubmissions.length,
+          approvedCount: requiredSubmissions.filter((s) => s.status === 'APPROVED').length,
+        };
+      },
+    }
+  );
 }
 
 /**
@@ -72,27 +57,10 @@ export function useApproveRequirement(options?: {
 }) {
   const queryClient = useQueryClient();
 
-  return useMutation<any, Error, { requirementSubmissionId: string; adminNotes?: string }>({
-    mutationFn: async ({ requirementSubmissionId, adminNotes }) => {
-      const result = await approveRequirementAction(requirementSubmissionId, adminNotes);
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      return result.data;
-    },
+  return api.admin.approveRequirement.useMutation({
     onSuccess: (data, variables) => {
       // Invalidate and refetch relevant queries
-      queryClient.invalidateQueries({
-        queryKey: ['admin', 'provider-requirement-submissions', data.providerId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['admin', 'required-requirements-status', data.providerId],
-      });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'providers'] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'provider', data.providerId] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'provider-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
 
       // Call the user-provided onSuccess callback if it exists
       if (options?.onSuccess) {
@@ -119,27 +87,10 @@ export function useRejectRequirement(options?: {
 }) {
   const queryClient = useQueryClient();
 
-  return useMutation<any, Error, { requirementSubmissionId: string; rejectionReason: string }>({
-    mutationFn: async ({ requirementSubmissionId, rejectionReason }) => {
-      const result = await rejectRequirementAction(requirementSubmissionId, rejectionReason);
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      return result.data;
-    },
+  return api.admin.rejectRequirement.useMutation({
     onSuccess: (data, variables) => {
       // Invalidate and refetch relevant queries
-      queryClient.invalidateQueries({
-        queryKey: ['admin', 'provider-requirement-submissions', data.providerId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['admin', 'required-requirements-status', data.providerId],
-      });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'providers'] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'provider', data.providerId] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'provider-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
 
       // Call the user-provided onSuccess callback if it exists
       if (options?.onSuccess) {
@@ -166,27 +117,10 @@ export function useApproveProvider(options?: {
 }) {
   const queryClient = useQueryClient();
 
-  return useMutation<any, Error, string>({
-    mutationFn: async (providerId: string) => {
-      const result = await approveProviderAction(providerId);
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      return result.data;
-    },
-    onSuccess: (data, providerId) => {
+  return api.admin.approveProvider.useMutation({
+    onSuccess: (data, variables) => {
       // Invalidate and refetch relevant queries
-      queryClient.invalidateQueries({ queryKey: ['admin', 'providers'] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'provider', providerId] });
-      queryClient.invalidateQueries({
-        queryKey: ['admin', 'required-requirements-status', providerId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['admin', 'provider-requirement-submissions', providerId],
-      });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'provider-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
 
       // Call the user-provided onSuccess callback if it exists
       if (options?.onSuccess) {
@@ -213,29 +147,10 @@ export function useRejectProvider(options?: {
 }) {
   const queryClient = useQueryClient();
 
-  return useMutation<any, Error, { providerId: string; rejectionReason: string }>({
-    mutationFn: async ({ providerId, rejectionReason }) => {
-      const result = await rejectProviderAction(providerId, rejectionReason);
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      return result.data;
-    },
+  return api.admin.rejectProvider.useMutation({
     onSuccess: (data, variables) => {
       // Invalidate and refetch relevant queries
-      queryClient.invalidateQueries({ queryKey: ['admin', 'providers'] });
-      queryClient.invalidateQueries({
-        queryKey: ['admin', 'provider', variables.providerId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['admin', 'required-requirements-status', variables.providerId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['admin', 'provider-requirement-submissions', variables.providerId],
-      });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'provider-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
 
       // Call the user-provided onSuccess callback if it exists
       if (options?.onSuccess) {

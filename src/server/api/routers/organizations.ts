@@ -9,23 +9,21 @@ export const organizationsRouter = createTRPCRouter({
    * Get organization by ID
    * Migrated from: GET /api/organizations/[id]
    */
-  getById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const organization = await ctx.prisma.organization.findUnique({
-        where: { id: input.id },
-        include: {
-          locations: true,
-          memberships: true,
-        },
-      });
+  getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    const organization = await ctx.prisma.organization.findUnique({
+      where: { id: input.id },
+      include: {
+        locations: true,
+        memberships: true,
+      },
+    });
 
-      if (!organization) {
-        throw new Error('Organization not found');
-      }
+    if (!organization) {
+      throw new Error('Organization not found');
+    }
 
-      return organization;
-    }),
+    return organization;
+  }),
 
   /**
    * Create a new organization

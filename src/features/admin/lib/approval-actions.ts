@@ -1,17 +1,157 @@
 /**
  * Admin approval workflow actions for providers and organizations
- * 
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+'use server';
+
+import { revalidatePath } from 'next/cache';
+
+import { getCurrentUser } from '@/features/auth/lib/session-helper';
+import { requirePermission } from '@/lib/auth/permissions';
+import { prisma } from '@/lib/prisma';
+import { Permission } from '@/types/permissions';
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
  * Server actions for managing approval processes, handling admin
  * oversight of provider and organization onboarding.
  */
 
-'use server';
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
 
-import { revalidatePath } from 'next/cache';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/features/auth/lib/session-helper';
-import { requirePermission } from '@/lib/auth/permissions';
-import { Permission } from '@/types/permissions';
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
+
+/**
+ * Admin approval workflow actions for providers and organizations
+ *
+ * Server actions for managing approval processes, handling admin
+ * oversight of provider and organization onboarding.
+ */
 
 export interface ApprovalResult {
   success: boolean;
@@ -22,39 +162,36 @@ export interface ApprovalResult {
 /**
  * Approve a service provider
  */
-export async function approveProvider(
-  providerId: string,
-  notes?: string
-): Promise<ApprovalResult> {
+export async function approveProvider(providerId: string, notes?: string): Promise<ApprovalResult> {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
       return { success: false, message: 'Not authenticated' };
     }
-    
+
     // Check admin permission
     requirePermission(currentUser.permissions, Permission.APPROVE_PROVIDERS);
-    
+
     // Check if provider exists and is pending
     const provider = await prisma.provider.findUnique({
       where: { id: providerId },
-      include: { user: true }
+      include: { user: true },
     });
-    
+
     if (!provider) {
       return { success: false, message: 'Provider not found' };
     }
-    
+
     if (provider.status !== 'PENDING_APPROVAL') {
-      return { 
-        success: false, 
-        message: `Provider is not pending approval (current status: ${provider.status})` 
+      return {
+        success: false,
+        message: `Provider is not pending approval (current status: ${provider.status})`,
       };
     }
-    
+
     // Skip requirements check for now since they're not in current schema
     // In production, implement proper requirement checking
-    
+
     // Update provider status
     await prisma.provider.update({
       where: { id: providerId },
@@ -63,10 +200,10 @@ export async function approveProvider(
         approvedAt: new Date(),
         approvedById: currentUser.user.id,
         rejectedAt: null,
-        rejectionReason: null
-      }
+        rejectionReason: null,
+      },
     });
-    
+
     // Log admin action
     await logAdminAction(
       currentUser.user.id,
@@ -74,20 +211,20 @@ export async function approveProvider(
       `Approved provider ${provider.user.email}`,
       { providerId, notes }
     );
-    
+
     revalidatePath('/admin/providers');
     revalidatePath(`/admin/providers/${providerId}`);
-    
-    return { 
-      success: true, 
-      message: `Provider ${provider.user.email} approved successfully` 
+
+    return {
+      success: true,
+      message: `Provider ${provider.user.email} approved successfully`,
     };
   } catch (error) {
     console.error('Error approving provider:', error);
-    return { 
-      success: false, 
+    return {
+      success: false,
       message: 'Failed to approve provider',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -105,29 +242,29 @@ export async function rejectProvider(
     if (!currentUser) {
       return { success: false, message: 'Not authenticated' };
     }
-    
+
     requirePermission(currentUser.permissions, Permission.APPROVE_PROVIDERS);
-    
+
     if (!reason.trim()) {
       return { success: false, message: 'Rejection reason is required' };
     }
-    
+
     const provider = await prisma.provider.findUnique({
       where: { id: providerId },
-      include: { user: true }
+      include: { user: true },
     });
-    
+
     if (!provider) {
       return { success: false, message: 'Provider not found' };
     }
-    
+
     if (provider.status !== 'PENDING_APPROVAL') {
-      return { 
-        success: false, 
-        message: `Provider is not pending approval (current status: ${provider.status})` 
+      return {
+        success: false,
+        message: `Provider is not pending approval (current status: ${provider.status})`,
       };
     }
-    
+
     await prisma.provider.update({
       where: { id: providerId },
       data: {
@@ -135,30 +272,30 @@ export async function rejectProvider(
         rejectedAt: new Date(),
         rejectionReason: reason,
         approvedAt: null,
-        approvedById: null
-      }
+        approvedById: null,
+      },
     });
-    
+
     await logAdminAction(
       currentUser.user.id,
       'REJECT_PROVIDER',
       `Rejected provider ${provider.user.email}: ${reason}`,
       { providerId, reason, notes }
     );
-    
+
     revalidatePath('/admin/providers');
     revalidatePath(`/admin/providers/${providerId}`);
-    
-    return { 
-      success: true, 
-      message: `Provider ${provider.user.email} rejected` 
+
+    return {
+      success: true,
+      message: `Provider ${provider.user.email} rejected`,
     };
   } catch (error) {
     console.error('Error rejecting provider:', error);
-    return { 
-      success: false, 
+    return {
+      success: false,
       message: 'Failed to reject provider',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -175,24 +312,24 @@ export async function approveOrganization(
     if (!currentUser) {
       return { success: false, message: 'Not authenticated' };
     }
-    
+
     requirePermission(currentUser.permissions, Permission.APPROVE_ORGANIZATIONS);
-    
+
     const organization = await prisma.organization.findUnique({
-      where: { id: organizationId }
+      where: { id: organizationId },
     });
-    
+
     if (!organization) {
       return { success: false, message: 'Organization not found' };
     }
-    
+
     if (organization.status !== 'PENDING_APPROVAL') {
-      return { 
-        success: false, 
-        message: `Organization is not pending approval (current status: ${organization.status})` 
+      return {
+        success: false,
+        message: `Organization is not pending approval (current status: ${organization.status})`,
       };
     }
-    
+
     await prisma.organization.update({
       where: { id: organizationId },
       data: {
@@ -200,30 +337,30 @@ export async function approveOrganization(
         approvedAt: new Date(),
         approvedById: currentUser.user.id,
         rejectedAt: null,
-        rejectionReason: null
-      }
+        rejectionReason: null,
+      },
     });
-    
+
     await logAdminAction(
       currentUser.user.id,
       'APPROVE_ORGANIZATION',
       `Approved organization ${organization.name}`,
       { organizationId, notes }
     );
-    
+
     revalidatePath('/admin/organizations');
     revalidatePath(`/admin/organizations/${organizationId}`);
-    
-    return { 
-      success: true, 
-      message: `Organization ${organization.name} approved successfully` 
+
+    return {
+      success: true,
+      message: `Organization ${organization.name} approved successfully`,
     };
   } catch (error) {
     console.error('Error approving organization:', error);
-    return { 
-      success: false, 
+    return {
+      success: false,
       message: 'Failed to approve organization',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -241,28 +378,28 @@ export async function rejectOrganization(
     if (!currentUser) {
       return { success: false, message: 'Not authenticated' };
     }
-    
+
     requirePermission(currentUser.permissions, Permission.APPROVE_ORGANIZATIONS);
-    
+
     if (!reason.trim()) {
       return { success: false, message: 'Rejection reason is required' };
     }
-    
+
     const organization = await prisma.organization.findUnique({
-      where: { id: organizationId }
+      where: { id: organizationId },
     });
-    
+
     if (!organization) {
       return { success: false, message: 'Organization not found' };
     }
-    
+
     if (organization.status !== 'PENDING_APPROVAL') {
-      return { 
-        success: false, 
-        message: `Organization is not pending approval (current status: ${organization.status})` 
+      return {
+        success: false,
+        message: `Organization is not pending approval (current status: ${organization.status})`,
       };
     }
-    
+
     await prisma.organization.update({
       where: { id: organizationId },
       data: {
@@ -270,30 +407,30 @@ export async function rejectOrganization(
         rejectedAt: new Date(),
         rejectionReason: reason,
         approvedAt: null,
-        approvedById: null
-      }
+        approvedById: null,
+      },
     });
-    
+
     await logAdminAction(
       currentUser.user.id,
       'REJECT_ORGANIZATION',
       `Rejected organization ${organization.name}: ${reason}`,
       { organizationId, reason, notes }
     );
-    
+
     revalidatePath('/admin/organizations');
     revalidatePath(`/admin/organizations/${organizationId}`);
-    
-    return { 
-      success: true, 
-      message: `Organization ${organization.name} rejected` 
+
+    return {
+      success: true,
+      message: `Organization ${organization.name} rejected`,
     };
   } catch (error) {
     console.error('Error rejecting organization:', error);
-    return { 
-      success: false, 
+    return {
+      success: false,
       message: 'Failed to reject organization',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -306,9 +443,9 @@ export async function approveRequirement(
   requirementId: string,
   notes?: string
 ): Promise<ApprovalResult> {
-  return { 
-    success: false, 
-    message: 'Requirement submissions not implemented in current schema' 
+  return {
+    success: false,
+    message: 'Requirement submissions not implemented in current schema',
   };
 }
 
@@ -321,9 +458,9 @@ export async function rejectRequirement(
   reason: string,
   notes?: string
 ): Promise<ApprovalResult> {
-  return { 
-    success: false, 
-    message: 'Requirement submissions not implemented in current schema' 
+  return {
+    success: false,
+    message: 'Requirement submissions not implemented in current schema',
   };
 }
 
@@ -346,7 +483,7 @@ async function logAdminAction(
       description,
       metadata,
       ip: 'server', // In real implementation, capture from request
-      userAgent: 'server' // In real implementation, capture from request
+      userAgent: 'server', // In real implementation, capture from request
     });
   } catch (error) {
     console.error('Error logging admin action:', error);

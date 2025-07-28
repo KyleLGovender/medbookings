@@ -63,7 +63,6 @@ interface OnboardingData {
   >;
 }
 
-
 export function ProviderOnboardingForm() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [formErrors, setFormErrors] = useState<string[]>([]);

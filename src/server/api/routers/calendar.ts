@@ -12,7 +12,7 @@ import {
 } from '@/features/calendar/lib/actions';
 import { availabilityCreateSchema } from '@/features/calendar/types/schemas';
 import { AvailabilityStatus } from '@/features/calendar/types/types';
-import { createTRPCRouter, publicProcedure, protectedProcedure } from '@/server/trpc';
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
 export const calendarRouter = createTRPCRouter({
   /**
@@ -71,33 +71,29 @@ export const calendarRouter = createTRPCRouter({
    * Get availability by ID
    * Migrated from: GET /api/calendar/availability/[id]
    */
-  getById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const result = await getAvailabilityById(input.id);
+  getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    const result = await getAvailabilityById(input.id);
 
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch availability');
-      }
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to fetch availability');
+    }
 
-      return result.data;
-    }),
+    return result.data;
+  }),
 
   /**
    * Create availability
    * Migrated from: POST /api/calendar/availability/create
    */
-  create: protectedProcedure
-    .input(availabilityCreateSchema)
-    .mutation(async ({ ctx, input }) => {
-      const result = await createAvailability(input);
+  create: protectedProcedure.input(availabilityCreateSchema).mutation(async ({ ctx, input }) => {
+    const result = await createAvailability(input);
 
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to create availability');
-      }
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to create availability');
+    }
 
-      return result.data;
-    }),
+    return result.data;
+  }),
 
   /**
    * Update availability

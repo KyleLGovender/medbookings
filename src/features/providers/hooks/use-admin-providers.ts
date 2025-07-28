@@ -3,33 +3,15 @@
 import { ProviderStatus } from '@prisma/client';
 import { useQuery } from '@tanstack/react-query';
 
+import { api } from '@/utils/api';
+
 /**
  * Hook for fetching all providers for admin view
  * @param status Optional status filter for providers
  * @returns Query result with providers list
  */
 export function useAdminProviders(status?: ProviderStatus) {
-  return useQuery({
-    queryKey: ['admin', 'providers', status],
-    queryFn: async () => {
-      const url = new URL('/api/admin/providers', window.location.origin);
-
-      if (status) {
-        url.searchParams.append('status', status);
-      }
-
-      const response = await fetch(url.toString());
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Unauthorized: Admin access required');
-        }
-        throw new Error('Failed to fetch providers');
-      }
-
-      return response.json();
-    },
-  });
+  return api.admin.getProviders.useQuery({ status });
 }
 
 /**
@@ -38,29 +20,12 @@ export function useAdminProviders(status?: ProviderStatus) {
  * @returns Query result with provider details
  */
 export function useAdminProvider(providerId: string | undefined) {
-  return useQuery({
-    queryKey: ['admin', 'provider', providerId],
-    queryFn: async () => {
-      if (!providerId) {
-        throw new Error('Provider ID is required');
-      }
-
-      const response = await fetch(`/api/admin/providers/${providerId}`);
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Unauthorized: Admin access required');
-        }
-        if (response.status === 404) {
-          throw new Error('Provider not found');
-        }
-        throw new Error('Failed to fetch provider');
-      }
-
-      return response.json();
-    },
-    enabled: !!providerId,
-  });
+  return api.admin.getProviderById.useQuery(
+    { id: providerId || '' },
+    {
+      enabled: !!providerId,
+    }
+  );
 }
 
 /**
@@ -68,62 +33,52 @@ export function useAdminProvider(providerId: string | undefined) {
  * @returns Query result with provider counts by status
  */
 export function useAdminProviderCounts() {
-  return useQuery({
-    queryKey: ['admin', 'provider-counts'],
-    queryFn: async () => {
-      // Fetch all providers and calculate counts client-side
-      // This could be optimized with a dedicated API endpoint for counts
-      const response = await fetch('/api/admin/providers');
+  return api.admin.getProviders.useQuery(
+    {},
+    {
+      select: (providers) => {
+        // Calculate counts by status
+        const counts = providers.reduce(
+          (acc: Record<string, number>, provider: any) => {
+            const status = provider.status || 'PENDING';
+            acc[status] = (acc[status] || 0) + 1;
+            acc.total = (acc.total || 0) + 1;
+            return acc;
+          },
+          { total: 0 }
+        );
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Unauthorized: Admin access required');
-        }
-        throw new Error('Failed to fetch providers');
-      }
+        // Calculate requirement-based counts
+        const requirementCounts = providers.reduce((acc: Record<string, number>, provider: any) => {
+          const requiredSubmissions =
+            provider.requirementSubmissions?.filter(
+              (sub: any) => sub.requirementType?.isRequired
+            ) || [];
 
-      const providers = await response.json();
+          const approvedRequired = requiredSubmissions.filter(
+            (sub: any) => sub.status === 'APPROVED'
+          ).length;
 
-      // Calculate counts by status
-      const counts = providers.reduce(
-        (acc: Record<string, number>, provider: any) => {
-          const status = provider.status || 'PENDING';
-          acc[status] = (acc[status] || 0) + 1;
-          acc.total = (acc.total || 0) + 1;
+          const totalRequired = requiredSubmissions.length;
+
+          if (totalRequired === 0) {
+            acc.noRequirements = (acc.noRequirements || 0) + 1;
+          } else if (approvedRequired === totalRequired) {
+            acc.allRequirementsApproved = (acc.allRequirementsApproved || 0) + 1;
+          } else {
+            acc.pendingRequirements = (acc.pendingRequirements || 0) + 1;
+          }
+
           return acc;
-        },
-        { total: 0 }
-      );
+        }, {});
 
-      // Calculate requirement-based counts
-      const requirementCounts = providers.reduce((acc: Record<string, number>, provider: any) => {
-        const requiredSubmissions =
-          provider.requirementSubmissions?.filter((sub: any) => sub.requirementType?.isRequired) ||
-          [];
-
-        const approvedRequired = requiredSubmissions.filter(
-          (sub: any) => sub.status === 'APPROVED'
-        ).length;
-
-        const totalRequired = requiredSubmissions.length;
-
-        if (totalRequired === 0) {
-          acc.noRequirements = (acc.noRequirements || 0) + 1;
-        } else if (approvedRequired === totalRequired) {
-          acc.allRequirementsApproved = (acc.allRequirementsApproved || 0) + 1;
-        } else {
-          acc.pendingRequirements = (acc.pendingRequirements || 0) + 1;
-        }
-
-        return acc;
-      }, {});
-
-      return {
-        ...counts,
-        requirements: requirementCounts,
-      };
-    },
-  });
+        return {
+          ...counts,
+          requirements: requirementCounts,
+        };
+      },
+    }
+  );
 }
 
 /**
@@ -131,37 +86,29 @@ export function useAdminProviderCounts() {
  * @returns Query result with providers that have pending requirements
  */
 export function useAdminProvidersWithPendingRequirements() {
-  return useQuery({
-    queryKey: ['admin', 'providers-pending-requirements'],
-    queryFn: async () => {
-      const response = await fetch('/api/admin/providers');
+  return api.admin.getProviders.useQuery(
+    {},
+    {
+      select: (providers) => {
+        // Filter providers with pending requirements
+        return providers.filter((provider: any) => {
+          const requiredSubmissions =
+            provider.requirementSubmissions?.filter(
+              (sub: any) => sub.requirementType?.isRequired
+            ) || [];
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Unauthorized: Admin access required');
-        }
-        throw new Error('Failed to fetch providers');
-      }
+          const approvedRequired = requiredSubmissions.filter(
+            (sub: any) => sub.status === 'APPROVED'
+          ).length;
 
-      const providers = await response.json();
+          const totalRequired = requiredSubmissions.length;
 
-      // Filter providers with pending requirements
-      return providers.filter((provider: any) => {
-        const requiredSubmissions =
-          provider.requirementSubmissions?.filter((sub: any) => sub.requirementType?.isRequired) ||
-          [];
-
-        const approvedRequired = requiredSubmissions.filter(
-          (sub: any) => sub.status === 'APPROVED'
-        ).length;
-
-        const totalRequired = requiredSubmissions.length;
-
-        // Has requirements and not all are approved
-        return totalRequired > 0 && approvedRequired < totalRequired;
-      });
-    },
-  });
+          // Has requirements and not all are approved
+          return totalRequired > 0 && approvedRequired < totalRequired;
+        });
+      },
+    }
+  );
 }
 
 /**
@@ -169,38 +116,30 @@ export function useAdminProvidersWithPendingRequirements() {
  * @returns Query result with providers ready for final approval
  */
 export function useAdminProvidersReadyForApproval() {
-  return useQuery({
-    queryKey: ['admin', 'providers-ready-for-approval'],
-    queryFn: async () => {
-      const response = await fetch('/api/admin/providers');
+  return api.admin.getProviders.useQuery(
+    {},
+    {
+      select: (providers) => {
+        // Filter providers ready for approval
+        return providers.filter((provider: any) => {
+          // Only consider providers that are still pending
+          if (provider.status !== 'PENDING') return false;
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Unauthorized: Admin access required');
-        }
-        throw new Error('Failed to fetch providers');
-      }
+          const requiredSubmissions =
+            provider.requirementSubmissions?.filter(
+              (sub: any) => sub.requirementType?.isRequired
+            ) || [];
 
-      const providers = await response.json();
+          const approvedRequired = requiredSubmissions.filter(
+            (sub: any) => sub.status === 'APPROVED'
+          ).length;
 
-      // Filter providers ready for approval
-      return providers.filter((provider: any) => {
-        // Only consider providers that are still pending
-        if (provider.status !== 'PENDING') return false;
+          const totalRequired = requiredSubmissions.length;
 
-        const requiredSubmissions =
-          provider.requirementSubmissions?.filter((sub: any) => sub.requirementType?.isRequired) ||
-          [];
-
-        const approvedRequired = requiredSubmissions.filter(
-          (sub: any) => sub.status === 'APPROVED'
-        ).length;
-
-        const totalRequired = requiredSubmissions.length;
-
-        // Has requirements and all are approved, or has no requirements
-        return totalRequired === 0 || approvedRequired === totalRequired;
-      });
-    },
-  });
+          // Has requirements and all are approved, or has no requirements
+          return totalRequired === 0 || approvedRequired === totalRequired;
+        });
+      },
+    }
+  );
 }

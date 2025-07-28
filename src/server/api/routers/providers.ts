@@ -9,7 +9,12 @@ import {
 } from '@/features/providers/lib/actions/update-provider';
 import { serializeProvider } from '@/features/providers/lib/helper';
 import { searchProviders } from '@/features/providers/lib/search';
-import { createTRPCRouter, publicProcedure, protectedProcedure, adminProcedure } from '@/server/trpc';
+import {
+  adminProcedure,
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+} from '@/server/trpc';
 
 export const providersRouter = createTRPCRouter({
   /**
@@ -109,15 +114,15 @@ export const providersRouter = createTRPCRouter({
       // Map services and add service config data if available
       return providerType.services.map((service) => {
         // Check if this service has been configured by the provider
-        const serviceConfig = serviceConfigs?.find(
-          (config) => config.serviceId === service.id
-        );
+        const serviceConfig = serviceConfigs?.find((config) => config.serviceId === service.id);
 
         // Determine if the service is configured by the provider
         const hasCustomConfig = !!serviceConfig;
-        const currentPrice = serviceConfig?.price 
-          ? Number(serviceConfig.price) 
-          : (service.defaultPrice ? Number(service.defaultPrice) : null);
+        const currentPrice = serviceConfig?.price
+          ? Number(serviceConfig.price)
+          : service.defaultPrice
+            ? Number(service.defaultPrice)
+            : null;
         const currentDuration = serviceConfig?.duration || service.defaultDuration;
 
         return {
@@ -134,14 +139,16 @@ export const providersRouter = createTRPCRouter({
           currentPrice,
           currentDuration,
           hasCustomConfig,
-          customConfig: serviceConfig ? {
-            id: serviceConfig.id,
-            duration: serviceConfig.duration,
-            price: serviceConfig.price ? Number(serviceConfig.price) : null,
-            isOnlineAvailable: serviceConfig.isOnlineAvailable,
-            isInPerson: serviceConfig.isInPerson,
-            locationId: serviceConfig.locationId,
-          } : undefined,
+          customConfig: serviceConfig
+            ? {
+                id: serviceConfig.id,
+                duration: serviceConfig.duration,
+                price: serviceConfig.price ? Number(serviceConfig.price) : null,
+                isOnlineAvailable: serviceConfig.isOnlineAvailable,
+                isInPerson: serviceConfig.isInPerson,
+                locationId: serviceConfig.locationId,
+              }
+            : undefined,
         };
       });
     }),
@@ -170,48 +177,46 @@ export const providersRouter = createTRPCRouter({
    * Get a single provider by ID
    * Migrated from: GET /api/providers/[id]
    */
-  getById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const provider = await ctx.prisma.provider.findUnique({
-        where: { id: input.id },
-        include: {
-          services: true,
-          availabilityConfigs: {
-            include: {
-              service: true,
-            },
+  getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    const provider = await ctx.prisma.provider.findUnique({
+      where: { id: input.id },
+      include: {
+        services: true,
+        availabilityConfigs: {
+          include: {
+            service: true,
           },
-          user: {
-            select: {
-              email: true,
-            },
+        },
+        user: {
+          select: {
+            email: true,
           },
-          typeAssignments: {
-            include: {
-              providerType: {
-                select: {
-                  id: true,
-                  name: true,
-                  description: true,
-                },
+        },
+        typeAssignments: {
+          include: {
+            providerType: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
               },
             },
           },
-          requirementSubmissions: {
-            include: {
-              requirementType: true,
-            },
+        },
+        requirementSubmissions: {
+          include: {
+            requirementType: true,
           },
         },
-      });
+      },
+    });
 
-      if (!provider) {
-        throw new Error('Provider not found');
-      }
+    if (!provider) {
+      throw new Error('Provider not found');
+    }
 
-      return serializeProvider(provider);
-    }),
+    return serializeProvider(provider);
+  }),
 
   /**
    * Create a new provider
@@ -230,25 +235,33 @@ export const providersRouter = createTRPCRouter({
           languages: z.array(z.string()).optional(),
         }),
         providerTypeIds: z.array(z.string()).min(1),
-        services: z.object({
-          availableServices: z.array(z.string()).optional(),
-          serviceConfigs: z.record(
-            z.string(),
-            z.object({
-              duration: z.number().optional(),
-              price: z.number().optional(),
-            })
-          ).optional(),
-        }).optional(),
-        regulatoryRequirements: z.object({
-          requirements: z.array(
-            z.object({
-              requirementTypeId: z.string(),
-              value: z.string().optional(),
-              documentMetadata: z.any().optional(),
-            })
-          ).optional(),
-        }).optional(),
+        services: z
+          .object({
+            availableServices: z.array(z.string()).optional(),
+            serviceConfigs: z
+              .record(
+                z.string(),
+                z.object({
+                  duration: z.number().optional(),
+                  price: z.number().optional(),
+                })
+              )
+              .optional(),
+          })
+          .optional(),
+        regulatoryRequirements: z
+          .object({
+            requirements: z
+              .array(
+                z.object({
+                  requirementTypeId: z.string(),
+                  value: z.string().optional(),
+                  documentMetadata: z.any().optional(),
+                })
+              )
+              .optional(),
+          })
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -259,7 +272,7 @@ export const providersRouter = createTRPCRouter({
       // Convert input to FormData for the server action
       const formData = new FormData();
       formData.append('userId', ctx.session.user.id);
-      
+
       // Add basic info
       formData.append('name', input.basicInfo.name);
       formData.append('bio', input.basicInfo.bio || '');
@@ -271,21 +284,21 @@ export const providersRouter = createTRPCRouter({
       if (input.basicInfo.image) {
         formData.append('imageUrl', input.basicInfo.image);
       }
-      
+
       // Add provider types
       input.providerTypeIds.forEach((typeId) => {
         formData.append('providerTypeIds', typeId);
       });
-      
+
       // Add languages
       input.basicInfo.languages?.forEach((lang) => {
         formData.append('languages', lang);
       });
-      
+
       // Add services
       input.services?.availableServices?.forEach((serviceId) => {
         formData.append('services', serviceId);
-        
+
         const config = input.services?.serviceConfigs?.[serviceId];
         if (config?.duration) {
           formData.append(`serviceConfigs[${serviceId}][duration]`, config.duration.toString());
@@ -294,7 +307,7 @@ export const providersRouter = createTRPCRouter({
           formData.append(`serviceConfigs[${serviceId}][price]`, config.price.toString());
         }
       });
-      
+
       // Add requirements
       input.regulatoryRequirements?.requirements?.forEach((req, index) => {
         formData.append(`requirements[${index}][requirementTypeId]`, req.requirementTypeId);
@@ -338,7 +351,7 @@ export const providersRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const formData = new FormData();
       formData.append('id', input.id);
-      
+
       if (input.name) formData.append('name', input.name);
       if (input.bio) formData.append('bio', input.bio);
       if (input.email) formData.append('email', input.email);
@@ -365,22 +378,24 @@ export const providersRouter = createTRPCRouter({
       z.object({
         id: z.string(),
         services: z.array(z.string()).optional(),
-        serviceConfigs: z.record(
-          z.string(),
-          z.object({
-            duration: z.number().optional(),
-            price: z.number().optional(),
-          })
-        ).optional(),
+        serviceConfigs: z
+          .record(
+            z.string(),
+            z.object({
+              duration: z.number().optional(),
+              price: z.number().optional(),
+            })
+          )
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const formData = new FormData();
       formData.append('id', input.id);
-      
+
       input.services?.forEach((serviceId) => {
         formData.append('services', serviceId);
-        
+
         const config = input.serviceConfigs?.[serviceId];
         if (config?.duration) {
           formData.append(`serviceConfigs[${serviceId}][duration]`, config.duration.toString());
@@ -419,7 +434,7 @@ export const providersRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const formData = new FormData();
       formData.append('id', input.id);
-      
+
       input.requirements.forEach((req, index) => {
         formData.append(`requirements[${index}][requirementTypeId]`, req.requirementTypeId);
         if (req.value) {

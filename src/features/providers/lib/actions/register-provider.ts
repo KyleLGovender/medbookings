@@ -22,18 +22,21 @@ export async function registerProvider(prevState: any, formData: FormData) {
     const website = (formData.get('website') as string) || null;
 
     // Extract service configurations from FormData
-    const serviceConfigs: Record<string, { 
-      duration?: number; 
-      price?: number; 
-      isOnlineAvailable?: boolean; 
-      isInPerson?: boolean; 
-    }> = {};
+    const serviceConfigs: Record<
+      string,
+      {
+        duration?: number;
+        price?: number;
+        isOnlineAvailable?: boolean;
+        isInPerson?: boolean;
+      }
+    > = {};
     for (const serviceId of services) {
       const duration = formData.get(`serviceConfigs[${serviceId}][duration]`);
       const price = formData.get(`serviceConfigs[${serviceId}][price]`);
       const isOnlineAvailable = formData.get(`serviceConfigs[${serviceId}][isOnlineAvailable]`);
       const isInPerson = formData.get(`serviceConfigs[${serviceId}][isInPerson]`);
-      
+
       if (duration || price || isOnlineAvailable || isInPerson) {
         serviceConfigs[serviceId] = {
           ...(duration && { duration: parseInt(duration as string, 10) }),
@@ -66,12 +69,12 @@ export async function registerProvider(prevState: any, formData: FormData) {
     // Validate that all provider types exist
     const existingProviderTypes = await prisma.providerType.findMany({
       where: { id: { in: providerTypeIds } },
-      select: { id: true }
+      select: { id: true },
     });
-    
+
     if (existingProviderTypes.length !== providerTypeIds.length) {
-      const foundTypeIds = existingProviderTypes.map(t => t.id);
-      const missingTypes = providerTypeIds.filter(id => !foundTypeIds.includes(id));
+      const foundTypeIds = existingProviderTypes.map((t) => t.id);
+      const missingTypes = providerTypeIds.filter((id) => !foundTypeIds.includes(id));
       return {
         success: false,
         error: `Provider types not found: ${missingTypes.join(', ')}`,
@@ -82,12 +85,12 @@ export async function registerProvider(prevState: any, formData: FormData) {
     if (services.length > 0) {
       const existingServices = await prisma.service.findMany({
         where: { id: { in: services } },
-        select: { id: true }
+        select: { id: true },
       });
-      
+
       if (existingServices.length !== services.length) {
-        const foundServiceIds = existingServices.map(s => s.id);
-        const missingServices = services.filter(id => !foundServiceIds.includes(id));
+        const foundServiceIds = existingServices.map((s) => s.id);
+        const missingServices = services.filter((id) => !foundServiceIds.includes(id));
         return {
           success: false,
           error: `Services not found: ${missingServices.join(', ')}`,
@@ -198,20 +201,24 @@ export async function registerProvider(prevState: any, formData: FormData) {
     // Create ServiceAvailabilityConfig records for services with custom configurations
     if (Object.keys(serviceConfigs).length > 0) {
       try {
-        const serviceAvailabilityConfigs = Object.entries(serviceConfigs).map(([serviceId, config]) => ({
-          serviceId,
-          providerId: provider.id,
-          duration: config.duration || 30, // Default to 30 minutes if not specified
-          price: config.price || 0, // Default to 0 if not specified
-          isOnlineAvailable: config.isOnlineAvailable ?? true, // Default to online available
-          isInPerson: config.isInPerson ?? false, // Default to not in-person unless specified
-        }));
+        const serviceAvailabilityConfigs = Object.entries(serviceConfigs).map(
+          ([serviceId, config]) => ({
+            serviceId,
+            providerId: provider.id,
+            duration: config.duration || 30, // Default to 30 minutes if not specified
+            price: config.price || 0, // Default to 0 if not specified
+            isOnlineAvailable: config.isOnlineAvailable ?? true, // Default to online available
+            isInPerson: config.isInPerson ?? false, // Default to not in-person unless specified
+          })
+        );
 
         await prisma.serviceAvailabilityConfig.createMany({
           data: serviceAvailabilityConfigs,
         });
 
-        console.log(`Created ${serviceAvailabilityConfigs.length} ServiceAvailabilityConfig records for provider ${provider.id}`);
+        console.log(
+          `Created ${serviceAvailabilityConfigs.length} ServiceAvailabilityConfig records for provider ${provider.id}`
+        );
       } catch (configError) {
         console.error('Failed to create ServiceAvailabilityConfig records:', {
           providerId: provider.id,

@@ -1,4 +1,4 @@
-import { initTRPC, TRPCError } from '@trpc/server';
+import { TRPCError, initTRPC } from '@trpc/server';
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { type Session } from 'next-auth';
 import superjson from 'superjson';
@@ -60,8 +60,7 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
       ...shape,
       data: {
         ...shape.data,
-        zodError:
-          error.cause instanceof ZodError ? error.cause.flatten() : null,
+        zodError: error.cause instanceof ZodError ? error.cause.flatten() : null,
       },
     };
   },
@@ -117,9 +116,9 @@ const enforceUserHasRole = (allowedRoles: string[]) => {
 
     const user = ctx.session.user as any;
     if (!allowedRoles.includes(user.role)) {
-      throw new TRPCError({ 
+      throw new TRPCError({
         code: 'FORBIDDEN',
-        message: 'You do not have permission to perform this action'
+        message: 'You do not have permission to perform this action',
       });
     }
 

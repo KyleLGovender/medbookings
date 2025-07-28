@@ -10,7 +10,7 @@ export function useUpdateProviderBasicInfo(options?: {
   onError?: (error: Error) => void;
 }) {
   const utils = api.useUtils();
-  
+
   return api.providers.update.useMutation({
     onSuccess: (data, variables) => {
       // Invalidate provider query

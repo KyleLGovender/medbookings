@@ -1,17 +1,157 @@
 /**
  * Admin override actions for accessing any account
- * 
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+'use server';
+
+import { redirect } from 'next/navigation';
+
+import { getCurrentUser, invalidateUserPermissions } from '@/features/auth/lib/session-helper';
+import { requirePermission } from '@/lib/auth/permissions';
+import { prisma } from '@/lib/prisma';
+import { Permission } from '@/types/permissions';
+
+/**
+ * Admin override actions for accessing any account
+ *
  * Secure system for administrators to temporarily access and manage
  * any user account for support and dispute resolution purposes.
  */
 
-'use server';
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
 
-import { redirect } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser, invalidateUserPermissions } from '@/features/auth/lib/session-helper';
-import { requirePermission } from '@/lib/auth/permissions';
-import { Permission } from '@/types/permissions';
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
 
 export interface OverrideSession {
   originalAdminId: string;
@@ -42,50 +182,50 @@ export async function initiateAccountOverride(
     if (!currentUser) {
       return { success: false, message: 'Not authenticated' };
     }
-    
+
     // Only super admins can override accounts
     requirePermission(currentUser.permissions, Permission.ACCESS_ANY_ACCOUNT);
-    
+
     if (!reason.trim()) {
       return { success: false, message: 'Override reason is required' };
     }
-    
+
     if (durationMinutes < 5 || durationMinutes > 120) {
       return { success: false, message: 'Duration must be between 5 and 120 minutes' };
     }
-    
+
     // Find target user
     const targetUser = await prisma.user.findUnique({
       where: { email: targetUserEmail.toLowerCase() },
       include: {
         provider: true,
         organizationMemberships: {
-          include: { organization: true }
-        }
-      }
+          include: { organization: true },
+        },
+      },
     });
-    
+
     if (!targetUser) {
       return { success: false, message: 'Target user not found' };
     }
-    
+
     // Cannot override another admin's account
     if (targetUser.role === 'ADMIN' || targetUser.role === 'SUPER_ADMIN') {
-      return { 
-        success: false, 
-        message: 'Cannot override administrator accounts' 
+      return {
+        success: false,
+        message: 'Cannot override administrator accounts',
       };
     }
-    
+
     // Check for existing active override
     const existingOverride = await getActiveOverride(currentUser.user.id);
     if (existingOverride) {
-      return { 
-        success: false, 
-        message: 'You already have an active account override session' 
+      return {
+        success: false,
+        message: 'You already have an active account override session',
       };
     }
-    
+
     // Create override session
     const expiresAt = new Date(Date.now() + durationMinutes * 60 * 1000);
     const overrideSession: OverrideSession = {
@@ -94,12 +234,12 @@ export async function initiateAccountOverride(
       targetUserEmail: targetUser.email || targetUserEmail,
       reason,
       startedAt: new Date(),
-      expiresAt
+      expiresAt,
     };
-    
+
     // Store in session/cache (in production, use secure session storage)
     await storeOverrideSession(currentUser.user.id, overrideSession);
-    
+
     // Log the override action
     await logOverrideAction(
       currentUser.user.id,
@@ -109,13 +249,13 @@ export async function initiateAccountOverride(
         targetUserId: targetUser.id,
         targetUserEmail,
         reason,
-        durationMinutes
+        durationMinutes,
       }
     );
-    
+
     // Invalidate current session permissions to force reload
     await invalidateUserPermissions(currentUser.user.email);
-    
+
     // Determine redirect URL based on user type
     let redirectUrl = '/profile';
     if (targetUser.provider) {
@@ -123,18 +263,18 @@ export async function initiateAccountOverride(
     } else if (targetUser.organizationMemberships.length > 0) {
       redirectUrl = `/organizations/${targetUser.organizationMemberships[0].organizationId}`;
     }
-    
+
     return {
       success: true,
       message: `Override session started for ${targetUserEmail}`,
-      redirectUrl
+      redirectUrl,
     };
   } catch (error) {
     console.error('Error initiating account override:', error);
     return {
       success: false,
       message: 'Failed to initiate account override',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -148,15 +288,15 @@ export async function endAccountOverride(): Promise<OverrideResult> {
     if (!currentUser) {
       return { success: false, message: 'Not authenticated' };
     }
-    
+
     const overrideSession = await getActiveOverride(currentUser.user.id);
     if (!overrideSession) {
       return { success: false, message: 'No active override session found' };
     }
-    
+
     // Remove override session
     await removeOverrideSession(currentUser.user.id);
-    
+
     // Log the end of override
     await logOverrideAction(
       overrideSession.originalAdminId,
@@ -165,24 +305,24 @@ export async function endAccountOverride(): Promise<OverrideResult> {
       {
         targetUserId: overrideSession.targetUserId,
         targetUserEmail: overrideSession.targetUserEmail,
-        duration: Date.now() - overrideSession.startedAt.getTime()
+        duration: Date.now() - overrideSession.startedAt.getTime(),
       }
     );
-    
+
     // Invalidate session permissions
     await invalidateUserPermissions(currentUser.user.email);
-    
+
     return {
       success: true,
       message: 'Override session ended',
-      redirectUrl: '/admin'
+      redirectUrl: '/admin',
     };
   } catch (error) {
     console.error('Error ending account override:', error);
     return {
       success: false,
       message: 'Failed to end account override',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -195,13 +335,13 @@ export async function getActiveOverride(adminId: string): Promise<OverrideSessio
     // In production, retrieve from secure session storage (Redis, etc.)
     const stored = overrideSessions.get(adminId);
     if (!stored) return null;
-    
+
     // Check if expired
     if (stored.expiresAt < new Date()) {
       overrideSessions.delete(adminId);
       return null;
     }
-    
+
     return stored;
   } catch (error) {
     console.error('Error getting active override:', error);
@@ -216,7 +356,7 @@ export async function getCurrentOverrideSession(): Promise<OverrideSession | nul
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) return null;
-    
+
     // Check if this is an override session
     for (const [adminId, session] of Array.from(overrideSessions.entries())) {
       if (session.targetUserId === currentUser.user.id) {
@@ -228,7 +368,7 @@ export async function getCurrentOverrideSession(): Promise<OverrideSession | nul
         return session;
       }
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error getting current override session:', error);
@@ -247,7 +387,7 @@ const overrideSessions = new Map<string, OverrideSession>();
  */
 async function storeOverrideSession(adminId: string, session: OverrideSession): Promise<void> {
   overrideSessions.set(adminId, session);
-  
+
   // Auto-cleanup expired session
   setTimeout(() => {
     const stored = overrideSessions.get(adminId);
@@ -282,9 +422,9 @@ async function logOverrideAction(
       description,
       metadata,
       severity: 'HIGH',
-      type: 'SECURITY_AUDIT'
+      type: 'SECURITY_AUDIT',
     });
-    
+
     // In production, also send to security monitoring system
   } catch (error) {
     console.error('Error logging override action:', error);
@@ -300,11 +440,7 @@ export async function handleOverrideRequest(
 ): Promise<OverrideResult> {
   switch (action) {
     case 'initiate':
-      return initiateAccountOverride(
-        params.targetUserEmail,
-        params.reason,
-        params.durationMinutes
-      );
+      return initiateAccountOverride(params.targetUserEmail, params.reason, params.durationMinutes);
     case 'end':
       return endAccountOverride();
     default:

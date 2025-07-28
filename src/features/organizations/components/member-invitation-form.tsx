@@ -1,45 +1,21 @@
 /**
  * Organization member invitation interface
- * 
+ *
  * Form component for inviting new members to organizations
  * with role assignment and permission validation.
  */
-
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+
 import { zodResolver } from '@hookform/resolvers/zod';
+import { CheckCircle, Clock, Mail, Shield, Trash2, UserPlus, XCircle } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from '@/components/ui/form';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table';
+
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -47,25 +23,185 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
+  DialogTrigger,
 } from '@/components/ui/dialog';
-import { 
-  Mail, 
-  UserPlus, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  Trash2,
-  Shield
-} from 'lucide-react';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  cancelInvitation,
+  inviteOrganizationMember,
+} from '@/features/organizations/lib/member-management';
 import { useOrganizationPermissions } from '@/hooks/use-permissions';
 import { OrganizationRole, Permission } from '@/types/permissions';
-import { inviteOrganizationMember, cancelInvitation } from '@/features/organizations/lib/member-management';
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
 
 const invitationSchema = z.object({
   email: z.string().email('Invalid email address'),
   role: z.nativeEnum(OrganizationRole),
-  message: z.string().optional()
+  message: z.string().optional(),
 });
 
 type InvitationFormData = z.infer<typeof invitationSchema>;
@@ -100,7 +236,7 @@ export function MemberInvitationForm({
   organizationName,
   members,
   pendingInvitations,
-  onInvitationSent
+  onInvitationSent,
 }: MemberInvitationFormProps) {
   const { hasOrganizationPermission, isAdmin } = useOrganizationPermissions(organizationId);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -111,8 +247,8 @@ export function MemberInvitationForm({
     defaultValues: {
       email: '',
       role: OrganizationRole.STAFF,
-      message: ''
-    }
+      message: '',
+    },
   });
 
   const canInviteMembers = hasOrganizationPermission(Permission.INVITE_MEMBERS);
@@ -123,7 +259,7 @@ export function MemberInvitationForm({
     try {
       const result = await inviteOrganizationMember({
         ...data,
-        organizationId
+        organizationId,
       });
 
       if (result.success) {
@@ -185,9 +321,9 @@ export function MemberInvitationForm({
   if (!canInviteMembers && !canManageMembers) {
     return (
       <Card>
-        <CardContent className='py-6'>
-          <div className='text-center text-muted-foreground'>
-            <Shield className='h-8 w-8 mx-auto mb-2' />
+        <CardContent className="py-6">
+          <div className="text-center text-muted-foreground">
+            <Shield className="mx-auto mb-2 h-8 w-8" />
             <p>You don&apos;t have permission to manage members</p>
           </div>
         </CardContent>
@@ -196,17 +332,17 @@ export function MemberInvitationForm({
   }
 
   return (
-    <div className='space-y-6'>
+    <div className="space-y-6">
       {/* Current Members */}
       <Card>
         <CardHeader>
-          <div className='flex items-center justify-between'>
+          <div className="flex items-center justify-between">
             <CardTitle>Organization Members</CardTitle>
             {canInviteMembers && (
               <Dialog open={showInviteForm} onOpenChange={setShowInviteForm}>
                 <DialogTrigger asChild>
                   <Button>
-                    <UserPlus className='h-4 w-4 mr-2' />
+                    <UserPlus className="mr-2 h-4 w-4" />
                     Invite Member
                   </Button>
                 </DialogTrigger>
@@ -217,40 +353,33 @@ export function MemberInvitationForm({
                       Send an invitation to join {organizationName}
                     </DialogDescription>
                   </DialogHeader>
-                  
+
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                       <FormField
                         control={form.control}
-                        name='email'
+                        name="email"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Email Address</FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder='member@example.com' 
-                                type='email'
-                                {...field} 
-                              />
+                              <Input placeholder="member@example.com" type="email" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
-                        name='role'
+                        name="role"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Role</FormLabel>
-                            <Select 
-                              onValueChange={field.onChange} 
-                              defaultValue={field.value}
-                            >
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder='Select a role' />
+                                  <SelectValue placeholder="Select a role" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -271,17 +400,17 @@ export function MemberInvitationForm({
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
-                        name='message'
+                        name="message"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Personal Message (Optional)</FormLabel>
                             <FormControl>
-                              <Textarea 
-                                placeholder='Add a personal message to the invitation...'
-                                {...field} 
+                              <Textarea
+                                placeholder="Add a personal message to the invitation..."
+                                {...field}
                               />
                             </FormControl>
                             <FormDescription>
@@ -291,16 +420,16 @@ export function MemberInvitationForm({
                           </FormItem>
                         )}
                       />
-                      
+
                       <DialogFooter>
                         <Button
-                          type='button'
-                          variant='outline'
+                          type="button"
+                          variant="outline"
                           onClick={() => setShowInviteForm(false)}
                         >
                           Cancel
                         </Button>
-                        <Button type='submit' disabled={isSubmitting}>
+                        <Button type="submit" disabled={isSubmitting}>
                           {isSubmitting ? 'Sending...' : 'Send Invitation'}
                         </Button>
                       </DialogFooter>
@@ -326,26 +455,22 @@ export function MemberInvitationForm({
                 <TableRow key={member.id}>
                   <TableCell>
                     <div>
-                      <div className='font-medium'>{member.name}</div>
-                      <div className='text-sm text-muted-foreground'>{member.email}</div>
+                      <div className="font-medium">{member.name}</div>
+                      <div className="text-sm text-muted-foreground">{member.email}</div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getRoleBadgeVariant(member.role)}>
-                      {member.role}
-                    </Badge>
+                    <Badge variant={getRoleBadgeVariant(member.role)}>{member.role}</Badge>
                   </TableCell>
-                  <TableCell>
-                    {new Date(member.joinedAt).toLocaleDateString()}
-                  </TableCell>
+                  <TableCell>{new Date(member.joinedAt).toLocaleDateString()}</TableCell>
                   <TableCell>
                     {canManageMembers && member.role !== OrganizationRole.OWNER && (
-                      <div className='flex items-center gap-2'>
-                        <Button variant='outline' size='sm'>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm">
                           Edit Role
                         </Button>
-                        <Button variant='outline' size='sm'>
-                          <Trash2 className='h-4 w-4' />
+                        <Button variant="outline" size="sm">
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     )}
@@ -378,8 +503,8 @@ export function MemberInvitationForm({
                 {pendingInvitations.map((invitation) => (
                   <TableRow key={invitation.id}>
                     <TableCell>
-                      <div className='flex items-center gap-2'>
-                        <Mail className='h-4 w-4 text-muted-foreground' />
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
                         {invitation.email}
                       </div>
                     </TableCell>
@@ -388,23 +513,21 @@ export function MemberInvitationForm({
                         {invitation.role}
                       </Badge>
                     </TableCell>
+                    <TableCell>{new Date(invitation.sentAt).toLocaleDateString()}</TableCell>
                     <TableCell>
-                      {new Date(invitation.sentAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className='flex items-center gap-2'>
-                        <Clock className='h-4 w-4 text-orange-500' />
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-orange-500" />
                         {new Date(invitation.expiresAt).toLocaleDateString()}
                       </div>
                     </TableCell>
                     <TableCell>
                       {canInviteMembers && (
                         <Button
-                          variant='outline'
-                          size='sm'
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleCancelInvitation(invitation.id)}
                         >
-                          <XCircle className='h-4 w-4 mr-1' />
+                          <XCircle className="mr-1 h-4 w-4" />
                           Cancel
                         </Button>
                       )}

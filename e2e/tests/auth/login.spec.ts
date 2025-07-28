@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 // Helper function to setup OAuth route mocking
 async function setupOAuthMocking(page: any, userInfo: any = null) {
@@ -9,14 +9,16 @@ async function setupOAuthMocking(page: any, userInfo: any = null) {
 
   // Mock session API
   await page.route('**/api/auth/session', async (route) => {
-    const json = userInfo ? {
-      user: userInfo,
-      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    } : { user: null };
-    await route.fulfill({ 
+    const json = userInfo
+      ? {
+          user: userInfo,
+          expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        }
+      : { user: null };
+    await route.fulfill({
       status: 200,
       headers: { 'Content-Type': 'application/json' },
-      json 
+      json,
     });
   });
 
@@ -25,7 +27,7 @@ async function setupOAuthMocking(page: any, userInfo: any = null) {
     await page.route('**/api/auth/signin/google**', async (route) => {
       await route.fulfill({
         status: 302,
-        headers: { 'Location': '/profile' },
+        headers: { Location: '/profile' },
       });
     });
   }
@@ -40,11 +42,11 @@ test.describe('Authentication Flow', () => {
 
   test('should display login page correctly', async ({ page }) => {
     await page.goto('/login');
-    
+
     // Check page elements
     await expect(page.locator('h1')).toContainText('Sign In to MedBookings');
     await expect(page.locator('button:has-text("Sign In with Google")')).toBeVisible();
-    
+
     // Check Google icon is present in the sign-in button specifically
     await expect(page.locator('button:has-text("Sign In with Google") svg')).toBeVisible();
   });
@@ -52,11 +54,11 @@ test.describe('Authentication Flow', () => {
   test('should show error message for authentication errors', async ({ page }) => {
     // Navigate with error parameter
     await page.goto('/login?error=OAuthAccountNotLinked');
-    
+
     // Check that we're still on login page and elements are visible
     await expect(page.locator('h1')).toContainText('Sign In to MedBookings');
     await expect(page.locator('button:has-text("Sign In with Google")')).toBeVisible();
-    
+
     // Note: Error handling would need to be implemented in the UI
     // For now, just verify the page loads correctly with error parameter
   });
@@ -70,13 +72,13 @@ test.describe('Authentication Flow', () => {
     });
 
     await page.goto('/login');
-    
+
     // Click Google sign-in button and wait for potential redirect
     await page.click('button:has-text("Sign In with Google")');
-    
+
     // Wait a bit for any navigation to complete
     await page.waitForLoadState('networkidle');
-    
+
     // Check if we're on profile page OR still on login (depends on implementation)
     const currentUrl = page.url();
     if (currentUrl.includes('/profile')) {
@@ -95,10 +97,10 @@ test.describe('Authentication Flow', () => {
 
     await page.goto('/login');
     await page.click('button:has-text("Sign In with Google")');
-    
+
     // Wait for any navigation to complete
     await page.waitForLoadState('networkidle');
-    
+
     // Should still be on login page (since OAuth was blocked)
     await expect(page.locator('h1')).toContainText('Sign In to MedBookings');
   });
@@ -106,7 +108,7 @@ test.describe('Authentication Flow', () => {
   test('should redirect to intended page after login', async ({ page }) => {
     // First visit without authentication - should redirect to login
     await page.goto('/profile');
-    
+
     // Check if redirected to login or if page loads (depending on auth middleware)
     const currentUrl = page.url();
     if (currentUrl.includes('/login')) {
@@ -116,11 +118,11 @@ test.describe('Authentication Flow', () => {
         email: 'user@test.com',
         image: 'https://via.placeholder.com/40',
       });
-      
+
       await page.click('button:has-text("Sign In with Google")');
       await page.waitForURL('/profile');
     }
-    
+
     // Verify we can access the intended page
     await expect(page.locator('html')).toBeVisible();
   });
@@ -131,7 +133,7 @@ test.describe('Authentication Flow', () => {
 
     // Try to access protected page
     await page.goto('/profile');
-    
+
     // Check that we either redirect to login or show login state
     // (behavior depends on the app's auth middleware implementation)
     const currentUrl = page.url();

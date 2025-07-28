@@ -252,7 +252,7 @@ export async function updateProviderServices(prevState: any, formData: FormData)
     // Update or create ServiceAvailabilityConfig records for selected services
     for (const serviceId of serviceIds) {
       const config = serviceConfigs[serviceId];
-      
+
       if (config) {
         // Try to update existing config first
         const existingConfig = await prisma.serviceAvailabilityConfig.findFirst({

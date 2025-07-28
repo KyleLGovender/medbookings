@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Organization } from '@prisma/client';
 import { Calendar, Clock, MapPin, Repeat } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -168,9 +168,7 @@ export function AvailabilityCreationForm({
   const selectedLocation = useMemo(() => {
     if (!watchLocationId) return null;
     return (
-      availableLocations
-        .filter((loc) => loc.id)
-        .find((loc) => loc.id === watchLocationId) || null
+      availableLocations.filter((loc) => loc.id).find((loc) => loc.id === watchLocationId) || null
     );
   }, [watchLocationId, availableLocations]);
 
@@ -297,8 +295,14 @@ export function AvailabilityCreationForm({
                             const currentStartTime = form.getValues('startTime');
                             const currentEndTime = form.getValues('endTime');
 
-                            form.setValue('startTime', updateDatePreservingTime(currentStartTime, date));
-                            form.setValue('endTime', updateDatePreservingTime(currentEndTime, date));
+                            form.setValue(
+                              'startTime',
+                              updateDatePreservingTime(currentStartTime, date)
+                            );
+                            form.setValue(
+                              'endTime',
+                              updateDatePreservingTime(currentEndTime, date)
+                            );
                           }
                         }}
                       />
