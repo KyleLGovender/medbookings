@@ -64,7 +64,10 @@
       "Bash(awk:*)",
       "mcp__playwright__browser_close",
       "Bash(npx ts-node:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(npx prisma db push:*)",
+      "mcp__filesystem-server__read_file",
+      "Bash(cat:*)"
     ],
     "deny": []
   },

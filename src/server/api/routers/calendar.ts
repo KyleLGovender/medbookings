@@ -10,6 +10,8 @@ import {
   searchAvailability,
   updateAvailability,
 } from '@/features/calendar/lib/actions';
+import { geocodeAddress } from '@/features/calendar/lib/location-search-service';
+import { getDatabasePerformanceRecommendations } from '@/features/calendar/lib/search-performance-service';
 import { availabilityCreateSchema } from '@/features/calendar/types/schemas';
 import { AvailabilityStatus } from '@/features/calendar/types/types';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
@@ -383,4 +385,33 @@ export const calendarRouter = createTRPCRouter({
 
       return services;
     }),
+
+  /**
+   * Geocode an address
+   * Migrated from: GET /api/calendar/availability/geocode
+   */
+  geocodeAddress: publicProcedure
+    .input(
+      z.object({
+        address: z.string().min(1, 'Address is required'),
+      })
+    )
+    .query(async ({ input }) => {
+      const result = await geocodeAddress(input.address);
+
+      if (!result) {
+        throw new Error('Could not geocode the provided address');
+      }
+
+      return result;
+    }),
+
+  /**
+   * Get database performance recommendations
+   * Migrated from: GET /api/calendar/availability/performance/recommendations
+   */
+  getPerformanceRecommendations: publicProcedure.query(async () => {
+    const recommendations = await getDatabasePerformanceRecommendations();
+    return recommendations;
+  }),
 });

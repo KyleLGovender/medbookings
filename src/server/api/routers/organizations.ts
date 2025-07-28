@@ -2,6 +2,13 @@ import { z } from 'zod';
 
 import { registerOrganization } from '@/features/organizations/lib/actions';
 import { organizationRegistrationSchema } from '@/features/organizations/types/schemas';
+import { getCurrentUser } from '@/lib/auth';
+import {
+  generateInvitationEmail,
+  generateInvitationToken,
+  getInvitationExpiryDate,
+  logEmail,
+} from '@/lib/invitation-utils';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
 export const organizationsRouter = createTRPCRouter({
@@ -361,5 +368,371 @@ export const organizationsRouter = createTRPCRouter({
       // TODO: Send invitation email
 
       return invitation;
+    }),
+
+  /**
+   * Cancel provider invitation
+   * Migrated from: DELETE /api/organizations/[id]/provider-invitations/[invitationId]
+   */
+  cancelProviderInvitation: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        invitationId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const currentUser = await getCurrentUser();
+
+      if (!currentUser) {
+        throw new Error('Unauthorized');
+      }
+
+      // Check if user has permission to cancel invitations
+      const membership = await ctx.prisma.organizationMembership.findFirst({
+        where: {
+          organizationId: input.organizationId,
+          userId: currentUser.id,
+          role: { in: ['OWNER', 'ADMIN'] },
+          status: 'ACTIVE',
+        },
+      });
+
+      if (!membership) {
+        throw new Error('Forbidden: Only organization owners and admins can cancel invitations');
+      }
+
+      // Find the invitation
+      const invitation = await ctx.prisma.providerInvitation.findFirst({
+        where: {
+          id: input.invitationId,
+          organizationId: input.organizationId,
+        },
+        include: {
+          organization: { select: { name: true } },
+          invitedBy: { select: { name: true } },
+        },
+      });
+
+      if (!invitation) {
+        throw new Error('Invitation not found');
+      }
+
+      // Check if invitation can be cancelled
+      if (invitation.status !== 'PENDING') {
+        throw new Error('Only pending invitations can be cancelled');
+      }
+
+      // Update invitation status
+      const updatedInvitation = await ctx.prisma.providerInvitation.update({
+        where: { id: input.invitationId },
+        data: {
+          status: 'CANCELLED',
+          cancelledAt: new Date(),
+        },
+      });
+
+      // Log cancellation email
+      const cancelEmailContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Invitation Cancelled</h2>
+          <p>Hi there,</p>
+          <p>The invitation to join ${invitation.organization.name} on MedBookings has been cancelled.</p>
+          <p>If you have any questions, please contact ${invitation.organization.name} directly.</p>
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+          <p style="color: #999; font-size: 12px;">
+            This email was sent by MedBookings on behalf of ${invitation.organization.name}.
+          </p>
+        </div>
+      `;
+
+      logEmail({
+        to: invitation.email,
+        subject: `Invitation to ${invitation.organization.name} has been cancelled`,
+        htmlContent: cancelEmailContent,
+        type: 'cancellation',
+      });
+
+      return {
+        message: 'Invitation cancelled successfully',
+        invitation: {
+          id: updatedInvitation.id,
+          status: updatedInvitation.status,
+          cancelledAt: updatedInvitation.cancelledAt,
+        },
+      };
+    }),
+
+  /**
+   * Resend provider invitation
+   * Migrated from: POST /api/organizations/[id]/provider-invitations/[invitationId]/resend
+   */
+  resendProviderInvitation: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        invitationId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const currentUser = await getCurrentUser();
+
+      if (!currentUser) {
+        throw new Error('Unauthorized');
+      }
+
+      // Check if user has permission to resend invitations
+      const membership = await ctx.prisma.organizationMembership.findFirst({
+        where: {
+          organizationId: input.organizationId,
+          userId: currentUser.id,
+          role: { in: ['OWNER', 'ADMIN'] },
+          status: 'ACTIVE',
+        },
+      });
+
+      if (!membership) {
+        throw new Error('Forbidden: Only organization owners and admins can resend invitations');
+      }
+
+      // Find the invitation
+      const invitation = await ctx.prisma.providerInvitation.findFirst({
+        where: {
+          id: input.invitationId,
+          organizationId: input.organizationId,
+        },
+        include: {
+          organization: { select: { name: true } },
+          invitedBy: { select: { name: true } },
+        },
+      });
+
+      if (!invitation) {
+        throw new Error('Invitation not found');
+      }
+
+      // Check if invitation can be resent
+      if (invitation.status !== 'PENDING') {
+        throw new Error('Only pending invitations can be resent');
+      }
+
+      // Check rate limiting (no more than 1 resend per hour)
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      if (invitation.lastEmailSentAt && invitation.lastEmailSentAt > oneHourAgo) {
+        throw new Error('Invitation can only be resent once per hour');
+      }
+
+      // Generate new token and extend expiry
+      const newToken = generateInvitationToken();
+      const newExpiresAt = getInvitationExpiryDate();
+
+      // Check if user exists to determine email type
+      const existingUser = await ctx.prisma.user.findUnique({
+        where: { email: invitation.email },
+        select: { id: true },
+      });
+
+      // Update invitation with new token and reset expiry
+      const updatedInvitation = await ctx.prisma.providerInvitation.update({
+        where: { id: input.invitationId },
+        data: {
+          token: newToken,
+          expiresAt: newExpiresAt,
+          emailAttempts: { increment: 1 },
+          lastEmailSentAt: new Date(),
+          emailDeliveryStatus: 'PENDING',
+        },
+      });
+
+      // Generate and log email
+      const emailContent = generateInvitationEmail({
+        organizationName: invitation.organization.name,
+        inviterName: currentUser.name || 'Someone',
+        customMessage: invitation.customMessage || undefined,
+        invitationToken: newToken,
+        isExistingUser: !!existingUser,
+      });
+
+      logEmail({
+        to: invitation.email,
+        subject: `[REMINDER] ${emailContent.subject}`,
+        htmlContent: emailContent.htmlContent,
+        textContent: emailContent.textContent,
+        type: 'reminder',
+      });
+
+      // Update email delivery status to "DELIVERED" for console logging
+      await ctx.prisma.providerInvitation.update({
+        where: { id: input.invitationId },
+        data: { emailDeliveryStatus: 'DELIVERED' },
+      });
+
+      return {
+        message: 'Invitation resent successfully',
+        invitation: {
+          id: updatedInvitation.id,
+          emailAttempts: updatedInvitation.emailAttempts,
+          lastEmailSentAt: updatedInvitation.lastEmailSentAt,
+          expiresAt: updatedInvitation.expiresAt,
+        },
+      };
+    }),
+
+  /**
+   * Update provider connection
+   * Migrated from: PUT /api/organizations/[id]/provider-connections/[connectionId]
+   */
+  updateProviderConnection: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        connectionId: z.string(),
+        status: z.enum(['ACCEPTED', 'SUSPENDED']),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = await getCurrentUser();
+
+      if (!user) {
+        throw new Error('Unauthorized');
+      }
+
+      // Verify user has admin access to this organization
+      const membership = await ctx.prisma.organizationMembership.findFirst({
+        where: {
+          organizationId: input.organizationId,
+          userId: user.id,
+          role: {
+            in: ['OWNER', 'ADMIN'],
+          },
+        },
+      });
+
+      if (!membership) {
+        throw new Error('Unauthorized');
+      }
+
+      // Verify connection belongs to this organization
+      const existingConnection = await ctx.prisma.organizationProviderConnection.findFirst({
+        where: {
+          id: input.connectionId,
+          organizationId: input.organizationId,
+        },
+      });
+
+      if (!existingConnection) {
+        throw new Error('Connection not found');
+      }
+
+      // Update the connection
+      const updatedConnection = await ctx.prisma.organizationProviderConnection.update({
+        where: {
+          id: input.connectionId,
+        },
+        data: {
+          status: input.status,
+          ...(input.status === 'SUSPENDED' && { suspendedAt: new Date() }),
+          ...(input.status === 'ACCEPTED' && { suspendedAt: null }),
+        },
+        include: {
+          provider: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  image: true,
+                },
+              },
+              typeAssignments: {
+                include: {
+                  providerType: {
+                    select: {
+                      id: true,
+                      name: true,
+                      description: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return { connection: updatedConnection };
+    }),
+
+  /**
+   * Delete provider connection
+   * Migrated from: DELETE /api/organizations/[id]/provider-connections/[connectionId]
+   */
+  deleteProviderConnection: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        connectionId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = await getCurrentUser();
+
+      if (!user) {
+        throw new Error('Unauthorized');
+      }
+
+      // Verify user has admin access to this organization
+      const membership = await ctx.prisma.organizationMembership.findFirst({
+        where: {
+          organizationId: input.organizationId,
+          userId: user.id,
+          role: {
+            in: ['OWNER', 'ADMIN'],
+          },
+        },
+      });
+
+      if (!membership) {
+        throw new Error('Unauthorized');
+      }
+
+      // Verify connection belongs to this organization
+      const existingConnection = await ctx.prisma.organizationProviderConnection.findFirst({
+        where: {
+          id: input.connectionId,
+          organizationId: input.organizationId,
+        },
+      });
+
+      if (!existingConnection) {
+        throw new Error('Connection not found');
+      }
+
+      // Check if provider has any active availability with this organization
+      const activeAvailabilities = await ctx.prisma.availability.findMany({
+        where: {
+          providerId: existingConnection.providerId,
+          organizationId: input.organizationId,
+          endTime: {
+            gte: new Date(),
+          },
+        },
+      });
+
+      if (activeAvailabilities.length > 0) {
+        throw new Error(
+          'Cannot delete connection with active future availability. Please cancel all future availability first.'
+        );
+      }
+
+      // Delete the connection
+      await ctx.prisma.organizationProviderConnection.delete({
+        where: {
+          id: input.connectionId,
+        },
+      });
+
+      return { message: 'Connection deleted successfully' };
     }),
 });

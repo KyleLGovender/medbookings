@@ -7,8 +7,11 @@ import {
   updateProviderRequirements,
   updateProviderServices,
 } from '@/features/providers/lib/actions/update-provider';
-import { serializeProvider } from '@/features/providers/lib/helper';
+import { serializeProvider, serializeServiceProvider } from '@/features/providers/lib/helper';
 import { searchProviders } from '@/features/providers/lib/search';
+import { ConnectionUpdateSchema, InvitationResponseSchema } from '@/features/providers/types/schemas';
+import { getCurrentUser } from '@/lib/auth';
+import { isInvitationExpired } from '@/lib/invitation-utils';
 import {
   adminProcedure,
   createTRPCRouter,
@@ -496,5 +499,587 @@ export const providersRouter = createTRPCRouter({
         price: Number(service.defaultPrice),
         duration: service.defaultDuration,
       }));
+    }),
+
+  /**
+   * Get consolidated onboarding data
+   * Migrated from: GET /api/providers/onboarding
+   */
+  getOnboardingData: publicProcedure.query(async ({ ctx }) => {
+    // Fetch all provider types
+    const providerTypes = await ctx.prisma.providerType.findMany({
+      select: {
+        id: true,
+        name: true,
+        description: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    // Fetch all requirements grouped by provider type
+    const requirementsData = await ctx.prisma.providerType.findMany({
+      select: {
+        id: true,
+        requirements: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            validationType: true,
+            isRequired: true,
+            validationConfig: true,
+            displayPriority: true,
+          },
+          orderBy: [{ displayPriority: 'asc' }, { name: 'asc' }],
+        },
+      },
+    });
+
+    // Fetch all services grouped by provider type
+    const servicesData = await ctx.prisma.service.findMany({
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        defaultDuration: true,
+        defaultPrice: true,
+        displayPriority: true,
+        providerTypeId: true,
+      },
+      orderBy: [{ displayPriority: 'asc' }, { name: 'asc' }],
+    });
+
+    // Organize requirements by provider type ID
+    const requirementsByProviderType: Record<string, any[]> = {};
+    requirementsData.forEach((providerType) => {
+      requirementsByProviderType[providerType.id] = providerType.requirements;
+    });
+
+    // Organize services by provider type ID
+    const servicesByProviderType: Record<string, any[]> = {};
+    servicesData.forEach((service) => {
+      if (!servicesByProviderType[service.providerTypeId]) {
+        servicesByProviderType[service.providerTypeId] = [];
+      }
+      servicesByProviderType[service.providerTypeId].push({
+        id: service.id,
+        name: service.name,
+        description: service.description,
+        defaultDuration: service.defaultDuration,
+        defaultPrice: service.defaultPrice.toString(), // Convert Decimal to string
+        displayPriority: service.displayPriority,
+      });
+    });
+
+    return {
+      providerTypes,
+      requirements: requirementsByProviderType,
+      services: servicesByProviderType,
+    };
+  }),
+
+  /**
+   * Get provider by user ID
+   * Migrated from: GET /api/providers/user/[userId]
+   */
+  getByUserId: publicProcedure
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { userId: input.userId },
+        include: {
+          services: true,
+          user: {
+            select: {
+              email: true,
+            },
+          },
+          typeAssignments: {
+            include: {
+              providerType: {
+                select: {
+                  name: true,
+                  description: true,
+                },
+              },
+            },
+          },
+          requirementSubmissions: {
+            include: {
+              requirementType: true,
+            },
+          },
+        },
+      });
+
+      if (!provider) {
+        return null;
+      }
+
+      // Serialize the provider data to handle Decimal values and dates
+      return serializeServiceProvider(provider);
+    }),
+
+  /**
+   * Get provider connections
+   * Migrated from: GET /api/providers/connections
+   */
+  getConnections: protectedProcedure
+    .input(
+      z.object({
+        status: z.enum(['PENDING', 'ACCEPTED', 'REJECTED', 'SUSPENDED']).optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const currentUser = await getCurrentUser();
+
+      if (!currentUser) {
+        throw new Error('Unauthorized');
+      }
+
+      // Find the service provider for the current user
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { userId: currentUser.id },
+      });
+
+      if (!provider) {
+        throw new Error('Service provider profile not found');
+      }
+
+      // Build where clause
+      const whereClause: any = {
+        providerId: provider.id,
+      };
+
+      if (input.status) {
+        whereClause.status = input.status;
+      }
+
+      // Fetch connections
+      const connections = await ctx.prisma.organizationProviderConnection.findMany({
+        where: whereClause,
+        include: {
+          organization: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              logo: true,
+              email: true,
+              phone: true,
+              website: true,
+            },
+          },
+          invitation: {
+            select: {
+              id: true,
+              customMessage: true,
+              createdAt: true,
+              invitedBy: {
+                select: { name: true, email: true },
+              },
+            },
+          },
+        },
+        orderBy: { requestedAt: 'desc' },
+      });
+
+      return { connections };
+    }),
+
+  /**
+   * Update provider connection
+   * Migrated from: PUT /api/providers/connections/[connectionId]
+   */
+  updateConnection: protectedProcedure
+    .input(
+      z.object({
+        connectionId: z.string(),
+        status: z.enum(['ACCEPTED', 'SUSPENDED']),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const currentUser = await getCurrentUser();
+
+      if (!currentUser) {
+        throw new Error('Unauthorized');
+      }
+
+      // Find the service provider for the current user
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { userId: currentUser.id },
+      });
+
+      if (!provider) {
+        throw new Error('Service provider profile not found');
+      }
+
+      // Find the connection
+      const connection = await ctx.prisma.organizationProviderConnection.findFirst({
+        where: {
+          id: input.connectionId,
+          providerId: provider.id,
+        },
+        include: {
+          organization: {
+            select: { name: true },
+          },
+        },
+      });
+
+      if (!connection) {
+        throw new Error('Connection not found');
+      }
+
+      // Validate status transition
+      if (connection.status === 'REJECTED') {
+        throw new Error('Cannot modify a rejected connection');
+      }
+
+      if (input.status === 'SUSPENDED' && connection.status !== 'ACCEPTED') {
+        throw new Error('Only active connections can be suspended');
+      }
+
+      if (input.status === 'ACCEPTED' && connection.status !== 'SUSPENDED') {
+        throw new Error('Only suspended connections can be reactivated');
+      }
+
+      // Update connection status
+      const updatedConnection = await ctx.prisma.organizationProviderConnection.update({
+        where: { id: input.connectionId },
+        data: {
+          status: input.status,
+          ...(input.status === 'ACCEPTED' && { acceptedAt: new Date() }),
+        },
+        include: {
+          organization: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              logo: true,
+              email: true,
+              phone: true,
+            },
+          },
+        },
+      });
+
+      const actionMessage =
+        input.status === 'SUSPENDED'
+          ? 'Connection suspended successfully'
+          : 'Connection reactivated successfully';
+
+      return {
+        message: actionMessage,
+        connection: {
+          id: updatedConnection.id,
+          status: updatedConnection.status,
+          organizationName: updatedConnection.organization.name,
+          acceptedAt: updatedConnection.acceptedAt,
+        },
+      };
+    }),
+
+  /**
+   * Delete provider connection
+   * Migrated from: DELETE /api/providers/connections/[connectionId]
+   */
+  deleteConnection: protectedProcedure
+    .input(z.object({ connectionId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const currentUser = await getCurrentUser();
+
+      if (!currentUser) {
+        throw new Error('Unauthorized');
+      }
+
+      // Find the service provider for the current user
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { userId: currentUser.id },
+      });
+
+      if (!provider) {
+        throw new Error('Service provider profile not found');
+      }
+
+      // Find the connection
+      const connection = await ctx.prisma.organizationProviderConnection.findFirst({
+        where: {
+          id: input.connectionId,
+          providerId: provider.id,
+        },
+        include: {
+          organization: {
+            select: { name: true },
+          },
+        },
+      });
+
+      if (!connection) {
+        throw new Error('Connection not found');
+      }
+
+      // Check if there are any active availabilities or bookings
+      const activeAvailabilities = await ctx.prisma.availability.count({
+        where: {
+          connectionId: input.connectionId,
+          endTime: { gte: new Date() }, // Future availabilities
+        },
+      });
+
+      if (activeAvailabilities > 0) {
+        throw new Error(
+          'Cannot delete connection with active future availabilities. Please remove or transfer them first.'
+        );
+      }
+
+      // Delete the connection
+      await ctx.prisma.organizationProviderConnection.delete({
+        where: { id: input.connectionId },
+      });
+
+      return {
+        message: 'Connection deleted successfully',
+        deletedConnection: {
+          id: input.connectionId,
+          organizationName: connection.organization.name,
+        },
+      };
+    }),
+
+  /**
+   * Get provider invitations
+   * Migrated from: GET /api/providers/invitations
+   */
+  getInvitations: protectedProcedure
+    .input(
+      z.object({
+        status: z.enum(['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'EXPIRED']).optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const currentUser = await getCurrentUser();
+
+      if (!currentUser) {
+        throw new Error('Unauthorized');
+      }
+
+      if (!currentUser.email) {
+        throw new Error('User email is required to check for invitations');
+      }
+
+      // Build where clause
+      const whereClause: any = {
+        email: currentUser.email,
+      };
+
+      if (input.status) {
+        whereClause.status = input.status;
+      }
+
+      // Fetch invitations for the current user's email
+      const invitations = await ctx.prisma.providerInvitation.findMany({
+        where: whereClause,
+        include: {
+          organization: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              logo: true,
+              email: true,
+              phone: true,
+            },
+          },
+          invitedBy: {
+            select: { name: true, email: true },
+          },
+          connection: {
+            select: {
+              id: true,
+              status: true,
+              acceptedAt: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      // Check for expired invitations and update them
+      const expiredInvitations = invitations.filter(
+        (invitation) => invitation.status === 'PENDING' && isInvitationExpired(invitation.expiresAt)
+      );
+
+      if (expiredInvitations.length > 0) {
+        await ctx.prisma.providerInvitation.updateMany({
+          where: {
+            id: { in: expiredInvitations.map((inv) => inv.id) },
+            status: 'PENDING',
+          },
+          data: { status: 'EXPIRED' },
+        });
+
+        // Update the status in our response
+        expiredInvitations.forEach((inv) => {
+          inv.status = 'EXPIRED';
+        });
+      }
+
+      return { invitations };
+    }),
+
+  /**
+   * Respond to provider invitation
+   * Migrated from: POST /api/providers/invitations/[token]/respond
+   */
+  respondToInvitation: protectedProcedure
+    .input(
+      z.object({
+        token: z.string(),
+        action: z.enum(['accept', 'reject']),
+        rejectionReason: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const currentUser = await getCurrentUser();
+
+      if (!currentUser) {
+        throw new Error('Unauthorized');
+      }
+
+      // Find the invitation
+      const invitation = await ctx.prisma.providerInvitation.findUnique({
+        where: { token: input.token },
+        include: {
+          organization: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      if (!invitation) {
+        throw new Error('Invalid or expired invitation token');
+      }
+
+      // Check if invitation has expired
+      if (isInvitationExpired(invitation.expiresAt)) {
+        await ctx.prisma.providerInvitation.update({
+          where: { id: invitation.id },
+          data: { status: 'EXPIRED' },
+        });
+
+        throw new Error('This invitation has expired');
+      }
+
+      // Check if invitation is still pending
+      if (invitation.status !== 'PENDING') {
+        throw new Error('This invitation has already been responded to');
+      }
+
+      // Verify the invitation is for the current user's email
+      if (invitation.email !== currentUser.email) {
+        throw new Error('This invitation is not for your email address');
+      }
+
+      // Find service provider for the current user
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { userId: currentUser.id },
+      });
+
+      if (!provider) {
+        throw new Error(
+          'You must complete your service provider registration before accepting invitations'
+        );
+      }
+
+      if (input.action === 'reject') {
+        // Update invitation status to rejected
+        const updatedInvitation = await ctx.prisma.providerInvitation.update({
+          where: { id: invitation.id },
+          data: {
+            status: 'REJECTED',
+            rejectedAt: new Date(),
+            rejectionReason: input.rejectionReason || null,
+          },
+        });
+
+        return {
+          message: 'Invitation rejected',
+          invitation: {
+            id: updatedInvitation.id,
+            status: updatedInvitation.status,
+            rejectedAt: updatedInvitation.rejectedAt,
+          },
+        };
+      }
+
+      if (input.action === 'accept') {
+        // Check if connection already exists
+        const existingConnection = await ctx.prisma.organizationProviderConnection.findUnique({
+          where: {
+            organizationId_providerId: {
+              organizationId: invitation.organizationId,
+              providerId: provider.id,
+            },
+          },
+        });
+
+        if (existingConnection) {
+          throw new Error('You are already connected to this organization');
+        }
+
+        // Start transaction to create connection and update invitation
+        const result = await ctx.prisma.$transaction(async (tx) => {
+          // Create the organization-provider connection
+          const connection = await tx.organizationProviderConnection.create({
+            data: {
+              organizationId: invitation.organizationId,
+              providerId: provider.id,
+              status: 'ACCEPTED',
+              acceptedAt: new Date(),
+            },
+            include: {
+              organization: {
+                select: { name: true },
+              },
+            },
+          });
+
+          // Update invitation status and link to connection
+          const updatedInvitation = await tx.providerInvitation.update({
+            where: { id: invitation.id },
+            data: {
+              status: 'ACCEPTED',
+              acceptedAt: new Date(),
+              connectionId: connection.id,
+            },
+          });
+
+          return { connection, invitation: updatedInvitation };
+        });
+
+        return {
+          message: 'Invitation accepted successfully',
+          connection: {
+            id: result.connection.id,
+            organizationName: result.connection.organization.name,
+            status: result.connection.status,
+            acceptedAt: result.connection.acceptedAt,
+          },
+          invitation: {
+            id: result.invitation.id,
+            status: result.invitation.status,
+            acceptedAt: result.invitation.acceptedAt,
+          },
+        };
+      }
+
+      throw new Error('Invalid action');
     }),
 });

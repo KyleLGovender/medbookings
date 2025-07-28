@@ -6,12 +6,53 @@ import { getServerSession } from 'next-auth';
 
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import type { UpdateProfileRequestInput } from '@/features/profile/types/schemas';
 
 export async function checkServiceProvider(userId: string) {
   const provider = await prisma.provider.findFirst({
     where: { userId },
   });
   return !!provider;
+}
+
+export async function updateProfile(data: UpdateProfileRequestInput) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        whatsapp: data.whatsapp,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        phone: true,
+        whatsapp: true,
+        role: true,
+      },
+    });
+
+    // Revalidate the profile page
+    revalidatePath('/profile');
+
+    return { success: true, user: updatedUser };
+  } catch (error) {
+    console.error('Update profile error:', error);
+    return {
+      success: false,
+      error: 'Failed to update profile. Please try again.',
+    };
+  }
 }
 
 export async function deleteUser() {
