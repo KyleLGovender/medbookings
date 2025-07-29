@@ -80,12 +80,12 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
     // Build update data object only with changed fields
     const updateData: any = {};
 
-    // Only include fields that were actually changed
-    if (name !== currentProvider.name) updateData.name = name;
-    if (image !== currentProvider.image) updateData.image = image;
-    if (bio !== currentProvider.bio) updateData.bio = bio;
-    if (email !== currentProvider.email) updateData.email = email;
-    if (whatsapp !== currentProvider.whatsapp) updateData.whatsapp = whatsapp;
+    // Only include fields that were actually changed and provided
+    if (name && name !== currentProvider.name) updateData.name = name;
+    if (image && image !== currentProvider.image) updateData.image = image;
+    if (bio !== undefined && bio !== currentProvider.bio) updateData.bio = bio;
+    if (email && email !== currentProvider.email) updateData.email = email;
+    if (whatsapp !== undefined && whatsapp !== currentProvider.whatsapp) updateData.whatsapp = whatsapp;
     if (website !== currentProvider.website) updateData.website = website;
     if (JSON.stringify(languages) !== JSON.stringify(currentProvider.languages)) {
       updateData.languages = languages;

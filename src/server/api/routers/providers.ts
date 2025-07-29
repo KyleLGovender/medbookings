@@ -245,8 +245,8 @@ export const providersRouter = createTRPCRouter({
               .record(
                 z.string(),
                 z.object({
-                  duration: z.number().optional(),
-                  price: z.number().optional(),
+                  duration: z.union([z.number(), z.string().transform(Number)]).optional(),
+                  price: z.union([z.number(), z.string().transform(Number)]).optional(),
                 })
               )
               .optional(),
@@ -272,37 +272,52 @@ export const providersRouter = createTRPCRouter({
         throw new Error('Unauthorized');
       }
 
-      // Convert input to FormData for the server action
+      // Create a proper object structure that matches what registerProvider expects
+      const providerData = {
+        userId: ctx.session.user.id,
+        name: input.basicInfo.name,
+        bio: input.basicInfo.bio || '',
+        email: input.basicInfo.email,
+        whatsapp: input.basicInfo.whatsapp || '',
+        website: input.basicInfo.website,
+        imageUrl: input.basicInfo.image,
+        languages: input.basicInfo.languages || [],
+        providerTypeIds: input.providerTypeIds,
+        services: input.services?.availableServices || [],
+        serviceConfigs: input.services?.serviceConfigs || {},
+        requirements: input.regulatoryRequirements?.requirements || [],
+      };
+
+      // Convert to FormData as the server action expects it
       const formData = new FormData();
-      formData.append('userId', ctx.session.user.id);
-
-      // Add basic info
-      formData.append('name', input.basicInfo.name);
-      formData.append('bio', input.basicInfo.bio || '');
-      formData.append('email', input.basicInfo.email);
-      formData.append('whatsapp', input.basicInfo.whatsapp || '');
-      if (input.basicInfo.website) {
-        formData.append('website', input.basicInfo.website);
+      
+      // Add basic fields
+      formData.append('userId', providerData.userId);
+      formData.append('name', providerData.name);
+      formData.append('bio', providerData.bio);
+      formData.append('email', providerData.email);
+      formData.append('whatsapp', providerData.whatsapp);
+      
+      if (providerData.website) {
+        formData.append('website', providerData.website);
       }
-      if (input.basicInfo.image) {
-        formData.append('imageUrl', input.basicInfo.image);
+      if (providerData.imageUrl) {
+        formData.append('imageUrl', providerData.imageUrl);
       }
 
-      // Add provider types
-      input.providerTypeIds.forEach((typeId) => {
+      // Add arrays
+      providerData.providerTypeIds.forEach((typeId) => {
         formData.append('providerTypeIds', typeId);
       });
 
-      // Add languages
-      input.basicInfo.languages?.forEach((lang) => {
+      providerData.languages.forEach((lang) => {
         formData.append('languages', lang);
       });
 
-      // Add services
-      input.services?.availableServices?.forEach((serviceId) => {
+      providerData.services.forEach((serviceId) => {
         formData.append('services', serviceId);
 
-        const config = input.services?.serviceConfigs?.[serviceId];
+        const config = providerData.serviceConfigs[serviceId];
         if (config?.duration) {
           formData.append(`serviceConfigs[${serviceId}][duration]`, config.duration.toString());
         }
@@ -311,8 +326,7 @@ export const providersRouter = createTRPCRouter({
         }
       });
 
-      // Add requirements
-      input.regulatoryRequirements?.requirements?.forEach((req, index) => {
+      providerData.requirements.forEach((req, index) => {
         formData.append(`requirements[${index}][requirementTypeId]`, req.requirementTypeId);
         if (req.value) {
           formData.append(`requirements[${index}][value]`, req.value);
@@ -360,7 +374,7 @@ export const providersRouter = createTRPCRouter({
       if (input.email) formData.append('email', input.email);
       if (input.whatsapp) formData.append('whatsapp', input.whatsapp);
       if (input.website) formData.append('website', input.website);
-      if (input.image) formData.append('imageUrl', input.image);
+      if (input.image) formData.append('image', input.image);
       input.languages?.forEach((lang) => formData.append('languages', lang));
 
       const result = await updateProviderBasicInfo({}, formData);
@@ -385,8 +399,8 @@ export const providersRouter = createTRPCRouter({
           .record(
             z.string(),
             z.object({
-              duration: z.number().optional(),
-              price: z.number().optional(),
+              duration: z.union([z.number(), z.string().transform(Number)]).optional(),
+              price: z.union([z.number(), z.string().transform(Number)]).optional(),
             })
           )
           .optional(),

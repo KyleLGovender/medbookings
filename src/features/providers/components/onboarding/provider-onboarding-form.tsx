@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, Send } from 'lucide-react';
 import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
+
+import { api } from '@/utils/api';
 
 import CalendarLoader from '@/components/calendar-loader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -73,16 +74,7 @@ export function ProviderOnboardingForm() {
     data: onboardingData,
     isLoading: isLoadingData,
     error: dataError,
-  } = useQuery<OnboardingData>({
-    queryKey: ['onboarding-data'],
-    queryFn: async () => {
-      const response = await fetch('/api/providers/onboarding');
-      if (!response.ok) {
-        throw new Error('Failed to fetch onboarding data');
-      }
-      return response.json();
-    },
-  });
+  } = api.providers.getOnboardingData.useQuery();
 
   const methods = useForm<ProviderFormType>({
     resolver: zodResolver(providerFormSchema),
