@@ -331,21 +331,21 @@ async function main() {
       prisma.requirementType.create({
         data: {
           name: 'HPCSA Registration Number',
-          description: 'Please provide your HPCSA registration number (e.g., MP123456)',
+          description: 'Please provide your HPCSA registration number (e.g., PS123456)',
           isRequired: true,
           validationType: 'TEXT',
           validationConfig: {
             minLength: 8,
             maxLength: 10,
-            pattern: '^MP\\d{6}$', // Regex pattern for "MP" followed by 6 digits
-            patternError: 'HPCSA number must start with MP followed by 6 digits',
+            pattern: '^PS\\d{6}$', // Regex pattern for "PS" followed by 6 digits
+            patternError: 'HPCSA number must start with PS followed by 6 digits',
             caseSensitive: false, // Whether to enforce case sensitivity
             trimWhitespace: true, // Whether to remove leading/trailing whitespace
             helpText:
-              'Your HPCSA number can be found on your registration certificate. It starts with "MP" followed by 6 digits. For General Practitioners, the number format is MP123456.',
+              'Your HPCSA number can be found on your registration certificate. It starts with "PS" followed by 6 digits. For Psychologists, the number format is PS123456.',
             validationError:
-              'Please enter a valid HPCSA number. It should start with MP followed by exactly 6 digits.',
-            placeholder: 'Enter your HPCSA number (e.g., MP123456)',
+              'Please enter a valid HPCSA number. It should start with PS followed by exactly 6 digits.',
+            placeholder: 'Enter your HPCSA number (e.g., PS123456)',
           },
           displayPriority: 2,
           providerType: { connect: { name: 'Psychologist' } },
