@@ -191,7 +191,11 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
         website: data.website || undefined,
         whatsapp: data.whatsapp,
         bio: data.bio,
+        image: data.image !== 'placeholder' ? data.image : undefined,
         languages: selectedLanguages,
+        providerTypeIds: data.providerTypeIds || [],
+        providerTypeId: data.providerTypeId || undefined,
+        showPrice: data.showPrice,
       };
       await updateProviderMutation.mutateAsync(updateData);
 

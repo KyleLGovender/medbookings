@@ -363,6 +363,9 @@ export const providersRouter = createTRPCRouter({
         website: z.string().optional(),
         image: z.string().optional(),
         languages: z.array(z.string()).optional(),
+        providerTypeIds: z.array(z.string()).optional(),
+        providerTypeId: z.string().optional(),
+        showPrice: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -375,7 +378,10 @@ export const providersRouter = createTRPCRouter({
       if (input.whatsapp) formData.append('whatsapp', input.whatsapp);
       if (input.website) formData.append('website', input.website);
       if (input.image) formData.append('image', input.image);
+      if (input.showPrice !== undefined) formData.append('showPrice', input.showPrice.toString());
       input.languages?.forEach((lang) => formData.append('languages', lang));
+      input.providerTypeIds?.forEach((typeId) => formData.append('providerTypeIds', typeId));
+      if (input.providerTypeId) formData.append('providerTypeId', input.providerTypeId);
 
       const result = await updateProviderBasicInfo({}, formData);
 
