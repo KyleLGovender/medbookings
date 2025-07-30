@@ -757,4 +757,75 @@ export const organizationsRouter = createTRPCRouter({
 
       return { message: 'Connection deleted successfully' };
     }),
+
+  /**
+   * Update organization locations
+   * Replaces all locations for an organization
+   */
+  updateLocations: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        locations: z.array(
+          z.object({
+            id: z.string().optional(),
+            organizationId: z.string(),
+            name: z.string().min(1, 'Location name is required'),
+            formattedAddress: z.string().min(1, 'Address is required'),
+            phone: z.string().optional().or(z.literal('')),
+            email: z.string().email('Invalid email format').optional().or(z.literal('')),
+            googlePlaceId: z.string().optional().or(z.literal('')),
+            coordinates: z.any().optional(),
+            searchTerms: z.array(z.string()).optional(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { organizationId, locations } = input;
+
+      // Check if user is an admin of the organization
+      const membership = await ctx.prisma.organizationMembership.findFirst({
+        where: {
+          organizationId,
+          userId: ctx.session.user.id,
+          role: { in: ['OWNER', 'ADMIN'] },
+          status: 'ACTIVE',
+        },
+      });
+
+      if (!membership) {
+        throw new Error('Forbidden: Admin access required');
+      }
+
+      // Use transaction to update locations
+      const result = await ctx.prisma.$transaction(async (tx) => {
+        // Delete existing locations
+        await tx.location.deleteMany({
+          where: { organizationId },
+        });
+
+        // Create new locations
+        const createdLocations = await Promise.all(
+          locations.map((location) =>
+            tx.location.create({
+              data: {
+                organizationId,
+                name: location.name,
+                formattedAddress: location.formattedAddress,
+                phone: location.phone || '',
+                email: location.email || '',
+                googlePlaceId: location.googlePlaceId || '',
+                coordinates: location.coordinates,
+                searchTerms: location.searchTerms || [],
+              },
+            })
+          )
+        );
+
+        return createdLocations;
+      });
+
+      return { locations: result };
+    }),
 });

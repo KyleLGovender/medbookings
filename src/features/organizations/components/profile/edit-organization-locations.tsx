@@ -44,6 +44,7 @@ export function EditOrganizationLocations({
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [originalData, setOriginalData] = useState<any>(null);
 
   // Fetch current organization data including locations
   const {
@@ -84,6 +85,7 @@ export function EditOrganizationLocations({
         return {
           ...loc,
           id: loc.id || undefined, // Ensure id is string or undefined
+          organizationId: organizationId, // Add the organizationId to satisfy the schema
           name: loc.name || '',
           googlePlaceId: loc.googlePlaceId || '',
           formattedAddress: loc.formattedAddress || '',
@@ -94,13 +96,24 @@ export function EditOrganizationLocations({
         };
       });
       form.reset({ locations: formattedLocations });
+      setOriginalData({ locations: formattedLocations });
+      // Trigger validation after reset to ensure form state is valid
+      form.trigger();
     }
   }, [organization, form]); // form.reset is stable, so form is the main dependency here along with organization
 
   const updateLocationsMutation = useUpdateOrganizationLocations();
 
+  // Check if form data has actually changed from original
+  const hasDataChanged = () => {
+    if (!originalData) return false;
+    const currentData = form.getValues();
+    return JSON.stringify(currentData) !== JSON.stringify(originalData);
+  };
+
   const addLocation = () => {
     append({
+      organizationId: organizationId, // Add organizationId here too
       name: '',
       googlePlaceId: '',
       formattedAddress: '',
@@ -136,7 +149,10 @@ export function EditOrganizationLocations({
   async function onSubmit(data: OrganizationLocationsData) {
     setIsSubmitting(true);
     try {
-      await updateLocationsMutation.mutateAsync({ organizationId, locations: data.locations });
+      await updateLocationsMutation.mutateAsync({
+        organizationId,
+        locations: data.locations,
+      });
 
       toast({
         title: 'Success',
@@ -304,7 +320,12 @@ export function EditOrganizationLocations({
                     )}
                   />
 
-                  {/* Hidden fields for Google data - not strictly necessary to render if handled in state */}
+                  {/* Hidden fields for Google data and organizationId */}
+                  <FormField
+                    control={form.control}
+                    name={`locations.${index}.organizationId`}
+                    render={({ field: formField }) => <Input {...formField} type="hidden" />}
+                  />
                   <FormField
                     control={form.control}
                     name={`locations.${index}.googlePlaceId`}
@@ -368,7 +389,7 @@ export function EditOrganizationLocations({
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || !form.formState.isDirty || !form.formState.isValid}
+            disabled={isSubmitting || !form.formState.isValid || !hasDataChanged()}
           >
             {isSubmitting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -378,6 +399,18 @@ export function EditOrganizationLocations({
             Save Changes
           </Button>
         </div>
+        
+        {isDevelopment && (
+          <div className="mt-4 rounded bg-muted/50 p-4 text-xs">
+            <h4 className="font-semibold">Form Debug Info:</h4>
+            <pre>isDirty: {String(form.formState.isDirty)}</pre>
+            <pre>isValid: {String(form.formState.isValid)}</pre>
+            <pre>isSubmitting: {String(isSubmitting)}</pre>
+            <pre>hasDataChanged: {String(hasDataChanged())}</pre>
+            <pre>dirtyFields: {JSON.stringify(form.formState.dirtyFields, null, 2)}</pre>
+            <pre>errors: {JSON.stringify(form.formState.errors, null, 2)}</pre>
+          </div>
+        )}
       </form>
     </FormProvider>
   );

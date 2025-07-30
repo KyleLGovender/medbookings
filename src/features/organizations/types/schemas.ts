@@ -18,18 +18,18 @@ export const createOrganizationSchema = z.object({
 });
 
 export const updateOrganizationSchema = createOrganizationSchema.partial().extend({
-  id: z.string().uuid(),
+  id: z.string(),
 });
 
 export const createMembershipSchema = z.object({
-  organizationId: z.string().uuid(),
-  userId: z.string().uuid(),
+  organizationId: z.string(),
+  userId: z.string(),
   role: z.enum(['ADMIN', 'MANAGER', 'MEMBER']),
 });
 
 export const createLocationSchema = z.object({
-  id: z.string().uuid().optional(),
-  organizationId: z.string().uuid(),
+  id: z.string().optional(),
+  organizationId: z.string(),
   name: z.string().min(1, 'Location name is required'),
   formattedAddress: z.string().min(1, 'Address is required'),
   phone: z.string().optional().or(z.literal('')),
@@ -78,7 +78,7 @@ export const membershipStatusSchema = z.enum(['PENDING', 'ACTIVE', 'INACTIVE']);
 // =============================================================================
 
 export const organizationResponseSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   name: z.string(),
   email: z.string().nullable(),
   phone: z.string().nullable(),
@@ -91,7 +91,7 @@ export const organizationResponseSchema = z.object({
 });
 
 export const membershipResponseSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   role: membershipRoleSchema,
   status: membershipStatusSchema,
   createdAt: z.date(),
@@ -99,7 +99,7 @@ export const membershipResponseSchema = z.object({
 });
 
 export const locationResponseSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   name: z.string(),
   formattedAddress: z.string(),
   phone: z.string().nullable(),
@@ -121,7 +121,7 @@ export const organizationSearchParamsSchema = z.object({
 });
 
 export const membershipSearchParamsSchema = z.object({
-  organizationId: z.string().uuid().optional(),
+  organizationId: z.string().optional(),
   role: membershipRoleSchema.optional(),
   status: membershipStatusSchema.optional(),
   page: z.coerce.number().min(1).default(1),
