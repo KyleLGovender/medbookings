@@ -13,7 +13,6 @@
       "Bash(ls:*)",
       "Bash(npx prettier:*)",
       "Bash(npm install:*)",
-      "Bash(npx prisma migrate dev:*)",
       "Bash(docker compose:*)",
       "mcp__postgres-server__query",
       "Bash(npx prisma db seed:*)",
@@ -52,7 +51,6 @@
       "mcp__playwright__browser_close",
       "Bash(npx ts-node:*)",
       "Bash(cp:*)",
-      "Bash(npx prisma db push:*)",
       "mcp__filesystem-server__read_file",
       "Bash(cat:*)"
     ],
