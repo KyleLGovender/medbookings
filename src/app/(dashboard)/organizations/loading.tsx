@@ -1,5 +1,5 @@
 import CalendarLoader from '@/components/calendar-loader';
 
-export default function ProfileLoading() {
-  return <CalendarLoader message="Loading Profile" submessage="Retrieving your information..." />;
+export default function OrganizationsLoading() {
+  return <CalendarLoader message="Loading Organizations" submessage="Retrieving your organizations..." />;
 }

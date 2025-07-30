@@ -1,10 +1,8 @@
 'use client';
 
-import Link from 'next/link';
-
 import { useQuery } from '@tanstack/react-query';
 
-import { Button } from '@/components/ui/button';
+import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Organization {
@@ -57,9 +55,9 @@ export default function OrganizationsClient({ userId }: OrganizationsClientProps
               You are not registered with any organizations.
             </p>
             <div>
-              <Link href="/organizations/new" passHref>
-                <Button variant="outline">Register New Organization</Button>
-              </Link>
+              <NavigationOutlineButton href="/organizations/new">
+                Register New Organization
+              </NavigationOutlineButton>
             </div>
           </CardContent>
         </Card>
@@ -83,9 +81,9 @@ export default function OrganizationsClient({ userId }: OrganizationsClientProps
                 <p className="text-sm text-muted-foreground dark:text-muted-foreground">
                   Status: {org.status}
                 </p>
-                <Link href={`/organizations/${org.id}`} passHref>
-                  <Button variant="outline">View Details</Button>
-                </Link>
+                <NavigationOutlineButton href={`/organizations/${org.id}`}>
+                  View Details
+                </NavigationOutlineButton>
               </div>
             ))}
           </div>
