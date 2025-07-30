@@ -55,10 +55,8 @@ export async function registerOrganization(data: OrganizationRegistrationData) {
             googlePlaceId: location.googlePlaceId || `temp-${Date.now()}`,
             formattedAddress: location.formattedAddress || '',
             coordinates: {
-              create: {
-                latitude: location.coordinates.lat,
-                longitude: location.coordinates.lng,
-              },
+              lat: location.coordinates.lat,
+              lng: location.coordinates.lng,
             },
             searchTerms: location.searchTerms || [],
             phone: location.phone || '',

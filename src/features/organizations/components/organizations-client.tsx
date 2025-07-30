@@ -2,8 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 
 interface Organization {
   id: string;

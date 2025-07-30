@@ -191,17 +191,21 @@ function DynamicBreadcrumb() {
       : undefined;
 
   const { data: provider, isLoading: isProviderLoading } = useProvider(providerId);
-  
+
   // Use admin hook for admin routes, regular hook for user routes
   const isAdminRoute = pathname.startsWith('/admin');
-  
-  const { data: adminOrganization, isLoading: isAdminOrganizationLoading } =
-    useAdminOrganization(isAdminRoute ? organizationId : undefined);
-  const { data: userOrganization, isLoading: isUserOrganizationLoading } =
-    useOrganization(!isAdminRoute ? organizationId : undefined);
-    
+
+  const { data: adminOrganization, isLoading: isAdminOrganizationLoading } = useAdminOrganization(
+    isAdminRoute ? organizationId : undefined
+  );
+  const { data: userOrganization, isLoading: isUserOrganizationLoading } = useOrganization(
+    !isAdminRoute ? organizationId : undefined
+  );
+
   const organization = isAdminRoute ? adminOrganization : userOrganization;
-  const isOrganizationLoading = isAdminRoute ? isAdminOrganizationLoading : isUserOrganizationLoading;
+  const isOrganizationLoading = isAdminRoute
+    ? isAdminOrganizationLoading
+    : isUserOrganizationLoading;
 
   // Create breadcrumb items
   const breadcrumbItems = [];

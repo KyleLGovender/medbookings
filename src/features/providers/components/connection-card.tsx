@@ -79,7 +79,8 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
 
   const updateConnectionMutation = useUpdateConnection({
     onSuccess: (data) => {
-      const message = pendingAction === 'suspend'
+      const message =
+        pendingAction === 'suspend'
           ? 'Connection suspended successfully'
           : 'Connection reactivated successfully';
 

@@ -29,9 +29,9 @@ export const organizationsRouter = createTRPCRouter({
                 id: true,
                 name: true,
                 email: true,
-              }
-            }
-          }
+              },
+            },
+          },
         },
       },
     });

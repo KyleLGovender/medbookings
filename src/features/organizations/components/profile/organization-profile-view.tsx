@@ -18,8 +18,8 @@ import { OrganizationProfileSkeleton } from '@/components/skeletons/organization
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { Separator } from '@/components/ui/separator';
 import { DeleteOrganizationButton } from '@/features/organizations/components/delete-organization-button';
 import { ProviderNetworkManager } from '@/features/organizations/components/provider-network-manager';

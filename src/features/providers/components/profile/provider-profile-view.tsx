@@ -6,8 +6,8 @@ import { PenSquare } from 'lucide-react';
 
 import { ProviderProfileSkeleton } from '@/components/skeletons/provider-profile-skeleton';
 import { Button } from '@/components/ui/button';
-import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { Card, CardContent } from '@/components/ui/card';
+import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { Separator } from '@/components/ui/separator';
 import { DeleteProviderButton } from '@/features/providers/components/delete-provider-button';
 import { OrganizationConnectionsManager } from '@/features/providers/components/organization-connections-manager';
@@ -281,7 +281,9 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
 
           {isOwner && (
             <div className="flex items-center gap-2">
-              <NavigationOutlineButton href={`/providers/${provider.id}/edit/regulatory-requirements`}>
+              <NavigationOutlineButton
+                href={`/providers/${provider.id}/edit/regulatory-requirements`}
+              >
                 <PenSquare className="h-4 w-4" />
                 Edit Requirements
               </NavigationOutlineButton>
