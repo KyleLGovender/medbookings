@@ -73,8 +73,6 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
         return 'Consolidated Billing';
       case 'PER_LOCATION':
         return 'Per-Location Billing';
-      case 'HYBRID':
-        return 'Hybrid Billing';
       default:
         return model;
     }

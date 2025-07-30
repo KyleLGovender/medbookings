@@ -24,7 +24,7 @@ export function useUpdateOrganizationBasicInfo(options?: {
 
 // Define the type for billing model data
 interface OrganizationBillingData {
-  billingModel: 'CONSOLIDATED' | 'PER_LOCATION' | 'HYBRID';
+  billingModel: 'CONSOLIDATED' | 'PER_LOCATION';
 }
 
 /**
