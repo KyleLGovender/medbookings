@@ -8,7 +8,7 @@
 // Configuration object with debug settings
 const debugConfig = {
   // Master switch for all debugging
-  enabled: true,
+  enabled: false,
 
   // Component-specific debugging
   components: {

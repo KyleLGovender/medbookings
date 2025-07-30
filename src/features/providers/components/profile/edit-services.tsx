@@ -130,13 +130,13 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
 
     console.log('Submitting to tRPC:', {
       id: providerId,
-      services: selectedServices,
+      availableServices: selectedServices,
       serviceConfigs,
     });
 
     updateServicesMutation.mutate({
       id: providerId,
-      services: selectedServices,
+      availableServices: selectedServices,
       serviceConfigs,
     });
   };

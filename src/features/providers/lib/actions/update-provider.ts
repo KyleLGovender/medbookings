@@ -185,6 +185,15 @@ export async function updateProviderServices(prevState: any, formData: FormData)
     // Extract service IDs
     const serviceIds = formData.getAll('services') as string[];
 
+    // Safety check: prevent accidental clearing of all services
+    if (serviceIds.length === 0) {
+      return {
+        success: false,
+        error:
+          'No services provided. Cannot update provider services without at least one service selected.',
+      };
+    }
+
     // Extract service configurations
     const serviceConfigs: Record<string, { duration: number; price: number }> = {};
 

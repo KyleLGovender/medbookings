@@ -83,7 +83,7 @@ export function OrganizationRegistrationForm() {
       return true;
     }
 
-    return await form.trigger(fieldsToValidate as string[]);
+    return await form.trigger(fieldsToValidate as any);
   };
 
   const goToStep = async (stepNumber: number) => {
@@ -162,14 +162,14 @@ export function OrganizationRegistrationForm() {
     }
   };
 
-  const getFieldsForStep = (step: number): (keyof OrganizationRegistrationData)[] => {
+  const getFieldsForStep = (step: number) => {
     switch (step) {
       case 1:
-        return ['organization'];
+        return ['organization' as const];
       case 2:
-        return ['locations'];
+        return ['locations' as const];
       case 3:
-        return ['organization'];
+        return ['organization' as const];
       default:
         return [];
     }

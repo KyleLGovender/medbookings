@@ -133,17 +133,16 @@ export function EditRegulatoryRequirements({
     setIsSubmitting(true);
 
     try {
-      // Create FormData object for the API
-      const formData = new FormData();
-      formData.append('id', providerId);
-      formData.append('userId', userId);
-
       // Process each requirement
       const requirementsData = data.regulatoryRequirements?.requirements || [];
 
-      requirementsData.forEach((req, index) => {
-        if (req) {
-          formData.append(`requirements[${index}][requirementTypeId]`, req.requirementTypeId);
+      // Transform the data to match the tRPC schema format
+      const requirements = requirementsData
+        .filter((req) => req && req.requirementTypeId) // Only include valid requirements
+        .map((req) => {
+          const transformedReq: any = {
+            requirementTypeId: req.requirementTypeId,
+          };
 
           // For document type requirements, prioritize using the value as documentMetadata
           if (
@@ -153,26 +152,27 @@ export function EditRegulatoryRequirements({
             (req.value.startsWith('http://') || req.value.startsWith('https://'))
           ) {
             // This is likely a document URL, so create proper document metadata
-            formData.append(
-              `requirements[${index}][documentMetadata]`,
-              JSON.stringify({ value: req.value })
-            );
-            formData.append(`requirements[${index}][value]`, req.value.toString());
+            transformedReq.documentMetadata = { value: req.value };
+            transformedReq.value = req.value;
           }
           // Handle regular text/boolean values
           else if (req.value !== undefined && req.value !== null) {
-            formData.append(`requirements[${index}][value]`, req.value.toString());
+            transformedReq.value = req.value.toString();
           }
 
           // Handle other values for predefined lists
           if (req.otherValue) {
-            formData.append(`requirements[${index}][otherValue]`, req.otherValue);
+            transformedReq.otherValue = req.otherValue;
           }
-        }
-      });
+
+          return transformedReq;
+        });
 
       // Use mutateAsync to properly await the result
-      await updateRequirementsMutation.mutateAsync(formData as any);
+      await updateRequirementsMutation.mutateAsync({
+        id: providerId,
+        requirements,
+      });
 
       // Invalidate and refetch provider data
       queryClient.invalidateQueries({ queryKey: ['provider', providerId] });

@@ -194,18 +194,27 @@ export const calendarRouter = createTRPCRouter({
    */
   searchSlots: publicProcedure
     .input(
-      slotSearchParamsSchema.extend({
+      z.object({
+        providerId: z.string().optional(),
+        serviceId: z.string().optional(),
+        locationId: z.string().optional(),
+        startDate: z.string(),
+        endDate: z.string(),
+        minDuration: z.number().optional(),
         onlineOnly: z.boolean().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
+      const startDate = new Date(input.startDate);
+      const endDate = new Date(input.endDate);
+
       // Find available slots based on availability
       const availabilities = await ctx.prisma.availability.findMany({
         where: {
           providerId: input.providerId,
           locationId: input.locationId,
-          startTime: { gte: input.startDate },
-          endTime: { lte: input.endDate },
+          startTime: { gte: startDate },
+          endTime: { lte: endDate },
           status: AvailabilityStatus.ACCEPTED,
           ...(input.onlineOnly && { isOnlineAvailable: true }),
         },

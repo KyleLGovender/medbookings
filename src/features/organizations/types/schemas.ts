@@ -34,7 +34,7 @@ export const createLocationSchema = z.object({
   formattedAddress: z.string().min(1, 'Address is required'),
   phone: z.string().optional().or(z.literal('')),
   email: z.string().email('Invalid email format').optional().or(z.literal('')),
-  googlePlaceId: z.string().min(1, 'Google Place ID is required'),
+  googlePlaceId: z.string().optional().or(z.literal('')),
   coordinates: z.any().optional(),
   searchTerms: z.array(z.string()).optional(),
 });
@@ -42,10 +42,15 @@ export const createLocationSchema = z.object({
 // Additional schemas referenced by components
 export const organizationBasicInfoSchema = createOrganizationSchema;
 
-export const organizationRegistrationSchema = createOrganizationSchema.extend({
-  termsAccepted: z.boolean().refine((val) => val === true, {
-    message: 'You must accept the terms and conditions',
+export const organizationRegistrationSchema = z.object({
+  organization: createOrganizationSchema.extend({
+    billingModel: z.enum(['CONSOLIDATED', 'SLOT_BASED']).default('CONSOLIDATED'),
+    logo: z.string().optional().or(z.literal('')),
   }),
+  locations: z
+    .array(createLocationSchema.omit({ organizationId: true }))
+    .optional()
+    .default([]),
 });
 
 export const organizationLocationsSchema = z.object({

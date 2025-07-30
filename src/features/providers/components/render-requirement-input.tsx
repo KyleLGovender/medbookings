@@ -205,20 +205,31 @@ export const renderRequirementInput = (
         />
       );
     case RequirementValidationType.FUTURE_DATE:
-      const dateValue =
+      const dateValue = form.watch(
+        `regulatoryRequirements.requirements.${requirement.index}.value`
+      );
+      const existingDateValue =
         requirement.existingSubmission?.documentMetadata?.value ||
-        form.watch(`regulatoryRequirements.requirements.${requirement.index}.value`) ||
-        null;
+        requirement.existingSubmission?.value;
+      const currentDateValue = dateValue || existingDateValue;
+
       return (
         <div className="max-w-64">
           <DatePickerWithInput
-            date={dateValue ? new Date(dateValue) : undefined}
+            date={currentDateValue ? new Date(currentDateValue) : undefined}
             onChange={(date?: Date) => {
               if (date) {
                 const dateString = date.toISOString().split('T')[0];
                 form.setValue(
                   `regulatoryRequirements.requirements.${requirement.index}.value`,
-                  dateString
+                  dateString,
+                  { shouldValidate: true, shouldDirty: true }
+                );
+              } else {
+                form.setValue(
+                  `regulatoryRequirements.requirements.${requirement.index}.value`,
+                  null,
+                  { shouldValidate: true, shouldDirty: true }
                 );
               }
             }}
@@ -226,20 +237,31 @@ export const renderRequirementInput = (
         </div>
       );
     case RequirementValidationType.PAST_DATE:
-      const pastDateValue =
+      const pastDateValue = form.watch(
+        `regulatoryRequirements.requirements.${requirement.index}.value`
+      );
+      const existingPastDateValue =
         requirement.existingSubmission?.documentMetadata?.value ||
-        form.watch(`regulatoryRequirements.requirements.${requirement.index}.value`) ||
-        null;
+        requirement.existingSubmission?.value;
+      const currentPastDateValue = pastDateValue || existingPastDateValue;
+
       return (
         <div className="max-w-64">
           <DatePickerWithInput
-            date={pastDateValue ? new Date(pastDateValue) : undefined}
+            date={currentPastDateValue ? new Date(currentPastDateValue) : undefined}
             onChange={(date?: Date) => {
               if (date) {
                 const dateString = date.toISOString().split('T')[0];
                 form.setValue(
                   `regulatoryRequirements.requirements.${requirement.index}.value`,
-                  dateString
+                  dateString,
+                  { shouldValidate: true, shouldDirty: true }
+                );
+              } else {
+                form.setValue(
+                  `regulatoryRequirements.requirements.${requirement.index}.value`,
+                  null,
+                  { shouldValidate: true, shouldDirty: true }
                 );
               }
             }}

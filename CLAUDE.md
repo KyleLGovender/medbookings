@@ -147,11 +147,11 @@ feature/
 
 - **User**: Base entity with roles (USER, ADMIN, SUPER_ADMIN)
 - **Account**: OAuth accounts (Google, etc.) linked to users
-- **ServiceProvider**: Healthcare providers offering services (1:1 with User)
+- **Provider**: Healthcare providers offering services (1:1 with User)
 
 #### Service Provider Ecosystem
 
-- **ServiceProviderType**: Categories like "General Practitioner", "Physiotherapist"
+- **ProviderType**: Categories like "General Practitioner", "Physiotherapist"
 - **Service**: Specific services offered (e.g., "Consultation", "X-Ray")
 - **ServiceAvailabilityConfig**: Service-specific pricing/duration per provider
 - **RequirementType**: Professional requirements (licenses, certifications)
@@ -210,7 +210,7 @@ feature/
 
 #### Status Management & Approval Workflows
 
-- **ServiceProvider**: PENDING_APPROVAL → APPROVED → TRIAL → ACTIVE
+- **Provider**: PENDING_APPROVAL → APPROVED → TRIAL → ACTIVE
 - **Organization**: PENDING_APPROVAL → APPROVED → TRIAL → ACTIVE
 - **Booking**: PENDING → CONFIRMED → COMPLETED/CANCELLED/NO_SHOW
 - **Availability**: PENDING (org-created) → ACCEPTED (by provider)
@@ -294,7 +294,7 @@ export const providersRouter = router({
 // ✅ CORRECT: Server action uses Prisma
 // /features/providers/lib/actions.ts
 export async function getProviders(input?: { limit?: number; offset?: number }) {
-  return prisma.serviceProvider.findMany({
+  return prisma.provider.findMany({
     take: input?.limit,
     skip: input?.offset,
   })
@@ -328,7 +328,7 @@ import { prisma } from '@/lib/prisma'
 export const useProviders = () => {
   return useQuery({
     queryKey: ['providers'],
-    queryFn: () => prisma.serviceProvider.findMany() // WRONG!
+    queryFn: () => prisma.provider.findMany() // WRONG!
   })
 }
 
@@ -361,7 +361,7 @@ export const useProviders = () => {
 - **Schema Changes**: Database schema changes require Prisma migrations
 - **Type Safety**: Use Prisma for type-safe database queries
 - **Optimistic Locking**: Bookings/slots use version control for calendar sync
-- **Polymorphic Relations**: Subscriptions can belong to ServiceProvider, Organization, or Location
+- **Polymorphic Relations**: Subscriptions can belong to Provider, Organization, or Location
 - **Audit Trails**: Organization membership changes are fully tracked
 
 ### Code Quality Standards

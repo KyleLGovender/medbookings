@@ -367,17 +367,18 @@ export const providersRouter = createTRPCRouter({
         .object({
           id: z.string(),
         })
-        .merge(
-          servicesSchema.omit({ loadedServices: true }).extend({
-            services: z.array(z.string()).optional(),
-          })
-        )
+        .merge(servicesSchema.omit({ loadedServices: true }).partial())
     )
     .mutation(async ({ ctx, input }) => {
       const formData = new FormData();
       formData.append('id', input.id);
 
-      input.services?.forEach((serviceId) => {
+      // Safety check: only proceed if availableServices is provided and not empty
+      if (!input.availableServices || input.availableServices.length === 0) {
+        throw new Error('No services provided. At least one service must be selected.');
+      }
+
+      input.availableServices.forEach((serviceId) => {
         formData.append('services', serviceId);
 
         const config = input.serviceConfigs?.[serviceId];
@@ -411,8 +412,13 @@ export const providersRouter = createTRPCRouter({
         .merge(regulatoryRequirementsSchema)
     )
     .mutation(async ({ ctx, input }) => {
+      if (!ctx.session?.user?.id) {
+        throw new Error('Unauthorized');
+      }
+
       const formData = new FormData();
       formData.append('id', input.id);
+      formData.append('userId', ctx.session.user.id);
 
       input.requirements.forEach((req, index) => {
         formData.append(`requirements[${index}][requirementTypeId]`, req.requirementTypeId);
@@ -440,17 +446,15 @@ export const providersRouter = createTRPCRouter({
    * Delete a provider
    * Migrated from: DELETE /api/providers/[id]
    */
-  delete: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const result = await deleteProvider(input.id);
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+    const result = await deleteProvider(input.id);
 
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to delete provider');
-      }
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to delete provider');
+    }
 
-      return result;
-    }),
+    return result;
+  }),
 
   /**
    * Get provider's associated services
