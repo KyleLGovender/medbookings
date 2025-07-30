@@ -163,6 +163,9 @@ export function EditOrganizationLocations({
       await queryClient.invalidateQueries({ queryKey: ['organization', organizationId] });
       refetch(); // Refetch the organization data for this component
       router.refresh(); // Refresh server components
+      
+      // Navigate back to organization profile
+      router.push(`/organizations/${organizationId}`);
     } catch (error) {
       toast({
         title: 'Error updating locations',
