@@ -1,5 +1,3 @@
-import { useMutation } from '@tanstack/react-query';
-
 import { OrganizationLocation } from '@/features/organizations/types/types';
 import { api } from '@/utils/api';
 
@@ -24,18 +22,13 @@ export function useUpdateOrganizationBasicInfo(options?: {
   });
 }
 
-interface UpdateOrganizationBillingParams {
-  organizationId: string;
-  data: OrganizationBillingData;
-}
-
 // Define the type for billing model data
 interface OrganizationBillingData {
   billingModel: 'CONSOLIDATED' | 'PER_LOCATION' | 'HYBRID';
 }
 
 /**
- * Hook for updating an organization's billing model
+ * Hook for updating an organization's billing model using tRPC
  * @param options Optional mutation options including onSuccess and onError callbacks
  * @returns Mutation object for updating organization billing model
  */
@@ -43,28 +36,14 @@ export function useUpdateOrganizationBilling(options?: {
   onSuccess?: (data: any) => void;
   onError?: (error: Error) => void;
 }) {
-  return useMutation<any, Error, UpdateOrganizationBillingParams>({
-    mutationFn: async ({ organizationId, data }) => {
-      if (!organizationId) {
-        throw new Error('Organization ID is required');
-      }
+  const utils = api.useUtils();
 
-      const response = await fetch(`/api/organizations/${organizationId}/billing`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update organization billing model');
-      }
-
-      return response.json();
+  return api.organizations.update.useMutation({
+    onSuccess: (data, variables) => {
+      // Invalidate organization query
+      utils.organizations.getById.invalidate({ id: variables.id });
+      options?.onSuccess?.(data);
     },
-    onSuccess: options?.onSuccess,
     onError: options?.onError as any,
   });
 }

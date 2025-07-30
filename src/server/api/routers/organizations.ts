@@ -82,7 +82,7 @@ export const organizationsRouter = createTRPCRouter({
         email: z.union([z.string().email('Invalid email format'), z.literal('')]).optional(),
         phone: z.string().optional(),
         website: z.union([z.string().url('Invalid website URL'), z.literal('')]).optional(),
-        billingModel: z.enum(['SLOT_BASED', 'PROVIDER_BASED']).optional(),
+        billingModel: z.enum(['CONSOLIDATED', 'PER_LOCATION', 'HYBRID']).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
