@@ -56,11 +56,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Tech Stack
 
 - **Framework**: Next.js 14 with App Router
+- **API Layer**: tRPC for type-safe APIs (with some legacy REST endpoints)
 - **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: NextAuth.js with Google OAuth
 - **UI**: Radix UI + Tailwind CSS + shadcn/ui
-- **State Management**: TanStack Query for server state
-- **Validation**: Zod schemas
+- **State Management**: tRPC + TanStack Query for server state
+- **Validation**: Zod schemas for runtime validation
 - **Testing**: Playwright for end-to-end testing only
 
 ### Type System Architecture ✅ **RECENTLY COMPLETED**
@@ -245,46 +246,83 @@ feature/
 - **Error Handling**: Return consistent 401/500 errors
 - **Pattern**: `getCurrentUser()` → role check → 401 if unauthorized → try/catch with 500 error handling
 
-### Data Layer Architecture
+### Data Layer Architecture ✅ **RECENTLY MIGRATED TO tRPC**
 
-- **API Routes**: Located in `/app/api/` - handle HTTP requests only
-- **Business Logic**: Located in `/features/{feature}/lib/actions.ts` (Next.js server actions)
-- **Client Hooks**: Located in `/features/{feature}/hooks/` using TanStack Query
-- **Query Keys**: Use `[resource, id]` format for cache keys
-- **Hook Callbacks**: Hooks accept optional onSuccess/onError callbacks
+- **tRPC API**: Type-safe end-to-end API using tRPC with server procedures
+- **Server Procedures**: Located in `/lib/trpc/routers/` - handle type-safe API logic
+- **Business Logic**: Located in `/features/{feature}/lib/actions.ts` (server actions) called by tRPC procedures
+- **Client Hooks**: Located in `/features/{feature}/hooks/` using tRPC + TanStack Query
+- **Type Safety**: Full end-to-end type safety from server to client
+- **Legacy REST**: A few exceptions remain as REST API routes in `/app/api/`
 
 #### CRITICAL: Data Access Separation
 
 - **Client-side hooks NEVER import Prisma directly**
-- **Hooks ONLY call API routes or server actions**
-- **Database access ONLY in server actions or API routes**
-- **Pattern**: Hook → API Route → Server Action → Prisma
+- **Hooks ONLY call tRPC procedures (or legacy API routes where applicable)**
+- **Database access ONLY in server actions called by tRPC procedures**
+- **Pattern**: Hook → tRPC Procedure → Server Action → Prisma
 
-#### Data Flow Examples
+#### tRPC Data Flow Examples
 
 ```typescript
-// ✅ CORRECT: Hook calls API route
+// ✅ CORRECT: Hook calls tRPC procedure
+import { api } from '@/lib/trpc/client'
+
 export const useProviders = () => {
-  return useQuery({
-    queryKey: ['providers'],
-    queryFn: () => fetch('/api/providers').then(res => res.json())
+  return api.providers.getAll.useQuery({
+    // Optional input parameters
   })
 }
 
-// ✅ CORRECT: API route calls server action
-// /app/api/providers/route.ts
-export async function GET() {
-  const providers = await getProviders() // Server action
-  return Response.json(providers)
-}
+// ✅ CORRECT: tRPC procedure calls server action
+// /lib/trpc/routers/providers.ts
+import { z } from 'zod'
+import { publicProcedure, router } from '../trpc'
+import { getProviders } from '@/features/providers/lib/actions'
+
+export const providersRouter = router({
+  getAll: publicProcedure
+    .input(z.object({
+      limit: z.number().optional(),
+      offset: z.number().optional(),
+    }))
+    .query(async ({ input }) => {
+      return await getProviders(input) // Server action
+    }),
+})
 
 // ✅ CORRECT: Server action uses Prisma
 // /features/providers/lib/actions.ts
-export async function getProviders() {
-  return prisma.serviceProvider.findMany()
+export async function getProviders(input?: { limit?: number; offset?: number }) {
+  return prisma.serviceProvider.findMany({
+    take: input?.limit,
+    skip: input?.offset,
+  })
 }
 
+// ✅ CORRECT: Mutation with tRPC
+export const useCreateProvider = () => {
+  return api.providers.create.useMutation({
+    onSuccess: () => {
+      // Handle success
+    },
+    onError: (error) => {
+      // Handle error with full type safety
+    },
+  })
+}
+```
+
+#### Legacy REST API Exceptions
+
+Some endpoints remain as REST APIs in `/app/api/`:
+- File uploads (`/api/upload/*`)
+- Webhook endpoints
+- Third-party integrations
+- NextAuth.js routes (`/api/auth/*`)
+
 #### ❌ FORBIDDEN PATTERNS
+```typescript
 // ❌ NEVER: Hook importing Prisma directly
 import { prisma } from '@/lib/prisma'
 export const useProviders = () => {
@@ -298,6 +336,14 @@ export const useProviders = () => {
 import { prisma } from '@/lib/prisma'
 export default function ProvidersPage() {
   // This will cause build errors
+}
+
+// ❌ NEVER: Direct fetch calls to REST APIs (use tRPC instead)
+export const useProviders = () => {
+  return useQuery({
+    queryKey: ['providers'],
+    queryFn: () => fetch('/api/providers').then(res => res.json()) // WRONG! Use tRPC
+  })
 }
 ```
 

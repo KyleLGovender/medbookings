@@ -137,102 +137,100 @@ export function OrganizationCalendarView({
     if (!organization || !providerConnections || !availabilityData) return null;
 
     // Transform provider connections into organization providers
-    const providers: OrganizationProvider[] = providerConnections.map(
-      (connection: any) => {
-        const provider = connection.provider;
+    const providers: OrganizationProvider[] = providerConnections.map((connection: any) => {
+      const provider = connection.provider;
 
-        // Get availability for this provider from organization availability data
-        const providerAvailability = availabilityData.filter(
-          (availability: AvailabilityWithRelations) => availability.providerId === provider.id
-        );
+      // Get availability for this provider from organization availability data
+      const providerAvailability = availabilityData.filter(
+        (availability: AvailabilityWithRelations) => availability.providerId === provider.id
+      );
 
-        // Transform availability into calendar events
-        const events: CalendarEvent[] = [];
+      // Transform availability into calendar events
+      const events: CalendarEvent[] = [];
 
-        providerAvailability.forEach((availability: AvailabilityWithRelations) => {
-          events.push({
-            id: availability.id,
-            type: 'availability',
-            title: `Available - ${availability.availableServices?.[0]?.service?.name || 'General'}`,
-            startTime: new Date(availability.startTime),
-            endTime: new Date(availability.endTime),
-            status: availability.status,
-            schedulingRule: availability.schedulingRule,
-            isRecurring: availability.isRecurring,
-            seriesId: availability.seriesId || undefined,
-            location: availability.location
-              ? {
-                  id: availability.location.id,
-                  name: availability.location.name,
-                  isOnline: !availability.locationId,
-                }
-              : undefined,
-            service: availability.availableServices?.[0]
-              ? {
-                  id: availability.availableServices[0].service.id,
-                  name: availability.availableServices[0].service.name,
-                  duration: availability.availableServices[0].duration || 30,
-                  price: Number(availability.availableServices[0].price) || 0,
-                }
-              : undefined,
-          });
-
-          // Add booked slots
-          availability.calculatedSlots
-            ?.filter((slot: CalculatedAvailabilitySlotWithRelations) => slot.status === 'BOOKED')
-            .forEach((slot: CalculatedAvailabilitySlotWithRelations) => {
-              events.push({
-                id: slot.id,
-                type: 'booking',
-                title: `Booking - ${slot.service?.name || 'Service'}`,
-                startTime: new Date(slot.startTime),
-                endTime: new Date(slot.endTime),
-                status: slot.status,
-                location: slot.serviceConfig?.location
-                  ? {
-                      id: slot.serviceConfig.location.id,
-                      name: slot.serviceConfig.location.name,
-                      isOnline: slot.serviceConfig.isOnlineAvailable,
-                    }
-                  : undefined,
-                service: slot.service
-                  ? {
-                      id: slot.service.id,
-                      name: slot.service.name,
-                      duration: slot.serviceConfig?.duration || 30,
-                      price: Number(slot.serviceConfig?.price) || 0,
-                    }
-                  : undefined,
-              });
-            });
+      providerAvailability.forEach((availability: AvailabilityWithRelations) => {
+        events.push({
+          id: availability.id,
+          type: 'availability',
+          title: `Available - ${availability.availableServices?.[0]?.service?.name || 'General'}`,
+          startTime: new Date(availability.startTime),
+          endTime: new Date(availability.endTime),
+          status: availability.status,
+          schedulingRule: availability.schedulingRule,
+          isRecurring: availability.isRecurring,
+          seriesId: availability.seriesId || undefined,
+          location: availability.location
+            ? {
+                id: availability.location.id,
+                name: availability.location.name,
+                isOnline: !availability.locationId,
+              }
+            : undefined,
+          service: availability.availableServices?.[0]
+            ? {
+                id: availability.availableServices[0].service.id,
+                name: availability.availableServices[0].service.name,
+                duration: availability.availableServices[0].duration || 30,
+                price: Number(availability.availableServices[0].price) || 0,
+              }
+            : undefined,
         });
 
-        // Calculate stats for this provider
-        const allSlots = providerAvailability.flatMap(
-          (availability: AvailabilityWithRelations) => availability.calculatedSlots || []
-        );
-        const bookedSlots = allSlots.filter(
-          (slot: CalculatedAvailabilitySlotWithRelations) => slot.status === 'BOOKED'
-        ).length;
-        const availableSlots = allSlots.filter(
-          (slot: CalculatedAvailabilitySlotWithRelations) => slot.status === 'AVAILABLE'
-        ).length;
+        // Add booked slots
+        availability.calculatedSlots
+          ?.filter((slot: CalculatedAvailabilitySlotWithRelations) => slot.status === 'BOOKED')
+          .forEach((slot: CalculatedAvailabilitySlotWithRelations) => {
+            events.push({
+              id: slot.id,
+              type: 'booking',
+              title: `Booking - ${slot.service?.name || 'Service'}`,
+              startTime: new Date(slot.startTime),
+              endTime: new Date(slot.endTime),
+              status: slot.status,
+              location: slot.serviceConfig?.location
+                ? {
+                    id: slot.serviceConfig.location.id,
+                    name: slot.serviceConfig.location.name,
+                    isOnline: slot.serviceConfig.isOnlineAvailable,
+                  }
+                : undefined,
+              service: slot.service
+                ? {
+                    id: slot.service.id,
+                    name: slot.service.name,
+                    duration: slot.serviceConfig?.duration || 30,
+                    price: Number(slot.serviceConfig?.price) || 0,
+                  }
+                : undefined,
+            });
+          });
+      });
 
-        return {
-          id: provider.id,
-          name: provider.name,
-          type: provider.serviceProviderType?.name || 'Healthcare Provider',
-          specialization: provider.serviceProviderType?.name,
-          isActive: true, // Default to active since we don't have status in the connection type
-          workingHours: { start: '09:00', end: '17:00' }, // Default working hours - provider settings integration pending
-          utilizationRate:
-            allSlots.length > 0 ? Math.round((bookedSlots / allSlots.length) * 100) : 0,
-          totalBookings: bookedSlots,
-          pendingBookings: 0, // No pending status in SlotStatus
-          events,
-        };
-      }
-    );
+      // Calculate stats for this provider
+      const allSlots = providerAvailability.flatMap(
+        (availability: AvailabilityWithRelations) => availability.calculatedSlots || []
+      );
+      const bookedSlots = allSlots.filter(
+        (slot: CalculatedAvailabilitySlotWithRelations) => slot.status === 'BOOKED'
+      ).length;
+      const availableSlots = allSlots.filter(
+        (slot: CalculatedAvailabilitySlotWithRelations) => slot.status === 'AVAILABLE'
+      ).length;
+
+      return {
+        id: provider.id,
+        name: provider.name,
+        type: provider.serviceProviderType?.name || 'Healthcare Provider',
+        specialization: provider.serviceProviderType?.name,
+        isActive: true, // Default to active since we don't have status in the connection type
+        workingHours: { start: '09:00', end: '17:00' }, // Default working hours - provider settings integration pending
+        utilizationRate:
+          allSlots.length > 0 ? Math.round((bookedSlots / allSlots.length) * 100) : 0,
+        totalBookings: bookedSlots,
+        pendingBookings: 0, // No pending status in SlotStatus
+        events,
+      };
+    });
 
     // Calculate organization stats
     const totalSlots = providers.reduce(

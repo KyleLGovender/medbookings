@@ -46,6 +46,23 @@ export const renderRequirementInput = (
     requirement.id
   );
 
+  // Initialize the field with existing value only if it doesn't already have a value
+  const currentValue = form.watch(`regulatoryRequirements.requirements.${requirement.index}.value`);
+  const hasExistingSubmission = requirement.existingSubmission;
+
+  if (!currentValue && hasExistingSubmission) {
+    const existingValue =
+      requirement.existingSubmission?.documentMetadata?.value ||
+      requirement.existingSubmission?.value;
+    if (existingValue !== undefined) {
+      form.setValue(
+        `regulatoryRequirements.requirements.${requirement.index}.value`,
+        existingValue,
+        { shouldValidate: false }
+      );
+    }
+  }
+
   const inputId = `requirement-${requirement.id}`;
 
   // Fix how errors are accessed - check if the specific requirement has errors
@@ -62,12 +79,19 @@ export const renderRequirementInput = (
 
   switch (requirement.validationType) {
     case RequirementValidationType.BOOLEAN:
+      // Get current value from form watcher or existing submission
+      const currentValue =
+        form.watch(`regulatoryRequirements.requirements.${requirement.index}.value`) ||
+        requirement.existingSubmission?.documentMetadata?.value ||
+        requirement.existingSubmission?.value ||
+        '';
+
       return (
         <RadioGroup
           onValueChange={(value) => {
             form.setValue(`regulatoryRequirements.requirements.${requirement.index}.value`, value);
           }}
-          defaultValue={requirement.existingSubmission?.documentMetadata?.value || ''}
+          value={currentValue}
           className="flex gap-4"
         >
           <div className="flex items-center space-x-2">
@@ -162,14 +186,20 @@ export const renderRequirementInput = (
         </div>
       );
     case RequirementValidationType.TEXT:
-      // For TEXT type, we need to register with a default value
+      // Get the existing value specifically for this requirement
+      const textValue =
+        requirement.existingSubmission?.documentMetadata?.value ||
+        requirement.existingSubmission?.value ||
+        form.existingValue ||
+        '';
+
       return (
         <Input
           id={inputId}
           required={requirement.isRequired}
           type="text"
           {...form.register(`regulatoryRequirements.requirements.${requirement.index}.value`, {
-            value: form.existingValue || '',
+            value: textValue,
           })}
           className={error ? 'border-destructive' : ''}
         />

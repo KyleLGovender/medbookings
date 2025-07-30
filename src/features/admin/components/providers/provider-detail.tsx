@@ -56,7 +56,10 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
   };
 
   const handleApproveRequirement = async (requirementSubmissionId: string) => {
-    await approveRequirementMutation.mutateAsync({ providerId, requirementId: requirementSubmissionId });
+    await approveRequirementMutation.mutateAsync({
+      providerId,
+      requirementId: requirementSubmissionId,
+    });
   };
 
   const handleRejectRequirementClick = (
@@ -124,7 +127,13 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
           <p className="text-muted-foreground">{provider?.user?.email}</p>
         </div>
         <div className="flex items-center gap-4">
-          <StatusBadge status={provider?.status === 'PENDING_APPROVAL' ? 'PENDING' : (provider?.status as any) || 'PENDING'} />
+          <StatusBadge
+            status={
+              provider?.status === 'PENDING_APPROVAL'
+                ? 'PENDING'
+                : (provider?.status as any) || 'PENDING'
+            }
+          />
           {provider?.status === 'PENDING_APPROVAL' && allRequirementsApproved && (
             <ApprovalButtons
               onApprove={handleApproveProvider}
@@ -184,7 +193,13 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Status</label>
                 <div className="text-sm">
-                  <StatusBadge status={provider?.status === 'PENDING_APPROVAL' ? 'PENDING' : (provider?.status as any) || 'PENDING'} />
+                  <StatusBadge
+                    status={
+                      provider?.status === 'PENDING_APPROVAL'
+                        ? 'PENDING'
+                        : (provider?.status as any) || 'PENDING'
+                    }
+                  />
                 </div>
               </div>
               <div>
@@ -398,7 +413,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                     </p>
                     <p className="text-sm text-green-600 dark:text-green-400">
                       {new Date(provider.approvedAt).toLocaleString()}
-                      {provider.approvedById && ` by Admin`}
+                      {provider.approvedById && ' by Admin'}
                     </p>
                   </div>
                 </div>
@@ -428,7 +443,9 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                     Application Submitted
                   </p>
                   <p className="text-sm text-blue-600 dark:text-blue-400">
-                    {provider?.createdAt ? new Date(provider.createdAt).toLocaleString() : 'Unknown'}
+                    {provider?.createdAt
+                      ? new Date(provider.createdAt).toLocaleString()
+                      : 'Unknown'}
                   </p>
                 </div>
               </div>

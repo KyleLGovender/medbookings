@@ -9,15 +9,17 @@ import {
 } from '@/features/providers/lib/actions/update-provider';
 import { serializeProvider, serializeServiceProvider } from '@/features/providers/lib/helper';
 import { searchProviders } from '@/features/providers/lib/search';
-import { ConnectionUpdateSchema, InvitationResponseSchema } from '@/features/providers/types/schemas';
+import {
+  ConnectionUpdateSchema,
+  InvitationResponseSchema,
+  basicInfoSchema,
+  providerSearchParamsSchema,
+  regulatoryRequirementsSchema,
+  servicesSchema,
+} from '@/features/providers/types/schemas';
 import { getCurrentUser } from '@/lib/auth';
 import { isInvitationExpired } from '@/lib/invitation-utils';
-import {
-  adminProcedure,
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-} from '@/server/trpc';
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
 export const providersRouter = createTRPCRouter({
   /**
@@ -162,12 +164,8 @@ export const providersRouter = createTRPCRouter({
    */
   search: publicProcedure
     .input(
-      z.object({
-        search: z.string().optional(),
+      providerSearchParamsSchema.extend({
         typeIds: z.array(z.string()).optional(),
-        status: z.string().default('APPROVED'),
-        limit: z.number().default(50),
-        offset: z.number().default(0),
         includeServices: z.boolean().default(true),
         includeRequirements: z.boolean().default(false),
       })
@@ -228,43 +226,18 @@ export const providersRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
       z.object({
-        basicInfo: z.object({
-          name: z.string(),
-          bio: z.string().optional(),
-          email: z.string().email(),
-          whatsapp: z.string().optional(),
-          website: z.string().optional(),
-          image: z.string().optional(),
-          languages: z.array(z.string()).optional(),
+        basicInfo: basicInfoSchema.pick({
+          name: true,
+          bio: true,
+          email: true,
+          whatsapp: true,
+          website: true,
+          image: true,
+          languages: true,
         }),
         providerTypeIds: z.array(z.string()).min(1),
-        services: z
-          .object({
-            availableServices: z.array(z.string()).optional(),
-            serviceConfigs: z
-              .record(
-                z.string(),
-                z.object({
-                  duration: z.union([z.number(), z.string().transform(Number)]).optional(),
-                  price: z.union([z.number(), z.string().transform(Number)]).optional(),
-                })
-              )
-              .optional(),
-          })
-          .optional(),
-        regulatoryRequirements: z
-          .object({
-            requirements: z
-              .array(
-                z.object({
-                  requirementTypeId: z.string(),
-                  value: z.string().optional(),
-                  documentMetadata: z.any().optional(),
-                })
-              )
-              .optional(),
-          })
-          .optional(),
+        services: servicesSchema.optional(),
+        regulatoryRequirements: regulatoryRequirementsSchema.optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -290,14 +263,14 @@ export const providersRouter = createTRPCRouter({
 
       // Convert to FormData as the server action expects it
       const formData = new FormData();
-      
+
       // Add basic fields
       formData.append('userId', providerData.userId);
       formData.append('name', providerData.name);
       formData.append('bio', providerData.bio);
       formData.append('email', providerData.email);
       formData.append('whatsapp', providerData.whatsapp);
-      
+
       if (providerData.website) {
         formData.append('website', providerData.website);
       }
@@ -354,18 +327,10 @@ export const providersRouter = createTRPCRouter({
    */
   update: protectedProcedure
     .input(
-      z.object({
+      basicInfoSchema.partial().extend({
         id: z.string(),
-        name: z.string().optional(),
-        bio: z.string().optional(),
-        email: z.string().email().optional(),
-        whatsapp: z.string().optional(),
-        website: z.string().optional(),
-        image: z.string().optional(),
-        languages: z.array(z.string()).optional(),
         providerTypeIds: z.array(z.string()).optional(),
         providerTypeId: z.string().optional(),
-        showPrice: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -398,19 +363,15 @@ export const providersRouter = createTRPCRouter({
    */
   updateServices: protectedProcedure
     .input(
-      z.object({
-        id: z.string(),
-        services: z.array(z.string()).optional(),
-        serviceConfigs: z
-          .record(
-            z.string(),
-            z.object({
-              duration: z.union([z.number(), z.string().transform(Number)]).optional(),
-              price: z.union([z.number(), z.string().transform(Number)]).optional(),
-            })
-          )
-          .optional(),
-      })
+      z
+        .object({
+          id: z.string(),
+        })
+        .merge(
+          servicesSchema.omit({ loadedServices: true }).extend({
+            services: z.array(z.string()).optional(),
+          })
+        )
     )
     .mutation(async ({ ctx, input }) => {
       const formData = new FormData();
@@ -443,16 +404,11 @@ export const providersRouter = createTRPCRouter({
    */
   updateRequirements: protectedProcedure
     .input(
-      z.object({
-        id: z.string(),
-        requirements: z.array(
-          z.object({
-            requirementTypeId: z.string(),
-            value: z.string().optional(),
-            documentMetadata: z.any().optional(),
-          })
-        ),
-      })
+      z
+        .object({
+          id: z.string(),
+        })
+        .merge(regulatoryRequirementsSchema)
     )
     .mutation(async ({ ctx, input }) => {
       const formData = new FormData();
@@ -715,10 +671,11 @@ export const providersRouter = createTRPCRouter({
    */
   updateConnection: protectedProcedure
     .input(
-      z.object({
-        connectionId: z.string(),
-        status: z.enum(['ACCEPTED', 'SUSPENDED']),
-      })
+      z
+        .object({
+          connectionId: z.string(),
+        })
+        .merge(ConnectionUpdateSchema)
     )
     .mutation(async ({ ctx, input }) => {
       const currentUser = await getCurrentUser();
@@ -957,11 +914,11 @@ export const providersRouter = createTRPCRouter({
    */
   respondToInvitation: protectedProcedure
     .input(
-      z.object({
-        token: z.string(),
-        action: z.enum(['accept', 'reject']),
-        rejectionReason: z.string().optional(),
-      })
+      z
+        .object({
+          token: z.string(),
+        })
+        .merge(InvitationResponseSchema)
     )
     .mutation(async ({ ctx, input }) => {
       const currentUser = await getCurrentUser();
@@ -1101,5 +1058,187 @@ export const providersRouter = createTRPCRouter({
       }
 
       throw new Error('Invalid action');
+    }),
+
+  /**
+   * Get services for multiple provider types
+   * Used when a provider has multiple specialties
+   */
+  getServicesForMultipleTypes: publicProcedure
+    .input(
+      z.object({
+        providerTypeIds: z.array(z.string()),
+        providerId: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { providerTypeIds, providerId } = input;
+
+      if (!providerTypeIds.length) {
+        return [];
+      }
+
+      // Fetch all services for the given provider types
+      const services = await ctx.prisma.service.findMany({
+        where: {
+          providerTypeId: {
+            in: providerTypeIds,
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          defaultDuration: true,
+          defaultPrice: true,
+          displayPriority: true,
+          providerTypeId: true,
+          providerType: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: [{ displayPriority: 'asc' }, { name: 'asc' }],
+      });
+
+      // If providerId is provided, fetch the provider's service configurations
+      let serviceConfigs: Array<{
+        id: string;
+        serviceId: string;
+        duration: number;
+        price: any;
+        isOnlineAvailable: boolean;
+        isInPerson: boolean;
+        locationId: string | null;
+      }> | null = null;
+
+      if (providerId) {
+        const provider = await ctx.prisma.provider.findUnique({
+          where: { id: providerId },
+          include: {
+            availabilityConfigs: {
+              select: {
+                id: true,
+                serviceId: true,
+                duration: true,
+                price: true,
+                isOnlineAvailable: true,
+                isInPerson: true,
+                locationId: true,
+              },
+            },
+          },
+        });
+
+        if (provider) {
+          serviceConfigs = provider.availabilityConfigs;
+        }
+      }
+
+      // Map services and add service config data if available
+      return services.map((service) => {
+        // Check if this service has been configured by the provider
+        const serviceConfig = serviceConfigs?.find((config) => config.serviceId === service.id);
+
+        // Determine if the service is configured by the provider
+        const hasCustomConfig = !!serviceConfig;
+        const currentPrice = serviceConfig?.price
+          ? Number(serviceConfig.price)
+          : service.defaultPrice
+            ? Number(service.defaultPrice)
+            : null;
+        const currentDuration = serviceConfig?.duration || service.defaultDuration;
+
+        return {
+          id: service.id,
+          name: service.name,
+          description: service.description ?? undefined,
+          defaultDuration: service.defaultDuration,
+          defaultPrice: service.defaultPrice ? Number(service.defaultPrice) : null,
+          displayPriority: service.displayPriority,
+          providerTypeId: service.providerTypeId,
+          providerTypeName: service.providerType.name,
+          // SerializedService fields for provider services API
+          isSelected: hasCustomConfig,
+          currentPrice,
+          currentDuration,
+          hasCustomConfig,
+          customConfig: serviceConfig
+            ? {
+                id: serviceConfig.id,
+                duration: serviceConfig.duration,
+                price: serviceConfig.price ? Number(serviceConfig.price) : null,
+                isOnlineAvailable: serviceConfig.isOnlineAvailable,
+                isInPerson: serviceConfig.isInPerson,
+                locationId: serviceConfig.locationId,
+              }
+            : undefined,
+        };
+      });
+    }),
+
+  /**
+   * Get requirements for multiple provider types
+   * Used when a provider has multiple specialties
+   */
+  getRequirementsForMultipleTypes: publicProcedure
+    .input(
+      z.object({
+        providerTypeIds: z.array(z.string()),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { providerTypeIds } = input;
+
+      if (!providerTypeIds.length) {
+        return [];
+      }
+
+      // Fetch all requirements for the given provider types
+      const providerTypesWithRequirements = await ctx.prisma.providerType.findMany({
+        where: {
+          id: {
+            in: providerTypeIds,
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          requirements: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              validationType: true,
+              isRequired: true,
+              validationConfig: true,
+              displayPriority: true,
+            },
+            orderBy: [{ displayPriority: 'asc' }, { name: 'asc' }],
+          },
+        },
+      });
+
+      // Flatten requirements and add provider type info
+      const allRequirements: any[] = [];
+      const seenRequirementIds = new Set<string>();
+
+      providerTypesWithRequirements.forEach((providerType) => {
+        providerType.requirements.forEach((requirement) => {
+          // Avoid duplicates if the same requirement is used by multiple provider types
+          if (!seenRequirementIds.has(requirement.id)) {
+            seenRequirementIds.add(requirement.id);
+            allRequirements.push({
+              ...requirement,
+              providerTypeId: providerType.id,
+              providerTypeName: providerType.name,
+            });
+          }
+        });
+      });
+
+      return allRequirements;
     }),
 });

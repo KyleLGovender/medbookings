@@ -118,7 +118,7 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
       .map(([serviceId, _]) => serviceId);
 
     const serviceConfigs: Record<string, { duration: number; price: number }> = {};
-    
+
     Object.entries(data.selectedServices)
       .filter(([_, serviceData]) => serviceData.selected)
       .forEach(([serviceId, serviceData]) => {

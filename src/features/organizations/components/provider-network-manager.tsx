@@ -47,9 +47,8 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
     error: connectionsError,
   } = useOrganizationProviderConnections(organizationId);
 
-  const { data: invitationsData, isLoading: isLoadingInvitations } = useProviderInvitations(
-    organizationId
-  );
+  const { data: invitationsData, isLoading: isLoadingInvitations } =
+    useProviderInvitations(organizationId);
 
   const connections = connectionsData || [];
   const invitations = invitationsData || [];

@@ -51,8 +51,9 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
   // Check if current user is the owner of this profile
   const isOwner = userId === provider.userId;
 
-  // For provider type, use a generic label since we don't have the actual type name
-  const providerTypeName = provider.providerType?.name || 'Healthcare Provider';
+  // Get all provider types from the providerTypes array
+  const providerTypes = provider.providerTypes || [];
+  const hasMultipleTypes = providerTypes.length > 1;
 
   return (
     <div className="space-y-8">
@@ -97,14 +98,20 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
         <Separator className="my-4" />
 
         <div>
-          <h3 className="font-medium">Provider Type</h3>
-          <p>{providerTypeName}</p>
-
-          {provider.providerType?.description && (
-            <div className="mt-4">
-              <h3 className="font-medium">Description</h3>
-              <p className="text-muted-foreground">{provider.providerType.description}</p>
+          <h3 className="font-medium">Provider Type{hasMultipleTypes ? 's' : ''}</h3>
+          {providerTypes.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {providerTypes.map((type: any) => (
+                <div key={type.id} className="rounded-md bg-muted px-3 py-1">
+                  <p className="font-medium">{type.name}</p>
+                  {type.description && (
+                    <p className="text-sm text-muted-foreground">{type.description}</p>
+                  )}
+                </div>
+              ))}
             </div>
+          ) : (
+            <p className="text-muted-foreground">No provider types specified</p>
           )}
         </div>
 

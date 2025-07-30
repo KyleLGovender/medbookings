@@ -122,7 +122,7 @@ export const calendarRouter = createTRPCRouter({
         startTime: input.startTime ? new Date(input.startTime) : undefined,
         endTime: input.endTime ? new Date(input.endTime) : undefined,
       };
-      
+
       const result = await updateAvailability(updateData);
 
       if (!result.success) {
@@ -137,10 +137,12 @@ export const calendarRouter = createTRPCRouter({
    * Migrated from: DELETE /api/calendar/availability/delete
    */
   delete: protectedProcedure
-    .input(z.object({ 
-      ids: z.array(z.string()),
-      scope: z.enum(['single', 'future', 'all']).optional()
-    }))
+    .input(
+      z.object({
+        ids: z.array(z.string()),
+        scope: z.enum(['single', 'future', 'all']).optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Handle single deletion with scope or bulk deletion
       if (input.ids.length === 1 && input.scope) {
@@ -152,15 +154,13 @@ export const calendarRouter = createTRPCRouter({
         return result;
       } else {
         // Bulk deletion (no scope support)
-        const results = await Promise.all(
-          input.ids.map(id => deleteAvailability(id))
-        );
-        
-        const failed = results.filter(r => !r.success);
+        const results = await Promise.all(input.ids.map((id) => deleteAvailability(id)));
+
+        const failed = results.filter((r) => !r.success);
         if (failed.length > 0) {
           throw new Error(`Failed to delete ${failed.length} availability(s)`);
         }
-        
+
         return { success: true };
       }
     }),
@@ -173,15 +173,13 @@ export const calendarRouter = createTRPCRouter({
     .input(z.object({ ids: z.array(z.string()) }))
     .mutation(async ({ ctx, input }) => {
       // Handle multiple cancellations
-      const results = await Promise.all(
-        input.ids.map(id => cancelAvailability(id))
-      );
-      
-      const hasErrors = results.some(result => !result.success);
+      const results = await Promise.all(input.ids.map((id) => cancelAvailability(id)));
+
+      const hasErrors = results.some((result) => !result.success);
       if (hasErrors) {
         const errorMessages = results
-          .filter(result => !result.success)
-          .map(result => result.error)
+          .filter((result) => !result.success)
+          .map((result) => result.error)
           .join(', ');
         throw new Error(`Failed to cancel some availability: ${errorMessages}`);
       }
@@ -379,9 +377,8 @@ export const calendarRouter = createTRPCRouter({
       const startDate = new Date(input.startDate);
       const endDate = new Date(input.endDate);
 
-      // Find all services  
-      const services = await ctx.prisma.service.findMany({
-      });
+      // Find all services
+      const services = await ctx.prisma.service.findMany({});
 
       return services;
     }),

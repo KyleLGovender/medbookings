@@ -97,7 +97,13 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
           <p className="text-muted-foreground">{organization?.email}</p>
         </div>
         <div className="flex items-center gap-4">
-          <StatusBadge status={organization?.status === 'PENDING_APPROVAL' ? 'PENDING' : (organization?.status as any) || 'PENDING'} />
+          <StatusBadge
+            status={
+              organization?.status === 'PENDING_APPROVAL'
+                ? 'PENDING'
+                : (organization?.status as any) || 'PENDING'
+            }
+          />
           {organization?.status === 'PENDING_APPROVAL' && (
             <ApprovalButtons
               onApprove={handleApproveOrganization}
@@ -166,7 +172,13 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Status</label>
                   <p className="text-sm">
-                    <StatusBadge status={organization?.status === 'PENDING_APPROVAL' ? 'PENDING' : (organization?.status as any) || 'PENDING'} />
+                    <StatusBadge
+                      status={
+                        organization?.status === 'PENDING_APPROVAL'
+                          ? 'PENDING'
+                          : (organization?.status as any) || 'PENDING'
+                      }
+                    />
                   </p>
                 </div>
                 <div>
@@ -188,7 +200,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
               </div>
 
               {/* Organization Owner/Creator Info */}
-              {organization?.memberships?.find(m => m.role === 'OWNER') && (
+              {organization?.memberships?.find((m) => m.role === 'OWNER') && (
                 <div className="mt-6 rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
                   <label className="text-sm font-medium text-blue-800 dark:text-blue-300">
                     Organization Owner
@@ -196,7 +208,10 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                   <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
                     <div>
                       <span className="text-xs text-muted-foreground">Owner:</span>
-                      <p className="text-sm">{organization.memberships.find(m => m.role === 'OWNER')?.user?.name || 'Unknown'}</p>
+                      <p className="text-sm">
+                        {organization.memberships.find((m) => m.role === 'OWNER')?.user?.name ||
+                          'Unknown'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -383,18 +398,18 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
             </CardHeader>
             <CardContent>
               <div className="py-8 text-center text-muted-foreground">No providers connected</div>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Provider</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Connected</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {/* organization?.providerConnections?.map((connection: any) => (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Provider</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Connected</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {/* organization?.providerConnections?.map((connection: any) => (
                         <TableRow key={connection.id}>
                           <TableCell>
                             <div>
@@ -432,9 +447,9 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                           </TableCell>
                         </TableRow>
                       )) */}
-                    </TableBody>
-                  </Table>
-                </div>
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -456,7 +471,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                       </p>
                       <p className="text-sm text-green-600 dark:text-green-400">
                         {new Date(organization.approvedAt).toLocaleString()}
-                        {organization.approvedById && ` by Admin`}
+                        {organization.approvedById && ' by Admin'}
                       </p>
                     </div>
                   </div>
@@ -488,7 +503,9 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                       Organization Registered
                     </p>
                     <p className="text-sm text-blue-600 dark:text-blue-400">
-                      {organization?.createdAt ? new Date(organization.createdAt).toLocaleString() : 'Unknown'}
+                      {organization?.createdAt
+                        ? new Date(organization.createdAt).toLocaleString()
+                        : 'Unknown'}
                     </p>
                   </div>
                 </div>

@@ -61,17 +61,15 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
   const approveOrganizationMutation = useApproveOrganization();
   const rejectOrganizationMutation = useRejectOrganization();
 
-  const filteredOrganizations = organizations?.filter(
-    (organization: any) => {
-      if (!searchQuery) return true;
-      const query = searchQuery.toLowerCase();
-      return (
-        organization.name?.toLowerCase().includes(query) ||
-        organization.email?.toLowerCase().includes(query) ||
-        organization.description?.toLowerCase().includes(query)
-      );
-    }
-  );
+  const filteredOrganizations = organizations?.filter((organization: any) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      organization.name?.toLowerCase().includes(query) ||
+      organization.email?.toLowerCase().includes(query) ||
+      organization.description?.toLowerCase().includes(query)
+    );
+  });
 
   const handleApprove = async (organizationId: string) => {
     await approveOrganizationMutation.mutateAsync({ organizationId });

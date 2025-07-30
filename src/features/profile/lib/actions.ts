@@ -4,9 +4,9 @@ import { revalidatePath } from 'next/cache';
 
 import { getServerSession } from 'next-auth';
 
+import type { UpdateProfileRequestInput } from '@/features/profile/types/schemas';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import type { UpdateProfileRequestInput } from '@/features/profile/types/schemas';
 
 export async function checkServiceProvider(userId: string) {
   const provider = await prisma.provider.findFirst({

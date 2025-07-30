@@ -5,30 +5,26 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Starting database seed...');
 
-  // First check if tables exist before trying to delete data
-  try {
-    await prisma.$queryRaw`SELECT 1 FROM "ProviderType" LIMIT 1`;
-    await prisma.providerType.deleteMany();
-    console.log('Cleared ProviderType table');
-  } catch (e) {
-    console.log('ProviderType table not found or empty');
-  }
-
-  try {
-    await prisma.$queryRaw`SELECT 1 FROM "Service" LIMIT 1`;
-    await prisma.service.deleteMany();
-    console.log('Cleared Service table');
-  } catch (e) {
-    console.log('Service table not found or empty');
-  }
-
-  try {
-    await prisma.$queryRaw`SELECT 1 FROM "RequirementType" LIMIT 1`;
-    await prisma.requirementType.deleteMany();
-    console.log('Cleared RequirementType table');
-  } catch (e) {
-    console.log('RequirementType table not found or empty');
-  }
+  // Clear all existing data in correct order (children first, then parents)
+  console.log('Clearing existing data...');
+  
+  // Delete requirement submissions first (they reference RequirementType)
+  await prisma.requirementSubmission.deleteMany();
+  console.log('Cleared RequirementSubmission table');
+  
+  // Delete service availability configs (they reference Service)
+  await prisma.serviceAvailabilityConfig.deleteMany();
+  console.log('Cleared ServiceAvailabilityConfig table');
+  
+  // Now delete the parent tables
+  await prisma.requirementType.deleteMany();
+  console.log('Cleared RequirementType table');
+  
+  await prisma.service.deleteMany();
+  console.log('Cleared Service table');
+  
+  await prisma.providerType.deleteMany();
+  console.log('Cleared ProviderType table');
 
   // Create provider types
   try {
@@ -47,6 +43,41 @@ async function main() {
             'A professional who practices psychology and studies mental states, perceptual, cognitive, emotional, and social processes and behavior',
         },
       }),
+      prisma.providerType.create({
+        data: {
+          name: 'Dentist',
+          description:
+            'A healthcare professional qualified to practice dentistry, providing oral health care services',
+        },
+      }),
+      prisma.providerType.create({
+        data: {
+          name: 'Speech Therapist',
+          description:
+            'A healthcare professional who evaluates and treats communication and swallowing disorders',
+        },
+      }),
+      prisma.providerType.create({
+        data: {
+          name: 'Physiotherapist',
+          description:
+            'A healthcare professional who helps restore movement and function through physical therapy',
+        },
+      }),
+      prisma.providerType.create({
+        data: {
+          name: 'Occupational Therapist',
+          description:
+            'A healthcare professional who helps people participate in daily activities through therapeutic interventions',
+        },
+      }),
+      prisma.providerType.create({
+        data: {
+          name: 'Dietitian',
+          description:
+            'A healthcare professional who specializes in human nutrition and the regulation of diet',
+        },
+      }),
     ]);
     console.log('Provider types created successfully');
   } catch (e: any) {
@@ -58,12 +89,12 @@ async function main() {
     const services = await Promise.all([
       prisma.service.create({
         data: {
-          name: 'General Consultation',
+          name: 'General GP Consult',
           description: 'Standard medical consultation for general health concerns',
           providerType: { connect: { name: 'General Practitioner' } },
           displayPriority: 1,
           defaultDuration: 15, // in minutes
-          defaultPrice: 650.0, // in ZAR
+          defaultPrice: 600.0, // in ZAR
         },
       }),
       prisma.service.create({
@@ -95,6 +126,72 @@ async function main() {
           displayPriority: 4,
           defaultDuration: 5,
           defaultPrice: 300.0,
+        },
+      }),
+      // Psychologist services
+      prisma.service.create({
+        data: {
+          name: 'General Psychology Consult',
+          description: 'Standard psychological consultation for mental health concerns',
+          providerType: { connect: { name: 'Psychologist' } },
+          displayPriority: 1,
+          defaultDuration: 15,
+          defaultPrice: 600.0,
+        },
+      }),
+      // Dentist services
+      prisma.service.create({
+        data: {
+          name: 'General Dental Consult',
+          description: 'Standard dental consultation and examination',
+          providerType: { connect: { name: 'Dentist' } },
+          displayPriority: 1,
+          defaultDuration: 15,
+          defaultPrice: 600.0,
+        },
+      }),
+      // Speech Therapist services
+      prisma.service.create({
+        data: {
+          name: 'General Speech Therapy Consult',
+          description: 'Standard speech therapy consultation and assessment',
+          providerType: { connect: { name: 'Speech Therapist' } },
+          displayPriority: 1,
+          defaultDuration: 15,
+          defaultPrice: 600.0,
+        },
+      }),
+      // Physiotherapist services
+      prisma.service.create({
+        data: {
+          name: 'General Physiotherapy Consult',
+          description: 'Standard physiotherapy consultation and assessment',
+          providerType: { connect: { name: 'Physiotherapist' } },
+          displayPriority: 1,
+          defaultDuration: 15,
+          defaultPrice: 600.0,
+        },
+      }),
+      // Occupational Therapist services
+      prisma.service.create({
+        data: {
+          name: 'General Occupational Therapy Consult',
+          description: 'Standard occupational therapy consultation and assessment',
+          providerType: { connect: { name: 'Occupational Therapist' } },
+          displayPriority: 1,
+          defaultDuration: 15,
+          defaultPrice: 600.0,
+        },
+      }),
+      // Dietitian services
+      prisma.service.create({
+        data: {
+          name: 'General Dietitian Consult',
+          description: 'Standard nutrition consultation and dietary assessment',
+          providerType: { connect: { name: 'Dietitian' } },
+          displayPriority: 1,
+          defaultDuration: 15,
+          defaultPrice: 600.0,
         },
       }),
     ]);
@@ -367,6 +464,201 @@ async function main() {
           },
           displayPriority: 3,
           providerType: { connect: { name: 'Psychologist' } },
+        },
+      }),
+      // Dentist requirements
+      prisma.requirementType.create({
+        data: {
+          name: 'HPCSA Registration - Dentist',
+          description:
+            'Are you currently registered as a Dentist with the Health Professions Council of South Africa (HPCSA)?',
+          isRequired: true,
+          validationType: 'BOOLEAN',
+          validationConfig: {
+            trueLabel: 'Yes, I am registered as a Dentist',
+            falseLabel: 'No, I am not registered',
+            defaultValue: null,
+            helpText: 'You must be a registered HPCSA member to practice as a Dentist in South Africa',
+            validationError:
+              'Please confirm your HPCSA registration status. This is a mandatory requirement.',
+            placeholder: 'Select your HPCSA registration status',
+          },
+          displayPriority: 1,
+          providerType: { connect: { name: 'Dentist' } },
+        },
+      }),
+      prisma.requirementType.create({
+        data: {
+          name: 'HPCSA Registration Document - Dentist',
+          description: 'Valid HPCSA registration certificate for practicing as a Dentist in South Africa',
+          isRequired: true,
+          validationType: 'DOCUMENT',
+          validationConfig: {
+            expectedFormat: 'PDF',
+            maxSizeMB: 5,
+            helpText:
+              'Please upload your valid HPCSA registration for practicing as a Dentist in South Africa.',
+            validationError: 'Please upload a PDF document that is less than 5MB in size.',
+            placeholder: 'Upload your valid HPCSA registration',
+          },
+          displayPriority: 2,
+          providerType: { connect: { name: 'Dentist' } },
+        },
+      }),
+      // Speech Therapist requirements
+      prisma.requirementType.create({
+        data: {
+          name: 'HPCSA Registration - Speech Therapist',
+          description:
+            'Are you currently registered as a Speech Therapist with the Health Professions Council of South Africa (HPCSA)?',
+          isRequired: true,
+          validationType: 'BOOLEAN',
+          validationConfig: {
+            trueLabel: 'Yes, I am registered as a Speech Therapist',
+            falseLabel: 'No, I am not registered',
+            defaultValue: null,
+            helpText: 'You must be a registered HPCSA member to practice as a Speech Therapist in South Africa',
+            validationError:
+              'Please confirm your HPCSA registration status. This is a mandatory requirement.',
+            placeholder: 'Select your HPCSA registration status',
+          },
+          displayPriority: 1,
+          providerType: { connect: { name: 'Speech Therapist' } },
+        },
+      }),
+      prisma.requirementType.create({
+        data: {
+          name: 'HPCSA Registration Document - Speech Therapist',
+          description: 'Valid HPCSA registration certificate for practicing as a Speech Therapist in South Africa',
+          isRequired: true,
+          validationType: 'DOCUMENT',
+          validationConfig: {
+            expectedFormat: 'PDF',
+            maxSizeMB: 5,
+            helpText:
+              'Please upload your valid HPCSA registration for practicing as a Speech Therapist in South Africa.',
+            validationError: 'Please upload a PDF document that is less than 5MB in size.',
+            placeholder: 'Upload your valid HPCSA registration',
+          },
+          displayPriority: 2,
+          providerType: { connect: { name: 'Speech Therapist' } },
+        },
+      }),
+      // Physiotherapist requirements
+      prisma.requirementType.create({
+        data: {
+          name: 'HPCSA Registration - Physiotherapist',
+          description:
+            'Are you currently registered as a Physiotherapist with the Health Professions Council of South Africa (HPCSA)?',
+          isRequired: true,
+          validationType: 'BOOLEAN',
+          validationConfig: {
+            trueLabel: 'Yes, I am registered as a Physiotherapist',
+            falseLabel: 'No, I am not registered',
+            defaultValue: null,
+            helpText: 'You must be a registered HPCSA member to practice as a Physiotherapist in South Africa',
+            validationError:
+              'Please confirm your HPCSA registration status. This is a mandatory requirement.',
+            placeholder: 'Select your HPCSA registration status',
+          },
+          displayPriority: 1,
+          providerType: { connect: { name: 'Physiotherapist' } },
+        },
+      }),
+      prisma.requirementType.create({
+        data: {
+          name: 'HPCSA Registration Document - Physiotherapist',
+          description: 'Valid HPCSA registration certificate for practicing as a Physiotherapist in South Africa',
+          isRequired: true,
+          validationType: 'DOCUMENT',
+          validationConfig: {
+            expectedFormat: 'PDF',
+            maxSizeMB: 5,
+            helpText:
+              'Please upload your valid HPCSA registration for practicing as a Physiotherapist in South Africa.',
+            validationError: 'Please upload a PDF document that is less than 5MB in size.',
+            placeholder: 'Upload your valid HPCSA registration',
+          },
+          displayPriority: 2,
+          providerType: { connect: { name: 'Physiotherapist' } },
+        },
+      }),
+      // Occupational Therapist requirements
+      prisma.requirementType.create({
+        data: {
+          name: 'HPCSA Registration - Occupational Therapist',
+          description:
+            'Are you currently registered as an Occupational Therapist with the Health Professions Council of South Africa (HPCSA)?',
+          isRequired: true,
+          validationType: 'BOOLEAN',
+          validationConfig: {
+            trueLabel: 'Yes, I am registered as an Occupational Therapist',
+            falseLabel: 'No, I am not registered',
+            defaultValue: null,
+            helpText: 'You must be a registered HPCSA member to practice as an Occupational Therapist in South Africa',
+            validationError:
+              'Please confirm your HPCSA registration status. This is a mandatory requirement.',
+            placeholder: 'Select your HPCSA registration status',
+          },
+          displayPriority: 1,
+          providerType: { connect: { name: 'Occupational Therapist' } },
+        },
+      }),
+      prisma.requirementType.create({
+        data: {
+          name: 'HPCSA Registration Document - Occupational Therapist',
+          description: 'Valid HPCSA registration certificate for practicing as an Occupational Therapist in South Africa',
+          isRequired: true,
+          validationType: 'DOCUMENT',
+          validationConfig: {
+            expectedFormat: 'PDF',
+            maxSizeMB: 5,
+            helpText:
+              'Please upload your valid HPCSA registration for practicing as an Occupational Therapist in South Africa.',
+            validationError: 'Please upload a PDF document that is less than 5MB in size.',
+            placeholder: 'Upload your valid HPCSA registration',
+          },
+          displayPriority: 2,
+          providerType: { connect: { name: 'Occupational Therapist' } },
+        },
+      }),
+      // Dietitian requirements
+      prisma.requirementType.create({
+        data: {
+          name: 'HPCSA Registration - Dietitian',
+          description:
+            'Are you currently registered as a Dietitian with the Health Professions Council of South Africa (HPCSA)?',
+          isRequired: true,
+          validationType: 'BOOLEAN',
+          validationConfig: {
+            trueLabel: 'Yes, I am registered as a Dietitian',
+            falseLabel: 'No, I am not registered',
+            defaultValue: null,
+            helpText: 'You must be a registered HPCSA member to practice as a Dietitian in South Africa',
+            validationError:
+              'Please confirm your HPCSA registration status. This is a mandatory requirement.',
+            placeholder: 'Select your HPCSA registration status',
+          },
+          displayPriority: 1,
+          providerType: { connect: { name: 'Dietitian' } },
+        },
+      }),
+      prisma.requirementType.create({
+        data: {
+          name: 'HPCSA Registration Document - Dietitian',
+          description: 'Valid HPCSA registration certificate for practicing as a Dietitian in South Africa',
+          isRequired: true,
+          validationType: 'DOCUMENT',
+          validationConfig: {
+            expectedFormat: 'PDF',
+            maxSizeMB: 5,
+            helpText:
+              'Please upload your valid HPCSA registration for practicing as a Dietitian in South Africa.',
+            validationError: 'Please upload a PDF document that is less than 5MB in size.',
+            placeholder: 'Upload your valid HPCSA registration',
+          },
+          displayPriority: 2,
+          providerType: { connect: { name: 'Dietitian' } },
         },
       }),
     ]);

@@ -85,7 +85,8 @@ export async function updateProviderBasicInfo(prevState: any, formData: FormData
     if (image && image !== currentProvider.image) updateData.image = image;
     if (bio !== undefined && bio !== currentProvider.bio) updateData.bio = bio;
     if (email && email !== currentProvider.email) updateData.email = email;
-    if (whatsapp !== undefined && whatsapp !== currentProvider.whatsapp) updateData.whatsapp = whatsapp;
+    if (whatsapp !== undefined && whatsapp !== currentProvider.whatsapp)
+      updateData.whatsapp = whatsapp;
     if (website !== currentProvider.website) updateData.website = website;
     if (JSON.stringify(languages) !== JSON.stringify(currentProvider.languages)) {
       updateData.languages = languages;

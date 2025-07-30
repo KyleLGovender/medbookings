@@ -1,43 +1,28 @@
-import { useQuery } from '@tanstack/react-query';
-
 import { api } from '@/utils/api';
 
 /**
- * Hook to fetch available services for a provider
+ * Hook to fetch available services for a provider based on all their provider types
  * @param providerId The ID of the provider
  * @returns Query result containing the available services
  */
 export function useProviderTypeServices(providerId: string | undefined) {
-  // First, fetch the provider to get its type ID
-  const providerQuery = useQuery({
-    queryKey: ['provider', providerId],
-    queryFn: async () => {
-      if (!providerId) {
-        throw new Error('Provider ID is required');
-      }
+  // First, fetch the provider to get its type IDs
+  const providerQuery = api.providers.getById.useQuery(
+    { id: providerId! },
+    { enabled: !!providerId }
+  );
 
-      const response = await fetch(`/api/providers/${providerId}`);
+  // Extract provider type IDs from the provider data
+  const providerTypeIds = providerQuery.data?.providerTypes?.map((type: any) => type.id) || [];
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Provider not found');
-        }
-        throw new Error('Failed to fetch provider data');
-      }
-
-      return response.json();
-    },
-    enabled: !!providerId,
-  });
-
-  // Then fetch services based on the provider type ID
-  return api.providers.getServices.useQuery(
+  // Fetch services based on all provider type IDs
+  return api.providers.getServicesForMultipleTypes.useQuery(
     {
-      providerTypeId: providerQuery.data?.providerTypeId || '',
+      providerTypeIds,
       providerId: providerId,
     },
     {
-      enabled: !!providerId && !!providerQuery.data?.providerTypeId,
+      enabled: !!providerId && providerTypeIds.length > 0,
     }
   );
 }

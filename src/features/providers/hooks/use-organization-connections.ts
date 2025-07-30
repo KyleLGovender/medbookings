@@ -7,14 +7,13 @@ import { api } from '@/utils/api';
  * @param status Optional status filter
  * @returns Query object with provider invitations data
  */
-export function useProviderInvitations(status?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'EXPIRED') {
-  return api.providers.getInvitations.useQuery(
-    status ? { status } : {},
-    {
-      // Always enabled since it handles auth internally
-      retry: false,
-    }
-  );
+export function useProviderInvitations(
+  status?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'EXPIRED'
+) {
+  return api.providers.getInvitations.useQuery(status ? { status } : {}, {
+    // Always enabled since it handles auth internally
+    retry: false,
+  });
 }
 
 /**
@@ -44,14 +43,13 @@ export function useRespondToInvitation(options?: {
  * @param status Optional status filter
  * @returns Query object with organization connections data
  */
-export function useOrganizationConnections(status?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'SUSPENDED') {
-  return api.providers.getConnections.useQuery(
-    status ? { status } : {},
-    {
-      // Always enabled since it handles auth internally
-      retry: false,
-    }
-  );
+export function useOrganizationConnections(
+  status?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'SUSPENDED'
+) {
+  return api.providers.getConnections.useQuery(status ? { status } : {}, {
+    // Always enabled since it handles auth internally
+    retry: false,
+  });
 }
 
 /**

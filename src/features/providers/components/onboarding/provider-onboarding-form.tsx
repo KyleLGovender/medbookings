@@ -6,8 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, Send } from 'lucide-react';
 import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 
-import { api } from '@/utils/api';
-
 import CalendarLoader from '@/components/calendar-loader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -26,6 +24,7 @@ import { Separator } from '@/components/ui/separator';
 import { ProviderFormType, providerFormSchema } from '@/features/providers/hooks/types';
 import { useCreateProvider } from '@/features/providers/hooks/use-create-provider';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/utils/api';
 
 import { BasicInfoSection } from './basic-info-section';
 import { ProviderTypeSection } from './provider-type-section';

@@ -1,4 +1,5 @@
 import { test as setup } from '@playwright/test';
+
 import { setupTestEnvironment } from '../utils/database';
 
 setup('authenticate', async ({ page }) => {
