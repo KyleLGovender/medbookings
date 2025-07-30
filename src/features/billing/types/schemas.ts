@@ -68,23 +68,88 @@ export const usageDataSchema = z.object({
 // REQUEST SCHEMAS
 // =============================================================================
 
-// Create subscription request schema
-export const createSubscriptionRequestSchema = z.object({
-  entityType: z.enum(['organization', 'location', 'provider']),
-  entityId: z.string().uuid(),
-  planId: z.string().uuid(),
-  type: subscriptionTypeSchema,
-  trialStart: z.coerce.date().optional(),
-  trialEnd: z.coerce.date().optional(),
-});
+// Create subscription request schema (polymorphic relationship)
+export const createSubscriptionRequestSchema = z
+  .object({
+    planId: z.string().min(1, 'Plan ID is required'),
+    // Polymorphic relationship - exactly one must be provided
+    organizationId: z.string().optional(),
+    locationId: z.string().optional(),
+    providerId: z.string().optional(),
+    // Subscription details
+    type: subscriptionTypeSchema.default('BASE'),
+    status: subscriptionStatusSchema,
+    startDate: z.string().transform((val) => new Date(val)),
+    endDate: z
+      .string()
+      .transform((val) => new Date(val))
+      .optional(),
+    // Stripe integration
+    stripeCustomerId: z.string().optional(),
+    stripeSubscriptionId: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      // Ensure exactly one of the polymorphic fields is set
+      const setFields = [data.organizationId, data.locationId, data.providerId].filter(Boolean);
+      return setFields.length === 1;
+    },
+    {
+      message: 'Exactly one of organizationId, locationId, or providerId must be provided',
+      path: ['polymorphicRelation'],
+    }
+  );
 
-// Update subscription request schema
-export const updateSubscriptionRequestSchema = z.object({
-  planId: z.string().uuid().optional(),
-  status: subscriptionStatusSchema.optional(),
-  isActive: z.boolean().optional(),
-  endDate: z.coerce.date().optional(),
-});
+// Update subscription request schema (polymorphic relationship)
+export const updateSubscriptionRequestSchema = z
+  .object({
+    id: z.string(),
+    planId: z.string().min(1, 'Plan ID is required').optional(),
+    // Polymorphic relationship - exactly one must be provided if updating
+    organizationId: z.string().optional(),
+    locationId: z.string().optional(),
+    providerId: z.string().optional(),
+    // Subscription details
+    type: subscriptionTypeSchema.optional(),
+    status: subscriptionStatusSchema.optional(),
+    startDate: z
+      .string()
+      .transform((val) => new Date(val))
+      .optional(),
+    endDate: z
+      .string()
+      .transform((val) => new Date(val))
+      .optional(),
+    cancelledAt: z
+      .string()
+      .transform((val) => new Date(val))
+      .optional(),
+    cancelReason: z.string().optional(),
+    // Stripe integration
+    stripeCustomerId: z.string().optional(),
+    stripeSubscriptionId: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      // If any polymorphic field is being updated, ensure exactly one is set
+      const polymorphicFields = [data.organizationId, data.locationId, data.providerId];
+      const definedFields = polymorphicFields.filter((field) => field !== undefined);
+
+      // If no polymorphic fields are being updated, that's fine
+      if (definedFields.length === 0) {
+        return true;
+      }
+
+      // If polymorphic fields are being updated, exactly one must be set (not null)
+      const setFields = polymorphicFields.filter((field) => field !== undefined && field !== null);
+      return setFields.length === 1;
+    },
+    {
+      message:
+        'If updating entity relationship, exactly one of organizationId, locationId, or providerId must be provided',
+      path: ['polymorphicRelation'],
+    }
+  );
 
 // Update billing configuration request schema
 export const updateBillingConfigRequestSchema = z.object({
@@ -112,9 +177,22 @@ export const createUsageRecordRequestSchema = z.object({
   slotDuration: z.number().int().positive(),
 });
 
+// Cancel subscription request schema
+export const cancelSubscriptionRequestSchema = z.object({
+  id: z.string(),
+  cancelReason: z.string().optional().default('Cancelled via API'),
+});
+
 // =============================================================================
 // QUERY SCHEMAS
 // =============================================================================
+
+// Get subscriptions query schema
+export const getSubscriptionsQuerySchema = z.object({
+  organizationId: z.string().optional(),
+  locationId: z.string().optional(),
+  providerId: z.string().optional(),
+});
 
 // Subscription query options schema
 export const subscriptionQueryOptionsSchema = z.object({
@@ -164,6 +242,8 @@ export type UpdateSubscriptionRequestInput = z.infer<typeof updateSubscriptionRe
 export type UpdateBillingConfigRequestInput = z.infer<typeof updateBillingConfigRequestSchema>;
 export type ProcessPaymentRequestInput = z.infer<typeof processPaymentRequestSchema>;
 export type CreateUsageRecordRequestInput = z.infer<typeof createUsageRecordRequestSchema>;
+export type CancelSubscriptionRequestInput = z.infer<typeof cancelSubscriptionRequestSchema>;
+export type GetSubscriptionsQueryInput = z.infer<typeof getSubscriptionsQuerySchema>;
 export type SubscriptionQueryOptionsInput = z.infer<typeof subscriptionQueryOptionsSchema>;
 export type BillingDashboardQueryInput = z.infer<typeof billingDashboardQuerySchema>;
 export type SubscriptionRouteParamsInput = z.infer<typeof subscriptionRouteParamsSchema>;

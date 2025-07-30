@@ -12,7 +12,12 @@ import {
 } from '@/features/calendar/lib/actions';
 import { geocodeAddress } from '@/features/calendar/lib/location-search-service';
 import { getDatabasePerformanceRecommendations } from '@/features/calendar/lib/search-performance-service';
-import { availabilityCreateSchema } from '@/features/calendar/types/schemas';
+import {
+  availabilityCreateSchema,
+  availabilitySearchParamsSchema,
+  slotSearchParamsSchema,
+  updateAvailabilityDataSchema,
+} from '@/features/calendar/types/schemas';
 import { AvailabilityStatus } from '@/features/calendar/types/types';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
@@ -41,26 +46,9 @@ export const calendarRouter = createTRPCRouter({
    * Migrated from: GET /api/calendar/availability
    */
   searchAvailability: publicProcedure
-    .input(
-      z.object({
-        providerId: z.string().optional(),
-        organizationId: z.string().optional(),
-        locationId: z.string().optional(),
-        serviceId: z.string().optional(),
-        startDate: z.string().datetime().optional(),
-        endDate: z.string().datetime().optional(),
-        status: z.nativeEnum(AvailabilityStatus).optional(),
-        seriesId: z.string().optional(),
-      })
-    )
+    .input(availabilitySearchParamsSchema)
     .query(async ({ ctx, input }) => {
-      const params = {
-        ...input,
-        startDate: input.startDate ? new Date(input.startDate) : undefined,
-        endDate: input.endDate ? new Date(input.endDate) : undefined,
-      };
-
-      const result = await searchAvailability(params);
+      const result = await searchAvailability(input);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch availability');
@@ -102,28 +90,9 @@ export const calendarRouter = createTRPCRouter({
    * Migrated from: PUT /api/calendar/availability/update
    */
   update: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        startTime: z.string().datetime().optional(),
-        endTime: z.string().datetime().optional(),
-        serviceId: z.string().optional(),
-        price: z.number().optional(),
-        duration: z.number().optional(),
-        isOnlineAvailable: z.boolean().optional(),
-        locationId: z.string().optional(),
-        notes: z.string().optional(),
-      })
-    )
+    .input(updateAvailabilityDataSchema)
     .mutation(async ({ ctx, input }) => {
-      // Convert string dates to Date objects
-      const updateData = {
-        ...input,
-        startTime: input.startTime ? new Date(input.startTime) : undefined,
-        endTime: input.endTime ? new Date(input.endTime) : undefined,
-      };
-
-      const result = await updateAvailability(updateData);
+      const result = await updateAvailability(input);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to update availability');
@@ -225,27 +194,18 @@ export const calendarRouter = createTRPCRouter({
    */
   searchSlots: publicProcedure
     .input(
-      z.object({
-        providerId: z.string().optional(),
-        serviceId: z.string().optional(),
-        locationId: z.string().optional(),
-        startDate: z.string(),
-        endDate: z.string(),
-        duration: z.number().optional(),
+      slotSearchParamsSchema.extend({
         onlineOnly: z.boolean().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
-      const startDate = new Date(input.startDate);
-      const endDate = new Date(input.endDate);
-
       // Find available slots based on availability
       const availabilities = await ctx.prisma.availability.findMany({
         where: {
           providerId: input.providerId,
           locationId: input.locationId,
-          startTime: { gte: startDate },
-          endTime: { lte: endDate },
+          startTime: { gte: input.startDate },
+          endTime: { lte: input.endDate },
           status: AvailabilityStatus.ACCEPTED,
           ...(input.onlineOnly && { isOnlineAvailable: true }),
         },
@@ -270,7 +230,7 @@ export const calendarRouter = createTRPCRouter({
 
       // Generate slots from availabilities
       const slots = availabilities.flatMap((availability) => {
-        const slotDuration = input.duration || 30;
+        const slotDuration = input.minDuration || 30;
         const slots = [];
         let currentTime = new Date(availability.startTime);
         const endTime = new Date(availability.endTime);

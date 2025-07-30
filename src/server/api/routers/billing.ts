@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
 import {
+  cancelSubscriptionRequestSchema,
   createSubscriptionRequestSchema,
+  getSubscriptionsQuerySchema,
   subscriptionQueryOptionsSchema,
   updateSubscriptionRequestSchema,
 } from '@/features/billing/types/schemas';
@@ -13,13 +15,7 @@ export const billingRouter = createTRPCRouter({
    * Migrated from: GET /api/subscriptions
    */
   getSubscriptions: protectedProcedure
-    .input(
-      z.object({
-        organizationId: z.string().optional(),
-        locationId: z.string().optional(),
-        providerId: z.string().optional(),
-      })
-    )
+    .input(getSubscriptionsQuerySchema)
     .query(async ({ ctx, input }) => {
       // Build where clause based on provided filters
       const whereClause: any = {};
@@ -87,42 +83,7 @@ export const billingRouter = createTRPCRouter({
    * Migrated from: POST /api/subscriptions
    */
   createSubscription: protectedProcedure
-    .input(
-      z
-        .object({
-          planId: z.string().min(1, 'Plan ID is required'),
-          // Polymorphic relationship - exactly one must be provided
-          organizationId: z.string().optional(),
-          locationId: z.string().optional(),
-          providerId: z.string().optional(),
-          // Subscription details
-          type: z
-            .enum(['BASE', 'WEBSITE_HOSTING', 'REVIEW_PROMOTION', 'PREMIUM_ANALYTICS', 'CUSTOM'])
-            .default('BASE'),
-          status: z.enum(['ACTIVE', 'PAST_DUE', 'CANCELLED', 'EXPIRED', 'TRIALING']),
-          startDate: z.string().transform((val) => new Date(val)),
-          endDate: z
-            .string()
-            .transform((val) => new Date(val))
-            .optional(),
-          // Stripe integration
-          stripeCustomerId: z.string().optional(),
-          stripeSubscriptionId: z.string().optional(),
-        })
-        .refine(
-          (data) => {
-            // Ensure exactly one of the polymorphic fields is set
-            const setFields = [data.organizationId, data.locationId, data.providerId].filter(
-              Boolean
-            );
-            return setFields.length === 1;
-          },
-          {
-            message: 'Exactly one of organizationId, locationId, or providerId must be provided',
-            path: ['polymorphicRelation'],
-          }
-        )
-    )
+    .input(createSubscriptionRequestSchema)
     .mutation(async ({ ctx, input }) => {
       // Additional validation: Check that the referenced entity exists
       if (input.organizationId) {
@@ -193,61 +154,7 @@ export const billingRouter = createTRPCRouter({
    * Migrated from: PATCH /api/subscriptions/[id]
    */
   updateSubscription: protectedProcedure
-    .input(
-      z
-        .object({
-          id: z.string(),
-          planId: z.string().min(1, 'Plan ID is required').optional(),
-          // Polymorphic relationship - exactly one must be provided if updating
-          organizationId: z.string().optional(),
-          locationId: z.string().optional(),
-          providerId: z.string().optional(),
-          // Subscription details
-          type: z
-            .enum(['BASE', 'WEBSITE_HOSTING', 'REVIEW_PROMOTION', 'PREMIUM_ANALYTICS', 'CUSTOM'])
-            .optional(),
-          status: z.enum(['ACTIVE', 'PAST_DUE', 'CANCELLED', 'EXPIRED', 'TRIALING']).optional(),
-          startDate: z
-            .string()
-            .transform((val) => new Date(val))
-            .optional(),
-          endDate: z
-            .string()
-            .transform((val) => new Date(val))
-            .optional(),
-          cancelledAt: z
-            .string()
-            .transform((val) => new Date(val))
-            .optional(),
-          cancelReason: z.string().optional(),
-          // Stripe integration
-          stripeCustomerId: z.string().optional(),
-          stripeSubscriptionId: z.string().optional(),
-        })
-        .refine(
-          (data) => {
-            // If any polymorphic field is being updated, ensure exactly one is set
-            const polymorphicFields = [data.organizationId, data.locationId, data.providerId];
-            const definedFields = polymorphicFields.filter((field) => field !== undefined);
-
-            // If no polymorphic fields are being updated, that's fine
-            if (definedFields.length === 0) {
-              return true;
-            }
-
-            // If polymorphic fields are being updated, exactly one must be set (not null)
-            const setFields = polymorphicFields.filter(
-              (field) => field !== undefined && field !== null
-            );
-            return setFields.length === 1;
-          },
-          {
-            message:
-              'If updating entity relationship, exactly one of organizationId, locationId, or providerId must be provided',
-            path: ['polymorphicRelation'],
-          }
-        )
-    )
+    .input(updateSubscriptionRequestSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if subscription exists
       const existingSubscription = await ctx.prisma.subscription.findUnique({
@@ -340,12 +247,7 @@ export const billingRouter = createTRPCRouter({
    * Migrated from: DELETE /api/subscriptions/[id]
    */
   cancelSubscription: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        cancelReason: z.string().optional().default('Cancelled via API'),
-      })
-    )
+    .input(cancelSubscriptionRequestSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if subscription exists
       const existingSubscription = await ctx.prisma.subscription.findUnique({
