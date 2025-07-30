@@ -137,11 +137,8 @@ export function EditOrganizationBasicInfo({
         description: 'Organization details updated successfully',
       });
 
-      // Force a hard refetch to ensure we have the latest data
-      refetch();
-
-      // Also refresh the router to update any server components
-      router.refresh();
+      // Navigate back to the organization page
+      router.push(`/organizations/${organizationId}`);
     } catch (error) {
       toast({
         title: 'Error',
