@@ -584,6 +584,76 @@ import { OrganizationRole, Permission, SystemRole } from '@/types/permissions';
  * showing only accessible routes and features.
  */
 
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
+/**
+ * Permission-aware navigation components
+ *
+ * Navigation components that adapt based on user permissions and roles,
+ * showing only accessible routes and features.
+ */
+
 interface NavigationItem {
   href: string;
   label: string;

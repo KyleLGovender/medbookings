@@ -187,6 +187,19 @@ export interface OrganizationLocationsData {
   locations: OrganizationLocation[];
 }
 
+// Location with required fields for mutation operations
+export interface OrganizationLocationForMutation {
+  id?: string;
+  organizationId: string;
+  name: string;
+  formattedAddress: string;
+  phone?: string;
+  email?: string;
+  googlePlaceId?: string;
+  coordinates?: any;
+  searchTerms?: string[];
+}
+
 export interface ProviderInvitationWithDetails {
   id: string;
   email: string;

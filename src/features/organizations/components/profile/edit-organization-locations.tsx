@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Location, Organization } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, Building, Loader2, MapPin, Plus, Save, Trash2 } from 'lucide-react';
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
@@ -27,19 +26,19 @@ import { GoogleMapsLocationPicker } from '@/features/organizations/components/go
 import { useOrganization } from '@/features/organizations/hooks/use-organization';
 import { useUpdateOrganizationLocations } from '@/features/organizations/hooks/use-organization-updates';
 import { organizationLocationsSchema } from '@/features/organizations/types/schemas';
-import { OrganizationLocationsData } from '@/features/organizations/types/types';
+import {
+  OrganizationLocationForMutation,
+  OrganizationLocationsData,
+} from '@/features/organizations/types/types';
 import { toast } from '@/hooks/use-toast';
-// Assuming Location type exists
 import { isDevelopment } from '@/lib/constants';
 
 interface EditOrganizationLocationsProps {
   organizationId: string;
-  userId?: string;
 }
 
 export function EditOrganizationLocations({
   organizationId,
-  userId,
 }: EditOrganizationLocationsProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -100,7 +99,7 @@ export function EditOrganizationLocations({
       // Trigger validation after reset to ensure form state is valid
       form.trigger();
     }
-  }, [organization, form]); // form.reset is stable, so form is the main dependency here along with organization
+  }, [organization, organizationId, form]); // form.reset is stable, so form is the main dependency here along with organization
 
   const updateLocationsMutation = useUpdateOrganizationLocations();
 
@@ -149,9 +148,24 @@ export function EditOrganizationLocations({
   async function onSubmit(data: OrganizationLocationsData) {
     setIsSubmitting(true);
     try {
+      // Ensure all locations have required fields for mutation
+      const locationsForMutation: OrganizationLocationForMutation[] = data.locations.map(
+        (location) => ({
+          id: location.id,
+          organizationId: location.organizationId || organizationId,
+          name: location.name,
+          formattedAddress: location.formattedAddress,
+          phone: location.phone,
+          email: location.email,
+          googlePlaceId: location.googlePlaceId,
+          coordinates: location.coordinates,
+          searchTerms: location.searchTerms,
+        })
+      );
+
       await updateLocationsMutation.mutateAsync({
         organizationId,
-        locations: data.locations,
+        locations: locationsForMutation,
       });
 
       toast({
@@ -163,7 +177,7 @@ export function EditOrganizationLocations({
       await queryClient.invalidateQueries({ queryKey: ['organization', organizationId] });
       refetch(); // Refetch the organization data for this component
       router.refresh(); // Refresh server components
-      
+
       // Navigate back to organization profile
       router.push(`/organizations/${organizationId}`);
     } catch (error) {
@@ -402,7 +416,7 @@ export function EditOrganizationLocations({
             Save Changes
           </Button>
         </div>
-        
+
         {isDevelopment && (
           <div className="mt-4 rounded bg-muted/50 p-4 text-xs">
             <h4 className="font-semibold">Form Debug Info:</h4>
