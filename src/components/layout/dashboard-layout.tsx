@@ -20,6 +20,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/s
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAdminOrganization } from '@/features/organizations/hooks/use-admin-organizations';
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
+import { useOrganization } from '@/features/organizations/hooks/use-organization';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useProvider } from '@/features/providers/hooks/use-provider';
 import { isMobileForUI } from '@/lib/utils/responsive';
@@ -190,8 +191,17 @@ function DynamicBreadcrumb() {
       : undefined;
 
   const { data: provider, isLoading: isProviderLoading } = useProvider(providerId);
-  const { data: organization, isLoading: isOrganizationLoading } =
-    useAdminOrganization(organizationId);
+  
+  // Use admin hook for admin routes, regular hook for user routes
+  const isAdminRoute = pathname.startsWith('/admin');
+  
+  const { data: adminOrganization, isLoading: isAdminOrganizationLoading } =
+    useAdminOrganization(isAdminRoute ? organizationId : undefined);
+  const { data: userOrganization, isLoading: isUserOrganizationLoading } =
+    useOrganization(!isAdminRoute ? organizationId : undefined);
+    
+  const organization = isAdminRoute ? adminOrganization : userOrganization;
+  const isOrganizationLoading = isAdminRoute ? isAdminOrganizationLoading : isUserOrganizationLoading;
 
   // Create breadcrumb items
   const breadcrumbItems = [];

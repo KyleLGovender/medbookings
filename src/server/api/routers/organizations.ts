@@ -16,17 +16,39 @@ export const organizationsRouter = createTRPCRouter({
    * Get organization by ID
    * Migrated from: GET /api/organizations/[id]
    */
-  getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+  getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    // First check if the organization exists
     const organization = await ctx.prisma.organization.findUnique({
       where: { id: input.id },
       include: {
         locations: true,
-        memberships: true,
+        memberships: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              }
+            }
+          }
+        },
       },
     });
 
     if (!organization) {
       throw new Error('Organization not found');
+    }
+
+    // Check if the current user is a member of this organization or is an admin
+    const userMembership = organization.memberships.find(
+      (membership) => membership.userId === ctx.session.user.id
+    );
+
+    const isSystemAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(ctx.session.user.role || '');
+
+    if (!userMembership && !isSystemAdmin) {
+      throw new Error('You do not have permission to access this organization');
     }
 
     return organization;
@@ -57,9 +79,9 @@ export const organizationsRouter = createTRPCRouter({
         id: z.string(),
         name: z.string().optional(),
         description: z.string().optional(),
-        email: z.string().email().optional(),
+        email: z.union([z.string().email('Invalid email format'), z.literal('')]).optional(),
         phone: z.string().optional(),
-        website: z.string().url().optional(),
+        website: z.union([z.string().url('Invalid website URL'), z.literal('')]).optional(),
         billingModel: z.enum(['SLOT_BASED', 'PROVIDER_BASED']).optional(),
       })
     )

@@ -81,11 +81,11 @@ async function checkRoutePermissions(pathname: string, token: any): Promise<bool
     return token.providerRole === 'PROVIDER';
   }
 
-  // For organization routes, we'll need to check membership
-  // This is simplified - in practice, you'd query the database
+  // For organization routes, allow authenticated users through
+  // The page component and tRPC procedures will handle the specific membership/permission checks
   if (pathname.startsWith('/organizations/') && pathname.includes('/edit')) {
-    // Check if user is org admin (simplified)
-    return token.role === 'ADMIN' || token.role === 'SUPER_ADMIN';
+    // Allow authenticated users through - proper authorization happens at the API level
+    return true;
   }
 
   if (pathname.startsWith('/providers/') && pathname.includes('/edit')) {

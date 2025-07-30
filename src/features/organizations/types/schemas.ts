@@ -11,10 +11,10 @@ import { z } from 'zod';
 
 export const createOrganizationSchema = z.object({
   name: z.string().min(1, 'Organization name is required').max(255, 'Name too long'),
-  email: z.string().email('Invalid email format').optional().or(z.literal('')),
-  phone: z.string().optional().or(z.literal('')),
-  website: z.string().url('Invalid website URL').optional().or(z.literal('')),
-  description: z.string().optional().or(z.literal('')),
+  email: z.union([z.string().email('Invalid email format'), z.literal('')]).optional(),
+  phone: z.string().optional(),
+  website: z.union([z.string().url('Invalid website URL'), z.literal('')]).optional(),
+  description: z.string().optional(),
 });
 
 export const updateOrganizationSchema = createOrganizationSchema.partial().extend({

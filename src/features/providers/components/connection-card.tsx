@@ -78,9 +78,8 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
   const { toast } = useToast();
 
   const updateConnectionMutation = useUpdateConnection({
-    onSuccess: (data, variables) => {
-      const message =
-        variables.status === 'SUSPENDED'
+    onSuccess: (data) => {
+      const message = pendingAction === 'suspend'
           ? 'Connection suspended successfully'
           : 'Connection reactivated successfully';
 
@@ -143,7 +142,7 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
     if (!pendingAction) return;
 
     if (pendingAction === 'delete') {
-      deleteConnectionMutation.mutate(connection.id);
+      deleteConnectionMutation.mutate({ connectionId: connection.id });
     } else {
       updateConnectionMutation.mutate({
         connectionId: connection.id,

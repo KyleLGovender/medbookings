@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Location, Organization } from '@prisma/client';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, Building, Loader2, MapPin, Plus, Save, Trash2 } from 'lucide-react';
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
 
@@ -24,6 +24,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { GoogleMapsLocationPicker } from '@/features/organizations/components/google-maps-location-picker';
+import { useOrganization } from '@/features/organizations/hooks/use-organization';
 import { useUpdateOrganizationLocations } from '@/features/organizations/hooks/use-organization-updates';
 import { organizationLocationsSchema } from '@/features/organizations/types/schemas';
 import { OrganizationLocationsData } from '@/features/organizations/types/types';
@@ -50,16 +51,7 @@ export function EditOrganizationLocations({
     isLoading: isLoadingOrganization,
     error: organizationError,
     refetch,
-  } = useQuery<Organization & { locations: Location[] }>({
-    queryKey: ['organization', organizationId],
-    queryFn: async () => {
-      const response = await fetch(`/api/organizations/${organizationId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch organization data');
-      }
-      return response.json();
-    },
-  });
+  } = useOrganization(organizationId);
 
   const form = useForm<OrganizationLocationsData>({
     resolver: zodResolver(organizationLocationsSchema),
