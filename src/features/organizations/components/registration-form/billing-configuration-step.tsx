@@ -95,7 +95,6 @@ export function BillingConfigurationStep() {
                         </div>
                       </div>
                     </div>
-
                   </RadioGroup>
                 </FormControl>
                 <FormMessage />

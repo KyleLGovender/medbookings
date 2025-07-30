@@ -24,8 +24,12 @@ import { ConnectionCard } from './connection-card';
 import { InvitationCard } from './invitation-card';
 
 export function OrganizationConnectionsManager() {
-  const [invitationsStatusFilter, setInvitationsStatusFilter] = useState<string>('all');
-  const [connectionsStatusFilter, setConnectionsStatusFilter] = useState<string>('all');
+  const [invitationsStatusFilter, setInvitationsStatusFilter] = useState<
+    'all' | 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'EXPIRED'
+  >('all');
+  const [connectionsStatusFilter, setConnectionsStatusFilter] = useState<
+    'all' | 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'SUSPENDED'
+  >('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const {
@@ -164,7 +168,12 @@ export function OrganizationConnectionsManager() {
         <TabsContent value="connections" className="space-y-6">
           {/* Connections Filters */}
           <div className="flex flex-col gap-4 sm:flex-row">
-            <Select value={connectionsStatusFilter} onValueChange={setConnectionsStatusFilter}>
+            <Select
+              value={connectionsStatusFilter}
+              onValueChange={(value) =>
+                setConnectionsStatusFilter(value as typeof connectionsStatusFilter)
+              }
+            >
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
@@ -206,7 +215,12 @@ export function OrganizationConnectionsManager() {
         <TabsContent value="invitations" className="space-y-6">
           {/* Invitations Filters */}
           <div className="flex flex-col gap-4 sm:flex-row">
-            <Select value={invitationsStatusFilter} onValueChange={setInvitationsStatusFilter}>
+            <Select
+              value={invitationsStatusFilter}
+              onValueChange={(value) =>
+                setInvitationsStatusFilter(value as typeof invitationsStatusFilter)
+              }
+            >
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>

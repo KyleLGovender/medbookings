@@ -738,6 +738,86 @@ import {
  * checking for UI elements.
  */
 
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
+/**
+ * Reusable component for conditional rendering based on permissions
+ *
+ * PermissionGate component that conditionally renders children based on
+ * user permissions, roles, and context. Provides flexible permission
+ * checking for UI elements.
+ */
+
 interface PermissionGateProps {
   children: ReactNode;
 

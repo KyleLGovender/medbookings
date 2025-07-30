@@ -94,7 +94,7 @@ export function ProfileClient({
                 {provider?.providerType?.name && (
                   <p className="text-lg font-semibold">{provider.providerType.name}</p>
                 )}
-                <p className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground">
                   {provider?.status ? (
                     <StatusBadge
                       status={provider.status as 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'}
@@ -102,7 +102,7 @@ export function ProfileClient({
                   ) : (
                     'Not Registered'
                   )}
-                </p>
+                </div>
                 <div>
                   {hasServiceProvider ? (
                     <NavigationOutlineButton href={`/providers/${provider?.id}`}>

@@ -641,17 +641,7 @@ export const providersRouter = createTRPCRouter({
       const connections = await ctx.prisma.organizationProviderConnection.findMany({
         where: whereClause,
         include: {
-          organization: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-              logo: true,
-              email: true,
-              phone: true,
-              website: true,
-            },
-          },
+          organization: true,
           invitation: {
             select: {
               id: true,
@@ -865,18 +855,12 @@ export const providersRouter = createTRPCRouter({
       const invitations = await ctx.prisma.providerInvitation.findMany({
         where: whereClause,
         include: {
-          organization: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-              logo: true,
-              email: true,
-              phone: true,
-            },
-          },
+          organization: true,
           invitedBy: {
-            select: { name: true, email: true },
+            select: {
+              name: true,
+              email: true,
+            },
           },
           connection: {
             select: {

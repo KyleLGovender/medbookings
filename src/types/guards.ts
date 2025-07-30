@@ -208,9 +208,7 @@ export function isValidAvailabilityStatus(
 }
 
 // Billing model validation
-export function isValidBillingModel(
-  value: unknown
-): value is 'CONSOLIDATED' | 'PER_LOCATION' {
+export function isValidBillingModel(value: unknown): value is 'CONSOLIDATED' | 'PER_LOCATION' {
   return typeof value === 'string' && ['CONSOLIDATED', 'PER_LOCATION'].includes(value);
 }
 

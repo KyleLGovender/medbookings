@@ -39,9 +39,7 @@ export function isInvitationAction(
   return typeof value === 'string' && ['ACCEPT', 'REJECT', 'CANCEL', 'RESEND'].includes(value);
 }
 
-export function isBillingModel(
-  value: unknown
-): value is 'CONSOLIDATED' | 'PER_LOCATION' {
+export function isBillingModel(value: unknown): value is 'CONSOLIDATED' | 'PER_LOCATION' {
   return typeof value === 'string' && ['CONSOLIDATED', 'PER_LOCATION'].includes(value);
 }
 

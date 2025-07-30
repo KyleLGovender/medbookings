@@ -643,6 +643,76 @@ import { Permission } from '@/types/permissions';
  * any user account for support and dispute resolution purposes.
  */
 
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
+/**
+ * Admin override actions for accessing any account
+ *
+ * Secure system for administrators to temporarily access and manage
+ * any user account for support and dispute resolution purposes.
+ */
+
 export interface OverrideSession {
   originalAdminId: string;
   targetUserId: string;

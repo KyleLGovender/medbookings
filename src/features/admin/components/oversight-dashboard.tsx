@@ -623,6 +623,76 @@ import { Permission } from '@/types/permissions';
  * capabilities for the entire platform.
  */
 
+/**
+ * Admin dashboard for provider/organization management
+ *
+ * Comprehensive dashboard providing administrators with oversight
+ * capabilities for the entire platform.
+ */
+
+/**
+ * Admin dashboard for provider/organization management
+ *
+ * Comprehensive dashboard providing administrators with oversight
+ * capabilities for the entire platform.
+ */
+
+/**
+ * Admin dashboard for provider/organization management
+ *
+ * Comprehensive dashboard providing administrators with oversight
+ * capabilities for the entire platform.
+ */
+
+/**
+ * Admin dashboard for provider/organization management
+ *
+ * Comprehensive dashboard providing administrators with oversight
+ * capabilities for the entire platform.
+ */
+
+/**
+ * Admin dashboard for provider/organization management
+ *
+ * Comprehensive dashboard providing administrators with oversight
+ * capabilities for the entire platform.
+ */
+
+/**
+ * Admin dashboard for provider/organization management
+ *
+ * Comprehensive dashboard providing administrators with oversight
+ * capabilities for the entire platform.
+ */
+
+/**
+ * Admin dashboard for provider/organization management
+ *
+ * Comprehensive dashboard providing administrators with oversight
+ * capabilities for the entire platform.
+ */
+
+/**
+ * Admin dashboard for provider/organization management
+ *
+ * Comprehensive dashboard providing administrators with oversight
+ * capabilities for the entire platform.
+ */
+
+/**
+ * Admin dashboard for provider/organization management
+ *
+ * Comprehensive dashboard providing administrators with oversight
+ * capabilities for the entire platform.
+ */
+
+/**
+ * Admin dashboard for provider/organization management
+ *
+ * Comprehensive dashboard providing administrators with oversight
+ * capabilities for the entire platform.
+ */
+
 interface PendingProvider {
   id: string;
   email: string;

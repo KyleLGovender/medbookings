@@ -1,6 +1,5 @@
 'use client';
 
-import { ProviderStatus } from '@prisma/client';
 import { useQuery } from '@tanstack/react-query';
 
 import { api } from '@/utils/api';
@@ -10,7 +9,7 @@ import { api } from '@/utils/api';
  * @param status Optional status filter for providers
  * @returns Query result with providers list
  */
-export function useAdminProviders(status?: ProviderStatus) {
+export function useAdminProviders(status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED') {
   return api.admin.getProviders.useQuery({ status });
 }
 

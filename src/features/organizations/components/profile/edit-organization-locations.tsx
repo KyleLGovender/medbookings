@@ -37,9 +37,7 @@ interface EditOrganizationLocationsProps {
   organizationId: string;
 }
 
-export function EditOrganizationLocations({
-  organizationId,
-}: EditOrganizationLocationsProps) {
+export function EditOrganizationLocations({ organizationId }: EditOrganizationLocationsProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
