@@ -356,6 +356,285 @@ export const useProviders = () => {
 - **Error Flow**: FormData → mutateAsync with try/catch → UI feedback
 - **Selection Forms**: Avoid useFieldArray for simple selection forms
 
+### Optimistic Update Pattern ✅ **CRITICAL FOR UX**
+
+This pattern provides instant UI feedback for mutations while maintaining data integrity through proper error handling and rollback mechanisms. It's extensively used in admin approval workflows and should be adopted for all mutations that update cached data.
+
+#### Why Use Optimistic Updates?
+
+- **Instant Feedback**: Users see changes immediately without waiting for server response
+- **Better UX**: Eliminates perceived lag, making the app feel more responsive
+- **Graceful Degradation**: Automatically rolls back on error with proper error messages
+- **Consistency**: Ensures UI state matches server state through invalidation
+
+#### Pattern Overview
+
+```typescript
+// The pattern uses tRPC's mutation hooks with three key phases:
+// 1. onMutate - Optimistically update the cache before server request
+// 2. onError - Roll back changes if server request fails
+// 3. onSuccess - Invalidate queries to fetch fresh data
+```
+
+#### Implementation Guide
+
+##### Step 1: Create the Mutation Hook
+
+```typescript
+export function useApproveRequirement(options?: {
+  onSuccess?: (data: any) => void;
+  onError?: (error: Error) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  return api.admin.approveRequirement.useMutation({
+    // Step 2: Implement onMutate for optimistic updates
+    onMutate: async ({ providerId, requirementId }) => {
+      // 2.1: Cancel outgoing refetches to prevent race conditions
+      await queryClient.cancelQueries({
+        predicate: (query) => {
+          const keyStr = JSON.stringify(query.queryKey);
+          return keyStr.includes('getProviderRequirements') && keyStr.includes(providerId);
+        },
+      });
+
+      // 2.2: Find and snapshot current data
+      const cache = queryClient.getQueryCache();
+      const allQueries = cache.getAll();
+      let previousData;
+      let actualKey;
+      
+      for (const query of allQueries) {
+        const keyStr = JSON.stringify(query.queryKey);
+        if (keyStr.includes('getProviderRequirements') && keyStr.includes(providerId)) {
+          actualKey = query.queryKey;
+          previousData = query.state.data;
+          break;
+        }
+      }
+
+      if (!previousData || !actualKey) {
+        console.warn('Could not find data to snapshot');
+        return { previousData: null, actualKey: null };
+      }
+
+      // 2.3: Optimistically update the cache
+      queryClient.setQueryData(actualKey, (old: any) => {
+        if (!old || !Array.isArray(old)) return old;
+
+        return old.map((item: any) =>
+          item.id === requirementId
+            ? {
+                ...item,
+                status: 'APPROVED',
+                validatedAt: new Date().toISOString(),
+                // Use placeholder until server responds
+                validatedById: 'optimistic',
+              }
+            : item
+        );
+      });
+
+      // 2.4: Return context for rollback
+      return { previousData, actualKey, providerId };
+    },
+
+    // Step 3: Handle errors with rollback
+    onError: (err, variables, context) => {
+      console.error('Mutation failed, rolling back:', err);
+      
+      // Roll back to previous state
+      if (context?.previousData && context?.actualKey) {
+        queryClient.setQueryData(context.actualKey, context.previousData);
+      }
+
+      // Call user's error handler
+      if (options?.onError) {
+        options.onError(err as any);
+      }
+    },
+
+    // Step 4: Handle success with cache invalidation
+    onSuccess: async (data, variables) => {
+      // Invalidate relevant queries to ensure fresh data
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const keyStr = JSON.stringify(query.queryKey);
+          return keyStr.includes('getProviderRequirements') && 
+                 keyStr.includes(variables.providerId);
+        },
+      });
+
+      // Also invalidate related queries
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const keyStr = JSON.stringify(query.queryKey);
+          return keyStr.includes('getProviders');
+        },
+      });
+
+      // Call user's success handler
+      if (options?.onSuccess) {
+        options.onSuccess(data);
+      }
+    },
+  });
+}
+```
+
+#### Key Implementation Details
+
+##### 1. Query Cancellation
+```typescript
+// ALWAYS cancel outgoing queries to prevent race conditions
+await queryClient.cancelQueries({
+  predicate: (query) => {
+    const keyStr = JSON.stringify(query.queryKey);
+    return keyStr.includes('targetQuery') && keyStr.includes(identifier);
+  },
+});
+```
+
+##### 2. Cache Key Discovery
+```typescript
+// The tRPC query keys can be complex, so we search for them dynamically
+const cache = queryClient.getQueryCache();
+const allQueries = cache.getAll();
+
+for (const query of allQueries) {
+  const keyStr = JSON.stringify(query.queryKey);
+  if (keyStr.includes('queryName') && keyStr.includes(identifier)) {
+    actualKey = query.queryKey;
+    previousData = query.state.data;
+    break;
+  }
+}
+```
+
+##### 3. Safe Cache Updates
+```typescript
+// ALWAYS check data exists and has expected shape before updating
+queryClient.setQueryData(actualKey, (old: any) => {
+  if (!old) return old; // Guard against undefined
+  
+  // Transform data based on mutation type
+  return transformedData;
+});
+```
+
+##### 4. Context for Rollback
+```typescript
+// ALWAYS return context with snapshot for rollback capability
+return { 
+  previousData,     // Snapshot of data before mutation
+  actualKey,        // The exact query key for updates
+  ...otherContext   // Any other data needed for rollback
+};
+```
+
+#### Real-World Examples from Codebase
+
+##### Example 1: Requirement Approval (List Update)
+```typescript
+// Updates a single item in a list
+queryClient.setQueryData(actualKey, (old: any) => {
+  if (!old || !Array.isArray(old)) return old;
+
+  return old.map((sub: any) =>
+    sub.id === requirementId
+      ? {
+          ...sub,
+          status: 'APPROVED',
+          validatedAt: new Date().toISOString(),
+          validatedById: 'optimistic',
+        }
+      : sub
+  );
+});
+```
+
+##### Example 2: Provider Status Update (Object Update)
+```typescript
+// Updates a single object
+queryClient.setQueryData(actualKey, (old: any) => {
+  if (!old) return old;
+
+  return {
+    ...old,
+    status: 'REJECTED',
+    rejectedAt: new Date().toISOString(),
+    rejectionReason: reason,
+    approvedAt: null,
+    approvedById: null,
+  };
+});
+```
+
+#### Best Practices
+
+1. **Always Cancel Queries**: Prevent race conditions by canceling outgoing refetches
+2. **Snapshot Everything**: Store enough context to fully restore previous state
+3. **Guard Updates**: Check data existence and shape before transforming
+4. **Use Predicates**: Use flexible predicate functions for query matching
+5. **Invalidate Broadly**: Invalidate all related queries in onSuccess
+6. **Log Everything**: Add console logs for debugging optimistic updates
+7. **Handle Edge Cases**: Account for missing data or unexpected shapes
+
+#### When to Use This Pattern
+
+✅ **Use for:**
+- Admin approval/rejection workflows
+- Status updates that need immediate feedback
+- Toggle operations (active/inactive, enabled/disabled)
+- Any mutation where the user expects instant feedback
+
+❌ **Don't use for:**
+- Create operations (no existing data to update)
+- Delete operations (consider hiding item instead)
+- Complex multi-step workflows
+- Operations where the result is unpredictable
+
+#### Common Pitfalls
+
+1. **Not Canceling Queries**: Leads to race conditions where old data overwrites optimistic updates
+2. **Wrong Query Keys**: tRPC query keys are complex; always search dynamically
+3. **Mutating State**: Always return new objects/arrays, never mutate
+4. **Missing Guards**: Always check data exists before updating
+5. **Incomplete Rollback**: Ensure all updated fields are restored on error
+
+#### Testing Optimistic Updates
+
+```typescript
+// Simulate slow network to see optimistic updates
+const SIMULATE_DELAY = true;
+
+if (SIMULATE_DELAY) {
+  await new Promise(resolve => setTimeout(resolve, 3000));
+}
+
+// Simulate random failures to test rollback
+const SIMULATE_FAILURE = Math.random() > 0.5;
+
+if (SIMULATE_FAILURE) {
+  throw new Error('Simulated network failure');
+}
+```
+
+#### Migration Checklist
+
+When migrating an existing mutation to use optimistic updates:
+
+- [ ] Identify all queries that display the mutated data
+- [ ] Determine the exact shape of cached data
+- [ ] Implement query cancellation in onMutate
+- [ ] Add cache discovery logic
+- [ ] Implement optimistic cache update
+- [ ] Return proper context for rollback
+- [ ] Implement rollback in onError
+- [ ] Add query invalidation in onSuccess
+- [ ] Test with slow network simulation
+- [ ] Test error scenarios and rollback
+
 ### Database & Schema Management
 
 - **Schema Changes**: Database schema changes require Prisma migrations

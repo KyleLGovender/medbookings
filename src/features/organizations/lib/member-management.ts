@@ -714,6 +714,76 @@ import { OrganizationRole, Permission } from '@/types/permissions';
  * and role assignments with proper permission validation.
  */
 
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
+/**
+ * Organization member role management utilities
+ *
+ * Server actions for managing organization memberships, invitations,
+ * and role assignments with proper permission validation.
+ */
+
 export interface MemberManagementResult {
   success: boolean;
   message: string;

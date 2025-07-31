@@ -163,15 +163,15 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Billing Model</label>
-                  <p className="text-sm">
+                  <div className="text-sm">
                     <Badge variant="outline">
                       {organization?.billingModel?.replace('_', ' ') || 'Unknown'}
                     </Badge>
-                  </p>
+                  </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Status</label>
-                  <p className="text-sm">
+                  <div className="text-sm">
                     <StatusBadge
                       status={
                         organization?.status === 'PENDING_APPROVAL'
@@ -179,7 +179,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                           : (organization?.status as any) || 'PENDING'
                       }
                     />
-                  </p>
+                  </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Submitted</label>

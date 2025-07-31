@@ -62,7 +62,7 @@ export const adminRouter = createTRPCRouter({
   }),
 
   /**
-   * Get provider by ID (admin)
+   * Get provider by ID (admin) - Basic info only
    * Migrated from: GET /api/admin/providers/[id]
    */
   getProviderById: adminProcedure.input(adminRouteParamsSchema).query(async ({ ctx, input }) => {
@@ -77,17 +77,7 @@ export const adminRouter = createTRPCRouter({
             providerType: true,
           },
         },
-        requirementSubmissions: {
-          include: {
-            requirementType: true,
-          },
-        },
         services: true,
-        availabilityConfigs: {
-          include: {
-            service: true,
-          },
-        },
       },
     });
 
@@ -97,6 +87,37 @@ export const adminRouter = createTRPCRouter({
 
     return provider;
   }),
+
+  /**
+   * Get provider requirement submissions by provider ID (admin)
+   * Focused query for requirements only - updates frequently
+   */
+  getProviderRequirements: adminProcedure
+    .input(adminRouteParamsSchema)
+    .query(async ({ ctx, input }) => {
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { id: input.id },
+        select: {
+          id: true,
+          requirementSubmissions: {
+            include: {
+              requirementType: true,
+            },
+            orderBy: {
+              requirementType: {
+                displayPriority: 'asc',
+              },
+            },
+          },
+        },
+      });
+
+      if (!provider) {
+        throw new Error('Provider not found');
+      }
+
+      return provider.requirementSubmissions;
+    }),
 
   /**
    * Approve provider
@@ -201,6 +222,57 @@ export const adminRouter = createTRPCRouter({
         reason: input.reason,
         timestamp: new Date().toISOString(),
         action: 'PROVIDER_REJECTED',
+      });
+
+      return updatedProvider;
+    }),
+
+  /**
+   * Reset rejected provider to pending status
+   * Allows a rejected provider to be reconsidered
+   */
+  resetProviderStatus: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!provider) {
+        throw new Error('Provider not found');
+      }
+
+      if (provider.status !== 'REJECTED') {
+        throw new Error('Provider must be in REJECTED status to reset');
+      }
+
+      // Reset the provider to pending approval
+      const updatedProvider = await ctx.prisma.provider.update({
+        where: { id: input.id },
+        data: {
+          status: 'PENDING_APPROVAL',
+          rejectedAt: null,
+          rejectionReason: null,
+          approvedAt: null,
+          approvedById: null,
+        },
+      });
+
+      // Log admin action
+      console.log('ADMIN_ACTION: Provider status reset to pending', {
+        providerId: provider.id,
+        providerName: provider.name,
+        providerEmail: provider.email,
+        previousStatus: provider.status,
+        newStatus: 'PENDING_APPROVAL',
+        adminId: ctx.session.user.id,
+        adminEmail: ctx.session.user.email,
+        timestamp: new Date().toISOString(),
+        action: 'PROVIDER_STATUS_RESET',
       });
 
       return updatedProvider;

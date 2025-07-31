@@ -441,7 +441,12 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
       (req) => req && req.requirementTypeId && (req.value !== undefined || req.documentMetadata)
     );
 
+    // Track if any requirements were changed
+    let requirementsChanged = false;
+
     // Process each requirement submission
+    // Important: Only changed requirements will have their status reset to PENDING
+    // Unchanged requirements will keep their current status (APPROVED, REJECTED, etc.)
     for (const req of validRequirements) {
       // Check if a submission already exists for this requirement type
       const existingSubmission = currentProvider.requirementSubmissions.find(
@@ -455,21 +460,26 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
       }
 
       if (existingSubmission) {
-        // Update existing submission
-        await prisma.requirementSubmission.update({
-          where: { id: existingSubmission.id },
-          data: {
-            documentMetadata,
-            // Reset to pending if the document was updated
-            status:
-              documentMetadata !== existingSubmission.documentMetadata
-                ? RequirementsValidationStatus.PENDING
-                : undefined,
-            notes: documentMetadata !== existingSubmission.documentMetadata ? null : undefined,
-          },
-        });
+        // Check if the document has changed
+        const hasChanged = JSON.stringify(documentMetadata) !== JSON.stringify(existingSubmission.documentMetadata);
+        
+        if (hasChanged) {
+          requirementsChanged = true;
+          // Update existing submission - only update status if content changed
+          await prisma.requirementSubmission.update({
+            where: { id: existingSubmission.id },
+            data: {
+              documentMetadata,
+              // Only reset to pending if the document was actually updated
+              status: RequirementsValidationStatus.PENDING,
+              notes: null,
+            },
+          });
+        }
+        // If not changed, we don't update anything - status remains as is
       } else {
         // Create new submission
+        requirementsChanged = true;
         await prisma.requirementSubmission.create({
           data: {
             requirementTypeId: req.requirementTypeId,
@@ -479,6 +489,21 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
           },
         });
       }
+    }
+
+    // If any requirements were changed, reset the provider status to PENDING_APPROVAL
+    if (requirementsChanged) {
+      await prisma.provider.update({
+        where: { id },
+        data: {
+          status: 'PENDING_APPROVAL',
+          // Clear any previous approval/rejection data
+          approvedAt: null,
+          approvedById: null,
+          rejectedAt: null,
+          rejectionReason: null,
+        },
+      });
     }
 
     // Revalidate paths to update UI

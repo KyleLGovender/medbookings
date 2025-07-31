@@ -14,12 +14,27 @@ export function useAdminProviders(status?: 'PENDING_APPROVAL' | 'APPROVED' | 'RE
 }
 
 /**
- * Hook for fetching a specific provider for admin view
+ * Hook for fetching a specific provider basic info for admin view
  * @param providerId The ID of the provider to fetch
- * @returns Query result with provider details
+ * @returns Query result with provider basic details (no requirements)
  */
 export function useAdminProvider(providerId: string | undefined) {
   return api.admin.getProviderById.useQuery(
+    { id: providerId || '' },
+    {
+      enabled: !!providerId,
+    }
+  );
+}
+
+/**
+ * Hook for fetching provider requirement submissions (admin view)
+ * Separate from basic provider info for better performance
+ * @param providerId The ID of the provider
+ * @returns Query result with requirement submissions only
+ */
+export function useAdminProviderRequirements(providerId: string | undefined) {
+  return api.admin.getProviderRequirements.useQuery(
     { id: providerId || '' },
     {
       enabled: !!providerId,
