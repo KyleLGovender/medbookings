@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { api } from '@/utils/api';
 
@@ -45,7 +45,7 @@ export function useApproveRequirement(options?: {
   return api.admin.approveRequirement.useMutation({
     onMutate: async ({ providerId, requirementId }) => {
       console.log('Optimistic update - approving requirement:', { providerId, requirementId });
-      
+
       // Cancel any outgoing refetches for requirements - try different query key patterns
       await queryClient.cancelQueries({
         predicate: (query) => {
@@ -59,7 +59,7 @@ export function useApproveRequirement(options?: {
       const cache = queryClient.getQueryCache();
       const allQueries = cache.getAll();
       console.log('All cached queries:');
-      allQueries.forEach(query => {
+      allQueries.forEach((query) => {
         const keyStr = JSON.stringify(query.queryKey);
         if (keyStr.includes('getProviderRequirements')) {
           console.log('Found requirements query:', query.queryKey, 'Data:', query.state.data);
@@ -69,7 +69,7 @@ export function useApproveRequirement(options?: {
       // Snapshot the previous requirements value - try different query key patterns
       let previousRequirements;
       let actualKey;
-      
+
       // Look for the actual key in the cache
       for (const query of allQueries) {
         const keyStr = JSON.stringify(query.queryKey);
@@ -108,7 +108,7 @@ export function useApproveRequirement(options?: {
     },
     onError: (err, _variables, context) => {
       console.error('Approve requirement failed, rolling back:', err);
-      
+
       if (context?.previousRequirements && context?.actualKey) {
         queryClient.setQueryData(context.actualKey, context.previousRequirements);
       }
@@ -124,7 +124,8 @@ export function useApproveRequirement(options?: {
       await queryClient.invalidateQueries({
         predicate: (query) => {
           const keyStr = JSON.stringify(query.queryKey);
-          const shouldInvalidate = keyStr.includes('getProviderRequirements') && keyStr.includes(variables.providerId);
+          const shouldInvalidate =
+            keyStr.includes('getProviderRequirements') && keyStr.includes(variables.providerId);
           if (shouldInvalidate) {
             console.log('Invalidating requirements query:', query.queryKey);
           }
@@ -240,7 +241,7 @@ export function useApproveProvider(options?: {
   return api.admin.approveProvider.useMutation({
     onMutate: async ({ id }) => {
       console.log('Optimistic update - approving provider:', { providerId: id });
-      
+
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
         predicate: (query) => {
@@ -254,7 +255,7 @@ export function useApproveProvider(options?: {
       const allQueries = cache.getAll();
       let previousProvider;
       let actualKey;
-      
+
       // Look for the actual key in the cache
       for (const query of allQueries) {
         const keyStr = JSON.stringify(query.queryKey);
@@ -283,7 +284,12 @@ export function useApproveProvider(options?: {
           rejectedAt: null,
           rejectionReason: null,
         };
-        console.log('Optimistically updated provider with key:', actualKey, 'Updated data:', updated);
+        console.log(
+          'Optimistically updated provider with key:',
+          actualKey,
+          'Updated data:',
+          updated
+        );
         return updated;
       });
 
@@ -291,7 +297,7 @@ export function useApproveProvider(options?: {
     },
     onError: (err, _variables, context) => {
       console.error('Approve provider failed, rolling back:', err);
-      
+
       if (context?.previousProvider && context?.actualKey) {
         queryClient.setQueryData(context.actualKey, context.previousProvider);
       }
@@ -340,7 +346,7 @@ export function useRejectProvider(options?: {
   return api.admin.rejectProvider.useMutation({
     onMutate: async ({ id, reason }) => {
       console.log('Optimistic update - rejecting provider:', { providerId: id, reason });
-      
+
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
         predicate: (query) => {
@@ -354,7 +360,7 @@ export function useRejectProvider(options?: {
       const allQueries = cache.getAll();
       let previousProvider;
       let actualKey;
-      
+
       // Look for the actual key in the cache
       for (const query of allQueries) {
         const keyStr = JSON.stringify(query.queryKey);
@@ -383,7 +389,12 @@ export function useRejectProvider(options?: {
           approvedAt: null,
           approvedById: null,
         };
-        console.log('Optimistically updated provider with key:', actualKey, 'Updated data:', updated);
+        console.log(
+          'Optimistically updated provider with key:',
+          actualKey,
+          'Updated data:',
+          updated
+        );
         return updated;
       });
 
@@ -391,7 +402,7 @@ export function useRejectProvider(options?: {
     },
     onError: (err, _variables, context) => {
       console.error('Reject provider failed, rolling back:', err);
-      
+
       if (context?.previousProvider && context?.actualKey) {
         queryClient.setQueryData(context.actualKey, context.previousProvider);
       }
@@ -440,7 +451,7 @@ export function useResetProviderStatus(options?: {
   return api.admin.resetProviderStatus.useMutation({
     onMutate: async ({ id }) => {
       console.log('Optimistic update - resetting provider status:', { providerId: id });
-      
+
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
         predicate: (query) => {
@@ -454,7 +465,7 @@ export function useResetProviderStatus(options?: {
       const allQueries = cache.getAll();
       let previousProvider;
       let actualKey;
-      
+
       // Look for the actual key in the cache
       for (const query of allQueries) {
         const keyStr = JSON.stringify(query.queryKey);
@@ -483,7 +494,12 @@ export function useResetProviderStatus(options?: {
           approvedAt: null,
           approvedById: null,
         };
-        console.log('Optimistically updated provider with key:', actualKey, 'Updated data:', updated);
+        console.log(
+          'Optimistically updated provider with key:',
+          actualKey,
+          'Updated data:',
+          updated
+        );
         return updated;
       });
 
@@ -491,7 +507,7 @@ export function useResetProviderStatus(options?: {
     },
     onError: (err, _variables, context) => {
       console.error('Reset provider status failed, rolling back:', err);
-      
+
       if (context?.previousProvider && context?.actualKey) {
         queryClient.setQueryData(context.actualKey, context.previousProvider);
       }

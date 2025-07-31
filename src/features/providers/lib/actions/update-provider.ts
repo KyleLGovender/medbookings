@@ -461,8 +461,9 @@ export async function updateProviderRequirements(prevState: any, formData: FormD
 
       if (existingSubmission) {
         // Check if the document has changed
-        const hasChanged = JSON.stringify(documentMetadata) !== JSON.stringify(existingSubmission.documentMetadata);
-        
+        const hasChanged =
+          JSON.stringify(documentMetadata) !== JSON.stringify(existingSubmission.documentMetadata);
+
         if (hasChanged) {
           requirementsChanged = true;
           // Update existing submission - only update status if content changed

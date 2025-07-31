@@ -803,6 +803,76 @@ import { OrganizationRole, Permission, PermissionContext, SystemRole } from '@/t
  * user permissions and roles.
  */
 
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
+/**
+ * Role-based form field visibility controls and permission-based form components
+ *
+ * Form components that adapt field visibility and functionality based on
+ * user permissions and roles.
+ */
+
 interface PermissionFieldProps {
   // Permission requirements
   permission?: Permission;
