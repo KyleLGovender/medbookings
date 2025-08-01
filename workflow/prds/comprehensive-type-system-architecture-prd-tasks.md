@@ -1,0 +1,306 @@
+# Comprehensive Type System Architecture - Tasks
+
+## Relevant Files
+
+### Type Files (31 files)
+- `src/features/admin/types/guards.ts` - Admin type guard functions
+- `src/features/admin/types/schemas.ts` - Admin form validation schemas
+- `src/features/admin/types/types.ts` - Admin domain enums and business logic types
+- `src/features/billing/types/enums.ts` - Billing domain enums
+- `src/features/billing/types/guards.ts` - Billing type guard functions
+- `src/features/billing/types/interfaces.ts` - Billing interfaces (audit for server data)
+- `src/features/billing/types/schemas.ts` - Billing form validation schemas
+- `src/features/billing/types/types.ts` - Billing business logic types
+- `src/features/calendar/types/guards.ts` - Calendar type guard functions
+- `src/features/calendar/types/schemas.ts` - Calendar form validation schemas
+- `src/features/calendar/types/types.ts` - Calendar domain types and enums
+- `src/features/communications/types/enums.ts` - Communications domain enums
+- `src/features/communications/types/interfaces.ts` - Communications interfaces (audit for server data)
+- `src/features/communications/types/schemas.ts` - Communications form validation schemas
+- `src/features/communications/types/types.ts` - Communications business logic types
+- `src/features/invitations/types/guards.ts` - Invitations type guard functions
+- `src/features/invitations/types/schemas.ts` - Invitations form validation schemas
+- `src/features/invitations/types/types.ts` - Invitations domain types and enums
+- `src/features/organizations/types/guards.ts` - Organizations type guard functions
+- `src/features/organizations/types/schemas.ts` - Organizations form validation schemas
+- `src/features/organizations/types/types.ts` - Organizations domain types and enums
+- `src/features/profile/types/enums.ts` - Profile domain enums
+- `src/features/profile/types/interfaces.ts` - Profile interfaces (audit for server data)
+- `src/features/profile/types/schemas.ts` - Profile form validation schemas
+- `src/features/profile/types/types.ts` - Profile business logic types
+- `src/features/providers/types/guards.ts` - Providers type guard functions
+- `src/features/providers/types/schemas.ts` - Providers form validation schemas
+- `src/features/providers/types/types.ts` - Providers domain types and enums
+- `src/features/reviews/types/enums.ts` - Reviews domain enums
+- `src/features/reviews/types/interfaces.ts` - Reviews interfaces (audit for server data)
+- `src/features/reviews/types/schemas.ts` - Reviews form validation schemas
+- `src/features/reviews/types/types.ts` - Reviews business logic types
+
+### tRPC Server Infrastructure
+- `src/server/api/routers/admin.ts` - Admin management procedures, ensure direct Prisma returns
+- `src/server/api/routers/billing.ts` - Billing and subscription procedures
+- `src/server/api/routers/calendar.ts` - Calendar and availability procedures
+- `src/server/api/routers/debug.ts` - Debug utilities procedures
+- `src/server/api/routers/invitations.ts` - Invitation management procedures
+- `src/server/api/routers/organizations.ts` - Organization management procedures
+- `src/server/api/routers/profile.ts` - User profile procedures
+- `src/server/api/routers/providers.ts` - Provider management procedures
+- `src/server/api/root.ts` - Main tRPC router configuration
+
+### Client Hooks (28 files)
+- `src/features/calendar/hooks/use-availability.ts` - Availability management hooks
+- `src/features/calendar/hooks/use-calendar-data.ts` - Calendar data fetching hooks
+- `src/features/organizations/hooks/use-admin-organization-approval.ts` - Organization approval workflow hooks
+- `src/features/organizations/hooks/use-admin-organizations.ts` - Admin organization management hooks
+- `src/features/organizations/hooks/use-current-user-organizations.ts` - Current user organizations hooks
+- `src/features/organizations/hooks/use-organization-by-user-id.ts` - Organization by user ID hooks
+- `src/features/organizations/hooks/use-organization-delete.ts` - Organization deletion hooks  
+- `src/features/organizations/hooks/use-organization-locations.ts` - Organization locations hooks
+- `src/features/organizations/hooks/use-organization-updates.ts` - Organization mutation hooks
+- `src/features/organizations/hooks/use-organization.ts` - Organization data hooks
+- `src/features/organizations/hooks/use-provider-connections.ts` - Provider connections hooks
+- `src/features/organizations/hooks/use-provider-invitations.ts` - Provider invitations hooks
+- `src/features/organizations/hooks/use-register-organization.ts` - Organization registration hooks
+- `src/features/profile/hooks/use-profile.ts` - User profile hooks
+- `src/features/providers/hooks/types.ts` - Provider hook types (remove - type exports forbidden)
+- `src/features/providers/hooks/use-admin-provider-approval.ts` - Provider approval workflow hooks
+- `src/features/providers/hooks/use-admin-providers.ts` - Admin provider management hooks
+- `src/features/providers/hooks/use-create-provider.ts` - Provider creation hooks
+- `src/features/providers/hooks/use-current-user-provider.ts` - Current user provider hooks
+- `src/features/providers/hooks/use-organization-connections.ts` - Organization connections hooks
+- `src/features/providers/hooks/use-provider-associated-services.ts` - Provider associated services hooks
+- `src/features/providers/hooks/use-provider-by-user-id.ts` - Provider by user ID hooks
+- `src/features/providers/hooks/use-provider-delete.ts` - Provider deletion hooks
+- `src/features/providers/hooks/use-provider-requirements.ts` - Provider requirements hooks
+- `src/features/providers/hooks/use-provider-type-services.ts` - Provider type services hooks
+- `src/features/providers/hooks/use-provider-types.ts` - Provider types hooks
+- `src/features/providers/hooks/use-provider-updates.ts` - Provider mutation hooks
+- `src/features/providers/hooks/use-provider.ts` - Provider data hooks
+
+### Feature Components (77 files)
+- `src/features/admin/components/dashboard/admin-dashboard.tsx` - Admin dashboard main component
+- `src/features/admin/components/organizations/organization-detail.tsx` - Admin organization detail view
+- `src/features/admin/components/organizations/organization-list.tsx` - Admin organization list component
+- `src/features/admin/components/oversight-dashboard.tsx` - Admin oversight dashboard
+- `src/features/admin/components/providers/approve-provider-button.tsx` - Provider approval button
+- `src/features/admin/components/providers/delete-provider-button.tsx` - Provider deletion button
+- `src/features/admin/components/providers/edit-provider-button.tsx` - Provider edit button
+- `src/features/admin/components/providers/provider-detail.tsx` - Admin provider detail view
+- `src/features/admin/components/providers/provider-list.tsx` - Admin provider list component
+- `src/features/admin/components/providers/suspend-provider-button.tsx` - Provider suspension button
+- `src/features/admin/components/ui/admin-loading-states.tsx` - Admin loading state components
+- `src/features/admin/components/ui/approval-buttons.tsx` - Admin approval button components
+- `src/features/admin/components/ui/rejection-modal.tsx` - Admin rejection modal component
+- `src/features/auth/components/auth-button.tsx` - Authentication button component
+- `src/features/billing/components/pricing-calculator.tsx` - Billing pricing calculator
+- `src/features/calendar/components/availability/availability-creation-form.tsx` - Availability creation form
+- `src/features/calendar/components/availability/availability-delete-dialog.tsx` - Availability deletion dialog
+- `src/features/calendar/components/availability/availability-edit-form.tsx` - Availability edit form
+- `src/features/calendar/components/availability/availability-proposal-form.tsx` - Availability proposal form
+- `src/features/calendar/components/availability/availability-proposals-list.tsx` - Availability proposals list
+- `src/features/calendar/components/availability/availability-view-modal.tsx` - Availability view modal
+- `src/features/calendar/components/availability/custom-recurrence-modal.tsx` - Custom recurrence modal
+- `src/features/calendar/components/availability/series-action-dialog.tsx` - Series action dialog
+- `src/features/calendar/components/availability/service-selection-section.tsx` - Service selection section
+- `src/features/calendar/components/calendar-event-dialog.tsx` - Calendar event dialog
+- `src/features/calendar/components/error-boundary/calendar-error-boundary.tsx` - Calendar error boundary
+- `src/features/calendar/components/error-boundary/calendar-error.tsx` - Calendar error component
+- `src/features/calendar/components/loading/calendar-skeleton.tsx` - Calendar loading skeleton
+- `src/features/calendar/components/organization-calendar-view.tsx` - Organization calendar view
+- `src/features/calendar/components/provider-calendar-view.tsx` - Provider calendar view
+- `src/features/calendar/components/views/day-view.tsx` - Calendar day view
+- `src/features/calendar/components/views/month-view.tsx` - Calendar month view
+- `src/features/calendar/components/views/three-day-view.tsx` - Calendar three-day view
+- `src/features/calendar/components/views/week-view.tsx` - Calendar week view
+- `src/features/communications/components/vcard-sender.tsx` - VCard sender component
+- `src/features/invitations/components/existing-user-invitation-flow.tsx` - Existing user invitation flow
+- `src/features/invitations/components/invitation-error-state.tsx` - Invitation error state
+- `src/features/invitations/components/invitation-page-content.tsx` - Invitation page content
+- `src/features/invitations/components/new-user-invitation-flow.tsx` - New user invitation flow
+- `src/features/invitations/components/post-registration-invitation-handler.tsx` - Post-registration invitation handler
+- `src/features/organizations/components/delete-organization-button.tsx` - Organization deletion button
+- `src/features/organizations/components/google-maps-location-picker.tsx` - Google Maps location picker
+- `src/features/organizations/components/member-invitation-form.tsx` - Member invitation form
+- `src/features/organizations/components/organizations-client.tsx` - Organizations client component
+- `src/features/organizations/components/profile/edit-organization-basic-info.tsx` - Edit organization basic info
+- `src/features/organizations/components/profile/edit-organization-billing.tsx` - Edit organization billing
+- `src/features/organizations/components/profile/edit-organization-locations.tsx` - Edit organization locations
+- `src/features/organizations/components/profile/organization-profile-view.tsx` - Organization profile view
+- `src/features/organizations/components/provider-connection-card.tsx` - Provider connection card
+- `src/features/organizations/components/provider-invitation-form.tsx` - Provider invitation form
+- `src/features/organizations/components/provider-invitation-list.tsx` - Provider invitation list
+- `src/features/organizations/components/provider-network-manager.tsx` - Provider network manager
+- `src/features/organizations/components/registration-form/billing-configuration-step.tsx` - Billing configuration step
+- `src/features/organizations/components/registration-form/index.tsx` - Registration form main component
+- `src/features/organizations/components/registration-form/location-setup-step.tsx` - Location setup step
+- `src/features/organizations/components/registration-form/organization-details-step.tsx` - Organization details step
+- `src/features/organizations/components/registration-form/review-step.tsx` - Registration review step
+- `src/features/organizations/components/static-location-map.tsx` - Static location map
+- `src/features/profile/components/delete-account-button.tsx` - Delete account button
+- `src/features/profile/components/edit-profile-form.tsx` - Edit profile form
+- `src/features/profile/components/profile-client-page.tsx` - Profile client page
+- `src/features/profile/components/profile-client.tsx` - Profile client component
+- `src/features/providers/components/connection-card.tsx` - Provider connection card
+- `src/features/providers/components/delete-provider-button.tsx` - Provider deletion button
+- `src/features/providers/components/integrations/integrate-google-services-button.tsx` - Google services integration
+- `src/features/providers/components/integrations/meet-settings-form.tsx` - Google Meet settings form
+- `src/features/providers/components/invitation-card.tsx` - Provider invitation card
+- `src/features/providers/components/onboarding/basic-info-section.tsx` - Basic info section
+- `src/features/providers/components/onboarding/profile-image-uploader.tsx` - Profile image uploader  
+- `src/features/providers/components/onboarding/provider-onboarding-form.tsx` - Provider onboarding form
+- `src/features/providers/components/onboarding/provider-type-section.tsx` - Provider type section
+- `src/features/providers/components/onboarding/regulatory-requirements-section.tsx` - Regulatory requirements section
+- `src/features/providers/components/onboarding/requirement-field.tsx` - Requirement field component
+- `src/features/providers/components/onboarding/services-section.tsx` - Services section
+- `src/features/providers/components/organization-connections-manager.tsx` - Organization connections manager
+- `src/features/providers/components/profile/edit-basic-info.tsx` - Edit provider basic info
+- `src/features/providers/components/profile/edit-provider-client.tsx` - Edit provider client
+- `src/features/providers/components/profile/edit-regulatory-requirements.tsx` - Edit regulatory requirements
+- `src/features/providers/components/profile/edit-services.tsx` - Edit provider services
+- `src/features/providers/components/profile/provider-profile-view.tsx` - Provider profile view
+- `src/features/providers/components/provider-calendar.tsx` - Provider calendar component
+- `src/features/providers/components/render-requirement-input.tsx` - Render requirement input
+- `src/features/providers/components/requirement-submission-card.tsx` - Requirement submission card
+
+### Page Components (52 files)
+- `src/app/(dashboard)/admin/organizations/[id]/loading.tsx` - Admin organization detail loading
+- `src/app/(dashboard)/admin/organizations/[id]/page.tsx` - Admin organization detail page
+- `src/app/(dashboard)/admin/organizations/loading.tsx` - Admin organizations loading
+- `src/app/(dashboard)/admin/organizations/page.tsx` - Admin organizations list page
+- `src/app/(dashboard)/admin/page.tsx` - Admin dashboard main page
+- `src/app/(dashboard)/admin/providers/[id]/loading.tsx` - Admin provider detail loading
+- `src/app/(dashboard)/admin/providers/[id]/page.tsx` - Admin provider detail page
+- `src/app/(dashboard)/admin/providers/loading.tsx` - Admin providers loading
+- `src/app/(dashboard)/admin/providers/page.tsx` - Admin providers list page
+- `src/app/(dashboard)/calendar/availability/page.tsx` - Calendar availability page
+- `src/app/(dashboard)/calendar/loading.tsx` - Calendar loading page
+- `src/app/(dashboard)/calendar/page.tsx` - Calendar main page
+- `src/app/(dashboard)/layout.tsx` - Dashboard layout component
+- `src/app/(dashboard)/loading.tsx` - Dashboard loading component
+- `src/app/(dashboard)/organizations/[id]/edit/basic-info/page.tsx` - Edit organization basic info page
+- `src/app/(dashboard)/organizations/[id]/edit/billing/page.tsx` - Edit organization billing page
+- `src/app/(dashboard)/organizations/[id]/edit/loading.tsx` - Edit organization loading
+- `src/app/(dashboard)/organizations/[id]/edit/locations/page.tsx` - Edit organization locations page
+- `src/app/(dashboard)/organizations/[id]/manage-calendar/loading.tsx` - Organization manage calendar loading
+- `src/app/(dashboard)/organizations/[id]/manage-calendar/page.tsx` - Organization manage calendar page
+- `src/app/(dashboard)/organizations/[id]/members/page.tsx` - Organization members page
+- `src/app/(dashboard)/organizations/[id]/page.tsx` - Organization detail page
+- `src/app/(dashboard)/organizations/[id]/view-calendar/loading.tsx` - Organization view calendar loading
+- `src/app/(dashboard)/organizations/[id]/view-calendar/page.tsx` - Organization view calendar page
+- `src/app/(dashboard)/organizations/loading.tsx` - Organizations loading page
+- `src/app/(dashboard)/organizations/new/loading.tsx` - New organization loading
+- `src/app/(dashboard)/organizations/new/page.tsx` - New organization page
+- `src/app/(dashboard)/organizations/page.tsx` - Organizations list page
+- `src/app/(dashboard)/profile/edit/loading.tsx` - Edit profile loading
+- `src/app/(dashboard)/profile/edit/page.tsx` - Edit profile page
+- `src/app/(dashboard)/profile/loading.tsx` - Profile loading page
+- `src/app/(dashboard)/profile/page.tsx` - Profile main page
+- `src/app/(dashboard)/providers/[id]/edit/basic-info/page.tsx` - Edit provider basic info page
+- `src/app/(dashboard)/providers/[id]/edit/page.tsx` - Edit provider main page
+- `src/app/(dashboard)/providers/[id]/edit/regulatory-requirements/page.tsx` - Edit provider requirements page
+- `src/app/(dashboard)/providers/[id]/edit/services/page.tsx` - Edit provider services page
+- `src/app/(dashboard)/providers/[id]/loading.tsx` - Provider detail loading
+- `src/app/(dashboard)/providers/[id]/manage-calendar/loading.tsx` - Provider manage calendar loading
+- `src/app/(dashboard)/providers/[id]/manage-calendar/page.tsx` - Provider manage calendar page
+- `src/app/(dashboard)/providers/[id]/page.tsx` - Provider detail page
+- `src/app/(dashboard)/providers/loading.tsx` - Providers loading page
+- `src/app/(dashboard)/providers/new/loading.tsx` - New provider loading
+- `src/app/(dashboard)/providers/new/page.tsx` - New provider page
+- `src/app/(dashboard)/providers/page.tsx` - Providers list page
+- `src/app/(general)/(auth)/login/page.tsx` - Login page
+- `src/app/(general)/(compliance)/privacy-policy/page.tsx` - Privacy policy page
+- `src/app/(general)/(compliance)/terms-of-use/page.tsx` - Terms of use page
+- `src/app/(general)/invitation/[token]/page.tsx` - Invitation token page
+- `src/app/(general)/join-medbookings/loading.tsx` - Join MedBookings loading
+- `src/app/(general)/join-medbookings/page.tsx` - Join MedBookings page
+- `src/app/(general)/layout.tsx` - General layout component  
+- `src/app/(general)/page.tsx` - Home page
+- `src/app/(general)/unauthorized/page.tsx` - Unauthorized access page
+
+### Server Actions (7 files)
+- `src/features/admin/lib/actions.ts` - Admin business logic server actions
+- `src/features/billing/lib/actions.ts` - Billing business logic server actions
+- `src/features/calendar/lib/actions.ts` - Calendar business logic server actions
+- `src/features/communications/lib/actions.ts` - Communications server actions
+- `src/features/organizations/lib/actions.ts` - Organizations business logic server actions
+- `src/features/profile/lib/actions.ts` - Profile management server actions
+- `src/features/reviews/lib/actions.ts` - Reviews server actions
+
+### Global Type Configuration
+- `src/utils/api.ts` - tRPC client configuration and RouterOutputs export
+- `src/types/api.ts` - Global API types and patterns
+- `src/types/guards.ts` - Global type guard functions
+- `CLAUDE.md` - Project documentation and architecture standards
+- `src/workflow/docs/` - Developer guides and migration documentation
+
+### Notes
+
+- End-to-end testing is handled via Playwright (`npx playwright test`)
+- No unit testing framework is configured in this codebase
+- Migration must maintain backward compatibility during transition
+- All changes must pass TypeScript compilation with zero type errors
+- Legacy REST APIs (auth, upload, webhooks) are excluded from migration
+
+## Tasks
+
+- [x] 1.0 Type File Cleanup & Domain Logic Separation (31 files)
+  - [x] 1.1 Clean up global types: remove server data from types.ts, keep approval enums and workflows
+  - [x] 1.2 Clean up admin types: remove server data from types.ts, keep approval enums and workflows
+  - [x] 1.3 Clean up billing types: remove server data interfaces, keep subscription tiers and payment enums
+  - [x] 1.4 Clean up calendar types: remove server data, keep recurrence patterns and booking states
+  - [x] 1.5 Clean up communications types: remove server data, keep professional categories and requirement types
+  - [x] 1.6 Clean up invitations types: remove server data, keep membership roles and billing models
+  - [x] 1.7 Clean up organizations types: remove server data, keep membership roles and billing models
+  - [x] 1.8 Clean up profile types: remove server data, keep membership roles and billing models
+  - [x] 1.9 Clean up providers types: remove server data, keep membership roles and billing models
+  - [x] 1.10 Clean up reviews types: remove server data, keep membership roles and billing models
+  - [x] 1.11 Validate clear separation between manual domain types and tRPC server types
+  - [x] 1.12 Update import patterns to use direct imports, remove any barrel exports
+
+- [ ] 2.0 tRPC Server Layer Validation & Migration
+  - [ ] 2.1 Validate all 9 tRPC routers return Prisma query results directly (no manual types)
+  - [ ] 2.2 Ensure all server procedures properly call server actions from `/features/*/lib/actions.ts`
+  - [ ] 2.3 Remove any manual type definitions at server procedure level - rely on automatic inference
+  - [ ] 2.4 Validate all server procedures have proper Zod input schemas
+  - [ ] 2.5 Test tRPC type inference flows correctly to client through `RouterOutputs`
+
+- [ ] 3.0 Client Hook Layer Migration (28 files)
+  - [ ] 3.1 Remove all type exports from hook files - components handle their own type extraction
+  - [ ] 3.2 Ensure all hooks are thin wrappers around tRPC queries/mutations only
+  - [ ] 3.3 Validate no hooks import Prisma directly - only tRPC procedure calls allowed
+  - [ ] 3.4 Migrate admin hooks: use-admin-providers.ts, use-admin-provider-approval.ts, use-admin-organizations.ts, use-admin-organization-approval.ts
+  - [ ] 3.5 Migrate calendar hooks: use-calendar-data.ts, use-availability.ts
+  - [ ] 3.6 Migrate organization hooks: use-organization.ts, use-organization-updates.ts, use-register-organization.ts, use-organization-delete.ts, use-organization-by-user-id.ts
+  - [ ] 3.7 Migrate provider hooks: use-provider.ts, use-provider-updates.ts, use-create-provider.ts, use-provider-delete.ts, use-current-user-provider.ts
+  - [ ] 3.8 Migrate remaining hooks: use-profile.ts, use-provider-invitations.ts, use-provider-connections.ts, etc.
+  - [ ] 3.9 Validate all 28 hooks follow naming convention and are tRPC-only wrappers
+
+- [ ] 4.0 Feature Component Migration (77 files)
+  - [ ] 4.1 Replace manual type imports with tRPC type extraction using `RouterOutputs['router']['procedure']`
+  - [ ] 4.2 Ensure all components import `RouterOutputs` from `@/utils/api`
+  - [ ] 4.3 Migrate admin components: provider-list.tsx, provider-detail.tsx, organization-list.tsx, organization-detail.tsx
+  - [ ] 4.4 Migrate provider components: provider-profile-view.tsx, provider-onboarding-form.tsx, edit-provider-client.tsx
+  - [ ] 4.5 Migrate organization components: organization-profile-view.tsx, provider-network-manager.tsx, organizations-client.tsx
+  - [ ] 4.6 Migrate calendar components: availability-creation-form.tsx, provider-calendar-view.tsx, availability-edit-form.tsx
+  - [ ] 4.7 Apply type extraction patterns: use `NonNullable<>` for nested types, `[number]` for array items
+  - [ ] 4.8 Remove any manual interfaces that duplicate server data structures
+  - [ ] 4.9 Test all 77 components for proper type inference and IntelliSense functionality
+
+- [ ] 5.0 Page Component Migration (52 files)
+  - [ ] 5.1 Apply component migration patterns to all dashboard page components
+  - [ ] 5.2 Migrate admin pages: providers/page.tsx, providers/[id]/page.tsx, organizations/page.tsx, organizations/[id]/page.tsx
+  - [ ] 5.3 Migrate provider pages: providers/page.tsx, providers/[id]/page.tsx, providers/[id]/edit/* pages
+  - [ ] 5.4 Migrate organization pages: organizations/page.tsx, organizations/[id]/page.tsx, organizations/[id]/edit/* pages
+  - [ ] 5.5 Migrate calendar pages: calendar/page.tsx, calendar/availability/page.tsx
+  - [ ] 5.6 Migrate profile pages: profile/page.tsx, profile/edit/page.tsx
+  - [ ] 5.7 Ensure consistent type usage across all app routes using tRPC type extraction
+  - [ ] 5.8 Test all 52 page components for type safety compliance and proper data flow
+
+- [ ] 6.0 Documentation Updates & Final Validation
+  - [ ] 6.1 Update CLAUDE.md with comprehensive type system architecture documentation
+  - [ ] 6.2 Create developer onboarding guide for dual-source type safety patterns
+  - [ ] 6.3 Update `/src/workflow/docs/` with migration guides and real-world examples
+  - [ ] 6.4 Document all type extraction patterns with code examples for each use case
+  - [ ] 6.5 Run final validation: TypeScript compilation with zero type errors across codebase
+  - [ ] 6.6 Validate 100% compliance: no manual server types, all hooks are tRPC wrappers, all components use type extraction
+  - [ ] 6.7 Create architectural compliance checklist for future development and code reviews
