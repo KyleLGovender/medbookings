@@ -434,7 +434,7 @@ async function main() {
           validationConfig: {
             minLength: 8,
             maxLength: 10,
-            pattern: '^PS\\\\d{6}$', // Regex pattern for "PS" followed by 6 digits
+            pattern: '^PS\\d{6}$', // Regex pattern for "PS" followed by 6 digits
             patternError: 'HPCSA number must start with PS followed by 6 digits',
             caseSensitive: false, // Whether to enforce case sensitivity
             trimWhitespace: true, // Whether to remove leading/trailing whitespace
