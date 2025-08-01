@@ -23,6 +23,23 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/
 
 export const providersRouter = createTRPCRouter({
   /**
+   * Get current user's provider ID
+   * Migrated from: GET /api/service-provider/me
+   */
+  getCurrentProvider: protectedProcedure.query(async ({ ctx }) => {
+    const provider = await ctx.prisma.provider.findUnique({
+      where: { userId: ctx.session.user.id },
+      select: { id: true },
+    });
+
+    if (!provider) {
+      return { serviceProviderId: undefined };
+    }
+
+    return { serviceProviderId: provider.id };
+  }),
+
+  /**
    * Get all provider types
    * Migrated from: /api/providers/provider-types
    */
