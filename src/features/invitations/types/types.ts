@@ -2,23 +2,65 @@
 // INVITATIONS FEATURE TYPES
 // =============================================================================
 // All type definitions for the invitations feature in one place
-// Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
-import {
-  InvitationStatus,
-  OrganizationInvitation,
-  OrganizationPermission,
-  OrganizationRole,
-  ProviderInvitation,
-  ProviderInvitationStatus,
-  User,
-} from '@prisma/client';
+// Domain enums, business logic types, and form schemas only
+//
+// =============================================================================
+// MIGRATION NOTES - SERVER DATA REMOVED
+// =============================================================================
+//
+// Removed server data:
+// - All Prisma imports and re-exports
+// - OrganizationInvitationWithRelations and ProviderInvitationWithRelations
+// - InvitationFlowState.user (User from Prisma)
+//
+// Components will use tRPC RouterOutputs for server data in Task 4.0
 
 // =============================================================================
-// ENUMS
+// DOMAIN ENUMS
 // =============================================================================
 
-// Re-export Prisma invitation-related enums for convenience
-export { InvitationStatus, ProviderInvitationStatus, OrganizationRole, OrganizationPermission };
+// Invitation status values
+export const InvitationStatus = {
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED',
+  EXPIRED: 'EXPIRED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export type InvitationStatus = (typeof InvitationStatus)[keyof typeof InvitationStatus];
+
+// Provider invitation status values
+export const ProviderInvitationStatus = {
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED',
+  EXPIRED: 'EXPIRED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export type ProviderInvitationStatus = (typeof ProviderInvitationStatus)[keyof typeof ProviderInvitationStatus];
+
+// Organization roles
+export const OrganizationRole = {
+  OWNER: 'OWNER',
+  ADMIN: 'ADMIN',
+  MANAGER: 'MANAGER',
+  STAFF: 'STAFF',
+} as const;
+
+export type OrganizationRole = (typeof OrganizationRole)[keyof typeof OrganizationRole];
+
+// Organization permissions
+export const OrganizationPermission = {
+  MANAGE_MEMBERS: 'MANAGE_MEMBERS',
+  MANAGE_PROVIDERS: 'MANAGE_PROVIDERS',
+  MANAGE_LOCATIONS: 'MANAGE_LOCATIONS',
+  MANAGE_BILLING: 'MANAGE_BILLING',
+  VIEW_ANALYTICS: 'VIEW_ANALYTICS',
+} as const;
+
+export type OrganizationPermission = (typeof OrganizationPermission)[keyof typeof OrganizationPermission];
 
 // Invitation action types
 export enum InvitationAction {
@@ -77,18 +119,6 @@ export interface UserContext {
 // COMPLEX INTERFACES
 // =============================================================================
 
-// Extended organization invitation with all relations
-export interface OrganizationInvitationWithRelations extends OrganizationInvitation {
-  organization: OrganizationContext;
-  invitedBy: UserContext;
-}
-
-// Extended provider invitation with all relations
-export interface ProviderInvitationWithRelations extends ProviderInvitation {
-  organization: OrganizationContext;
-  invitedBy: UserContext;
-}
-
 // General invitation data (for components that handle both types)
 export interface InvitationData {
   id: string;
@@ -114,7 +144,8 @@ export interface InvitationValidation {
 export interface InvitationFlowState {
   step: 'LOADING' | 'VALIDATING' | 'ACCEPTING' | 'COMPLETING' | 'SUCCESS' | 'ERROR';
   invitation?: InvitationData;
-  user?: User;
+  // user will be typed using tRPC RouterOutputs in Task 4.0
+  user?: any; // Temporary - will use RouterOutputs['auth']['getCurrentUser']
   error?: string;
   isNewUser: boolean;
 }
@@ -202,7 +233,8 @@ export interface InvitationFlowProps {
 
 // Invitation list props
 export interface InvitationListProps {
-  invitations: (OrganizationInvitationWithRelations | ProviderInvitationWithRelations)[];
+  // invitations will be typed using tRPC RouterOutputs in Task 4.0
+  invitations: any[]; // Temporary - will use RouterOutputs['invitations']['getInvitations']
   organizationId: string;
   canManageInvitations: boolean;
   onInvitationAction?: (invitationId: string, action: InvitationAction) => void;
