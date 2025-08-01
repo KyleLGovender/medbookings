@@ -30,7 +30,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useManageProviderInvitation } from '@/features/organizations/hooks/use-provider-invitations';
+import {
+  useCancelProviderInvitation,
+  useResendProviderInvitation,
+} from '@/features/organizations/hooks/use-provider-invitations';
 import type {
   ProviderInvitationStatus,
   ProviderInvitationWithDetails,
@@ -88,18 +91,32 @@ export function ProviderInvitationList({
 }: ProviderInvitationListProps) {
   const { toast } = useToast();
 
-  const manageInvitationMutation = useManageProviderInvitation({
-    onSuccess: (data: any) => {
-      // Extract action from the mutation data or set default
-      const action = 'updated';
+  const cancelInvitationMutation = useCancelProviderInvitation({
+    onSuccess: () => {
       toast({
-        title: `Invitation ${action}`,
-        description: `The invitation has been ${action} successfully.`,
+        title: 'Invitation cancelled',
+        description: 'The invitation has been cancelled successfully.',
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Failed to update invitation',
+        title: 'Failed to cancel invitation',
+        description: error.message || 'An error occurred',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const resendInvitationMutation = useResendProviderInvitation({
+    onSuccess: () => {
+      toast({
+        title: 'Invitation resent',
+        description: 'The invitation has been resent successfully.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to resend invitation',
         description: error.message || 'An error occurred',
         variant: 'destructive',
       });
@@ -107,18 +124,16 @@ export function ProviderInvitationList({
   });
 
   const handleCancelInvitation = (invitationId: string) => {
-    manageInvitationMutation.mutate({
+    cancelInvitationMutation.mutate({
       organizationId,
       invitationId,
-      action: 'cancel',
     });
   };
 
   const handleResendInvitation = (invitationId: string) => {
-    manageInvitationMutation.mutate({
+    resendInvitationMutation.mutate({
       organizationId,
       invitationId,
-      action: 'resend',
     });
   };
 
@@ -213,7 +228,9 @@ export function ProviderInvitationList({
                         <Button
                           variant="ghost"
                           size="sm"
-                          disabled={manageInvitationMutation.isPending}
+                          disabled={
+                            cancelInvitationMutation.isPending || resendInvitationMutation.isPending
+                          }
                         >
                           <MoreVertical className="h-4 w-4" />
                         </Button>

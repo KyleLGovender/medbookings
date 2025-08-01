@@ -898,6 +898,76 @@ import { OrganizationRole, Permission } from '@/types/permissions';
  * with role assignment and permission validation.
  */
 
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
+/**
+ * Organization member invitation interface
+ *
+ * Form component for inviting new members to organizations
+ * with role assignment and permission validation.
+ */
+
 const invitationSchema = z.object({
   email: z.string().email('Invalid email address'),
   role: z.nativeEnum(OrganizationRole),

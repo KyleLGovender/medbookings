@@ -272,6 +272,30 @@ export const organizationsRouter = createTRPCRouter({
             include: {
               user: {
                 select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  image: true,
+                },
+              },
+              typeAssignments: {
+                include: {
+                  providerType: {
+                    select: {
+                      id: true,
+                      name: true,
+                      description: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          invitation: {
+            include: {
+              invitedBy: {
+                select: {
+                  id: true,
                   name: true,
                   email: true,
                 },
@@ -281,7 +305,14 @@ export const organizationsRouter = createTRPCRouter({
         },
       });
 
-      return connections;
+      // Transform the response to match the TypeScript interface
+      return connections.map(connection => ({
+        ...connection,
+        provider: {
+          ...connection.provider,
+          serviceProviderType: connection.provider.typeAssignments[0]?.providerType || null,
+        },
+      }));
     }),
 
   /**

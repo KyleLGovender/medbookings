@@ -79,7 +79,7 @@ export interface OrganizationProviderConnection {
   acceptedAt: string | null;
   suspendedAt: string | null;
   createdAt: string;
-  serviceProvider: {
+  provider: {
     id: string;
     name: string;
     email: string;

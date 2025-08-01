@@ -35,6 +35,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Let the user run the dev server... never start the dev server yourself... just request the user to do it
 
+## Command Execution Policy
+
+- **NEVER execute commands like `npm run build`, `npm run lint`, `npm run format`, or `npm run dev` directly**
+- **ALWAYS present the command to the user and ask them to run it**
+- **Wait for the user to provide the output/feedback before proceeding**
+- **Only run simple file operations and searches directly**
+
+### Commands to Present to User:
+- `npm run build` - For checking build/compilation
+- `npm run lint` - For linting code 
+- `npm run format` - For formatting code
+- `npm run dev` - For starting development server
+- `npm run test` - For running tests
+- Any other npm scripts or long-running processes
+
 ## Command Line Usage Guidelines
 
 ### Search Commands

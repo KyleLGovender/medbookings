@@ -7,6 +7,8 @@ import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { api } from '@/utils/api';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface PendingInvitation {
   token: string;
@@ -22,49 +24,112 @@ export function PostRegistrationInvitationHandler({
   onInvitationHandled,
 }: PostRegistrationInvitationHandlerProps) {
   const { data: session, status } = useSession();
-  const [pendingInvitation, setPendingInvitation] = useState<PendingInvitation | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    // Check for pending invitation after user is authenticated
-    if (status === 'authenticated' && session?.user?.email) {
-      const storedInvitation = localStorage.getItem('pendingInvitation');
+  // Fetch all pending invitations for the current user
+  const { data: pendingInvitations, isLoading: isLoadingInvitations } = api.providers.getInvitations.useQuery(
+    { status: 'PENDING' },
+    {
+      enabled: status === 'authenticated',
+      retry: false,
+    }
+  );
 
-      if (storedInvitation) {
-        try {
-          const invitation: PendingInvitation = JSON.parse(storedInvitation);
+  // Get the first pending invitation (we'll show one at a time)
+  const invitationsArray = pendingInvitations?.invitations || [];
+  const pendingInvitation = invitationsArray.length > 0 ? invitationsArray[0] : null;
 
-          // Verify the invitation email matches the authenticated user's email
-          if (invitation.email === session.user.email) {
-            setPendingInvitation(invitation);
-          } else {
-            // Clear invalid invitation
-            localStorage.removeItem('pendingInvitation');
-          }
-        } catch (error) {
-          console.error('Error parsing pending invitation:', error);
-          localStorage.removeItem('pendingInvitation');
+  // Optimistic update mutation for quick banner acceptance
+  const acceptInvitationMutation = api.providers.respondToInvitation.useMutation({
+    onMutate: async (variables) => {
+      setIsProcessing(true);
+      
+      // Cancel outgoing queries
+      await queryClient.cancelQueries({
+        predicate: (query) => {
+          const keyStr = JSON.stringify(query.queryKey);
+          return keyStr.includes('getInvitations');
+        },
+      });
+
+      // Snapshot current data
+      const cache = queryClient.getQueryCache();
+      const allQueries = cache.getAll();
+      let previousData;
+      let actualKey;
+      
+      for (const query of allQueries) {
+        const keyStr = JSON.stringify(query.queryKey);
+        if (keyStr.includes('getInvitations')) {
+          actualKey = query.queryKey;
+          previousData = query.state.data;
+          break;
         }
       }
-    }
-  }, [status, session]);
+
+      // Optimistically update: remove the accepted invitation from pending list
+      if (previousData && actualKey) {
+        queryClient.setQueryData(actualKey, (old: any) => {
+          if (!old?.invitations || !Array.isArray(old.invitations)) return old;
+
+          return {
+            ...old,
+            invitations: old.invitations.filter(
+              (inv: any) => inv.token !== variables.token
+            ),
+          };
+        });
+      }
+
+      return { previousData, actualKey };
+    },
+
+    onError: (err, variables, context) => {
+      console.error('Banner invitation acceptance failed, rolling back:', err);
+      
+      // Roll back to previous state
+      if (context?.previousData && context?.actualKey) {
+        queryClient.setQueryData(context.actualKey, context.previousData);
+      }
+      
+      setIsProcessing(false);
+    },
+
+    onSuccess: async () => {
+      // Invalidate all invitation-related queries
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const keyStr = JSON.stringify(query.queryKey);
+          return keyStr.includes('getInvitations') || 
+                 keyStr.includes('validate') ||
+                 keyStr.includes('getProviderConnections');
+        },
+      });
+
+      setIsProcessing(false);
+      onInvitationHandled?.();
+    },
+  });
+
 
   const handleAcceptInvitation = () => {
     if (pendingInvitation) {
-      setIsProcessing(true);
-      // Redirect to the invitation page to complete the acceptance
-      window.location.href = `/invitation/${pendingInvitation.token}`;
+      acceptInvitationMutation.mutate({
+        token: pendingInvitation.token,
+        action: 'accept',
+      });
     }
   };
 
   const handleSkipInvitation = () => {
-    localStorage.removeItem('pendingInvitation');
-    setPendingInvitation(null);
+    // Just trigger the callback to hide the banner
+    // The invitation will still be available in the database
     onInvitationHandled?.();
   };
 
   // Don't render if no pending invitation or still loading
-  if (status === 'loading' || !pendingInvitation) {
+  if (status === 'loading' || isLoadingInvitations || !pendingInvitation) {
     return null;
   }
 
@@ -73,26 +138,29 @@ export function PostRegistrationInvitationHandler({
       <CardHeader>
         <CardTitle className="text-lg">Complete Your Invitation</CardTitle>
         <CardDescription>
-          You have a pending invitation from {pendingInvitation.organizationName} that you can now
+          You have a pending invitation from {pendingInvitation.organization.name} that you can now
           accept.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="text-sm text-muted-foreground">
           <p>
-            Now that you&apos;ve created your MedBookings account, you can accept the invitation
-            from <strong>{pendingInvitation.organizationName}</strong> to join their organization.
+            You can accept this invitation from <strong>{pendingInvitation.organization.name}</strong> to join their organization.
           </p>
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row">
-          <Button onClick={handleAcceptInvitation} disabled={isProcessing} className="flex-1">
-            {isProcessing ? 'Processing...' : 'Accept Invitation'}
+          <Button 
+            onClick={handleAcceptInvitation} 
+            disabled={acceptInvitationMutation.isPending} 
+            className="flex-1"
+          >
+            {acceptInvitationMutation.isPending ? 'Accepting...' : 'Accept Invitation'}
           </Button>
           <Button
             variant="outline"
             onClick={handleSkipInvitation}
-            disabled={isProcessing}
+            disabled={acceptInvitationMutation.isPending}
             className="flex-1"
           >
             Skip for Now

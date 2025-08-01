@@ -537,6 +537,57 @@ export const adminRouter = createTRPCRouter({
     }),
 
   /**
+   * Reset organization status to pending
+   * Allows a rejected organization to be reconsidered
+   */
+  resetOrganizationStatus: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const organization = await ctx.prisma.organization.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!organization) {
+        throw new Error('Organization not found');
+      }
+
+      if (organization.status !== 'REJECTED') {
+        throw new Error('Organization must be in REJECTED status to reset');
+      }
+
+      // Reset the organization to pending approval
+      const updatedOrganization = await ctx.prisma.organization.update({
+        where: { id: input.id },
+        data: {
+          status: 'PENDING_APPROVAL',
+          rejectedAt: null,
+          rejectionReason: null,
+          approvedAt: null,
+          approvedById: null,
+        },
+      });
+
+      // Log admin action
+      console.log('ADMIN_ACTION: Organization status reset to pending', {
+        organizationId: organization.id,
+        organizationName: organization.name,
+        organizationEmail: organization.email,
+        previousStatus: organization.status,
+        newStatus: 'PENDING_APPROVAL',
+        adminId: ctx.session.user.id,
+        adminEmail: ctx.session.user.email,
+        timestamp: new Date().toISOString(),
+        action: 'ORGANIZATION_STATUS_RESET',
+      });
+
+      return updatedOrganization;
+    }),
+
+  /**
    * Admin override login
    * Migrated from: POST /api/admin/override
    */

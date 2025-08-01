@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { NavigationLink } from '@/components/ui/navigation-link';
 import {
@@ -17,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   useApproveOrganization,
   useRejectOrganization,
+  useResetOrganizationStatus,
 } from '@/features/organizations/hooks/use-admin-organization-approval';
 import { useAdminOrganization } from '@/features/organizations/hooks/use-admin-organizations';
 
@@ -44,6 +46,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
 
   const approveOrganizationMutation = useApproveOrganization();
   const rejectOrganizationMutation = useRejectOrganization();
+  const resetOrganizationStatusMutation = useResetOrganizationStatus();
 
   const handleApproveOrganization = async () => {
     await approveOrganizationMutation.mutateAsync({ organizationId });
@@ -62,6 +65,19 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
       organizationId: rejectionModal.organizationId,
       rejectionReason: reason,
     });
+  };
+
+  const handleResetOrganizationStatus = async () => {
+    console.log('Resetting organization status:', {
+      organizationId,
+      currentStatus: organization?.status,
+    });
+    try {
+      await resetOrganizationStatusMutation.mutateAsync({ id: organizationId });
+      console.log('Organization status reset successful');
+    } catch (error) {
+      console.error('Organization status reset failed:', error);
+    }
   };
 
   const closeRejectionModal = () => {
@@ -111,6 +127,16 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
               isApproving={approveOrganizationMutation.isPending}
               isRejecting={rejectOrganizationMutation.isPending}
             />
+          )}
+          {organization?.status === 'REJECTED' && (
+            <Button
+              onClick={handleResetOrganizationStatus}
+              disabled={resetOrganizationStatusMutation.isPending}
+              variant="outline"
+              className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-900/20"
+            >
+              {resetOrganizationStatusMutation.isPending ? 'Resetting...' : 'Reset to Pending'}
+            </Button>
           )}
         </div>
       </div>
