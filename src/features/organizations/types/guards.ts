@@ -350,94 +350,17 @@ export function isValidProviderConnection(value: unknown): value is {
 }
 
 // =============================================================================
-// API RESPONSE GUARDS
+// API RESPONSE GUARDS REMOVED
 // =============================================================================
-
-export function isOrganizationListResponse(value: unknown): value is Array<{
-  id: string;
-  name: string;
-  email?: string;
-  status: string;
-  billingModel?: string;
-  _count?: { memberships: number; locations: number; providerConnections: number };
-}> {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item: unknown) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        'name' in item &&
-        'status' in item &&
-        isValidUUID((item as any).id) &&
-        typeof (item as any).name === 'string' &&
-        isOrganizationStatus((item as any).status) &&
-        (!(item as any).email || isValidEmail((item as any).email)) &&
-        (!(item as any).billingModel || isBillingModel((item as any).billingModel))
-    )
-  );
-}
-
-export function isMembershipListResponse(value: unknown): value is Array<{
-  id: string;
-  role: string;
-  status: string;
-  user: { id: string; name: string; email: string };
-  organization: { id: string; name: string };
-}> {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item: unknown) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        'role' in item &&
-        'status' in item &&
-        'user' in item &&
-        'organization' in item &&
-        isValidUUID((item as any).id) &&
-        isMembershipRole((item as any).role) &&
-        isMembershipStatus((item as any).status) &&
-        typeof (item as any).user === 'object' &&
-        (item as any).user !== null &&
-        'id' in (item as any).user &&
-        'name' in (item as any).user &&
-        'email' in (item as any).user &&
-        isValidUUID((item as any).user.id) &&
-        typeof (item as any).user.name === 'string' &&
-        isValidEmail((item as any).user.email)
-    )
-  );
-}
-
-export function isLocationListResponse(value: unknown): value is Array<{
-  id: string;
-  name: string;
-  formattedAddress?: string;
-  phone?: string;
-  email?: string;
-  organizationId: string;
-}> {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item: unknown) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        'name' in item &&
-        'organizationId' in item &&
-        isValidUUID((item as any).id) &&
-        typeof (item as any).name === 'string' &&
-        isValidUUID((item as any).organizationId) &&
-        (!(item as any).formattedAddress || typeof (item as any).formattedAddress === 'string') &&
-        (!(item as any).phone || isValidPhone((item as any).phone)) &&
-        (!(item as any).email || isValidEmail((item as any).email))
-    )
-  );
-}
+//
+// Server response validation guards have been removed as part of the dual-source
+// type safety migration. Components will use tRPC RouterOutputs for server
+// data validation in Task 4.0.
+//
+// Removed:
+// - isOrganizationListResponse
+// - isMembershipListResponse
+// - isLocationListResponse
 
 // =============================================================================
 // SEARCH AND FILTER GUARDS
