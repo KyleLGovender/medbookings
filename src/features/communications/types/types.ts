@@ -2,8 +2,16 @@
 // COMMUNICATIONS FEATURE TYPES
 // =============================================================================
 // All type definitions for the communications feature in one place
-// Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
-import { BookingView } from '@/features/calendar/types/types';
+// Organized by: Domain Enums -> Business Logic -> Communication Interfaces
+//
+// =============================================================================
+// MIGRATION NOTES - CROSS-FEATURE IMPORTS REMOVED
+// =============================================================================
+//
+// Removed cross-feature imports:
+// - BookingView from calendar types (server data structure)
+//
+// Components will use tRPC RouterOutputs for server data in Task 4.0
 
 // =============================================================================
 // ENUMS AND CONSTANTS
@@ -73,7 +81,8 @@ export interface NotificationOptions {
 // =============================================================================
 
 export interface TemplateData {
-  booking?: BookingView;
+  // booking will be typed using tRPC RouterOutputs in Task 4.0
+  booking?: any; // Temporary - will use RouterOutputs['calendar']['getBookingView']
   recipientName?: string;
   [key: string]: unknown;
 }
