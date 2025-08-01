@@ -79,46 +79,55 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Validation**: Zod schemas for runtime validation
 - **Testing**: Playwright for end-to-end testing only
 
-### Type System Architecture ✅ **RECENTLY COMPLETED**
+### Type System Architecture ✅ **COMPREHENSIVE TYPE SAFETY STRATEGY**
 
-The MedBookings codebase uses a **bulletproof-react inspired type organization** with zero barrel exports:
+The MedBookings codebase uses a **dual-source type safety approach** that combines manual domain types with tRPC-inferred API types for complete end-to-end type safety.
 
-#### File Structure
+#### Core Principle: Clear Type Boundaries
+
+**✅ Manual Types** (`/features/*/types/`) for domain logic and client-side concerns  
+**✅ tRPC Types** (`RouterOutputs`) for server data and API responses
+
+#### Type Source Decision Matrix
+
+| Type Category | Source | Example | Pattern |
+|--------------|--------|---------|---------|
+| **Domain Enums** | Manual | `AdminApprovalStatus`, `OrganizationRole` | `/features/*/types/types.ts` |
+| **Form Schemas** | Manual | User input validation | `/features/*/types/schemas.ts` |
+| **Business Logic** | Manual | Complex domain calculations | `/features/*/types/types.ts` |
+| **Type Guards** | Manual | Runtime validation | `/features/*/types/guards.ts` |
+| **API Responses** | tRPC | Server query results | `RouterOutputs['router']['procedure']` |
+| **Database Entities** | tRPC | Prisma query outputs | `RouterOutputs['router']['procedure']` |
+| **Server-Derived** | tRPC | Any data from server procedures | `RouterOutputs['router']['procedure']` |
+
+#### Manual Type Organization (`/features/[feature-name]/types/`)
+
+##### File Structure
 ```
 src/features/[feature-name]/types/
-├── types.ts          # Main type definitions with comprehensive JSDoc
-├── schemas.ts        # Zod validation schemas for runtime validation  
+├── types.ts          # Domain enums, business logic types, utility types
+├── schemas.ts        # Zod validation schemas for forms and user input  
 ├── guards.ts         # Type guard functions for runtime type checking
 ```
 
-#### Import Patterns
+##### Import Patterns
 - ✅ **Direct imports**: `import { Type } from '@/features/calendar/types/types'`
 - ❌ **Barrel exports**: `import { Type } from '@/features/calendar/types'` (not allowed)
 
-#### Type Organization Standards
-1. **File headers** with comprehensive documentation
-2. **Enums** with proper JSDoc and consistent naming
-3. **Base interfaces** for simple data structures
-4. **Complex interfaces** with detailed examples and documentation
-5. **Utility types** for type manipulation
-6. **Prisma-derived types** for optimized database operations
+##### Manual Type Standards
+1. **Domain Enums**: Business status values, user roles, workflow states
+2. **Form Types**: User input structures with Zod validation
+3. **Business Logic Types**: Complex domain calculations and transformations
+4. **Utility Types**: Type manipulation for domain-specific needs
+5. **Client-Only Types**: UI state, form state, component props
 
-#### Features with Standardized Types
-- **Calendar**: `/src/features/calendar/types/` - Availability, scheduling, recurrence
-- **Providers**: `/src/features/providers/types/` - Provider management, requirements
-- **Organizations**: `/src/features/organizations/types/` - Organization management, locations
-- **Admin**: `/src/features/admin/types/` - Admin operations, user management
-- **Billing**: `/src/features/billing/types/` - Subscriptions, payments, invoicing
-- **Invitations**: `/src/features/invitations/types/` - Invitation workflows
-
-#### Global Types
-- **API types**: `/src/types/api.ts` - Generic API response structures
-- **Type guards**: `/src/types/guards.ts` - Common validation functions
-
-#### Automated Enforcement
-- **ESLint rules** prevent barrel exports and enforce naming conventions
-- **TypeScript strict mode** ensures type safety
-- **Custom linting rules** maintain architectural consistency
+##### Features with Manual Types
+- **Calendar**: Domain enums, recurrence patterns, booking states
+- **Providers**: Professional categories, requirement types, specializations
+- **Organizations**: Membership roles, billing models, location types
+- **Admin**: Approval workflows, audit actions, status transitions
+- **Billing**: Subscription tiers, payment states, usage tracking
+- **Invitations**: Invitation types, workflow states, response actions
 
 ### Project Structure
 
@@ -336,6 +345,232 @@ Some endpoints remain as REST APIs in `/app/api/`:
 - Third-party integrations
 - NextAuth.js routes (`/api/auth/*`)
 
+#### tRPC Type Safety Architecture ✅ **SERVER DATA & API RESPONSES**
+
+**For all server-derived data, the codebase uses tRPC's automatic type inference to ensure zero-drift type safety from server to client. This pattern MUST be followed for all API data.**
+
+##### Pattern Overview: Component-Level Type Extraction
+
+**✅ REQUIRED APPROACH**: Components extract types directly from `RouterOutputs` for all server data.
+
+##### 1. tRPC API Level (Server Procedures)
+
+```typescript
+// /server/api/routers/admin.ts
+import { adminProcedure, createTRPCRouter } from '@/server/trpc';
+
+export const adminRouter = createTRPCRouter({
+  getProviderById: adminProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { id: input.id },
+        include: {
+          user: { select: { id: true, email: true, name: true } },
+          typeAssignments: { include: { providerType: true } },
+          services: true,
+        },
+      });
+      
+      if (!provider) {
+        throw new Error('Provider not found');
+      }
+      
+      return provider; // ← Return type automatically inferred by tRPC
+    }),
+    
+  getProviders: adminProcedure
+    .input(adminSearchParamsSchema)
+    .query(async ({ ctx, input }) => {
+      return await ctx.prisma.provider.findMany({
+        where: buildWhereClause(input),
+        include: { /* ... */ },
+      }); // ← Return type automatically inferred
+    }),
+});
+```
+
+**Key Points:**
+- Server procedures return Prisma query results directly
+- tRPC automatically infers and captures return types
+- No manual type definitions needed at server level
+
+##### 2. Hook Level (Simple tRPC Wrappers)
+
+```typescript
+// /features/providers/hooks/use-admin-providers.ts
+import { api } from '@/utils/api';
+
+// ✅ CORRECT: Keep hooks simple, no type extraction
+export function useAdminProvider(providerId: string | undefined) {
+  return api.admin.getProviderById.useQuery(
+    { id: providerId || '' },
+    {
+      enabled: !!providerId,
+    }
+  );
+}
+
+export function useAdminProviders(status?: AdminApprovalStatus) {
+  return api.admin.getProviders.useQuery({ status });
+}
+
+// ❌ FORBIDDEN: Don't export types from hooks
+// export type AdminProvider = RouterOutputs['admin']['getProviderById']; // DON'T DO THIS
+```
+
+**Key Points:**
+- Hooks are thin wrappers around tRPC queries
+- No type exports from hook files
+- Components handle their own type extraction
+
+##### 3. Component Level (Type Extraction + Usage)
+
+```typescript
+// /features/admin/components/providers/provider-detail.tsx
+import { api, type RouterOutputs } from '@/utils/api';
+
+// ✅ CORRECT: Extract types directly from RouterOutputs
+type AdminProvider = RouterOutputs['admin']['getProviderById'];
+type AdminProviders = RouterOutputs['admin']['getProviders'];
+type SingleProvider = AdminProviders[number];
+type TypeAssignment = NonNullable<AdminProvider>['typeAssignments'][number];
+type Service = NonNullable<AdminProvider>['services'][number];
+
+export function ProviderDetail({ providerId }: { providerId: string }) {
+  // Hook returns fully typed data
+  const { data: provider, isLoading, error } = useAdminProvider(providerId);
+  //    ↑ TypeScript knows this is AdminProvider | undefined
+  
+  // Full type safety in component logic
+  const providerTypes = provider?.typeAssignments?.map((assignment: TypeAssignment) => 
+    assignment.providerType?.name
+  );
+  
+  const services = provider?.services?.map((service: Service) => 
+    service.name
+  );
+  
+  return (
+    <div>
+      {/* TypeScript provides full intellisense */}
+      <h1>{provider?.user?.name}</h1>
+      <p>{provider?.user?.email}</p>
+      {providerTypes?.map(type => <Badge key={type}>{type}</Badge>)}
+    </div>
+  );
+}
+```
+
+**Key Points:**
+- Import `RouterOutputs` from `@/utils/api`
+- Extract exact types using bracket notation: `RouterOutputs['router']['procedure']`
+- Use `NonNullable<>` for nested types when needed
+- Use `[number]` to extract array item types
+- Components get full type safety and intellisense
+
+##### 4. Type Extraction Patterns
+
+```typescript
+// Basic procedure output
+type Output = RouterOutputs['routerName']['procedureName'];
+
+// Array item type
+type ArrayItem = RouterOutputs['routerName']['getAll'][number];
+
+// Nested object type (when relation might be null)
+type NestedType = NonNullable<Output>['relationName'][number];
+
+// Optional field type
+type OptionalField = NonNullable<Output>['optionalField'];
+
+// Union type extraction
+type Status = NonNullable<Output>['status']; // Extracts the exact enum/union
+```
+
+##### 5. Dual-Source Type Usage Rules
+
+**✅ For Server Data (use tRPC):**
+- Extract types in each component that needs them: `RouterOutputs['router']['procedure']`
+- Keep hooks simple and focused on data fetching
+- Import types directly from tRPC source of truth
+- Use for: API responses, database entities, server-derived data
+
+**✅ For Domain Logic (use Manual Types):**
+- Import from feature type files: `import { Type } from '@/features/feature/types/types'`
+- Use for: Domain enums, form schemas, business logic, type guards
+- Keep in `/features/*/types/` files with proper documentation
+
+**❌ DON'T:**
+- Re-export types from hook files
+- Create manual interfaces that duplicate tRPC server data
+- Use `any` types with tRPC data
+- Mix manual types for server data (use tRPC instead)
+- Use tRPC types for pure domain logic (use manual types instead)
+
+##### 6. Migration Patterns & Examples
+
+**A. Server Data Migration (API responses → tRPC types):**
+
+```typescript
+// BEFORE (manual types for server data - ❌ WRONG)
+import { AdminProviderListSelect } from '@/features/admin/types/types';
+const providers = api.admin.getProviders.useQuery();
+providers?.map((provider: AdminProviderListSelect) => /* ... */);
+
+// AFTER (tRPC types for server data - ✅ CORRECT)
+import { type RouterOutputs } from '@/utils/api';
+type AdminProviders = RouterOutputs['admin']['getProviders'];
+type AdminProvider = AdminProviders[number];
+const providers = api.admin.getProviders.useQuery();
+providers?.map((provider: AdminProvider) => /* ... */);
+```
+
+**B. Domain Logic Integration (combine both sources):**
+
+```typescript
+// ✅ CORRECT: Mixed usage with clear boundaries
+import { AdminApprovalStatus } from '@/features/admin/types/types'; // Domain enum
+import { type RouterOutputs } from '@/utils/api'; // Server data
+
+type AdminProvider = RouterOutputs['admin']['getProviderById']; // Server data
+type AdminProviders = RouterOutputs['admin']['getProviders']; // Server data
+
+function ProviderComponent({ providerId }: { providerId: string }) {
+  const { data: provider } = useAdminProvider(providerId); // provider: AdminProvider
+  
+  // Mix server data (provider) with domain logic (status enum)
+  const handleStatusUpdate = (newStatus: AdminApprovalStatus) => {
+    // Business logic using domain enum + server data
+  };
+}
+```
+
+#### Complete Type Safety Implementation Roadmap
+
+##### Phase 1: Audit & Categorize All Types
+1. **Identify Server Data Types**: All interfaces that represent API responses or database entities
+2. **Identify Domain Types**: All enums, business logic types, form schemas, type guards
+3. **Mark for Migration**: Server data types → tRPC, Keep domain types as manual
+
+##### Phase 2: Component-by-Component Migration
+1. **Replace server data imports** with tRPC type extraction
+2. **Keep domain type imports** from manual type files
+3. **Remove redundant manual interfaces** that duplicate server data
+4. **Update manual type files** to contain only domain logic
+
+##### Phase 3: Validation & Cleanup
+1. **Remove unused manual types** that were migrated to tRPC
+2. **Ensure consistent patterns** across all components
+3. **Update type documentation** to reflect dual-source approach
+
+**This comprehensive approach ensures:**
+- Zero type drift between server and client for API data
+- Consistent domain logic representation across features
+- Clear boundaries between server and client concerns
+- Automatic type updates when server changes
+- Maximum type safety and developer experience throughout the application
+
 #### ❌ FORBIDDEN PATTERNS
 ```typescript
 // ❌ NEVER: Hook importing Prisma directly
@@ -360,7 +595,42 @@ export const useProviders = () => {
     queryFn: () => fetch('/api/providers').then(res => res.json()) // WRONG! Use tRPC
   })
 }
+
+// ❌ NEVER: Export types from hook files
+export function useAdminProviders() {
+  return api.admin.getProviders.useQuery();
+}
+export type AdminProviders = RouterOutputs['admin']['getProviders']; // DON'T DO THIS
+
+// ❌ NEVER: Use manual types for server data (use tRPC instead)
+import { AdminProviderListSelect } from '@/features/admin/types/types';
+const { data: providers } = useAdminProviders();
+providers?.map((provider: AdminProviderListSelect) => /* WRONG! Use tRPC types */);
+
+// ❌ NEVER: Use tRPC types for domain logic (use manual types instead)
+type MyBusinessLogic = RouterOutputs['admin']['getProviders'][number]['status']; // WRONG! Use domain enum
+
+// ❌ NEVER: Use any types with tRPC data
+const { data: providers } = useAdminProviders();
+providers?.map((provider: any) => /* WRONG! */);
+
+// ❌ NEVER: Mix sources incorrectly
+import { AdminProvider } from '@/features/admin/types/types'; // Manual interface
+import { type RouterOutputs } from '@/utils/api';
+type MixedWrong = AdminProvider & RouterOutputs['admin']['getProviders'][number]; // WRONG!
 ```
+
+#### Global Types Structure
+
+##### Manual Global Types (`/src/types/`)
+- **`/src/types/api.ts`**: Generic API patterns, error types, pagination
+- **`/src/types/guards.ts`**: Common validation functions across features  
+- **`/src/types/ui.ts`**: Shared UI component types, theme types
+
+##### tRPC Global Types (`/src/utils/api.ts`)
+- **`RouterInputs`**: Input types for all tRPC procedures
+- **`RouterOutputs`**: Output types for all tRPC procedures  
+- **`api`**: The tRPC client with full type safety
 
 ### Form Implementation Patterns
 
