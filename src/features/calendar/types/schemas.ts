@@ -156,6 +156,7 @@ export const availabilitySearchParamsSchema = z
     organizationId: z.string().min(1).optional(),
     locationId: z.string().min(1).optional(),
     serviceId: z.string().min(1).optional(),
+    seriesId: z.string().min(1).optional(),
     startDate: z
       .union([z.date(), z.string()])
       .transform((val) => {

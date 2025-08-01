@@ -1,6 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { api } from '@/utils/api';
+import { api, type RouterOutputs } from '@/utils/api';
+
+// Infer the type from the tRPC router output
+export type ProviderConnection = RouterOutputs['organizations']['getProviderConnections'][number];
 
 export function useOrganizationProviderConnections(organizationId: string) {
   return api.organizations.getProviderConnections.useQuery(

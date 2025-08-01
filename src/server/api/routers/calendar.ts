@@ -136,9 +136,31 @@ export const calendarRouter = createTRPCRouter({
 
   /**
    * Cancel availability
-   * Migrated from: POST /api/calendar/availability/cancel
+   * Migrated from: PUT /api/calendar/availability/cancel
    */
   cancel: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        reason: z.string().optional(),
+        scope: z.enum(['single', 'future', 'all']).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const result = await cancelAvailability(input.id, input.reason, input.scope);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to cancel availability');
+      }
+
+      return result;
+    }),
+
+  /**
+   * Cancel multiple availabilities (batch operation)
+   * New endpoint for bulk cancellations
+   */
+  cancelMultiple: protectedProcedure
     .input(z.object({ ids: z.array(z.string()) }))
     .mutation(async ({ ctx, input }) => {
       // Handle multiple cancellations
@@ -161,6 +183,22 @@ export const calendarRouter = createTRPCRouter({
    * Migrated from: POST /api/calendar/availability/accept
    */
   accept: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await acceptAvailability([input.id]);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to accept availability');
+      }
+
+      return result.data?.[0];
+    }),
+
+  /**
+   * Accept multiple availabilities (batch operation)
+   * New endpoint for bulk acceptances
+   */
+  acceptMultiple: protectedProcedure
     .input(z.object({ ids: z.array(z.string()) }))
     .mutation(async ({ ctx, input }) => {
       const result = await acceptAvailability(input.ids);
@@ -177,9 +215,25 @@ export const calendarRouter = createTRPCRouter({
    * Migrated from: POST /api/calendar/availability/reject
    */
   reject: protectedProcedure
-    .input(z.object({ ids: z.array(z.string()) }))
+    .input(z.object({ id: z.string(), reason: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
-      const result = await rejectAvailability(input.ids);
+      const result = await rejectAvailability([input.id], input.reason);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to reject availability');
+      }
+
+      return result;
+    }),
+
+  /**
+   * Reject multiple availabilities (batch operation)
+   * New endpoint for bulk rejections
+   */
+  rejectMultiple: protectedProcedure
+    .input(z.object({ ids: z.array(z.string()), reason: z.string().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await rejectAvailability(input.ids, input.reason);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to reject availability');
@@ -380,4 +434,52 @@ export const calendarRouter = createTRPCRouter({
     const recommendations = await getDatabasePerformanceRecommendations();
     return recommendations;
   }),
+
+  /**
+   * Get availability by provider ID
+   * New endpoint for useProviderAvailability hook
+   */
+  getByProviderId: publicProcedure
+    .input(z.object({ providerId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const result = await searchAvailability({ providerId: input.providerId });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch provider availability');
+      }
+
+      return result.data || [];
+    }),
+
+  /**
+   * Get availability by organization ID
+   * New endpoint for useOrganizationAvailability hook
+   */
+  getByOrganizationId: publicProcedure
+    .input(z.object({ organizationId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const result = await searchAvailability({ organizationId: input.organizationId });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch organization availability');
+      }
+
+      return result.data || [];
+    }),
+
+  /**
+   * Get availability by series ID
+   * New endpoint for useAvailabilitySeries hook
+   */
+  getBySeriesId: publicProcedure
+    .input(z.object({ seriesId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const result = await searchAvailability({ seriesId: input.seriesId });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch availability series');
+      }
+
+      return result.data || [];
+    }),
 });

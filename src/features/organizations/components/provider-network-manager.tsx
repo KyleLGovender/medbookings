@@ -222,7 +222,7 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
             />
           ) : (
             <div className="space-y-4">
-              {filteredConnections.map((connection: any) => (
+              {filteredConnections.map((connection) => (
                 <ProviderConnectionCard
                   key={connection.id}
                   connection={connection}

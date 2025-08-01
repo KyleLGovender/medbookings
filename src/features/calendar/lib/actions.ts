@@ -372,6 +372,10 @@ export async function searchAvailability(
       where.locationId = validatedParams.locationId;
     }
 
+    if (validatedParams.seriesId) {
+      where.seriesId = validatedParams.seriesId;
+    }
+
     if (validatedParams.serviceId) {
       where.availableServices = {
         some: {
