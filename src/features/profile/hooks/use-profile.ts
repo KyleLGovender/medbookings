@@ -1,12 +1,7 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 
-import {
-  DeleteAccountResponse,
-  UpdateProfileRequest,
-  UpdateProfileResponse,
-} from '@/features/profile/types/types';
 import { api } from '@/utils/api';
 
 // Fetch the user profile
@@ -16,33 +11,15 @@ export function useProfile() {
 
 // Update the user profile
 export function useUpdateProfile() {
-  const queryClient = useQueryClient();
+  const utils = api.useUtils();
 
-  return useMutation<UpdateProfileResponse, Error, UpdateProfileRequest>({
-    mutationFn: async (data) => {
-      const response = await fetch('/api/profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update profile');
-      }
-
-      return response.json();
-    },
+  return api.profile.update.useMutation({
     onSuccess: (data) => {
       // Invalidate the profile query to refetch the updated data
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      utils.profile.get.invalidate();
 
       // Optionally update the cache directly
-      if (data.user) {
-        queryClient.setQueryData(['profile'], data.user);
-      }
+      utils.profile.get.setData(undefined, data);
     },
   });
 }
@@ -51,19 +28,7 @@ export function useUpdateProfile() {
 export function useDeleteAccount() {
   const queryClient = useQueryClient();
 
-  return useMutation<DeleteAccountResponse, Error, void>({
-    mutationFn: async () => {
-      const response = await fetch('/api/profile', {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to delete account');
-      }
-
-      return response.json();
-    },
+  return api.profile.delete.useMutation({
     onSuccess: () => {
       // Clear all queries from the cache
       queryClient.clear();
