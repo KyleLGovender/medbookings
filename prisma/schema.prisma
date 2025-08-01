@@ -243,7 +243,6 @@ model Organization {
 enum OrganizationBillingModel {
   CONSOLIDATED // One subscription for entire organization
   PER_LOCATION // Each location has its own subscription
-  HYBRID // Mix of consolidated and per-location
 }
 
 enum OrganizationStatus {

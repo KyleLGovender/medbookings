@@ -1,18 +1,217 @@
-# API Routes Documentation
+# API Documentation
 
-This document provides comprehensive documentation for all REST API endpoints in the MedBookings application. All endpoints follow RESTful conventions and require proper authentication where indicated.
+This document provides comprehensive documentation for the MedBookings application API layer. **Most APIs have been migrated to tRPC** for type-safe, end-to-end communication, with some legacy REST endpoints remaining for specific use cases.
+
+## ⚠️ **IMPORTANT: tRPC Migration Status**
+
+**✅ Migrated to tRPC:**
+- Provider APIs
+- Organization APIs  
+- Admin APIs
+- User/Profile APIs
+- Calendar APIs
+- Most business logic endpoints
+
+**🔄 Remaining as REST:**
+- File upload APIs (`/api/upload/*`)
+- Webhook endpoints
+- Third-party integrations
+- NextAuth.js routes (`/api/auth/*`)
+
+## API Architecture Overview
+
+### tRPC APIs (Primary)
+- **Type Safety**: Full end-to-end type safety
+- **Location**: `/lib/trpc/routers/`
+- **Client Usage**: Via `api.router.procedure.useQuery()` or `api.router.procedure.useMutation()`
+- **Validation**: Zod schemas for input/output validation
+- **Error Handling**: Type-safe error handling with `TRPCError`
+
+### REST APIs (Legacy/Specific Use Cases)
+- **Location**: `/app/api/`
+- **Usage**: Traditional HTTP endpoints
+- **Format**: JSON request/response
 
 ## Table of Contents
 
+- [tRPC Usage Patterns](#trpc-usage-patterns)
 - [Authentication](#authentication)
-- [Provider APIs](#provider-apis)
-- [Organization APIs](#organization-apis)
-- [File Upload APIs](#file-upload-apis)
-- [Admin APIs](#admin-apis)
-- [User APIs](#user-apis)
-- [Calendar APIs](#calendar-apis)
+- [tRPC APIs](#trpc-apis)
+  - [Provider APIs (tRPC)](#provider-apis-trpc)
+  - [Organization APIs (tRPC)](#organization-apis-trpc)
+  - [Admin APIs (tRPC)](#admin-apis-trpc)
+  - [User APIs (tRPC)](#user-apis-trpc)
+  - [Calendar APIs (tRPC)](#calendar-apis-trpc)
+- [Legacy REST APIs](#legacy-rest-apis)
+  - [File Upload APIs](#file-upload-apis)
+  - [Authentication APIs](#authentication-apis)
 - [Common Patterns](#common-patterns)
 - [Error Handling](#error-handling)
+
+---
+
+## tRPC Usage Patterns
+
+### Client-Side Usage
+
+#### Queries (Data Fetching)
+
+```typescript
+import { api } from '@/lib/trpc/client'
+
+// Basic query
+const { data, isLoading, error } = api.providers.getAll.useQuery()
+
+// Query with input parameters
+const { data } = api.providers.getById.useQuery({ id: 'provider-id' })
+
+// Query with options
+const { data } = api.providers.search.useQuery(
+  { search: 'doctor', limit: 10 },
+  { 
+    enabled: !!searchTerm, // Only run when searchTerm exists
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  }
+)
+```
+
+#### Mutations (Data Modification)
+
+```typescript
+// Basic mutation
+const createProvider = api.providers.create.useMutation({
+  onSuccess: (data) => {
+    // Handle success - data is fully typed
+    router.push(`/providers/${data.id}`)
+  },
+  onError: (error) => {
+    // Handle error - error is typed TRPCError
+    toast.error(error.message)
+  },
+})
+
+// Using the mutation
+const handleSubmit = async (formData) => {
+  await createProvider.mutateAsync(formData)
+}
+```
+
+#### Optimistic Updates
+
+```typescript
+const updateProvider = api.providers.update.useMutation({
+  onMutate: async (updatedProvider) => {
+    // Cancel outgoing refetches
+    await utils.providers.getById.cancel({ id: updatedProvider.id })
+    
+    // Snapshot previous value
+    const previousProvider = utils.providers.getById.getData({ id: updatedProvider.id })
+    
+    // Optimistically update
+    utils.providers.getById.setData({ id: updatedProvider.id }, (old) => ({
+      ...old,
+      ...updatedProvider,
+    }))
+    
+    return { previousProvider }
+  },
+  onError: (err, variables, context) => {
+    // Rollback on error
+    if (context?.previousProvider) {
+      utils.providers.getById.setData(
+        { id: variables.id }, 
+        context.previousProvider
+      )
+    }
+  },
+  onSettled: (data, error, variables) => {
+    // Always refetch after error or success
+    utils.providers.getById.invalidate({ id: variables.id })
+  },
+})
+```
+
+### Server-Side Usage (tRPC Procedures)
+
+#### Basic Procedure Structure
+
+```typescript
+// /lib/trpc/routers/providers.ts
+import { z } from 'zod'
+import { router, publicProcedure, protectedProcedure } from '../trpc'
+import { getProviders, createProvider } from '@/features/providers/lib/actions'
+
+export const providersRouter = router({
+  // Query procedure
+  getAll: publicProcedure
+    .input(z.object({
+      search: z.string().optional(),
+      limit: z.number().min(1).max(100).default(50),
+      offset: z.number().min(0).default(0),
+    }))
+    .query(async ({ input }) => {
+      return await getProviders(input)
+    }),
+
+  // Mutation procedure
+  create: protectedProcedure
+    .input(z.object({
+      name: z.string().min(1),
+      email: z.string().email(),
+      bio: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      return await createProvider({
+        ...input,
+        userId: ctx.user.id, // From authenticated context
+      })
+    }),
+})
+```
+
+#### Error Handling in Procedures
+
+```typescript
+import { TRPCError } from '@trpc/server'
+
+export const providersRouter = router({
+  getById: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
+      const provider = await getProviderById(input.id)
+      
+      if (!provider) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        })
+      }
+      
+      return provider
+    }),
+})
+```
+
+### Type Safety Benefits
+
+```typescript
+// Client gets full type inference
+const { data } = api.providers.getAll.useQuery()
+// data is automatically typed as Provider[] | undefined
+
+// Input validation is automatic
+api.providers.create.useMutation()
+// TypeScript will enforce the correct input schema
+
+// Errors are typed
+const mutation = api.providers.create.useMutation({
+  onError: (error) => {
+    // error.code is typed: 'BAD_REQUEST' | 'UNAUTHORIZED' | etc.
+    // error.message is string
+    // error.data contains additional context
+  },
+})
+```
 
 ---
 
@@ -20,21 +219,26 @@ This document provides comprehensive documentation for all REST API endpoints in
 
 ### Authentication Requirements
 
-Most API endpoints require authentication using NextAuth.js sessions. The session is checked server-side using `getServerSession()`.
+Authentication is handled through NextAuth.js sessions for both tRPC procedures and legacy REST endpoints.
 
 **Authentication Flow:**
 
 1. User signs in through OAuth (Google)
 2. Session is created and stored
-3. Subsequent API requests include session cookies
-4. Server validates session for protected routes
+3. Subsequent requests include session cookies
+4. Server validates session for protected procedures/routes
 
-**Protected Routes:**
+**tRPC Authentication:**
+
+- **`publicProcedure`**: No authentication required
+- **`protectedProcedure`**: Requires valid user session
+- **`adminProcedure`**: Requires ADMIN or SUPER_ADMIN role
+
+**Legacy REST Protected Routes:**
 
 - All `/api/admin/*` routes require ADMIN or SUPER_ADMIN role
-- All `/api/providers/*` routes require authentication
-- All `/api/organizations/*` routes require authentication
 - `/api/upload/*` routes require authentication
+- `/api/auth/*` routes handle authentication itself
 
 ### NextAuth API
 
@@ -61,17 +265,24 @@ Most API endpoints require authentication using NextAuth.js sessions. The sessio
 
 ---
 
-## Provider APIs
+## tRPC APIs
 
-### Create Provider
+These APIs have been migrated to tRPC for full type safety and better developer experience.
 
-**Endpoint:** `POST /api/providers`
+### Provider APIs (tRPC)
+
+**Router Location:** `/lib/trpc/routers/providers.ts`
+**Client Usage:** `api.providers.*`
+
+#### Create Provider
+
+**Procedure:** `api.providers.create.useMutation()`
 
 **Description:** Creates a new service provider profile with support for multiple provider types.
 
-**Authentication:** Required (authenticated user)
+**Authentication:** `protectedProcedure` (authenticated user required)
 
-**Request Body:**
+**Input Schema:**
 
 ```typescript
 {
@@ -84,9 +295,7 @@ Most API endpoints require authentication using NextAuth.js sessions. The sessio
     image?: string; // URL to uploaded image
     languages?: string[];
   };
-  // NEW: Support for multiple provider types
   serviceProviderTypeIds: string[]; // Array of provider type IDs
-  serviceProviderTypeId?: string; // Legacy single type (backward compatibility)
   services?: {
     availableServices: string[];
     serviceConfigs?: {
@@ -109,28 +318,32 @@ Most API endpoints require authentication using NextAuth.js sessions. The sessio
 }
 ```
 
-**Response:**
+**Return Type:**
 
 ```typescript
-// Success
 {
-  success: true;
-  redirect: string; // URL to redirect to
-}
-
-// Error
-{
-  error: string;
+  id: string;
+  name: string;
+  email: string;
+  status: 'PENDING_APPROVAL';
+  // ... other provider fields
 }
 ```
 
-**Example:**
+**Example Usage:**
 
 ```typescript
-const response = await fetch('/api/providers', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
+const createProvider = api.providers.create.useMutation({
+  onSuccess: (data) => {
+    router.push(`/providers/${data.id}`)
+  },
+  onError: (error) => {
+    toast.error(error.message)
+  },
+})
+
+const handleSubmit = async (formData) => {
+  await createProvider.mutateAsync({
     basicInfo: {
       name: 'Dr. John Smith',
       bio: 'Experienced family physician',
@@ -138,10 +351,7 @@ const response = await fetch('/api/providers', {
       whatsapp: '+1234567890',
       languages: ['english', 'spanish'],
     },
-    // Multiple provider types (NEW)
     serviceProviderTypeIds: ['gp-type-id', 'psych-type-id'],
-    // OR single type (legacy compatibility)
-    serviceProviderTypeId: 'provider-type-id',
     services: {
       availableServices: ['service-id-1', 'service-id-2'],
       serviceConfigs: {
@@ -151,36 +361,40 @@ const response = await fetch('/api/providers', {
         },
       },
     },
-  }),
-});
+  })
+}
 ```
 
-**Error Codes:**
+**Error Handling:**
 
-- `401`: Unauthorized (no valid session)
-- `404`: User not found
-- `400`: Invalid request data
-- `500`: Server error
+tRPC automatically handles and types errors. Common error codes:
+- `UNAUTHORIZED`: No valid session
+- `BAD_REQUEST`: Invalid input data
+- `NOT_FOUND`: User not found
+- `INTERNAL_SERVER_ERROR`: Server error
 
-### Search Providers
+#### Search Providers
 
-**Endpoint:** `GET /api/providers`
+**Procedure:** `api.providers.search.useQuery()`
 
 **Description:** Search and filter providers with enhanced support for multiple provider types.
 
-**Authentication:** Optional (public endpoint)
+**Authentication:** `publicProcedure` (no authentication required)
 
-**Query Parameters:**
+**Input Schema:**
 
-- `search`: Text search across provider name, email, and bio (optional)
-- `typeIds`: Comma-separated list of provider type IDs for filtering (optional)
-- `status`: Provider status filter (default: 'APPROVED')
-- `limit`: Number of results per page (default: 50, max: 100)
-- `offset`: Number of results to skip for pagination (default: 0)
-- `includeServices`: Include provider services in response (default: true)
-- `includeRequirements`: Include requirement submissions in response (default: false)
+```typescript
+{
+  search?: string;           // Text search across provider name, email, and bio
+  typeIds?: string[];        // Array of provider type IDs for filtering
+  status?: string;           // Provider status filter (default: 'APPROVED')
+  limit?: number;            // Number of results per page (default: 50, max: 100)
+  offset?: number;           // Number of results to skip for pagination (default: 0)
+  includeServices?: boolean; // Include provider services in response (default: true)
+}
+```
 
-**Response:**
+**Return Type:**
 
 ```typescript
 {
@@ -190,7 +404,6 @@ const response = await fetch('/api/providers', {
     bio: string;
     email: string;
     status: string;
-    // NEW: Multiple type assignments
     typeAssignments: Array<{
       id: string;
       serviceProviderTypeId: string;
@@ -199,18 +412,7 @@ const response = await fetch('/api/providers', {
         name: string;
         description: string;
       };
-      createdAt: string;
     }>;
-    // NEW: Convenience array of all provider types
-    serviceProviderTypes: Array<{
-      id: string;
-      name: string;
-    }>;
-    // Legacy compatibility
-    serviceProviderType?: {
-      id: string;
-      name: string;
-    };
     services?: Array<{
       id: string;
       name: string;
@@ -227,293 +429,67 @@ const response = await fetch('/api/providers', {
 }
 ```
 
-**Examples:**
+**Example Usage:**
 
 ```typescript
-// Search by text
-GET /api/providers?search=Dr&limit=10
+// Basic search
+const { data } = api.providers.search.useQuery({ search: 'Dr', limit: 10 })
 
-// Filter by single provider type
-GET /api/providers?typeIds=gp-type-id
+// Filter by provider types
+const { data } = api.providers.search.useQuery({ 
+  typeIds: ['gp-type-id', 'psych-type-id'] 
+})
 
-// Filter by multiple provider types (OR logic)
-GET /api/providers?typeIds=gp-type-id,psych-type-id
-
-// Complex search
-GET /api/providers?search=specialist&typeIds=psych-type-id&status=APPROVED&limit=20
+// Complex search with loading state
+const { data, isLoading, error } = api.providers.search.useQuery(
+  { search: 'specialist', typeIds: ['psych-type-id'], status: 'APPROVED', limit: 20 },
+  { enabled: !!searchTerm }
+)
 ```
 
-### Get Provider Services
+### Other tRPC APIs Summary
 
-**Endpoint:** `GET /api/providers/services`
+The following APIs have been migrated to tRPC with similar patterns:
 
-**Description:** Retrieves available services for providers.
+#### Organization APIs (`api.organizations.*`)
+- `getAll.useQuery()` - List organizations
+- `getById.useQuery({ id })` - Get organization details
+- `create.useMutation()` - Create organization
+- `update.useMutation()` - Update organization
+- `delete.useMutation()` - Delete organization
+- `getUserOrganization.useQuery()` - Get current user's organization
 
-**Authentication:** Required
+#### Admin APIs (`api.admin.*`)
+- `getDashboard.useQuery()` - Admin dashboard stats
+- `providers.getAll.useQuery()` - All providers (admin view)
+- `providers.updateStatus.useMutation()` - Update provider status
+- `organizations.getAll.useQuery()` - All organizations (admin view)
+- `users.getAll.useQuery()` - All users (admin view)
 
-**Query Parameters:**
+#### User APIs (`api.users.*`)
+- `getProfile.useQuery()` - Current user profile
+- `updateProfile.useMutation()` - Update user profile
+- `getPreferences.useQuery()` - User preferences
+- `updatePreferences.useMutation()` - Update preferences
 
-- `type`: Filter by provider type (optional)
-- `category`: Filter by service category (optional)
-
-**Response:**
-
-```typescript
-{
-  services: Array<{
-    id: string;
-    name: string;
-    description: string;
-    category: string;
-    defaultDuration: number;
-    defaultPrice: number;
-  }>;
-}
-```
-
-### Get Provider Types
-
-**Endpoint:** `GET /api/providers/provider-types`
-
-**Description:** Retrieves available provider types.
-
-**Authentication:** Required
-
-**Response:**
-
-```typescript
-{
-  types: Array<{
-    id: string;
-    name: string;
-    description: string;
-    requirements: Array<{
-      id: string;
-      name: string;
-      type: string;
-      required: boolean;
-    }>;
-  }>;
-}
-```
-
-### Get Provider by ID
-
-**Endpoint:** `GET /api/providers/[id]`
-
-**Description:** Retrieves a specific provider's information.
-
-**Authentication:** Optional (public endpoint)
-
-**Path Parameters:**
-
-- `id`: Provider ID
-
-**Response:**
-
-```typescript
-{
-  id: string;
-  name: string;
-  bio: string;
-  email: string;
-  whatsapp?: string;
-  website?: string;
-  image?: string;
-  languages: string[];
-  services: Array<{
-    id: string;
-    name: string;
-    duration: number;
-    price: number;
-  }>;
-  availability: Array<{
-    dayOfWeek: number;
-    startTime: string;
-    endTime: string;
-  }>;
-  rating: number;
-  reviewCount: number;
-}
-```
-
-### Update Provider
-
-**Endpoint:** `PUT /api/providers/[id]`
-
-**Description:** Updates a provider's information.
-
-**Authentication:** Required (must be provider owner or admin)
-
-**Path Parameters:**
-
-- `id`: Provider ID
-
-**Request Body:** Same as create provider
-
-**Response:**
-
-```typescript
-{
-  success: boolean;
-  provider?: object;
-  error?: string;
-}
-```
-
-### Delete Provider
-
-**Endpoint:** `DELETE /api/providers/[id]`
-
-**Description:** Deletes a provider profile.
-
-**Authentication:** Required (must be provider owner or admin)
-
-**Path Parameters:**
-
-- `id`: Provider ID
-
-**Response:**
-
-```typescript
-{
-  success: boolean;
-  error?: string;
-}
-```
+#### Calendar APIs (`api.calendar.*`)
+- `getEvents.useQuery()` - Get calendar events
+- `createEvent.useMutation()` - Create calendar event
+- `updateEvent.useMutation()` - Update calendar event
+- `deleteEvent.useMutation()` - Delete calendar event
+- `getAvailability.useQuery()` - Get provider availability
 
 ---
 
-## Organization APIs
+## Legacy REST APIs
 
-### Create Organization
+These APIs remain as traditional REST endpoints for specific use cases.
 
-**Endpoint:** `POST /api/organizations`
+### File Upload APIs
 
-**Description:** Creates a new organization.
+File uploads remain as REST endpoints due to their nature requiring `multipart/form-data`.
 
-**Authentication:** Required
-
-**Request Body:**
-
-```typescript
-{
-  name: string;
-  description?: string;
-  email: string;
-  phone?: string;
-  website?: string;
-  address?: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  };
-  logo?: string; // URL to uploaded logo
-}
-```
-
-**Response:**
-
-```typescript
-{
-  success: boolean;
-  organization?: {
-    id: string;
-    name: string;
-    // ... other fields
-  };
-  error?: string;
-}
-```
-
-### Get Organization
-
-**Endpoint:** `GET /api/organizations/[id]`
-
-**Description:** Retrieves organization information.
-
-**Authentication:** Optional (public endpoint)
-
-**Path Parameters:**
-
-- `id`: Organization ID
-
-**Response:**
-
-```typescript
-{
-  id: string;
-  name: string;
-  description: string;
-  email: string;
-  phone?: string;
-  website?: string;
-  address?: object;
-  logo?: string;
-  providers: Array<{
-    id: string;
-    name: string;
-    specialization: string;
-  }>;
-  memberCount: number;
-  createdAt: string;
-}
-```
-
-### Update Organization
-
-**Endpoint:** `PUT /api/organizations/[id]`
-
-**Description:** Updates organization information.
-
-**Authentication:** Required (must be organization admin)
-
-**Path Parameters:**
-
-- `id`: Organization ID
-
-**Request Body:** Same as create organization
-
-### Delete Organization
-
-**Endpoint:** `DELETE /api/organizations/[id]`
-
-**Description:** Deletes an organization.
-
-**Authentication:** Required (must be organization admin)
-
-**Path Parameters:**
-
-- `id`: Organization ID
-
-### Get Organization User
-
-**Endpoint:** `GET /api/organizations/user`
-
-**Description:** Gets organization for current user.
-
-**Authentication:** Required
-
-**Response:**
-
-```typescript
-{
-  organization?: {
-    id: string;
-    name: string;
-    role: 'ADMIN' | 'MEMBER';
-    // ... other fields
-  };
-}
-```
-
----
-
-## File Upload APIs
-
-### Upload File
+#### Upload File
 
 **Endpoint:** `POST /api/upload`
 

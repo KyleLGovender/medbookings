@@ -104,17 +104,15 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
   const handleAccept = () => {
     respondToInvitationMutation.mutate({
       token: invitation.token,
-      response: { action: 'accept' },
+      action: 'accept',
     });
   };
 
   const handleReject = () => {
     respondToInvitationMutation.mutate({
       token: invitation.token,
-      response: {
-        action: 'reject',
-        rejectionReason: rejectionReason || undefined,
-      },
+      action: 'reject',
+      rejectionReason: rejectionReason || undefined,
     });
   };
 

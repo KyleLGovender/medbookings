@@ -28,7 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 
 // Define schema for billing model updates
 const organizationBillingSchema = z.object({
-  billingModel: z.enum(['CONSOLIDATED', 'PER_LOCATION', 'HYBRID']),
+  billingModel: z.enum(['CONSOLIDATED', 'PER_LOCATION']),
 });
 
 // Define type based on the schema
@@ -116,31 +116,22 @@ export function EditOrganizationBilling({ organizationId, userId }: EditOrganiza
   async function onSubmit(data: OrganizationBillingData) {
     setIsSubmitting(true);
     try {
-      // Use mutateAsync instead of mutate to properly await the result
-      await updateOrganizationMutation.mutateAsync({ organizationId, data });
+      // Use mutateAsync with the tRPC-compatible parameters
+      await updateOrganizationMutation.mutateAsync({
+        id: organizationId,
+        billingModel: data.billingModel,
+      });
 
-      // Manually update the local state to reflect the change immediately
-      if (organization) {
-        // Create a new organization object with the updated billing model
-        const updatedOrganization = {
-          ...organization,
-          billingModel: data.billingModel,
-        };
-
-        // Force update the query cache with the new data
-        queryClient.setQueryData(['organization', organizationId], updatedOrganization);
-      }
+      // Explicitly refetch the organization data to ensure we have the latest
+      await refetch();
 
       toast({
         title: 'Success',
         description: 'Billing model updated successfully',
       });
 
-      // Force a hard refetch to ensure we have the latest data
-      refetch();
-
-      // Also refresh the router to update any server components
-      router.refresh();
+      // Navigate back to the organization page
+      router.push(`/organizations/${organizationId}`);
     } catch (error) {
       toast({
         title: 'Error',
@@ -183,7 +174,7 @@ export function EditOrganizationBilling({ organizationId, userId }: EditOrganiza
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         className="space-y-4"
                       >
                         <FormItem className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
@@ -205,18 +196,6 @@ export function EditOrganizationBilling({ organizationId, userId }: EditOrganiza
                             <FormLabel className="font-medium">Per Location</FormLabel>
                             <FormDescription>
                               Each location has its own separate billing account.
-                            </FormDescription>
-                          </div>
-                        </FormItem>
-                        <FormItem className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
-                          <FormControl>
-                            <RadioGroupItem value="HYBRID" />
-                          </FormControl>
-                          <div className="space-y-1">
-                            <FormLabel className="font-medium">Hybrid</FormLabel>
-                            <FormDescription>
-                              Some locations use the organization&apos;s billing, while others have
-                              their own billing accounts.
                             </FormDescription>
                           </div>
                         </FormItem>

@@ -39,10 +39,8 @@ export function isInvitationAction(
   return typeof value === 'string' && ['ACCEPT', 'REJECT', 'CANCEL', 'RESEND'].includes(value);
 }
 
-export function isBillingModel(
-  value: unknown
-): value is 'CONSOLIDATED' | 'PER_LOCATION' | 'HYBRID' {
-  return typeof value === 'string' && ['CONSOLIDATED', 'PER_LOCATION', 'HYBRID'].includes(value);
+export function isBillingModel(value: unknown): value is 'CONSOLIDATED' | 'PER_LOCATION' {
+  return typeof value === 'string' && ['CONSOLIDATED', 'PER_LOCATION'].includes(value);
 }
 
 // =============================================================================
@@ -322,7 +320,7 @@ export function isValidProviderConnection(value: unknown): value is {
   acceptedAt: string | null;
   suspendedAt: string | null;
   createdAt: string;
-  serviceProvider: {
+  provider: {
     id: string;
     name: string;
     email: string;
@@ -334,20 +332,20 @@ export function isValidProviderConnection(value: unknown): value is {
     'id' in value &&
     'status' in value &&
     'createdAt' in value &&
-    'serviceProvider' in value &&
+    'provider' in value &&
     isValidUUID((value as any).id) &&
     typeof (value as any).status === 'string' &&
     isValidDateString((value as any).createdAt) &&
     ((value as any).acceptedAt === null || isValidDateString((value as any).acceptedAt)) &&
     ((value as any).suspendedAt === null || isValidDateString((value as any).suspendedAt)) &&
-    typeof (value as any).serviceProvider === 'object' &&
-    (value as any).serviceProvider !== null &&
-    'id' in (value as any).serviceProvider &&
-    'name' in (value as any).serviceProvider &&
-    'email' in (value as any).serviceProvider &&
-    isValidUUID((value as any).serviceProvider.id) &&
-    typeof (value as any).serviceProvider.name === 'string' &&
-    isValidEmail((value as any).serviceProvider.email)
+    typeof (value as any).provider === 'object' &&
+    (value as any).provider !== null &&
+    'id' in (value as any).provider &&
+    'name' in (value as any).provider &&
+    'email' in (value as any).provider &&
+    isValidUUID((value as any).provider.id) &&
+    typeof (value as any).provider.name === 'string' &&
+    isValidEmail((value as any).provider.email)
   );
 }
 

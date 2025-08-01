@@ -112,33 +112,33 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
   const onSubmit = (data: EditServicesFormValues) => {
     if (!providerId) return;
 
-    // Transform form data to the format expected by the API
-    const services = Object.entries(data.selectedServices)
+    // Transform form data to the format expected by the tRPC API
+    const selectedServices = Object.entries(data.selectedServices)
       .filter(([_, serviceData]) => serviceData.selected)
-      .map(([serviceId, serviceData]) => ({
-        id: serviceId,
-        price: serviceData.price,
-        duration: serviceData.duration,
-      }));
+      .map(([serviceId, _]) => serviceId);
 
-    console.log('Submitting services:', services);
+    const serviceConfigs: Record<string, { duration: number; price: number }> = {};
 
-    // Create FormData as expected by the updateProviderServices server action
-    const formData = new FormData();
-    formData.append('id', providerId);
+    Object.entries(data.selectedServices)
+      .filter(([_, serviceData]) => serviceData.selected)
+      .forEach(([serviceId, serviceData]) => {
+        serviceConfigs[serviceId] = {
+          duration: serviceData.duration,
+          price: serviceData.price,
+        };
+      });
 
-    // Add service IDs as expected by the server action
-    services.forEach((service) => {
-      formData.append('services', service.id);
+    console.log('Submitting to tRPC:', {
+      id: providerId,
+      availableServices: selectedServices,
+      serviceConfigs,
     });
 
-    // Add service configurations in the format expected by the server action
-    services.forEach((service) => {
-      formData.append(`serviceConfigs[${service.id}][price]`, service.price.toString());
-      formData.append(`serviceConfigs[${service.id}][duration]`, service.duration.toString());
+    updateServicesMutation.mutate({
+      id: providerId,
+      availableServices: selectedServices,
+      serviceConfigs,
     });
-
-    updateServicesMutation.mutate(formData as any);
   };
 
   if (isProviderLoading || isServicesLoading) {

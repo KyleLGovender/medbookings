@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, Send } from 'lucide-react';
 import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 
@@ -25,6 +24,7 @@ import { Separator } from '@/components/ui/separator';
 import { ProviderFormType, providerFormSchema } from '@/features/providers/hooks/types';
 import { useCreateProvider } from '@/features/providers/hooks/use-create-provider';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/utils/api';
 
 import { BasicInfoSection } from './basic-info-section';
 import { ProviderTypeSection } from './provider-type-section';
@@ -73,16 +73,7 @@ export function ProviderOnboardingForm() {
     data: onboardingData,
     isLoading: isLoadingData,
     error: dataError,
-  } = useQuery<OnboardingData>({
-    queryKey: ['onboarding-data'],
-    queryFn: async () => {
-      const response = await fetch('/api/providers/onboarding');
-      if (!response.ok) {
-        throw new Error('Failed to fetch onboarding data');
-      }
-      return response.json();
-    },
-  });
+  } = api.providers.getOnboardingData.useQuery();
 
   const methods = useForm<ProviderFormType>({
     resolver: zodResolver(providerFormSchema),

@@ -4,8 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Location, Organization } from '@prisma/client';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, Building, Loader2, MapPin, Plus, Save, Trash2 } from 'lucide-react';
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
 
@@ -24,25 +23,25 @@ import {
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { GoogleMapsLocationPicker } from '@/features/organizations/components/google-maps-location-picker';
+import { useOrganization } from '@/features/organizations/hooks/use-organization';
 import { useUpdateOrganizationLocations } from '@/features/organizations/hooks/use-organization-updates';
 import { organizationLocationsSchema } from '@/features/organizations/types/schemas';
-import { OrganizationLocationsData } from '@/features/organizations/types/types';
+import {
+  OrganizationLocationForMutation,
+  OrganizationLocationsData,
+} from '@/features/organizations/types/types';
 import { toast } from '@/hooks/use-toast';
-// Assuming Location type exists
 import { isDevelopment } from '@/lib/constants';
 
 interface EditOrganizationLocationsProps {
   organizationId: string;
-  userId?: string;
 }
 
-export function EditOrganizationLocations({
-  organizationId,
-  userId,
-}: EditOrganizationLocationsProps) {
+export function EditOrganizationLocations({ organizationId }: EditOrganizationLocationsProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [originalData, setOriginalData] = useState<any>(null);
 
   // Fetch current organization data including locations
   const {
@@ -50,16 +49,7 @@ export function EditOrganizationLocations({
     isLoading: isLoadingOrganization,
     error: organizationError,
     refetch,
-  } = useQuery<Organization & { locations: Location[] }>({
-    queryKey: ['organization', organizationId],
-    queryFn: async () => {
-      const response = await fetch(`/api/organizations/${organizationId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch organization data');
-      }
-      return response.json();
-    },
-  });
+  } = useOrganization(organizationId);
 
   const form = useForm<OrganizationLocationsData>({
     resolver: zodResolver(organizationLocationsSchema),
@@ -92,6 +82,7 @@ export function EditOrganizationLocations({
         return {
           ...loc,
           id: loc.id || undefined, // Ensure id is string or undefined
+          organizationId: organizationId, // Add the organizationId to satisfy the schema
           name: loc.name || '',
           googlePlaceId: loc.googlePlaceId || '',
           formattedAddress: loc.formattedAddress || '',
@@ -102,13 +93,24 @@ export function EditOrganizationLocations({
         };
       });
       form.reset({ locations: formattedLocations });
+      setOriginalData({ locations: formattedLocations });
+      // Trigger validation after reset to ensure form state is valid
+      form.trigger();
     }
-  }, [organization, form]); // form.reset is stable, so form is the main dependency here along with organization
+  }, [organization, organizationId, form]); // form.reset is stable, so form is the main dependency here along with organization
 
   const updateLocationsMutation = useUpdateOrganizationLocations();
 
+  // Check if form data has actually changed from original
+  const hasDataChanged = () => {
+    if (!originalData) return false;
+    const currentData = form.getValues();
+    return JSON.stringify(currentData) !== JSON.stringify(originalData);
+  };
+
   const addLocation = () => {
     append({
+      organizationId: organizationId, // Add organizationId here too
       name: '',
       googlePlaceId: '',
       formattedAddress: '',
@@ -144,7 +146,25 @@ export function EditOrganizationLocations({
   async function onSubmit(data: OrganizationLocationsData) {
     setIsSubmitting(true);
     try {
-      await updateLocationsMutation.mutateAsync({ organizationId, locations: data.locations });
+      // Ensure all locations have required fields for mutation
+      const locationsForMutation: OrganizationLocationForMutation[] = data.locations.map(
+        (location) => ({
+          id: location.id,
+          organizationId: location.organizationId || organizationId,
+          name: location.name,
+          formattedAddress: location.formattedAddress,
+          phone: location.phone,
+          email: location.email,
+          googlePlaceId: location.googlePlaceId,
+          coordinates: location.coordinates,
+          searchTerms: location.searchTerms,
+        })
+      );
+
+      await updateLocationsMutation.mutateAsync({
+        organizationId,
+        locations: locationsForMutation,
+      });
 
       toast({
         title: 'Success',
@@ -155,6 +175,9 @@ export function EditOrganizationLocations({
       await queryClient.invalidateQueries({ queryKey: ['organization', organizationId] });
       refetch(); // Refetch the organization data for this component
       router.refresh(); // Refresh server components
+
+      // Navigate back to organization profile
+      router.push(`/organizations/${organizationId}`);
     } catch (error) {
       toast({
         title: 'Error updating locations',
@@ -312,7 +335,12 @@ export function EditOrganizationLocations({
                     )}
                   />
 
-                  {/* Hidden fields for Google data - not strictly necessary to render if handled in state */}
+                  {/* Hidden fields for Google data and organizationId */}
+                  <FormField
+                    control={form.control}
+                    name={`locations.${index}.organizationId`}
+                    render={({ field: formField }) => <Input {...formField} type="hidden" />}
+                  />
                   <FormField
                     control={form.control}
                     name={`locations.${index}.googlePlaceId`}
@@ -376,7 +404,7 @@ export function EditOrganizationLocations({
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || !form.formState.isDirty || !form.formState.isValid}
+            disabled={isSubmitting || !form.formState.isValid || !hasDataChanged()}
           >
             {isSubmitting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -386,6 +414,18 @@ export function EditOrganizationLocations({
             Save Changes
           </Button>
         </div>
+
+        {isDevelopment && (
+          <div className="mt-4 rounded bg-muted/50 p-4 text-xs">
+            <h4 className="font-semibold">Form Debug Info:</h4>
+            <pre>isDirty: {String(form.formState.isDirty)}</pre>
+            <pre>isValid: {String(form.formState.isValid)}</pre>
+            <pre>isSubmitting: {String(isSubmitting)}</pre>
+            <pre>hasDataChanged: {String(hasDataChanged())}</pre>
+            <pre>dirtyFields: {JSON.stringify(form.formState.dirtyFields, null, 2)}</pre>
+            <pre>errors: {JSON.stringify(form.formState.errors, null, 2)}</pre>
+          </div>
+        )}
       </form>
     </FormProvider>
   );

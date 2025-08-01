@@ -25,11 +25,13 @@ export function DatePickerWithInput({
   placeholder = 'Pick a date',
 }: DatePickerWithInputProps) {
   const [open, setOpen] = useState(false);
-  const [inputValue, setInputValue] = useState(date ? format(date, 'yyyy-MM-dd') : '');
+  const [inputValue, setInputValue] = useState(
+    date && isValid(date) ? format(date, 'yyyy-MM-dd') : ''
+  );
 
   // Update input when date changes externally
   useEffect(() => {
-    if (date) {
+    if (date && isValid(date)) {
       setInputValue(format(date, 'yyyy-MM-dd'));
     } else {
       setInputValue('');
@@ -38,7 +40,7 @@ export function DatePickerWithInput({
 
   const handleSelect = (selectedDate?: Date) => {
     onChange?.(selectedDate);
-    if (selectedDate) {
+    if (selectedDate && isValid(selectedDate)) {
       setInputValue(format(selectedDate, 'yyyy-MM-dd'));
     }
     setOpen(false);

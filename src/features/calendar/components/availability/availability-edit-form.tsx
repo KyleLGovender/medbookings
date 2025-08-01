@@ -146,9 +146,8 @@ export function AvailabilityEditForm({
   const selectedLocation = useMemo(() => {
     if (!watchLocationId) return null;
     return (
-      availableLocations
-        .filter((loc) => loc.id)
-        .find((loc: any) => loc.id === watchLocationId) || null
+      availableLocations.filter((loc) => loc.id).find((loc: any) => loc.id === watchLocationId) ||
+      null
     );
   }, [watchLocationId, availableLocations]);
 

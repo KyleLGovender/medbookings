@@ -46,7 +46,7 @@ export default async function EditOrganizationPage({ params }: EditOrganizationP
         </div>
         <CancelButton cancelTo={`/organizations/${params.id}`}>Cancel</CancelButton>
       </div>
-      <EditOrganizationLocations organizationId={params.id} userId={userId} />
+      <EditOrganizationLocations organizationId={params.id} />
     </Suspense>
   );
 }

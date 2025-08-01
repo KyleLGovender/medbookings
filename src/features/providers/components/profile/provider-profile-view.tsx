@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { PenSquare } from 'lucide-react';
@@ -8,6 +7,7 @@ import { PenSquare } from 'lucide-react';
 import { ProviderProfileSkeleton } from '@/components/skeletons/provider-profile-skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { Separator } from '@/components/ui/separator';
 import { DeleteProviderButton } from '@/features/providers/components/delete-provider-button';
 import { OrganizationConnectionsManager } from '@/features/providers/components/organization-connections-manager';
@@ -51,8 +51,9 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
   // Check if current user is the owner of this profile
   const isOwner = userId === provider.userId;
 
-  // For provider type, use a generic label since we don't have the actual type name
-  const providerTypeName = provider.providerType?.name || 'Healthcare Provider';
+  // Get all provider types from the providerTypes array
+  const providerTypes = provider.providerTypes || [];
+  const hasMultipleTypes = providerTypes.length > 1;
 
   return (
     <div className="space-y-8">
@@ -84,12 +85,10 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
 
           {isOwner && (
             <div className="flex items-center gap-2">
-              <Link href={`/providers/${provider.id}/edit/basic-info`}>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <PenSquare className="h-4 w-4" />
-                  Edit Profile
-                </Button>
-              </Link>
+              <NavigationOutlineButton href={`/providers/${provider.id}/edit/basic-info`}>
+                <PenSquare className="h-4 w-4" />
+                Edit Profile
+              </NavigationOutlineButton>
             </div>
           )}
         </div>
@@ -97,14 +96,20 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
         <Separator className="my-4" />
 
         <div>
-          <h3 className="font-medium">Provider Type</h3>
-          <p>{providerTypeName}</p>
-
-          {provider.providerType?.description && (
-            <div className="mt-4">
-              <h3 className="font-medium">Description</h3>
-              <p className="text-muted-foreground">{provider.providerType.description}</p>
+          <h3 className="font-medium">Provider Type{hasMultipleTypes ? 's' : ''}</h3>
+          {providerTypes.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {providerTypes.map((type: any) => (
+                <div key={type.id} className="rounded-md bg-muted px-3 py-1">
+                  <p className="font-medium">{type.name}</p>
+                  {type.description && (
+                    <p className="text-sm text-muted-foreground">{type.description}</p>
+                  )}
+                </div>
+              ))}
             </div>
+          ) : (
+            <p className="text-muted-foreground">No provider types specified</p>
           )}
         </div>
 
@@ -187,12 +192,10 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
 
           {isOwner && (
             <div className="flex items-center gap-2">
-              <Link href={`/providers/${provider.id}/edit/services`}>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <PenSquare className="h-4 w-4" />
-                  Edit Services
-                </Button>
-              </Link>
+              <NavigationOutlineButton href={`/providers/${provider.id}/edit/services`}>
+                <PenSquare className="h-4 w-4" />
+                Edit Services
+              </NavigationOutlineButton>
             </div>
           )}
         </div>
@@ -278,12 +281,12 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
 
           {isOwner && (
             <div className="flex items-center gap-2">
-              <Link href={`/providers/${provider.id}/edit/regulatory-requirements`}>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <PenSquare className="h-4 w-4" />
-                  Edit Requirements
-                </Button>
-              </Link>
+              <NavigationOutlineButton
+                href={`/providers/${provider.id}/edit/regulatory-requirements`}
+              >
+                <PenSquare className="h-4 w-4" />
+                Edit Requirements
+              </NavigationOutlineButton>
             </div>
           )}
         </div>

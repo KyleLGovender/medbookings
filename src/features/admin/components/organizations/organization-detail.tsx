@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { NavigationLink } from '@/components/ui/navigation-link';
 import {
@@ -17,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   useApproveOrganization,
   useRejectOrganization,
+  useResetOrganizationStatus,
 } from '@/features/organizations/hooks/use-admin-organization-approval';
 import { useAdminOrganization } from '@/features/organizations/hooks/use-admin-organizations';
 
@@ -24,6 +26,26 @@ import { StatusBadge } from '../../../../components/status-badge';
 import { OrganizationDetailSkeleton } from '../ui/admin-loading-states';
 import { ApprovalButtons } from '../ui/approval-buttons';
 import { RejectionModal } from '../ui/rejection-modal';
+import { type RouterOutputs } from '@/utils/api';
+
+// Infer types from tRPC router outputs
+type AdminOrganization = RouterOutputs['admin']['getOrganizationById'];
+type OrganizationMembership = NonNullable<AdminOrganization>['memberships'][number];
+type OrganizationLocation = NonNullable<AdminOrganization>['locations'][number];
+
+// Provider connection types (for commented code)
+interface ProviderConnection {
+  id: string;
+  provider?: {
+    typeAssignments?: TypeAssignment[];
+  };
+}
+
+interface TypeAssignment {
+  providerType?: {
+    name?: string;
+  };
+}
 
 interface OrganizationDetailProps {
   organizationId: string;
@@ -44,6 +66,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
 
   const approveOrganizationMutation = useApproveOrganization();
   const rejectOrganizationMutation = useRejectOrganization();
+  const resetOrganizationStatusMutation = useResetOrganizationStatus();
 
   const handleApproveOrganization = async () => {
     await approveOrganizationMutation.mutateAsync({ organizationId });
@@ -62,6 +85,19 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
       organizationId: rejectionModal.organizationId,
       rejectionReason: reason,
     });
+  };
+
+  const handleResetOrganizationStatus = async () => {
+    console.log('Resetting organization status:', {
+      organizationId,
+      currentStatus: organization?.status,
+    });
+    try {
+      await resetOrganizationStatusMutation.mutateAsync({ id: organizationId });
+      console.log('Organization status reset successful');
+    } catch (error) {
+      console.error('Organization status reset failed:', error);
+    }
   };
 
   const closeRejectionModal = () => {
@@ -97,7 +133,13 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
           <p className="text-muted-foreground">{organization?.email}</p>
         </div>
         <div className="flex items-center gap-4">
-          <StatusBadge status={organization?.status === 'PENDING_APPROVAL' ? 'PENDING' : (organization?.status as any) || 'PENDING'} />
+          <StatusBadge
+            status={
+              organization?.status === 'PENDING_APPROVAL'
+                ? 'PENDING'
+                : organization?.status || 'PENDING'
+            }
+          />
           {organization?.status === 'PENDING_APPROVAL' && (
             <ApprovalButtons
               onApprove={handleApproveOrganization}
@@ -105,6 +147,16 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
               isApproving={approveOrganizationMutation.isPending}
               isRejecting={rejectOrganizationMutation.isPending}
             />
+          )}
+          {organization?.status === 'REJECTED' && (
+            <Button
+              onClick={handleResetOrganizationStatus}
+              disabled={resetOrganizationStatusMutation.isPending}
+              variant="outline"
+              className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-900/20"
+            >
+              {resetOrganizationStatusMutation.isPending ? 'Resetting...' : 'Reset to Pending'}
+            </Button>
           )}
         </div>
       </div>
@@ -157,17 +209,23 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Billing Model</label>
-                  <p className="text-sm">
+                  <div className="text-sm">
                     <Badge variant="outline">
                       {organization?.billingModel?.replace('_', ' ') || 'Unknown'}
                     </Badge>
-                  </p>
+                  </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Status</label>
-                  <p className="text-sm">
-                    <StatusBadge status={organization?.status === 'PENDING_APPROVAL' ? 'PENDING' : (organization?.status as any) || 'PENDING'} />
-                  </p>
+                  <div className="text-sm">
+                    <StatusBadge
+                      status={
+                        organization?.status === 'PENDING_APPROVAL'
+                          ? 'PENDING'
+                          : organization?.status || 'PENDING'
+                      }
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Submitted</label>
@@ -188,7 +246,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
               </div>
 
               {/* Organization Owner/Creator Info */}
-              {organization?.memberships?.find(m => m.role === 'OWNER') && (
+              {organization?.memberships?.find((m) => m.role === 'OWNER') && (
                 <div className="mt-6 rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
                   <label className="text-sm font-medium text-blue-800 dark:text-blue-300">
                     Organization Owner
@@ -196,7 +254,10 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                   <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
                     <div>
                       <span className="text-xs text-muted-foreground">Owner:</span>
-                      <p className="text-sm">{organization.memberships.find(m => m.role === 'OWNER')?.user?.name || 'Unknown'}</p>
+                      <p className="text-sm">
+                        {organization.memberships.find((m) => m.role === 'OWNER')?.user?.name ||
+                          'Unknown'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -233,7 +294,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                 <p className="text-xs text-muted-foreground">Total members</p>
                 {organization?.memberships && organization.memberships.length > 0 && (
                   <p className="text-xs text-green-600">
-                    {organization.memberships.filter((m: any) => m.status === 'ACTIVE').length}{' '}
+                    {organization.memberships.filter((m: OrganizationMembership) => m.status === 'ACTIVE').length}{' '}
                     active
                   </p>
                 )}
@@ -297,7 +358,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {organization?.memberships?.map((membership: any) => (
+                      {organization?.memberships?.map((membership: OrganizationMembership) => (
                         <TableRow key={membership.id}>
                           <TableCell>
                             <div>
@@ -341,7 +402,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                 <div className="py-8 text-center text-muted-foreground">No locations found</div>
               ) : (
                 <div className="space-y-4">
-                  {organization?.locations?.map((location: any) => (
+                  {organization?.locations?.map((location: OrganizationLocation) => (
                     <div
                       key={location.id}
                       className="rounded-lg border p-4 transition-colors hover:bg-muted/50"
@@ -383,18 +444,18 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
             </CardHeader>
             <CardContent>
               <div className="py-8 text-center text-muted-foreground">No providers connected</div>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Provider</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Connected</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {/* organization?.providerConnections?.map((connection: any) => (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Provider</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Connected</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {/* organization?.providerConnections?.map((connection: ProviderConnection) => (
                         <TableRow key={connection.id}>
                           <TableCell>
                             <div>
@@ -414,7 +475,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
                               {connection.provider?.typeAssignments?.map(
-                                (assignment: any, index: number) => (
+                                (assignment: TypeAssignment, index: number) => (
                                   <Badge key={index} variant="outline">
                                     {assignment.providerType?.name || 'Unknown'}
                                   </Badge>
@@ -432,9 +493,9 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                           </TableCell>
                         </TableRow>
                       )) */}
-                    </TableBody>
-                  </Table>
-                </div>
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -456,7 +517,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                       </p>
                       <p className="text-sm text-green-600 dark:text-green-400">
                         {new Date(organization.approvedAt).toLocaleString()}
-                        {organization.approvedById && ` by Admin`}
+                        {organization.approvedById && ' by Admin'}
                       </p>
                     </div>
                   </div>
@@ -488,7 +549,9 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                       Organization Registered
                     </p>
                     <p className="text-sm text-blue-600 dark:text-blue-400">
-                      {organization?.createdAt ? new Date(organization.createdAt).toLocaleString() : 'Unknown'}
+                      {organization?.createdAt
+                        ? new Date(organization.createdAt).toLocaleString()
+                        : 'Unknown'}
                     </p>
                   </div>
                 </div>

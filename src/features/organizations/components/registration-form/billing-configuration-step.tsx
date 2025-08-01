@@ -95,30 +95,6 @@ export function BillingConfigurationStep() {
                         </div>
                       </div>
                     </div>
-
-                    <div className="flex items-center space-x-3 rounded-lg border p-4 transition-colors hover:bg-accent/50">
-                      <RadioGroupItem value="HYBRID" id="hybrid" />
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Zap className="h-4 w-4 text-primary" />
-                          <FormLabel
-                            htmlFor="hybrid"
-                            className="cursor-pointer text-base font-medium"
-                          >
-                            Hybrid Billing
-                          </FormLabel>
-                          <Badge variant="outline">Advanced</Badge>
-                        </div>
-                        <FormDescription className="text-sm">
-                          Mix of consolidated and per-location billing. Some locations share a
-                          subscription, others are separate.
-                        </FormDescription>
-                        <div className="text-xs text-muted-foreground">
-                          ✓ Maximum flexibility • ✓ Complex organization support • ✓ Custom
-                          arrangements
-                        </div>
-                      </div>
-                    </div>
                   </RadioGroup>
                 </FormControl>
                 <FormMessage />

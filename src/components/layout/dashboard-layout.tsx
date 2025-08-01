@@ -20,9 +20,30 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/s
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAdminOrganization } from '@/features/organizations/hooks/use-admin-organizations';
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
+import { useOrganization } from '@/features/organizations/hooks/use-organization';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useProvider } from '@/features/providers/hooks/use-provider';
 import { isMobileForUI } from '@/lib/utils/responsive';
+import { type RouterOutputs } from '@/utils/api';
+
+// Infer types from tRPC router outputs
+type UserOrganizations = RouterOutputs['organizations']['getCurrentUserOrganizations'];
+type Organization = UserOrganizations[number];
+type Provider = RouterOutputs['providers']['getByUserId'];
+
+// Session user type
+interface SessionUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  role?: string;
+}
+
+// Breadcrumb item type
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
 
 // Enhanced truncation function with dynamic calculation and truncation tracking
 function truncateForMobile(
@@ -90,7 +111,7 @@ function truncateForMobile(
 
 // Enhanced function to determine if breadcrumb should be collapsed based on content
 function shouldCollapseBreadcrumb(
-  items: any[],
+  items: BreadcrumbItem[],
   isMobile: boolean,
   isTablet: boolean
 ): {
@@ -190,8 +211,21 @@ function DynamicBreadcrumb() {
       : undefined;
 
   const { data: provider, isLoading: isProviderLoading } = useProvider(providerId);
-  const { data: organization, isLoading: isOrganizationLoading } =
-    useAdminOrganization(organizationId);
+
+  // Use admin hook for admin routes, regular hook for user routes
+  const isAdminRoute = pathname.startsWith('/admin');
+
+  const { data: adminOrganization, isLoading: isAdminOrganizationLoading } = useAdminOrganization(
+    isAdminRoute ? organizationId : undefined
+  );
+  const { data: userOrganization, isLoading: isUserOrganizationLoading } = useOrganization(
+    !isAdminRoute ? organizationId : undefined
+  );
+
+  const organization = isAdminRoute ? adminOrganization : userOrganization;
+  const isOrganizationLoading = isAdminRoute
+    ? isAdminOrganizationLoading
+    : isUserOrganizationLoading;
 
   // Create breadcrumb items
   const breadcrumbItems = [];
@@ -414,7 +448,7 @@ function DynamicBreadcrumb() {
 }
 
 // We'll create this as a function to make it dynamic
-const createNavData = (providers: any[] = [], organizations: any[] = [], user?: any) => ({
+const createNavData = (providers: Provider[] = [], organizations: Organization[] = [], user?: SessionUser) => ({
   title: 'MedBookings',
   url: '/',
   navMain: [
@@ -485,8 +519,8 @@ const createNavData = (providers: any[] = [], organizations: any[] = [], user?: 
       : []),
     ...(organizations.length > 0
       ? organizations
-          .sort((a: any, b: any) => a.name.localeCompare(b.name))
-          .map((organization: any) => ({
+          .sort((a: Organization, b: Organization) => a.name.localeCompare(b.name))
+          .map((organization: Organization) => ({
             title: organization.name,
             url: `/organizations/${organization.id}`,
             items: [

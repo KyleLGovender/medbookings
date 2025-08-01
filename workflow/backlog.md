@@ -3,7 +3,25 @@
 ----------------------------------------------------------------------------------------
 
 ## 🚀 Current Sprint (In Progress)
+- [ ] tRPC migration
 - [ ] Implement testing throughout the application. https://github.com/microsoft/playwright-mcp 
+
+- [ ] **Technical Debt**: Critical cleanup of availability-creation-form.tsx as reference pattern - `src/features/calendar/availability/components/availability-creation-form.tsx:1`
+  - **Issue**: The availability-creation-form.tsx component needs comprehensive cleanup to serve as a clean reference pattern before it can be used as a template for standardizing the edit form. Current issues include: potential legacy code, inconsistent patterns, TODO comments (line 237), unused variables, complex state management that may not follow CLAUDE.md patterns, and general code quality issues that make it difficult to maintain and use as a reliable reference.
+  - **Impact**: Without a clean reference pattern, attempts to standardize the edit form will propagate existing technical debt and inconsistencies. This prevents the availability forms from serving as reliable patterns for other calendar implementations and makes future development more error-prone.
+  - **Implementation**:
+    1. **Critical Code Review**: Thoroughly review entire component for unnecessary code, legacy patterns, and development artifacts
+    2. **Remove Dead Code**: Remove unused variables, commented code, and any development debugging artifacts
+    3. **Resolve TODOs**: Address the TODO comment at line 237 for organization provider selection - either implement properly or remove
+    4. **State Management Cleanup**: Simplify and standardize state management patterns following CLAUDE.md guidelines
+    5. **Type Safety**: Ensure all types are properly defined, remove any 'any' types (line 99, 486, 487)
+    6. **Component Structure**: Ensure component follows consistent patterns for form handling, validation, and error management
+    7. **Code Organization**: Group related logic together, extract reusable functions if needed
+    8. **Error Handling**: Standardize error handling patterns and loading states
+    9. **Performance**: Review for unnecessary re-renders and optimize form watchers
+    10. **Documentation**: Add JSDoc comments for complex logic and ensure code is self-documenting
+    11. **CLAUDE.md Compliance**: Ensure all patterns follow the standards specified in CLAUDE.md
+  - **Estimated Time**: 4-5 hours
 - [ ] **Technical Debt**: Standardize availability-edit-form.tsx to match cleaned creation form pattern - `src/features/calendar/availability/components/availability-edit-form.tsx:1`
   - **Issue**: The availability-edit-form.tsx component doesn't follow the same comprehensive pattern as the availability-creation-form.tsx. It's missing key sections like profile selection, recurrence settings, location management, and doesn't have the same level of form organization and structure. This inconsistency makes the codebase harder to maintain and creates confusion for developers working with both forms.
   - **Impact**: Inconsistent form patterns across the availability system create maintenance burden, confuse developers, and make it difficult to ensure feature parity between creation and editing workflows. Users may expect similar functionality in both forms but find missing features in the edit form.
@@ -51,22 +69,9 @@
 ----------------------------------------------------------------------------------------
 
 ## ✅ Recently Completed
-- [ ] **Technical Debt**: Critical cleanup of availability-creation-form.tsx as reference pattern - `src/features/calendar/availability/components/availability-creation-form.tsx:1`
-  - **Issue**: The availability-creation-form.tsx component needs comprehensive cleanup to serve as a clean reference pattern before it can be used as a template for standardizing the edit form. Current issues include: potential legacy code, inconsistent patterns, TODO comments (line 237), unused variables, complex state management that may not follow CLAUDE.md patterns, and general code quality issues that make it difficult to maintain and use as a reliable reference.
-  - **Impact**: Without a clean reference pattern, attempts to standardize the edit form will propagate existing technical debt and inconsistencies. This prevents the availability forms from serving as reliable patterns for other calendar implementations and makes future development more error-prone.
-  - **Implementation**:
-    1. **Critical Code Review**: Thoroughly review entire component for unnecessary code, legacy patterns, and development artifacts
-    2. **Remove Dead Code**: Remove unused variables, commented code, and any development debugging artifacts
-    3. **Resolve TODOs**: Address the TODO comment at line 237 for organization provider selection - either implement properly or remove
-    4. **State Management Cleanup**: Simplify and standardize state management patterns following CLAUDE.md guidelines
-    5. **Type Safety**: Ensure all types are properly defined, remove any 'any' types (line 99, 486, 487)
-    6. **Component Structure**: Ensure component follows consistent patterns for form handling, validation, and error management
-    7. **Code Organization**: Group related logic together, extract reusable functions if needed
-    8. **Error Handling**: Standardize error handling patterns and loading states
-    9. **Performance**: Review for unnecessary re-renders and optimize form watchers
-    10. **Documentation**: Add JSDoc comments for complex logic and ensure code is self-documenting
-    11. **CLAUDE.md Compliance**: Ensure all patterns follow the standards specified in CLAUDE.md
-  - **Estimated Time**: 4-5 hours
+- [x] Implement user roles system (guest, user, provider, organization manager, admin)
+- [x] Context 7 documentation
+- [x] Firecrawl
 - [x] provider-service-default-values-not-persisted-during-registration
 
 ----------------------------------------------------------------------------------------

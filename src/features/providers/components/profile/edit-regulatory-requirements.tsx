@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 // Feature components
 import { renderRequirementInput } from '@/features/providers/components/render-requirement-input';
-import { RequirementType } from '@/features/providers/hooks/types';
 import { useProvider } from '@/features/providers/hooks/use-provider';
 import { useProviderRequirementTypes } from '@/features/providers/hooks/use-provider-requirements';
 import { useUpdateProviderRequirements } from '@/features/providers/hooks/use-provider-updates';
@@ -90,30 +89,17 @@ export function EditRegulatoryRequirements({
     const existingRequirements = provider.requirementSubmissions || [];
 
     // Prepare form data by merging requirement types with existing submissions
-    const requirementsData = requirementTypes.map((req: any) => {
-      // Find existing submission for this requirement type
+    const requirementsData = requirementTypes.map((req: any, index: number) => {
+      // Find existing submission for this specific requirement type
       const existingSubmission = existingRequirements.find(
         (sub: any) => sub.requirementTypeId === req.id
       );
 
-      // Create form entry with proper values
+      // Create form entry with proper values - ONLY for THIS requirement
       const formEntry: any = {
         requirementTypeId: req.id,
-        index: req.index,
+        // Don't set any value initially - let the render function handle it
       };
-
-      // If there's an existing submission, pre-populate the value
-      if (existingSubmission) {
-        // Handle different types of values based on requirement type
-        if (existingSubmission.documentMetadata?.value !== undefined) {
-          formEntry.value = existingSubmission.documentMetadata.value;
-        } else if (
-          existingSubmission.documentMetadata?.value &&
-          typeof existingSubmission.documentMetadata.value === 'string'
-        ) {
-          formEntry.value = existingSubmission.documentMetadata.value;
-        }
-      }
 
       return formEntry;
     });
@@ -125,6 +111,14 @@ export function EditRegulatoryRequirements({
       },
     });
   }, [provider, requirementTypes, methods]);
+
+  // Create indexed requirement types for rendering
+  const indexedRequirementTypes = requirementTypes
+    ? requirementTypes.map((req: any, index: number) => ({
+        ...req,
+        index: index,
+      }))
+    : [];
 
   // Check if current user is authorized to edit this provider
   useEffect(() => {
@@ -139,17 +133,16 @@ export function EditRegulatoryRequirements({
     setIsSubmitting(true);
 
     try {
-      // Create FormData object for the API
-      const formData = new FormData();
-      formData.append('id', providerId);
-      formData.append('userId', userId);
-
       // Process each requirement
       const requirementsData = data.regulatoryRequirements?.requirements || [];
 
-      requirementsData.forEach((req, index) => {
-        if (req) {
-          formData.append(`requirements[${index}][requirementTypeId]`, req.requirementTypeId);
+      // Transform the data to match the tRPC schema format
+      const requirements = requirementsData
+        .filter((req) => req && req.requirementTypeId) // Only include valid requirements
+        .map((req) => {
+          const transformedReq: any = {
+            requirementTypeId: req.requirementTypeId,
+          };
 
           // For document type requirements, prioritize using the value as documentMetadata
           if (
@@ -159,26 +152,27 @@ export function EditRegulatoryRequirements({
             (req.value.startsWith('http://') || req.value.startsWith('https://'))
           ) {
             // This is likely a document URL, so create proper document metadata
-            formData.append(
-              `requirements[${index}][documentMetadata]`,
-              JSON.stringify({ value: req.value })
-            );
-            formData.append(`requirements[${index}][value]`, req.value.toString());
+            transformedReq.documentMetadata = { value: req.value };
+            transformedReq.value = req.value;
           }
           // Handle regular text/boolean values
           else if (req.value !== undefined && req.value !== null) {
-            formData.append(`requirements[${index}][value]`, req.value.toString());
+            transformedReq.value = req.value.toString();
           }
 
           // Handle other values for predefined lists
           if (req.otherValue) {
-            formData.append(`requirements[${index}][otherValue]`, req.otherValue);
+            transformedReq.otherValue = req.otherValue;
           }
-        }
-      });
+
+          return transformedReq;
+        });
 
       // Use mutateAsync to properly await the result
-      await updateRequirementsMutation.mutateAsync(formData as any);
+      await updateRequirementsMutation.mutateAsync({
+        id: providerId,
+        requirements,
+      });
 
       // Invalidate and refetch provider data
       queryClient.invalidateQueries({ queryKey: ['provider', providerId] });
@@ -241,13 +235,13 @@ export function EditRegulatoryRequirements({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {requirementTypes.length === 0 ? (
+              {indexedRequirementTypes.length === 0 ? (
                 <div className="py-4 text-center text-muted-foreground">
                   No regulatory requirements found for this provider type.
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {requirementTypes.map((requirement: any, index: number) => {
+                  {indexedRequirementTypes.map((requirement: any, index: number) => {
                     // Find existing submission for this requirement
                     const existingSubmission = provider.requirementSubmissions?.find(
                       (sub: any) => sub.requirementTypeId === requirement.id
@@ -257,6 +251,13 @@ export function EditRegulatoryRequirements({
                     const fieldName = `regulatoryRequirements.requirements.${index}`;
                     const fieldError =
                       methods.formState.errors?.regulatoryRequirements?.requirements?.[index];
+
+                    // Create requirement object with existing submission data
+                    const requirementWithSubmission = {
+                      ...requirement,
+                      existingSubmission,
+                      index, // Ensure index is set correctly
+                    };
 
                     return (
                       <div key={requirement.id} className="rounded-md border p-4">
@@ -289,13 +290,15 @@ export function EditRegulatoryRequirements({
                         )}
 
                         <div className="mt-4">
-                          {renderRequirementInput(requirement, {
+                          {renderRequirementInput(requirementWithSubmission, {
                             register: methods.register,
                             watch: methods.watch,
                             setValue: methods.setValue,
                             errors: methods.formState.errors,
                             fieldName,
-                            existingValue: existingSubmission?.documentMetadata?.value,
+                            existingValue:
+                              existingSubmission?.documentMetadata?.value ||
+                              existingSubmission?.value,
                           })}
                           {fieldError && (
                             <p className="mt-1 text-xs text-red-500">

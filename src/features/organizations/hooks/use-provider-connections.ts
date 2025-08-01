@@ -1,6 +1,7 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { api, type RouterOutputs } from '@/utils/api';
 
-import { api } from '@/utils/api';
+// Infer the type from the tRPC router output
+export type ProviderConnection = RouterOutputs['organizations']['getProviderConnections'][number];
 
 export function useOrganizationProviderConnections(organizationId: string) {
   return api.organizations.getProviderConnections.useQuery(
@@ -20,43 +21,48 @@ export function useManageOrganizationProviderConnection(
   organizationId: string,
   options: ManageOrganizationProviderConnectionOptions = {}
 ) {
-  const queryClient = useQueryClient();
+  const utils = api.useUtils();
 
-  return useMutation({
-    mutationFn: async (params: {
-      connectionId: string;
-      action: 'update' | 'delete';
-      data?: { status: string };
-    }) => {
-      const url = `/api/organizations/${organizationId}/provider-connections/${params.connectionId}`;
-
-      const response = await fetch(url, {
-        method: params.action === 'delete' ? 'DELETE' : 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        ...(params.action === 'update' && { body: JSON.stringify(params.data) }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to manage provider connection');
-      }
-
-      if (params.action === 'delete') {
-        return { message: 'Connection deleted successfully' };
-      }
-
-      return response.json();
-    },
+  // Update provider connection status
+  const updateConnection = api.organizations.updateProviderConnection.useMutation({
     onSuccess: (data, variables) => {
       // Invalidate and refetch organization provider connections
-      queryClient.invalidateQueries({
-        queryKey: ['organization-provider-connections', organizationId],
-      });
-
+      utils.organizations.getProviderConnections.invalidate({ organizationId });
       options.onSuccess?.(data, variables);
     },
     onError: options.onError,
   });
+
+  // Delete provider connection
+  const deleteConnection = api.organizations.deleteProviderConnection.useMutation({
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch organization provider connections
+      utils.organizations.getProviderConnections.invalidate({ organizationId });
+      options.onSuccess?.(data, variables);
+    },
+    onError: options.onError,
+  });
+
+  return {
+    mutate: (params: {
+      connectionId: string;
+      action: 'update' | 'delete';
+      data?: { status: 'ACCEPTED' | 'SUSPENDED' };
+    }) => {
+      if (params.action === 'update' && params.data?.status) {
+        updateConnection.mutate({
+          organizationId,
+          connectionId: params.connectionId,
+          status: params.data.status,
+        });
+      } else if (params.action === 'delete') {
+        deleteConnection.mutate({
+          organizationId,
+          connectionId: params.connectionId,
+        });
+      }
+    },
+    isLoading: updateConnection.isLoading || deleteConnection.isLoading,
+    error: updateConnection.error || deleteConnection.error,
+  };
 }

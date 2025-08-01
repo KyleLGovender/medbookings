@@ -26,8 +26,6 @@ export function ReviewStep() {
         return 'Consolidated Billing';
       case 'PER_LOCATION':
         return 'Per-Location Billing';
-      case 'HYBRID':
-        return 'Hybrid Billing';
       default:
         return model;
     }

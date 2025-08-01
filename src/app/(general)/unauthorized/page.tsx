@@ -155,6 +155,776 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
  * based on the type of permission violation.
  */
 
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
+/**
+ * Unauthorized access error page
+ *
+ * Context-aware error page that provides specific messaging
+ * based on the type of permission violation.
+ */
+
 interface UnauthorizedPageProps {
   searchParams: {
     reason?: string;

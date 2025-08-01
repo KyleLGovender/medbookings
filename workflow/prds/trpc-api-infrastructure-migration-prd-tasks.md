@@ -49,37 +49,42 @@
   - [x] 2.7 Create invitations router for token validation
   - [x] 2.8 Update all corresponding hooks to use tRPC queries
   - [x] 2.9 Test each migrated endpoint for type safety
-  - [x] 2.10 Remove old REST API route files for migrated endpoints
+  - [ ] 2.10 Remove old REST API route files for migrated endpoints (INCOMPLETE: Many legacy routes still exist)
 
-- [x] 3.0 Migrate Provider Domain CRUD Operations and Hooks
+- [ ] 3.0 Migrate Provider Domain CRUD Operations and Hooks
   - [x] 3.1 Implement providers.list query with search and filtering
   - [x] 3.2 Create providers.create mutation using registerProvider action
   - [x] 3.3 Implement providers.get query with relations
   - [x] 3.4 Create providers.update mutation with form data conversion
   - [x] 3.5 Implement providers.delete mutation
-  - [x] 3.6 Migrate updateBasicInfo procedure with validation
+  - [ ] 3.6 Migrate updateBasicInfo procedure with validation (LEGACY: /api/providers/[id]/basic-info still exists)
   - [x] 3.7 Implement services management procedures (get/update)
   - [x] 3.8 Create requirements submission procedures
   - [x] 3.9 Migrate all provider hooks (useProviders, useProvider, etc.)
   - [x] 3.10 Implement optimistic updates for provider mutations
-  - [x] 3.11 Add provider connections sub-router
+  - [ ] 3.11 Add provider connections sub-router (LEGACY: /api/providers/connections/* still exists)
   - [x] 3.12 Test provider domain end-to-end flows
+  - [ ] 3.13 Migrate provider onboarding endpoint (LEGACY: /api/providers/onboarding still exists)
+  - [ ] 3.14 Migrate provider invitations endpoints (LEGACY: /api/providers/invitations/* still exists)
+  - [ ] 3.15 Migrate getByUserId endpoint (LEGACY: /api/providers/user/[userId] still exists)
 
-- [x] 4.0 Migrate Organization Domain CRUD Operations and Hooks
+- [ ] 4.0 Migrate Organization Domain CRUD Operations and Hooks
   - [x] 4.1 Implement organizations.list with filtering
   - [x] 4.2 Create organizations.create mutation with validation
   - [x] 4.3 Implement organizations.get with includes
   - [x] 4.4 Create organizations.update mutation
   - [x] 4.5 Implement organizations.delete mutation
   - [x] 4.6 Create locations sub-router (get/add/update/delete)
-  - [x] 4.7 Implement billing sub-router procedures
-  - [x] 4.8 Create provider connections management procedures
-  - [x] 4.9 Implement provider invitations procedures
+  - [ ] 4.7 Implement billing sub-router procedures (LEGACY: /api/organizations/[id]/billing still exists)
+  - [x] 4.8 Create provider connections management procedures (LIST/CREATE only - UPDATE/DELETE still legacy)
+  - [x] 4.9 Implement provider invitations procedures (LIST/CREATE only - UPDATE/DELETE still legacy)
   - [x] 4.10 Migrate all organization hooks to tRPC
   - [x] 4.11 Add getByUserId procedures for user lookups
   - [x] 4.12 Test organization workflows with authorization
+  - [ ] 4.13 Migrate provider connection update/delete endpoints (LEGACY: /api/organizations/[id]/provider-connections/[connectionId] still exists)
+  - [ ] 4.14 Migrate provider invitation update/delete/resend endpoints (LEGACY: /api/organizations/[id]/provider-invitations/[invitationId]/* still exists)
 
-- [x] 5.0 Migrate Calendar Domain Complex Operations and Search
+- [ ] 5.0 Migrate Calendar Domain Complex Operations and Search
   - [x] 5.1 Create calendar.createAvailability with complex validation
   - [x] 5.2 Implement updateAvailability with business rules
   - [x] 5.3 Create deleteAvailability with cascade handling
@@ -88,8 +93,8 @@
   - [x] 5.6 Implement searchSlots with performance optimization
   - [x] 5.7 Create searchProviders with filtering logic
   - [x] 5.8 Implement searchServices procedure
-  - [x] 5.9 Add geocode procedure for location services
-  - [x] 5.10 Create performance recommendations query
+  - [ ] 5.9 Add geocode procedure for location services (LEGACY: /api/calendar/availability/geocode still exists)
+  - [ ] 5.10 Create performance recommendations query (LEGACY: /api/calendar/availability/performance/recommendations still exists)
   - [x] 5.11 Migrate all calendar hooks with caching strategies
   - [x] 5.12 Test complex calendar workflows and search
 
@@ -107,11 +112,11 @@
   - [x] 6.11 Test admin workflows with different roles
   - [x] 6.12 Verify audit trail functionality
 
-- [x] 7.0 Complete Migration Cleanup and Documentation
-  - [x] 7.1 Create billing router for subscription management
-  - [x] 7.2 Implement profile update and delete procedures
+- [ ] 7.0 Complete Migration Cleanup and Documentation
+  - [ ] 7.1 Create billing router for subscription management (MISSING: No billing router exists, /api/subscriptions/* still exists)
+  - [ ] 7.2 Implement profile update and delete procedures (INCOMPLETE: Only profile.get exists, missing update/delete)
   - [x] 7.3 Add feature flags for gradual rollout
-  - [x] 7.4 Remove all migrated REST API route files
+  - [ ] 7.4 Remove all migrated REST API route files (INCOMPLETE: Many legacy routes still exist)
   - [x] 7.5 Update CLAUDE.md with tRPC patterns and examples
   - [x] 7.6 Create migration guide for team reference
   - [x] 7.7 Set up performance monitoring for tRPC endpoints
@@ -120,3 +125,52 @@
   - [x] 7.10 Create rollback plan documentation
   - [x] 7.11 Update TypeScript configurations if needed
   - [x] 7.12 Final code review and optimization
+
+## 📊 Migration Status Summary
+
+### ✅ Fully Migrated Domains
+- **Admin** - All admin operations migrated to tRPC (11 procedures)
+- **Invitations** - Token validation migrated
+- **Debug** - Session endpoint migrated
+
+### 🟡 Partially Migrated Domains  
+- **Providers** - Core CRUD migrated, but missing: basic-info updates, onboarding, connections, invitations, getByUserId
+- **Organizations** - Core CRUD migrated, but missing: billing, connection/invitation management endpoints
+- **Calendar** - Core availability migrated, but missing: geocode, performance recommendations
+- **Profile** - Only GET migrated, missing: update, delete
+
+### ❌ Not Started
+- **Billing** - No billing router exists, subscription endpoints still in REST
+
+### 🔍 Remaining Legacy API Routes (19 endpoints)
+**Provider Domain (7 routes):**
+- `/api/providers/onboarding` 
+- `/api/providers/[id]/basic-info`
+- `/api/providers/user/[userId]`
+- `/api/providers/invitations/*`
+- `/api/providers/connections/*`
+
+**Organization Domain (4 routes):**
+- `/api/organizations/[id]/billing`
+- `/api/organizations/[id]/provider-connections/[connectionId]`
+- `/api/organizations/[id]/provider-invitations/[invitationId]/*`
+
+**Calendar Domain (2 routes):**
+- `/api/calendar/availability/geocode`
+- `/api/calendar/availability/performance/recommendations`
+
+**Billing Domain (2 routes):**
+- `/api/subscriptions/*`
+
+**Auth/Upload/Webhooks (4 routes - intentionally kept as REST):**
+- `/api/auth/*`
+- `/api/upload`
+- `/api/whatsapp-callback`
+
+### 🎯 Next Priority Actions
+1. Create missing billing router with subscription procedures
+2. Complete profile router with update/delete procedures
+3. Migrate remaining provider domain endpoints
+4. Migrate remaining organization billing/management endpoints
+5. Migrate remaining calendar utility endpoints
+6. Remove legacy route files after tRPC migration confirmed working

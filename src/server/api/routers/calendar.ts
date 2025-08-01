@@ -10,7 +10,14 @@ import {
   searchAvailability,
   updateAvailability,
 } from '@/features/calendar/lib/actions';
-import { availabilityCreateSchema } from '@/features/calendar/types/schemas';
+import { geocodeAddress } from '@/features/calendar/lib/location-search-service';
+import { getDatabasePerformanceRecommendations } from '@/features/calendar/lib/search-performance-service';
+import {
+  availabilityCreateSchema,
+  availabilitySearchParamsSchema,
+  slotSearchParamsSchema,
+  updateAvailabilityDataSchema,
+} from '@/features/calendar/types/schemas';
 import { AvailabilityStatus } from '@/features/calendar/types/types';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
@@ -39,26 +46,9 @@ export const calendarRouter = createTRPCRouter({
    * Migrated from: GET /api/calendar/availability
    */
   searchAvailability: publicProcedure
-    .input(
-      z.object({
-        providerId: z.string().optional(),
-        organizationId: z.string().optional(),
-        locationId: z.string().optional(),
-        serviceId: z.string().optional(),
-        startDate: z.string().datetime().optional(),
-        endDate: z.string().datetime().optional(),
-        status: z.nativeEnum(AvailabilityStatus).optional(),
-        seriesId: z.string().optional(),
-      })
-    )
+    .input(availabilitySearchParamsSchema)
     .query(async ({ ctx, input }) => {
-      const params = {
-        ...input,
-        startDate: input.startDate ? new Date(input.startDate) : undefined,
-        endDate: input.endDate ? new Date(input.endDate) : undefined,
-      };
-
-      const result = await searchAvailability(params);
+      const result = await searchAvailability(input);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch availability');
@@ -100,28 +90,9 @@ export const calendarRouter = createTRPCRouter({
    * Migrated from: PUT /api/calendar/availability/update
    */
   update: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        startTime: z.string().datetime().optional(),
-        endTime: z.string().datetime().optional(),
-        serviceId: z.string().optional(),
-        price: z.number().optional(),
-        duration: z.number().optional(),
-        isOnlineAvailable: z.boolean().optional(),
-        locationId: z.string().optional(),
-        notes: z.string().optional(),
-      })
-    )
+    .input(updateAvailabilityDataSchema)
     .mutation(async ({ ctx, input }) => {
-      // Convert string dates to Date objects
-      const updateData = {
-        ...input,
-        startTime: input.startTime ? new Date(input.startTime) : undefined,
-        endTime: input.endTime ? new Date(input.endTime) : undefined,
-      };
-      
-      const result = await updateAvailability(updateData);
+      const result = await updateAvailability(input);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to update availability');
@@ -135,10 +106,12 @@ export const calendarRouter = createTRPCRouter({
    * Migrated from: DELETE /api/calendar/availability/delete
    */
   delete: protectedProcedure
-    .input(z.object({ 
-      ids: z.array(z.string()),
-      scope: z.enum(['single', 'future', 'all']).optional()
-    }))
+    .input(
+      z.object({
+        ids: z.array(z.string()),
+        scope: z.enum(['single', 'future', 'all']).optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Handle single deletion with scope or bulk deletion
       if (input.ids.length === 1 && input.scope) {
@@ -150,36 +123,54 @@ export const calendarRouter = createTRPCRouter({
         return result;
       } else {
         // Bulk deletion (no scope support)
-        const results = await Promise.all(
-          input.ids.map(id => deleteAvailability(id))
-        );
-        
-        const failed = results.filter(r => !r.success);
+        const results = await Promise.all(input.ids.map((id) => deleteAvailability(id)));
+
+        const failed = results.filter((r) => !r.success);
         if (failed.length > 0) {
           throw new Error(`Failed to delete ${failed.length} availability(s)`);
         }
-        
+
         return { success: true };
       }
     }),
 
   /**
    * Cancel availability
-   * Migrated from: POST /api/calendar/availability/cancel
+   * Migrated from: PUT /api/calendar/availability/cancel
    */
   cancel: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        reason: z.string().optional(),
+        scope: z.enum(['single', 'future', 'all']).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const result = await cancelAvailability(input.id, input.reason, input.scope);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to cancel availability');
+      }
+
+      return result;
+    }),
+
+  /**
+   * Cancel multiple availabilities (batch operation)
+   * New endpoint for bulk cancellations
+   */
+  cancelMultiple: protectedProcedure
     .input(z.object({ ids: z.array(z.string()) }))
     .mutation(async ({ ctx, input }) => {
       // Handle multiple cancellations
-      const results = await Promise.all(
-        input.ids.map(id => cancelAvailability(id))
-      );
-      
-      const hasErrors = results.some(result => !result.success);
+      const results = await Promise.all(input.ids.map((id) => cancelAvailability(id)));
+
+      const hasErrors = results.some((result) => !result.success);
       if (hasErrors) {
         const errorMessages = results
-          .filter(result => !result.success)
-          .map(result => result.error)
+          .filter((result) => !result.success)
+          .map((result) => result.error)
           .join(', ');
         throw new Error(`Failed to cancel some availability: ${errorMessages}`);
       }
@@ -192,6 +183,22 @@ export const calendarRouter = createTRPCRouter({
    * Migrated from: POST /api/calendar/availability/accept
    */
   accept: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await acceptAvailability([input.id]);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to accept availability');
+      }
+
+      return result.data?.[0];
+    }),
+
+  /**
+   * Accept multiple availabilities (batch operation)
+   * New endpoint for bulk acceptances
+   */
+  acceptMultiple: protectedProcedure
     .input(z.object({ ids: z.array(z.string()) }))
     .mutation(async ({ ctx, input }) => {
       const result = await acceptAvailability(input.ids);
@@ -208,9 +215,25 @@ export const calendarRouter = createTRPCRouter({
    * Migrated from: POST /api/calendar/availability/reject
    */
   reject: protectedProcedure
-    .input(z.object({ ids: z.array(z.string()) }))
+    .input(z.object({ id: z.string(), reason: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
-      const result = await rejectAvailability(input.ids);
+      const result = await rejectAvailability([input.id], input.reason);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to reject availability');
+      }
+
+      return result;
+    }),
+
+  /**
+   * Reject multiple availabilities (batch operation)
+   * New endpoint for bulk rejections
+   */
+  rejectMultiple: protectedProcedure
+    .input(z.object({ ids: z.array(z.string()), reason: z.string().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await rejectAvailability(input.ids, input.reason);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to reject availability');
@@ -231,7 +254,7 @@ export const calendarRouter = createTRPCRouter({
         locationId: z.string().optional(),
         startDate: z.string(),
         endDate: z.string(),
-        duration: z.number().optional(),
+        minDuration: z.number().optional(),
         onlineOnly: z.boolean().optional(),
       })
     )
@@ -270,7 +293,7 @@ export const calendarRouter = createTRPCRouter({
 
       // Generate slots from availabilities
       const slots = availabilities.flatMap((availability) => {
-        const slotDuration = input.duration || 30;
+        const slotDuration = input.minDuration || 30;
         const slots = [];
         let currentTime = new Date(availability.startTime);
         const endTime = new Date(availability.endTime);
@@ -377,10 +400,86 @@ export const calendarRouter = createTRPCRouter({
       const startDate = new Date(input.startDate);
       const endDate = new Date(input.endDate);
 
-      // Find all services  
-      const services = await ctx.prisma.service.findMany({
-      });
+      // Find all services
+      const services = await ctx.prisma.service.findMany({});
 
       return services;
+    }),
+
+  /**
+   * Geocode an address
+   * Migrated from: GET /api/calendar/availability/geocode
+   */
+  geocodeAddress: publicProcedure
+    .input(
+      z.object({
+        address: z.string().min(1, 'Address is required'),
+      })
+    )
+    .query(async ({ input }) => {
+      const result = await geocodeAddress(input.address);
+
+      if (!result) {
+        throw new Error('Could not geocode the provided address');
+      }
+
+      return result;
+    }),
+
+  /**
+   * Get database performance recommendations
+   * Migrated from: GET /api/calendar/availability/performance/recommendations
+   */
+  getPerformanceRecommendations: publicProcedure.query(async () => {
+    const recommendations = await getDatabasePerformanceRecommendations();
+    return recommendations;
+  }),
+
+  /**
+   * Get availability by provider ID
+   * New endpoint for useProviderAvailability hook
+   */
+  getByProviderId: publicProcedure
+    .input(z.object({ providerId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const result = await searchAvailability({ providerId: input.providerId });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch provider availability');
+      }
+
+      return result.data || [];
+    }),
+
+  /**
+   * Get availability by organization ID
+   * New endpoint for useOrganizationAvailability hook
+   */
+  getByOrganizationId: publicProcedure
+    .input(z.object({ organizationId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const result = await searchAvailability({ organizationId: input.organizationId });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch organization availability');
+      }
+
+      return result.data || [];
+    }),
+
+  /**
+   * Get availability by series ID
+   * New endpoint for useAvailabilitySeries hook
+   */
+  getBySeriesId: publicProcedure
+    .input(z.object({ seriesId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const result = await searchAvailability({ seriesId: input.seriesId });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch availability series');
+      }
+
+      return result.data || [];
     }),
 });

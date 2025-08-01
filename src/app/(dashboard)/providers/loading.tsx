@@ -1,7 +1,7 @@
 import CalendarLoader from '@/components/calendar-loader';
 
-export default function ServiceProviderLoading() {
+export default function ProvidersLoading() {
   return (
-    <CalendarLoader message="Loading Provider" submessage="Preparing provider information..." />
+    <CalendarLoader message="Loading Providers" submessage="Preparing provider information..." />
   );
 }

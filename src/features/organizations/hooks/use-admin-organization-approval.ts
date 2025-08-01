@@ -81,3 +81,108 @@ export function useRejectOrganization(callbacks?: MutationCallbacks) {
     },
   };
 }
+
+/**
+ * Hook for resetting a rejected organization back to pending status
+ * @param options Optional mutation options including onSuccess and onError callbacks
+ * @returns Mutation object for resetting organization status
+ */
+export function useResetOrganizationStatus(options?: {
+  onSuccess?: (data: any) => void;
+  onError?: (error: Error) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  return api.admin.resetOrganizationStatus.useMutation({
+    onMutate: async ({ id }) => {
+      console.log('Optimistic update - resetting organization status:', { organizationId: id });
+
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({
+        predicate: (query) => {
+          const keyStr = JSON.stringify(query.queryKey);
+          return keyStr.includes('getOrganizationById') && keyStr.includes(id);
+        },
+      });
+
+      // Snapshot the previous organization value
+      const cache = queryClient.getQueryCache();
+      const allQueries = cache.getAll();
+      let previousOrganization;
+      let actualKey;
+
+      // Look for the actual key in the cache
+      for (const query of allQueries) {
+        const keyStr = JSON.stringify(query.queryKey);
+        if (keyStr.includes('getOrganizationById') && keyStr.includes(id)) {
+          actualKey = query.queryKey;
+          previousOrganization = query.state.data;
+          console.log('Found organization data with actual key:', actualKey);
+          break;
+        }
+      }
+
+      if (!previousOrganization || !actualKey) {
+        console.warn('Could not find organization data to snapshot');
+        return { previousOrganization: null, organizationId: id, actualKey: null };
+      }
+
+      // Optimistically update the organization cache
+      queryClient.setQueryData(actualKey, (old: any) => {
+        if (!old) return old;
+
+        const updated = {
+          ...old,
+          status: 'PENDING_APPROVAL',
+          rejectedAt: null,
+          rejectionReason: null,
+          approvedAt: null,
+          approvedById: null,
+        };
+        console.log(
+          'Optimistically updated organization with key:',
+          actualKey,
+          'Updated data:',
+          updated
+        );
+        return updated;
+      });
+
+      return { previousOrganization, organizationId: id, actualKey };
+    },
+    onError: (err, _variables, context) => {
+      console.error('Reset organization status failed, rolling back:', err);
+
+      if (context?.previousOrganization && context?.actualKey) {
+        queryClient.setQueryData(context.actualKey, context.previousOrganization);
+      }
+
+      if (options?.onError) {
+        options.onError(err as any);
+      }
+    },
+    onSuccess: async (data, variables) => {
+      console.log('Reset organization status success - invalidating queries for:', variables.id);
+
+      // Invalidate relevant queries
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const keyStr = JSON.stringify(query.queryKey);
+          return keyStr.includes('getOrganizationById') && keyStr.includes(variables.id);
+        },
+      });
+
+      // Also invalidate the organization list
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const keyStr = JSON.stringify(query.queryKey);
+          return keyStr.includes('"getOrganizations"');
+        },
+      });
+
+      if (options?.onSuccess) {
+        options.onSuccess(data);
+      }
+    },
+  });
+}

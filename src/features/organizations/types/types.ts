@@ -63,7 +63,7 @@ export interface OrganizationLocation {
   id?: string;
   name: string;
   organizationId?: string;
-  formattedAddress?: string;
+  formattedAddress: string;
   phone?: string;
   email?: string;
   createdAt?: string | Date;
@@ -79,7 +79,7 @@ export interface OrganizationProviderConnection {
   acceptedAt: string | null;
   suspendedAt: string | null;
   createdAt: string;
-  serviceProvider: {
+  provider: {
     id: string;
     name: string;
     email: string;
@@ -147,10 +147,21 @@ export interface CreateOrganizationData {
 // Alias for backward compatibility
 export type OrganizationBasicInfoData = CreateOrganizationData;
 
-export interface OrganizationRegistrationData extends CreateOrganizationData {
-  termsAccepted: boolean;
-  billingType?: 'monthly' | 'yearly';
-  [key: string]: any; // Allow additional registration fields
+export interface OrganizationRegistrationData {
+  organization: CreateOrganizationData & {
+    billingModel: 'CONSOLIDATED' | 'SLOT_BASED';
+    logo?: string;
+  };
+  locations?: Array<{
+    id?: string;
+    name: string;
+    formattedAddress: string;
+    phone?: string;
+    email?: string;
+    googlePlaceId?: string;
+    coordinates?: any;
+    searchTerms?: string[];
+  }>;
 }
 
 export interface UpdateOrganizationData extends Partial<CreateOrganizationData> {
@@ -174,6 +185,19 @@ export interface CreateLocationData {
 
 export interface OrganizationLocationsData {
   locations: OrganizationLocation[];
+}
+
+// Location with required fields for mutation operations
+export interface OrganizationLocationForMutation {
+  id?: string;
+  organizationId: string;
+  name: string;
+  formattedAddress: string;
+  phone?: string;
+  email?: string;
+  googlePlaceId?: string;
+  coordinates?: any;
+  searchTerms?: string[];
 }
 
 export interface ProviderInvitationWithDetails {

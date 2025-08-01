@@ -9,7 +9,7 @@ import { api } from '@/utils/api';
  */
 export function useOrganizationLocations(organizationIds: string[]) {
   const utils = api.useUtils();
-  
+
   const locationQueries = useQueries({
     queries: organizationIds.map((orgId) => ({
       queryKey: ['organizations', 'locations', orgId],

@@ -1,10 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import {
-  cleanTestData,
-  getTestDataCounts,
-  setupTestData,
-} from '../utils/database';
+import { cleanTestData, getTestDataCounts, setupTestData } from '../utils/database';
 
 test.describe('Test Data Management', () => {
   test('should show current test data counts', async ({ page }) => {

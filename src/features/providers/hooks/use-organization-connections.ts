@@ -1,40 +1,19 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 
-import { ConnectionUpdate, InvitationResponse } from '@/features/providers/types/schemas';
-import {
-  OrganizationConnectionWithDetails,
-  ProviderInvitationWithOrganization,
-} from '@/features/providers/types/types';
+import { api } from '@/utils/api';
 
 /**
  * Hook for fetching provider invitations
  * @param status Optional status filter
  * @returns Query object with provider invitations data
  */
-export function useProviderInvitations(status?: string) {
-  return useQuery<{ invitations: ProviderInvitationWithOrganization[] }, Error>({
-    queryKey: ['providerInvitations', status],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (status) {
-        params.append('status', status);
-      }
-
-      const response = await fetch(`/api/providers/invitations?${params.toString()}`);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch invitations');
-      }
-
-      return response.json();
-    },
+export function useProviderInvitations(
+  status?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'EXPIRED'
+) {
+  return api.providers.getInvitations.useQuery(status ? { status } : {}, {
+    // Always enabled since it handles auth internally
+    retry: false,
   });
-}
-
-interface RespondToInvitationParams {
-  token: string;
-  response: InvitationResponse;
 }
 
 /**
@@ -44,35 +23,15 @@ interface RespondToInvitationParams {
  */
 export function useRespondToInvitation(options?: {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: any) => void;
 }) {
   const queryClient = useQueryClient();
 
-  return useMutation<any, Error, RespondToInvitationParams>({
-    mutationFn: async ({ token, response }) => {
-      if (!token) {
-        throw new Error('Invitation token is required');
-      }
-
-      const apiResponse = await fetch(`/api/providers/invitations/${token}/respond`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(response),
-      });
-
-      if (!apiResponse.ok) {
-        const errorData = await apiResponse.json();
-        throw new Error(errorData.message || 'Failed to respond to invitation');
-      }
-
-      return apiResponse.json();
-    },
+  return api.providers.respondToInvitation.useMutation({
     onSuccess: (data) => {
       // Invalidate both invitations and connections to refresh the data
-      queryClient.invalidateQueries({ queryKey: ['providerInvitations'] });
-      queryClient.invalidateQueries({ queryKey: ['organizationConnections'] });
+      queryClient.invalidateQueries({ queryKey: ['providers', 'getInvitations'] });
+      queryClient.invalidateQueries({ queryKey: ['providers', 'getConnections'] });
       options?.onSuccess?.(data);
     },
     onError: options?.onError,
@@ -84,79 +43,52 @@ export function useRespondToInvitation(options?: {
  * @param status Optional status filter
  * @returns Query object with organization connections data
  */
-export function useOrganizationConnections(status?: string) {
-  return useQuery<{ connections: OrganizationConnectionWithDetails[] }, Error>({
-    queryKey: ['organizationConnections', status],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (status) {
-        params.append('status', status);
-      }
-
-      const response = await fetch(`/api/providers/connections?${params.toString()}`);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch connections');
-      }
-
-      return response.json();
-    },
+export function useOrganizationConnections(
+  status?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'SUSPENDED'
+) {
+  return api.providers.getConnections.useQuery(status ? { status } : {}, {
+    // Always enabled since it handles auth internally
+    retry: false,
   });
 }
 
-interface ManageConnectionParams {
-  connectionId: string;
-  action: 'update' | 'delete';
-  data?: ConnectionUpdate;
-}
-
 /**
- * Hook for managing organization connections (suspend/reactivate/delete)
+ * Hook for updating organization connection status (suspend/reactivate)
  * @param options Optional mutation options including onSuccess and onError callbacks
- * @returns Mutation object for managing connections
+ * @returns Mutation object for updating connections
  */
-export function useManageConnection(options?: {
-  onSuccess?: (data: any, variables: ManageConnectionParams) => void;
-  onError?: (error: Error) => void;
+export function useUpdateConnection(options?: {
+  onSuccess?: (data: any) => void;
+  onError?: (error: any) => void;
 }) {
   const queryClient = useQueryClient();
 
-  return useMutation<any, Error, ManageConnectionParams>({
-    mutationFn: async ({ connectionId, action, data }) => {
-      if (!connectionId) {
-        throw new Error('Connection ID is required');
-      }
-
-      let response: Response;
-
-      if (action === 'update' && data) {
-        response = await fetch(`/api/providers/connections/${connectionId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        });
-      } else if (action === 'delete') {
-        response = await fetch(`/api/providers/connections/${connectionId}`, {
-          method: 'DELETE',
-        });
-      } else {
-        throw new Error('Invalid action or missing data');
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to ${action} connection`);
-      }
-
-      return response.json();
-    },
-    onSuccess: (data, variables) => {
+  return api.providers.updateConnection.useMutation({
+    onSuccess: (data) => {
       // Invalidate connections to refresh the data
-      queryClient.invalidateQueries({ queryKey: ['organizationConnections'] });
-      options?.onSuccess?.(data, variables);
+      queryClient.invalidateQueries({ queryKey: ['providers', 'getConnections'] });
+      options?.onSuccess?.(data);
+    },
+    onError: options?.onError,
+  });
+}
+
+/**
+ * Hook for deleting organization connections
+ * @param options Optional mutation options including onSuccess and onError callbacks
+ * @returns Mutation object for deleting connections
+ */
+export function useDeleteConnection(options?: {
+  onSuccess?: (data: any) => void;
+  onError?: (error: any) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  return api.providers.deleteConnection.useMutation({
+    onSuccess: (data) => {
+      // Invalidate connections to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['providers', 'getConnections'] });
+      options?.onSuccess?.(data);
     },
     onError: options?.onError,
   });

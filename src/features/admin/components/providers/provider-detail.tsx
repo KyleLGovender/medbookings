@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RequirementSubmissionCard } from '@/features/providers/components/requirement-submission-card';
 import {
@@ -10,20 +11,45 @@ import {
   useApproveRequirement,
   useRejectProvider,
   useRejectRequirement,
+  useResetProviderStatus,
 } from '@/features/providers/hooks/use-admin-provider-approval';
-import { useAdminProvider } from '@/features/providers/hooks/use-admin-providers';
+import {
+  useAdminProvider,
+  useAdminProviderRequirements,
+} from '@/features/providers/hooks/use-admin-providers';
 
-import { StatusBadge } from '../../../../components/status-badge';
-import { ProviderDetailSkeleton } from '../ui/admin-loading-states';
-import { ApprovalButtons } from '../ui/approval-buttons';
-import { RejectionModal } from '../ui/rejection-modal';
+
+import { StatusBadge } from '@/components/status-badge';
+import { ProviderDetailSkeleton } from '@/features/admin/components/ui/admin-loading-states';
+import { ApprovalButtons } from '@/features/admin/components/ui/approval-buttons';
+import { RejectionModal } from '@/features/admin/components/ui/rejection-modal';
+import { type RouterOutputs } from '@/utils/api';
+
+// Infer types from tRPC router outputs
+type AdminProvider = RouterOutputs['admin']['getProviderById'];
+type AdminProviderRequirements = RouterOutputs['admin']['getProviderRequirements'];
+type RequirementSubmission = AdminProviderRequirements[number];
+type TypeAssignment = NonNullable<AdminProvider>['typeAssignments'][number];
+type Service = NonNullable<AdminProvider>['services'][number];
 
 interface ProviderDetailProps {
   providerId: string;
 }
 
 export function ProviderDetail({ providerId }: ProviderDetailProps) {
-  const { data: provider, isLoading, error } = useAdminProvider(providerId);
+  const {
+    data: provider,
+    isLoading: providerLoading,
+    error: providerError,
+  } = useAdminProvider(providerId);
+  const {
+    data: requirements,
+    isLoading: requirementsLoading,
+    error: requirementsError,
+  } = useAdminProviderRequirements(providerId);
+
+  const isLoading = providerLoading || requirementsLoading;
+  const error = providerError || requirementsError;
 
   const [rejectionModal, setRejectionModal] = useState<{
     isOpen: boolean;
@@ -37,13 +63,30 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
     name: '',
   });
 
+  // Track which requirement is being processed
+  const [processingRequirementId, setProcessingRequirementId] = useState<string | null>(null);
+
   const approveProviderMutation = useApproveProvider();
   const rejectProviderMutation = useRejectProvider();
   const approveRequirementMutation = useApproveRequirement();
   const rejectRequirementMutation = useRejectRequirement();
+  const resetProviderStatusMutation = useResetProviderStatus();
 
   const handleApproveProvider = async () => {
-    await approveProviderMutation.mutateAsync({ id: providerId });
+    console.log('Attempting to approve provider:', {
+      providerId,
+      requiredSubmissions: requiredSubmissions.length,
+      approvedRequired: approvedRequiredSubmissions.length,
+      allRequiredApproved: allRequiredRequirementsApproved,
+      status: provider?.status,
+    });
+
+    try {
+      await approveProviderMutation.mutateAsync({ id: providerId });
+      console.log('Provider approval successful');
+    } catch (error) {
+      console.error('Provider approval failed:', error);
+    }
   };
 
   const handleRejectProviderClick = () => {
@@ -55,8 +98,34 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
     });
   };
 
+  const handleResetProviderStatus = async () => {
+    console.log('Attempting to reset provider status:', {
+      providerId,
+      currentStatus: provider?.status,
+    });
+
+    try {
+      await resetProviderStatusMutation.mutateAsync({ id: providerId });
+      console.log('Provider status reset successful');
+    } catch (error) {
+      console.error('Provider status reset failed:', error);
+    }
+  };
+
   const handleApproveRequirement = async (requirementSubmissionId: string) => {
-    await approveRequirementMutation.mutateAsync({ providerId, requirementId: requirementSubmissionId });
+    console.log('Starting requirement approval:', { requirementSubmissionId, providerId });
+    setProcessingRequirementId(requirementSubmissionId);
+    try {
+      const result = await approveRequirementMutation.mutateAsync({
+        providerId,
+        requirementId: requirementSubmissionId,
+      });
+      console.log('Requirement approval successful:', result);
+    } catch (error) {
+      console.error('Requirement approval failed:', error);
+    } finally {
+      setProcessingRequirementId(null);
+    }
   };
 
   const handleRejectRequirementClick = (
@@ -78,11 +147,16 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
         reason: reason,
       });
     } else {
-      await rejectRequirementMutation.mutateAsync({
-        providerId,
-        requirementId: rejectionModal.id,
-        reason: reason,
-      });
+      setProcessingRequirementId(rejectionModal.id);
+      try {
+        await rejectRequirementMutation.mutateAsync({
+          providerId,
+          requirementId: rejectionModal.id,
+          reason: reason,
+        });
+      } finally {
+        setProcessingRequirementId(null);
+      }
     }
   };
 
@@ -94,6 +168,21 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
       name: '',
     });
   };
+
+  // Debug logging - Must be before conditional returns to maintain hook order
+  useEffect(() => {
+    if (requirements) {
+      console.log('Provider requirements updated:', {
+        total: requirements.length,
+        submissions: requirements.map((sub: RequirementSubmission) => ({
+          id: sub.id,
+          name: sub.requirementType?.name,
+          status: sub.status,
+          isRequired: sub.requirementType?.isRequired,
+        })),
+      });
+    }
+  }, [requirements]);
 
   if (error) {
     return (
@@ -110,10 +199,18 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
   }
 
   const approvedRequirements =
-    provider?.requirementSubmissions?.filter((req: any) => req.status === 'APPROVED').length || 0;
-  const totalRequirements = provider?.requirementSubmissions?.length || 0;
-  const allRequirementsApproved =
-    approvedRequirements === totalRequirements && totalRequirements > 0;
+    requirements?.filter((req: RequirementSubmission) => req.status === 'APPROVED').length || 0;
+  const totalRequirements = requirements?.length || 0;
+
+  // Check if all REQUIRED requirements are approved (to match server-side logic)
+  const requiredSubmissions =
+    requirements?.filter((req: RequirementSubmission) => req.requirementType?.isRequired) || [];
+  const approvedRequiredSubmissions = requiredSubmissions.filter(
+    (req: RequirementSubmission) => req.status === 'APPROVED'
+  );
+  const allRequiredRequirementsApproved =
+    requiredSubmissions.length > 0 &&
+    approvedRequiredSubmissions.length === requiredSubmissions.length;
 
   return (
     <div className="space-y-6">
@@ -124,14 +221,30 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
           <p className="text-muted-foreground">{provider?.user?.email}</p>
         </div>
         <div className="flex items-center gap-4">
-          <StatusBadge status={provider?.status === 'PENDING_APPROVAL' ? 'PENDING' : (provider?.status as any) || 'PENDING'} />
-          {provider?.status === 'PENDING_APPROVAL' && allRequirementsApproved && (
+          <StatusBadge
+            status={
+              provider?.status === 'PENDING_APPROVAL'
+                ? 'PENDING'
+                : provider?.status || 'PENDING'
+            }
+          />
+          {provider?.status === 'PENDING_APPROVAL' && allRequiredRequirementsApproved && (
             <ApprovalButtons
               onApprove={handleApproveProvider}
               onReject={handleRejectProviderClick}
               isApproving={approveProviderMutation.isPending}
               isRejecting={rejectProviderMutation.isPending}
             />
+          )}
+          {provider?.status === 'REJECTED' && (
+            <Button
+              onClick={handleResetProviderStatus}
+              disabled={resetProviderStatusMutation.isPending}
+              variant="outline"
+              className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-900/20"
+            >
+              {resetProviderStatusMutation.isPending ? 'Resetting...' : 'Reset to Pending'}
+            </Button>
           )}
         </div>
       </div>
@@ -174,7 +287,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Provider Types</label>
                 <div className="flex flex-wrap gap-1">
-                  {provider?.typeAssignments?.map((assignment: any, index: number) => (
+                  {provider?.typeAssignments?.map((assignment: TypeAssignment, index: number) => (
                     <Badge key={index} variant="outline">
                       {assignment.providerType?.name || 'Unknown'}
                     </Badge>
@@ -184,7 +297,13 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Status</label>
                 <div className="text-sm">
-                  <StatusBadge status={provider?.status === 'PENDING_APPROVAL' ? 'PENDING' : (provider?.status as any) || 'PENDING'} />
+                  <StatusBadge
+                    status={
+                      provider?.status === 'PENDING_APPROVAL'
+                        ? 'PENDING'
+                        : provider?.status || 'PENDING'
+                    }
+                  />
                 </div>
               </div>
               <div>
@@ -208,7 +327,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                   Services Offered
                 </label>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {provider.services.map((service: any) => (
+                  {provider.services.map((service: Service) => (
                     <Badge key={service.id} variant="secondary">
                       {service.name}
                     </Badge>
@@ -243,7 +362,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               Requirements Summary
-              {allRequirementsApproved && (
+              {allRequiredRequirementsApproved && (
                 <Badge
                   variant="default"
                   className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
@@ -282,25 +401,19 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div className="rounded-lg bg-green-50 p-2 text-center dark:bg-green-900/20">
                     <div className="font-semibold text-green-700 dark:text-green-300">
-                      {provider?.requirementSubmissions?.filter(
-                        (req: any) => req.status === 'APPROVED'
-                      ).length || 0}
+                      {requirements?.filter((req: RequirementSubmission) => req.status === 'APPROVED').length || 0}
                     </div>
                     <div className="text-green-600 dark:text-green-400">Approved</div>
                   </div>
                   <div className="rounded-lg bg-yellow-50 p-2 text-center dark:bg-yellow-900/20">
                     <div className="font-semibold text-yellow-700 dark:text-yellow-300">
-                      {provider?.requirementSubmissions?.filter(
-                        (req: any) => req.status === 'PENDING'
-                      ).length || 0}
+                      {requirements?.filter((req: RequirementSubmission) => req.status === 'PENDING').length || 0}
                     </div>
                     <div className="text-yellow-600 dark:text-yellow-400">Pending</div>
                   </div>
                   <div className="rounded-lg bg-red-50 p-2 text-center dark:bg-red-900/20">
                     <div className="font-semibold text-red-700 dark:text-red-300">
-                      {provider?.requirementSubmissions?.filter(
-                        (req: any) => req.status === 'REJECTED'
-                      ).length || 0}
+                      {requirements?.filter((req: RequirementSubmission) => req.status === 'REJECTED').length || 0}
                     </div>
                     <div className="text-red-600 dark:text-red-400">Rejected</div>
                   </div>
@@ -310,22 +423,22 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
 
             {/* Requirements List */}
             <div className="space-y-4">
-              {provider?.requirementSubmissions?.length === 0 ? (
+              {totalRequirements === 0 ? (
                 <div className="py-8 text-center text-muted-foreground">
                   <div className="mb-2">📋</div>
                   <h3 className="font-medium">No requirements submitted</h3>
                   <p className="text-sm">This provider has not submitted any requirements yet.</p>
                 </div>
               ) : (
-                provider?.requirementSubmissions
+                requirements
                   ?.slice()
-                  .sort((a: any, b: any) => {
+                  .sort((a: RequirementSubmission, b: RequirementSubmission) => {
                     // Sort by requirementType displayPriority to maintain consistent order
                     const priorityA = a.requirementType?.displayPriority ?? 999;
                     const priorityB = b.requirementType?.displayPriority ?? 999;
                     return priorityA - priorityB;
                   })
-                  .map((submission: any) => (
+                  .map((submission: RequirementSubmission) => (
                     <RequirementSubmissionCard
                       key={submission.id}
                       submission={submission}
@@ -337,15 +450,21 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                           submission.requirementType?.name || 'Requirement'
                         )
                       }
-                      isApproving={approveRequirementMutation.isPending}
-                      isRejecting={rejectRequirementMutation.isPending}
+                      isApproving={
+                        processingRequirementId === submission.id &&
+                        approveRequirementMutation.isPending
+                      }
+                      isRejecting={
+                        processingRequirementId === submission.id &&
+                        rejectRequirementMutation.isPending
+                      }
                     />
                   ))
               )}
             </div>
 
             {/* Action Note */}
-            {totalRequirements > 0 && !allRequirementsApproved && (
+            {totalRequirements > 0 && !allRequiredRequirementsApproved && (
               <div className="rounded-lg bg-amber-50 p-4 dark:bg-amber-900/20">
                 <div className="flex items-start gap-2">
                   <div className="text-amber-600 dark:text-amber-400">⚠️</div>
@@ -362,7 +481,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
               </div>
             )}
 
-            {allRequirementsApproved && provider?.status === 'PENDING_APPROVAL' && (
+            {allRequiredRequirementsApproved && provider?.status === 'PENDING_APPROVAL' && (
               <div className="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
                 <div className="flex items-start gap-2">
                   <div className="text-green-600 dark:text-green-400">✅</div>
@@ -398,7 +517,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                     </p>
                     <p className="text-sm text-green-600 dark:text-green-400">
                       {new Date(provider.approvedAt).toLocaleString()}
-                      {provider.approvedById && ` by Admin`}
+                      {provider.approvedById && ' by Admin'}
                     </p>
                   </div>
                 </div>
@@ -428,7 +547,9 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                     Application Submitted
                   </p>
                   <p className="text-sm text-blue-600 dark:text-blue-400">
-                    {provider?.createdAt ? new Date(provider.createdAt).toLocaleString() : 'Unknown'}
+                    {provider?.createdAt
+                      ? new Date(provider.createdAt).toLocaleString()
+                      : 'Unknown'}
                   </p>
                 </div>
               </div>

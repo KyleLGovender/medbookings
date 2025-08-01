@@ -11,30 +11,30 @@ import { z } from 'zod';
 
 export const createOrganizationSchema = z.object({
   name: z.string().min(1, 'Organization name is required').max(255, 'Name too long'),
-  email: z.string().email('Invalid email format').optional().or(z.literal('')),
-  phone: z.string().optional().or(z.literal('')),
-  website: z.string().url('Invalid website URL').optional().or(z.literal('')),
-  description: z.string().optional().or(z.literal('')),
+  email: z.union([z.string().email('Invalid email format'), z.literal('')]).optional(),
+  phone: z.string().optional(),
+  website: z.union([z.string().url('Invalid website URL'), z.literal('')]).optional(),
+  description: z.string().optional(),
 });
 
 export const updateOrganizationSchema = createOrganizationSchema.partial().extend({
-  id: z.string().uuid(),
+  id: z.string(),
 });
 
 export const createMembershipSchema = z.object({
-  organizationId: z.string().uuid(),
-  userId: z.string().uuid(),
+  organizationId: z.string(),
+  userId: z.string(),
   role: z.enum(['ADMIN', 'MANAGER', 'MEMBER']),
 });
 
 export const createLocationSchema = z.object({
-  id: z.string().uuid().optional(),
-  organizationId: z.string().uuid(),
+  id: z.string().optional(),
+  organizationId: z.string(),
   name: z.string().min(1, 'Location name is required'),
   formattedAddress: z.string().min(1, 'Address is required'),
   phone: z.string().optional().or(z.literal('')),
   email: z.string().email('Invalid email format').optional().or(z.literal('')),
-  googlePlaceId: z.string().min(1, 'Google Place ID is required'),
+  googlePlaceId: z.string().optional().or(z.literal('')),
   coordinates: z.any().optional(),
   searchTerms: z.array(z.string()).optional(),
 });
@@ -42,10 +42,15 @@ export const createLocationSchema = z.object({
 // Additional schemas referenced by components
 export const organizationBasicInfoSchema = createOrganizationSchema;
 
-export const organizationRegistrationSchema = createOrganizationSchema.extend({
-  termsAccepted: z.boolean().refine((val) => val === true, {
-    message: 'You must accept the terms and conditions',
+export const organizationRegistrationSchema = z.object({
+  organization: createOrganizationSchema.extend({
+    billingModel: z.enum(['CONSOLIDATED', 'SLOT_BASED']).default('CONSOLIDATED'),
+    logo: z.string().optional().or(z.literal('')),
   }),
+  locations: z
+    .array(createLocationSchema.omit({ organizationId: true }))
+    .optional()
+    .default([]),
 });
 
 export const organizationLocationsSchema = z.object({
@@ -73,7 +78,7 @@ export const membershipStatusSchema = z.enum(['PENDING', 'ACTIVE', 'INACTIVE']);
 // =============================================================================
 
 export const organizationResponseSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   name: z.string(),
   email: z.string().nullable(),
   phone: z.string().nullable(),
@@ -86,7 +91,7 @@ export const organizationResponseSchema = z.object({
 });
 
 export const membershipResponseSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   role: membershipRoleSchema,
   status: membershipStatusSchema,
   createdAt: z.date(),
@@ -94,7 +99,7 @@ export const membershipResponseSchema = z.object({
 });
 
 export const locationResponseSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   name: z.string(),
   formattedAddress: z.string(),
   phone: z.string().nullable(),
@@ -116,7 +121,7 @@ export const organizationSearchParamsSchema = z.object({
 });
 
 export const membershipSearchParamsSchema = z.object({
-  organizationId: z.string().uuid().optional(),
+  organizationId: z.string().optional(),
   role: membershipRoleSchema.optional(),
   status: membershipStatusSchema.optional(),
   page: z.coerce.number().min(1).default(1),

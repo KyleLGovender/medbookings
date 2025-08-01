@@ -88,8 +88,13 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
   // Update form values when provider data is loaded
   useEffect(() => {
     if (provider) {
-      // Get provider type IDs from the available data
-      const providerTypeIds = provider.providerTypeId ? [provider.providerTypeId] : [];
+      // Get provider type IDs from the providerTypes array or fall back to legacy field
+      const providerTypeIds =
+        provider.providerTypes?.length > 0
+          ? provider.providerTypes.map((type: any) => type.id)
+          : provider.providerTypeId
+            ? [provider.providerTypeId]
+            : [];
       const legacyProviderTypeId = provider.providerTypeId || '';
 
       // Set form values including provider type IDs
@@ -179,11 +184,11 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
 
       // Add showPrice field
       formData.append('showPrice', data.showPrice.toString());
-      
+
       // Add provider ID
       formData.append('id', provider.id);
 
-      // Use mutateAsync to properly await the result  
+      // Use mutateAsync to properly await the result
       const updateData = {
         id: provider.id,
         name: data.name,
@@ -191,7 +196,11 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
         website: data.website || undefined,
         whatsapp: data.whatsapp,
         bio: data.bio,
+        image: data.image !== 'placeholder' ? data.image : undefined,
         languages: selectedLanguages,
+        providerTypeIds: data.providerTypeIds || [],
+        providerTypeId: data.providerTypeId || undefined,
+        showPrice: data.showPrice,
       };
       await updateProviderMutation.mutateAsync(updateData);
 
@@ -284,9 +293,13 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
 
             <div className="space-y-6">
               <h3 className="mb-2 font-medium">Current Types</h3>
-              <div className="mb-4">
-                {provider?.providerType ? (
-                  <Badge variant="secondary">{provider.providerType.name}</Badge>
+              <div className="mb-4 flex flex-wrap gap-2">
+                {provider?.providerTypes && provider.providerTypes.length > 0 ? (
+                  provider.providerTypes.map((type: any) => (
+                    <Badge key={type.id} variant="secondary">
+                      {type.name}
+                    </Badge>
+                  ))
                 ) : (
                   <p className="text-muted-foreground">Not specified</p>
                 )}

@@ -1,6 +1,17 @@
 import { OrganizationStatus, ProviderStatus } from '@prisma/client';
 import { z } from 'zod';
 
+import {
+  adminRequirementRouteParamsSchema,
+  adminRouteParamsSchema,
+  adminSearchParamsSchema,
+  approveOrganizationRequestSchema,
+  approveProviderRequestSchema,
+  approveRequirementRequestSchema,
+  rejectOrganizationRequestSchema,
+  rejectProviderRequestSchema,
+  rejectRequirementRequestSchema,
+} from '@/features/admin/types/schemas';
 import { adminProcedure, createTRPCRouter } from '@/server/trpc';
 
 export const adminRouter = createTRPCRouter({
@@ -8,65 +19,94 @@ export const adminRouter = createTRPCRouter({
    * Get all providers (admin)
    * Migrated from: GET /api/admin/providers
    */
-  getProviders: adminProcedure
-    .input(
-      z.object({
-        status: z.nativeEnum(ProviderStatus).optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const providers = await ctx.prisma.provider.findMany({
-        where: input.status ? { status: input.status } : {},
-        include: {
-          user: {
-            select: { id: true, email: true, name: true },
-          },
-          typeAssignments: {
-            include: {
-              providerType: {
-                select: { name: true },
-              },
-            },
-          },
-          requirementSubmissions: {
-            select: {
-              status: true,
+  getProviders: adminProcedure.input(adminSearchParamsSchema).query(async ({ ctx, input }) => {
+    // Build where clause with optional status and search filters
+    const whereClause: any = {};
+
+    if (input.status) {
+      whereClause.status = input.status;
+    }
+
+    if (input.search) {
+      whereClause.OR = [
+        { name: { contains: input.search, mode: 'insensitive' } },
+        { email: { contains: input.search, mode: 'insensitive' } },
+        { user: { name: { contains: input.search, mode: 'insensitive' } } },
+        { user: { email: { contains: input.search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const providers = await ctx.prisma.provider.findMany({
+      where: whereClause,
+      include: {
+        user: {
+          select: { id: true, email: true, name: true },
+        },
+        typeAssignments: {
+          include: {
+            providerType: {
+              select: { name: true },
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
-      });
+        requirementSubmissions: {
+          select: {
+            status: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
-      return providers;
-    }),
+    return providers;
+  }),
 
   /**
-   * Get provider by ID (admin)
+   * Get provider by ID (admin) - Basic info only
    * Migrated from: GET /api/admin/providers/[id]
    */
-  getProviderById: adminProcedure
-    .input(z.object({ id: z.string() }))
+  getProviderById: adminProcedure.input(adminRouteParamsSchema).query(async ({ ctx, input }) => {
+    const provider = await ctx.prisma.provider.findUnique({
+      where: { id: input.id },
+      include: {
+        user: {
+          select: { id: true, email: true, name: true },
+        },
+        typeAssignments: {
+          include: {
+            providerType: true,
+          },
+        },
+        services: true,
+      },
+    });
+
+    if (!provider) {
+      throw new Error('Provider not found');
+    }
+
+    return provider;
+  }),
+
+  /**
+   * Get provider requirement submissions by provider ID (admin)
+   * Focused query for requirements only - updates frequently
+   */
+  getProviderRequirements: adminProcedure
+    .input(adminRouteParamsSchema)
     .query(async ({ ctx, input }) => {
       const provider = await ctx.prisma.provider.findUnique({
         where: { id: input.id },
-        include: {
-          user: {
-            select: { id: true, email: true, name: true },
-          },
-          typeAssignments: {
-            include: {
-              providerType: true,
-            },
-          },
+        select: {
+          id: true,
           requirementSubmissions: {
             include: {
               requirementType: true,
             },
-          },
-          services: true,
-          availabilityConfigs: {
-            include: {
-              service: true,
+            orderBy: {
+              requirementType: {
+                displayPriority: 'asc',
+              },
             },
           },
         },
@@ -76,7 +116,7 @@ export const adminRouter = createTRPCRouter({
         throw new Error('Provider not found');
       }
 
-      return provider;
+      return provider.requirementSubmissions;
     }),
 
   /**
@@ -84,7 +124,7 @@ export const adminRouter = createTRPCRouter({
    * Migrated from: POST /api/admin/providers/[id]/approve
    */
   approveProvider: adminProcedure
-    .input(z.object({ id: z.string() }))
+    .input(adminRouteParamsSchema.merge(approveProviderRequestSchema))
     .mutation(async ({ ctx, input }) => {
       // Check if all required requirements are approved
       const provider = await ctx.prisma.provider.findUnique({
@@ -150,12 +190,7 @@ export const adminRouter = createTRPCRouter({
    * Migrated from: POST /api/admin/providers/[id]/reject
    */
   rejectProvider: adminProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        reason: z.string(),
-      })
-    )
+    .input(adminRouteParamsSchema.merge(rejectProviderRequestSchema))
     .mutation(async ({ ctx, input }) => {
       const provider = await ctx.prisma.provider.findUnique({
         where: { id: input.id },
@@ -193,15 +228,68 @@ export const adminRouter = createTRPCRouter({
     }),
 
   /**
+   * Reset rejected provider to pending status
+   * Allows a rejected provider to be reconsidered
+   */
+  resetProviderStatus: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!provider) {
+        throw new Error('Provider not found');
+      }
+
+      if (provider.status !== 'REJECTED') {
+        throw new Error('Provider must be in REJECTED status to reset');
+      }
+
+      // Reset the provider to pending approval
+      const updatedProvider = await ctx.prisma.provider.update({
+        where: { id: input.id },
+        data: {
+          status: 'PENDING_APPROVAL',
+          rejectedAt: null,
+          rejectionReason: null,
+          approvedAt: null,
+          approvedById: null,
+        },
+      });
+
+      // Log admin action
+      console.log('ADMIN_ACTION: Provider status reset to pending', {
+        providerId: provider.id,
+        providerName: provider.name,
+        providerEmail: provider.email,
+        previousStatus: provider.status,
+        newStatus: 'PENDING_APPROVAL',
+        adminId: ctx.session.user.id,
+        adminEmail: ctx.session.user.email,
+        timestamp: new Date().toISOString(),
+        action: 'PROVIDER_STATUS_RESET',
+      });
+
+      return updatedProvider;
+    }),
+
+  /**
    * Approve provider requirement
    * Migrated from: POST /api/admin/providers/[id]/requirements/[requirementId]/approve
    */
   approveRequirement: adminProcedure
     .input(
-      z.object({
-        providerId: z.string(),
-        requirementId: z.string(),
-      })
+      z
+        .object({
+          providerId: z.string(),
+          requirementId: z.string(),
+        })
+        .merge(approveRequirementRequestSchema)
     )
     .mutation(async ({ ctx, input }) => {
       const submission = await ctx.prisma.requirementSubmission.findFirst({
@@ -250,11 +338,12 @@ export const adminRouter = createTRPCRouter({
    */
   rejectRequirement: adminProcedure
     .input(
-      z.object({
-        providerId: z.string(),
-        requirementId: z.string(),
-        reason: z.string(),
-      })
+      z
+        .object({
+          providerId: z.string(),
+          requirementId: z.string(),
+        })
+        .merge(rejectRequirementRequestSchema)
     )
     .mutation(async ({ ctx, input }) => {
       const submission = await ctx.prisma.requirementSubmission.findFirst({
@@ -301,40 +390,49 @@ export const adminRouter = createTRPCRouter({
    * Get all organizations (admin)
    * Migrated from: GET /api/admin/organizations
    */
-  getOrganizations: adminProcedure
-    .input(
-      z.object({
-        status: z.nativeEnum(OrganizationStatus).optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const organizations = await ctx.prisma.organization.findMany({
-        where: input.status ? { status: input.status } : {},
-        include: {
-          memberships: {
-            where: { role: 'OWNER' },
-            include: {
-              user: {
-                select: { id: true, email: true, name: true },
-              },
+  getOrganizations: adminProcedure.input(adminSearchParamsSchema).query(async ({ ctx, input }) => {
+    // Build where clause with optional status and search filters
+    const whereClause: any = {};
+
+    if (input.status) {
+      whereClause.status = input.status;
+    }
+
+    if (input.search) {
+      whereClause.OR = [
+        { name: { contains: input.search, mode: 'insensitive' } },
+        { description: { contains: input.search, mode: 'insensitive' } },
+        { email: { contains: input.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const organizations = await ctx.prisma.organization.findMany({
+      where: whereClause,
+      include: {
+        memberships: {
+          where: { role: 'OWNER' },
+          include: {
+            user: {
+              select: { id: true, email: true, name: true },
             },
           },
-          locations: {
-            select: { id: true },
-          },
         },
-        orderBy: { createdAt: 'desc' },
-      });
+        locations: {
+          select: { id: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
-      return organizations;
-    }),
+    return organizations;
+  }),
 
   /**
    * Get organization by ID (admin)
    * Migrated from: GET /api/admin/organizations/[id]
    */
   getOrganizationById: adminProcedure
-    .input(z.object({ id: z.string() }))
+    .input(adminRouteParamsSchema)
     .query(async ({ ctx, input }) => {
       const organization = await ctx.prisma.organization.findUnique({
         where: { id: input.id },
@@ -362,7 +460,7 @@ export const adminRouter = createTRPCRouter({
    * Migrated from: POST /api/admin/organizations/[id]/approve
    */
   approveOrganization: adminProcedure
-    .input(z.object({ id: z.string() }))
+    .input(adminRouteParamsSchema.merge(approveOrganizationRequestSchema))
     .mutation(async ({ ctx, input }) => {
       const organization = await ctx.prisma.organization.findUnique({
         where: { id: input.id },
@@ -402,12 +500,7 @@ export const adminRouter = createTRPCRouter({
    * Migrated from: POST /api/admin/organizations/[id]/reject
    */
   rejectOrganization: adminProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        reason: z.string(),
-      })
-    )
+    .input(adminRouteParamsSchema.merge(rejectOrganizationRequestSchema))
     .mutation(async ({ ctx, input }) => {
       const organization = await ctx.prisma.organization.findUnique({
         where: { id: input.id },
@@ -438,6 +531,57 @@ export const adminRouter = createTRPCRouter({
         reason: input.reason,
         timestamp: new Date().toISOString(),
         action: 'ORGANIZATION_REJECTED',
+      });
+
+      return updatedOrganization;
+    }),
+
+  /**
+   * Reset organization status to pending
+   * Allows a rejected organization to be reconsidered
+   */
+  resetOrganizationStatus: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const organization = await ctx.prisma.organization.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!organization) {
+        throw new Error('Organization not found');
+      }
+
+      if (organization.status !== 'REJECTED') {
+        throw new Error('Organization must be in REJECTED status to reset');
+      }
+
+      // Reset the organization to pending approval
+      const updatedOrganization = await ctx.prisma.organization.update({
+        where: { id: input.id },
+        data: {
+          status: 'PENDING_APPROVAL',
+          rejectedAt: null,
+          rejectionReason: null,
+          approvedAt: null,
+          approvedById: null,
+        },
+      });
+
+      // Log admin action
+      console.log('ADMIN_ACTION: Organization status reset to pending', {
+        organizationId: organization.id,
+        organizationName: organization.name,
+        organizationEmail: organization.email,
+        previousStatus: organization.status,
+        newStatus: 'PENDING_APPROVAL',
+        adminId: ctx.session.user.id,
+        adminEmail: ctx.session.user.email,
+        timestamp: new Date().toISOString(),
+        action: 'ORGANIZATION_STATUS_RESET',
       });
 
       return updatedOrganization;

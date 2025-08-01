@@ -24,23 +24,23 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     // Setup
-    { 
-      name: 'setup', 
+    {
+      name: 'setup',
       testMatch: /auth\.setup\.ts/,
     },
 
     // Desktop testing
     {
       name: 'chromium',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
         storageState: 'e2e/.auth/user.json',
       },
       dependencies: ['setup'],
       testMatch: [
-        '**/calendar/**',       // Calendar tests
-        '**/availability/**',   // Availability tests
-        '**/booking/**',        // Booking tests
+        '**/calendar/**', // Calendar tests
+        '**/availability/**', // Availability tests
+        '**/booking/**', // Booking tests
       ],
     },
   ],

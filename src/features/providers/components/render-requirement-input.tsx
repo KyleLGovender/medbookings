@@ -46,6 +46,23 @@ export const renderRequirementInput = (
     requirement.id
   );
 
+  // Initialize the field with existing value only if it doesn't already have a value
+  const currentValue = form.watch(`regulatoryRequirements.requirements.${requirement.index}.value`);
+  const hasExistingSubmission = requirement.existingSubmission;
+
+  if (!currentValue && hasExistingSubmission) {
+    const existingValue =
+      requirement.existingSubmission?.documentMetadata?.value ||
+      requirement.existingSubmission?.value;
+    if (existingValue !== undefined) {
+      form.setValue(
+        `regulatoryRequirements.requirements.${requirement.index}.value`,
+        existingValue,
+        { shouldValidate: false }
+      );
+    }
+  }
+
   const inputId = `requirement-${requirement.id}`;
 
   // Fix how errors are accessed - check if the specific requirement has errors
@@ -62,12 +79,19 @@ export const renderRequirementInput = (
 
   switch (requirement.validationType) {
     case RequirementValidationType.BOOLEAN:
+      // Get current value from form watcher or existing submission
+      const currentValue =
+        form.watch(`regulatoryRequirements.requirements.${requirement.index}.value`) ||
+        requirement.existingSubmission?.documentMetadata?.value ||
+        requirement.existingSubmission?.value ||
+        '';
+
       return (
         <RadioGroup
           onValueChange={(value) => {
             form.setValue(`regulatoryRequirements.requirements.${requirement.index}.value`, value);
           }}
-          defaultValue={requirement.existingSubmission?.documentMetadata?.value || ''}
+          value={currentValue}
           className="flex gap-4"
         >
           <div className="flex items-center space-x-2">
@@ -162,33 +186,50 @@ export const renderRequirementInput = (
         </div>
       );
     case RequirementValidationType.TEXT:
-      // For TEXT type, we need to register with a default value
+      // Get the existing value specifically for this requirement
+      const textValue =
+        requirement.existingSubmission?.documentMetadata?.value ||
+        requirement.existingSubmission?.value ||
+        form.existingValue ||
+        '';
+
       return (
         <Input
           id={inputId}
           required={requirement.isRequired}
           type="text"
           {...form.register(`regulatoryRequirements.requirements.${requirement.index}.value`, {
-            value: form.existingValue || '',
+            value: textValue,
           })}
           className={error ? 'border-destructive' : ''}
         />
       );
     case RequirementValidationType.FUTURE_DATE:
-      const dateValue =
+      const dateValue = form.watch(
+        `regulatoryRequirements.requirements.${requirement.index}.value`
+      );
+      const existingDateValue =
         requirement.existingSubmission?.documentMetadata?.value ||
-        form.watch(`regulatoryRequirements.requirements.${requirement.index}.value`) ||
-        null;
+        requirement.existingSubmission?.value;
+      const currentDateValue = dateValue || existingDateValue;
+
       return (
         <div className="max-w-64">
           <DatePickerWithInput
-            date={dateValue ? new Date(dateValue) : undefined}
+            date={currentDateValue ? new Date(currentDateValue) : undefined}
             onChange={(date?: Date) => {
               if (date) {
                 const dateString = date.toISOString().split('T')[0];
                 form.setValue(
                   `regulatoryRequirements.requirements.${requirement.index}.value`,
-                  dateString
+                  dateString,
+                  { shouldValidate: true, shouldDirty: true }
+                );
+              } else {
+                form.setValue(
+                  `regulatoryRequirements.requirements.${requirement.index}.value`,
+                  null,
+                  { shouldValidate: true, shouldDirty: true }
                 );
               }
             }}
@@ -196,20 +237,31 @@ export const renderRequirementInput = (
         </div>
       );
     case RequirementValidationType.PAST_DATE:
-      const pastDateValue =
+      const pastDateValue = form.watch(
+        `regulatoryRequirements.requirements.${requirement.index}.value`
+      );
+      const existingPastDateValue =
         requirement.existingSubmission?.documentMetadata?.value ||
-        form.watch(`regulatoryRequirements.requirements.${requirement.index}.value`) ||
-        null;
+        requirement.existingSubmission?.value;
+      const currentPastDateValue = pastDateValue || existingPastDateValue;
+
       return (
         <div className="max-w-64">
           <DatePickerWithInput
-            date={pastDateValue ? new Date(pastDateValue) : undefined}
+            date={currentPastDateValue ? new Date(currentPastDateValue) : undefined}
             onChange={(date?: Date) => {
               if (date) {
                 const dateString = date.toISOString().split('T')[0];
                 form.setValue(
                   `regulatoryRequirements.requirements.${requirement.index}.value`,
-                  dateString
+                  dateString,
+                  { shouldValidate: true, shouldDirty: true }
+                );
+              } else {
+                form.setValue(
+                  `regulatoryRequirements.requirements.${requirement.index}.value`,
+                  null,
+                  { shouldValidate: true, shouldDirty: true }
                 );
               }
             }}

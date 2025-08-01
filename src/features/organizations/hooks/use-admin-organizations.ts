@@ -9,7 +9,7 @@ import { api } from '@/utils/api';
  * @param status Optional status filter for organizations
  * @returns Query result with organizations list
  */
-export function useAdminOrganizations(status?: OrganizationStatus) {
+export function useAdminOrganizations(status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED') {
   return api.admin.getOrganizations.useQuery({ status });
 }
 

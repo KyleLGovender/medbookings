@@ -338,6 +338,7 @@ export type RequirementType = {
   existingSubmission?: {
     documentUrl: string | null;
     documentMetadata: Record<string, any> | null;
+    value?: string | boolean | number | null;
   };
 };
 
@@ -445,7 +446,7 @@ export type ProviderInvitationWithOrganization = ProviderInvitation & {
   organization: Organization;
   invitedBy?: {
     name: string | null;
-    email: string;
+    email: string | null;
   } | null;
   connection?: {
     id: string;
@@ -462,7 +463,7 @@ export type OrganizationConnectionWithDetails = OrganizationProviderConnection &
     createdAt: Date;
     invitedBy: {
       name: string | null;
-      email: string;
+      email: string | null;
     } | null;
   } | null;
 };

@@ -47,9 +47,8 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
     error: connectionsError,
   } = useOrganizationProviderConnections(organizationId);
 
-  const { data: invitationsData, isLoading: isLoadingInvitations } = useProviderInvitations(
-    organizationId
-  );
+  const { data: invitationsData, isLoading: isLoadingInvitations } =
+    useProviderInvitations(organizationId);
 
   const connections = connectionsData || [];
   const invitations = invitationsData || [];
@@ -223,7 +222,7 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
             />
           ) : (
             <div className="space-y-4">
-              {filteredConnections.map((connection: any) => (
+              {filteredConnections.map((connection) => (
                 <ProviderConnectionCard
                   key={connection.id}
                   connection={connection}

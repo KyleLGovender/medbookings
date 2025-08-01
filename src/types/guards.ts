@@ -208,10 +208,8 @@ export function isValidAvailabilityStatus(
 }
 
 // Billing model validation
-export function isValidBillingModel(
-  value: unknown
-): value is 'CONSOLIDATED' | 'PER_LOCATION' | 'HYBRID' {
-  return typeof value === 'string' && ['CONSOLIDATED', 'PER_LOCATION', 'HYBRID'].includes(value);
+export function isValidBillingModel(value: unknown): value is 'CONSOLIDATED' | 'PER_LOCATION' {
+  return typeof value === 'string' && ['CONSOLIDATED', 'PER_LOCATION'].includes(value);
 }
 
 // User role validation

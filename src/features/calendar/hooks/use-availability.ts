@@ -103,90 +103,54 @@ export function useAvailabilitySearch(params: AvailabilitySearchParams) {
 }
 
 export function useProviderAvailability(providerId: string | undefined) {
-  return useQuery({
-    queryKey: providerId ? availabilityKeys.provider(providerId) : ['availability'],
-    queryFn: async () => {
-      if (!providerId) {
-        throw new Error('Provider ID is required');
-      }
-
-      const response = await fetch(`/api/calendar/availability?providerId=${providerId}`);
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to fetch provider availability');
-      }
-
-      return response.json();
-    },
-    enabled: !!providerId,
-    staleTime: DEFAULT_STALE_TIME,
-    gcTime: DEFAULT_CACHE_TIME,
-    retry: (failureCount, error) => {
-      if (error instanceof Error && /4\d{2}/.test(error.message)) {
-        return false;
-      }
-      return failureCount < 3;
-    },
-  });
+  return api.calendar.getByProviderId.useQuery(
+    { providerId: providerId! },
+    {
+      enabled: !!providerId,
+      staleTime: DEFAULT_STALE_TIME,
+      gcTime: DEFAULT_CACHE_TIME,
+      retry: (failureCount, error) => {
+        if (error instanceof Error && /4\d{2}/.test(error.message)) {
+          return false;
+        }
+        return failureCount < 3;
+      },
+    }
+  );
 }
 
 export function useOrganizationAvailability(organizationId: string | undefined) {
-  return useQuery({
-    queryKey: organizationId ? availabilityKeys.organization(organizationId) : ['availability'],
-    queryFn: async () => {
-      if (!organizationId) {
-        throw new Error('Organization ID is required');
-      }
-
-      const response = await fetch(`/api/calendar/availability?organizationId=${organizationId}`);
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to fetch organization availability');
-      }
-
-      return response.json();
-    },
-    enabled: !!organizationId,
-    staleTime: DEFAULT_STALE_TIME,
-    gcTime: DEFAULT_CACHE_TIME,
-    retry: (failureCount, error) => {
-      if (error instanceof Error && /4\d{2}/.test(error.message)) {
-        return false;
-      }
-      return failureCount < 3;
-    },
-  });
+  return api.calendar.getByOrganizationId.useQuery(
+    { organizationId: organizationId! },
+    {
+      enabled: !!organizationId,
+      staleTime: DEFAULT_STALE_TIME,
+      gcTime: DEFAULT_CACHE_TIME,
+      retry: (failureCount, error) => {
+        if (error instanceof Error && /4\d{2}/.test(error.message)) {
+          return false;
+        }
+        return failureCount < 3;
+      },
+    }
+  );
 }
 
 export function useAvailabilitySeries(seriesId: string | undefined) {
-  return useQuery({
-    queryKey: seriesId ? availabilityKeys.series(seriesId) : ['availability'],
-    queryFn: async () => {
-      if (!seriesId) {
-        throw new Error('Series ID is required');
-      }
-
-      const response = await fetch(`/api/calendar/availability?seriesId=${seriesId}`);
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to fetch availability series');
-      }
-
-      return response.json();
-    },
-    enabled: !!seriesId,
-    staleTime: DEFAULT_STALE_TIME,
-    gcTime: DEFAULT_CACHE_TIME,
-    retry: (failureCount, error) => {
-      if (error instanceof Error && /4\d{2}/.test(error.message)) {
-        return false;
-      }
-      return failureCount < 3;
-    },
-  });
+  return api.calendar.getBySeriesId.useQuery(
+    { seriesId: seriesId! },
+    {
+      enabled: !!seriesId,
+      staleTime: DEFAULT_STALE_TIME,
+      gcTime: DEFAULT_CACHE_TIME,
+      retry: (failureCount, error) => {
+        if (error instanceof Error && /4\d{2}/.test(error.message)) {
+          return false;
+        }
+        return failureCount < 3;
+      },
+    }
+  );
 }
 
 // Mutation hooks
@@ -303,30 +267,12 @@ export function useCancelAvailability(options?: {
     scope?: 'single' | 'future' | 'all';
   }) => void;
 }) {
-  const queryClient = useQueryClient();
+  const utils = api.useUtils();
 
-  return useMutation<
-    void,
-    Error,
-    { id: string; reason?: string; scope?: 'single' | 'future' | 'all' }
-  >({
-    mutationFn: async ({ id, reason, scope }) => {
-      const response = await fetch('/api/calendar/availability/cancel', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id, reason, scope }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to cancel availability');
-      }
-    },
+  return api.calendar.cancel.useMutation({
     onSuccess: (_, variables) => {
       // Invalidate all availability queries
-      queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
+      utils.calendar.invalidate();
 
       options?.onSuccess?.(variables);
     },
@@ -352,71 +298,14 @@ export function useDeleteAvailability(options?: {
 export function useAcceptAvailabilityProposal(options?: {
   onSuccess?: (data: AvailabilityWithRelations, variables: { id: string }) => void;
 }) {
-  const queryClient = useQueryClient();
+  const utils = api.useUtils();
 
-  return useMutation<AvailabilityWithRelations, Error, { id: string }, AcceptAvailabilityContext>({
-    mutationFn: async ({ id }) => {
-      const response = await fetch('/api/calendar/availability/accept', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to accept availability proposal');
-      }
-
-      return response.json();
-    },
-    onMutate: async (variables) => {
-      // Cancel any outgoing refetches for this specific availability
-      await queryClient.cancelQueries({
-        queryKey: availabilityKeys.detail(variables.id),
-      });
-
-      // Snapshot the previous value
-      const previousAvailability = queryClient.getQueryData(
-        availabilityKeys.detail(variables.id)
-      ) as AvailabilityWithRelations | null;
-
-      // Optimistically update status
-      if (previousAvailability) {
-        queryClient.setQueryData(
-          availabilityKeys.detail(variables.id),
-          (old: AvailabilityWithRelations | undefined) => ({
-            ...old,
-            status: 'ACCEPTED' as const,
-            acceptedAt: new Date(),
-          })
-        );
-      }
-
-      return { previousAvailability, availabilityId: variables.id };
-    },
+  return api.calendar.accept.useMutation({
     onSuccess: (data, variables) => {
-      // Update the specific availability in cache
-      queryClient.setQueryData(availabilityKeys.detail(variables.id), data);
-
-      // Invalidate provider and organization availability lists using patterns
-      queryClient.invalidateQueries({
-        predicate: (query) =>
-          query.queryKey[0] === 'availability' &&
-          ['provider', 'organization', 'search'].includes(query.queryKey[1] as string),
-      });
+      // Invalidate all availability queries
+      utils.calendar.invalidate();
 
       options?.onSuccess?.(data, variables);
-    },
-    onError: (error, variables, context) => {
-      // Rollback optimistic update
-      if (context?.previousAvailability) {
-        queryClient.setQueryData(
-          availabilityKeys.detail(context.availabilityId),
-          context.previousAvailability
-        );
-      }
     },
   });
 }
@@ -424,65 +313,14 @@ export function useAcceptAvailabilityProposal(options?: {
 export function useRejectAvailabilityProposal(options?: {
   onSuccess?: (variables: { id: string; reason?: string }) => void;
 }) {
-  const queryClient = useQueryClient();
+  const utils = api.useUtils();
 
-  return useMutation<void, Error, { id: string; reason?: string }, RejectAvailabilityContext>({
-    mutationFn: async ({ id, reason }) => {
-      const response = await fetch('/api/calendar/availability/reject', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id, reason }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to reject availability proposal');
-      }
-    },
-    onMutate: async (variables) => {
-      // Cancel any outgoing refetches for this specific availability
-      await queryClient.cancelQueries({
-        queryKey: availabilityKeys.detail(variables.id),
-      });
-
-      // Snapshot the previous value
-      const previousAvailability = queryClient.getQueryData(
-        availabilityKeys.detail(variables.id)
-      ) as AvailabilityWithRelations | null;
-
-      // Optimistically update status
-      if (previousAvailability) {
-        queryClient.setQueryData(
-          availabilityKeys.detail(variables.id),
-          (old: AvailabilityWithRelations | undefined) => ({
-            ...old,
-            status: 'REJECTED' as const,
-          })
-        );
-      }
-
-      return { previousAvailability, availabilityId: variables.id };
-    },
+  return api.calendar.reject.useMutation({
     onSuccess: (_, variables) => {
-      // Invalidate provider and organization availability lists using patterns
-      queryClient.invalidateQueries({
-        predicate: (query) =>
-          query.queryKey[0] === 'availability' &&
-          ['provider', 'organization', 'search'].includes(query.queryKey[1] as string),
-      });
+      // Invalidate all availability queries
+      utils.calendar.invalidate();
 
       options?.onSuccess?.(variables);
-    },
-    onError: (error, variables, context) => {
-      // Rollback optimistic update
-      if (context?.previousAvailability) {
-        queryClient.setQueryData(
-          availabilityKeys.detail(context.availabilityId),
-          context.previousAvailability
-        );
-      }
     },
   });
 }

@@ -6,7 +6,10 @@ import { useSession } from 'next-auth/react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { api } from '@/utils/api';
+import { api, type RouterOutputs } from '@/utils/api';
+
+// Infer types from tRPC router outputs
+type InvitationValidationResponse = RouterOutputs['invitations']['validate'];
 
 import { ExistingUserInvitationFlow } from './existing-user-invitation-flow';
 import { InvitationErrorState } from './invitation-error-state';
@@ -54,7 +57,7 @@ export function InvitationPageContent({ token }: InvitationPageContentProps) {
 
   useEffect(() => {
     if (invitationQuery.data) {
-      setInvitation(invitationQuery.data.invitation as any);
+      setInvitation(invitationQuery.data.invitation);
       setIsLoading(false);
     } else if (invitationQuery.error) {
       setError(invitationQuery.error.message);

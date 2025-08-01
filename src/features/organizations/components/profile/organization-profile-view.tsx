@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import {
@@ -20,6 +19,7 @@ import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { Separator } from '@/components/ui/separator';
 import { DeleteOrganizationButton } from '@/features/organizations/components/delete-organization-button';
 import { ProviderNetworkManager } from '@/features/organizations/components/provider-network-manager';
@@ -73,8 +73,6 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
         return 'Consolidated Billing';
       case 'PER_LOCATION':
         return 'Per-Location Billing';
-      case 'HYBRID':
-        return 'Hybrid Billing';
       default:
         return model;
     }
@@ -113,12 +111,10 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
 
           {isOwner && (
             <div className="flex items-center gap-2">
-              <Link href={`/organizations/${organization.id}/edit/basic-info`}>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <PenSquare className="h-4 w-4" />
-                  Edit Basic Info
-                </Button>
-              </Link>
+              <NavigationOutlineButton href={`/organizations/${organization.id}/edit/basic-info`}>
+                <PenSquare className="h-4 w-4" />
+                Edit Basic Info
+              </NavigationOutlineButton>
             </div>
           )}
         </div>
@@ -202,12 +198,10 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
 
           {isOwner && (
             <div className="flex items-center gap-2">
-              <Link href={`/organizations/${organization.id}/edit/locations`}>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <PenSquare className="h-4 w-4" />
-                  Edit Locations
-                </Button>
-              </Link>
+              <NavigationOutlineButton href={`/organizations/${organization.id}/edit/locations`}>
+                <PenSquare className="h-4 w-4" />
+                Edit Locations
+              </NavigationOutlineButton>
             </div>
           )}
         </div>
@@ -394,12 +388,10 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
 
           {isOwner && (
             <div className="flex items-center gap-2">
-              <Link href={`/organizations/${organization.id}/edit/billing`}>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <PenSquare className="h-4 w-4" />
-                  Edit Billing Model
-                </Button>
-              </Link>
+              <NavigationOutlineButton href={`/organizations/${organization.id}/edit/billing`}>
+                <PenSquare className="h-4 w-4" />
+                Edit Billing Model
+              </NavigationOutlineButton>
             </div>
           )}
         </div>

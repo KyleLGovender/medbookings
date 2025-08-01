@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import {
   Building2,
-  Check,
   Globe,
   Mail,
   MoreVertical,
@@ -35,7 +34,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import { useManageConnection } from '@/features/providers/hooks/use-organization-connections';
+import {
+  useDeleteConnection,
+  useUpdateConnection,
+} from '@/features/providers/hooks/use-organization-connections';
 import type { OrganizationConnectionWithDetails } from '@/features/providers/types/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -75,21 +77,12 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
   );
   const { toast } = useToast();
 
-  const manageConnectionMutation = useManageConnection({
-    onSuccess: (data, variables) => {
-      let message = '';
-      switch (variables.action) {
-        case 'update':
-          if (variables.data?.status === 'SUSPENDED') {
-            message = 'Connection suspended successfully';
-          } else if (variables.data?.status === 'ACCEPTED') {
-            message = 'Connection reactivated successfully';
-          }
-          break;
-        case 'delete':
-          message = 'Connection deleted successfully';
-          break;
-      }
+  const updateConnectionMutation = useUpdateConnection({
+    onSuccess: (data) => {
+      const message =
+        pendingAction === 'suspend'
+          ? 'Connection suspended successfully'
+          : 'Connection reactivated successfully';
 
       toast({
         title: 'Connection Updated',
@@ -102,6 +95,27 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
     onError: (error) => {
       toast({
         title: 'Failed to update connection',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setIsActionDialogOpen(false);
+      setPendingAction(null);
+    },
+  });
+
+  const deleteConnectionMutation = useDeleteConnection({
+    onSuccess: () => {
+      toast({
+        title: 'Connection Deleted',
+        description: 'Connection deleted successfully',
+      });
+
+      setIsActionDialogOpen(false);
+      setPendingAction(null);
+    },
+    onError: (error) => {
+      toast({
+        title: 'Failed to delete connection',
         description: error.message,
         variant: 'destructive',
       });
@@ -129,17 +143,11 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
     if (!pendingAction) return;
 
     if (pendingAction === 'delete') {
-      manageConnectionMutation.mutate({
-        connectionId: connection.id,
-        action: 'delete',
-      });
+      deleteConnectionMutation.mutate({ connectionId: connection.id });
     } else {
-      manageConnectionMutation.mutate({
+      updateConnectionMutation.mutate({
         connectionId: connection.id,
-        action: 'update',
-        data: {
-          status: pendingAction === 'suspend' ? 'SUSPENDED' : 'ACCEPTED',
-        },
+        status: pendingAction === 'suspend' ? 'SUSPENDED' : 'ACCEPTED',
       });
     }
   };
@@ -212,7 +220,13 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
             {showActions && connection.status !== 'REJECTED' && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" disabled={manageConnectionMutation.isPending}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={
+                      updateConnectionMutation.isPending || deleteConnectionMutation.isPending
+                    }
+                  >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -359,16 +373,18 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
               <Button
                 variant="outline"
                 onClick={() => setIsActionDialogOpen(false)}
-                disabled={manageConnectionMutation.isPending}
+                disabled={updateConnectionMutation.isPending || deleteConnectionMutation.isPending}
               >
                 Cancel
               </Button>
               <Button
                 variant={dialogContent.variant}
                 onClick={confirmAction}
-                disabled={manageConnectionMutation.isPending}
+                disabled={updateConnectionMutation.isPending || deleteConnectionMutation.isPending}
               >
-                {manageConnectionMutation.isPending ? 'Processing...' : dialogContent.confirmText}
+                {updateConnectionMutation.isPending || deleteConnectionMutation.isPending
+                  ? 'Processing...'
+                  : dialogContent.confirmText}
               </Button>
             </DialogFooter>
           </DialogContent>

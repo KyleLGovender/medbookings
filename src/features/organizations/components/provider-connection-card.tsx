@@ -35,12 +35,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import { useManageOrganizationProviderConnection } from '@/features/organizations/hooks/use-provider-connections';
-import type { OrganizationProviderConnection } from '@/features/organizations/types/types';
+import { 
+  useManageOrganizationProviderConnection,
+  type ProviderConnection
+} from '@/features/organizations/hooks/use-provider-connections';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProviderConnectionCardProps {
-  connection: OrganizationProviderConnection;
+  connection: ProviderConnection;
   organizationId: string;
   showActions?: boolean;
 }
@@ -154,21 +156,21 @@ export function ProviderConnectionCard({
       case 'suspend':
         return {
           title: 'Suspend Provider Connection',
-          description: `Are you sure you want to suspend the connection with ${connection.serviceProvider.name}? They won&apos;t be able to schedule new availability until you reactivate the connection.`,
+          description: `Are you sure you want to suspend the connection with ${connection.provider.name}? They won&apos;t be able to schedule new availability until you reactivate the connection.`,
           confirmText: 'Suspend Connection',
           variant: 'destructive' as const,
         };
       case 'reactivate':
         return {
           title: 'Reactivate Provider Connection',
-          description: `Reactivate the connection with ${connection.serviceProvider.name}? They will be able to schedule availability again.`,
+          description: `Reactivate the connection with ${connection.provider.name}? They will be able to schedule availability again.`,
           confirmText: 'Reactivate Connection',
           variant: 'default' as const,
         };
       case 'delete':
         return {
           title: 'Delete Provider Connection',
-          description: `Are you sure you want to permanently delete the connection with ${connection.serviceProvider.name}? This action cannot be undone.`,
+          description: `Are you sure you want to permanently delete the connection with ${connection.provider.name}? This action cannot be undone.`,
           confirmText: 'Delete Connection',
           variant: 'destructive' as const,
         };
@@ -188,21 +190,21 @@ export function ProviderConnectionCard({
               <Avatar className="h-12 w-12">
                 <AvatarImage
                   src={
-                    connection.serviceProvider.image || connection.serviceProvider.user.image || ''
+                    connection.provider.image || connection.provider.user.image || ''
                   }
-                  alt={connection.serviceProvider.name}
+                  alt={connection.provider.name}
                 />
                 <AvatarFallback>
-                  {connection.serviceProvider.name.charAt(0).toUpperCase()}
+                  {connection.provider.name.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <CardTitle className="text-lg">{connection.serviceProvider.name}</CardTitle>
+                <CardTitle className="text-lg">{connection.provider.name}</CardTitle>
                 <CardDescription className="mt-1 flex items-center gap-2">
                   <StatusBadge status={connection.status} />
-                  {connection.serviceProvider.serviceProviderType && (
+                  {connection.provider.serviceProviderType && (
                     <span className="text-xs text-muted-foreground">
-                      {connection.serviceProvider.serviceProviderType.name}
+                      {connection.provider.serviceProviderType.name}
                     </span>
                   )}
                 </CardDescription>
@@ -250,10 +252,10 @@ export function ProviderConnectionCard({
 
         <CardContent className="space-y-4">
           {/* Provider Bio */}
-          {connection.serviceProvider.bio && (
+          {connection.provider.bio && (
             <div>
               <p className="line-clamp-2 text-sm text-muted-foreground">
-                {connection.serviceProvider.bio}
+                {connection.provider.bio}
               </p>
             </div>
           )}
@@ -263,35 +265,35 @@ export function ProviderConnectionCard({
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-muted-foreground" />
               <a
-                href={`mailto:${connection.serviceProvider.email}`}
+                href={`mailto:${connection.provider.email}`}
                 className="truncate text-primary hover:underline"
               >
-                {connection.serviceProvider.email}
+                {connection.provider.email}
               </a>
             </div>
-            {connection.serviceProvider.whatsapp && (
+            {connection.provider.whatsapp && (
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-muted-foreground" />
                 <a
-                  href={`https://wa.me/${connection.serviceProvider.whatsapp.replace(/\D/g, '')}`}
+                  href={`https://wa.me/${connection.provider.whatsapp.replace(/\D/g, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
-                  {connection.serviceProvider.whatsapp}
+                  {connection.provider.whatsapp}
                 </a>
               </div>
             )}
-            {connection.serviceProvider.website && (
+            {connection.provider.website && (
               <div className="flex items-center gap-2 sm:col-span-2">
                 <Globe className="h-4 w-4 text-muted-foreground" />
                 <a
-                  href={connection.serviceProvider.website}
+                  href={connection.provider.website}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="truncate text-primary hover:underline"
                 >
-                  {connection.serviceProvider.website}
+                  {connection.provider.website}
                 </a>
               </div>
             )}
