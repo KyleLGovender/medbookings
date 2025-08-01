@@ -24,6 +24,26 @@ import { useOrganization } from '@/features/organizations/hooks/use-organization
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useProvider } from '@/features/providers/hooks/use-provider';
 import { isMobileForUI } from '@/lib/utils/responsive';
+import { type RouterOutputs } from '@/utils/api';
+
+// Infer types from tRPC router outputs
+type UserOrganizations = RouterOutputs['organizations']['getCurrentUserOrganizations'];
+type Organization = UserOrganizations[number];
+type Provider = RouterOutputs['providers']['getByUserId'];
+
+// Session user type
+interface SessionUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  role?: string;
+}
+
+// Breadcrumb item type
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
 
 // Enhanced truncation function with dynamic calculation and truncation tracking
 function truncateForMobile(
@@ -91,7 +111,7 @@ function truncateForMobile(
 
 // Enhanced function to determine if breadcrumb should be collapsed based on content
 function shouldCollapseBreadcrumb(
-  items: any[],
+  items: BreadcrumbItem[],
   isMobile: boolean,
   isTablet: boolean
 ): {
@@ -428,7 +448,7 @@ function DynamicBreadcrumb() {
 }
 
 // We'll create this as a function to make it dynamic
-const createNavData = (providers: any[] = [], organizations: any[] = [], user?: any) => ({
+const createNavData = (providers: Provider[] = [], organizations: Organization[] = [], user?: SessionUser) => ({
   title: 'MedBookings',
   url: '/',
   navMain: [
@@ -499,8 +519,8 @@ const createNavData = (providers: any[] = [], organizations: any[] = [], user?: 
       : []),
     ...(organizations.length > 0
       ? organizations
-          .sort((a: any, b: any) => a.name.localeCompare(b.name))
-          .map((organization: any) => ({
+          .sort((a: Organization, b: Organization) => a.name.localeCompare(b.name))
+          .map((organization: Organization) => ({
             title: organization.name,
             url: `/organizations/${organization.id}`,
             items: [

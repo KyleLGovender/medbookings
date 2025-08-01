@@ -1,7 +1,11 @@
 'use client';
 
+import { api, type RouterOutputs } from '@/utils/api';
 
-import { api } from '@/utils/api';
+// Infer types from tRPC router outputs
+type AdminProviders = RouterOutputs['admin']['getProviders'];
+type AdminProvider = AdminProviders[number];
+type RequirementSubmission = AdminProvider['requirementSubmissions'][number];
 
 /**
  * Hook for fetching all providers for admin view
@@ -52,7 +56,7 @@ export function useAdminProviderCounts() {
       select: (providers) => {
         // Calculate counts by status
         const counts = providers.reduce(
-          (acc: Record<string, number>, provider: any) => {
+          (acc: Record<string, number>, provider: AdminProvider) => {
             const status = provider.status || 'PENDING';
             acc[status] = (acc[status] || 0) + 1;
             acc.total = (acc.total || 0) + 1;
@@ -62,21 +66,20 @@ export function useAdminProviderCounts() {
         );
 
         // Calculate requirement-based counts
-        const requirementCounts = providers.reduce((acc: Record<string, number>, provider: any) => {
-          const requiredSubmissions =
-            provider.requirementSubmissions?.filter(
-              (sub: any) => sub.requirementType?.isRequired
-            ) || [];
+        // Note: Basic getProviders query only includes requirementSubmissions.status
+        // For detailed requirement analysis, use getProviderRequirements
+        const requirementCounts = providers.reduce((acc: Record<string, number>, provider: AdminProvider) => {
+          const submissions = provider.requirementSubmissions || [];
 
-          const approvedRequired = requiredSubmissions.filter(
-            (sub: any) => sub.status === 'APPROVED'
+          const approvedCount = submissions.filter(
+            (sub: RequirementSubmission) => sub.status === 'APPROVED'
           ).length;
 
-          const totalRequired = requiredSubmissions.length;
+          const totalCount = submissions.length;
 
-          if (totalRequired === 0) {
+          if (totalCount === 0) {
             acc.noRequirements = (acc.noRequirements || 0) + 1;
-          } else if (approvedRequired === totalRequired) {
+          } else if (approvedCount === totalCount) {
             acc.allRequirementsApproved = (acc.allRequirementsApproved || 0) + 1;
           } else {
             acc.pendingRequirements = (acc.pendingRequirements || 0) + 1;
@@ -104,20 +107,18 @@ export function useAdminProvidersWithPendingRequirements() {
     {
       select: (providers) => {
         // Filter providers with pending requirements
-        return providers.filter((provider: any) => {
-          const requiredSubmissions =
-            provider.requirementSubmissions?.filter(
-              (sub: any) => sub.requirementType?.isRequired
-            ) || [];
+        // Note: Using all submissions since requirementType.isRequired is not available in basic query
+        return providers.filter((provider: AdminProvider) => {
+          const submissions = provider.requirementSubmissions || [];
 
-          const approvedRequired = requiredSubmissions.filter(
-            (sub: any) => sub.status === 'APPROVED'
+          const approvedCount = submissions.filter(
+            (sub: RequirementSubmission) => sub.status === 'APPROVED'
           ).length;
 
-          const totalRequired = requiredSubmissions.length;
+          const totalCount = submissions.length;
 
           // Has requirements and not all are approved
-          return totalRequired > 0 && approvedRequired < totalRequired;
+          return totalCount > 0 && approvedCount < totalCount;
         });
       },
     }
@@ -134,23 +135,20 @@ export function useAdminProvidersReadyForApproval() {
     {
       select: (providers) => {
         // Filter providers ready for approval
-        return providers.filter((provider: any) => {
+        return providers.filter((provider: AdminProvider) => {
           // Only consider providers that are still pending
-          if (provider.status !== 'PENDING') return false;
+          if (provider.status !== 'PENDING_APPROVAL') return false;
 
-          const requiredSubmissions =
-            provider.requirementSubmissions?.filter(
-              (sub: any) => sub.requirementType?.isRequired
-            ) || [];
+          const submissions = provider.requirementSubmissions || [];
 
-          const approvedRequired = requiredSubmissions.filter(
-            (sub: any) => sub.status === 'APPROVED'
+          const approvedCount = submissions.filter(
+            (sub: RequirementSubmission) => sub.status === 'APPROVED'
           ).length;
 
-          const totalRequired = requiredSubmissions.length;
+          const totalCount = submissions.length;
 
           // Has requirements and all are approved, or has no requirements
-          return totalRequired === 0 || approvedRequired === totalRequired;
+          return totalCount === 0 || approvedCount === totalCount;
         });
       },
     }

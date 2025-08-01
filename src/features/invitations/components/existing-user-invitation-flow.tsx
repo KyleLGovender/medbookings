@@ -18,9 +18,20 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { api } from '@/utils/api';
+import { api, type RouterOutputs } from '@/utils/api';
 import { useProviderByUserId } from '@/features/providers/hooks/use-provider-by-user-id';
 import { useQueryClient } from '@tanstack/react-query';
+
+// Infer types from tRPC router outputs
+type InvitationsResponse = RouterOutputs['providers']['getInvitations'];
+type Invitation = InvitationsResponse['invitations'][number];
+
+// User type from session
+interface User {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+}
 
 interface InvitationData {
   id: string;
@@ -46,7 +57,7 @@ interface InvitationData {
 interface ExistingUserInvitationFlowProps {
   invitation: InvitationData;
   token: string;
-  user: any;
+  user: User;
 }
 
 export function ExistingUserInvitationFlow({
@@ -102,12 +113,12 @@ export function ExistingUserInvitationFlow({
 
       // 1.3: Optimistically update the invitations cache
       if (previousInvitationsData && invitationsKey) {
-        queryClient.setQueryData(invitationsKey, (old: any) => {
+        queryClient.setQueryData(invitationsKey, (old: InvitationsResponse | undefined) => {
           if (!old?.invitations || !Array.isArray(old.invitations)) return old;
 
           return {
             ...old,
-            invitations: old.invitations.map((inv: any) =>
+            invitations: old.invitations.map((inv: Invitation) =>
               inv.token === token
                 ? {
                     ...inv,
@@ -126,7 +137,7 @@ export function ExistingUserInvitationFlow({
 
       // 1.4: Optimistically update the validation cache
       if (previousValidationData && validationKey) {
-        queryClient.setQueryData(validationKey, (old: any) => {
+        queryClient.setQueryData(validationKey, (old: InvitationData | undefined) => {
           if (!old) return old;
 
           return {

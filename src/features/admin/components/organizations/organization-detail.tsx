@@ -26,6 +26,26 @@ import { StatusBadge } from '../../../../components/status-badge';
 import { OrganizationDetailSkeleton } from '../ui/admin-loading-states';
 import { ApprovalButtons } from '../ui/approval-buttons';
 import { RejectionModal } from '../ui/rejection-modal';
+import { type RouterOutputs } from '@/utils/api';
+
+// Infer types from tRPC router outputs
+type AdminOrganization = RouterOutputs['admin']['getOrganizationById'];
+type OrganizationMembership = NonNullable<AdminOrganization>['memberships'][number];
+type OrganizationLocation = NonNullable<AdminOrganization>['locations'][number];
+
+// Provider connection types (for commented code)
+interface ProviderConnection {
+  id: string;
+  provider?: {
+    typeAssignments?: TypeAssignment[];
+  };
+}
+
+interface TypeAssignment {
+  providerType?: {
+    name?: string;
+  };
+}
 
 interface OrganizationDetailProps {
   organizationId: string;
@@ -117,7 +137,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
             status={
               organization?.status === 'PENDING_APPROVAL'
                 ? 'PENDING'
-                : (organization?.status as any) || 'PENDING'
+                : organization?.status || 'PENDING'
             }
           />
           {organization?.status === 'PENDING_APPROVAL' && (
@@ -202,7 +222,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                       status={
                         organization?.status === 'PENDING_APPROVAL'
                           ? 'PENDING'
-                          : (organization?.status as any) || 'PENDING'
+                          : organization?.status || 'PENDING'
                       }
                     />
                   </div>
@@ -274,7 +294,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                 <p className="text-xs text-muted-foreground">Total members</p>
                 {organization?.memberships && organization.memberships.length > 0 && (
                   <p className="text-xs text-green-600">
-                    {organization.memberships.filter((m: any) => m.status === 'ACTIVE').length}{' '}
+                    {organization.memberships.filter((m: OrganizationMembership) => m.status === 'ACTIVE').length}{' '}
                     active
                   </p>
                 )}
@@ -338,7 +358,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {organization?.memberships?.map((membership: any) => (
+                      {organization?.memberships?.map((membership: OrganizationMembership) => (
                         <TableRow key={membership.id}>
                           <TableCell>
                             <div>
@@ -382,7 +402,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                 <div className="py-8 text-center text-muted-foreground">No locations found</div>
               ) : (
                 <div className="space-y-4">
-                  {organization?.locations?.map((location: any) => (
+                  {organization?.locations?.map((location: OrganizationLocation) => (
                     <div
                       key={location.id}
                       className="rounded-lg border p-4 transition-colors hover:bg-muted/50"
@@ -435,7 +455,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {/* organization?.providerConnections?.map((connection: any) => (
+                    {/* organization?.providerConnections?.map((connection: ProviderConnection) => (
                         <TableRow key={connection.id}>
                           <TableCell>
                             <div>
@@ -455,7 +475,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
                               {connection.provider?.typeAssignments?.map(
-                                (assignment: any, index: number) => (
+                                (assignment: TypeAssignment, index: number) => (
                                   <Badge key={index} variant="outline">
                                     {assignment.providerType?.name || 'Unknown'}
                                   </Badge>

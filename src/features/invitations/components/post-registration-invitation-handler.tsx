@@ -7,8 +7,12 @@ import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { api } from '@/utils/api';
+import { api, type RouterOutputs } from '@/utils/api';
 import { useQueryClient } from '@tanstack/react-query';
+
+// Infer types from tRPC router outputs
+type InvitationsResponse = RouterOutputs['providers']['getInvitations'];
+type Invitation = InvitationsResponse['invitations'][number];
 
 interface PendingInvitation {
   token: string;
@@ -70,13 +74,13 @@ export function PostRegistrationInvitationHandler({
 
       // Optimistically update: remove the accepted invitation from pending list
       if (previousData && actualKey) {
-        queryClient.setQueryData(actualKey, (old: any) => {
+        queryClient.setQueryData(actualKey, (old: InvitationsResponse | undefined) => {
           if (!old?.invitations || !Array.isArray(old.invitations)) return old;
 
           return {
             ...old,
             invitations: old.invitations.filter(
-              (inv: any) => inv.token !== variables.token
+              (inv: Invitation) => inv.token !== variables.token
             ),
           };
         });

@@ -56,12 +56,12 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
     data: organizations,
     isLoading,
     error,
-  } = useAdminOrganizations(statusFilter === 'all' ? undefined : (statusFilter as any));
+  } = useAdminOrganizations(statusFilter === 'all' ? undefined : (statusFilter as AdminApprovalStatus));
 
   const approveOrganizationMutation = useApproveOrganization();
   const rejectOrganizationMutation = useRejectOrganization();
 
-  const filteredOrganizations = organizations?.filter((organization: any) => {
+  const filteredOrganizations = organizations?.filter((organization: AdminOrganizationListSelect) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -179,7 +179,7 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredOrganizations?.map((organization: any) => (
+                    filteredOrganizations?.map((organization: AdminOrganizationListSelect) => (
                       <TableRow key={organization.id}>
                         <TableCell>
                           <div className="flex flex-col">
