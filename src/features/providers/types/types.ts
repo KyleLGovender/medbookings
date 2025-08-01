@@ -1,40 +1,20 @@
 // =============================================================================
 // PROVIDERS FEATURE TYPES
 // =============================================================================
-
-/**
- * @fileoverview Comprehensive type definitions for the providers feature.
- *
- * This module defines all types related to healthcare service providers including:
- * - Provider onboarding and registration
- * - Requirement submission and validation
- * - Service configuration and offerings
- * - Organization connections and invitations
- * - Provider types and specializations
- * - Regulatory compliance tracking
- *
- * The types support the complete provider lifecycle from initial registration
- * through approval, service setup, and ongoing compliance management.
- *
- * @author MedBookings Development Team
- * @version 1.0.0
- */
 // All type definitions for the providers feature in one place
-// Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
-import {
-  ConnectionStatus,
-  Organization,
-  OrganizationProviderConnection,
-  Prisma,
-  Provider as PrismaProvider,
-  RequirementSubmission as PrismaRequirementSubmission,
-  RequirementType as PrismaRequirementType,
-  Service as PrismaService,
-  ProviderInvitation,
-  ProviderInvitationStatus,
-  ProviderType,
-  User,
-} from '@prisma/client';
+// Domain enums, business logic types, and form schemas only
+//
+// =============================================================================
+// MIGRATION NOTES - SERVER DATA REMOVED
+// =============================================================================
+//
+// Removed server data:
+// - All Prisma imports and re-exports
+// - Provider aliases and extensions (Provider, ProviderWithRelations)
+// - All Prisma GetPayload types (ProviderDetailSelect, etc.)
+// - Server data interfaces that extend Prisma types
+//
+// Components will use tRPC RouterOutputs for server data in Task 4.0
 
 // =============================================================================
 // ENUMS
@@ -165,24 +145,7 @@ export interface ServiceInfo {
 // COMPLEX INTERFACES
 // =============================================================================
 
-// Provider with full relations
-export interface ProviderWithRelations extends Provider {
-  user: User;
-  typeAssignments: Array<{
-    id: string;
-    providerType: ProviderTypeInfo;
-  }>;
-  services: ServiceInfo[];
-  requirementSubmissions: Array<{
-    id: string;
-    status: RequirementSubmissionStatus;
-    notes?: string;
-    validatedAt?: Date;
-    requirementType: PrismaRequirementType;
-    validatedBy?: User;
-  }>;
-  approvedBy?: User;
-}
+// ProviderWithRelations moved to server data - use tRPC RouterOutputs
 
 // Serialized types (moved from hooks/types.ts)
 export interface SerializedService {
@@ -441,37 +404,11 @@ export type RequirementStatusType = keyof typeof RequirementSubmissionStatus;
 // PROVIDER INVITATION AND CONNECTION TYPES (moved from barrel export)
 // =============================================================================
 
-// Provider invitation types
-export type ProviderInvitationWithOrganization = ProviderInvitation & {
-  organization: Organization;
-  invitedBy?: {
-    name: string | null;
-    email: string | null;
-  } | null;
-  connection?: {
-    id: string;
-    status: ConnectionStatus;
-    acceptedAt: Date | null;
-  } | null;
-};
+// Server data types moved to tRPC RouterOutputs:
+// - ProviderInvitationWithOrganization → Use RouterOutputs['providers']['getProviderInvitations']
+// - OrganizationConnectionWithDetails → Use RouterOutputs['providers']['getOrganizationConnections']
 
-export type OrganizationConnectionWithDetails = OrganizationProviderConnection & {
-  organization: Organization;
-  invitation?: {
-    id: string;
-    customMessage: string | null;
-    createdAt: Date;
-    invitedBy: {
-      name: string | null;
-      email: string | null;
-    } | null;
-  } | null;
-};
-
-// Enhanced Provider interface
-export interface Provider extends PrismaProvider {
-  showPrice: boolean; // Whether to display prices to patients looking to book
-}
+// Provider interface moved to server data - use tRPC RouterOutputs
 
 // Enhanced Service interface
 export interface Service {
@@ -482,35 +419,14 @@ export interface Service {
   duration: number;
 }
 
-// Re-export Prisma types for convenience
-export type {
-  ConnectionStatus,
-  OrganizationProviderConnection,
-  ProviderInvitation,
-  ProviderInvitationStatus,
-};
+// Prisma re-exports removed - components will use tRPC RouterOutputs
 
 // =============================================================================
-// PRISMA INCLUDE CONFIGURATIONS
+// PRISMA CONFIGURATIONS REMOVED
 // =============================================================================
-
-// Helper configuration for including provider relations
-export const includeProviderRelations = {
-  user: true,
-  typeAssignments: {
-    include: {
-      providerType: true,
-    },
-  },
-  services: true,
-  requirementSubmissions: {
-    include: {
-      requirementType: true,
-      validatedBy: true,
-    },
-  },
-  approvedBy: true,
-};
+//
+// Prisma include configurations moved to server actions.
+// tRPC procedures will handle data fetching patterns in server layer.
 
 // =============================================================================
 // DEFAULT CONFIGURATIONS
@@ -523,247 +439,15 @@ export const getDefaultProviderData = (): Partial<CreateProviderData> => ({
 });
 
 // =============================================================================
-// PRISMA-DERIVED TYPES
+// PRISMA-DERIVED TYPES REMOVED
 // =============================================================================
-
-// Provider with comprehensive relations for detailed views
-export type ProviderDetailSelect = Prisma.ProviderGetPayload<{
-  include: {
-    user: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-        phone: true;
-        whatsapp: true;
-        image: true;
-        role: true;
-      };
-    };
-    typeAssignments: {
-      include: {
-        providerType: {
-          select: {
-            id: true;
-            name: true;
-            description: true;
-            category: true;
-            isActive: true;
-          };
-        };
-      };
-    };
-    services: {
-      include: {
-        providerType: {
-          select: {
-            id: true;
-            name: true;
-            category: true;
-            description: true;
-          };
-        };
-      };
-    };
-    requirementSubmissions: {
-      include: {
-        requirementType: {
-          select: {
-            id: true;
-            name: true;
-            description: true;
-            category: true;
-            isRequired: true;
-            allowedFileTypes: true;
-            maxFileSize: true;
-          };
-        };
-        validatedBy: {
-          select: {
-            id: true;
-            name: true;
-            email: true;
-          };
-        };
-      };
-    };
-    organizationConnections: {
-      include: {
-        organization: {
-          select: {
-            id: true;
-            name: true;
-            email: true;
-            status: true;
-          };
-        };
-      };
-    };
-    approvedBy: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-    subscriptions: {
-      include: {
-        plan: {
-          select: {
-            id: true;
-            name: true;
-            basePrice: true;
-            currency: true;
-            interval: true;
-            includedSlots: true;
-          };
-        };
-      };
-    };
-  };
-}>;
-
-// Provider for list views (minimal relations)
-export type ProviderListSelect = Prisma.ProviderGetPayload<{
-  include: {
-    user: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-        image: true;
-      };
-    };
-    typeAssignments: {
-      include: {
-        providerType: {
-          select: {
-            id: true;
-            name: true;
-          };
-        };
-      };
-    };
-    _count: {
-      select: {
-        services: true;
-        requirementSubmissions: true;
-        organizationConnections: true;
-      };
-    };
-  };
-}>;
-
-// Provider with basic info for dropdowns and selectors
-export type ProviderBasicSelect = Prisma.ProviderGetPayload<{
-  include: {
-    user: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-    typeAssignments: {
-      include: {
-        providerType: {
-          select: {
-            name: true;
-          };
-        };
-      };
-    };
-  };
-}>;
-
-// Service with relations for provider service management
-export type ServiceDetailSelect = Prisma.ServiceGetPayload<{
-  include: {
-    providerType: {
-      select: {
-        id: true;
-        name: true;
-        category: true;
-        description: true;
-      };
-    };
-    providers: {
-      include: {
-        user: {
-          select: {
-            id: true;
-            name: true;
-          };
-        };
-      };
-    };
-    availabilityConfigs: {
-      select: {
-        id: true;
-        duration: true;
-        price: true;
-        isOnlineAvailable: true;
-        locationId: true;
-      };
-    };
-  };
-}>;
-
-// Requirement submission with relations for compliance tracking
-export type RequirementSubmissionDetailSelect = Prisma.RequirementSubmissionGetPayload<{
-  include: {
-    requirementType: {
-      select: {
-        id: true;
-        name: true;
-        description: true;
-        category: true;
-        isRequired: true;
-        allowedFileTypes: true;
-        maxFileSize: true;
-        displayPriority: true;
-      };
-    };
-    provider: {
-      include: {
-        user: {
-          select: {
-            id: true;
-            name: true;
-            email: true;
-          };
-        };
-      };
-    };
-    validatedBy: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-  };
-}>;
-
-// Provider invitation with relations
-export type ProviderInvitationDetailSelect = Prisma.ProviderInvitationGetPayload<{
-  include: {
-    organization: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-        description: true;
-        logo: true;
-        website: true;
-      };
-    };
-    invitedBy: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-  };
-}>;
+//
+// All Prisma GetPayload types removed:
+// - ProviderDetailSelect → Use RouterOutputs['providers']['getProviderDetail']
+// - ProviderListSelect → Use RouterOutputs['providers']['getProviders']
+// - ProviderBasicSelect → Use RouterOutputs['providers']['getProviderBasic']
+// - ServiceDetailSelect → Use RouterOutputs['providers']['getServiceDetail']
+// - RequirementSubmissionDetailSelect → Use RouterOutputs['providers']['getRequirementSubmissions']
+// - ProviderInvitationDetailSelect → Use RouterOutputs['providers']['getProviderInvitations']
+//
+// Components will extract types directly from tRPC RouterOutputs in Task 4.0
