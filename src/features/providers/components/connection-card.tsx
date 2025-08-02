@@ -38,7 +38,9 @@ import {
   useDeleteConnection,
   useUpdateConnection,
 } from '@/features/providers/hooks/use-organization-connections';
-import type { OrganizationConnectionWithDetails } from '@/features/providers/types/types';
+import { type RouterOutputs } from '@/utils/api';
+
+type OrganizationConnectionWithDetails = RouterOutputs['providers']['getOrganizationConnections'][number];
 import { useToast } from '@/hooks/use-toast';
 
 interface ConnectionCardProps {

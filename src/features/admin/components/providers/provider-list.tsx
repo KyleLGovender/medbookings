@@ -24,8 +24,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { AdminProviderListSelect } from '@/features/admin/types/types';
 import type { AdminApprovalStatus } from '@/features/admin/types/types';
+import { type RouterOutputs } from '@/utils/api';
+
+type AdminProviders = RouterOutputs['admin']['getProviders'];
+type AdminProvider = AdminProviders[number];
 import {
   useApproveProvider,
   useRejectProvider,
@@ -61,7 +64,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
   const approveProviderMutation = useApproveProvider();
   const rejectProviderMutation = useRejectProvider();
 
-  const filteredProviders = providers?.filter((provider: AdminProviderListSelect) => {
+  const filteredProviders = providers?.filter((provider: AdminProvider) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -178,7 +181,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredProviders?.map((provider: AdminProviderListSelect) => (
+                    filteredProviders?.map((provider: AdminProvider) => (
                       <TableRow key={provider.id}>
                         <TableCell>
                           <div className="flex flex-col">

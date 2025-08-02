@@ -23,8 +23,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { AdminOrganizationListSelect } from '@/features/admin/types/types';
 import type { AdminApprovalStatus } from '@/features/admin/types/types';
+import { type RouterOutputs } from '@/utils/api';
+
+type AdminOrganizations = RouterOutputs['admin']['getOrganizations'];
+type AdminOrganization = AdminOrganizations[number];
 import {
   useApproveOrganization,
   useRejectOrganization,
@@ -61,7 +64,7 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
   const approveOrganizationMutation = useApproveOrganization();
   const rejectOrganizationMutation = useRejectOrganization();
 
-  const filteredOrganizations = organizations?.filter((organization: AdminOrganizationListSelect) => {
+  const filteredOrganizations = organizations?.filter((organization: AdminOrganization) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -179,7 +182,7 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredOrganizations?.map((organization: AdminOrganizationListSelect) => (
+                    filteredOrganizations?.map((organization: AdminOrganization) => (
                       <TableRow key={organization.id}>
                         <TableCell>
                           <div className="flex flex-col">
