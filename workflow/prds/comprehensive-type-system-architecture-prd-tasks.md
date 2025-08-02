@@ -31,7 +31,7 @@
   - [x] 1.9 Remove server data interfaces from profile types (interfaces.ts, enums.ts, types.ts, schemas.ts)
   - [x] 1.10 Remove server data interfaces from providers types (types.ts, schemas.ts, guards.ts)
   - [x] 1.11 Remove server data interfaces from reviews types (interfaces.ts, enums.ts, types.ts, schemas.ts)
-  - [ ] 1.12 Ensure all remaining manual types are domain logic only (enums, form schemas, business logic, type guards)
+  - [x] 1.12 Ensure all remaining manual types are domain logic only (enums, form schemas, business logic, type guards)
   - [ ] 1.13 Set up type extraction examples and migration templates for development team
 
 - [ ] 2.0 Server-Side Library Integration & Database Migration
