@@ -13,6 +13,8 @@
 - `/workflow/docs/trpc-type-extraction-guide.md` - Comprehensive guide for extracting types from tRPC RouterOutputs
 - `/workflow/docs/migration-templates.md` - Copy-paste templates for common migration patterns
 - `/workflow/docs/type-extraction-quick-reference.md` - Quick reference card for developers during migration
+- `/workflow/docs/server-lib-audit-report.md` - Comprehensive audit of lib directories for database interactions
+- `/workflow/docs/orphaned-functions-report.md` - Detailed report of database functions not exposed through tRPC
 
 ### Notes
 
@@ -40,7 +42,7 @@
 
 - [ ] 2.0 Server-Side Library Integration & Database Migration
   - [x] 2.1 Audit ALL files in `/src/features/*/lib/` directories for database interactions (Prisma queries/mutations)
-  - [ ] 2.2 Identify orphaned database functions not exposed through tRPC procedures (e.g., `getAvailabilityById`)
+  - [x] 2.2 Identify orphaned database functions not exposed through tRPC procedures (e.g., `getAvailabilityById`)
   - [ ] 2.3 Migrate admin lib functions: Convert all database operations in `/src/features/admin/lib/` to tRPC procedures
   - [ ] 2.4 Migrate billing lib functions: Convert all database operations in `/src/features/billing/lib/` to tRPC procedures
   - [ ] 2.5 Migrate calendar lib functions: Convert all database operations in `/src/features/calendar/lib/` to tRPC procedures
