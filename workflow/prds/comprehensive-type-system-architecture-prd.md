@@ -65,11 +65,11 @@ The MedBookings platform requires a complete migration to a **dual-source type s
 4.4. Manual types limited to: Domain enums, form schemas, business logic, type guards, client-only types
 
 ### 5. Migration Requirements for Existing Code
-5.1. **Hook Migration** (27 files): Remove type exports, ensure tRPC-only calls, simplify to thin wrappers
-5.2. **Component Migration** (77 files): Replace manual type imports with tRPC type extraction
-5.3. **Type File Audit** (31 files): Remove server data interfaces, keep only domain logic types  
-5.4. **Page Component Migration** (54 files): Apply same component migration patterns
-5.5. **Server Action Validation**: Ensure all 7 server action files follow Prisma-only pattern
+5.1. **Type File Audit** (31 files): Remove server data interfaces, keep only domain logic types
+5.2. **Server-Side Library Integration** (All `/src/features/*/lib/` files): Migrate all database-interacting functions to tRPC procedures, remove manual type dependencies
+5.3. **Hook Migration** (27 files): Remove type exports, ensure tRPC-only calls, simplify to thin wrappers
+5.4. **Component Migration** (77 files): Replace manual type imports with tRPC type extraction
+5.5. **Page Component Migration** (54 files): Apply same component migration patterns
 
 ### 6. Documentation Requirements
 6.1. Update `/CLAUDE.md` with complete type system architecture documentation
@@ -89,12 +89,15 @@ The MedBookings platform requires a complete migration to a **dual-source type s
 ## Technical Considerations
 
 ### Architecture Compliance Checklist
-- [ ] All server procedures return Prisma results directly
+- [ ] All database-interacting functions are exposed through tRPC procedures (no orphaned database operations)
+- [ ] All server procedures return Prisma results directly for automatic inference
+- [ ] No manual include configurations (e.g., `includeAvailabilityRelations`) in any files
 - [ ] All hooks are thin tRPC wrappers without type exports  
 - [ ] All components extract types from `RouterOutputs`
 - [ ] All manual types limited to domain logic only
 - [ ] No client code imports Prisma directly
 - [ ] Clear separation between tRPC types and manual types
+- [ ] Utility functions and non-database helpers can remain in `/src/features/*/lib/`
 
 ### Migration File Categories
 
@@ -140,37 +143,53 @@ The MedBookings platform requires a complete migration to a **dual-source type s
 **Location**: `/src/app/`
 **Requirements**: Apply component migration patterns to all page components
 
-#### Category 6: Server Actions (7 files)
-**Location**: `/src/features/*/lib/actions.ts`  
-**Requirements**: Validate Prisma-only usage, proper error handling
-**Files**: admin, billing, calendar, communications, organizations, profile, reviews
+#### Category 6: Server-Side Library Integration (All `/src/features/*/lib/` files)
+**Location**: `/src/features/*/lib/` (all files, not just actions.ts)
+**Scope**: Any file in lib directories that performs database queries or mutations
+**Requirements**: Migrate all database-interacting functions to tRPC procedures, remove manual type dependencies
+**Critical Issues Identified**:
+- Database functions not exposed through tRPC routers (e.g., `getAvailabilityById`)
+- Server functions using manual include configurations (e.g., `includeAvailabilityRelations`)
+- Server functions using manual type interfaces instead of tRPC automatic inference
+- Direct server function calls bypassing tRPC type safety
+- Utility functions, helpers, and other non-database code can remain in lib directories
+**File Types**: actions.ts, queries.ts, mutations.ts, utils.ts, helpers.ts, and any other database-interacting files
 
 ### Implementation Phases
 
-#### Phase 1: Foundation (Estimated: 2 days)
+#### Phase 1: Foundation & Type File Cleanup (Estimated: 2 days)
 - Audit current type usage patterns across all files
+- Remove server data interfaces from all 31 type files, keep only domain logic
 - Document existing violations of the dual-source pattern
 - Set up type extraction examples and migration templates
 
-#### Phase 2: Server Layer (Estimated: 1 day)
-- Validate all tRPC routers follow direct Prisma return pattern
-- Ensure server actions are properly separated from client concerns
-- Fix any server-side type safety violations
+#### Phase 2: Server-Side Library Integration (Estimated: 3 days)
+- **Critical Phase**: Migrate all database-interacting functions to tRPC procedures
+- Audit ALL files in `/src/features/*/lib/` directories for database interactions
+- Identify functions performing Prisma queries/mutations not exposed through tRPC
+- Convert standalone database functions (e.g., `getAvailabilityById`) to tRPC procedures
+- Remove manual include configurations (e.g., `includeAvailabilityRelations`)
+- Replace manual type interfaces with tRPC automatic inference
+- Ensure all database operations flow through tRPC for type safety
+- Preserve utility functions and helpers that don't interact with database
 
-#### Phase 3: Hook Layer Migration (Estimated: 3 days)
+#### Phase 3: Server Layer Validation (Estimated: 1 day)
+- Validate all tRPC routers follow direct Prisma return pattern
+- Ensure server actions are properly called from tRPC procedures
+- Fix any remaining server-side type safety violations
+- Test that build passes with all server actions integrated
+
+#### Phase 4: Hook Layer Migration (Estimated: 3 days)
 - Migrate all 27 hook files to remove type exports
 - Ensure hooks are thin tRPC wrappers only
 - Validate no Prisma imports in client hooks
+- Update hooks to use new tRPC procedures from Phase 2
 
-#### Phase 4: Component Migration (Estimated: 5 days) 
+#### Phase 5: Component Migration (Estimated: 5 days) 
 - Migrate all 77 feature components to use tRPC type extraction
 - Replace manual type imports with `RouterOutputs` extraction
 - Test all components for type safety compliance
-
-#### Phase 5: Type File Cleanup (Estimated: 2 days)
-- Audit all 31 type files to remove server data interfaces
-- Keep only domain logic, enums, schemas, and type guards
-- Validate clear separation between manual and tRPC types
+- Ensure components use new tRPC procedures
 
 #### Phase 6: Page Component Migration (Estimated: 3 days)
 - Apply migration patterns to all 54 page components
@@ -181,15 +200,18 @@ The MedBookings platform requires a complete migration to a **dual-source type s
 - Update CLAUDE.md and workflow documentation
 - Create developer guides and examples
 - Final validation of 100% compliance across codebase
+- Verify TypeScript compilation with zero errors
 
 ## Success Metrics
 
 ### Quantitative Metrics
 1. **100% Type Safety Compliance**: All 200+ files follow dual-source pattern
-2. **Zero Manual Server Types**: No manual interfaces duplicating server data
-3. **Zero Type Exports from Hooks**: All 27 hook files are thin wrappers only
-4. **100% Component Type Extraction**: All components extract types from `RouterOutputs`
-5. **Clean Type Files**: All 31 type files contain only domain logic
+2. **Zero Orphaned Database Operations**: All database functions exposed through tRPC procedures
+3. **Zero Manual Server Types**: No manual interfaces duplicating server data
+4. **Zero Type Exports from Hooks**: All 27 hook files are thin wrappers only
+5. **100% Component Type Extraction**: All components extract types from `RouterOutputs`
+6. **Clean Type Files**: All 31 type files contain only domain logic
+7. **Clean Lib Directories**: Only utility functions and non-database helpers remain in `/src/features/*/lib/`
 
 ### Qualitative Metrics
 1. **Developer Experience**: Developers report improved IntelliSense and error detection
@@ -199,9 +221,12 @@ The MedBookings platform requires a complete migration to a **dual-source type s
 
 ### Validation Criteria
 - [ ] TypeScript compilation with zero type errors
+- [ ] All database operations properly integrated with tRPC (no orphaned database functions)
 - [ ] All components receive proper type inference from server procedures
 - [ ] No manual interfaces that duplicate server data remain
+- [ ] No manual include configurations in any files
 - [ ] All hooks are simple tRPC wrappers without type exports
+- [ ] Clean `/src/features/*/lib/` directories with only non-database utilities
 - [ ] Documentation accurately reflects implemented patterns
 
 ## Open Questions

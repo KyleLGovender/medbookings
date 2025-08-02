@@ -8,6 +8,7 @@
 - `/src/features/*/lib/` - All lib directory files that perform database operations and need migration to tRPC procedures
 - `/CLAUDE.md` - Project documentation that needs comprehensive type system architecture updates
 - `/src/utils/api.ts` - tRPC client configuration and RouterOutputs/RouterInputs exports
+- `/workflow/docs/type-system-audit-report.md` - Comprehensive audit report documenting type system compliance status
 
 ### Notes
 
@@ -20,16 +21,16 @@
 
 - [ ] 1.0 Foundation & Type File Cleanup
   - [x] 1.1 Audit current type usage patterns across all 31 type files in `/src/features/*/types/`
-  - [ ] 1.2 Document existing violations of the dual-source pattern in all features
-  - [ ] 1.3 Remove server data interfaces from admin types (types.ts, schemas.ts, guards.ts)
-  - [ ] 1.4 Remove server data interfaces from billing types (interfaces.ts, enums.ts, types.ts, schemas.ts, guards.ts)
-  - [ ] 1.5 Remove server data interfaces from calendar types (types.ts, schemas.ts, guards.ts)
-  - [ ] 1.6 Remove server data interfaces from communications types (interfaces.ts, enums.ts, types.ts, schemas.ts)
-  - [ ] 1.7 Remove server data interfaces from invitations types (types.ts, schemas.ts, guards.ts)
-  - [ ] 1.8 Remove server data interfaces from organizations types (types.ts, schemas.ts, guards.ts)
-  - [ ] 1.9 Remove server data interfaces from profile types (interfaces.ts, enums.ts, types.ts, schemas.ts)
-  - [ ] 1.10 Remove server data interfaces from providers types (types.ts, schemas.ts, guards.ts)
-  - [ ] 1.11 Remove server data interfaces from reviews types (interfaces.ts, enums.ts, types.ts, schemas.ts)
+  - [x] 1.2 Document existing violations of the dual-source pattern in all features
+  - [x] 1.3 Remove server data interfaces from admin types (types.ts, schemas.ts, guards.ts)
+  - [x] 1.4 Remove server data interfaces from billing types (interfaces.ts, enums.ts, types.ts, schemas.ts, guards.ts)
+  - [x] 1.5 Remove server data interfaces from calendar types (types.ts, schemas.ts, guards.ts)
+  - [x] 1.6 Remove server data interfaces from communications types (interfaces.ts, enums.ts, types.ts, schemas.ts)
+  - [x] 1.7 Remove server data interfaces from invitations types (types.ts, schemas.ts, guards.ts)
+  - [x] 1.8 Remove server data interfaces from organizations types (types.ts, schemas.ts, guards.ts)
+  - [x] 1.9 Remove server data interfaces from profile types (interfaces.ts, enums.ts, types.ts, schemas.ts)
+  - [x] 1.10 Remove server data interfaces from providers types (types.ts, schemas.ts, guards.ts)
+  - [x] 1.11 Remove server data interfaces from reviews types (interfaces.ts, enums.ts, types.ts, schemas.ts)
   - [ ] 1.12 Ensure all remaining manual types are domain logic only (enums, form schemas, business logic, type guards)
   - [ ] 1.13 Set up type extraction examples and migration templates for development team
 
