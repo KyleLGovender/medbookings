@@ -39,7 +39,7 @@
   - [x] 1.13 Set up type extraction examples and migration templates for development team
 
 - [ ] 2.0 Server-Side Library Integration & Database Migration
-  - [ ] 2.1 Audit ALL files in `/src/features/*/lib/` directories for database interactions (Prisma queries/mutations)
+  - [x] 2.1 Audit ALL files in `/src/features/*/lib/` directories for database interactions (Prisma queries/mutations)
   - [ ] 2.2 Identify orphaned database functions not exposed through tRPC procedures (e.g., `getAvailabilityById`)
   - [ ] 2.3 Migrate admin lib functions: Convert all database operations in `/src/features/admin/lib/` to tRPC procedures
   - [ ] 2.4 Migrate billing lib functions: Convert all database operations in `/src/features/billing/lib/` to tRPC procedures
