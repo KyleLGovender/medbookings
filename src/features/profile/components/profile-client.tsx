@@ -6,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { useOrganizationByUserId } from '@/features/organizations/hooks/use-organization-by-user-id';
 import { UserProfile } from '@/features/profile/types/types';
-import { SerializedProvider } from '@/features/providers/hooks/types';
+import { type RouterOutputs } from '@/utils/api';
+
+type SerializedProvider = NonNullable<RouterOutputs['providers']['getProvider']>;
 
 import { DeleteAccountButton } from './delete-account-button';
 

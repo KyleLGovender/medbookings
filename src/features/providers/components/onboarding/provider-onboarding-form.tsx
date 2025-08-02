@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { ProviderFormType, providerFormSchema } from '@/features/providers/hooks/types';
+import { ProviderFormType, providerFormSchema } from '@/features/providers/types/schemas';
 import { useCreateProvider } from '@/features/providers/hooks/use-create-provider';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/utils/api';

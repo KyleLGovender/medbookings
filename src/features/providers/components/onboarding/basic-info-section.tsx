@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { SUPPORTED_LANGUAGES } from '@/features/providers/hooks/types';
+import { SUPPORTED_LANGUAGES } from '@/features/providers/types/types';
 
 import { ProfileImageUploader } from './profile-image-uploader';
 

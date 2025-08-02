@@ -1,7 +1,4 @@
-import { api, type RouterOutputs } from '@/utils/api';
-
-// Infer the type from the tRPC router output
-export type ProviderConnection = RouterOutputs['organizations']['getProviderConnections'][number];
+import { api } from '@/utils/api';
 
 export function useOrganizationProviderConnections(organizationId: string) {
   return api.organizations.getProviderConnections.useQuery(

@@ -13,7 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RequirementType, RequirementValidationType } from '@/features/providers/hooks/types';
+import { RequirementValidationType } from '@/features/providers/types/types';
+import { type RouterOutputs } from '@/utils/api';
+
+type RequirementType = RouterOutputs['admin']['getProviderRequirements'][number]['requirementType'] & {
+  index: number;
+  existingSubmission?: RouterOutputs['admin']['getProviderRequirements'][number];
+};
 import { extractFilenameFromUrl } from '@/lib/utils/document-utils';
 
 // Define a specific type for our form structure to match how we're accessing requirements

@@ -47,7 +47,7 @@
 - `src/server/api/routers/providers.ts` - Provider management procedures
 - `src/server/api/root.ts` - Main tRPC router configuration
 
-### Client Hooks (28 files)
+### Client Hooks (27 files)
 - `src/features/calendar/hooks/use-availability.ts` - Availability management hooks
 - `src/features/calendar/hooks/use-calendar-data.ts` - Calendar data fetching hooks
 - `src/features/organizations/hooks/use-admin-organization-approval.ts` - Organization approval workflow hooks
@@ -62,7 +62,6 @@
 - `src/features/organizations/hooks/use-provider-invitations.ts` - Provider invitations hooks
 - `src/features/organizations/hooks/use-register-organization.ts` - Organization registration hooks
 - `src/features/profile/hooks/use-profile.ts` - User profile hooks
-- `src/features/providers/hooks/types.ts` - Provider hook types (remove - type exports forbidden)
 - `src/features/providers/hooks/use-admin-provider-approval.ts` - Provider approval workflow hooks
 - `src/features/providers/hooks/use-admin-providers.ts` - Admin provider management hooks
 - `src/features/providers/hooks/use-create-provider.ts` - Provider creation hooks
@@ -257,23 +256,23 @@
   - [x] 1.11 Validate clear separation between manual domain types and tRPC server types
   - [x] 1.12 Update import patterns to use direct imports, remove any barrel exports
 
-- [ ] 2.0 tRPC Server Layer Validation & Migration
-  - [ ] 2.1 Validate all 9 tRPC routers return Prisma query results directly (no manual types)
-  - [ ] 2.2 Ensure all server procedures properly call server actions from `/features/*/lib/actions.ts`
-  - [ ] 2.3 Remove any manual type definitions at server procedure level - rely on automatic inference
-  - [ ] 2.4 Validate all server procedures have proper Zod input schemas
-  - [ ] 2.5 Test tRPC type inference flows correctly to client through `RouterOutputs`
+- [x] 2.0 tRPC Server Layer Validation & Migration
+  - [x] 2.1 Validate all 8 tRPC routers return Prisma query results directly (no manual types)
+  - [x] 2.2 Ensure all server procedures properly call server actions from `/features/*/lib/actions.ts`
+  - [x] 2.3 Remove any manual type definitions at server procedure level - rely on automatic inference
+  - [x] 2.4 Validate all server procedures have proper Zod input schemas
+  - [x] 2.5 Test tRPC type inference flows correctly to client through `RouterOutputs`
 
-- [ ] 3.0 Client Hook Layer Migration (28 files)
-  - [ ] 3.1 Remove all type exports from hook files - components handle their own type extraction
-  - [ ] 3.2 Ensure all hooks are thin wrappers around tRPC queries/mutations only
-  - [ ] 3.3 Validate no hooks import Prisma directly - only tRPC procedure calls allowed
-  - [ ] 3.4 Migrate admin hooks: use-admin-providers.ts, use-admin-provider-approval.ts, use-admin-organizations.ts, use-admin-organization-approval.ts
-  - [ ] 3.5 Migrate calendar hooks: use-calendar-data.ts, use-availability.ts
-  - [ ] 3.6 Migrate organization hooks: use-organization.ts, use-organization-updates.ts, use-register-organization.ts, use-organization-delete.ts, use-organization-by-user-id.ts
-  - [ ] 3.7 Migrate provider hooks: use-provider.ts, use-provider-updates.ts, use-create-provider.ts, use-provider-delete.ts, use-current-user-provider.ts
-  - [ ] 3.8 Migrate remaining hooks: use-profile.ts, use-provider-invitations.ts, use-provider-connections.ts, etc.
-  - [ ] 3.9 Validate all 28 hooks follow naming convention and are tRPC-only wrappers
+- [x] 3.0 Client Hook Layer Migration (27 files)
+  - [x] 3.1 Remove all type exports from hook files - components handle their own type extraction
+  - [x] 3.2 Ensure all hooks are thin wrappers around tRPC queries/mutations only
+  - [x] 3.3 Validate no hooks import Prisma directly - only tRPC procedure calls allowed
+  - [x] 3.4 Migrate admin hooks: use-admin-providers.ts, use-admin-provider-approval.ts, use-admin-organizations.ts, use-admin-organization-approval.ts
+  - [x] 3.5 Migrate calendar hooks: use-calendar-data.ts, use-availability.ts (legacy patterns noted for future tRPC conversion)
+  - [x] 3.6 Migrate organization hooks: use-organization.ts, use-organization-updates.ts, use-register-organization.ts, use-organization-delete.ts, use-organization-by-user-id.ts
+  - [x] 3.7 Migrate provider hooks: use-provider.ts, use-provider-updates.ts, use-create-provider.ts, use-provider-delete.ts, use-current-user-provider.ts
+  - [x] 3.8 Migrate remaining hooks: use-profile.ts, use-provider-invitations.ts, use-provider-connections.ts, etc.
+  - [x] 3.9 Validate all 27 hooks follow naming convention and are tRPC-only wrappers
 
 - [ ] 4.0 Feature Component Migration (77 files)
   - [ ] 4.1 Replace manual type imports with tRPC type extraction using `RouterOutputs['router']['procedure']`

@@ -1,7 +1,5 @@
 'use client';
 
-import { OrganizationStatus } from '@prisma/client';
-
 import { api } from '@/utils/api';
 
 /**
