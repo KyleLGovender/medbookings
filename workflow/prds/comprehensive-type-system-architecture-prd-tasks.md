@@ -9,6 +9,10 @@
 - `/CLAUDE.md` - Project documentation that needs comprehensive type system architecture updates
 - `/src/utils/api.ts` - tRPC client configuration and RouterOutputs/RouterInputs exports
 - `/workflow/docs/type-system-audit-report.md` - Comprehensive audit report documenting type system compliance status
+- `/workflow/docs/type-categorization-verification.md` - Verification report confirming all manual types are domain logic only
+- `/workflow/docs/trpc-type-extraction-guide.md` - Comprehensive guide for extracting types from tRPC RouterOutputs
+- `/workflow/docs/migration-templates.md` - Copy-paste templates for common migration patterns
+- `/workflow/docs/type-extraction-quick-reference.md` - Quick reference card for developers during migration
 
 ### Notes
 
@@ -19,7 +23,7 @@
 
 ## Tasks
 
-- [ ] 1.0 Foundation & Type File Cleanup
+- [x] 1.0 Foundation & Type File Cleanup
   - [x] 1.1 Audit current type usage patterns across all 31 type files in `/src/features/*/types/`
   - [x] 1.2 Document existing violations of the dual-source pattern in all features
   - [x] 1.3 Remove server data interfaces from admin types (types.ts, schemas.ts, guards.ts)
@@ -32,7 +36,7 @@
   - [x] 1.10 Remove server data interfaces from providers types (types.ts, schemas.ts, guards.ts)
   - [x] 1.11 Remove server data interfaces from reviews types (interfaces.ts, enums.ts, types.ts, schemas.ts)
   - [x] 1.12 Ensure all remaining manual types are domain logic only (enums, form schemas, business logic, type guards)
-  - [ ] 1.13 Set up type extraction examples and migration templates for development team
+  - [x] 1.13 Set up type extraction examples and migration templates for development team
 
 - [ ] 2.0 Server-Side Library Integration & Database Migration
   - [ ] 2.1 Audit ALL files in `/src/features/*/lib/` directories for database interactions (Prisma queries/mutations)
