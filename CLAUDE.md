@@ -270,21 +270,23 @@ feature/
 - **Error Handling**: Return consistent 401/500 errors
 - **Pattern**: `getCurrentUser()` → role check → 401 if unauthorized → try/catch with 500 error handling
 
-### Data Layer Architecture ✅ **RECENTLY MIGRATED TO tRPC**
+### Data Layer Architecture ✅ **EFFICIENT tRPC PATTERN**
 
-- **tRPC API**: Type-safe end-to-end API using tRPC with server procedures
-- **Server Procedures**: Located in `/lib/trpc/routers/` - handle type-safe API logic
-- **Business Logic**: Located in `/features/{feature}/lib/actions.ts` (server actions) called by tRPC procedures
+- **tRPC API**: Type-safe end-to-end API using tRPC with direct database queries for maximum efficiency
+- **Server Procedures**: Located in `/lib/trpc/routers/` - handle ALL database operations directly
+- **Business Logic**: Located in `/features/{feature}/lib/actions.ts` (server actions) for validation, notifications, and workflows only
 - **Client Hooks**: Located in `/features/{feature}/hooks/` using tRPC + TanStack Query
-- **Type Safety**: Full end-to-end type safety from server to client
+- **Type Safety**: Full end-to-end type safety from server to client with automatic Prisma inference
 - **Legacy REST**: A few exceptions remain as REST API routes in `/app/api/`
 
-#### CRITICAL: Data Access Separation
+#### CRITICAL: Efficient Data Access Pattern
 
 - **Client-side hooks NEVER import Prisma directly**
 - **Hooks ONLY call tRPC procedures (or legacy API routes where applicable)**
-- **Database access ONLY in server actions called by tRPC procedures**
-- **Pattern**: Hook → tRPC Procedure → Server Action → Prisma
+- **Database queries ONLY in tRPC procedures for automatic type inference**
+- **Server actions ONLY for business logic, return minimal metadata**
+- **Pattern**: Hook → tRPC Procedure → Prisma (single database query)
+- **Business Logic Pattern**: tRPC Procedure → Server Action (for validation/notifications) → Return metadata → tRPC Procedure → Single Prisma Query
 
 #### tRPC Data Flow Examples
 
@@ -298,11 +300,10 @@ export const useProviders = () => {
   })
 }
 
-// ✅ CORRECT: tRPC procedure calls server action
+// ✅ CORRECT: tRPC procedure queries database directly for automatic type inference
 // /lib/trpc/routers/providers.ts
 import { z } from 'zod'
 import { publicProcedure, router } from '../trpc'
-import { getProviders } from '@/features/providers/lib/actions'
 
 export const providersRouter = router({
   getAll: publicProcedure
@@ -310,21 +311,42 @@ export const providersRouter = router({
       limit: z.number().optional(),
       offset: z.number().optional(),
     }))
-    .query(async ({ input }) => {
-      return await getProviders(input) // Server action
+    .query(async ({ ctx, input }) => {
+      // Direct Prisma query for automatic type inference
+      return ctx.prisma.provider.findMany({
+        take: input?.limit,
+        skip: input?.offset,
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          services: true,
+          // Full relations for complete type safety
+        }
+      })
     }),
 })
 
-// ✅ CORRECT: Server action uses Prisma
+// ✅ CORRECT: Server action handles business logic only, returns metadata
 // /features/providers/lib/actions.ts
-export async function getProviders(input?: { limit?: number; offset?: number }) {
-  return prisma.provider.findMany({
-    take: input?.limit,
-    skip: input?.offset,
-  })
+export async function createProvider(data: CreateProviderData) {
+  // Validation, notifications, business logic
+  const validatedData = validateProviderData(data)
+  
+  if (!validatedData.isValid) {
+    return { success: false, error: validatedData.error }
+  }
+
+  // Send notifications, trigger workflows, etc.
+  await sendProviderRegistrationEmail(data.email)
+  
+  // Return minimal metadata only
+  return { 
+    success: true, 
+    providerId: data.userId, // Just the ID for tRPC to query
+    requiresApproval: true 
+  }
 }
 
-// ✅ CORRECT: Mutation with tRPC
+// ✅ CORRECT: Mutation with business logic + database query
 export const useCreateProvider = () => {
   return api.providers.create.useMutation({
     onSuccess: () => {
@@ -335,6 +357,29 @@ export const useCreateProvider = () => {
     },
   })
 }
+
+// ✅ CORRECT: tRPC mutation procedure pattern
+create: protectedProcedure
+  .input(createProviderSchema)
+  .mutation(async ({ ctx, input }) => {
+    // Call server action for business logic
+    const result = await createProvider(input)
+    
+    if (!result.success) {
+      throw new Error(result.error)
+    }
+    
+    // Single database query with full relations for type safety
+    return ctx.prisma.provider.findUnique({
+      where: { id: result.providerId },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        services: true,
+        typeAssignments: { include: { providerType: true } },
+        // Complete data with automatic type inference
+      }
+    })
+  })
 ```
 
 #### Legacy REST API Exceptions
@@ -595,6 +640,22 @@ export const useProviders = () => {
     queryFn: () => fetch('/api/providers').then(res => res.json()) // WRONG! Use tRPC
   })
 }
+
+// ❌ NEVER: Server actions returning database results (return metadata only)
+export async function getProviders(input?: { limit?: number }) {
+  return prisma.provider.findMany({ take: input?.limit }) // WRONG! tRPC should query
+}
+
+// ❌ NEVER: tRPC procedures calling server actions for database queries
+getAll: publicProcedure.query(async ({ input }) => {
+  return await getProviders(input) // WRONG! Query database directly in tRPC
+})
+
+// ❌ NEVER: Duplicate database queries
+create: protectedProcedure.mutation(async ({ ctx, input }) => {
+  const result = await createProvider(input) // Server action queries DB
+  return ctx.prisma.provider.findUnique({ where: { id: result.id } }) // WRONG! Second query
+})
 
 // ❌ NEVER: Export types from hook files
 export function useAdminProviders() {
@@ -1057,14 +1118,15 @@ Imports are automatically sorted in this order:
 - **Client hooks MUST NOT import Prisma directly**
 - **React components MUST NOT import Prisma**
 - **Any code that runs in the browser MUST NOT access the database directly**
-- **Database access ONLY in server actions (`/features/*/lib/actions.ts`) or API routes (`/app/api/`)**
+- **Database queries ONLY in tRPC procedures (`/server/api/routers/`) for automatic type inference**
+- **Server actions ONLY for business logic, validation, and notifications**
 
 ### Correct Data Flow
 
-1. **Client Hook** → calls API route or server action
-2. **API Route** → calls server action (if needed)
-3. **Server Action** → uses Prisma to access database
-4. **Never skip steps** - maintain the separation
+1. **Client Hook** → calls tRPC procedure
+2. **tRPC Procedure** → queries Prisma database directly (single query)
+3. **For Business Logic**: tRPC Procedure → calls server action → returns metadata → tRPC queries database
+4. **Never use server actions for database queries** - only for business logic
 
 ### Build Errors Indicate Wrong Pattern
 

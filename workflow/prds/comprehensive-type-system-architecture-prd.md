@@ -37,10 +37,12 @@ The MedBookings platform requires a complete migration to a **dual-source type s
 ## Functional Requirements
 
 ### 1. tRPC Server Infrastructure Requirements
-1.1. All tRPC routers in `/src/server/api/routers/` must return Prisma query results directly for automatic type inference
-1.2. Server procedures must call server actions from `/src/features/*/lib/actions.ts` for business logic
-1.3. No manual type definitions at the server procedure level - rely on automatic inference
-1.4. All server procedures must have proper input validation using Zod schemas
+1.1. All tRPC routers in `/src/server/api/routers/` must perform database queries directly using Prisma for automatic type inference
+1.2. Server procedures must call server actions from `/src/features/*/lib/actions.ts` ONLY for business logic (validation, notifications, workflows)
+1.3. Server actions must return minimal metadata only, never database results
+1.4. No manual type definitions at the server procedure level - rely on automatic inference
+1.5. All server procedures must have proper input validation using Zod schemas
+1.6. Single database query per endpoint for optimal performance
 
 ### 2. Client Hook Architecture Requirements  
 2.1. All hooks in `/src/features/*/hooks/` must be thin wrappers around tRPC queries/mutations
@@ -66,10 +68,11 @@ The MedBookings platform requires a complete migration to a **dual-source type s
 
 ### 5. Migration Requirements for Existing Code
 5.1. **Type File Audit** (31 files): Remove server data interfaces, keep only domain logic types
-5.2. **Server-Side Library Integration** (All `/src/features/*/lib/` files): Migrate all database-interacting functions to tRPC procedures, remove manual type dependencies
+5.2. **Server-Side Library Integration** (All `/src/features/*/lib/` files): Convert server actions to business logic only, move database queries to tRPC procedures
 5.3. **Hook Migration** (27 files): Remove type exports, ensure tRPC-only calls, simplify to thin wrappers
 5.4. **Component Migration** (77 files): Replace manual type imports with tRPC type extraction
 5.5. **Page Component Migration** (54 files): Apply same component migration patterns
+5.6. **Performance Optimization**: Eliminate duplicate database queries through efficient tRPC patterns
 
 ### 6. Documentation Requirements
 6.1. Update `/CLAUDE.md` with complete type system architecture documentation
@@ -89,8 +92,10 @@ The MedBookings platform requires a complete migration to a **dual-source type s
 ## Technical Considerations
 
 ### Architecture Compliance Checklist
-- [ ] All database-interacting functions are exposed through tRPC procedures (no orphaned database operations)
-- [ ] All server procedures return Prisma results directly for automatic inference
+- [ ] All database queries are performed directly in tRPC procedures for automatic type inference
+- [ ] Server actions handle ONLY business logic (validation, notifications, workflows)
+- [ ] Server actions return minimal metadata, never database results
+- [ ] Single database query per tRPC endpoint (no duplicate queries)
 - [ ] No manual include configurations (e.g., `includeAvailabilityRelations`) in any files
 - [ ] All hooks are thin tRPC wrappers without type exports  
 - [ ] All components extract types from `RouterOutputs`
@@ -98,13 +103,14 @@ The MedBookings platform requires a complete migration to a **dual-source type s
 - [ ] No client code imports Prisma directly
 - [ ] Clear separation between tRPC types and manual types
 - [ ] Utility functions and non-database helpers can remain in `/src/features/*/lib/`
+- [ ] No orphaned database operations outside of tRPC procedures
 
 ### Migration File Categories
 
 #### Category 1: tRPC Server Procedures (9 files)
 **Location**: `/src/server/api/routers/`
 **Files**: admin.ts, billing.ts, calendar.ts, debug.ts, invitations.ts, organizations.ts, profile.ts, providers.ts
-**Requirements**: Ensure direct Prisma returns, proper server action calls, no manual types
+**Requirements**: Perform database queries directly with Prisma, call server actions only for business logic, single query per endpoint, no manual types
 
 #### Category 2: Client Hooks (27 files)  
 **Location**: `/src/features/*/hooks/`
@@ -145,15 +151,16 @@ The MedBookings platform requires a complete migration to a **dual-source type s
 
 #### Category 6: Server-Side Library Integration (All `/src/features/*/lib/` files)
 **Location**: `/src/features/*/lib/` (all files, not just actions.ts)
-**Scope**: Any file in lib directories that performs database queries or mutations
-**Requirements**: Migrate all database-interacting functions to tRPC procedures, remove manual type dependencies
-**Critical Issues Identified**:
-- Database functions not exposed through tRPC routers (e.g., `getAvailabilityById`)
-- Server functions using manual include configurations (e.g., `includeAvailabilityRelations`)
-- Server functions using manual type interfaces instead of tRPC automatic inference
-- Direct server function calls bypassing tRPC type safety
+**Scope**: Convert server actions to business logic only, move all database queries to tRPC procedures
+**Requirements**: Refactor server actions to handle only validation/notifications/workflows, ensure all database queries happen in tRPC procedures
+**Critical Changes Required**:
+- Move database queries from server actions to tRPC procedures for automatic type inference
+- Convert server actions to return minimal metadata only (IDs, success flags, error messages)
+- Remove manual include configurations (e.g., `includeAvailabilityRelations`) - let tRPC handle relations
+- Eliminate duplicate database queries between server actions and tRPC procedures
+- Single database query per endpoint pattern for optimal performance
 - Utility functions, helpers, and other non-database code can remain in lib directories
-**File Types**: actions.ts, queries.ts, mutations.ts, utils.ts, helpers.ts, and any other database-interacting files
+**File Types**: actions.ts (business logic only), utils.ts, helpers.ts, validators.ts, and any other non-database files
 
 ### Implementation Phases
 
@@ -164,20 +171,22 @@ The MedBookings platform requires a complete migration to a **dual-source type s
 - Set up type extraction examples and migration templates
 
 #### Phase 2: Server-Side Library Integration (Estimated: 3 days)
-- **Critical Phase**: Migrate all database-interacting functions to tRPC procedures
+- **Critical Phase**: Convert server actions to business logic only, move database queries to tRPC procedures
 - Audit ALL files in `/src/features/*/lib/` directories for database interactions
-- Identify functions performing Prisma queries/mutations not exposed through tRPC
-- Convert standalone database functions (e.g., `getAvailabilityById`) to tRPC procedures
+- Refactor server actions to handle only validation, notifications, and business workflows
+- Move all database queries from server actions to tRPC procedures for automatic type inference
+- Convert server actions to return minimal metadata (IDs, success flags, error messages)
 - Remove manual include configurations (e.g., `includeAvailabilityRelations`)
-- Replace manual type interfaces with tRPC automatic inference
-- Ensure all database operations flow through tRPC for type safety
+- Implement single database query per endpoint pattern for optimal performance
+- Eliminate duplicate database queries between server actions and tRPC procedures
 - Preserve utility functions and helpers that don't interact with database
 
 #### Phase 3: Server Layer Validation (Estimated: 1 day)
-- Validate all tRPC routers follow direct Prisma return pattern
-- Ensure server actions are properly called from tRPC procedures
+- Validate all tRPC routers perform database queries directly with Prisma
+- Ensure server actions handle only business logic and return minimal metadata
+- Verify single database query per endpoint pattern implementation
 - Fix any remaining server-side type safety violations
-- Test that build passes with all server actions integrated
+- Test that build passes with all refactored server actions
 
 #### Phase 4: Hook Layer Migration (Estimated: 3 days)
 - Migrate all 27 hook files to remove type exports
@@ -206,12 +215,14 @@ The MedBookings platform requires a complete migration to a **dual-source type s
 
 ### Quantitative Metrics
 1. **100% Type Safety Compliance**: All 200+ files follow dual-source pattern
-2. **Zero Orphaned Database Operations**: All database functions exposed through tRPC procedures
-3. **Zero Manual Server Types**: No manual interfaces duplicating server data
-4. **Zero Type Exports from Hooks**: All 27 hook files are thin wrappers only
-5. **100% Component Type Extraction**: All components extract types from `RouterOutputs`
-6. **Clean Type Files**: All 31 type files contain only domain logic
-7. **Clean Lib Directories**: Only utility functions and non-database helpers remain in `/src/features/*/lib/`
+2. **Zero Duplicate Database Queries**: Single database query per tRPC endpoint
+3. **Zero Database Operations in Server Actions**: All server actions handle only business logic
+4. **Zero Manual Server Types**: No manual interfaces duplicating server data
+5. **Zero Type Exports from Hooks**: All 27 hook files are thin wrappers only
+6. **100% Component Type Extraction**: All components extract types from `RouterOutputs`
+7. **Clean Type Files**: All 31 type files contain only domain logic
+8. **Efficient Server Actions**: All server actions return minimal metadata only
+9. **Clean Lib Directories**: Only utility functions and non-database helpers remain in `/src/features/*/lib/`
 
 ### Qualitative Metrics
 1. **Developer Experience**: Developers report improved IntelliSense and error detection
@@ -221,13 +232,15 @@ The MedBookings platform requires a complete migration to a **dual-source type s
 
 ### Validation Criteria
 - [ ] TypeScript compilation with zero type errors
-- [ ] All database operations properly integrated with tRPC (no orphaned database functions)
+- [ ] All database queries performed directly in tRPC procedures (no database operations in server actions)
+- [ ] Single database query per tRPC endpoint (no duplicate queries)
+- [ ] All server actions return minimal metadata only
 - [ ] All components receive proper type inference from server procedures
 - [ ] No manual interfaces that duplicate server data remain
 - [ ] No manual include configurations in any files
 - [ ] All hooks are simple tRPC wrappers without type exports
 - [ ] Clean `/src/features/*/lib/` directories with only non-database utilities
-- [ ] Documentation accurately reflects implemented patterns
+- [ ] Documentation accurately reflects implemented efficient patterns
 
 ## Open Questions
 

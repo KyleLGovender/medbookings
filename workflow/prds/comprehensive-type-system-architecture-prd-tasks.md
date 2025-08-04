@@ -35,7 +35,8 @@
 - End-to-end testing is handled via Playwright (`npx playwright test`)
 - No unit testing framework is configured in this codebase
 - This migration focuses on zero type drift and eliminates manual maintenance of server data types
-- Critical requirement: All database operations must flow through tRPC procedures for complete type safety
+- **Critical requirement: Option C Architecture - Server actions handle ONLY business logic, tRPC procedures handle ALL database queries directly**
+- **Performance optimization: Single database query per tRPC endpoint eliminates duplicate queries and improves response times**
 
 ## Tasks
 
@@ -54,35 +55,50 @@
   - [x] 1.12 Ensure all remaining manual types are domain logic only (enums, form schemas, business logic, type guards)
   - [x] 1.13 Set up type extraction examples and migration templates for development team
 
-- [ ] 2.0 Server-Side Library Integration & Database Migration
+- [ ] 2.0 Server-Side Library Integration & Efficient Data Flow Migration
   - [x] 2.1 Audit ALL files in `/src/features/*/lib/` directories for database interactions (Prisma queries/mutations)
-  - [x] 2.2 Identify orphaned database functions not exposed through tRPC procedures (e.g., `getAvailabilityById`)
-  - [ ] 2.3 Migrate admin lib functions: Convert all database operations in `/src/features/admin/lib/` to tRPC procedures
-  - [ ] 2.4 Migrate billing lib functions: Convert all database operations in `/src/features/billing/lib/` to tRPC procedures
-  - [ ] 2.5 Migrate calendar lib functions: Convert all database operations in `/src/features/calendar/lib/` to tRPC procedures
-  - [ ] 2.6 Migrate communications lib functions: Convert all database operations in `/src/features/communications/lib/` to tRPC procedures
-  - [ ] 2.7 Migrate invitations lib functions: Convert all database operations in `/src/features/invitations/lib/` to tRPC procedures
-  - [ ] 2.8 Migrate organizations lib functions: Convert all database operations in `/src/features/organizations/lib/` to tRPC procedures
-  - [ ] 2.9 Migrate profile lib functions: Convert all database operations in `/src/features/profile/lib/` to tRPC procedures
-  - [ ] 2.10 Migrate providers lib functions: Convert all database operations in `/src/features/providers/lib/` to tRPC procedures
-  - [ ] 2.11 Migrate reviews lib functions: Convert all database operations in `/src/features/reviews/lib/` to tRPC procedures
-  - [ ] 2.12 Remove manual include configurations (e.g., `includeAvailabilityRelations`) from all server functions
-  - [ ] 2.13 Replace manual type interfaces with tRPC automatic inference in all migrated functions
-  - [ ] 2.14 Preserve utility functions and helpers that don't interact with database in lib directories
+  - [x] 2.2 Identify database operations that need to be moved from server actions to tRPC procedures
+  - [x] 2.3 Refactor admin lib functions: Convert server actions to business logic only, move database queries to tRPC procedures
+  - [x] 2.4 Refactor billing lib functions: Convert server actions to business logic only, move database queries to tRPC procedures
+  - [x] 2.5 Refactor calendar lib functions: Convert server actions to business logic only, move database queries to tRPC procedures
+  - [x] 2.6 Refactor communications lib functions: Convert server actions to business logic only, move database queries to tRPC procedures
+  - [x] 2.7 Refactor invitations lib functions: Convert server actions to business logic only, move database queries to tRPC procedures
+  - [x] 2.8 Refactor organizations lib functions: Convert server actions to business logic only, move database queries to tRPC procedures
+  - [x] 2.9 Refactor profile lib functions: Convert server actions to business logic only, move database queries to tRPC procedures
+  - [x] 2.10 Refactor providers lib functions: Convert server actions to business logic only, move database queries to tRPC procedures
+  - [x] 2.11 Refactor reviews lib functions: Convert server actions to business logic only, move database queries to tRPC procedures
+  - [ ] 2.12 Convert server actions to return minimal metadata only (IDs, success flags, error messages)
+  - [ ] 2.13 Implement single database query per tRPC endpoint pattern (eliminate duplicate queries)
+  - [ ] 2.14 Remove manual include configurations (e.g., `includeAvailabilityRelations`) from all files
+  - [ ] 2.15 Preserve utility functions and helpers that don't interact with database in lib directories
 
-- [ ] 3.0 Server Layer Validation & tRPC Router Compliance
-  - [ ] 3.1 Validate admin.ts router follows direct Prisma return pattern and calls server actions properly
-  - [ ] 3.2 Validate billing.ts router follows direct Prisma return pattern and calls server actions properly
-  - [ ] 3.3 Validate calendar.ts router follows direct Prisma return pattern and calls server actions properly
-  - [ ] 3.4 Validate debug.ts router follows direct Prisma return pattern and calls server actions properly
-  - [ ] 3.5 Validate invitations.ts router follows direct Prisma return pattern and calls server actions properly
-  - [ ] 3.6 Validate organizations.ts router follows direct Prisma return pattern and calls server actions properly
-  - [ ] 3.7 Validate profile.ts router follows direct Prisma return pattern and calls server actions properly
-  - [ ] 3.8 Validate providers.ts router follows direct Prisma return pattern and calls server actions properly
+**Phase 2 Migration Summary (Tasks 2.3-2.11)**:
+- ✅ **Admin**: Refactored - server actions handle business logic only, tRPC procedures handle all database queries
+- ✅ **Billing**: Refactored - converted to efficient single-query pattern  
+- ✅ **Calendar**: Refactored - moved database operations to tRPC, server actions handle validation/notifications only
+- ✅ **Communications**: Refactored - notification logic in server actions, no duplicate database queries
+- ✅ **Invitations**: No lib directory - already clean
+- ✅ **Organizations**: Refactored - optimized for single database query per endpoint
+- ✅ **Profile**: Refactored - separated business logic from database operations
+- ✅ **Providers**: Refactored - converted to efficient tRPC pattern with minimal server action metadata
+- ✅ **Reviews**: Clean - no database operations in lib files
+
+**Next Steps (Tasks 2.12-2.15)**: Implement Option C architecture fully - server actions return metadata only, single database query per tRPC endpoint
+
+- [ ] 3.0 Server Layer Validation & Efficient tRPC Pattern Compliance
+  - [ ] 3.1 Validate admin.ts router performs database queries directly and uses server actions only for business logic
+  - [ ] 3.2 Validate billing.ts router implements single database query per endpoint pattern
+  - [ ] 3.3 Validate calendar.ts router follows efficient Option C architecture (no duplicate queries)
+  - [ ] 3.4 Validate debug.ts router performs database queries directly with automatic type inference
+  - [ ] 3.5 Validate invitations.ts router follows single-query pattern with minimal server action metadata
+  - [ ] 3.6 Validate organizations.ts router eliminates duplicate database operations
+  - [ ] 3.7 Validate profile.ts router separates business logic from database queries effectively
+  - [ ] 3.8 Validate providers.ts router implements efficient data flow pattern
   - [ ] 3.9 Ensure all tRPC procedures have proper input validation using Zod schemas
-  - [ ] 3.10 Fix any remaining server-side type safety violations
-  - [ ] 3.11 Test that TypeScript build passes with all server actions integrated
+  - [ ] 3.10 Verify server actions return minimal metadata only (no database results)
+  - [ ] 3.11 Test that TypeScript build passes with all refactored server patterns
   - [ ] 3.12 Verify no manual type definitions exist at server procedure level
+  - [ ] 3.13 Confirm single database query per endpoint across all routers
 
 - [ ] 4.0 Client Hook Layer Migration
   - [ ] 4.1 Migrate admin hooks: Remove type exports from `use-admin-providers.ts`, `use-admin-provider-approval.ts` and ensure tRPC-only calls

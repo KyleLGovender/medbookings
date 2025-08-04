@@ -109,6 +109,8 @@ export const servicesSchema = z.object({
       z.object({
         duration: z.coerce.number().min(1, 'Duration must be at least 1 minute'),
         price: z.coerce.number().min(0, 'Price cannot be negative'),
+        isOnlineAvailable: z.boolean().optional(),
+        isInPerson: z.boolean().optional(),
       })
     )
     .optional(),

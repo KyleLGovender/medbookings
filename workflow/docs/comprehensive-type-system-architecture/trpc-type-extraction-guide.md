@@ -1,8 +1,20 @@
-# tRPC Type Extraction Guide
+# tRPC Type Extraction Guide - Option C Architecture
 
-**Version**: 1.0  
-**Last Updated**: 2025-08-02  
-**Purpose**: Comprehensive guide for extracting types from tRPC RouterOutputs
+**Version**: 2.0 (Updated for Option C)  
+**Last Updated**: 2025-08-04  
+**Purpose**: Comprehensive guide for extracting types from tRPC RouterOutputs with efficient Option C patterns
+
+## Option C Architecture Overview
+
+**MedBookings uses Option C architecture for optimal performance and type safety:**
+
+- ✅ **tRPC procedures perform ALL database queries directly** for automatic type inference
+- ✅ **Server actions handle ONLY business logic** (validation, notifications, workflows)  
+- ✅ **Single database query per endpoint** eliminates duplicate queries
+- ✅ **Server actions return minimal metadata only** (IDs, success flags, error messages)
+- ✅ **Zero type drift** through automatic Prisma → tRPC → Client type inference
+
+This ensures maximum performance with zero type maintenance overhead.
 
 ## Table of Contents
 1. [Quick Reference](#quick-reference)

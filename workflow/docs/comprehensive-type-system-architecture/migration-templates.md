@@ -1,6 +1,100 @@
-# Migration Templates
+# Migration Templates - Option C Architecture
 
-**Purpose**: Copy-paste templates for common migration patterns
+**Purpose**: Copy-paste templates for efficient Option C migration patterns
+
+## Architecture Principles (Option C)
+
+- ✅ **Server actions handle ONLY business logic** (validation, notifications, workflows)
+- ✅ **tRPC procedures handle ALL database queries directly** for automatic type inference
+- ✅ **Single database query per endpoint** for optimal performance
+- ✅ **Server actions return minimal metadata only** (IDs, success flags, error messages)
+
+## Template 0: Server Action Migration (Option C)
+
+```typescript
+// ============= BEFORE (Old Pattern) =============
+// Server action returns database results - WRONG
+export async function createProvider(data: CreateProviderData) {
+  const validatedData = validateProviderData(data)
+  
+  if (!validatedData.isValid) {
+    return { success: false, error: validatedData.error }
+  }
+
+  // Database operation in server action - INEFFICIENT
+  const provider = await prisma.provider.create({
+    data: validatedData.data,
+    include: {
+      user: { select: { id: true, name: true, email: true } },
+      services: true,
+      typeAssignments: { include: { providerType: true } },
+    }
+  })
+  
+  return { success: true, data: provider } // Returns database results
+}
+
+// tRPC procedure calls server action - DUPLICATE QUERY
+create: protectedProcedure
+  .input(createProviderSchema)
+  .mutation(async ({ ctx, input }) => {
+    const result = await createProvider(input) // Server action queries DB
+    
+    if (!result.success) throw new Error(result.error)
+    
+    // SECOND database query for full relations - INEFFICIENT
+    return ctx.prisma.provider.findUnique({
+      where: { id: result.data.id },
+      include: { /* full relations */ }
+    })
+  })
+
+// ============= AFTER (Option C) =============
+// Server action handles ONLY business logic - EFFICIENT
+export async function createProvider(data: CreateProviderData) {
+  // Validation, notifications, business workflows
+  const validatedData = validateProviderData(data)
+  
+  if (!validatedData.isValid) {
+    return { success: false, error: validatedData.error }
+  }
+
+  // Send notifications, trigger workflows, etc.
+  await sendProviderRegistrationEmail(data.email)
+  await notifyAdminsOfNewProvider(data)
+  
+  // Return minimal metadata only - NO DATABASE RESULTS
+  return { 
+    success: true, 
+    providerId: data.userId, // Just the ID for tRPC to query
+    requiresApproval: true,
+    notificationsSent: true
+  }
+}
+
+// tRPC procedure performs SINGLE database query - EFFICIENT
+create: protectedProcedure
+  .input(createProviderSchema)
+  .mutation(async ({ ctx, input }) => {
+    // Call server action for business logic
+    const result = await createProvider(input)
+    
+    if (!result.success) {
+      throw new Error(result.error)
+    }
+    
+    // SINGLE database query with full relations and automatic type inference
+    return ctx.prisma.provider.findUnique({
+      where: { id: result.providerId },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        services: true,
+        typeAssignments: { include: { providerType: true } },
+        // Complete data with automatic type inference - NO MANUAL TYPES
+      }
+    })
+  })
+```
 
 ## Template 1: Basic Component Migration
 

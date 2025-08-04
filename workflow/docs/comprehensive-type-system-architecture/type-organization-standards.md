@@ -1,10 +1,17 @@
-# Type Organization Standards
+# Type Organization Standards - Option C Architecture
 
-This document outlines the type organization standards and linting rules for the MedBookings codebase.
+This document outlines the type organization standards and linting rules for the MedBookings codebase, updated for Option C architecture.
 
 ## Overview
 
-The MedBookings codebase follows a strict type organization pattern to ensure consistency, maintainability, and developer experience. All types are organized by feature using direct imports (no barrel exports).
+The MedBookings codebase follows a strict **dual-source type safety pattern** with **Option C architecture** for optimal performance:
+
+- **Manual Types**: Domain logic, form schemas, business rules (in `/features/*/types/`)
+- **tRPC Types**: Server data, API responses, database entities (via `RouterOutputs` extraction)
+- **Option C Pattern**: tRPC procedures handle ALL database queries, server actions handle ONLY business logic
+- **Performance**: Single database query per endpoint, zero duplicate queries
+
+All types are organized by feature using direct imports (no barrel exports).
 
 ## Directory Structure
 

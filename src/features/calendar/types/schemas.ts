@@ -178,7 +178,7 @@ export const availabilitySearchParamsSchema = z
     isOnlineAvailable: z.boolean().optional(),
     status: availabilityStatusSchema.optional(),
     schedulingRule: schedulingRuleSchema.optional(),
-    seriesId: z.string().min(1).optional(),
+    limit: z.number().int().positive().max(1000).default(1000).optional(),
   })
   .refine((data) => !data.startDate || !data.endDate || data.endDate >= data.startDate, {
     message: 'End date must be after or equal to start date',

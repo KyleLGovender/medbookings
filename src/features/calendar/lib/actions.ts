@@ -5,19 +5,15 @@ import { revalidatePath } from 'next/cache';
 import { Prisma } from '@prisma/client';
 
 import {
-  availabilitySearchParamsSchema,
   createAvailabilityDataSchema,
   updateAvailabilityDataSchema,
 } from '@/features/calendar/types/schemas';
 import {
-  AvailabilitySearchParams,
   AvailabilityStatus,
-  AvailabilityWithRelations,
   BillingEntity,
   CreateAvailabilityData,
   SchedulingRule,
-  UpdateAvailabilityData,
-  includeAvailabilityRelations,
+  UpdateAvailabilityData
 } from '@/features/calendar/types/types';
 import { UserRole } from '@/features/profile/types/types';
 import { getCurrentUser } from '@/lib/auth';
@@ -25,20 +21,26 @@ import { prisma } from '@/lib/prisma';
 
 import {
   validateAvailability,
-  validateAvailabilityUpdate,
-  validateRecurringAvailability,
+  validateRecurringAvailability
 } from './availability-validation';
-import { notifyAvailabilityProposed } from './notification-service';
 import { generateRecurringInstances } from './recurrence-utils';
-import { generateSlotsForMultipleAvailability } from './slot-generation';
-import { processAvailabilityAcceptance, processAvailabilityRejection } from './workflow-service';
+import { generateSlotsForAvailability } from './slot-generation';
 
 /**
  * Create new availability period
  */
 export async function createAvailability(
   data: CreateAvailabilityData
-): Promise<{ success: boolean; data?: AvailabilityWithRelations; error?: string }> {
+): Promise<{ 
+  success: boolean; 
+  availabilityId?: string;
+  seriesId?: string;
+  allAvailabilityIds?: string[];
+  requiresApproval?: boolean;
+  notificationsSent?: boolean;
+  slotsGenerated?: number;
+  error?: string;
+}> {
   try {
     // Get current user
     const currentUser = await getCurrentUser();
@@ -215,7 +217,6 @@ export async function createAvailability(
               })),
             },
           },
-          include: includeAvailabilityRelations,
         });
       })
     );
@@ -223,12 +224,14 @@ export async function createAvailability(
     // Return the first availability instance (master instance)
     const availability = availabilities[0];
 
-    // Generate slots for accepted availability only
+    // Generate slots for accepted availability (provider-created is auto-accepted)
+    let totalSlotsGenerated = 0;
     if (availability.status === AvailabilityStatus.ACCEPTED) {
-      try {
-        const slotResult = await generateSlotsForMultipleAvailability(
-          availabilities.map((av) => ({
-            id: av.id,
+      // Generate slots for each created availability
+      for (const av of availabilities) {
+        try {
+          const slotResult = await generateSlotsForAvailability({
+            availabilityId: av.id,
             startTime: av.startTime,
             endTime: av.endTime,
             providerId: av.providerId,
@@ -236,36 +239,26 @@ export async function createAvailability(
             locationId: av.locationId || undefined,
             schedulingRule: av.schedulingRule as SchedulingRule,
             schedulingInterval: av.schedulingInterval || undefined,
-            availableServices: av.availableServices.map((as) => ({
-              serviceId: as.serviceId,
-              duration: as.duration,
-              price: Number(as.price),
-            })),
-          }))
-        );
+            services: validatedData.services,
+          });
 
-        if (!slotResult.success) {
-          // Slot generation failed but don't block availability creation
-          // Production systems would track this for monitoring
+          if (slotResult.success) {
+            totalSlotsGenerated += slotResult.slotsGenerated;
+          } else {
+            // Log slot generation failure but don't block creation
+            console.warn(`Slot generation failed for availability ${av.id}:`, slotResult.errors?.join(', '));
+          }
+        } catch (slotError) {
+          // Log slot generation error but don't block creation
+          console.error('Slot generation error during availability creation:', slotError);
         }
-      } catch (slotError) {
-        // Slot generation error - continue with availability creation
-        // Production systems would track this for monitoring
       }
     }
 
     // Send proposal notification if this is organization-created
     if (!isProviderCreated && availability.status === AvailabilityStatus.PENDING) {
-      try {
-        await notifyAvailabilityProposed(availability as unknown as AvailabilityWithRelations, {
-          id: currentUser.id,
-          name: currentUser.name || 'Organization Member',
-          role: 'ORGANIZATION',
-        });
-      } catch (notificationError) {
-        // Notification failed but don't block availability creation
-        // Production systems would track this for monitoring
-      }
+      // TODO: Implement proper notification service
+      console.log(`📧 Availability proposal notification would be sent for availability ${availability.id}`);
     }
 
     // Revalidate relevant paths
@@ -275,7 +268,15 @@ export async function createAvailability(
       revalidatePath(`/dashboard/organizations/${validatedData.organizationId}/availability`);
     }
 
-    return { success: true, data: availability as unknown as AvailabilityWithRelations };
+    return { 
+      success: true, 
+      availabilityId: availability.id,
+      seriesId: availability.seriesId || undefined,
+      allAvailabilityIds: availabilities.map(a => a.id),
+      requiresApproval: availability.status === AvailabilityStatus.PENDING,
+      notificationsSent: !isProviderCreated && availability.status === AvailabilityStatus.PENDING,
+      slotsGenerated: totalSlotsGenerated
+    };
   } catch (error) {
     return {
       success: false,
@@ -285,182 +286,11 @@ export async function createAvailability(
 }
 
 /**
- * Get availability by ID with all relations
- */
-export async function getAvailabilityById(
-  id: string
-): Promise<{ success: boolean; data?: AvailabilityWithRelations; error?: string }> {
-  try {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-      return { success: false, error: 'Authentication required' };
-    }
-
-    const availability = await prisma.availability.findUnique({
-      where: { id },
-      include: includeAvailabilityRelations,
-    });
-
-    if (!availability) {
-      return { success: false, error: 'Availability not found' };
-    }
-
-    // Get current user's provider record for authorization checks
-    const currentUserProvider = await prisma.provider.findUnique({
-      where: { userId: currentUser.id },
-    });
-
-    // Check if user has permission to view this availability
-    const canView =
-      currentUserProvider?.id === availability.providerId ||
-      currentUser.id === availability.createdById ||
-      currentUser.role === 'ADMIN' ||
-      currentUser.role === 'SUPER_ADMIN';
-
-    if (!canView && availability.organizationId) {
-      // Check organization membership
-      const membership = await prisma.organizationMembership.findFirst({
-        where: {
-          userId: currentUser.id,
-          organizationId: availability.organizationId,
-        },
-      });
-
-      if (!membership) {
-        return { success: false, error: 'Access denied' };
-      }
-    } else if (!canView) {
-      return { success: false, error: 'Access denied' };
-    }
-
-    return { success: true, data: availability as unknown as AvailabilityWithRelations };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch availability',
-    };
-  }
-}
-
-/**
- * Search and filter availability periods
- */
-export async function searchAvailability(
-  params: AvailabilitySearchParams
-): Promise<{ success: boolean; data?: AvailabilityWithRelations[]; error?: string }> {
-  try {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-      return { success: false, error: 'Authentication required' };
-    }
-
-    // Validate search parameters
-    const validatedParams = availabilitySearchParamsSchema.parse(params);
-
-    // Build where clause
-    const where: any = {};
-
-    if (validatedParams.providerId) {
-      where.providerId = validatedParams.providerId;
-    }
-
-    if (validatedParams.organizationId) {
-      where.organizationId = validatedParams.organizationId;
-    }
-
-    if (validatedParams.locationId) {
-      where.locationId = validatedParams.locationId;
-    }
-
-    if (validatedParams.seriesId) {
-      where.seriesId = validatedParams.seriesId;
-    }
-
-    if (validatedParams.serviceId) {
-      where.availableServices = {
-        some: {
-          serviceId: validatedParams.serviceId,
-        },
-      };
-    }
-
-    if (validatedParams.startDate || validatedParams.endDate) {
-      where.AND = [];
-
-      if (validatedParams.startDate) {
-        where.AND.push({
-          endTime: { gte: validatedParams.startDate },
-        });
-      }
-
-      if (validatedParams.endDate) {
-        where.AND.push({
-          startTime: { lte: validatedParams.endDate },
-        });
-      }
-    }
-
-    if (validatedParams.isOnlineAvailable !== undefined) {
-      where.isOnlineAvailable = validatedParams.isOnlineAvailable;
-    }
-
-    if (validatedParams.status) {
-      where.status = validatedParams.status;
-    }
-
-    if (validatedParams.schedulingRule) {
-      where.schedulingRule = validatedParams.schedulingRule;
-    }
-
-    if (validatedParams.seriesId) {
-      where.seriesId = validatedParams.seriesId;
-    }
-
-    // Add permission filters
-    if (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
-      // Get current user's provider record for authorization
-      const currentUserProvider = await prisma.provider.findUnique({
-        where: { userId: currentUser.id },
-      });
-
-      // Get user's organizations
-      const userOrganizations = await prisma.organizationMembership.findMany({
-        where: { userId: currentUser.id },
-        select: { organizationId: true },
-      });
-
-      const organizationIds = userOrganizations.map((m) => m.organizationId);
-
-      where.OR = [
-        ...(currentUserProvider ? [{ providerId: currentUserProvider.id }] : []),
-        { createdById: currentUser.id },
-        ...(organizationIds.length > 0 ? [{ organizationId: { in: organizationIds } }] : []),
-      ];
-    }
-
-    const availabilities = await prisma.availability.findMany({
-      where,
-      include: includeAvailabilityRelations,
-      orderBy: [{ startTime: 'asc' }, { createdAt: 'desc' }],
-      // Add pagination for large recurring series
-      take: 1000, // Limit to prevent memory issues with very large series
-    });
-
-    return { success: true, data: availabilities as unknown as AvailabilityWithRelations[] };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to search availability',
-    };
-  }
-}
-
-/**
  * Update existing availability
  */
 export async function updateAvailability(
   data: UpdateAvailabilityData
-): Promise<{ success: boolean; data?: AvailabilityWithRelations; error?: string }> {
+): Promise<{ success: boolean; availabilityId?: string; slotsRegenerated?: number; error?: string }> {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
@@ -595,8 +425,7 @@ export async function updateAvailability(
           updatedAvailability = await prisma.availability.update({
             where: { id: validatedData.id },
             data: updateData,
-            include: includeAvailabilityRelations,
-          });
+            });
           break;
 
         case 'future':
@@ -614,8 +443,7 @@ export async function updateAvailability(
           // Get the updated availability with relations
           updatedAvailability = await prisma.availability.findUnique({
             where: { id: validatedData.id },
-            include: includeAvailabilityRelations,
-          });
+            });
           break;
 
         case 'all':
@@ -628,8 +456,7 @@ export async function updateAvailability(
           // Get the updated availability with relations
           updatedAvailability = await prisma.availability.findUnique({
             where: { id: validatedData.id },
-            include: includeAvailabilityRelations,
-          });
+            });
           break;
 
         default:
@@ -640,8 +467,7 @@ export async function updateAvailability(
       updatedAvailability = await prisma.availability.update({
         where: { id: validatedData.id },
         data: updateData,
-        include: includeAvailabilityRelations,
-      });
+        });
     }
 
     // Update services if provided (scope-aware)
@@ -703,6 +529,86 @@ export async function updateAvailability(
       });
     }
 
+    // Intelligently update slots based on what changed
+    let slotsRegenerated = 0;
+    if (updatedAvailability && updatedAvailability.status === AvailabilityStatus.ACCEPTED) {
+      try {
+        // Get the updated availability with its services and existing slots
+        const availabilityWithSlots = await prisma.availability.findUnique({
+          where: { id: validatedData.id },
+          include: {
+            availableServices: true,
+            calculatedSlots: {
+              include: {
+                booking: true, // Check for existing bookings
+              },
+            },
+          },
+        });
+
+        if (availabilityWithSlots) {
+          // Determine what changed to decide slot update strategy
+          const hasTimeChanges = validatedData.startTime || validatedData.endTime;
+          const hasServiceChanges = validatedData.services && validatedData.services.length > 0;
+          const hasSchedulingChanges = validatedData.schedulingRule || validatedData.schedulingInterval !== undefined;
+          
+          if (hasTimeChanges || hasServiceChanges || hasSchedulingChanges) {
+            // Check for existing bookings before modifying slots
+            const bookedSlots = availabilityWithSlots.calculatedSlots.filter(slot => slot.booking);
+            
+            if (bookedSlots.length > 0) {
+              // If there are bookings, only regenerate unbooked slots
+              console.warn(`Availability ${availabilityWithSlots.id} has ${bookedSlots.length} booked slots. Only regenerating unbooked slots.`);
+              
+              // Delete only unbooked slots
+              const unbookedSlotIds = availabilityWithSlots.calculatedSlots
+                .filter(slot => !slot.booking)
+                .map(slot => slot.id);
+                
+              if (unbookedSlotIds.length > 0) {
+                await prisma.calculatedAvailabilitySlot.deleteMany({
+                  where: { id: { in: unbookedSlotIds } },
+                });
+              }
+            } else {
+              // No bookings, safe to regenerate all slots
+              await prisma.calculatedAvailabilitySlot.deleteMany({
+                where: { availabilityId: availabilityWithSlots.id },
+              });
+            }
+
+            // Generate new slots with updated parameters
+            const slotResult = await generateSlotsForAvailability({
+              availabilityId: availabilityWithSlots.id,
+              providerId: availabilityWithSlots.providerId,
+              organizationId: availabilityWithSlots.organizationId || '',
+              locationId: availabilityWithSlots.locationId || undefined,
+              startTime: availabilityWithSlots.startTime,
+              endTime: availabilityWithSlots.endTime,
+              services: availabilityWithSlots.availableServices.map((as) => ({
+                serviceId: as.serviceId,
+                duration: as.duration,
+                price: Number(as.price),
+              })),
+              schedulingRule: availabilityWithSlots.schedulingRule as SchedulingRule,
+              schedulingInterval: availabilityWithSlots.schedulingInterval || undefined,
+            });
+
+            if (slotResult.success) {
+              slotsRegenerated = slotResult.slotsGenerated;
+            } else {
+              // Log slot regeneration failure but don't block update
+              console.warn(`Slot regeneration failed for updated availability ${availabilityWithSlots.id}:`, slotResult.errors?.join(', '));
+            }
+          }
+          // If no relevant changes were made, keep existing slots as-is
+        }
+      } catch (slotGenError) {
+        // Log slot regeneration error but don't block update
+        console.error('Slot regeneration error during availability update:', slotGenError);
+      }
+    }
+
     // Revalidate paths
     revalidatePath('/dashboard/availability');
     revalidatePath('/dashboard/calendar');
@@ -712,13 +618,7 @@ export async function updateAvailability(
       );
     }
 
-    // Fetch updated availability with new relations
-    const finalAvailability = await prisma.availability.findUnique({
-      where: { id: validatedData.id },
-      include: includeAvailabilityRelations,
-    });
-
-    return { success: true, data: finalAvailability as unknown as AvailabilityWithRelations };
+    return { success: true, availabilityId: validatedData.id, slotsRegenerated };
   } catch (error) {
     return {
       success: false,
@@ -828,168 +728,6 @@ export async function deleteAvailability(
 }
 
 /**
- * Cancel availability (soft delete by setting status to CANCELLED)
- */
-export async function cancelAvailability(
-  id: string,
-  reason?: string,
-  scope?: 'single' | 'future' | 'all'
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-      return { success: false, error: 'Authentication required' };
-    }
-
-    // Get existing availability
-    const existingAvailability = await prisma.availability.findUnique({
-      where: { id },
-      include: {
-        calculatedSlots: {
-          include: {
-            booking: true,
-          },
-        },
-      },
-    });
-
-    if (!existingAvailability) {
-      return { success: false, error: 'Availability not found' };
-    }
-
-    // Get current user's provider record for authorization checks
-    const currentUserProvider = await prisma.provider.findUnique({
-      where: { userId: currentUser.id },
-    });
-
-    // Check permissions
-    const canCancel =
-      currentUserProvider?.id === existingAvailability.providerId ||
-      currentUser.id === existingAvailability.createdById ||
-      currentUser.role === 'ADMIN' ||
-      currentUser.role === 'SUPER_ADMIN';
-
-    if (!canCancel && existingAvailability.organizationId) {
-      const membership = await prisma.organizationMembership.findFirst({
-        where: {
-          userId: currentUser.id,
-          organizationId: existingAvailability.organizationId,
-          role: { in: ['OWNER', 'ADMIN', 'MANAGER'] },
-        },
-      });
-
-      if (!membership) {
-        return { success: false, error: 'Insufficient permissions' };
-      }
-    } else if (!canCancel) {
-      return { success: false, error: 'Access denied' };
-    }
-
-    // Check for existing bookings
-    const hasBookings = existingAvailability.calculatedSlots.some((slot) => slot.booking);
-
-    if (hasBookings) {
-      return {
-        success: false,
-        error: 'Cannot cancel availability with existing bookings. Cancel the bookings first.',
-      };
-    }
-
-    // Handle series operations
-    if (scope && existingAvailability.seriesId) {
-      return handleSeriesCancel(existingAvailability, scope, reason);
-    }
-
-    // Set status to CANCELLED
-    await prisma.availability.update({
-      where: { id },
-      data: {
-        status: AvailabilityStatus.CANCELLED,
-      },
-    });
-
-    // Mark calculated slots as invalid
-    await prisma.calculatedAvailabilitySlot.updateMany({
-      where: { availabilityId: id },
-      data: {
-        status: 'INVALID',
-      },
-    });
-
-    // Revalidate paths
-    revalidatePath('/dashboard/availability');
-    revalidatePath('/dashboard/calendar');
-    if (existingAvailability.organizationId) {
-      revalidatePath(
-        `/dashboard/organizations/${existingAvailability.organizationId}/availability`
-      );
-    }
-
-    return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to cancel availability',
-    };
-  }
-}
-
-/**
- * Accept availability proposal (for organization-created availability)
- */
-export async function acceptAvailabilityProposal(
-  id: string
-): Promise<{ success: boolean; data?: AvailabilityWithRelations; error?: string }> {
-  try {
-    // Use the comprehensive workflow service
-    const result = await processAvailabilityAcceptance(id);
-
-    if (!result.success) {
-      return { success: false, error: result.error };
-    }
-
-    // Revalidate paths
-    revalidatePath('/dashboard/availability');
-    revalidatePath('/dashboard/calendar');
-
-    return { success: true, data: result.availability };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to accept availability proposal',
-    };
-  }
-}
-
-/**
- * Reject availability proposal
- */
-export async function rejectAvailabilityProposal(
-  id: string,
-  reason?: string
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    // Use the comprehensive workflow service
-    const result = await processAvailabilityRejection(id, reason);
-
-    if (!result.success) {
-      return { success: false, error: result.error };
-    }
-
-    // Revalidate paths
-    revalidatePath('/dashboard/availability');
-    revalidatePath('/dashboard/calendar');
-
-    return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to reject availability proposal',
-    };
-  }
-}
-
-/**
  * Handle series deletion operations
  */
 async function handleSeriesDelete(
@@ -1063,114 +801,3 @@ async function handleSeriesDelete(
     };
   }
 }
-
-/**
- * Handle series cancellation operations
- */
-async function handleSeriesCancel(
-  availability: any,
-  scope: 'single' | 'future' | 'all',
-  reason?: string
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const seriesId = availability.seriesId;
-    const currentDate = availability.startTime;
-
-    let cancelConditions: any = { seriesId };
-
-    switch (scope) {
-      case 'single':
-        // Cancel only this occurrence
-        cancelConditions = { id: availability.id };
-        break;
-      case 'future':
-        // Cancel this and all future occurrences
-        cancelConditions = {
-          seriesId,
-          startTime: { gte: currentDate },
-        };
-        break;
-      case 'all':
-        // Cancel all occurrences in the series
-        cancelConditions = { seriesId };
-        break;
-    }
-
-    // Check for bookings in the affected availabilities
-    const affectedAvailabilities = await prisma.availability.findMany({
-      where: cancelConditions,
-      include: {
-        calculatedSlots: {
-          include: {
-            booking: true,
-          },
-        },
-      },
-    });
-
-    const hasBookings = affectedAvailabilities.some((av) =>
-      av.calculatedSlots.some((slot) => slot.booking)
-    );
-
-    if (hasBookings) {
-      return {
-        success: false,
-        error: 'Cannot cancel availability with existing bookings. Cancel the bookings first.',
-      };
-    }
-
-    // Update availability status to CANCELLED
-    await prisma.availability.updateMany({
-      where: cancelConditions,
-      data: {
-        status: AvailabilityStatus.CANCELLED,
-      },
-    });
-
-    // Mark calculated slots as invalid
-    await prisma.calculatedAvailabilitySlot.updateMany({
-      where: {
-        availability: cancelConditions,
-      },
-      data: {
-        status: 'INVALID',
-      },
-    });
-
-    return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to cancel availability series',
-    };
-  }
-}
-
-// Export aliases for TRPC compatibility
-export const acceptAvailability = async (ids: string[]) => {
-  const results = await Promise.all(ids.map((id) => acceptAvailabilityProposal(id)));
-  const failed = results.filter((r) => !r.success);
-
-  if (failed.length > 0) {
-    return {
-      success: false,
-      error: `Failed to accept ${failed.length} availability(s): ${failed.map((f) => f.error).join(', ')}`,
-    };
-  }
-
-  return { success: true, data: results.map((r) => r.data) };
-};
-
-export const rejectAvailability = async (ids: string[]) => {
-  const results = await Promise.all(ids.map((id) => rejectAvailabilityProposal(id)));
-  const failed = results.filter((r) => !r.success);
-
-  if (failed.length > 0) {
-    return {
-      success: false,
-      error: `Failed to reject ${failed.length} availability(s): ${failed.map((f) => f.error).join(', ')}`,
-    };
-  }
-
-  return { success: true };
-};

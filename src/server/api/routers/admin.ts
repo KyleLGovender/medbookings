@@ -1,8 +1,6 @@
-import { OrganizationStatus, ProviderStatus } from '@prisma/client';
 import { z } from 'zod';
 
 import {
-  adminRequirementRouteParamsSchema,
   adminRouteParamsSchema,
   adminSearchParamsSchema,
   approveOrganizationRequestSchema,
@@ -10,11 +8,18 @@ import {
   approveRequirementRequestSchema,
   rejectOrganizationRequestSchema,
   rejectProviderRequestSchema,
-  rejectRequirementRequestSchema,
+  rejectRequirementRequestSchema
 } from '@/features/admin/types/schemas';
 import { adminProcedure, createTRPCRouter } from '@/server/trpc';
 
 export const adminRouter = createTRPCRouter({
+  /*
+   * ====================================
+   * PROVIDER MANAGEMENT - QUERIES
+   * ====================================
+   * Endpoints for retrieving provider data
+   */
+
   /**
    * Get all providers (admin)
    * Migrated from: GET /api/admin/providers
@@ -118,6 +123,13 @@ export const adminRouter = createTRPCRouter({
 
       return provider.requirementSubmissions;
     }),
+
+  /*
+   * ====================================
+   * PROVIDER MANAGEMENT - MUTATIONS
+   * ====================================
+   * Endpoints for provider approval/rejection workflows
+   */
 
   /**
    * Approve provider
@@ -278,6 +290,13 @@ export const adminRouter = createTRPCRouter({
       return updatedProvider;
     }),
 
+  /*
+   * ====================================
+   * REQUIREMENT MANAGEMENT
+   * ====================================
+   * Endpoints for managing provider requirement submissions
+   */
+
   /**
    * Approve provider requirement
    * Migrated from: POST /api/admin/providers/[id]/requirements/[requirementId]/approve
@@ -386,6 +405,13 @@ export const adminRouter = createTRPCRouter({
       return updatedSubmission;
     }),
 
+  /*
+   * ====================================
+   * ORGANIZATION MANAGEMENT - QUERIES
+   * ====================================
+   * Endpoints for retrieving organization data
+   */
+
   /**
    * Get all organizations (admin)
    * Migrated from: GET /api/admin/organizations
@@ -454,6 +480,13 @@ export const adminRouter = createTRPCRouter({
 
       return organization;
     }),
+
+  /*
+   * ====================================
+   * ORGANIZATION MANAGEMENT - MUTATIONS
+   * ====================================
+   * Endpoints for organization approval/rejection workflows
+   */
 
   /**
    * Approve organization
@@ -586,6 +619,13 @@ export const adminRouter = createTRPCRouter({
 
       return updatedOrganization;
     }),
+
+  /*
+   * ====================================
+   * ADMIN UTILITIES
+   * ====================================
+   * Special administrative functions
+   */
 
   /**
    * Admin override login

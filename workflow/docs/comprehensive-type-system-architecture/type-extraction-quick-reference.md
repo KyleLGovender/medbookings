@@ -1,4 +1,10 @@
-# tRPC Type Extraction Quick Reference
+# tRPC Type Extraction Quick Reference - Option C
+
+## 🏗️ Option C Architecture
+- ✅ **tRPC procedures = ALL database queries** (automatic type inference)
+- ✅ **Server actions = ONLY business logic** (validation, notifications)
+- ✅ **Single query per endpoint** (optimal performance)
+- ✅ **Zero type drift** (Prisma → tRPC → Client)
 
 ## 🚀 Essential Imports
 
