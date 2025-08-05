@@ -82,6 +82,25 @@ export enum SlotGenerationStatus {
 // BASE INTERFACES (Client-safe versions of Prisma types)
 // =============================================================================
 
+// Slot creation data for database operations (used by slot-generation utilities)
+export interface SlotCreateData {
+  availabilityId: string;
+  serviceId: string;
+  serviceConfigId: string;
+  providerId: string;
+  organizationId: string;
+  locationId?: string;
+  startTime: Date;
+  endTime: Date;
+  duration: number;
+  price: number;
+  status: 'AVAILABLE';
+  isBlocked: boolean;
+  lastCalculated: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface OrganizationProvider {
   id: string;
   name: string;

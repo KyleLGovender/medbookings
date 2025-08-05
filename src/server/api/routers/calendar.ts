@@ -8,7 +8,7 @@ import {
   validateAvailabilityUpdate,
   validateAvailabilityDeletion
 } from '@/features/calendar/lib/actions';
-import { generateSlotsForAvailability } from '@/features/calendar/lib/slot-generation';
+import { generateSlotDataForAvailability } from '@/features/calendar/lib/slot-generation';
 import {
   availabilityCreateSchema,
   availabilitySearchParamsSchema,
@@ -171,7 +171,7 @@ export const calendarRouter = createTRPCRouter({
       if (validatedData.initialStatus === AvailabilityStatus.ACCEPTED) {
         for (const availability of availabilities) {
           try {
-            const slotResult = await generateSlotsForAvailability({
+            const slotData = generateSlotDataForAvailability({
               availabilityId: availability.id,
               startTime: availability.startTime,
               endTime: availability.endTime,
@@ -183,10 +183,14 @@ export const calendarRouter = createTRPCRouter({
               services: validatedData.services,
             });
 
-            if (slotResult.success) {
-              totalSlotsGenerated += slotResult.slotsGenerated;
-            } else {
-              console.warn(`Slot generation failed for availability ${availability.id}:`, slotResult.errors?.join(', '));
+            if (slotData.errors.length > 0) {
+              console.warn(`Slot generation failed for availability ${availability.id}:`, slotData.errors.join(', '));
+            } else if (slotData.slotRecords.length > 0) {
+              // Create slots in database (Option C: database operations in tRPC)
+              await tx.calculatedAvailabilitySlot.createMany({
+                data: slotData.slotRecords,
+              });
+              totalSlotsGenerated += slotData.totalSlots;
             }
           } catch (slotError) {
             console.error('Slot generation error during availability creation:', slotError);
@@ -406,7 +410,7 @@ export const calendarRouter = createTRPCRouter({
                 }
 
                 // Generate new slots with updated parameters
-                const slotResult = await generateSlotsForAvailability({
+                const slotData = generateSlotDataForAvailability({
                   availabilityId: availability.id,
                   providerId: availability.providerId,
                   organizationId: availability.organizationId || '',
@@ -422,10 +426,14 @@ export const calendarRouter = createTRPCRouter({
                   schedulingInterval: availability.schedulingInterval || undefined,
                 });
 
-                if (slotResult.success) {
-                  totalSlotsRegenerated += slotResult.slotsGenerated;
-                } else {
-                  console.warn(`Slot regeneration failed for availability ${availability.id}:`, slotResult.errors?.join(', '));
+                if (slotData.errors.length > 0) {
+                  console.warn(`Slot regeneration failed for availability ${availability.id}:`, slotData.errors.join(', '));
+                } else if (slotData.slotRecords.length > 0) {
+                  // Create new slots in database (Option C: database operations in tRPC)
+                  await tx.calculatedAvailabilitySlot.createMany({
+                    data: slotData.slotRecords,
+                  });
+                  totalSlotsRegenerated += slotData.totalSlots;
                 }
               } catch (slotGenError) {
                 console.error('Slot regeneration error during availability update:', slotGenError);
@@ -840,7 +848,7 @@ export const calendarRouter = createTRPCRouter({
 
       // Generate slots for the accepted availability
       try {
-        const slotResult = await generateSlotsForAvailability({
+        const slotData = generateSlotDataForAvailability({
           availabilityId: updatedAvailability.id,
           providerId: updatedAvailability.providerId,
           organizationId: updatedAvailability.organizationId || '',
@@ -856,8 +864,15 @@ export const calendarRouter = createTRPCRouter({
           schedulingInterval: updatedAvailability.schedulingInterval || undefined,
         });
 
-        if (!slotResult.success) {
-          console.warn(`Slot generation failed for accepted availability ${updatedAvailability.id}:`, slotResult.errors?.join(', '));
+        let slotsGenerated = 0;
+        if (slotData.errors.length > 0) {
+          console.warn(`Slot generation failed for accepted availability ${updatedAvailability.id}:`, slotData.errors.join(', '));
+        } else if (slotData.slotRecords.length > 0) {
+          // Create slots in database (Option C: database operations in tRPC)
+          await ctx.prisma.calculatedAvailabilitySlot.createMany({
+            data: slotData.slotRecords,
+          });
+          slotsGenerated = slotData.totalSlots;
         }
 
         console.log(`📧 Availability accepted notification would be sent for availability ${input.id}`);
@@ -865,7 +880,7 @@ export const calendarRouter = createTRPCRouter({
         return { 
           success: true, 
           id: input.id,
-          slotsGenerated: slotResult.success ? slotResult.slotsGenerated : 0
+          slotsGenerated
         };
       } catch (slotGenError) {
         console.warn(`Slot generation error for accepted availability ${input.id}:`, slotGenError);
