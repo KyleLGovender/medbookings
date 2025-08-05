@@ -1,13 +1,10 @@
 import { z } from 'zod';
+import { AvailabilityStatus, BillingEntity, SchedulingRule, SlotStatus } from '@prisma/client';
 
 import {
   AvailabilityContext,
-  AvailabilityStatus,
-  BillingEntity,
   DayOfWeek,
   RecurrenceOption,
-  SchedulingRule,
-  SlotStatus,
 } from '@/features/calendar/types/types';
 
 // Base Zod schemas for enums

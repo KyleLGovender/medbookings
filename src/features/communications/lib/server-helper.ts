@@ -186,3 +186,36 @@ export async function sendGuestVCardToProvider(booking: BookingView) {
     console.error('Error sending vCard:', error);
   }
 }
+
+/**
+ * Sends a WhatsApp confirmation message to the provider
+ * @param name - The name of the provider
+ * @param whatsappNumber - The WhatsApp number to send the message to
+ */
+export async function sendProviderWhatsappConfirmation(name: string, whatsappNumber: string) {
+  try {
+    if (!whatsappNumber) {
+      console.log('No WhatsApp number provided');
+      return;
+    }
+
+    // Prepare template variables
+    const templateVariables = JSON.stringify({
+      1: name,
+    });
+
+    // Send WhatsApp message
+    const message = await twilioClient.messages.create({
+      from: `whatsapp:${TwilioWhatsappNumber}`,
+      contentSid: 'HX4f483e7980984dd42aabf49b2cfdf537',
+      contentVariables: templateVariables,
+      to: `whatsapp:${whatsappNumber}`,
+    });
+
+    console.log('Provider WhatsApp confirmation sent successfully:', message.sid);
+    return message;
+  } catch (error) {
+    console.error('Error sending provider WhatsApp confirmation:', error);
+    throw error;
+  }
+}

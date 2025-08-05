@@ -63,6 +63,3 @@ export function serializeProvider(provider: any): any {
   };
 }
 
-// Backward compatibility export
-export const serializeServiceProvider = serializeProvider;
-

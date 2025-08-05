@@ -19,8 +19,15 @@
  * @author MedBookings Development Team
  * @version 1.0.0
  */
-// All type definitions for the calendar availability feature in one place
-// Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
+
+// Import database enums from Prisma to prevent type drift
+import { 
+  AvailabilityStatus, 
+  BillingEntity, 
+  SchedulingRule, 
+  SlotStatus 
+} from '@prisma/client';
+
 // =============================================================================
 // MIGRATION NOTES - SERVER DATA IMPORTS REMOVED
 // =============================================================================
@@ -34,35 +41,11 @@
 // Cross-feature types will be handled through tRPC procedures
 
 // =============================================================================
-// ENUMS
+// ENUMS (UI-SPECIFIC ONLY - Database enums imported from Prisma)
 // =============================================================================
 
-// Core availability enums (matching Prisma schema)
-export enum AvailabilityStatus {
-  PENDING = 'PENDING',
-  ACCEPTED = 'ACCEPTED',
-  REJECTED = 'REJECTED',
-  CANCELLED = 'CANCELLED',
-}
-
-export enum SchedulingRule {
-  CONTINUOUS = 'CONTINUOUS',
-  ON_THE_HOUR = 'ON_THE_HOUR',
-  ON_THE_HALF_HOUR = 'ON_THE_HALF_HOUR',
-}
-
-export enum SlotStatus {
-  AVAILABLE = 'AVAILABLE',
-  BOOKED = 'BOOKED',
-  BLOCKED = 'BLOCKED',
-  INVALID = 'INVALID',
-}
-
-export enum BillingEntity {
-  ORGANIZATION = 'ORGANIZATION',
-  LOCATION = 'LOCATION',
-  PROVIDER = 'PROVIDER',
-}
+// NOTE: Database enums (AvailabilityStatus, BillingEntity, SchedulingRule, SlotStatus) 
+// are imported from @prisma/client to prevent type drift
 
 // Simplified recurrence options (Google Calendar style)
 export enum RecurrenceOption {

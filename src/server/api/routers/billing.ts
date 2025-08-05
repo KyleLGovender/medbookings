@@ -4,10 +4,9 @@ import {
   cancelSubscriptionRequestSchema,
   createSubscriptionRequestSchema,
   getSubscriptionsQuerySchema,
-  subscriptionQueryOptionsSchema,
-  updateSubscriptionRequestSchema,
+  updateSubscriptionRequestSchema
 } from '@/features/billing/types/schemas';
-import { adminProcedure, createTRPCRouter, protectedProcedure } from '@/server/trpc';
+import { createTRPCRouter, protectedProcedure } from '@/server/trpc';
 
 export const billingRouter = createTRPCRouter({
   /**

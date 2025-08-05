@@ -1,9 +1,12 @@
+import { revalidatePath } from 'next/cache';
+
 import { z } from 'zod';
+import { Prisma, AvailabilityStatus, SchedulingRule } from '@prisma/client';
 
 import {
-  createAvailability,
-  deleteAvailability,
-  updateAvailability
+  validateAvailabilityCreation,
+  validateAvailabilityUpdate,
+  validateAvailabilityDeletion
 } from '@/features/calendar/lib/actions';
 import { generateSlotsForAvailability } from '@/features/calendar/lib/slot-generation';
 import {
@@ -11,7 +14,6 @@ import {
   availabilitySearchParamsSchema,
   updateAvailabilityDataSchema
 } from '@/features/calendar/types/schemas';
-import { AvailabilityStatus, SchedulingRule } from '@/features/calendar/types/types';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
 export const calendarRouter = createTRPCRouter({
@@ -87,37 +89,376 @@ export const calendarRouter = createTRPCRouter({
 
   /**
    * Create availability with slot generation
-   * Migrated from: POST /api/calendar/availability/create
+   * OPTION C: Complete database operations in tRPC procedure for automatic type inference
    */
   create: protectedProcedure.input(availabilityCreateSchema).mutation(async ({ ctx, input }) => {
-    const result = await createAvailability(input);
-
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to create availability');
+    // 1. Call business logic validation
+    const validation = await validateAvailabilityCreation(input);
+    
+    if (!validation.success) {
+      throw new Error(validation.error || 'Failed to validate availability creation');
     }
 
-    return result;
+    const { validatedData } = validation;
+    if (!validatedData) {
+      throw new Error('Validation data is missing');
+    }
+
+    // 2. Perform all database operations in single transaction
+    const result = await ctx.prisma.$transaction(async (tx) => {
+      // Create all availability instances
+      const availabilities = await Promise.all(
+        validatedData.instances.map(async (instance) => {
+          return tx.availability.create({
+            data: {
+              providerId: validatedData.providerId,
+              organizationId: validatedData.organizationId,
+              locationId: validatedData.locationId,
+              connectionId: validatedData.connectionId,
+              startTime: instance.startTime,
+              endTime: instance.endTime,
+              isRecurring: validatedData.isRecurring,
+              recurrencePattern: validatedData.recurrencePattern ? (validatedData.recurrencePattern as any) : Prisma.JsonNull,
+              seriesId: validatedData.seriesId || null,
+              schedulingRule: validatedData.schedulingRule,
+              schedulingInterval: validatedData.schedulingInterval,
+              isOnlineAvailable: validatedData.isOnlineAvailable,
+              requiresConfirmation: validatedData.requiresConfirmation,
+              billingEntity: validatedData.billingEntity,
+              status: validatedData.initialStatus,
+              createdById: ctx.session.user.id,
+              createdByMembershipId: validatedData.createdByMembershipId,
+              defaultSubscriptionId: validatedData.defaultSubscriptionId,
+              availableServices: {
+                create: validatedData.services.map((service) => ({
+                  service: { connect: { id: service.serviceId } },
+                  provider: { connect: { id: validatedData.providerId } },
+                  duration: service.duration,
+                  price: service.price,
+                  isOnlineAvailable: validatedData.isOnlineAvailable,
+                  isInPerson: !validatedData.isOnlineAvailable || !!validatedData.locationId,
+                  locationId: validatedData.locationId,
+                })),
+              },
+            },
+            include: {
+              provider: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                      image: true,
+                    },
+                  },
+                },
+              },
+              organization: true,
+              location: true,
+              availableServices: {
+                include: {
+                  service: true,
+                },
+              },
+            },
+          });
+        })
+      );
+
+      // Generate slots for accepted availability (provider-created is auto-accepted)
+      let totalSlotsGenerated = 0;
+      if (validatedData.initialStatus === AvailabilityStatus.ACCEPTED) {
+        for (const availability of availabilities) {
+          try {
+            const slotResult = await generateSlotsForAvailability({
+              availabilityId: availability.id,
+              startTime: availability.startTime,
+              endTime: availability.endTime,
+              providerId: availability.providerId,
+              organizationId: availability.organizationId || '',
+              locationId: availability.locationId || undefined,
+              schedulingRule: availability.schedulingRule as SchedulingRule,
+              schedulingInterval: availability.schedulingInterval || undefined,
+              services: validatedData.services,
+            });
+
+            if (slotResult.success) {
+              totalSlotsGenerated += slotResult.slotsGenerated;
+            } else {
+              console.warn(`Slot generation failed for availability ${availability.id}:`, slotResult.errors?.join(', '));
+            }
+          } catch (slotError) {
+            console.error('Slot generation error during availability creation:', slotError);
+          }
+        }
+      }
+
+      return { availabilities, totalSlotsGenerated };
+    });
+
+    // 3. Handle notifications and cache revalidation
+    if (validation.notificationNeeded) {
+      console.log(`📧 Availability proposal notification would be sent for availability ${result.availabilities[0]?.id}`);
+    }
+
+    // Revalidate relevant paths
+    revalidatePath('/dashboard/availability');
+    revalidatePath('/dashboard/calendar');
+    if (validatedData.organizationId) {
+      revalidatePath(`/dashboard/organizations/${validatedData.organizationId}/availability`);
+    }
+
+    // 4. Return full typed data (automatic inference from Prisma includes)
+    return {
+      availability: result.availabilities[0], // Full availability object with relations
+      allAvailabilities: result.availabilities,
+      allAvailabilityIds: result.availabilities.map(a => a.id),
+      seriesId: validatedData.seriesId,
+      slotsGenerated: result.totalSlotsGenerated,
+      requiresApproval: validation.requiresApproval || false,
+      notificationSent: validation.notificationNeeded || false,
+    };
   }),
 
   /**
    * Update availability with slot regeneration
-   * Migrated from: PUT /api/calendar/availability/update
+   * OPTION C: Complete database operations in tRPC procedure for automatic type inference
    */
   update: protectedProcedure
     .input(updateAvailabilityDataSchema)
     .mutation(async ({ ctx, input }) => {
-      const result = await updateAvailability(input);
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to update availability');
+      // 1. Call business logic validation
+      const validation = await validateAvailabilityUpdate(input);
+      
+      if (!validation.success) {
+        throw new Error(validation.error || 'Failed to validate availability update');
       }
 
-      return result;
+      const { validatedData } = validation;
+      if (!validatedData) {
+        throw new Error('Validation data is missing');
+      }
+
+      // 2. Perform all database operations in single transaction
+      const result = await ctx.prisma.$transaction(async (tx) => {
+        // Prepare update data
+        const updateData: any = {};
+        if (validatedData.startTime !== undefined) updateData.startTime = validatedData.startTime;
+        if (validatedData.endTime !== undefined) updateData.endTime = validatedData.endTime;
+        if (validatedData.isRecurring !== undefined) updateData.isRecurring = validatedData.isRecurring;
+        if (validatedData.recurrencePattern !== undefined) {
+          updateData.recurrencePattern = validatedData.recurrencePattern ? (validatedData.recurrencePattern as any) : Prisma.JsonNull;
+        }
+        if (validatedData.schedulingRule !== undefined) updateData.schedulingRule = validatedData.schedulingRule;
+        if (validatedData.schedulingInterval !== undefined) updateData.schedulingInterval = validatedData.schedulingInterval;
+        if (validatedData.isOnlineAvailable !== undefined) updateData.isOnlineAvailable = validatedData.isOnlineAvailable;
+        if (validatedData.requiresConfirmation !== undefined) updateData.requiresConfirmation = validatedData.requiresConfirmation;
+        if (validatedData.billingEntity !== undefined) updateData.billingEntity = validatedData.billingEntity;
+
+        // Handle scope-based updates
+        let updatedAvailabilities;
+        
+        if (validatedData.updateStrategy === 'single') {
+          // Update only the target availability
+          const updated = await tx.availability.update({
+            where: { id: validatedData.id },
+            data: updateData,
+            include: {
+              provider: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                      image: true,
+                    },
+                  },
+                },
+              },
+              organization: true,
+              location: true,
+              availableServices: {
+                include: {
+                  service: true,
+                },
+              },
+              calculatedSlots: {
+                include: {
+                  booking: true,
+                },
+              },
+            },
+          });
+          updatedAvailabilities = [updated];
+        } else {
+          // Handle scope-based batch updates (future/all)
+          const { existingAvailability } = validatedData;
+          const currentDate = new Date(existingAvailability.startTime);
+          
+          let whereCondition: any;
+          if (validatedData.updateStrategy === 'future') {
+            whereCondition = {
+              seriesId: existingAvailability.seriesId,
+              startTime: { gte: currentDate },
+            };
+          } else { // 'all'
+            whereCondition = {
+              seriesId: existingAvailability.seriesId,
+            };
+          }
+
+          // Batch update
+          await tx.availability.updateMany({
+            where: whereCondition,
+            data: updateData,
+          });
+
+          // Get updated availabilities with relations
+          updatedAvailabilities = await tx.availability.findMany({
+            where: { id: { in: validatedData.affectedAvailabilityIds || [] } },
+            include: {
+              provider: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                      image: true,
+                    },
+                  },
+                },
+              },
+              organization: true,
+              location: true,
+              availableServices: {
+                include: {
+                  service: true,
+                },
+              },
+              calculatedSlots: {
+                include: {
+                  booking: true,
+                },
+              },
+            },
+          });
+        }
+
+        // Update services if provided
+        if (validatedData.services) {
+          // Delete existing service configs for affected availabilities
+          await tx.serviceAvailabilityConfig.deleteMany({
+            where: { 
+              availabilities: { 
+                some: { 
+                  id: { in: validatedData.affectedAvailabilityIds || [] } 
+                } 
+              } 
+            },
+          });
+
+          // Create new service configs for all affected availabilities
+          const serviceConfigs = (validatedData.affectedAvailabilityIds || []).flatMap(() =>
+            validatedData.services!.map((service) => ({
+              serviceId: service.serviceId,
+              providerId: validatedData.existingAvailability.providerId,
+              duration: service.duration,
+              price: service.price,
+              isOnlineAvailable: validatedData.isOnlineAvailable || false,
+              isInPerson: !validatedData.isOnlineAvailable || !!validatedData.locationId,
+              locationId: validatedData.locationId,
+            }))
+          );
+
+          await tx.serviceAvailabilityConfig.createMany({
+            data: serviceConfigs,
+          });
+        }
+
+        // Handle slot regeneration if needed
+        let totalSlotsRegenerated = 0;
+        if (validatedData.needsSlotRegeneration) {
+          for (const availability of updatedAvailabilities) {
+            if (availability.status === AvailabilityStatus.ACCEPTED) {
+              try {
+                // Check for existing bookings before modifying slots
+                const bookedSlots = availability.calculatedSlots.filter(slot => slot.booking);
+                
+                if (bookedSlots.length > 0) {
+                  // Delete only unbooked slots
+                  const unbookedSlotIds = availability.calculatedSlots
+                    .filter(slot => !slot.booking)
+                    .map(slot => slot.id);
+                    
+                  if (unbookedSlotIds.length > 0) {
+                    await tx.calculatedAvailabilitySlot.deleteMany({
+                      where: { id: { in: unbookedSlotIds } },
+                    });
+                  }
+                } else {
+                  // No bookings, safe to regenerate all slots
+                  await tx.calculatedAvailabilitySlot.deleteMany({
+                    where: { availabilityId: availability.id },
+                  });
+                }
+
+                // Generate new slots with updated parameters
+                const slotResult = await generateSlotsForAvailability({
+                  availabilityId: availability.id,
+                  providerId: availability.providerId,
+                  organizationId: availability.organizationId || '',
+                  locationId: availability.locationId || undefined,
+                  startTime: availability.startTime,
+                  endTime: availability.endTime,
+                  services: availability.availableServices.map((as) => ({
+                    serviceId: as.serviceId,
+                    duration: as.duration,
+                    price: Number(as.price),
+                  })),
+                  schedulingRule: availability.schedulingRule as SchedulingRule,
+                  schedulingInterval: availability.schedulingInterval || undefined,
+                });
+
+                if (slotResult.success) {
+                  totalSlotsRegenerated += slotResult.slotsGenerated;
+                } else {
+                  console.warn(`Slot regeneration failed for availability ${availability.id}:`, slotResult.errors?.join(', '));
+                }
+              } catch (slotGenError) {
+                console.error('Slot regeneration error during availability update:', slotGenError);
+              }
+            }
+          }
+        }
+
+        return { updatedAvailabilities, totalSlotsRegenerated };
+      });
+
+      // 3. Handle cache revalidation
+      const { existingAvailability } = validatedData;
+      
+      revalidatePath('/dashboard/availability');
+      revalidatePath('/dashboard/calendar');
+      if (existingAvailability.organizationId) {
+        revalidatePath(`/dashboard/organizations/${existingAvailability.organizationId}/availability`);
+      }
+
+      // 4. Return full typed data (automatic inference from Prisma includes)
+      return {
+        availability: result.updatedAvailabilities[0], // Primary updated availability with relations
+        allUpdatedAvailabilities: result.updatedAvailabilities,
+        affectedAvailabilityIds: validatedData.affectedAvailabilityIds || [],
+        updateScope: validatedData.updateStrategy,
+        slotsRegenerated: result.totalSlotsRegenerated,
+      };
     }),
 
   /**
    * Delete availability
-   * Migrated from: DELETE /api/calendar/availability/delete
+   * OPTION C: Complete database operations in tRPC procedure for automatic type inference
    */
   delete: protectedProcedure
     .input(
@@ -127,21 +468,13 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Handle single availability deletion with scope
       if (input.ids.length === 1 && input.scope) {
-        const result = await deleteAvailability(input.ids[0], input.scope);
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to delete availability');
-        }
-        return result;
-      } else {
-        const results = await Promise.all(input.ids.map((id) => deleteAvailability(id)));
-
-        const failed = results.filter((r) => !r.success);
-        if (failed.length > 0) {
-          throw new Error(`Failed to delete ${failed.length} availability(s)`);
-        }
-
-        return { success: true };
+        return deleteSingleAvailability(ctx, input.ids[0], input.scope);
+      } 
+      // Handle batch deletion (no scope support for batch)
+      else {
+        return deleteBatchAvailabilities(ctx, input.ids);
       }
     }),
 
@@ -736,3 +1069,131 @@ export const calendarRouter = createTRPCRouter({
     }),
 
 });
+
+/**
+ * Handle single availability deletion with scope support
+ */
+async function deleteSingleAvailability(
+  ctx: { prisma: typeof import('@/lib/prisma').prisma; session: { user: { id: string } } },
+  id: string,
+  scope?: 'single' | 'future' | 'all'
+) {
+  // 1. Call business logic validation
+  const validation = await validateAvailabilityDeletion(id, scope);
+  
+  if (!validation.success) {
+    throw new Error(validation.error || 'Failed to validate availability deletion');
+  }
+
+  const { validatedData } = validation;
+  if (!validatedData) {
+    throw new Error('Validation data is missing');
+  }
+
+  // 2. Perform all database operations in single transaction
+  const result = await ctx.prisma.$transaction(async (tx) => {
+    // Get affected availabilities with full relations before deletion
+    const affectedAvailabilities = await tx.availability.findMany({
+      where: { id: { in: validatedData.affectedAvailabilityIds } },
+      include: {
+        provider: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+              },
+            },
+          },
+        },
+        organization: true,
+        location: true,
+        calculatedSlots: {
+          include: {
+            booking: true,
+          },
+        },
+      },
+    });
+
+    // Count slots to be deleted
+    const slotsToDelete = affectedAvailabilities.reduce(
+      (total: number, availability) => total + availability.calculatedSlots.length,
+      0
+    );
+
+    // Delete calculated slots first (referential integrity)
+    await tx.calculatedAvailabilitySlot.deleteMany({
+      where: { availabilityId: { in: validatedData.affectedAvailabilityIds } },
+    });
+
+    // Delete availability records
+    await tx.availability.deleteMany({
+      where: { id: { in: validatedData.affectedAvailabilityIds } },
+    });
+
+    return { affectedAvailabilities, slotsDeleted: slotsToDelete };
+  });
+
+  // 3. Handle cache revalidation
+  const { existingAvailability } = validatedData;
+  
+  revalidatePath('/dashboard/availability');
+  revalidatePath('/dashboard/calendar');
+  if (existingAvailability.organizationId) {
+    revalidatePath(`/dashboard/organizations/${existingAvailability.organizationId}/availability`);
+  }
+
+  // 4. Return full typed data (automatic inference from Prisma includes)
+  return {
+    deletedAvailabilities: result.affectedAvailabilities, // Full objects before deletion
+    deletedCount: result.affectedAvailabilities.length,
+    slotsDeleted: result.slotsDeleted,
+    deleteScope: validatedData.deleteStrategy,
+    affectedSeriesId: existingAvailability.seriesId,
+    organizationId: existingAvailability.organizationId,
+  };
+}
+
+/**
+ * Handle batch availability deletion (no scope support)
+ */
+async function deleteBatchAvailabilities(
+  ctx: { prisma: typeof import('@/lib/prisma').prisma; session: { user: { id: string } } }, 
+  ids: string[]
+) {
+  const results = [];
+  const errors = [];
+
+  // Process each deletion individually for better error handling
+  for (const id of ids) {
+    try {
+      const result = await deleteSingleAvailability(ctx, id, 'single');
+      results.push(result);
+    } catch (error) {
+      errors.push({
+        id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Failed to delete ${errors.length} availability(s): ${errors.map(e => `${e.id}: ${e.error}`).join(', ')}`);
+  }
+
+  // Combine results
+  const allDeletedAvailabilities = results.flatMap(r => r.deletedAvailabilities);
+  const totalDeleted = results.reduce((sum, r) => sum + r.deletedCount, 0);
+  const totalSlotsDeleted = results.reduce((sum, r) => sum + r.slotsDeleted, 0);
+
+  return {
+    deletedAvailabilities: allDeletedAvailabilities,
+    deletedCount: totalDeleted,
+    slotsDeleted: totalSlotsDeleted,
+    deleteScope: 'batch' as const,
+    batchResults: results,
+  };
+}

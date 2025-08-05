@@ -59,26 +59,35 @@ The MedBookings platform requires a complete migration to a **dual-source type s
 
 ### 4. Manual Type Organization Requirements
 4.1. Manual types must be organized in `/src/features/[feature-name]/types/` with the structure:
-   - `types.ts` - Domain enums, business logic types, utility types
+   - `types.ts` - Business logic types, client-only types, utility types (NO Prisma enum duplicates)
    - `schemas.ts` - Zod validation schemas for forms and user input  
    - `guards.ts` - Type guard functions for runtime type checking
 4.2. Direct imports only: `import { Type } from '@/features/calendar/types/types'`
 4.3. NO barrel exports: `import { Type } from '@/features/calendar/types'` is forbidden
-4.4. Manual types limited to: Domain enums, form schemas, business logic, type guards, client-only types
+4.4. Manual types limited to: Client-only types, form schemas, business logic, type guards, calculated types
+4.5. All Prisma enums must be imported directly from `@prisma/client` - NO manual duplication
 
-### 5. Migration Requirements for Existing Code
-5.1. **Type File Audit** (31 files): Remove server data interfaces, keep only domain logic types
-5.2. **Server-Side Library Integration** (All `/src/features/*/lib/` files): Convert server actions to business logic only, move database queries to tRPC procedures
-5.3. **Hook Migration** (27 files): Remove type exports, ensure tRPC-only calls, simplify to thin wrappers
-5.4. **Component Migration** (77 files): Replace manual type imports with tRPC type extraction
-5.5. **Page Component Migration** (54 files): Apply same component migration patterns
-5.6. **Performance Optimization**: Eliminate duplicate database queries through efficient tRPC patterns
+### 5. Prisma Type Import Requirements
+5.1. **Direct Imports Only**: All Prisma enums must be imported from `@prisma/client` - no manual duplication
+5.2. **Remove Duplicate Enums**: Delete all manually defined enums that exist in Prisma schema
+5.3. **Update Import Paths**: Change all enum imports from feature type files to `@prisma/client`
+5.4. **Keep Domain Types**: Retain client-only types, business logic types, and calculated types
+5.5. **Zod Integration**: Use `z.nativeEnum(PrismaEnum)` for schema validation with Prisma enums
 
-### 6. Documentation Requirements
-6.1. Update `/CLAUDE.md` with complete type system architecture documentation
-6.2. Update `/src/workflow/docs/` with migration guides and examples
-6.3. Create developer onboarding guide for the type system patterns
-6.4. Document all type extraction patterns with real examples
+### 6. Migration Requirements for Existing Code
+6.1. **Type File Audit** (31 files): Remove server data interfaces AND Prisma enum duplicates, keep only domain logic types
+6.2. **Server-Side Library Integration** (All `/src/features/*/lib/` files): Convert server actions to business logic only, move database queries to tRPC procedures
+6.3. **Hook Migration** (27 files): Remove type exports, ensure tRPC-only calls, simplify to thin wrappers
+6.4. **Component Migration** (77 files): Replace manual type imports with tRPC type extraction and Prisma enum imports
+6.5. **Page Component Migration** (54 files): Apply same component migration patterns
+6.6. **Performance Optimization**: Eliminate duplicate database queries through efficient tRPC patterns
+
+### 7. Documentation Requirements
+7.1. Update `/CLAUDE.md` with complete type system architecture documentation
+7.2. Update `/src/workflow/docs/` with migration guides and examples
+7.3. Create developer onboarding guide for the type system patterns
+7.4. Document all type extraction patterns with real examples
+7.5. Document Prisma type import patterns and migration guide
 
 ## Non-Goals (Out of Scope)
 
@@ -99,9 +108,11 @@ The MedBookings platform requires a complete migration to a **dual-source type s
 - [ ] No manual include configurations (e.g., `includeAvailabilityRelations`) in any files
 - [ ] All hooks are thin tRPC wrappers without type exports  
 - [ ] All components extract types from `RouterOutputs`
-- [ ] All manual types limited to domain logic only
-- [ ] No client code imports Prisma directly
-- [ ] Clear separation between tRPC types and manual types
+- [ ] All manual types limited to domain logic only (no Prisma enum duplicates)
+- [ ] All Prisma enums imported directly from `@prisma/client`
+- [ ] No manually duplicated enums that exist in Prisma schema
+- [ ] No client code imports Prisma directly (except for enum imports)
+- [ ] Clear separation between tRPC types, Prisma enums, and manual types
 - [ ] Utility functions and non-database helpers can remain in `/src/features/*/lib/`
 - [ ] No orphaned database operations outside of tRPC procedures
 

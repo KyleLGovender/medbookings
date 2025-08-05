@@ -2,12 +2,8 @@ import { z } from 'zod';
 
 import { Languages } from '@prisma/client';
 
-import { serializeProvider, serializeServiceProvider } from '@/features/providers/lib/helper';
-import {
-  getApprovedProviders
-} from '@/features/providers/lib/queries';
-import { searchProviders } from '@/features/providers/lib/search';
-import { sendProviderWhatsappConfirmation } from '@/features/providers/lib/server-helper';
+import { serializeProvider } from '@/features/providers/lib/helper';
+import { sendProviderWhatsappConfirmation } from '@/features/communications/lib/server-helper';
 import {
   ConnectionUpdateSchema,
   InvitationResponseSchema,
@@ -16,8 +12,6 @@ import {
   regulatoryRequirementsSchema,
   servicesSchema,
 } from '@/features/providers/types/schemas';
-import { getCurrentUser } from '@/lib/auth';
-import { isInvitationExpired } from '@/lib/invitation-utils';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
 export const providersRouter = createTRPCRouter({
@@ -126,7 +120,7 @@ export const providersRouter = createTRPCRouter({
       }
 
       // Serialize the provider data to handle Decimal values and dates
-      return serializeServiceProvider(provider);
+      return serializeProvider(provider);
     }),
 
   /**
@@ -179,9 +173,43 @@ export const providersRouter = createTRPCRouter({
   /**
    * Get all approved providers  
    * Migrated from: getApprovedProviders() lib function
+   * Database query moved to tRPC procedure for Option C compliance
    */
-  getApproved: publicProcedure.query(async () => {
-    return await getApprovedProviders();
+  getApproved: publicProcedure.query(async ({ ctx }) => {
+    const providers = await ctx.prisma.provider.findMany({
+      where: {
+        status: 'APPROVED', // Only fetch approved providers
+      },
+      include: {
+        typeAssignments: {
+          include: {
+            providerType: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
+          },
+        },
+        services: true,
+        user: {
+          select: {
+            email: true,
+          },
+        },
+        requirementSubmissions: {
+          include: {
+            requirementType: true,
+          },
+        },
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    return providers.map((provider) => serializeProvider(provider));
   }),
 
   // ============================================================================
@@ -191,6 +219,7 @@ export const providersRouter = createTRPCRouter({
   /**
    * Search providers
    * Migrated from: GET /api/providers
+   * Database query moved to tRPC procedure for Option C compliance
    */
   search: publicProcedure
     .input(
@@ -201,7 +230,121 @@ export const providersRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      return searchProviders(input);
+      const {
+        search,
+        typeIds = [],
+        status = 'APPROVED',
+        page = 1,
+        limit = 50,
+        includeServices = true,
+        includeRequirements = false,
+      } = input;
+
+      // Convert page to offset
+      const offset = (page - 1) * limit;
+
+      // Build optimized where clause
+      const where: any = {
+        status: status as any,
+      };
+
+      // Add search filter with optimized text search
+      if (search) {
+        where.OR = [
+          {
+            name: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+          {
+            user: {
+              email: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          },
+          {
+            bio: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+        ];
+      }
+
+      // Optimized type filter using the indexed n:n relationship
+      if (typeIds.length > 0) {
+        where.typeAssignments = {
+          some: {
+            providerTypeId: {
+              in: typeIds,
+            },
+          },
+        };
+      }
+
+      // Build optimized include clause based on requirements
+      const include: any = {
+        user: {
+          select: {
+            email: true,
+          },
+        },
+        typeAssignments: {
+          include: {
+            providerType: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
+          },
+        },
+      };
+
+      // Conditionally include services to avoid unnecessary JOINs
+      if (includeServices) {
+        include.services = true;
+      }
+
+      // Conditionally include requirements to avoid unnecessary JOINs
+      if (includeRequirements) {
+        include.requirementSubmissions = {
+          include: {
+            requirementType: true,
+          },
+        };
+      }
+
+      // Execute optimized query with pagination
+      const [providers, total] = await Promise.all([
+        ctx.prisma.provider.findMany({
+          where,
+          include,
+          orderBy: {
+            name: 'asc',
+          },
+          take: limit,
+          skip: offset,
+        }),
+        ctx.prisma.provider.count({ where }),
+      ]);
+
+      // Serialize providers for JSON response
+      const serializedProviders = providers.map((provider) => serializeProvider(provider));
+
+      return {
+        providers: serializedProviders,
+        pagination: {
+          total,
+          limit,
+          offset,
+          hasMore: offset + limit < total,
+        },
+      };
     }),
 
   // ============================================================================
@@ -1262,15 +1405,9 @@ export const providersRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const currentUser = await getCurrentUser();
-
-      if (!currentUser) {
-        throw new Error('Unauthorized');
-      }
-
       // Find the service provider for the current user
       const provider = await ctx.prisma.provider.findUnique({
-        where: { userId: currentUser.id },
+        where: { userId: ctx.session.user.id },
       });
 
       if (!provider) {
@@ -1321,15 +1458,9 @@ export const providersRouter = createTRPCRouter({
         .merge(ConnectionUpdateSchema)
     )
     .mutation(async ({ ctx, input }) => {
-      const currentUser = await getCurrentUser();
-
-      if (!currentUser) {
-        throw new Error('Unauthorized');
-      }
-
       // Find the service provider for the current user
       const provider = await ctx.prisma.provider.findUnique({
-        where: { userId: currentUser.id },
+        where: { userId: ctx.session.user.id },
       });
 
       if (!provider) {
@@ -1410,15 +1541,9 @@ export const providersRouter = createTRPCRouter({
   deleteConnection: protectedProcedure
     .input(z.object({ connectionId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const currentUser = await getCurrentUser();
-
-      if (!currentUser) {
-        throw new Error('Unauthorized');
-      }
-
       // Find the service provider for the current user
       const provider = await ctx.prisma.provider.findUnique({
-        where: { userId: currentUser.id },
+        where: { userId: ctx.session.user.id },
       });
 
       if (!provider) {
@@ -1481,19 +1606,13 @@ export const providersRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const currentUser = await getCurrentUser();
-
-      if (!currentUser) {
-        throw new Error('Unauthorized');
-      }
-
-      if (!currentUser.email) {
+      if (!ctx.session.user.email) {
         throw new Error('User email is required to check for invitations');
       }
 
       // Build where clause
       const whereClause: any = {
-        email: currentUser.email,
+        email: ctx.session.user.email,
       };
 
       if (input.status) {
@@ -1524,7 +1643,7 @@ export const providersRouter = createTRPCRouter({
 
       // Check for expired invitations and update them
       const expiredInvitations = invitations.filter(
-        (invitation) => invitation.status === 'PENDING' && isInvitationExpired(invitation.expiresAt)
+        (invitation) => invitation.status === 'PENDING' && new Date() > invitation.expiresAt
       );
 
       if (expiredInvitations.length > 0) {
@@ -1604,11 +1723,6 @@ export const providersRouter = createTRPCRouter({
         .merge(InvitationResponseSchema)
     )
     .mutation(async ({ ctx, input }) => {
-      const currentUser = await getCurrentUser();
-
-      if (!currentUser) {
-        throw new Error('Unauthorized');
-      }
 
       // Find the invitation
       const invitation = await ctx.prisma.providerInvitation.findUnique({
@@ -1628,7 +1742,7 @@ export const providersRouter = createTRPCRouter({
       }
 
       // Check if invitation has expired
-      if (isInvitationExpired(invitation.expiresAt)) {
+      if (new Date() > invitation.expiresAt) {
         await ctx.prisma.providerInvitation.update({
           where: { id: invitation.id },
           data: { status: 'EXPIRED' },
@@ -1643,13 +1757,13 @@ export const providersRouter = createTRPCRouter({
       }
 
       // Verify the invitation is for the current user's email
-      if (invitation.email !== currentUser.email) {
+      if (invitation.email !== ctx.session.user.email) {
         throw new Error('This invitation is not for your email address');
       }
 
       // Find service provider for the current user
       const provider = await ctx.prisma.provider.findUnique({
-        where: { userId: currentUser.id },
+        where: { userId: ctx.session.user.id },
       });
 
       if (!provider) {

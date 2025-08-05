@@ -1,18 +1,14 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
 
-import { Prisma } from '@prisma/client';
+import { AvailabilityStatus, BillingEntity } from '@prisma/client';
 
 import {
   createAvailabilityDataSchema,
   updateAvailabilityDataSchema,
 } from '@/features/calendar/types/schemas';
 import {
-  AvailabilityStatus,
-  BillingEntity,
   CreateAvailabilityData,
-  SchedulingRule,
   UpdateAvailabilityData
 } from '@/features/calendar/types/types';
 import { UserRole } from '@/features/profile/types/types';
@@ -24,21 +20,25 @@ import {
   validateRecurringAvailability
 } from './availability-validation';
 import { generateRecurringInstances } from './recurrence-utils';
-import { generateSlotsForAvailability } from './slot-generation';
 
 /**
- * Create new availability period
+ * Validate availability creation and prepare data for database operations
+ * OPTION C: Business logic only - no database operations
  */
-export async function createAvailability(
+export async function validateAvailabilityCreation(
   data: CreateAvailabilityData
 ): Promise<{ 
-  success: boolean; 
-  availabilityId?: string;
-  seriesId?: string;
-  allAvailabilityIds?: string[];
+  success: boolean;
+  validatedData?: CreateAvailabilityData & {
+    instances: Array<{ startTime: Date; endTime: Date }>;
+    seriesId?: string;
+    initialStatus: AvailabilityStatus;
+    billingEntity: BillingEntity;
+    createdByMembershipId?: string;
+    isProviderCreated: boolean;
+  };
   requiresApproval?: boolean;
-  notificationsSent?: boolean;
-  slotsGenerated?: number;
+  notificationNeeded?: boolean;
   error?: string;
 }> {
   try {
@@ -83,7 +83,6 @@ export async function createAvailability(
     }
 
     // Determine initial status based on context
-    // Check if current user is the service provider by comparing Provider IDs
     const isProviderCreated = currentUserProvider?.id === validatedData.providerId;
     const initialStatus = isProviderCreated
       ? AvailabilityStatus.ACCEPTED
@@ -97,7 +96,7 @@ export async function createAvailability(
     // Generate series ID for recurring availability
     const seriesId = validatedData.isRecurring
       ? validatedData.seriesId || crypto.randomUUID()
-      : null;
+      : undefined;
 
     // Get current organization membership for context
     const createdByMembership = validatedData.organizationId
@@ -182,115 +181,45 @@ export async function createAvailability(
       }
     }
 
-    // Create availability instances
-    const availabilities = await Promise.all(
-      instances.map(async (instance) => {
-        return prisma.availability.create({
-          data: {
-            providerId: validatedData.providerId,
-            organizationId: validatedData.organizationId,
-            locationId: validatedData.locationId,
-            connectionId: validatedData.connectionId,
-            startTime: instance.startTime,
-            endTime: instance.endTime,
-            isRecurring: validatedData.isRecurring,
-            recurrencePattern: validatedData.recurrencePattern || Prisma.JsonNull,
-            seriesId,
-            schedulingRule: validatedData.schedulingRule,
-            schedulingInterval: validatedData.schedulingInterval,
-            isOnlineAvailable: validatedData.isOnlineAvailable,
-            requiresConfirmation: validatedData.requiresConfirmation,
-            billingEntity: billingEntity || null,
-            status: initialStatus,
-            createdById: currentUser.id,
-            createdByMembershipId: createdByMembership?.id,
-            defaultSubscriptionId: validatedData.defaultSubscriptionId,
-            availableServices: {
-              create: validatedData.services.map((service) => ({
-                service: { connect: { id: service.serviceId } },
-                provider: { connect: { id: validatedData.providerId } },
-                duration: service.duration,
-                price: service.price,
-                isOnlineAvailable: validatedData.isOnlineAvailable, // Use availability-level setting
-                isInPerson: !validatedData.isOnlineAvailable || !!validatedData.locationId, // True if not online-only or has location
-                locationId: validatedData.locationId, // Use availability-level location
-              })),
-            },
-          },
-        });
-      })
-    );
-
-    // Return the first availability instance (master instance)
-    const availability = availabilities[0];
-
-    // Generate slots for accepted availability (provider-created is auto-accepted)
-    let totalSlotsGenerated = 0;
-    if (availability.status === AvailabilityStatus.ACCEPTED) {
-      // Generate slots for each created availability
-      for (const av of availabilities) {
-        try {
-          const slotResult = await generateSlotsForAvailability({
-            availabilityId: av.id,
-            startTime: av.startTime,
-            endTime: av.endTime,
-            providerId: av.providerId,
-            organizationId: av.organizationId || '',
-            locationId: av.locationId || undefined,
-            schedulingRule: av.schedulingRule as SchedulingRule,
-            schedulingInterval: av.schedulingInterval || undefined,
-            services: validatedData.services,
-          });
-
-          if (slotResult.success) {
-            totalSlotsGenerated += slotResult.slotsGenerated;
-          } else {
-            // Log slot generation failure but don't block creation
-            console.warn(`Slot generation failed for availability ${av.id}:`, slotResult.errors?.join(', '));
-          }
-        } catch (slotError) {
-          // Log slot generation error but don't block creation
-          console.error('Slot generation error during availability creation:', slotError);
-        }
-      }
-    }
-
-    // Send proposal notification if this is organization-created
-    if (!isProviderCreated && availability.status === AvailabilityStatus.PENDING) {
-      // TODO: Implement proper notification service
-      console.log(`📧 Availability proposal notification would be sent for availability ${availability.id}`);
-    }
-
-    // Revalidate relevant paths
-    revalidatePath('/dashboard/availability');
-    revalidatePath('/dashboard/calendar');
-    if (validatedData.organizationId) {
-      revalidatePath(`/dashboard/organizations/${validatedData.organizationId}/availability`);
-    }
-
+    // Return validated data for tRPC procedure to process
     return { 
-      success: true, 
-      availabilityId: availability.id,
-      seriesId: availability.seriesId || undefined,
-      allAvailabilityIds: availabilities.map(a => a.id),
-      requiresApproval: availability.status === AvailabilityStatus.PENDING,
-      notificationsSent: !isProviderCreated && availability.status === AvailabilityStatus.PENDING,
-      slotsGenerated: totalSlotsGenerated
+      success: true,
+      validatedData: {
+        ...validatedData,
+        instances,
+        seriesId,
+        initialStatus,
+        billingEntity,
+        createdByMembershipId: createdByMembership?.id,
+        isProviderCreated,
+      },
+      requiresApproval: initialStatus === AvailabilityStatus.PENDING,
+      notificationNeeded: !isProviderCreated && initialStatus === AvailabilityStatus.PENDING,
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to create availability',
+      error: error instanceof Error ? error.message : 'Failed to validate availability creation',
     };
   }
 }
 
 /**
- * Update existing availability
+ * Validate availability update and prepare data for database operations
+ * OPTION C: Business logic only - no database operations
  */
-export async function updateAvailability(
+export async function validateAvailabilityUpdate(
   data: UpdateAvailabilityData
-): Promise<{ success: boolean; availabilityId?: string; slotsRegenerated?: number; error?: string }> {
+): Promise<{ 
+  success: boolean;
+  validatedData?: UpdateAvailabilityData & {
+    updateStrategy: 'single' | 'future' | 'all';
+    needsSlotRegeneration: boolean;
+    affectedAvailabilityIds?: string[];
+    existingAvailability?: any;
+  };
+  error?: string;
+}> {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
@@ -323,7 +252,7 @@ export async function updateAvailability(
       }
     }
 
-    // Get existing availability
+    // Get existing availability for validation
     const existingAvailability = await prisma.availability.findUnique({
       where: { id: validatedData.id },
       include: {
@@ -394,253 +323,86 @@ export async function updateAvailability(
       }
     }
 
-    // Prepare update data
-    const updateData: any = {};
+    // Determine update strategy
+    const updateStrategy = validatedData.scope || 'single';
+    
+    // Determine if slot regeneration is needed
+    const needsSlotRegeneration = !!(
+      validatedData.startTime || 
+      validatedData.endTime || 
+      validatedData.services || 
+      validatedData.schedulingRule || 
+      validatedData.schedulingInterval !== undefined
+    );
 
-    if (validatedData.startTime !== undefined) updateData.startTime = validatedData.startTime;
-    if (validatedData.endTime !== undefined) updateData.endTime = validatedData.endTime;
-    if (validatedData.isRecurring !== undefined) updateData.isRecurring = validatedData.isRecurring;
-    if (validatedData.recurrencePattern !== undefined)
-      updateData.recurrencePattern = validatedData.recurrencePattern;
-    if (validatedData.schedulingRule !== undefined)
-      updateData.schedulingRule = validatedData.schedulingRule;
-    if (validatedData.schedulingInterval !== undefined)
-      updateData.schedulingInterval = validatedData.schedulingInterval;
-    if (validatedData.isOnlineAvailable !== undefined)
-      updateData.isOnlineAvailable = validatedData.isOnlineAvailable;
-    if (validatedData.requiresConfirmation !== undefined)
-      updateData.requiresConfirmation = validatedData.requiresConfirmation;
-    if (validatedData.billingEntity !== undefined)
-      updateData.billingEntity = validatedData.billingEntity;
-
-    // Handle scope-based updates for recurring availability
-    let updatedAvailability;
-
+    // Calculate affected availability IDs for scope operations
+    let affectedAvailabilityIds: string[] = [validatedData.id];
+    
     if (validatedData.scope && existingAvailability.isRecurring && existingAvailability.seriesId) {
       const currentDate = new Date(existingAvailability.startTime);
-
-      switch (validatedData.scope) {
-        case 'single':
-          // Update only this single occurrence
-          updatedAvailability = await prisma.availability.update({
-            where: { id: validatedData.id },
-            data: updateData,
-            });
-          break;
-
-        case 'future':
-          // Update this occurrence and all future occurrences in the series
-          const futureWhere = {
+      
+      if (validatedData.scope === 'future') {
+        const futureAvailabilities = await prisma.availability.findMany({
+          where: {
             seriesId: existingAvailability.seriesId,
             startTime: { gte: currentDate },
-          };
-
-          await prisma.availability.updateMany({
-            where: futureWhere,
-            data: updateData,
-          });
-
-          // Get the updated availability with relations
-          updatedAvailability = await prisma.availability.findUnique({
-            where: { id: validatedData.id },
-            });
-          break;
-
-        case 'all':
-          // Update all occurrences in the series
-          await prisma.availability.updateMany({
-            where: { seriesId: existingAvailability.seriesId },
-            data: updateData,
-          });
-
-          // Get the updated availability with relations
-          updatedAvailability = await prisma.availability.findUnique({
-            where: { id: validatedData.id },
-            });
-          break;
-
-        default:
-          return { success: false, error: 'Invalid scope parameter' };
-      }
-    } else {
-      // Standard single availability update
-      updatedAvailability = await prisma.availability.update({
-        where: { id: validatedData.id },
-        data: updateData,
-        });
-    }
-
-    // Update services if provided (scope-aware)
-    if (validatedData.services) {
-      if (
-        validatedData.scope &&
-        existingAvailability.isRecurring &&
-        existingAvailability.seriesId
-      ) {
-        // Handle scope-based service updates
-        const currentDate = new Date(existingAvailability.startTime);
-        let targetAvailabilityIds: string[] = [];
-
-        switch (validatedData.scope) {
-          case 'single':
-            targetAvailabilityIds = [validatedData.id];
-            break;
-          case 'future':
-            const futureAvailabilities = await prisma.availability.findMany({
-              where: {
-                seriesId: existingAvailability.seriesId,
-                startTime: { gte: currentDate },
-              },
-              select: { id: true },
-            });
-            targetAvailabilityIds = futureAvailabilities.map((a) => a.id);
-            break;
-          case 'all':
-            const allAvailabilities = await prisma.availability.findMany({
-              where: { seriesId: existingAvailability.seriesId },
-              select: { id: true },
-            });
-            targetAvailabilityIds = allAvailabilities.map((a) => a.id);
-            break;
-        }
-
-        // Delete existing service configs for target availabilities
-        await prisma.serviceAvailabilityConfig.deleteMany({
-          where: { availabilities: { some: { id: { in: targetAvailabilityIds } } } },
-        });
-      } else {
-        // Standard single availability service update
-        await prisma.serviceAvailabilityConfig.deleteMany({
-          where: { availabilities: { some: { id: validatedData.id } } },
-        });
-      }
-
-      // Create new service configs
-      await prisma.serviceAvailabilityConfig.createMany({
-        data: validatedData.services.map((service) => ({
-          serviceId: service.serviceId,
-          providerId: existingAvailability.providerId,
-          duration: service.duration,
-          price: service.price,
-          isOnlineAvailable: validatedData.isOnlineAvailable || false, // Use availability-level setting
-          isInPerson: !validatedData.isOnlineAvailable || !!validatedData.locationId, // True if not online-only or has location
-          locationId: validatedData.locationId, // Use availability-level location
-        })),
-      });
-    }
-
-    // Intelligently update slots based on what changed
-    let slotsRegenerated = 0;
-    if (updatedAvailability && updatedAvailability.status === AvailabilityStatus.ACCEPTED) {
-      try {
-        // Get the updated availability with its services and existing slots
-        const availabilityWithSlots = await prisma.availability.findUnique({
-          where: { id: validatedData.id },
-          include: {
-            availableServices: true,
-            calculatedSlots: {
-              include: {
-                booking: true, // Check for existing bookings
-              },
-            },
           },
+          select: { id: true },
         });
-
-        if (availabilityWithSlots) {
-          // Determine what changed to decide slot update strategy
-          const hasTimeChanges = validatedData.startTime || validatedData.endTime;
-          const hasServiceChanges = validatedData.services && validatedData.services.length > 0;
-          const hasSchedulingChanges = validatedData.schedulingRule || validatedData.schedulingInterval !== undefined;
-          
-          if (hasTimeChanges || hasServiceChanges || hasSchedulingChanges) {
-            // Check for existing bookings before modifying slots
-            const bookedSlots = availabilityWithSlots.calculatedSlots.filter(slot => slot.booking);
-            
-            if (bookedSlots.length > 0) {
-              // If there are bookings, only regenerate unbooked slots
-              console.warn(`Availability ${availabilityWithSlots.id} has ${bookedSlots.length} booked slots. Only regenerating unbooked slots.`);
-              
-              // Delete only unbooked slots
-              const unbookedSlotIds = availabilityWithSlots.calculatedSlots
-                .filter(slot => !slot.booking)
-                .map(slot => slot.id);
-                
-              if (unbookedSlotIds.length > 0) {
-                await prisma.calculatedAvailabilitySlot.deleteMany({
-                  where: { id: { in: unbookedSlotIds } },
-                });
-              }
-            } else {
-              // No bookings, safe to regenerate all slots
-              await prisma.calculatedAvailabilitySlot.deleteMany({
-                where: { availabilityId: availabilityWithSlots.id },
-              });
-            }
-
-            // Generate new slots with updated parameters
-            const slotResult = await generateSlotsForAvailability({
-              availabilityId: availabilityWithSlots.id,
-              providerId: availabilityWithSlots.providerId,
-              organizationId: availabilityWithSlots.organizationId || '',
-              locationId: availabilityWithSlots.locationId || undefined,
-              startTime: availabilityWithSlots.startTime,
-              endTime: availabilityWithSlots.endTime,
-              services: availabilityWithSlots.availableServices.map((as) => ({
-                serviceId: as.serviceId,
-                duration: as.duration,
-                price: Number(as.price),
-              })),
-              schedulingRule: availabilityWithSlots.schedulingRule as SchedulingRule,
-              schedulingInterval: availabilityWithSlots.schedulingInterval || undefined,
-            });
-
-            if (slotResult.success) {
-              slotsRegenerated = slotResult.slotsGenerated;
-            } else {
-              // Log slot regeneration failure but don't block update
-              console.warn(`Slot regeneration failed for updated availability ${availabilityWithSlots.id}:`, slotResult.errors?.join(', '));
-            }
-          }
-          // If no relevant changes were made, keep existing slots as-is
-        }
-      } catch (slotGenError) {
-        // Log slot regeneration error but don't block update
-        console.error('Slot regeneration error during availability update:', slotGenError);
+        affectedAvailabilityIds = futureAvailabilities.map(a => a.id);
+      } else if (validatedData.scope === 'all') {
+        const allAvailabilities = await prisma.availability.findMany({
+          where: { seriesId: existingAvailability.seriesId },
+          select: { id: true },
+        });
+        affectedAvailabilityIds = allAvailabilities.map(a => a.id);
       }
     }
 
-    // Revalidate paths
-    revalidatePath('/dashboard/availability');
-    revalidatePath('/dashboard/calendar');
-    if (existingAvailability.organizationId) {
-      revalidatePath(
-        `/dashboard/organizations/${existingAvailability.organizationId}/availability`
-      );
-    }
-
-    return { success: true, availabilityId: validatedData.id, slotsRegenerated };
+    // Return validated data for tRPC procedure to process
+    return { 
+      success: true,
+      validatedData: {
+        ...validatedData,
+        updateStrategy,
+        needsSlotRegeneration,
+        affectedAvailabilityIds,
+        existingAvailability,
+      },
+    };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update availability',
+      error: error instanceof Error ? error.message : 'Failed to validate availability update',
     };
   }
 }
 
 /**
- * Delete availability (soft delete by setting status to CANCELLED)
+ * Validate availability deletion and prepare data for database operations
+ * OPTION C: Business logic only - no database operations
  */
-export async function deleteAvailability(
+export async function validateAvailabilityDeletion(
   id: string,
   scope?: 'single' | 'future' | 'all'
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ 
+  success: boolean;
+  validatedData?: {
+    targetAvailabilityId: string;
+    deleteStrategy: 'single' | 'future' | 'all';
+    affectedAvailabilityIds: string[];
+    existingAvailability: any;
+    canDelete: boolean;
+  };
+  error?: string;
+}> {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
       return { success: false, error: 'Authentication required' };
     }
 
-    // Get existing availability with bookings
+    // Get existing availability with bookings for validation
     const existingAvailability = await prisma.availability.findUnique({
       where: { id },
       include: {
@@ -684,120 +446,84 @@ export async function deleteAvailability(
       return { success: false, error: 'Access denied' };
     }
 
-    // Check for existing bookings
-    const hasBookings = existingAvailability.calculatedSlots.some((slot) => slot.booking);
-
-    if (hasBookings) {
-      return {
-        success: false,
-        error: 'Cannot delete availability with existing bookings. Cancel the bookings first.',
-      };
-    }
-
-    // Handle series operations
+    // Determine delete strategy
+    const deleteStrategy = scope || 'single';
+    
+    // Calculate affected availability IDs for scope operations
+    let affectedAvailabilityIds: string[] = [id];
+    
     if (scope && existingAvailability.seriesId) {
-      return handleSeriesDelete(existingAvailability, scope);
+      const currentDate = new Date(existingAvailability.startTime);
+      
+      if (scope === 'future') {
+        const futureAvailabilities = await prisma.availability.findMany({
+          where: {
+            seriesId: existingAvailability.seriesId,
+            startTime: { gte: currentDate },
+          },
+          select: { id: true },
+        });
+        affectedAvailabilityIds = futureAvailabilities.map(a => a.id);
+      } else if (scope === 'all') {
+        const allAvailabilities = await prisma.availability.findMany({
+          where: { seriesId: existingAvailability.seriesId },
+          select: { id: true },
+        });
+        affectedAvailabilityIds = allAvailabilities.map(a => a.id);
+      }
     }
 
-    // Hard delete - first delete calculated slots, then availability
-    await prisma.calculatedAvailabilitySlot.deleteMany({
-      where: { availabilityId: id },
-    });
-
-    // Delete the availability record
-    await prisma.availability.delete({
-      where: { id },
-    });
-
-    // Revalidate paths
-    revalidatePath('/dashboard/availability');
-    revalidatePath('/dashboard/calendar');
-    if (existingAvailability.organizationId) {
-      revalidatePath(
-        `/dashboard/organizations/${existingAvailability.organizationId}/availability`
-      );
-    }
-
-    return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to delete availability',
-    };
-  }
-}
-
-/**
- * Handle series deletion operations
- */
-async function handleSeriesDelete(
-  availability: any,
-  scope: 'single' | 'future' | 'all'
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const seriesId = availability.seriesId;
-    const currentDate = availability.startTime;
-
-    let deleteConditions: any = { seriesId };
-
-    switch (scope) {
-      case 'single':
-        // Delete only this occurrence
-        deleteConditions = { id: availability.id };
-        break;
-      case 'future':
-        // Delete this and all future occurrences
-        deleteConditions = {
-          seriesId,
-          startTime: { gte: currentDate },
-        };
-        break;
-      case 'all':
-        // Delete all occurrences in the series
-        deleteConditions = { seriesId };
-        break;
-    }
-
-    // Check for bookings in the affected availabilities
-    const affectedAvailabilities = await prisma.availability.findMany({
-      where: deleteConditions,
-      include: {
-        calculatedSlots: {
-          include: {
-            booking: true,
+    // Check for existing bookings in all affected availabilities
+    if (scope && existingAvailability.seriesId) {
+      const affectedAvailabilities = await prisma.availability.findMany({
+        where: { id: { in: affectedAvailabilityIds } },
+        include: {
+          calculatedSlots: {
+            include: {
+              booking: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    const hasBookings = affectedAvailabilities.some((av) =>
-      av.calculatedSlots.some((slot) => slot.booking)
-    );
+      const hasBookings = affectedAvailabilities.some((av) =>
+        av.calculatedSlots.some((slot) => slot.booking)
+      );
 
-    if (hasBookings) {
-      return {
-        success: false,
-        error: 'Cannot delete availability with existing bookings. Cancel the bookings first.',
-      };
+      if (hasBookings) {
+        return {
+          success: false,
+          error: 'Cannot delete availability with existing bookings. Cancel the bookings first.',
+        };
+      }
+    } else {
+      // Single availability booking check
+      const hasBookings = existingAvailability.calculatedSlots.some((slot) => slot.booking);
+
+      if (hasBookings) {
+        return {
+          success: false,
+          error: 'Cannot delete availability with existing bookings. Cancel the bookings first.',
+        };
+      }
     }
 
-    // Delete calculated slots first
-    await prisma.calculatedAvailabilitySlot.deleteMany({
-      where: {
-        availability: deleteConditions,
+    // Return validated data for tRPC procedure to process
+    return { 
+      success: true,
+      validatedData: {
+        targetAvailabilityId: id,
+        deleteStrategy,
+        affectedAvailabilityIds,
+        existingAvailability,
+        canDelete: true,
       },
-    });
-
-    // Delete the availability records
-    await prisma.availability.deleteMany({
-      where: deleteConditions,
-    });
-
-    return { success: true };
+    };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to delete availability series',
+      error: error instanceof Error ? error.message : 'Failed to validate availability deletion',
     };
   }
 }
+

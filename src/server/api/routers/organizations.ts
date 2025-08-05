@@ -12,12 +12,12 @@ import {
 } from '@/features/organizations/lib/actions';
 import { organizationRegistrationSchema } from '@/features/organizations/types/schemas';
 import { getCurrentUser } from '@/lib/auth';
+import { logEmail } from '@/features/communications/lib/helper';
 import {
   generateInvitationEmail,
   generateInvitationToken,
   getInvitationExpiryDate,
-  logEmail,
-} from '@/lib/invitation-utils';
+} from '@/features/invitations/lib/utils';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
 export const organizationsRouter = createTRPCRouter({

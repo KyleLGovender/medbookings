@@ -19,40 +19,6 @@ export function getInvitationExpiryDate(): Date {
 }
 
 /**
- * Check if invitation token has expired
- * @param expiresAt - Expiration date
- * @returns true if expired, false otherwise
- */
-export function isInvitationExpired(expiresAt: Date): boolean {
-  return new Date() > expiresAt;
-}
-
-/**
- * Email logging utility for development
- * Logs email content to console until email service is implemented
- */
-export function logEmail(params: {
-  to: string;
-  subject: string;
-  htmlContent: string;
-  textContent?: string;
-  type: 'invitation' | 'cancellation' | 'reminder';
-}) {
-  console.log('📧 EMAIL WOULD BE SENT:');
-  console.log('=======================');
-  console.log(`To: ${params.to}`);
-  console.log(`Subject: ${params.subject}`);
-  console.log(`Type: ${params.type}`);
-  console.log('------- HTML CONTENT -------');
-  console.log(params.htmlContent);
-  if (params.textContent) {
-    console.log('------- TEXT CONTENT -------');
-    console.log(params.textContent);
-  }
-  console.log('============================\n');
-}
-
-/**
  * Generate invitation email content
  */
 export function generateInvitationEmail(params: {

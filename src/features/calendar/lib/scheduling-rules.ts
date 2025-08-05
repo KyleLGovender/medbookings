@@ -2,11 +2,11 @@ import { addMinutes, setMinutes, startOfDay, startOfHour } from 'date-fns';
 
 import {
   SchedulingOptions,
-  SchedulingRule,
   SchedulingRuleConfig,
   TimeSlot,
   TimeSlotGenerationResult,
 } from '@/features/calendar/types/types';
+import { SchedulingRule } from '@prisma/client';
 
 /**
  * Generate time slots based on scheduling rules

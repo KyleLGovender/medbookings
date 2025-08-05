@@ -1,7 +1,7 @@
 import { addMinutes } from 'date-fns';
+import { SchedulingRule } from '@prisma/client';
 
 import {
-  SchedulingRule,
   SlotGenerationOptions,
   SlotGenerationResult,
 } from '@/features/calendar/types/types';
