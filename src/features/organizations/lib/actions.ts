@@ -2,7 +2,7 @@
 
 import { OrganizationRegistrationData } from '@/features/organizations/types/types';
 import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { OrganizationRole } from '@prisma/client';
 
 /**
  * Validates organization registration data and handles business logic
@@ -19,16 +19,7 @@ export async function registerOrganization(data: OrganizationRegistrationData): 
   }
 
   try {
-    // Validation: Check if user already has an organization (business rule)
-    const hasExistingOrganization = await checkUserHasOrganization(currentUser.id);
-    if (hasExistingOrganization) {
-      return { 
-        success: false, 
-        error: 'User is already associated with an organization' 
-      };
-    }
-
-    // Additional business validations
+    // Business validations only
     if (!data.organization.name || data.organization.name.trim().length === 0) {
       return { success: false, error: 'Organization name is required' };
     }
@@ -55,18 +46,6 @@ export async function registerOrganization(data: OrganizationRegistrationData): 
   }
 }
 
-/**
- * Checks if a user is already associated with an organization
- * @param userId User ID to check
- * @returns Boolean indicating if user has an organization
- */
-export async function checkUserHasOrganization(userId: string) {
-  const organizationMembership = await prisma.organizationMembership.findFirst({
-    where: { userId },
-  });
-
-  return !!organizationMembership;
-}
 
 // =============================================================================
 // MEMBER MANAGEMENT BUSINESS LOGIC
@@ -104,8 +83,8 @@ export async function validateMemberInvitation(invitationData: {
       return { success: false, message: 'Missing required fields' };
     }
 
-    const validRoles = ['OWNER', 'ADMIN', 'MANAGER', 'STAFF'];
-    if (!validRoles.includes(role)) {
+    const validRoles = Object.values(OrganizationRole);
+    if (!validRoles.includes(role as OrganizationRole)) {
       return { success: false, message: 'Invalid role specified' };
     }
 
@@ -218,8 +197,8 @@ export async function validateMemberRoleChange(
       return { success: false, message: 'Missing required fields' };
     }
 
-    const validRoles = ['OWNER', 'ADMIN', 'MANAGER', 'STAFF'];
-    if (!validRoles.includes(newRole)) {
+    const validRoles = Object.values(OrganizationRole);
+    if (!validRoles.includes(newRole as OrganizationRole)) {
       return { success: false, message: 'Invalid role specified' };
     }
 

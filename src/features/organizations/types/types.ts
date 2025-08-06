@@ -17,36 +17,11 @@
 // Components will use tRPC RouterOutputs for server data in Task 4.0
 
 // =============================================================================
-// ENUMS
+// DOMAIN ENUMS - CLIENT-ONLY BUSINESS LOGIC
 // =============================================================================
+// Note: Prisma enums should be imported directly from @prisma/client where needed
 
-// Organization-related enums (matching Prisma schema)
-export enum OrganizationStatus {
-  PENDING_APPROVAL = 'PENDING_APPROVAL',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  SUSPENDED = 'SUSPENDED',
-}
-
-export enum MembershipRole {
-  ADMIN = 'ADMIN',
-  MANAGER = 'MANAGER',
-  MEMBER = 'MEMBER',
-}
-
-export enum MembershipStatus {
-  PENDING = 'PENDING',
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-}
-
-export enum ProviderInvitationStatus {
-  PENDING = 'PENDING',
-  ACCEPTED = 'ACCEPTED',
-  REJECTED = 'REJECTED',
-  CANCELLED = 'CANCELLED',
-}
-
+// Domain-specific enum for UI actions (not in Prisma)
 export enum InvitationAction {
   ACCEPT = 'ACCEPT',
   REJECT = 'REJECT',
@@ -65,7 +40,7 @@ export interface BasicOrganizationInfo {
   email?: string;
   phone?: string;
   website?: string;
-  status: OrganizationStatus;
+  status: string; // Use Prisma OrganizationStatus directly where needed
   isActive: boolean;
 }
 
@@ -132,7 +107,7 @@ export interface UpdateOrganizationData extends Partial<CreateOrganizationData> 
 export interface CreateMembershipData {
   organizationId: string;
   userId: string;
-  role: MembershipRole;
+  role: string; // Use Prisma OrganizationRole directly where needed
 }
 
 export interface CreateLocationData {
@@ -178,9 +153,8 @@ export interface OrganizationApiResponse<T = any> {
 // UTILITY TYPES
 // =============================================================================
 
-export type OrganizationStatusType = keyof typeof OrganizationStatus;
-export type MembershipRoleType = keyof typeof MembershipRole;
-export type MembershipStatusType = keyof typeof MembershipStatus;
+// Utility types - import specific Prisma types where needed
+// Example: import type { OrganizationStatus } from '@prisma/client'
 
 // =============================================================================
 // PRISMA CONFIGURATIONS REMOVED
