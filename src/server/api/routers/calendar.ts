@@ -1083,6 +1083,42 @@ export const calendarRouter = createTRPCRouter({
       return allSlots;
     }),
 
+  /**
+   * Get booking with all relations needed for communications
+   * OPTION C: Direct database query in tRPC for automatic type inference
+   */
+  getBookingWithDetails: protectedProcedure
+    .input(z.object({ bookingId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const booking = await ctx.prisma.booking.findUnique({
+        where: { id: input.bookingId },
+        include: {
+          slot: {
+            include: {
+              service: true,
+              serviceConfig: true,
+              availability: {
+                include: {
+                  provider: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!booking) {
+        throw new Error('Booking not found');
+      }
+
+      // Check authorization
+      if (booking.slot?.availability?.provider?.userId !== ctx.session.user.id) {
+        throw new Error('Unauthorized access to booking');
+      }
+
+      return booking;
+    }),
+
 });
 
 /**

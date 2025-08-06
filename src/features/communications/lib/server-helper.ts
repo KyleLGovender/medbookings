@@ -4,7 +4,10 @@ import twilio from 'twilio';
 import vCardsJS from 'vcards-js';
 
 import env from '@/config/env/server';
-import { BookingView } from '@/features/calendar/types/types';
+import { type RouterOutputs } from '@/utils/api';
+
+// OPTION C: Use tRPC-inferred type for booking data from calendar router
+type BookingWithDetails = RouterOutputs['calendar']['getBookingWithDetails'];
 
 // Load environment variables
 const accountSid = env.TWILIO_ACCOUNT_SID;
@@ -20,55 +23,58 @@ const twilioClient = twilio(accountSid, authToken);
 // Initialize SendGrid
 sgMail.setApiKey(env.SENDGRID_API_KEY!);
 
-export async function sendBookingNotifications(booking: BookingView) {
+export async function sendBookingNotifications(booking: BookingWithDetails) {
   try {
     const notificationPromises = [];
 
+    if (!booking.slot) {
+      console.error('Booking has no slot associated');
+      return;
+    }
+
     const templateVariablesProvider = JSON.stringify({
-      1: booking.slot.provider.name,
+      1: booking.slot.availability?.provider?.name || '',
       2: `${booking.slot.startTime.toLocaleDateString()} at ${booking.slot.startTime.toLocaleTimeString()}`,
-      3: `${booking.slot.serviceConfig.duration} minutes`,
-      4: `R${booking.slot.serviceConfig.price}`,
-      5: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
-      6: booking.guestInfo.name,
+      3: `${booking.slot.serviceConfig?.duration} minutes`,
+      4: `R${booking.slot.serviceConfig?.price}`,
+      5: booking.slot.serviceConfig?.isOnlineAvailable ? 'Online' : 'In-Person',
+      6: booking.guestName || '',
       7: booking.id,
     });
 
     // Send provider whatsapp notification
-    if (booking.slot.provider.whatsapp) {
+    if (booking.slot.availability?.provider?.whatsapp) {
       notificationPromises.push(
         twilioClient.messages.create({
           from: `whatsapp:${TwilioWhatsappNumber}`,
           contentSid: 'HX7b7542c849bf762b63fc38dcb069f6f1',
           contentVariables: templateVariablesProvider,
-          to: `whatsapp:${booking.slot.provider.whatsapp}`,
+          to: `whatsapp:${booking.slot.availability.provider.whatsapp}`,
         })
       );
     }
 
     const templateVariablesPatient = JSON.stringify({
-      1: booking.guestInfo.name,
-      2: booking.slot.provider.name,
+      1: booking.guestName || '',
+      2: booking.slot.availability?.provider?.name || '',
       3: `${booking.slot.startTime.toLocaleDateString()} at ${booking.slot.startTime.toLocaleTimeString()}`,
-      4: `${booking.slot.serviceConfig.duration} minutes`,
-      5: `R${booking.slot.serviceConfig.price}`,
-      6: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
-      7: booking.guestInfo.name,
+      4: `${booking.slot.serviceConfig?.duration} minutes`,
+      5: `R${booking.slot.serviceConfig?.price}`,
+      6: booking.slot.serviceConfig?.isOnlineAvailable ? 'Online' : 'In-Person',
+      7: booking.guestName || '',
       8: booking.id,
     });
 
-    // Send patient whatsapp notification
-    if (booking.notificationPreferences.whatsapp) {
-      if (booking.notificationPreferences.whatsapp) {
-        notificationPromises.push(
-          twilioClient.messages.create({
-            from: `whatsapp:${TwilioWhatsappNumber}`,
-            contentSid: 'HXd872a8922fc1bffd95bb57e4c702dc9e',
-            contentVariables: templateVariablesPatient,
-            to: `whatsapp:${booking.guestInfo.whatsapp}`,
-          })
-        );
-      }
+    // Send patient whatsapp notification if guest has whatsapp
+    if (booking.guestWhatsapp) {
+      notificationPromises.push(
+        twilioClient.messages.create({
+          from: `whatsapp:${TwilioWhatsappNumber}`,
+          contentSid: 'HXd872a8922fc1bffd95bb57e4c702dc9e',
+          contentVariables: templateVariablesPatient,
+          to: `whatsapp:${booking.guestWhatsapp}`,
+        })
+      );
     }
 
     // Send all notifications in parallel and log results
@@ -82,58 +88,61 @@ export async function sendBookingNotifications(booking: BookingView) {
   }
 }
 
-export async function sendBookingConfirmation(booking: BookingView) {
+export async function sendBookingConfirmation(booking: BookingWithDetails) {
   try {
     const notificationPromises = [];
 
+    if (!booking.slot) {
+      console.error('Booking has no slot associated');
+      return;
+    }
+
     const templateVariablesProvider = JSON.stringify({
-      1: booking.slot.provider.name,
+      1: booking.slot.availability?.provider?.name || '',
       2: booking.id,
       3: `${booking.slot.startTime.toLocaleDateString()} at ${booking.slot.startTime.toLocaleTimeString()}`,
-      4: `${booking.slot.serviceConfig.duration} minutes`,
-      5: `R${booking.slot.serviceConfig.price}`,
-      6: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
-      7: booking.guestInfo.name,
-      8: booking.guestInfo.whatsapp,
+      4: `${booking.slot.serviceConfig?.duration} minutes`,
+      5: `R${booking.slot.serviceConfig?.price}`,
+      6: booking.slot.serviceConfig?.isOnlineAvailable ? 'Online' : 'In-Person',
+      7: booking.guestName || '',
+      8: booking.guestWhatsapp || '',
       9: booking.id,
     });
 
     // Send provider whatsapp notification with option to request vCard
-    if (booking.slot.provider.whatsapp) {
+    if (booking.slot.availability?.provider?.whatsapp) {
       notificationPromises.push(
         twilioClient.messages.create({
           from: `whatsapp:${TwilioWhatsappNumber}`,
           contentSid: 'HXd4581d3971aba1d4c6343c97e5c5cf2e',
           contentVariables: templateVariablesProvider,
-          to: `whatsapp:${booking.slot.provider.whatsapp}`,
+          to: `whatsapp:${booking.slot.availability.provider.whatsapp}`,
         })
       );
     }
 
     const templateVariablesPatient = JSON.stringify({
-      1: booking.guestInfo.name,
-      2: booking.slot.provider.name,
+      1: booking.guestName || '',
+      2: booking.slot.availability?.provider?.name || '',
       3: booking.id,
       4: `${booking.slot.startTime.toLocaleDateString()} at ${booking.slot.startTime.toLocaleTimeString()}`,
-      5: `${booking.slot.serviceConfig.duration} minutes`,
-      6: `R${booking.slot.serviceConfig.price}`,
-      7: booking.slot.serviceConfig.isOnlineAvailable ? 'Online' : 'In-Person',
-      8: booking.guestInfo.name,
+      5: `${booking.slot.serviceConfig?.duration} minutes`,
+      6: `R${booking.slot.serviceConfig?.price}`,
+      7: booking.slot.serviceConfig?.isOnlineAvailable ? 'Online' : 'In-Person',
+      8: booking.guestName || '',
       9: booking.id,
     });
 
-    // Send patient whatsapp notification
-    if (booking.notificationPreferences.whatsapp) {
-      if (booking.notificationPreferences.whatsapp) {
-        notificationPromises.push(
-          twilioClient.messages.create({
-            from: `whatsapp:${TwilioWhatsappNumber}`,
-            contentSid: 'HX8bfd0fc829de1adfe41f2e526d42cabf',
-            contentVariables: templateVariablesPatient,
-            to: `whatsapp:${booking.guestInfo.whatsapp}`,
-          })
-        );
-      }
+    // Send patient whatsapp notification if guest has whatsapp
+    if (booking.guestWhatsapp) {
+      notificationPromises.push(
+        twilioClient.messages.create({
+          from: `whatsapp:${TwilioWhatsappNumber}`,
+          contentSid: 'HX8bfd0fc829de1adfe41f2e526d42cabf',
+          contentVariables: templateVariablesPatient,
+          to: `whatsapp:${booking.guestWhatsapp}`,
+        })
+      );
     }
 
     // Send all notifications in parallel and log results
@@ -146,13 +155,18 @@ export async function sendBookingConfirmation(booking: BookingView) {
   }
 }
 
-export async function sendGuestVCardToProvider(booking: BookingView) {
+export async function sendGuestVCardToProvider(booking: BookingWithDetails) {
   try {
+    if (!booking.slot) {
+      console.error('Booking has no slot associated');
+      return;
+    }
+
     // Create vCard for guest
     const vCard = vCardsJS();
-    vCard.firstName = booking.guestInfo.name;
-    if (booking.guestInfo.whatsapp) {
-      vCard.workPhone = booking.guestInfo.whatsapp;
+    vCard.firstName = booking.guestName || '';
+    if (booking.guestWhatsapp) {
+      vCard.workPhone = booking.guestWhatsapp;
     }
 
     // Upload to Vercel Blob
@@ -166,7 +180,7 @@ export async function sendGuestVCardToProvider(booking: BookingView) {
       // Capture the result of the Twilio API call
       const message = await twilioClient.messages.create({
         from: `whatsapp:${TwilioWhatsappNumber}`,
-        to: `whatsapp:${booking.slot.provider.whatsapp}`,
+        to: `whatsapp:${booking.slot.availability?.provider?.whatsapp}`,
         mediaUrl: [url],
       });
 

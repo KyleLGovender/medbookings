@@ -6,7 +6,7 @@ import { createTRPCRouter, protectedProcedure } from '@/server/trpc';
 export const communicationsRouter = createTRPCRouter({
   /**
    * Send patient details to provider via WhatsApp
-   * Migrated from: sendProviderPatientsDetailsByWhatsapp() lib function
+   * OPTION C: Uses booking data from calendar.getBookingWithDetails
    */
   sendPatientDetailsWhatsApp: protectedProcedure
     .input(
@@ -14,8 +14,36 @@ export const communicationsRouter = createTRPCRouter({
         bookingId: z.string(),
       })
     )
-    .mutation(async ({ input }) => {
-      const result = await sendProviderPatientsDetailsByWhatsapp(input.bookingId);
+    .mutation(async ({ ctx, input }) => {
+      // First, fetch the booking data using the query above
+      const booking = await ctx.prisma.booking.findUnique({
+        where: { id: input.bookingId },
+        include: {
+          slot: {
+            include: {
+              service: true,
+              serviceConfig: true,
+              availability: {
+                include: {
+                  provider: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!booking) {
+        throw new Error('Booking not found');
+      }
+
+      // Check authorization
+      if (booking.slot?.availability?.provider?.userId !== ctx.session.user.id) {
+        throw new Error('Unauthorized access to booking');
+      }
+
+      // Call the server action with the booking data
+      const result = await sendProviderPatientsDetailsByWhatsapp(booking);
       
       if (result.error) {
         throw new Error(result.error);
@@ -40,7 +68,7 @@ export const communicationsRouter = createTRPCRouter({
         message: z.string().optional(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       // TODO: Implement notification sending logic
       // This would integrate with email/SMS/WhatsApp services
       console.log('Sending availability status notification:', input);
@@ -164,7 +192,7 @@ export const communicationsRouter = createTRPCRouter({
         notificationMethods: z.array(z.enum(['EMAIL', 'SMS', 'WHATSAPP'])),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       // TODO: Implement cancellation notification logic
       console.log('Sending cancellation notification:', input);
 
