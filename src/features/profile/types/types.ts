@@ -1,51 +1,24 @@
 // =============================================================================
-// PROFILE FEATURE TYPES
+// PROFILE FEATURE DOMAIN TYPES
 // =============================================================================
-// All type definitions for the profile feature in one place
-// Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
+// Domain logic types for profile feature (client-side concerns only)
+// Server data types are automatically inferred from tRPC procedures
 
 // =============================================================================
-// ENUMS
+// FORM STATE TYPES
 // =============================================================================
 
-export enum UserRole {
-  USER = 'USER',
-  ADMIN = 'ADMIN',
-  SUPER_ADMIN = 'SUPER_ADMIN',
+export interface ProfileFormState {
+  isEditing: boolean;
+  isDirty: boolean;
+  isSubmitting: boolean;
 }
 
 // =============================================================================
-// BASE INTERFACES
+// UI STATE TYPES
 // =============================================================================
 
-export interface UserProfile {
-  id: string;
-  name: string | null;
-  email: string | null;
-  image: string | null;
-  phone: string | null;
-  whatsapp: string | null;
-  role: UserRole;
-}
-
-// =============================================================================
-// API REQUEST/RESPONSE TYPES
-// =============================================================================
-
-export interface UpdateProfileRequest {
-  name?: string;
-  email?: string;
-  phone?: string;
-  whatsapp?: string;
-}
-
-export interface UpdateProfileResponse {
-  success: boolean;
-  error?: string;
-  user?: UserProfile;
-}
-
-export interface DeleteAccountResponse {
-  success: boolean;
-  error?: string;
+export interface ProfilePageState {
+  showDeleteConfirmation: boolean;
+  activeTab: 'profile' | 'security' | 'preferences';
 }

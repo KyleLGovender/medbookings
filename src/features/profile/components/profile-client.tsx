@@ -5,10 +5,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { useOrganizationByUserId } from '@/features/organizations/hooks/use-organization-by-user-id';
-import { UserProfile } from '@/features/profile/types/types';
 import { type RouterOutputs } from '@/utils/api';
 
-type SerializedProvider = NonNullable<RouterOutputs['providers']['getProvider']>;
+type UserProfile = RouterOutputs['profile']['get'];
+type SerializedProvider = NonNullable<RouterOutputs['providers']['getById']>;
 
 import { DeleteAccountButton } from './delete-account-button';
 

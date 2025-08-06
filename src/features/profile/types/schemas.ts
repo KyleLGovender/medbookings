@@ -1,11 +1,11 @@
 // =============================================================================
 // PROFILE FEATURE SCHEMAS
 // =============================================================================
-// All Zod validation schemas for the profile feature in one place
-// Organized by: Entity Schemas -> Request Schemas -> Response Schemas
+// Zod validation schemas for profile feature form inputs only
+// Response types are automatically inferred from tRPC procedures
 import { z } from 'zod';
 
-import { UserRole } from './types';
+import { UserRole } from '@prisma/client';
 
 // =============================================================================
 // ENUM SCHEMAS
@@ -14,22 +14,7 @@ import { UserRole } from './types';
 export const userRoleSchema = z.nativeEnum(UserRole);
 
 // =============================================================================
-// ENTITY SCHEMAS
-// =============================================================================
-
-// User profile schema
-export const userProfileSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().nullable(),
-  email: z.string().email().nullable(),
-  image: z.string().url().nullable(),
-  phone: z.string().nullable(),
-  whatsapp: z.string().nullable(),
-  role: userRoleSchema,
-});
-
-// =============================================================================
-// REQUEST SCHEMAS
+// INPUT VALIDATION SCHEMAS
 // =============================================================================
 
 // Update profile request schema
@@ -46,28 +31,8 @@ export const deleteAccountRequestSchema = z.object({
 });
 
 // =============================================================================
-// RESPONSE SCHEMAS
-// =============================================================================
-
-// Update profile response schema
-export const updateProfileResponseSchema = z.object({
-  success: z.boolean(),
-  error: z.string().optional(),
-  user: userProfileSchema.optional(),
-});
-
-// Delete account response schema
-export const deleteAccountResponseSchema = z.object({
-  success: z.boolean(),
-  error: z.string().optional(),
-});
-
-// =============================================================================
 // TYPE INFERENCE HELPERS
 // =============================================================================
 
-export type UserProfileInput = z.infer<typeof userProfileSchema>;
-export type UpdateProfileRequestInput = z.infer<typeof updateProfileRequestSchema>;
-export type DeleteAccountRequestInput = z.infer<typeof deleteAccountRequestSchema>;
-export type UpdateProfileResponseInput = z.infer<typeof updateProfileResponseSchema>;
-export type DeleteAccountResponseInput = z.infer<typeof deleteAccountResponseSchema>;
+export type UpdateProfileRequest = z.infer<typeof updateProfileRequestSchema>;
+export type DeleteAccountRequest = z.infer<typeof deleteAccountRequestSchema>;

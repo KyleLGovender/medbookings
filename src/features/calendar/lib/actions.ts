@@ -11,7 +11,7 @@ import {
   CreateAvailabilityData,
   UpdateAvailabilityData
 } from '@/features/calendar/types/types';
-import { UserRole } from '@/features/profile/types/types';
+import { UserRole } from '@prisma/client';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
