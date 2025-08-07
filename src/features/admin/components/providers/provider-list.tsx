@@ -24,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { AdminApprovalStatus } from '@/features/admin/types/types';
+import type { AdminFilterStatus } from '@/features/admin/types/types';
 import { type RouterOutputs } from '@/utils/api';
 
 type AdminProviders = RouterOutputs['admin']['getProviders'];
@@ -39,7 +39,7 @@ import { StatusBadge } from '../../../../components/status-badge';
 import { RejectionModal } from '../ui/rejection-modal';
 
 interface ProviderListProps {
-  initialStatus?: AdminApprovalStatus;
+  initialStatus?: AdminFilterStatus;
 }
 
 export function ProviderList({ initialStatus }: ProviderListProps) {
@@ -59,7 +59,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
     data: providers,
     isLoading,
     error,
-  } = useAdminProviders(statusFilter === 'all' ? undefined : (statusFilter as AdminApprovalStatus));
+  } = useAdminProviders(statusFilter === 'all' ? undefined : (statusFilter as AdminFilterStatus));
 
   const approveProviderMutation = useApproveProvider();
   const rejectProviderMutation = useRejectProvider();

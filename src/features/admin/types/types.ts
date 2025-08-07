@@ -5,7 +5,19 @@
 // Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
 
 // =============================================================================
-// ENUMS
+// PRISMA TYPE IMPORTS
+// =============================================================================
+// Import database enums directly from Prisma to prevent type drift
+
+import {
+  ProviderStatus,
+  OrganizationStatus,
+  RequirementsValidationStatus,
+  UserRole
+} from '@prisma/client';
+
+// =============================================================================
+// DOMAIN-SPECIFIC ENUMS (Not in Prisma)
 // =============================================================================
 
 export enum AdminAction {
@@ -20,49 +32,19 @@ export enum ApprovalEntityType {
   REQUIREMENT = 'REQUIREMENT',
 }
 
-export enum AdminApprovalStatus {
-  PENDING_APPROVAL = 'PENDING_APPROVAL',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-}
-
-export enum AdminProviderStatus {
-  PENDING_APPROVAL = 'PENDING_APPROVAL',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  TRIAL = 'TRIAL',
-  TRIAL_EXPIRED = 'TRIAL_EXPIRED',
-  ACTIVE = 'ACTIVE',
-  PAYMENT_OVERDUE = 'PAYMENT_OVERDUE',
-  SUSPENDED = 'SUSPENDED',
-  CANCELLED = 'CANCELLED',
-}
-
-export enum AdminOrganizationStatus {
-  PENDING_APPROVAL = 'PENDING_APPROVAL',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  TRIAL = 'TRIAL',
-  TRIAL_EXPIRED = 'TRIAL_EXPIRED',
-  ACTIVE = 'ACTIVE',
-  PAYMENT_OVERDUE = 'PAYMENT_OVERDUE',
-  SUSPENDED = 'SUSPENDED',
-  CANCELLED = 'CANCELLED',
-}
-
-export enum RequirementValidationStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-}
-
 // =============================================================================
 // BASE INTERFACES AND TYPES
 // =============================================================================
 
-// Basic Admin Action Types
+// Basic Admin Action Types  
 export type AdminActionType = 'APPROVE' | 'REJECT' | 'SUSPEND';
-export type ApprovalStatus = 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+
+// Approval status type that handles both Provider and Organization statuses
+// Note: Using union type since admin can approve both providers and organizations
+export type ApprovalStatus = ProviderStatus | OrganizationStatus;
+
+// Specific approval statuses for filtering (common values across provider and organization)
+export type AdminFilterStatus = 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
 
 // API Response Types
 export interface AdminApiResponse<T = any> {
@@ -141,17 +123,18 @@ export type RejectRequirementAction = (
 ) => Promise<ServerActionResult>;
 
 // Dashboard Data Types
+// Note: Using Prisma enum values as keys for count aggregation
 export interface AdminProviderCounts {
-  PENDING_APPROVAL: number;
-  APPROVED: number;
-  REJECTED: number;
+  [ProviderStatus.PENDING_APPROVAL]: number;
+  [ProviderStatus.APPROVED]: number;
+  [ProviderStatus.REJECTED]: number;
   total: number;
 }
 
 export interface AdminOrganizationCounts {
-  PENDING_APPROVAL: number;
-  APPROVED: number;
-  REJECTED: number;
+  [OrganizationStatus.PENDING_APPROVAL]: number;
+  [OrganizationStatus.APPROVED]: number;
+  [OrganizationStatus.REJECTED]: number;
   total: number;
 }
 
@@ -162,7 +145,7 @@ export interface AdminDashboardData {
 
 // List Filter Types
 export interface AdminListFilters {
-  status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+  status?: AdminFilterStatus;
   search?: string;
 }
 
@@ -177,7 +160,7 @@ export interface AdminRequirementRouteParams {
 }
 
 export interface AdminSearchParams {
-  status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+  status?: AdminFilterStatus;
 }
 
 // Page Props Types
@@ -222,13 +205,25 @@ export interface RejectionModalProps {
 // MIGRATION NOTES
 // =============================================================================
 // 
+// ✅ TASK 3.2 COMPLETE: Prisma Type Import Migration
+// 
+// REMOVED duplicate enums (now using Prisma imports):
+// - AdminApprovalStatus → Use ApprovalStatus (union of ProviderStatus | OrganizationStatus)
+// - AdminProviderStatus → Use ProviderStatus from @prisma/client
+// - AdminOrganizationStatus → Use OrganizationStatus from @prisma/client  
+// - RequirementValidationStatus → Use RequirementsValidationStatus from @prisma/client
+//
+// KEPT domain-specific enums (not in Prisma):
+// - AdminAction (UI-specific approval actions)
+// - ApprovalEntityType (UI-specific entity categorization)
+//
 // All server data types, hook interfaces, and API client interfaces have been
 // removed from this manual type file as part of the dual-source type safety
 // architecture migration.
 //
 // These will be replaced with:
-// - tRPC RouterOutputs for server data (Task 4.0 component migration)
-// - Hook return types inferred from tRPC hooks (Task 3.0 hook migration)
+// - tRPC RouterOutputs for server data (Task 6.0 component migration)
+// - Hook return types inferred from tRPC hooks (Task 5.0 hook migration)
 // - Direct tRPC client usage instead of manual API client interfaces
 //
 // Domain logic types (enums, form data, request types, route params) remain

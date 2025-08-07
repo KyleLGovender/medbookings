@@ -23,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { AdminApprovalStatus } from '@/features/admin/types/types';
+import type { AdminFilterStatus } from '@/features/admin/types/types';
 import { type RouterOutputs } from '@/utils/api';
 
 type AdminOrganizations = RouterOutputs['admin']['getOrganizations'];
@@ -39,7 +39,7 @@ import { ApprovalButtons } from '../ui/approval-buttons';
 import { RejectionModal } from '../ui/rejection-modal';
 
 interface OrganizationListProps {
-  initialStatus?: AdminApprovalStatus;
+  initialStatus?: ApprovalStatus;
 }
 
 export function OrganizationList({ initialStatus }: OrganizationListProps) {
