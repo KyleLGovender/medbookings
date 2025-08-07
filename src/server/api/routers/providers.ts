@@ -1858,6 +1858,57 @@ export const providersRouter = createTRPCRouter({
     }),
 
   // ============================================================================
+  // REQUIREMENTS VALIDATION & CHECKING
+  // ============================================================================
+
+  /**
+   * Get provider requirements approval status
+   * Moved from server action to tRPC procedure for Option C compliance
+   * This performs the database query that was previously in the server action
+   */
+  getProviderRequirementsStatus: publicProcedure
+    .input(z.object({ providerId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Get the provider with all their assigned types and requirements
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { id: input.providerId },
+        include: {
+          typeAssignments: {
+            include: {
+              providerType: {
+                include: {
+                  requirements: {
+                    where: { isRequired: true },
+                  },
+                },
+              },
+            },
+          },
+          requirementSubmissions: {
+            where: {
+              requirementType: {
+                isRequired: true,
+              },
+            },
+            include: {
+              requirementType: true,
+            },
+          },
+        },
+      });
+
+      if (!provider) {
+        throw new Error('Provider not found');
+      }
+
+      // Return the raw data - business logic will be handled by the server action
+      return {
+        typeAssignments: provider.typeAssignments,
+        requirementSubmissions: provider.requirementSubmissions,
+      };
+    }),
+
+  // ============================================================================
   // ONBOARDING & SETUP
   // ============================================================================
 

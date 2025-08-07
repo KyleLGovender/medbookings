@@ -10,6 +10,7 @@ import {
   rejectProviderRequestSchema,
   rejectRequirementRequestSchema
 } from '@/features/admin/types/schemas';
+import { validateProviderRequirementsBusinessLogic } from '@/features/providers/lib/actions';
 import { adminProcedure, createTRPCRouter } from '@/server/trpc';
 
 export const adminRouter = createTRPCRouter({
@@ -134,15 +135,32 @@ export const adminRouter = createTRPCRouter({
   /**
    * Approve provider
    * Migrated from: POST /api/admin/providers/[id]/approve
+   * OPTION C COMPLIANT: Uses business logic validation from server action
    */
   approveProvider: adminProcedure
     .input(adminRouteParamsSchema.merge(approveProviderRequestSchema))
     .mutation(async ({ ctx, input }) => {
-      // Check if all required requirements are approved
+      // Get provider with all requirements data for validation
       const provider = await ctx.prisma.provider.findUnique({
         where: { id: input.id },
         include: {
+          typeAssignments: {
+            include: {
+              providerType: {
+                include: {
+                  requirements: {
+                    where: { isRequired: true },
+                  },
+                },
+              },
+            },
+          },
           requirementSubmissions: {
+            where: {
+              requirementType: {
+                isRequired: true,
+              },
+            },
             include: {
               requirementType: true,
             },
@@ -154,20 +172,20 @@ export const adminRouter = createTRPCRouter({
         throw new Error('Provider not found');
       }
 
+      // Use the business logic validation function (Option C compliant)
+      const validationResult = await validateProviderRequirementsBusinessLogic(
+        provider.typeAssignments,
+        provider.requirementSubmissions
+      );
+
       // Check if all required requirements are approved
-      const requiredSubmissions = provider.requirementSubmissions.filter(
-        (submission) => submission.requirementType.isRequired
-      );
-
-      const unapprovedRequired = requiredSubmissions.filter(
-        (submission) => submission.status !== 'APPROVED'
-      );
-
-      if (unapprovedRequired.length > 0) {
+      if (!validationResult.allRequiredApproved) {
+        const pendingDetails = validationResult.pendingByType
+          .map(type => `${type.typeName}: ${type.pendingCount} pending`)
+          .join(', ');
+        
         throw new Error(
-          `Cannot approve provider: not all required requirements are approved. Unapproved: ${unapprovedRequired
-            .map((sub) => sub.requirementType.name)
-            .join(', ')}`
+          `Cannot approve provider: ${validationResult.pendingRequirementsCount} required requirements are not approved. ${pendingDetails}`
         );
       }
 
@@ -185,13 +203,17 @@ export const adminRouter = createTRPCRouter({
 
       // Log admin action
       console.log('ADMIN_ACTION: Provider approved', {
-        providerId: provider.id,
-        providerName: provider.name,
-        providerEmail: provider.email,
+        providerId: updatedProvider.id,
+        providerName: updatedProvider.name,
+        providerEmail: updatedProvider.email,
         adminId: ctx.session.user.id,
         adminEmail: ctx.session.user.email,
         timestamp: new Date().toISOString(),
         action: 'PROVIDER_APPROVED',
+        requirementsValidation: {
+          totalRequired: validationResult.totalRequired,
+          totalApproved: validationResult.totalApproved,
+        },
       });
 
       return updatedProvider;
