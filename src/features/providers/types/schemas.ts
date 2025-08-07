@@ -3,7 +3,15 @@
 // =============================================================================
 // Validation schemas for providers feature forms and API endpoints
 // Organized by: Input Schemas -> Response Schemas -> Utility Schemas
+//
+// OPTION C COMPLIANT: Using z.nativeEnum() with Prisma enums
+// =============================================================================
 import { z } from 'zod';
+import { 
+  ProviderStatus,
+  RequirementsValidationStatus,
+  Languages 
+} from '@prisma/client';
 
 // =============================================================================
 // INPUT SCHEMAS
@@ -30,14 +38,10 @@ export const updateProviderSchema = createProviderSchema.partial().extend({
   id: z.string().uuid(),
 });
 
-export const providerStatusSchema = z.enum([
-  'PENDING_APPROVAL',
-  'APPROVED',
-  'REJECTED',
-  'SUSPENDED',
-]);
+// Use Prisma enums directly with z.nativeEnum
+export const providerStatusSchema = z.nativeEnum(ProviderStatus);
 
-export const requirementStatusSchema = z.enum(['PENDING', 'APPROVED', 'REJECTED']);
+export const requirementStatusSchema = z.nativeEnum(RequirementsValidationStatus);
 
 // =============================================================================
 // RESPONSE SCHEMAS
@@ -79,7 +83,7 @@ export const basicInfoSchema = z.object({
     .min(50, 'Bio must be at least 50 characters')
     .max(500, 'Bio must be less than 500 characters'),
   image: z.string().min(1, 'Profile image is required'),
-  languages: z.array(z.string()).min(1, 'Please select at least one language'),
+  languages: z.array(z.nativeEnum(Languages)).min(1, 'Please select at least one language'),
   website: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
   email: z.string().email('Please enter a valid email address'),
   whatsapp: z.string().min(10, 'Please enter a valid WhatsApp number'),
