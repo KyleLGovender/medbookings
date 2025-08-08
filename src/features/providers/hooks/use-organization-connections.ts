@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { ProviderInvitationStatus, ConnectionStatus } from '@prisma/client';
 
 import { api } from '@/utils/api';
 
@@ -8,7 +9,7 @@ import { api } from '@/utils/api';
  * @returns Query object with provider invitations data
  */
 export function useProviderInvitations(
-  status?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'EXPIRED'
+  status?: ProviderInvitationStatus
 ) {
   return api.providers.getInvitations.useQuery(status ? { status } : {}, {
     // Always enabled since it handles auth internally
@@ -44,7 +45,7 @@ export function useRespondToInvitation(options?: {
  * @returns Query object with organization connections data
  */
 export function useOrganizationConnections(
-  status?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'SUSPENDED'
+  status?: ConnectionStatus
 ) {
   return api.providers.getConnections.useQuery(status ? { status } : {}, {
     // Always enabled since it handles auth internally

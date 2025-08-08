@@ -1,5 +1,7 @@
 'use client';
 
+import { ProviderStatus, RequirementsValidationStatus } from '@prisma/client';
+
 import { api } from '@/utils/api';
 
 /**
@@ -7,7 +9,7 @@ import { api } from '@/utils/api';
  * @param status Optional status filter for providers
  * @returns Query result with providers list
  */
-export function useAdminProviders(status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED') {
+export function useAdminProviders(status?: ProviderStatus) {
   return api.admin.getProviders.useQuery({ status });
 }
 
@@ -52,7 +54,7 @@ export function useAdminProviderCounts() {
         // Calculate counts by status
         const counts = providers.reduce(
           (acc: Record<string, number>, provider: any) => {
-            const status = provider.status || 'PENDING';
+            const status = provider.status || ProviderStatus.PENDING_APPROVAL;
             acc[status] = (acc[status] || 0) + 1;
             acc.total = (acc.total || 0) + 1;
             return acc;
@@ -67,7 +69,7 @@ export function useAdminProviderCounts() {
           const submissions = provider.requirementSubmissions || [];
 
           const approvedCount = submissions.filter(
-            (sub: any) => sub.status === 'APPROVED'
+            (sub: any) => sub.status === RequirementsValidationStatus.APPROVED
           ).length;
 
           const totalCount = submissions.length;
@@ -107,7 +109,7 @@ export function useAdminProvidersWithPendingRequirements() {
           const submissions = provider.requirementSubmissions || [];
 
           const approvedCount = submissions.filter(
-            (sub: any) => sub.status === 'APPROVED'
+            (sub: any) => sub.status === RequirementsValidationStatus.APPROVED
           ).length;
 
           const totalCount = submissions.length;
@@ -132,12 +134,12 @@ export function useAdminProvidersReadyForApproval() {
         // Filter providers ready for approval
         return providers.filter((provider: any) => {
           // Only consider providers that are still pending
-          if (provider.status !== 'PENDING_APPROVAL') return false;
+          if (provider.status !== ProviderStatus.PENDING_APPROVAL) return false;
 
           const submissions = provider.requirementSubmissions || [];
 
           const approvedCount = submissions.filter(
-            (sub: any) => sub.status === 'APPROVED'
+            (sub: any) => sub.status === RequirementsValidationStatus.APPROVED
           ).length;
 
           const totalCount = submissions.length;

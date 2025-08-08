@@ -1,4 +1,9 @@
+import { ConnectionStatus } from '@prisma/client';
+
 import { api } from '@/utils/api';
+
+// Type for connection statuses that can be updated
+type UpdatableConnectionStatus = Extract<ConnectionStatus, 'ACCEPTED' | 'SUSPENDED'>;
 
 export function useOrganizationProviderConnections(organizationId: string) {
   return api.organizations.getProviderConnections.useQuery(
@@ -44,7 +49,7 @@ export function useManageOrganizationProviderConnection(
     mutate: (params: {
       connectionId: string;
       action: 'update' | 'delete';
-      data?: { status: 'ACCEPTED' | 'SUSPENDED' };
+      data?: { status: UpdatableConnectionStatus };
     }) => {
       if (params.action === 'update' && params.data?.status) {
         updateConnection.mutate({

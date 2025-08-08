@@ -2,6 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { RequirementsValidationStatus, ProviderStatus } from '@prisma/client';
 import { api } from '@/utils/api';
 
 /**
@@ -19,12 +20,12 @@ export function useRequiredRequirementsStatus(providerId: string | undefined) {
           (submission) => submission.requirementType.isRequired
         );
         const allApproved = requiredSubmissions.every(
-          (submission) => submission.status === 'APPROVED'
+          (submission) => submission.status === RequirementsValidationStatus.APPROVED
         );
         return {
           allRequiredApproved: allApproved,
           requiredCount: requiredSubmissions.length,
-          approvedCount: requiredSubmissions.filter((s) => s.status === 'APPROVED').length,
+          approvedCount: requiredSubmissions.filter((s) => s.status === RequirementsValidationStatus.APPROVED).length,
         };
       },
     }
@@ -94,7 +95,7 @@ export function useApproveRequirement(options?: {
           sub.id === requirementId
             ? {
                 ...sub,
-                status: 'APPROVED',
+                status: RequirementsValidationStatus.APPROVED,
                 validatedAt: new Date().toISOString(),
                 validatedById: 'optimistic',
               }
@@ -183,7 +184,7 @@ export function useRejectRequirement(options?: {
             sub.id === requirementId
               ? {
                   ...sub,
-                  status: 'REJECTED',
+                  status: RequirementsValidationStatus.REJECTED,
                   validatedAt: new Date().toISOString(),
                   validatedById: 'optimistic', // This will be replaced by the real value
                   notes: reason,
@@ -278,7 +279,7 @@ export function useApproveProvider(options?: {
 
         const updated = {
           ...old,
-          status: 'APPROVED',
+          status: ProviderStatus.APPROVED,
           approvedAt: new Date().toISOString(),
           approvedById: 'optimistic',
           rejectedAt: null,
@@ -383,7 +384,7 @@ export function useRejectProvider(options?: {
 
         const updated = {
           ...old,
-          status: 'REJECTED',
+          status: ProviderStatus.REJECTED,
           rejectedAt: new Date().toISOString(),
           rejectionReason: reason,
           approvedAt: null,
@@ -488,7 +489,7 @@ export function useResetProviderStatus(options?: {
 
         const updated = {
           ...old,
-          status: 'PENDING_APPROVAL',
+          status: ProviderStatus.PENDING_APPROVAL,
           rejectedAt: null,
           rejectionReason: null,
           approvedAt: null,
