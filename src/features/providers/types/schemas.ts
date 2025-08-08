@@ -10,7 +10,8 @@ import { z } from 'zod';
 import { 
   ProviderStatus,
   RequirementsValidationStatus,
-  Languages 
+  Languages,
+  ConnectionStatus
 } from '@prisma/client';
 
 // =============================================================================
@@ -157,9 +158,9 @@ export const InvitationResponseSchema = z.object({
 
 export type InvitationResponse = z.infer<typeof InvitationResponseSchema>;
 
-// Schema for connection management
+// Schema for connection management  
 export const ConnectionUpdateSchema = z.object({
-  status: z.enum(['ACCEPTED', 'SUSPENDED'] as const),
+  status: z.nativeEnum(ConnectionStatus),
 });
 
 export type ConnectionUpdate = z.infer<typeof ConnectionUpdateSchema>;

@@ -204,7 +204,7 @@ export const subscriptionQueryOptionsSchema = z.object({
 
 // Billing dashboard query schema
 export const billingDashboardQuerySchema = z.object({
-  entityType: z.enum(['organization', 'location', 'provider']),
+  entityType: billingEntitySchema,
   entityId: z.string().uuid(),
   includeTrialInfo: z.boolean().optional(),
   paymentLimit: z.number().int().min(1).max(100).optional().default(10),
@@ -221,7 +221,7 @@ export const subscriptionRouteParamsSchema = z.object({
 
 // Entity route params schema
 export const entityRouteParamsSchema = z.object({
-  entityType: z.enum(['organization', 'location', 'provider']),
+  entityType: billingEntitySchema,
   entityId: z.string().uuid(),
 });
 
