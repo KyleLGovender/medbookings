@@ -11,26 +11,32 @@
 // =============================================================================
 
 // =============================================================================
-// DOMAIN-SPECIFIC TYPES (Not in Prisma)
+// PRISMA ENUM IMPORTS
 // =============================================================================
 
-// Note: All provider-related enums (ProviderStatus, RequirementsValidationStatus, 
-// RequirementValidationType, Languages) are defined in Prisma schema.
-// Import them directly from '@prisma/client' where needed.
+import {
+  ProviderStatus,
+  RequirementsValidationStatus,
+  RequirementValidationType,
+  Languages,
+} from '@prisma/client';
+
+// =============================================================================
+// DOMAIN-SPECIFIC TYPES (Not in Prisma)
+// =============================================================================
 
 // =============================================================================
 // BASE INTERFACES (Client-only types)
 // =============================================================================
 
 // Provider-related base interfaces for client-side use
-// Note: status field should use ProviderStatus from @prisma/client
 export interface BasicProviderInfo {
   id: string;
   name: string;
   email: string;
   phone?: string;
   whatsapp?: string;
-  status: string; // Will be ProviderStatus when imported from Prisma
+  status: ProviderStatus;
   isActive: boolean;
 }
 
@@ -45,7 +51,7 @@ export type RequirementTypeData = {
   id: string;
   name: string;
   description: string | null;
-  validationType: string;
+  validationType: RequirementValidationType;
   isRequired: boolean;
   validationConfig: any;
   displayPriority?: number;
@@ -143,7 +149,7 @@ export type RequirementType = {
   id: string;
   name: string;
   description?: string | null;
-  validationType: string; // Will be RequirementValidationType when imported from Prisma
+  validationType: RequirementValidationType;
   isRequired: boolean;
   validationConfig?: ValidationConfig;
   displayPriority?: number;
@@ -158,8 +164,6 @@ export type RequirementType = {
 /**
  * Represents a provider's submission for a regulatory or business requirement.
  * Supports various submission types including documents, forms, and boolean validations.
- * 
- * Note: status field should use RequirementsValidationStatus from @prisma/client
  */
 export type RequirementSubmission = {
   /** Unique identifier for the submission (generated on save) */
@@ -169,7 +173,7 @@ export type RequirementSubmission = {
   /** Provider making the submission */
   providerId?: string;
   /** Current validation status of the submission */
-  status?: string; // Will be RequirementsValidationStatus when imported from Prisma
+  status?: RequirementsValidationStatus;
   /** Metadata for document submissions including URLs and file info */
   documentMetadata?: Record<string, any> | null;
   /** Expiration date for time-sensitive requirements (e.g., licenses) */

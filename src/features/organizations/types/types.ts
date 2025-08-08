@@ -17,9 +17,20 @@
 // Components will use tRPC RouterOutputs for server data in Task 4.0
 
 // =============================================================================
+// PRISMA ENUM IMPORTS
+// =============================================================================
+
+import {
+  OrganizationStatus,
+  OrganizationRole,
+  OrganizationBillingModel,
+  MembershipStatus,
+  InvitationStatus,
+} from '@prisma/client';
+
+// =============================================================================
 // DOMAIN ENUMS - CLIENT-ONLY BUSINESS LOGIC
 // =============================================================================
-// Note: Prisma enums should be imported directly from @prisma/client where needed
 
 // Domain-specific enum for UI actions (not in Prisma)
 export enum InvitationAction {
@@ -40,7 +51,7 @@ export interface BasicOrganizationInfo {
   email?: string;
   phone?: string;
   website?: string;
-  status: string; // Use Prisma OrganizationStatus directly where needed
+  status: OrganizationStatus;
   isActive: boolean;
 }
 
@@ -85,7 +96,7 @@ export type OrganizationBasicInfoData = CreateOrganizationData;
 
 export interface OrganizationRegistrationData {
   organization: CreateOrganizationData & {
-    billingModel: 'CONSOLIDATED' | 'SLOT_BASED';
+    billingModel: OrganizationBillingModel;
     logo?: string;
   };
   locations?: Array<{
@@ -107,7 +118,7 @@ export interface UpdateOrganizationData extends Partial<CreateOrganizationData> 
 export interface CreateMembershipData {
   organizationId: string;
   userId: string;
-  role: string; // Use Prisma OrganizationRole directly where needed
+  role: OrganizationRole;
 }
 
 export interface CreateLocationData {

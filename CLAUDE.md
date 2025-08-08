@@ -31,6 +31,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Always display a list of files that were modified once a task is complete explaining briefly what was modified in each file
 
+### Git Workflow
+
+- **Commit changes after completing each subtask** to maintain clear development history
+- Create descriptive commit messages that explain what was accomplished
+- Use standard co-authored footer for AI-assisted development
+
 ## Server Management
 
 - Let the user run the dev server... never start the dev server yourself... just request the user to do it

@@ -3,7 +3,13 @@
 // =============================================================================
 // Validation schemas for organizations feature forms and API endpoints
 // Organized by: Input Schemas -> Response Schemas -> Utility Schemas
-import { MembershipStatus, OrganizationRole, OrganizationStatus } from '@prisma/client';
+import {
+  MembershipStatus,
+  OrganizationRole,
+  OrganizationStatus,
+  OrganizationBillingModel,
+  InvitationStatus,
+} from '@prisma/client';
 import { z } from 'zod';
 
 // =============================================================================
@@ -25,7 +31,7 @@ export const updateOrganizationSchema = createOrganizationSchema.partial().exten
 export const createMembershipSchema = z.object({
   organizationId: z.string(),
   userId: z.string(),
-  role: z.enum(['ADMIN', 'MANAGER', 'MEMBER']),
+  role: z.nativeEnum(OrganizationRole),
 });
 
 export const createLocationSchema = z.object({
@@ -45,7 +51,7 @@ export const organizationBasicInfoSchema = createOrganizationSchema;
 
 export const organizationRegistrationSchema = z.object({
   organization: createOrganizationSchema.extend({
-    billingModel: z.enum(['CONSOLIDATED', 'SLOT_BASED']).default('CONSOLIDATED'),
+    billingModel: z.nativeEnum(OrganizationBillingModel).default('CONSOLIDATED'),
     logo: z.string().optional().or(z.literal('')),
   }),
   locations: z
