@@ -3,44 +3,18 @@
 // =============================================================================
 // Runtime type validation for billing-specific types and API responses
 import { isValidDateString, isValidUUID } from '@/types/guards';
+import { PaymentStatus, SubscriptionStatus, BillingInterval, BillingEntity } from '@prisma/client';
 
 // =============================================================================
 // ENUM GUARDS
 // =============================================================================
 
-export function isSubscriptionStatus(
-  value: unknown
-): value is
-  | 'ACTIVE'
-  | 'CANCELLED'
-  | 'PAST_DUE'
-  | 'UNPAID'
-  | 'INCOMPLETE'
-  | 'INCOMPLETE_EXPIRED'
-  | 'TRIALING'
-  | 'PAUSED' {
-  return (
-    typeof value === 'string' &&
-    [
-      'ACTIVE',
-      'CANCELLED',
-      'PAST_DUE',
-      'UNPAID',
-      'INCOMPLETE',
-      'INCOMPLETE_EXPIRED',
-      'TRIALING',
-      'PAUSED',
-    ].includes(value)
-  );
+export function isSubscriptionStatus(value: unknown): value is SubscriptionStatus {
+  return typeof value === 'string' && Object.values(SubscriptionStatus).includes(value as SubscriptionStatus);
 }
 
-export function isPaymentStatus(
-  value: unknown
-): value is 'PENDING' | 'PROCESSING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED' | 'REFUNDED' {
-  return (
-    typeof value === 'string' &&
-    ['PENDING', 'PROCESSING', 'SUCCEEDED', 'FAILED', 'CANCELLED', 'REFUNDED'].includes(value)
-  );
+export function isPaymentStatus(value: unknown): value is PaymentStatus {
+  return typeof value === 'string' && Object.values(PaymentStatus).includes(value as PaymentStatus);
 }
 
 export function isInvoiceStatus(
@@ -51,8 +25,10 @@ export function isInvoiceStatus(
   );
 }
 
-export function isBillingInterval(value: unknown): value is 'MONTHLY' | 'YEARLY' | 'ONE_TIME' {
-  return typeof value === 'string' && ['MONTHLY', 'YEARLY', 'ONE_TIME'].includes(value);
+export function isBillingInterval(value: unknown): value is BillingInterval | 'YEARLY' | 'ONE_TIME' {
+  // Check Prisma enum first, then domain-specific extensions
+  return typeof value === 'string' && 
+    (Object.values(BillingInterval).includes(value as BillingInterval) || ['YEARLY', 'ONE_TIME'].includes(value));
 }
 
 export function isSubscriptionEntityType(

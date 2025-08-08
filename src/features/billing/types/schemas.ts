@@ -13,7 +13,7 @@ import {
   SubscriptionStatus,
   SubscriptionType,
   TrialStatus,
-} from './types';
+} from '@prisma/client';
 
 // =============================================================================
 // ENUM SCHEMAS

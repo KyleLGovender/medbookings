@@ -2,13 +2,24 @@
 // BILLING FEATURE TYPES
 // =============================================================================
 // All type definitions for the billing feature in one place
-// Organized by: Domain Enums -> Business Logic -> Request Types -> Component Props
+// Organized by: Prisma Imports -> Domain Enums -> Business Logic -> Request Types -> Component Props
+
+// =============================================================================
+// PRISMA TYPE IMPORTS
+// =============================================================================
+// Import database enums directly from Prisma to prevent type drift
+
+import {
+  PaymentStatus,
+  SubscriptionStatus,
+  BillingEntity,
+  BillingInterval
+} from '@prisma/client';
 
 // =============================================================================
 // DOMAIN ENUMS AND BUSINESS LOGIC
 // =============================================================================
-// Note: Domain enums will be imported from Prisma where needed, but we don't
-// re-export them here to avoid coupling manual types to server schema.
+// Note: Database enums are now imported from Prisma above.
 // Components will use tRPC RouterOutputs for server data types.
 
 // =============================================================================
@@ -24,8 +35,8 @@ export type SubscriptionEntity =
 // Basic subscription info (business logic)
 export interface SubscriptionInfo {
   id: string;
-  status: 'ACTIVE' | 'CANCELLED' | 'PAST_DUE' | 'UNPAID' | 'INCOMPLETE' | 'INCOMPLETE_EXPIRED' | 'TRIALING' | 'PAUSED'; // Domain enum
-  type: 'BASE' | 'TRIAL' | 'PROMOTIONAL'; // Domain enum
+  status: SubscriptionStatus; // Use Prisma enum
+  type: 'BASE' | 'TRIAL' | 'PROMOTIONAL'; // Domain enum (not in Prisma)
   startDate: Date;
   endDate?: Date;
   isActive: boolean;
@@ -38,7 +49,7 @@ export interface PaymentInfo {
   baseAmount?: number;
   usageAmount?: number;
   currency: string;
-  status: 'PENDING' | 'PROCESSING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED' | 'REFUNDED'; // Domain enum
+  status: PaymentStatus; // Use Prisma enum
   paidAt?: Date;
   billingPeriodStart?: Date;
   billingPeriodEnd?: Date;
@@ -71,8 +82,8 @@ export interface TrialInfo {
 
 // Billing configuration data (domain logic)
 export interface BillingConfigurationData {
-  billingModel: 'ORGANIZATION' | 'LOCATION' | 'PROVIDER'; // Domain enum
-  defaultBillingEntity?: 'ORGANIZATION' | 'LOCATION' | 'PROVIDER'; // Domain enum
+  billingModel: BillingEntity; // Use Prisma enum
+  defaultBillingEntity?: BillingEntity; // Use Prisma enum
   paymentMethodAdded?: boolean;
 }
 
@@ -93,7 +104,7 @@ export interface PlanWithPricing {
   description?: string;
   basePrice: number; // Changed from Decimal to number for client-side calculations
   currency: string;
-  interval: 'MONTHLY' | 'YEARLY' | 'ONE_TIME'; // Domain enum
+  interval: BillingInterval | 'YEARLY' | 'ONE_TIME'; // Use Prisma enum + domain-specific extensions
   includedSlots: number;
   overagePrice: number; // Changed from Decimal to number for client-side calculations
   stripePriceId?: string;
@@ -117,15 +128,15 @@ export interface CreateSubscriptionRequest {
 // Update subscription request
 export interface UpdateSubscriptionRequest {
   planId?: string;
-  status?: 'ACTIVE' | 'CANCELLED' | 'PAST_DUE' | 'UNPAID' | 'INCOMPLETE' | 'INCOMPLETE_EXPIRED' | 'TRIALING' | 'PAUSED'; // Domain enum
+  status?: SubscriptionStatus; // Use Prisma enum
   isActive?: boolean;
   endDate?: Date;
 }
 
 // Update billing configuration request
 export interface UpdateBillingConfigRequest {
-  billingModel?: 'ORGANIZATION' | 'LOCATION' | 'PROVIDER'; // Domain enum
-  defaultBillingEntity?: 'ORGANIZATION' | 'LOCATION' | 'PROVIDER'; // Domain enum
+  billingModel?: BillingEntity; // Use Prisma enum
+  defaultBillingEntity?: BillingEntity; // Use Prisma enum
 }
 
 // Process payment request
@@ -155,8 +166,8 @@ export interface CreateUsageRecordRequest {
 // Subscription query options
 export interface SubscriptionQueryOptions {
   includeRelations?: boolean;
-  status?: 'ACTIVE' | 'CANCELLED' | 'PAST_DUE' | 'UNPAID' | 'INCOMPLETE' | 'INCOMPLETE_EXPIRED' | 'TRIALING' | 'PAUSED'; // Domain enum
-  type?: 'BASE' | 'TRIAL' | 'PROMOTIONAL'; // Domain enum
+  status?: SubscriptionStatus; // Use Prisma enum
+  type?: 'BASE' | 'TRIAL' | 'PROMOTIONAL'; // Domain enum (not in Prisma)
   isActive?: boolean;
 }
 
