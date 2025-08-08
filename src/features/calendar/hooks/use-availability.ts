@@ -10,11 +10,15 @@ import {
 } from '@/features/calendar/lib/api-error-handler';
 import {
   AvailabilitySearchParams,
-  AvailabilityWithRelations,
   CreateAvailabilityData,
   UpdateAvailabilityData,
 } from '@/features/calendar/types/types';
-import { api } from '@/utils/api';
+import { api, type RouterOutputs } from '@/utils/api';
+
+// Extract types from tRPC procedures
+type AvailabilityWithRelations = RouterOutputs['calendar']['getById'];
+type CreateAvailabilityResponse = RouterOutputs['calendar']['create'];
+type CreatedAvailability = NonNullable<CreateAvailabilityResponse['availability']>;
 
 // =============================================================================
 // QUERY KEY FACTORY
@@ -155,7 +159,7 @@ export function useAvailabilitySeries(seriesId: string | undefined) {
 
 // Mutation hooks
 export function useCreateAvailability(options?: {
-  onSuccess?: (data: AvailabilityWithRelations, variables: CreateAvailabilityData) => void;
+  onSuccess?: (data: CreatedAvailability, variables: CreateAvailabilityData) => void;
 }) {
   const utils = api.useUtils();
 
@@ -165,8 +169,9 @@ export function useCreateAvailability(options?: {
       utils.calendar.searchAvailability.invalidate();
       utils.calendar.getById.invalidate();
 
-      if (data) {
-        options?.onSuccess?.(data, variables as any);
+      // The tRPC mutation returns an object with availability property
+      if (data?.availability) {
+        options?.onSuccess?.(data.availability, variables as any);
       }
     },
   });

@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Organization } from '@prisma/client';
 import { Clock, MapPin, Repeat, Send, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -41,19 +40,18 @@ import {
   getRecurrenceOptions,
 } from '@/features/calendar/lib/recurrence-utils';
 import { createAvailabilityDataSchema } from '@/features/calendar/types/schemas';
-import {
-  AvailabilityWithRelations,
-  CreateAvailabilityData,
-  CustomRecurrenceData,
-  RecurrenceOption,
-  SchedulingRule,
-} from '@/features/calendar/types/types';
+import { CreateAvailabilityData, CustomRecurrenceData, RecurrenceOption } from '@/features/calendar/types/types';
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
-import { OrganizationLocation } from '@/features/organizations/types/types';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
+import { type RouterOutputs } from '@/utils/api';
+import { SchedulingRule } from '@prisma/client';
+
+// Extract the availability type from the create mutation response
+type CreateAvailabilityResponse = RouterOutputs['calendar']['create'];
+type CreatedAvailability = NonNullable<CreateAvailabilityResponse['availability']>;
 
 // Using centralized OrganizationLocation type instead of local interface
 
@@ -63,7 +61,7 @@ interface AvailabilityProposalFormProps {
   locationId?: string;
   connectionId?: string;
   providerName?: string;
-  onSuccess?: (data: AvailabilityWithRelations) => void;
+  onSuccess?: (data: CreatedAvailability) => void;
   onCancel?: () => void;
 }
 
@@ -128,7 +126,7 @@ export function AvailabilityProposalForm({
   } = useProviderAssociatedServices(providerId);
 
   // Fetch organization locations
-  const organizationIds = userOrganizations.map((org: Organization) => org.id);
+  const organizationIds = userOrganizations.map((org: any) => org.id);
   const { data: availableLocations = [], isLoading: isLocationsLoading } =
     useOrganizationLocations(organizationIds);
 

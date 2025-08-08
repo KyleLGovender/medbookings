@@ -3,22 +3,20 @@
 // =============================================================================
 // Runtime type validation for admin-specific types and API responses
 import { isValidDateString, isValidEmail, isValidPhone, isValidUUID } from '@/types/guards';
+import { UserRole } from '@prisma/client';
+import { AdminActionType, AdminAction } from './types';
 
 // =============================================================================
 // ENUM GUARDS
 // =============================================================================
 
-export function isUserRole(value: unknown): value is 'USER' | 'ADMIN' | 'SUPER_ADMIN' {
-  return typeof value === 'string' && ['USER', 'ADMIN', 'SUPER_ADMIN'].includes(value);
+export function isUserRole(value: unknown): value is UserRole {
+  return typeof value === 'string' && Object.values(UserRole).includes(value as UserRole);
 }
 
-export function isAdminActionType(
-  value: unknown
-): value is 'APPROVE' | 'REJECT' | 'SUSPEND' | 'ACTIVATE' | 'DELETE' {
-  return (
-    typeof value === 'string' &&
-    ['APPROVE', 'REJECT', 'SUSPEND', 'ACTIVATE', 'DELETE'].includes(value)
-  );
+export function isAdminActionType(value: unknown): value is AdminActionType {
+  // Use the AdminAction enum values to validate
+  return typeof value === 'string' && Object.values(AdminAction).includes(value as any);
 }
 
 export function isEntityType(

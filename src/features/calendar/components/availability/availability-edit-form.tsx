@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Organization } from '@prisma/client';
 import { AlertTriangle, Calendar, Clock, MapPin, Repeat, Save } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
@@ -37,18 +36,21 @@ import {
   useUpdateAvailability,
 } from '@/features/calendar/hooks/use-availability';
 import { updateAvailabilityDataSchema } from '@/features/calendar/types/schemas';
-import {
-  AvailabilityWithRelations,
-  CalculatedAvailabilitySlotWithRelations,
-  SchedulingRule,
-  ServiceAvailabilityConfigWithRelations,
-  UpdateAvailabilityData,
-} from '@/features/calendar/types/types';
+import type { RecurrencePattern } from '@/features/calendar/types/types';
+import { type UpdateAvailabilityData } from '@/features/calendar/types/types';
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
-import { OrganizationLocation } from '@/features/organizations/types/types';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useToast } from '@/hooks/use-toast';
+import { type RouterOutputs } from '@/utils/api';
+import { SchedulingRule } from '@prisma/client';
+type AvailabilityWithRelations = RouterOutputs['calendar']['getById'];
+type CalculatedAvailabilitySlotWithRelations = NonNullable<
+  AvailabilityWithRelations['calculatedSlots']
+>[number];
+type ServiceAvailabilityConfigWithRelations = NonNullable<
+  AvailabilityWithRelations['availableServices']
+>[number];
 
 // Using centralized OrganizationLocation type instead of local interface
 
@@ -81,7 +83,7 @@ export function AvailabilityEditForm({
   const { data: userOrganizations = [] } = useCurrentUserOrganizations();
 
   // Fetch organization locations
-  const organizationIds = userOrganizations.map((org: Organization) => org.id);
+  const organizationIds = userOrganizations.map((org: any) => org.id);
   const { data: availableLocations = [], isLoading: isLocationsLoading } =
     useOrganizationLocations(organizationIds);
 
@@ -121,7 +123,11 @@ export function AvailabilityEditForm({
         startTime: availabilityWithId.startTime,
         endTime: availabilityWithId.endTime,
         isRecurring: availabilityWithId.isRecurring,
-        recurrencePattern: availabilityWithId.recurrencePattern || undefined,
+        recurrencePattern:
+          typeof availabilityWithId.recurrencePattern === 'object' &&
+          availabilityWithId.recurrencePattern !== null
+            ? (availabilityWithId.recurrencePattern as unknown as RecurrencePattern)
+            : undefined,
         schedulingRule: availabilityWithId.schedulingRule,
         schedulingInterval: availabilityWithId.schedulingInterval || undefined,
         isOnlineAvailable: availabilityWithId.isOnlineAvailable,

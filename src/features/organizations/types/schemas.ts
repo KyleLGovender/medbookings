@@ -3,6 +3,7 @@
 // =============================================================================
 // Validation schemas for organizations feature forms and API endpoints
 // Organized by: Input Schemas -> Response Schemas -> Utility Schemas
+import { MembershipStatus, OrganizationRole, OrganizationStatus } from '@prisma/client';
 import { z } from 'zod';
 
 // =============================================================================
@@ -62,16 +63,11 @@ export const ProviderInvitationSchema = z.object({
   customMessage: z.string().optional().or(z.literal('')),
 });
 
-export const organizationStatusSchema = z.enum([
-  'PENDING_APPROVAL',
-  'APPROVED',
-  'REJECTED',
-  'SUSPENDED',
-]);
+export const organizationStatusSchema = z.nativeEnum(OrganizationStatus);
 
-export const membershipRoleSchema = z.enum(['ADMIN', 'MANAGER', 'MEMBER']);
+export const membershipRoleSchema = z.nativeEnum(OrganizationRole);
 
-export const membershipStatusSchema = z.enum(['PENDING', 'ACTIVE', 'INACTIVE']);
+export const membershipStatusSchema = z.nativeEnum(MembershipStatus);
 
 // =============================================================================
 // RESPONSE SCHEMAS

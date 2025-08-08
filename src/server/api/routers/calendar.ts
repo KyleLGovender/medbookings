@@ -1,18 +1,18 @@
 import { revalidatePath } from 'next/cache';
 
+import { AvailabilityStatus, Prisma, SchedulingRule } from '@prisma/client';
 import { z } from 'zod';
-import { Prisma, AvailabilityStatus, SchedulingRule } from '@prisma/client';
 
 import {
-  validateAvailabilityCreation,
-  validateAvailabilityUpdate,
-  validateAvailabilityDeletion
+    validateAvailabilityCreation,
+    validateAvailabilityDeletion,
+    validateAvailabilityUpdate
 } from '@/features/calendar/lib/actions';
 import { generateSlotDataForAvailability } from '@/features/calendar/lib/slot-generation';
 import {
-  availabilityCreateSchema,
-  availabilitySearchParamsSchema,
-  updateAvailabilityDataSchema
+    availabilityCreateSchema,
+    availabilitySearchParamsSchema,
+    updateAvailabilityDataSchema
 } from '@/features/calendar/types/schemas';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
@@ -71,6 +71,8 @@ export const calendarRouter = createTRPCRouter({
         },
         organization: true,
         location: true,
+        availableServices: true,
+        createdBy: true,
         calculatedSlots: {
           include: {
             booking: true,

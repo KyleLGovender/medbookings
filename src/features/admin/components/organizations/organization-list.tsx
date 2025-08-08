@@ -8,38 +8,38 @@ import { Input } from '@/components/ui/input';
 import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { NavigationLink } from '@/components/ui/navigation-link';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@/components/ui/table';
 import type { AdminFilterStatus } from '@/features/admin/types/types';
+import {
+    useApproveOrganization,
+    useRejectOrganization,
+} from '@/features/organizations/hooks/use-admin-organization-approval';
+import { useAdminOrganizations } from '@/features/organizations/hooks/use-admin-organizations';
 import { type RouterOutputs } from '@/utils/api';
 
 type AdminOrganizations = RouterOutputs['admin']['getOrganizations'];
 type AdminOrganization = AdminOrganizations[number];
-import {
-  useApproveOrganization,
-  useRejectOrganization,
-} from '@/features/organizations/hooks/use-admin-organization-approval';
-import { useAdminOrganizations } from '@/features/organizations/hooks/use-admin-organizations';
 
 import { StatusBadge } from '../../../../components/status-badge';
 import { ApprovalButtons } from '../ui/approval-buttons';
 import { RejectionModal } from '../ui/rejection-modal';
 
 interface OrganizationListProps {
-  initialStatus?: ApprovalStatus;
+  initialStatus?: AdminFilterStatus;
 }
 
 export function OrganizationList({ initialStatus }: OrganizationListProps) {
@@ -59,7 +59,7 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
     data: organizations,
     isLoading,
     error,
-  } = useAdminOrganizations(statusFilter === 'all' ? undefined : (statusFilter as AdminApprovalStatus));
+  } = useAdminOrganizations(statusFilter === 'all' ? undefined : (statusFilter as AdminFilterStatus));
 
   const approveOrganizationMutation = useApproveOrganization();
   const rejectOrganizationMutation = useRejectOrganization();
@@ -222,12 +222,12 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            {organization._count?.memberships || 0} members
+                            {(organization.memberships?.length ?? 0)} members
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            {organization._count?.locations || 0} locations
+                            {(organization.locations?.length ?? 0)} locations
                           </div>
                         </TableCell>
                         <TableCell>
