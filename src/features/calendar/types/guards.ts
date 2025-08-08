@@ -3,37 +3,31 @@
 // =============================================================================
 // Runtime type validation for calendar-specific types and API responses
 import { isValidDate, isValidDateString, isValidUUID } from '@/types/guards';
+import { AvailabilityStatus, BookingStatus, SchedulingRule, SlotStatus } from '@prisma/client';
+import { RecurrenceOption } from './types';
 
 // =============================================================================
 // ENUM GUARDS
 // =============================================================================
 
-export function isAvailabilityStatus(
-  value: unknown
-): value is 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' {
-  return (
-    typeof value === 'string' && ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED'].includes(value)
-  );
+export function isAvailabilityStatus(value: unknown): value is AvailabilityStatus {
+  return typeof value === 'string' && Object.values(AvailabilityStatus).includes(value as AvailabilityStatus);
 }
 
-export function isSchedulingRule(
-  value: unknown
-): value is 'CONTINUOUS' | 'ON_THE_HOUR' | 'ON_THE_HALF_HOUR' {
-  return (
-    typeof value === 'string' && ['CONTINUOUS', 'ON_THE_HOUR', 'ON_THE_HALF_HOUR'].includes(value)
-  );
+export function isBookingStatus(value: unknown): value is BookingStatus {
+  return typeof value === 'string' && Object.values(BookingStatus).includes(value as BookingStatus);
 }
 
-export function isSlotStatus(
-  value: unknown
-): value is 'AVAILABLE' | 'BOOKED' | 'BLOCKED' | 'INVALID' {
-  return typeof value === 'string' && ['AVAILABLE', 'BOOKED', 'BLOCKED', 'INVALID'].includes(value);
+export function isSchedulingRule(value: unknown): value is SchedulingRule {
+  return typeof value === 'string' && Object.values(SchedulingRule).includes(value as SchedulingRule);
 }
 
-export function isRecurrenceOption(
-  value: unknown
-): value is 'none' | 'daily' | 'weekly' | 'custom' {
-  return typeof value === 'string' && ['none', 'daily', 'weekly', 'custom'].includes(value);
+export function isSlotStatus(value: unknown): value is SlotStatus {
+  return typeof value === 'string' && Object.values(SlotStatus).includes(value as SlotStatus);
+}
+
+export function isRecurrenceOption(value: unknown): value is RecurrenceOption {
+  return typeof value === 'string' && Object.values(RecurrenceOption).includes(value as RecurrenceOption);
 }
 
 // =============================================================================

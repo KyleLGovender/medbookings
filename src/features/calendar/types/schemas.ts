@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AvailabilityStatus, BillingEntity, SchedulingRule, SlotStatus } from '@prisma/client';
+import { AvailabilityStatus, BillingEntity, BookingStatus, SchedulingRule, SlotStatus } from '@prisma/client';
 
 import {
   AvailabilityContext,
@@ -10,6 +10,7 @@ import {
 // Base Zod schemas for enums
 export const availabilityStatusSchema = z.nativeEnum(AvailabilityStatus);
 export const billingEntitySchema = z.nativeEnum(BillingEntity);
+export const bookingStatusSchema = z.nativeEnum(BookingStatus);
 export const schedulingRuleSchema = z.nativeEnum(SchedulingRule);
 export const slotStatusSchema = z.nativeEnum(SlotStatus);
 export const dayOfWeekSchema = z.nativeEnum(DayOfWeek);

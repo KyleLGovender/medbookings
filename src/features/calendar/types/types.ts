@@ -24,6 +24,7 @@
 import { 
   AvailabilityStatus, 
   BillingEntity, 
+  BookingStatus,
   SchedulingRule, 
   SlotStatus 
 } from '@prisma/client';
@@ -94,7 +95,7 @@ export interface SlotCreateData {
   endTime: Date;
   duration: number;
   price: number;
-  status: 'AVAILABLE';
+  status: SlotStatus;
   isBlocked: boolean;
   lastCalculated: Date;
   createdAt: Date;
@@ -212,7 +213,7 @@ export interface Subscription {
 
 export interface Booking {
   id: string;
-  status: string;
+  status: BookingStatus;
   startTime: Date;
   endTime: Date;
 }
@@ -761,7 +762,7 @@ export interface SeriesCleanupResult extends CleanupResult {
 // Communication Service Type (moved from types.ts)
 export interface BookingView {
   id: string;
-  status: string;
+  status: BookingStatus;
   notificationPreferences: {
     whatsapp: boolean;
   };

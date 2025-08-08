@@ -90,7 +90,7 @@
   - [x] 3.1 Audit all manual type files for Prisma enum duplicates (document in prisma-type-import-migration.md)
   - [x] 3.2 Remove duplicate enums from admin types: AdminApprovalStatus, AdminActionType, UserRole
   - [x] 3.3 Remove duplicate enums from billing types: BillingStatus, PaymentStatus, SubscriptionStatus, SubscriptionTier, BillingPeriod
-  - [ ] 3.4 Remove duplicate enums from calendar types: AvailabilityStatus, BookingStatus, RecurrenceFrequency, DayOfWeek, AvailabilityType, SlotStatus
+  - [x] 3.4 Remove duplicate enums from calendar types: AvailabilityStatus, BookingStatus, RecurrenceFrequency, DayOfWeek, AvailabilityType, SlotStatus
   - [ ] 3.5 Remove duplicate enums from communications types: CommunicationType, NotificationStatus, NotificationChannel
   - [ ] 3.6 Remove duplicate enums from organizations types: OrganizationStatus, OrganizationRole, OrganizationBillingModel, MembershipStatus, InvitationStatus
   - [ ] 3.7 Remove duplicate enums from profile types: UserRole, AccountProvider
