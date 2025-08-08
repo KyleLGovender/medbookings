@@ -2,14 +2,13 @@ import { EmailService } from '@/features/communications/services/email.service';
 import { TemplateService } from '@/features/communications/services/template.service';
 import { WhatsAppService } from '@/features/communications/services/whatsapp.service';
 
+import { CommunicationType, CommunicationChannel } from '@prisma/client';
 import {
-  NotificationChannel,
   NotificationContent,
   NotificationOptions,
   NotificationRecipient,
   NotificationResult,
   TemplateData,
-  TemplateType,
 } from '../types/types';
 
 export class NotificationService {
@@ -31,10 +30,10 @@ export class NotificationService {
       let result: NotificationResult;
 
       switch (channel) {
-        case NotificationChannel.EMAIL:
+        case CommunicationChannel.EMAIL:
           result = await this.emailService.send(recipient, content);
           break;
-        case NotificationChannel.WHATSAPP:
+        case CommunicationChannel.WHATSAPP:
           result = await this.whatsappService.send(recipient, content);
           break;
         default:

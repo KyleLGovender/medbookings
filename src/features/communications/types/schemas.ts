@@ -5,15 +5,14 @@
 // Organized by: Entity Schemas -> Request Schemas -> Response Schemas
 import { z } from 'zod';
 
-import { NotificationChannel, NotificationType, TemplateType } from './types';
+import { CommunicationType, CommunicationChannel } from '@prisma/client';
 
 // =============================================================================
 // ENUM SCHEMAS
 // =============================================================================
 
-export const notificationChannelSchema = z.nativeEnum(NotificationChannel);
-export const notificationTypeSchema = z.nativeEnum(NotificationType);
-export const templateTypeSchema = z.nativeEnum(TemplateType);
+export const communicationChannelSchema = z.nativeEnum(CommunicationChannel);
+export const communicationTypeSchema = z.nativeEnum(CommunicationType);
 
 // =============================================================================
 // ENTITY SCHEMAS
@@ -37,7 +36,7 @@ export const notificationRecipientSchema = z.object({
 
 // Notification options schema
 export const notificationOptionsSchema = z.object({
-  channels: z.array(notificationChannelSchema).optional(),
+  channels: z.array(communicationChannelSchema).optional(),
   priority: z.enum(['high', 'normal', 'low']).optional(),
   retry: z.boolean().optional(),
 });

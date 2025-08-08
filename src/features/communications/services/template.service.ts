@@ -1,4 +1,5 @@
-import { TemplateData, TemplateType } from '../types/types';
+import { CommunicationType } from '@prisma/client';
+import { TemplateData } from '../types/types';
 
 export class TemplateService {
   private static formatDateTime(date: Date): { date: string; time: string } {
@@ -11,15 +12,15 @@ export class TemplateService {
     };
   }
 
-  static getTemplate(type: TemplateType, data: TemplateData): string {
+  static getTemplate(type: CommunicationType, data: TemplateData): string {
     const recipientName = data.recipientName || 'Guest';
 
     switch (type) {
-      case TemplateType.BOOKING_CONFIRMATION:
+      case CommunicationType.BOOKING_CONFIRMATION:
         return this.getBookingConfirmationTemplate(recipientName, data);
-      case TemplateType.BOOKING_UPDATE:
+      case CommunicationType.BOOKING_MODIFICATION:
         return this.getBookingUpdateTemplate(recipientName, data);
-      case TemplateType.BOOKING_CANCELLATION:
+      case CommunicationType.BOOKING_CANCELLATION:
         return this.getBookingCancellationTemplate(recipientName, data);
       default:
         throw new Error(`Unknown template type: ${type}`);

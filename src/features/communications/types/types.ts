@@ -2,8 +2,18 @@
 // COMMUNICATIONS FEATURE TYPES
 // =============================================================================
 // All type definitions for the communications feature in one place
-// Organized by: Domain Enums -> Business Logic -> Communication Interfaces
-//
+// Organized by: Prisma Imports -> Domain Enums -> Business Logic -> Communication Interfaces
+
+// =============================================================================
+// PRISMA TYPE IMPORTS
+// =============================================================================
+// Import database enums directly from Prisma to prevent type drift
+
+import {
+  CommunicationType,
+  CommunicationChannel
+} from '@prisma/client';
+
 // =============================================================================
 // MIGRATION NOTES - CROSS-FEATURE IMPORTS REMOVED
 // =============================================================================
@@ -14,32 +24,10 @@
 // Components will use tRPC RouterOutputs for server data in Task 4.0
 
 // =============================================================================
-// ENUMS AND CONSTANTS
+// DOMAIN ENUMS AND CONSTANTS
 // =============================================================================
-
-export const NotificationChannel = {
-  EMAIL: 'EMAIL',
-  SMS: 'SMS',
-  WHATSAPP: 'WHATSAPP',
-} as const;
-
-export type NotificationChannel = (typeof NotificationChannel)[keyof typeof NotificationChannel];
-
-export const TemplateType = {
-  BOOKING_CONFIRMATION: 'BOOKING_CONFIRMATION',
-  BOOKING_UPDATE: 'BOOKING_UPDATE',
-  BOOKING_CANCELLATION: 'BOOKING_CANCELLATION',
-} as const;
-
-export type TemplateType = (typeof TemplateType)[keyof typeof TemplateType];
-
-export const NotificationType = {
-  BOOKING_CONFIRMATION: 'BOOKING_CONFIRMATION',
-  BOOKING_UPDATE: 'BOOKING_UPDATE',
-  BOOKING_CANCELLATION: 'BOOKING_CANCELLATION',
-} as const;
-
-export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
+// Note: Database enums are now imported from Prisma above.
+// Custom const objects replaced with proper enum imports.
 
 // =============================================================================
 // BASE INTERFACES
@@ -71,7 +59,7 @@ export interface NotificationTemplate {
 }
 
 export interface NotificationOptions {
-  channels?: NotificationChannel[];
+  channels?: CommunicationChannel[];
   priority?: 'high' | 'normal' | 'low';
   retry?: boolean;
 }
