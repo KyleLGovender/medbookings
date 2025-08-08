@@ -2,6 +2,8 @@
 
 import { Calendar, Check, FileText, Info, X } from 'lucide-react';
 
+import { RequirementsValidationStatus } from '@prisma/client';
+
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { NavigationLink } from '@/components/ui/navigation-link';
@@ -128,20 +130,20 @@ export function RequirementSubmissionCard({
     submission.documentMetadata?.value;
 
   const shouldShowPendingButtons =
-    isAdminView && submission.status === 'PENDING' && onApprove && onReject;
+    isAdminView && submission.status === RequirementsValidationStatus.PENDING && onApprove && onReject;
 
   const shouldShowReapproveButton =
     isAdminView &&
-    (submission.status === 'REJECTED' || submission.status?.includes('REJECT')) &&
+    (submission.status === RequirementsValidationStatus.REJECTED || submission.status?.includes('REJECT')) &&
     onApprove;
 
   const shouldShowStatusBadge =
     submission.status &&
-    (submission.status === 'APPROVED' ||
-      submission.status === 'REJECTED' ||
+    (submission.status === RequirementsValidationStatus.APPROVED ||
+      submission.status === RequirementsValidationStatus.REJECTED ||
       submission.status?.includes('REJECT') ||
       submission.status?.includes('APPROV') ||
-      submission.status === 'PENDING');
+      submission.status === RequirementsValidationStatus.PENDING);
 
   return (
     <div className={`rounded-md border p-4 ${className}`}>
@@ -183,7 +185,7 @@ export function RequirementSubmissionCard({
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
                 {/* Show rejection details icon for rejected requirements */}
-                {(submission.status === 'REJECTED' || submission.status?.includes('REJECT')) && (
+                {(submission.status === RequirementsValidationStatus.REJECTED || submission.status?.includes('REJECT')) && (
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button

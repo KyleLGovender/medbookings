@@ -92,10 +92,10 @@
   - [x] 3.3 Remove duplicate enums from billing types: BillingStatus, PaymentStatus, SubscriptionStatus, SubscriptionTier, BillingPeriod
   - [x] 3.4 Remove duplicate enums from calendar types: AvailabilityStatus, BookingStatus, RecurrenceFrequency, DayOfWeek, AvailabilityType, SlotStatus
   - [x] 3.5 Remove duplicate enums from communications types: CommunicationType, NotificationStatus, NotificationChannel
-  - [ ] 3.6 Remove duplicate enums from organizations types: OrganizationStatus, OrganizationRole, OrganizationBillingModel, MembershipStatus, InvitationStatus
-  - [ ] 3.7 Remove duplicate enums from profile types: UserRole, AccountProvider
-  - [ ] 3.8 Remove duplicate enums from providers types: ProviderStatus, RequirementsValidationStatus, RequirementValidationType, Languages, RequirementSubmissionStatus
-  - [ ] 3.9 Remove duplicate enums from reviews types: ReviewStatus, ReviewRating
+  - [x] 3.6 Remove duplicate enums from organizations types: OrganizationStatus, OrganizationRole, OrganizationBillingModel, MembershipStatus, InvitationStatus
+  - [x] 3.7 Remove duplicate enums from profile types: UserRole, AccountProvider (already clean - no duplicates found)
+  - [x] 3.8 Remove duplicate enums from providers types: ProviderStatus, RequirementsValidationStatus, RequirementValidationType, Languages, RequirementSubmissionStatus
+  - [x] 3.9 Remove duplicate enums from reviews types: ReviewStatus, ReviewRating (placeholder stubs - no duplicates found)
   - [ ] 3.10 Update all component imports to use @prisma/client for enums
   - [ ] 3.11 Update all hook imports to use @prisma/client for enums
   - [ ] 3.12 Update all server action imports to use @prisma/client for enums

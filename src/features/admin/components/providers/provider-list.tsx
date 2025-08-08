@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ProviderStatus } from '@prisma/client';
 import type { AdminFilterStatus } from '@/features/admin/types/types';
 import { type RouterOutputs } from '@/utils/api';
 
@@ -130,9 +131,9 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="PENDING_APPROVAL">Pending</SelectItem>
-                  <SelectItem value="APPROVED">Approved</SelectItem>
-                  <SelectItem value="REJECTED">Rejected</SelectItem>
+                  <SelectItem value={ProviderStatus.PENDING_APPROVAL}>Pending</SelectItem>
+                  <SelectItem value={ProviderStatus.APPROVED}>Approved</SelectItem>
+                  <SelectItem value={ProviderStatus.REJECTED}>Rejected</SelectItem>
                 </SelectContent>
               </Select>
               <Input
@@ -208,11 +209,11 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                         <TableCell>
                           <StatusBadge
                             status={
-                              provider.status === 'PENDING_APPROVAL'
+                              provider.status === ProviderStatus.PENDING_APPROVAL
                                 ? 'PENDING'
-                                : provider.status === 'REJECTED'
+                                : provider.status === ProviderStatus.REJECTED
                                   ? 'REJECTED'
-                                  : provider.status === 'SUSPENDED'
+                                  : provider.status === ProviderStatus.SUSPENDED
                                     ? 'SUSPENDED'
                                     : 'APPROVED'
                             }
@@ -232,7 +233,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          {provider.status === 'PENDING_APPROVAL' ? (
+                          {provider.status === ProviderStatus.PENDING_APPROVAL ? (
                             (() => {
                               const approvedRequirements =
                                 provider.requirementSubmissions?.filter(

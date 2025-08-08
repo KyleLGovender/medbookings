@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 
 import { useSession } from 'next-auth/react';
 
+import { ProviderInvitationStatus } from '@prisma/client';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api, type RouterOutputs } from '@/utils/api';
@@ -87,13 +89,13 @@ export function InvitationPageContent({ token }: InvitationPageContentProps) {
   }
 
   // Check if invitation is already used
-  if (invitation.status !== 'PENDING') {
+  if (invitation.status !== ProviderInvitationStatus.PENDING) {
     let statusMessage = 'This invitation has already been responded to';
-    if (invitation.status === 'ACCEPTED') {
+    if (invitation.status === ProviderInvitationStatus.ACCEPTED) {
       statusMessage = 'This invitation has already been accepted';
-    } else if (invitation.status === 'REJECTED') {
+    } else if (invitation.status === ProviderInvitationStatus.REJECTED) {
       statusMessage = 'This invitation has been declined';
-    } else if (invitation.status === 'CANCELLED') {
+    } else if (invitation.status === ProviderInvitationStatus.CANCELLED) {
       statusMessage = 'This invitation has been cancelled';
     }
 

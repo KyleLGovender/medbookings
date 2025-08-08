@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+import { ProviderStatus, RequirementsValidationStatus } from '@prisma/client';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -199,14 +201,14 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
   }
 
   const approvedRequirements =
-    requirements?.filter((req: RequirementSubmission) => req.status === 'APPROVED').length || 0;
+    requirements?.filter((req: RequirementSubmission) => req.status === RequirementsValidationStatus.APPROVED).length || 0;
   const totalRequirements = requirements?.length || 0;
 
   // Check if all REQUIRED requirements are approved (to match server-side logic)
   const requiredSubmissions =
     requirements?.filter((req: RequirementSubmission) => req.requirementType?.isRequired) || [];
   const approvedRequiredSubmissions = requiredSubmissions.filter(
-    (req: RequirementSubmission) => req.status === 'APPROVED'
+    (req: RequirementSubmission) => req.status === RequirementsValidationStatus.APPROVED
   );
   const allRequiredRequirementsApproved =
     requiredSubmissions.length > 0 &&
@@ -223,12 +225,12 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
         <div className="flex items-center gap-4">
           <StatusBadge
             status={
-              provider?.status === 'PENDING_APPROVAL'
+              provider?.status === ProviderStatus.PENDING_APPROVAL
                 ? 'PENDING'
                 : provider?.status || 'PENDING'
             }
           />
-          {provider?.status === 'PENDING_APPROVAL' && allRequiredRequirementsApproved && (
+          {provider?.status === ProviderStatus.PENDING_APPROVAL && allRequiredRequirementsApproved && (
             <ApprovalButtons
               onApprove={handleApproveProvider}
               onReject={handleRejectProviderClick}
@@ -236,7 +238,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
               isRejecting={rejectProviderMutation.isPending}
             />
           )}
-          {provider?.status === 'REJECTED' && (
+          {provider?.status === ProviderStatus.REJECTED && (
             <Button
               onClick={handleResetProviderStatus}
               disabled={resetProviderStatusMutation.isPending}
@@ -299,7 +301,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                 <div className="text-sm">
                   <StatusBadge
                     status={
-                      provider?.status === 'PENDING_APPROVAL'
+                      provider?.status === ProviderStatus.PENDING_APPROVAL
                         ? 'PENDING'
                         : provider?.status || 'PENDING'
                     }
@@ -401,19 +403,19 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div className="rounded-lg bg-green-50 p-2 text-center dark:bg-green-900/20">
                     <div className="font-semibold text-green-700 dark:text-green-300">
-                      {requirements?.filter((req: RequirementSubmission) => req.status === 'APPROVED').length || 0}
+                      {requirements?.filter((req: RequirementSubmission) => req.status === RequirementsValidationStatus.APPROVED).length || 0}
                     </div>
                     <div className="text-green-600 dark:text-green-400">Approved</div>
                   </div>
                   <div className="rounded-lg bg-yellow-50 p-2 text-center dark:bg-yellow-900/20">
                     <div className="font-semibold text-yellow-700 dark:text-yellow-300">
-                      {requirements?.filter((req: RequirementSubmission) => req.status === 'PENDING').length || 0}
+                      {requirements?.filter((req: RequirementSubmission) => req.status === RequirementsValidationStatus.PENDING).length || 0}
                     </div>
                     <div className="text-yellow-600 dark:text-yellow-400">Pending</div>
                   </div>
                   <div className="rounded-lg bg-red-50 p-2 text-center dark:bg-red-900/20">
                     <div className="font-semibold text-red-700 dark:text-red-300">
-                      {requirements?.filter((req: RequirementSubmission) => req.status === 'REJECTED').length || 0}
+                      {requirements?.filter((req: RequirementSubmission) => req.status === RequirementsValidationStatus.REJECTED).length || 0}
                     </div>
                     <div className="text-red-600 dark:text-red-400">Rejected</div>
                   </div>
@@ -481,7 +483,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
               </div>
             )}
 
-            {allRequiredRequirementsApproved && provider?.status === 'PENDING_APPROVAL' && (
+            {allRequiredRequirementsApproved && provider?.status === ProviderStatus.PENDING_APPROVAL && (
               <div className="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
                 <div className="flex items-start gap-2">
                   <div className="text-green-600 dark:text-green-400">✅</div>

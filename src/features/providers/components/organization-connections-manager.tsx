@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { ProviderInvitationStatus, ConnectionStatus } from '@prisma/client';
 import { Building2, Mail, Users } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,10 +26,10 @@ import { InvitationCard } from './invitation-card';
 
 export function OrganizationConnectionsManager() {
   const [invitationsStatusFilter, setInvitationsStatusFilter] = useState<
-    'all' | 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'EXPIRED'
+    'all' | ProviderInvitationStatus
   >('all');
   const [connectionsStatusFilter, setConnectionsStatusFilter] = useState<
-    'all' | 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'SUSPENDED'
+    'all' | ConnectionStatus
   >('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -73,7 +74,7 @@ export function OrganizationConnectionsManager() {
 
   // Count pending invitations for tab badge
   const pendingInvitationsCount = invitations.filter(
-    (inv) => inv.status === 'PENDING' && new Date(inv.expiresAt) > new Date()
+    (inv) => inv.status === ProviderInvitationStatus.PENDING && new Date(inv.expiresAt) > new Date()
   ).length;
 
   const LoadingCards = () => (
@@ -179,9 +180,9 @@ export function OrganizationConnectionsManager() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Connections</SelectItem>
-                <SelectItem value="ACCEPTED">Active</SelectItem>
-                <SelectItem value="SUSPENDED">Suspended</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
+                <SelectItem value={ConnectionStatus.ACCEPTED}>Active</SelectItem>
+                <SelectItem value={ConnectionStatus.SUSPENDED}>Suspended</SelectItem>
+                <SelectItem value={ConnectionStatus.PENDING}>Pending</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -226,10 +227,10 @@ export function OrganizationConnectionsManager() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Invitations</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="ACCEPTED">Accepted</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
-                <SelectItem value="EXPIRED">Expired</SelectItem>
+                <SelectItem value={ProviderInvitationStatus.PENDING}>Pending</SelectItem>
+                <SelectItem value={ProviderInvitationStatus.ACCEPTED}>Accepted</SelectItem>
+                <SelectItem value={ProviderInvitationStatus.REJECTED}>Rejected</SelectItem>
+                <SelectItem value={ProviderInvitationStatus.EXPIRED}>Expired</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -256,7 +257,7 @@ export function OrganizationConnectionsManager() {
                   key={invitation.id}
                   invitation={invitation}
                   showActions={
-                    invitation.status === 'PENDING' && new Date(invitation.expiresAt) > new Date()
+                    invitation.status === ProviderInvitationStatus.PENDING && new Date(invitation.expiresAt) > new Date()
                   }
                 />
               ))}

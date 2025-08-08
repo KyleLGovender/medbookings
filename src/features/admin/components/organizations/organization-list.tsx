@@ -23,6 +23,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { OrganizationStatus } from '@prisma/client';
 import type { AdminFilterStatus } from '@/features/admin/types/types';
 import {
     useApproveOrganization,
@@ -131,8 +132,8 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="APPROVED">Approved</SelectItem>
-                  <SelectItem value="REJECTED">Rejected</SelectItem>
+                  <SelectItem value={OrganizationStatus.APPROVED}>Approved</SelectItem>
+                  <SelectItem value={OrganizationStatus.REJECTED}>Rejected</SelectItem>
                 </SelectContent>
               </Select>
               <Input
@@ -210,11 +211,11 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                         <TableCell>
                           <StatusBadge
                             status={
-                              organization.status === 'PENDING_APPROVAL'
+                              organization.status === OrganizationStatus.PENDING_APPROVAL
                                 ? 'PENDING'
-                                : organization.status === 'REJECTED'
+                                : organization.status === OrganizationStatus.REJECTED
                                   ? 'REJECTED'
-                                  : organization.status === 'SUSPENDED'
+                                  : organization.status === OrganizationStatus.SUSPENDED
                                     ? 'SUSPENDED'
                                     : 'APPROVED'
                             }
@@ -236,7 +237,7 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          {organization.status === 'PENDING_APPROVAL' ? (
+                          {organization.status === OrganizationStatus.PENDING_APPROVAL ? (
                             <div className="flex justify-end gap-2">
                               <NavigationOutlineButton
                                 href={`/admin/organizations/${organization.id}`}

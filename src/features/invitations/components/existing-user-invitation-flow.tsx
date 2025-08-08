@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { AlertTriangle, Building2, Check, Globe, Mail, MessageSquare, Phone, User, X } from 'lucide-react';
 
+import { ProviderInvitationStatus } from '@prisma/client';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -122,7 +124,7 @@ export function ExistingUserInvitationFlow({
               inv.token === token
                 ? {
                     ...inv,
-                    status: action === 'accept' ? 'ACCEPTED' : 'REJECTED',
+                    status: action === 'accept' ? ProviderInvitationStatus.ACCEPTED : ProviderInvitationStatus.REJECTED,
                     ...(action === 'accept' && { acceptedAt: new Date().toISOString() }),
                     ...(action === 'reject' && { 
                       rejectedAt: new Date().toISOString(),
