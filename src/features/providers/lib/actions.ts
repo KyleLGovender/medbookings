@@ -1,5 +1,7 @@
 'use server';
 
+import { RequirementsValidationStatus } from '@prisma/client';
+
 /**
  * Business logic for checking if all required requirements are approved for a provider
  * 
@@ -46,7 +48,7 @@ export async function validateProviderRequirementsBusinessLogic(
   );
 
   const approvedSubmissions = requirementSubmissions.filter(
-    (submission) => submission.status === 'APPROVED'
+    (submission) => submission.status === RequirementsValidationStatus.APPROVED
   );
 
   // Check if all required requirements from ALL types have approved submissions

@@ -1,7 +1,7 @@
 'use server';
 
 
-import { AvailabilityStatus, BillingEntity } from '@prisma/client';
+import { AvailabilityStatus, BillingEntity, UserRole, OrganizationRole } from '@prisma/client';
 
 import {
   createAvailabilityDataSchema,
@@ -68,7 +68,7 @@ export async function validateAvailabilityCreation(
         where: {
           userId: currentUser.id,
           organizationId: validatedData.organizationId,
-          role: { in: ['OWNER', 'ADMIN', 'MANAGER'] },
+          role: { in: [OrganizationRole.OWNER, OrganizationRole.ADMIN, OrganizationRole.MANAGER] },
         },
       });
 
@@ -277,15 +277,15 @@ export async function validateAvailabilityUpdate(
     const canUpdate =
       currentUserProvider?.id === existingAvailability.providerId ||
       currentUser.id === existingAvailability.createdById ||
-      currentUser.role === 'ADMIN' ||
-      currentUser.role === 'SUPER_ADMIN';
+      currentUser.role === UserRole.ADMIN ||
+      currentUser.role === UserRole.SUPER_ADMIN;
 
     if (!canUpdate && existingAvailability.organizationId) {
       const membership = await prisma.organizationMembership.findFirst({
         where: {
           userId: currentUser.id,
           organizationId: existingAvailability.organizationId,
-          role: { in: ['OWNER', 'ADMIN', 'MANAGER'] },
+          role: { in: [OrganizationRole.OWNER, OrganizationRole.ADMIN, OrganizationRole.MANAGER] },
         },
       });
 
@@ -427,15 +427,15 @@ export async function validateAvailabilityDeletion(
     const canDelete =
       currentUserProvider?.id === existingAvailability.providerId ||
       currentUser.id === existingAvailability.createdById ||
-      currentUser.role === 'ADMIN' ||
-      currentUser.role === 'SUPER_ADMIN';
+      currentUser.role === UserRole.ADMIN ||
+      currentUser.role === UserRole.SUPER_ADMIN;
 
     if (!canDelete && existingAvailability.organizationId) {
       const membership = await prisma.organizationMembership.findFirst({
         where: {
           userId: currentUser.id,
           organizationId: existingAvailability.organizationId,
-          role: { in: ['OWNER', 'ADMIN', 'MANAGER'] },
+          role: { in: [OrganizationRole.OWNER, OrganizationRole.ADMIN, OrganizationRole.MANAGER] },
         },
       });
 
