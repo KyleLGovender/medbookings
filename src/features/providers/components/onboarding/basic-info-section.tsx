@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { SUPPORTED_LANGUAGES } from '@/features/providers/types/types';
+import { Languages } from '@prisma/client';
 
 import { ProfileImageUploader } from './profile-image-uploader';
 
@@ -170,7 +170,7 @@ export function BasicInfoSection() {
                 <SelectValue placeholder="Select languages you speak" />
               </SelectTrigger>
               <SelectContent>
-                {SUPPORTED_LANGUAGES.filter((lang) => !selectedLanguages.includes(lang)).map(
+                {Object.values(Languages).filter((lang) => !selectedLanguages.includes(lang)).map(
                   (language) => (
                     <SelectItem key={language} value={language}>
                       {language}

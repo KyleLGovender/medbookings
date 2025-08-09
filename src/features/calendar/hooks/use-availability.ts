@@ -274,7 +274,7 @@ export function useCancelAvailability(options?: {
 }) {
   const utils = api.useUtils();
 
-  return api.calendar.cancel.useMutation({
+  return api.calendar.delete.useMutation({
     onSuccess: (_, variables) => {
       // Invalidate all availability queries
       utils.calendar.invalidate();

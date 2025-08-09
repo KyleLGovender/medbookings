@@ -30,8 +30,8 @@ import {
 // Performance monitoring functions removed - using simplified approach
 const measureCalendarDataProcessing = (fn: () => any) => fn();
 const measureCalendarRendering = (fn: () => any) => fn();
-const recordCalendarCyclePerformance = (metrics: any) => {};
-const usePerformanceMonitor = () => ({ startMeasurement: () => {}, endMeasurement: () => {} });
+const recordCalendarCyclePerformance = (eventCount: number, viewMode: string, dateRange: any) => {};
+const usePerformanceMonitor = (name: string, deps: any[]) => ({ startMeasurement: () => {}, endMeasurement: () => {} });
 import {
   filterEventsInTimeRange,
   groupEventsByDate,

@@ -7,7 +7,7 @@ import { useFormContext } from 'react-hook-form';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { renderRequirementInput } from '@/features/providers/components/render-requirement-input';
-import { RequirementValidationType } from '@/features/providers/types/types';
+import { RequirementValidationType } from '@prisma/client';
 import { type RouterOutputs } from '@/utils/api';
 
 type RequirementType = RouterOutputs['admin']['getProviderRequirements'][number]['requirementType'] & {

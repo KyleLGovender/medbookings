@@ -96,10 +96,10 @@
   - [x] 3.7 Remove duplicate enums from profile types: UserRole, AccountProvider (already clean - no duplicates found)
   - [x] 3.8 Remove duplicate enums from providers types: ProviderStatus, RequirementsValidationStatus, RequirementValidationType, Languages, RequirementSubmissionStatus
   - [x] 3.9 Remove duplicate enums from reviews types: ReviewStatus, ReviewRating (placeholder stubs - no duplicates found)
-  - [ ] 3.10 Update all component imports to use @prisma/client for enums
-  - [ ] 3.11 Update all hook imports to use @prisma/client for enums
-  - [ ] 3.12 Update all server action imports to use @prisma/client for enums
-  - [ ] 3.13 Update Zod schemas to use z.nativeEnum() with Prisma enums
+  - [x] 3.10 Update all component imports to use @prisma/client for enums
+  - [x] 3.11 Update all hook imports to use @prisma/client for enums
+  - [x] 3.12 Update all server action imports to use @prisma/client for enums
+  - [x] 3.13 Update Zod schemas to use z.nativeEnum() with Prisma enums
   - [x] 3.14 Verify TypeScript compilation after enum migration
   - [ ] 3.15 Document final Prisma type import patterns in CLAUDE.md
 
