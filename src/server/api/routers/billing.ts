@@ -1,6 +1,11 @@
 import { z } from 'zod';
 
 import {
+  validateSubscriptionCancellation,
+  validateSubscriptionCreation,
+  validateSubscriptionUpdate,
+} from '@/features/billing/lib/actions';
+import {
   cancelSubscriptionRequestSchema,
   createSubscriptionRequestSchema,
   getSubscriptionsQuerySchema,
@@ -79,63 +84,46 @@ export const billingRouter = createTRPCRouter({
 
   /**
    * Create new subscription
+   * OPTION C COMPLIANT: Single database query with server action business logic
    * Migrated from: POST /api/subscriptions
    */
   createSubscription: protectedProcedure
     .input(createSubscriptionRequestSchema)
     .mutation(async ({ ctx, input }) => {
-      // Additional validation: Check that the referenced entity exists
-      if (input.organizationId) {
-        const organization = await ctx.prisma.organization.findUnique({
-          where: { id: input.organizationId },
-        });
-        if (!organization) {
-          throw new Error('Organization not found');
-        }
+      // Call server action for business logic validation
+      const validation = await validateSubscriptionCreation(input);
+      
+      if (!validation.success) {
+        throw new Error(validation.error);
       }
 
-      if (input.locationId) {
-        const location = await ctx.prisma.location.findUnique({
-          where: { id: input.locationId },
-        });
-        if (!location) {
-          throw new Error('Location not found');
-        }
-      }
-
-      if (input.providerId) {
-        const provider = await ctx.prisma.provider.findUnique({
-          where: { id: input.providerId },
-        });
-        if (!provider) {
-          throw new Error('Service provider not found');
-        }
-      }
-
-      // Check that the plan exists
-      const plan = await ctx.prisma.subscriptionPlan.findUnique({
-        where: { id: input.planId },
-      });
-      if (!plan) {
-        throw new Error('Subscription plan not found');
-      }
-
-      // Create the subscription
+      // Single database query with all necessary relations and validations
       const subscription = await ctx.prisma.subscription.create({
         data: {
-          planId: input.planId,
-          organizationId: input.organizationId,
-          locationId: input.locationId,
-          providerId: input.providerId,
-          type: input.type,
+          planId: validation.validatedData!.planId,
+          organizationId: validation.validatedData!.organizationId,
+          locationId: validation.validatedData!.locationId,
+          providerId: validation.validatedData!.providerId,
+          type: validation.validatedData!.type,
           status: input.status,
-          startDate: input.startDate,
-          endDate: input.endDate,
-          stripeCustomerId: input.stripeCustomerId,
-          stripeSubscriptionId: input.stripeSubscriptionId,
-          billingCycleStart: input.startDate,
-          billingCycleEnd: new Date(input.startDate.getTime() + 30 * 24 * 60 * 60 * 1000), // 30 days
-          currentMonthSlots: 0,
+          startDate: validation.validatedData!.startDate,
+          endDate: validation.validatedData!.endDate,
+          stripeCustomerId: validation.validatedData!.stripeCustomerId,
+          stripeSubscriptionId: validation.validatedData!.stripeSubscriptionId,
+          billingCycleStart: validation.validatedData!.startDate,
+          billingCycleEnd: validation.validatedData!.billingCycleEnd,
+          currentMonthSlots: validation.validatedData!.currentMonthSlots,
+          // Connect to related entities (Prisma will validate existence automatically)
+          plan: { connect: { id: validation.validatedData!.planId } },
+          ...(validation.validatedData!.organizationId && {
+            organization: { connect: { id: validation.validatedData!.organizationId } }
+          }),
+          ...(validation.validatedData!.locationId && {
+            location: { connect: { id: validation.validatedData!.locationId } }
+          }),
+          ...(validation.validatedData!.providerId && {
+            provider: { connect: { id: validation.validatedData!.providerId } }
+          }),
         },
         include: {
           plan: true,
@@ -150,86 +138,47 @@ export const billingRouter = createTRPCRouter({
 
   /**
    * Update subscription
+   * OPTION C COMPLIANT: Single database query with server action business logic
    * Migrated from: PATCH /api/subscriptions/[id]
    */
   updateSubscription: protectedProcedure
     .input(updateSubscriptionRequestSchema)
     .mutation(async ({ ctx, input }) => {
-      // Check if subscription exists
-      const existingSubscription = await ctx.prisma.subscription.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!existingSubscription) {
-        throw new Error('Subscription not found');
+      // Call server action for business logic validation
+      const validation = await validateSubscriptionUpdate(input);
+      
+      if (!validation.success) {
+        throw new Error(validation.error);
       }
 
-      // Additional validation: Check that referenced entities exist
-      if (input.organizationId) {
-        const organization = await ctx.prisma.organization.findUnique({
-          where: { id: input.organizationId },
-        });
-        if (!organization) {
-          throw new Error('Organization not found');
-        }
-      }
-
-      if (input.locationId) {
-        const location = await ctx.prisma.location.findUnique({
-          where: { id: input.locationId },
-        });
-        if (!location) {
-          throw new Error('Location not found');
-        }
-      }
-
-      if (input.providerId) {
-        const provider = await ctx.prisma.provider.findUnique({
-          where: { id: input.providerId },
-        });
-        if (!provider) {
-          throw new Error('Service provider not found');
-        }
-      }
-
-      if (input.planId) {
-        const plan = await ctx.prisma.subscriptionPlan.findUnique({
-          where: { id: input.planId },
-        });
-        if (!plan) {
-          throw new Error('Subscription plan not found');
-        }
-      }
-
-      // Handle polymorphic relationship updates carefully
+      // Prepare update data
       const updateData: any = { ...input };
       delete updateData.id; // Remove ID from update data
 
-      // If updating the polymorphic relationship, we need to clear the other fields
-      if (
-        input.organizationId !== undefined ||
-        input.locationId !== undefined ||
-        input.providerId !== undefined
-      ) {
-        // Clear all polymorphic fields first
-        updateData.organizationId = null;
-        updateData.locationId = null;
-        updateData.providerId = null;
-
-        // Then set the one that was provided
-        if (input.organizationId) {
-          updateData.organizationId = input.organizationId;
-        } else if (input.locationId) {
-          updateData.locationId = input.locationId;
-        } else if (input.providerId) {
-          updateData.providerId = input.providerId;
-        }
+      // Apply polymorphic relationship updates if needed
+      if (Object.keys(validation.validatedData!.polymorphicUpdateData).length > 0) {
+        Object.assign(updateData, validation.validatedData!.polymorphicUpdateData);
       }
 
-      // Update the subscription
+      // Single database query with all necessary relations and validations
       const updatedSubscription = await ctx.prisma.subscription.update({
-        where: { id: input.id },
-        data: updateData,
+        where: { id: validation.validatedData!.id },
+        data: {
+          ...updateData,
+          // Connect to related entities if updated (Prisma will validate existence automatically)
+          ...(input.planId && {
+            plan: { connect: { id: input.planId } }
+          }),
+          ...(updateData.organizationId && {
+            organization: { connect: { id: updateData.organizationId } }
+          }),
+          ...(updateData.locationId && {
+            location: { connect: { id: updateData.locationId } }
+          }),
+          ...(updateData.providerId && {
+            provider: { connect: { id: updateData.providerId } }
+          }),
+        },
         include: {
           plan: true,
           organization: true,
@@ -243,27 +192,26 @@ export const billingRouter = createTRPCRouter({
 
   /**
    * Cancel subscription (soft delete)
+   * OPTION C COMPLIANT: Single database query with server action business logic
    * Migrated from: DELETE /api/subscriptions/[id]
    */
   cancelSubscription: protectedProcedure
     .input(cancelSubscriptionRequestSchema)
     .mutation(async ({ ctx, input }) => {
-      // Check if subscription exists
-      const existingSubscription = await ctx.prisma.subscription.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!existingSubscription) {
-        throw new Error('Subscription not found');
+      // Call server action for business logic validation
+      const validation = await validateSubscriptionCancellation(input);
+      
+      if (!validation.success) {
+        throw new Error(validation.error);
       }
 
-      // Instead of hard delete, mark as cancelled
+      // Single database query - Prisma will validate existence and update atomically
       const cancelledSubscription = await ctx.prisma.subscription.update({
-        where: { id: input.id },
+        where: { id: validation.validatedData!.id },
         data: {
-          status: 'CANCELLED',
-          cancelledAt: new Date(),
-          cancelReason: input.cancelReason,
+          status: validation.validatedData!.status,
+          cancelledAt: validation.validatedData!.cancelledAt,
+          cancelReason: validation.validatedData!.cancelReason,
         },
         include: {
           plan: true,

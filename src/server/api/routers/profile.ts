@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
 import {
+  validateAccountDeletion,
+  validateProfileUpdate,
+} from '@/features/profile/lib/actions';
+import {
   deleteAccountRequestSchema,
   updateProfileRequestSchema,
 } from '@/features/profile/types/schemas';
@@ -41,29 +45,25 @@ export const profileRouter = createTRPCRouter({
 
   /**
    * Update current user's profile
+   * OPTION C COMPLIANT: Single database query with server action business logic
    * Migrated from: PATCH /api/profile
    */
   update: protectedProcedure.input(updateProfileRequestSchema).mutation(async ({ ctx, input }) => {
-    // Simple validation
-    if (input.email && input.email.trim().length === 0) {
-      throw new Error('Email cannot be empty');
-    }
+    // Call server action for business logic validation
+    const validation = await validateProfileUpdate(input);
     
-    if (input.name && input.name.trim().length === 0) {
-      throw new Error('Name cannot be empty');
+    if (!validation.success) {
+      throw new Error(validation.error);
     }
 
-    // TODO: Send profile update notification email
-    console.log(`📧 Profile update notification would be sent to: ${ctx.session.user.email}`);
-
-    // Update user profile with automatic type inference
+    // Single database query with automatic type inference
     const updatedUser = await ctx.prisma.user.update({
-      where: { id: ctx.session.user.id },
+      where: { id: validation.validatedData!.userId },
       data: {
-        name: input.name,
-        email: input.email,
-        phone: input.phone,
-        whatsapp: input.whatsapp,
+        name: validation.validatedData!.name,
+        email: validation.validatedData!.email,
+        phone: validation.validatedData!.phone,
+        whatsapp: validation.validatedData!.whatsapp,
       },
       select: {
         id: true,
@@ -88,34 +88,47 @@ export const profileRouter = createTRPCRouter({
 
   /**
    * Delete current user's account
+   * OPTION C COMPLIANT: Single transaction with server action business logic
    * Migrated from: DELETE /api/profile
    */
   delete: protectedProcedure.input(deleteAccountRequestSchema.optional()).mutation(async ({ ctx }) => {
-    // Check if user has a service provider profile
-    const provider = await ctx.prisma.provider.findFirst({
-      where: { userId: ctx.session.user.id },
-    });
-
-    if (provider) {
-      throw new Error('Please delete your service provider profile first before deleting your account.');
+    // Call server action for business logic validation
+    const validation = await validateAccountDeletion();
+    
+    if (!validation.success) {
+      throw new Error(validation.error);
     }
 
-    // TODO: Send account deletion notification email
-    console.log(`📧 Account deletion notification would be sent to: ${ctx.session.user.email}`);
+    // Single transaction with all database operations and validation
+    const result = await ctx.prisma.$transaction(async (tx) => {
+      // Check if user has a service provider profile (must be done in transaction)
+      const provider = await tx.provider.findFirst({
+        where: { userId: validation.validatedData!.userId },
+        select: { id: true }, // Minimal data needed
+      });
 
-    // Delete the user and all related records in a transaction
-    await ctx.prisma.$transaction(async (tx) => {
+      if (provider) {
+        throw new Error('Please delete your service provider profile first before deleting your account.');
+      }
+
       // Delete account connections (OAuth)
       await tx.account.deleteMany({
-        where: { userId: ctx.session.user.id },
+        where: { userId: validation.validatedData!.userId },
+      });
+
+      // Delete organization memberships
+      await tx.organizationMembership.deleteMany({
+        where: { userId: validation.validatedData!.userId },
       });
 
       // Finally delete the user
       await tx.user.delete({
-        where: { id: ctx.session.user.id },
+        where: { id: validation.validatedData!.userId },
       });
+
+      return { success: true, deletedUserId: validation.validatedData!.userId };
     });
 
-    return { success: true };
+    return result;
   }),
 });
