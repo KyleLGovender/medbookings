@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
-import { approveProvider } from '@/features/providers/lib/actions/administer-provider';
+import { useApproveProvider } from '@/features/providers/hooks/use-admin-provider-approval';
 
 interface ApproveProviderButtonProps {
   providerId: string;
@@ -11,11 +11,14 @@ interface ApproveProviderButtonProps {
 
 export function ApproveProviderButton({ providerId }: ApproveProviderButtonProps) {
   const router = useRouter();
+  const approveProviderMutation = useApproveProvider();
 
   const handleApprove = async () => {
-    const result = await approveProvider(providerId);
-    if (result.success) {
+    try {
+      await approveProviderMutation.mutateAsync({ id: providerId });
       router.refresh();
+    } catch (error) {
+      console.error('Failed to approve provider:', error);
     }
   };
 

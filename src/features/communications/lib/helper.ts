@@ -9,7 +9,7 @@ export function logEmail(params: {
   textContent?: string;
   type: string; // Made generic - any string instead of specific types
 }) {
-  console.log('=ç EMAIL WOULD BE SENT:');
+  console.log('=== EMAIL WOULD BE SENT:');
   console.log('=======================');
   console.log(`To: ${params.to}`);
   console.log(`Subject: ${params.subject}`);

@@ -32,8 +32,8 @@ import {
   useDeleteAvailability,
   useRejectAvailabilityProposal,
 } from '@/features/calendar/hooks/use-availability';
+import { AvailabilityStatus } from '@prisma/client';
 import {
-  AvailabilityStatus,
   CalendarEvent,
   OrganizationProvider,
 } from '@/features/calendar/types/types';

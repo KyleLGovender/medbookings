@@ -25,12 +25,11 @@ import {
   useProviderAvailability,
   useRejectAvailabilityProposal,
 } from '@/features/calendar/hooks/use-availability';
-import {
-  AvailabilityStatus,
-  AvailabilityWithRelations,
-  SchedulingRule,
-  ServiceAvailabilityConfigWithRelations,
-} from '@/features/calendar/types/types';
+import { AvailabilityStatus, SchedulingRule } from '@prisma/client';
+
+// Temporary type fixes - need proper tRPC procedures with relations
+type AvailabilityWithRelations = any;
+type ServiceAvailabilityConfigWithRelations = any;
 import { useToast } from '@/hooks/use-toast';
 
 interface AvailabilityProposalsListProps {

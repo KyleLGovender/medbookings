@@ -5,7 +5,8 @@ import {
   getEventsForDay,
   getWorkingTimeRange,
 } from '@/features/calendar/lib/calendar-utils';
-import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
+import { AvailabilityStatus } from '@prisma/client';
+import { CalendarEvent } from '@/features/calendar/types/types';
 
 import { WeekViewProps } from './types';
 

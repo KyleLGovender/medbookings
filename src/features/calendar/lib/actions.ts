@@ -1,7 +1,7 @@
 'use server';
 
 
-import { AvailabilityStatus, BillingEntity, UserRole, OrganizationRole } from '@prisma/client';
+import { AvailabilityStatus, BillingEntity, OrganizationRole, UserRole } from '@prisma/client';
 
 import {
   createAvailabilityDataSchema,
@@ -11,7 +11,7 @@ import {
   CreateAvailabilityData,
   UpdateAvailabilityData
 } from '@/features/calendar/types/types';
-import { UserRole } from '@prisma/client';
+
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 

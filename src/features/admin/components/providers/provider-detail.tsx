@@ -227,7 +227,13 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
             status={
               provider?.status === ProviderStatus.PENDING_APPROVAL
                 ? 'PENDING'
-                : provider?.status || 'PENDING'
+                : provider?.status === ProviderStatus.TRIAL || provider?.status === ProviderStatus.TRIAL_EXPIRED || provider?.status === ProviderStatus.ACTIVE || provider?.status === ProviderStatus.PAYMENT_OVERDUE || provider?.status === ProviderStatus.CANCELLED
+                ? 'APPROVED'
+                : provider?.status === ProviderStatus.SUSPENDED
+                ? 'SUSPENDED'
+                : provider?.status === ProviderStatus.REJECTED
+                ? 'REJECTED'
+                : 'PENDING'
             }
           />
           {provider?.status === ProviderStatus.PENDING_APPROVAL && allRequiredRequirementsApproved && (
@@ -303,7 +309,13 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                     status={
                       provider?.status === ProviderStatus.PENDING_APPROVAL
                         ? 'PENDING'
-                        : provider?.status || 'PENDING'
+                        : provider?.status === ProviderStatus.TRIAL || provider?.status === ProviderStatus.TRIAL_EXPIRED || provider?.status === ProviderStatus.ACTIVE || provider?.status === ProviderStatus.PAYMENT_OVERDUE || provider?.status === ProviderStatus.CANCELLED
+                        ? 'APPROVED'
+                        : provider?.status === ProviderStatus.SUSPENDED
+                        ? 'SUSPENDED'
+                        : provider?.status === ProviderStatus.REJECTED
+                        ? 'REJECTED'
+                        : 'PENDING'
                     }
                   />
                 </div>
@@ -443,7 +455,12 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                   .map((submission: RequirementSubmission) => (
                     <RequirementSubmissionCard
                       key={submission.id}
-                      submission={submission}
+                      submission={{
+                        ...submission,
+                        createdAt: submission.createdAt.toISOString(),
+                        notes: submission.notes || undefined,
+                        documentMetadata: submission.documentMetadata as Record<string, any> | null,
+                      }}
                       isAdminView={true}
                       onApprove={() => handleApproveRequirement(submission.id)}
                       onReject={() =>

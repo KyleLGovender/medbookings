@@ -25,6 +25,10 @@ import {
 // DOMAIN-SPECIFIC TYPES (Not in Prisma)
 // =============================================================================
 
+// Export enums for backward compatibility
+export const SUPPORTED_LANGUAGES = Languages;
+export { RequirementValidationType };
+
 // =============================================================================
 // BASE INTERFACES (Client-only types)
 // =============================================================================

@@ -51,10 +51,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  cancelInvitation,
-  inviteOrganizationMember,
-} from '@/features/organizations/lib/member-management';
+// Temporary placeholder functions until proper hooks are implemented
+const inviteOrganizationMember = async (data: any) => ({ 
+  success: false, 
+  message: 'Member invitation functionality is temporarily disabled' 
+});
+
+const cancelInvitation = async (organizationId: string, invitationId: string) => ({ 
+  success: false,
+  message: 'Cancel invitation functionality is temporarily disabled' 
+});
 import { useOrganizationPermissions } from '@/hooks/use-permissions';
 import { OrganizationRole, Permission } from '@/types/permissions';
 

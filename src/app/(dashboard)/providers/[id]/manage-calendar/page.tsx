@@ -32,7 +32,8 @@ import {
   useDeleteAvailability,
   useRejectAvailabilityProposal,
 } from '@/features/calendar/hooks/use-availability';
-import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
+import { AvailabilityStatus } from '@prisma/client';
+import { CalendarEvent } from '@/features/calendar/types/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProviderAvailabilityPageProps {

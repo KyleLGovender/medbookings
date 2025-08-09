@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { deleteProvider } from '@/features/providers/lib/actions/delete-provider';
+import { useDeleteProvider } from '@/features/providers/hooks/use-provider-delete';
 import { useNavigation } from '@/hooks/use-navigation';
 
 interface DeleteProviderButtonProps {
@@ -23,24 +23,15 @@ interface DeleteProviderButtonProps {
 }
 
 export function DeleteProviderButton({ providerId }: DeleteProviderButtonProps) {
-  const [isDeleting, setIsDeleting] = useState(false);
   const { navigate } = useNavigation();
+  const deleteProviderMutation = useDeleteProvider();
 
   const handleDelete = async () => {
     try {
-      setIsDeleting(true);
-      const result = await deleteProvider(providerId);
-
-      if (result.success) {
-        await navigate('/profile');
-      } else {
-        // You might want to show an error toast here
-        console.error('Failed to delete provider:', result.error);
-      }
+      await deleteProviderMutation.mutateAsync({ id: providerId });
+      await navigate('/profile');
     } catch (error) {
       console.error('Error deleting provider:', error);
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -48,7 +39,7 @@ export function DeleteProviderButton({ providerId }: DeleteProviderButtonProps) 
     <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button variant="destructive" className="w-full max-w-64">
-          {isDeleting ? (
+          {deleteProviderMutation.isPending ? (
             <>
               <Spinner className="mr-2" />
               Deleting...
@@ -70,10 +61,10 @@ export function DeleteProviderButton({ providerId }: DeleteProviderButtonProps) 
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
-            disabled={isDeleting}
+            disabled={deleteProviderMutation.isPending}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {isDeleting ? (
+            {deleteProviderMutation.isPending ? (
               <>
                 <Spinner className="mr-2" />
                 Deleting...

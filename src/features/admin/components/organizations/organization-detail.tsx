@@ -137,7 +137,13 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
             status={
               organization?.status === 'PENDING_APPROVAL'
                 ? 'PENDING'
-                : organization?.status || 'PENDING'
+                : organization?.status === 'TRIAL' || organization?.status === 'TRIAL_EXPIRED' || organization?.status === 'ACTIVE' || organization?.status === 'PAYMENT_OVERDUE' || organization?.status === 'CANCELLED'
+                ? 'APPROVED'
+                : organization?.status === 'SUSPENDED'
+                ? 'SUSPENDED'
+                : organization?.status === 'REJECTED'
+                ? 'REJECTED'
+                : 'PENDING'
             }
           />
           {organization?.status === 'PENDING_APPROVAL' && (
@@ -222,7 +228,13 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                       status={
                         organization?.status === 'PENDING_APPROVAL'
                           ? 'PENDING'
-                          : organization?.status || 'PENDING'
+                          : organization?.status === 'TRIAL' || organization?.status === 'TRIAL_EXPIRED' || organization?.status === 'ACTIVE' || organization?.status === 'PAYMENT_OVERDUE' || organization?.status === 'CANCELLED'
+                          ? 'APPROVED'
+                          : organization?.status === 'SUSPENDED'
+                          ? 'SUSPENDED'
+                          : organization?.status === 'REJECTED'
+                          ? 'REJECTED'
+                          : 'PENDING'
                       }
                     />
                   </div>
@@ -372,7 +384,17 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                             <Badge variant="outline">{membership.role}</Badge>
                           </TableCell>
                           <TableCell>
-                            <StatusBadge status={membership.status} />
+                            <StatusBadge 
+                              status={
+                                membership.status === 'ACTIVE' 
+                                  ? 'APPROVED'
+                                  : membership.status === 'INACTIVE' || membership.status === 'PENDING'
+                                  ? 'PENDING'
+                                  : membership.status === 'SUSPENDED'
+                                  ? 'SUSPENDED'
+                                  : 'PENDING'
+                              } 
+                            />
                           </TableCell>
                           <TableCell>
                             <div className="text-sm text-muted-foreground">

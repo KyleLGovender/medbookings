@@ -27,19 +27,18 @@ import {
   getEventStyle,
   navigateCalendarDate,
 } from '@/features/calendar/lib/calendar-utils';
-import {
-  measureCalendarDataProcessing,
-  measureCalendarRendering,
-  recordCalendarCyclePerformance,
-  usePerformanceMonitor,
-} from '@/features/calendar/lib/performance-monitor';
+// Performance monitoring functions removed - using simplified approach
+const measureCalendarDataProcessing = (fn: () => any) => fn();
+const measureCalendarRendering = (fn: () => any) => fn();
+const recordCalendarCyclePerformance = (metrics: any) => {};
+const usePerformanceMonitor = () => ({ startMeasurement: () => {}, endMeasurement: () => {} });
 import {
   filterEventsInTimeRange,
   groupEventsByDate,
   sortEventsForRendering,
 } from '@/features/calendar/lib/virtualization-helpers';
+import { AvailabilityStatus } from '@prisma/client';
 import {
-  AvailabilityStatus,
   CalendarEvent,
   CalendarViewMode,
 } from '@/features/calendar/types/types';

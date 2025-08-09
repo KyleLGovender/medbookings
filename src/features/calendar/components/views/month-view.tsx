@@ -1,7 +1,7 @@
 import { Repeat } from 'lucide-react';
 
 import { getEventsForDay } from '@/features/calendar/lib/calendar-utils';
-import { AvailabilityStatus } from '@/features/calendar/types/types';
+import { AvailabilityStatus } from '@prisma/client';
 
 import { MonthViewProps } from './types';
 
