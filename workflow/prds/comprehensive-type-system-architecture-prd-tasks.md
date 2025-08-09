@@ -102,19 +102,19 @@
   - [x] 3.13 Update Zod schemas to use z.nativeEnum() with Prisma enums
   - [x] 3.15 Document final Prisma type import patterns in CLAUDE.md
 
-- [ ] 4.0 Server Layer Validation & Efficient tRPC Pattern Compliance
+- [x] 4.0 Server Layer Validation & Efficient tRPC Pattern Compliance
   - [x] 4.1 Validate admin.ts router performs database queries directly and uses server actions only for business logic
-  - [ ] 4.2 Validate billing.ts router implements single database query per endpoint pattern
-  - [ ] 4.3 Validate calendar.ts router follows efficient Option C architecture (no duplicate queries)
-  - [ ] 4.4 Validate debug.ts router performs database queries directly with automatic type inference
-  - [ ] 4.5 Validate invitations.ts router follows single-query pattern with minimal server action metadata
+  - [x] 4.2 Validate billing.ts router implements single database query per endpoint pattern
+  - [x] 4.3 Validate calendar.ts router follows efficient Option C architecture (no duplicate queries)
+  - [x] 4.4 Validate debug.ts router performs database queries directly with automatic type inference
+  - [x] 4.5 Validate invitations.ts router follows single-query pattern with minimal server action metadata
   - [x] 4.6 Validate organizations.ts router eliminates duplicate database operations
-  - [ ] 4.7 Validate profile.ts router separates business logic from database queries effectively
-  - [ ] 4.8 Validate providers.ts router implements efficient data flow pattern
-  - [ ] 4.9 Ensure all tRPC procedures have proper input validation using Zod schemas
-  - [ ] 4.10 Verify server actions return minimal metadata only (no database results)
-  - [ ] 4.12 Verify no manual type definitions exist at server procedure level
-  - [ ] 4.13 Confirm single database query per endpoint across all routers
+  - [x] 4.7 Validate profile.ts router separates business logic from database queries effectively
+  - [x] 4.8 Validate providers.ts router implements efficient data flow pattern
+  - [x] 4.9 Ensure all tRPC procedures have proper input validation using Zod schemas
+  - [x] 4.10 Verify server actions return minimal metadata only (no database results)
+  - [x] 4.12 Verify no manual type definitions exist at server procedure level
+  - [x] 4.13 Confirm single database query per endpoint across all routers
 
 - [ ] 5.0 Client Hook Layer Migration
   - [x] 5.1 Migrate admin hooks: Remove type exports from `use-admin-providers.ts`, `use-admin-provider-approval.ts` and ensure tRPC-only calls
