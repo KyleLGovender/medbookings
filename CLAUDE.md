@@ -98,8 +98,9 @@ The MedBookings codebase uses a **dual-source type safety approach** that combin
 
 | Type Category | Source | Example | Pattern |
 |--------------|--------|---------|---------|
-| **Domain Enums** | Manual | `AdminApprovalStatus`, `OrganizationRole` | `/features/*/types/types.ts` |
-| **Form Schemas** | Manual | User input validation | `/features/*/types/schemas.ts` |
+| **Database Enums** | Prisma | `ProviderStatus`, `AvailabilityStatus` | `import { Status } from '@prisma/client'` |
+| **Domain Enums** | Manual | `RecurrenceOption`, `AdminAction` | `/features/*/types/types.ts` |
+| **Form Schemas** | Manual + Prisma | `z.nativeEnum(ProviderStatus)` | `/features/*/types/schemas.ts` |
 | **Business Logic** | Manual | Complex domain calculations | `/features/*/types/types.ts` |
 | **Type Guards** | Manual | Runtime validation | `/features/*/types/guards.ts` |
 | **API Responses** | tRPC | Server query results | `RouterOutputs['router']['procedure']` |
@@ -120,20 +121,37 @@ src/features/[feature-name]/types/
 - ✅ **Direct imports**: `import { Type } from '@/features/calendar/types/types'`
 - ❌ **Barrel exports**: `import { Type } from '@/features/calendar/types'` (not allowed)
 
+##### Prisma Type Import Patterns ✅ **ZERO TYPE DRIFT**
+
+**Direct Prisma Enum Imports** - Always import database enums directly from `@prisma/client`:
+
+```typescript
+// ✅ CORRECT: Components, hooks, server actions
+import { ProviderStatus, AvailabilityStatus, Languages } from '@prisma/client';
+
+// ✅ CORRECT: Zod schemas with native enums
+import { z } from 'zod';
+import { ProviderStatus } from '@prisma/client';
+export const providerStatusSchema = z.nativeEnum(ProviderStatus);
+
+// ❌ WRONG: Never re-export or duplicate Prisma enums
+export enum ProviderStatus { PENDING = 'PENDING' } // DON'T DO THIS
+```
+
+**Available Prisma Enums:**
+- **User**: `UserRole`
+- **Provider**: `ProviderStatus`, `Languages`, `RequirementsValidationStatus`, `RequirementValidationType`
+- **Organization**: `OrganizationStatus`, `OrganizationRole`, `OrganizationBillingModel`, `MembershipStatus`, `InvitationStatus`
+- **Calendar**: `AvailabilityStatus`, `BookingStatus`, `SchedulingRule`, `SlotStatus`
+- **Billing**: `SubscriptionStatus`, `PaymentStatus`, `BillingInterval`, `BillingEntity`
+- **Communications**: `CommunicationType`, `CommunicationChannel`
+
 ##### Manual Type Standards
-1. **Domain Enums**: Business status values, user roles, workflow states
+1. **Domain Enums**: UI-specific enums not in database (`RecurrenceOption`, `AdminAction`)
 2. **Form Types**: User input structures with Zod validation
 3. **Business Logic Types**: Complex domain calculations and transformations
 4. **Utility Types**: Type manipulation for domain-specific needs
 5. **Client-Only Types**: UI state, form state, component props
-
-##### Features with Manual Types
-- **Calendar**: Domain enums, recurrence patterns, booking states
-- **Providers**: Professional categories, requirement types, specializations
-- **Organizations**: Membership roles, billing models, location types
-- **Admin**: Approval workflows, audit actions, status transitions
-- **Billing**: Subscription tiers, payment states, usage tracking
-- **Invitations**: Invitation types, workflow states, response actions
 
 ### Project Structure
 
@@ -624,6 +642,19 @@ function ProviderComponent({ providerId }: { providerId: string }) {
 
 #### ❌ FORBIDDEN PATTERNS
 ```typescript
+// ❌ NEVER: Duplicate Prisma enums in manual types
+export enum ProviderStatus { 
+  PENDING = 'PENDING', 
+  APPROVED = 'APPROVED' 
+} // WRONG! Import from @prisma/client
+
+// ❌ NEVER: Re-export Prisma enums from manual types
+import { ProviderStatus } from '@prisma/client';
+export { ProviderStatus }; // WRONG! Import directly where used
+
+// ❌ NEVER: Manual enum values in Zod schemas
+export const statusSchema = z.enum(['PENDING', 'APPROVED']); // WRONG! Use z.nativeEnum
+
 // ❌ NEVER: Hook importing Prisma directly
 import { prisma } from '@/lib/prisma'
 export const useProviders = () => {
