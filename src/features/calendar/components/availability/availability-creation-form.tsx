@@ -37,16 +37,18 @@ import {
 } from '@/features/calendar/lib/recurrence-utils';
 import { createAvailabilityDataSchema } from '@/features/calendar/types/schemas';
 import {
-  CreateAvailabilityData,
   CustomRecurrenceData,
   RecurrenceOption,
 } from '@/features/calendar/types/types';
+
+// Extract input type from tRPC procedure for zero type drift
+type CreateAvailabilityInput = RouterInputs['calendar']['create'];
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
-import { type RouterOutputs } from '@/utils/api';
+import { type RouterOutputs, type RouterInputs } from '@/utils/api';
 import { SchedulingRule } from '@prisma/client';
 
 // Extract the availability type from the create mutation response
@@ -62,7 +64,7 @@ interface AvailabilityCreationFormProps {
   onCancel?: () => void;
 }
 
-type FormValues = CreateAvailabilityData;
+type FormValues = CreateAvailabilityInput;
 
 /**
  * Helper function to update date while preserving time
@@ -182,7 +184,14 @@ export function AvailabilityCreationForm({
 
     setIsSubmitting(true);
     try {
-      await createMutation.mutateAsync(data);
+      // Ensure all Date fields are properly converted from form strings to Date objects
+      const submitData: CreateAvailabilityInput = {
+        ...data,
+        startTime: data.startTime instanceof Date ? data.startTime : new Date(data.startTime),
+        endTime: data.endTime instanceof Date ? data.endTime : new Date(data.endTime),
+      };
+      
+      await createMutation.mutateAsync(submitData);
     } catch (error) {
       // Error handled by mutation onError callback
       console.error('Failed to create availability:', error);
@@ -192,9 +201,10 @@ export function AvailabilityCreationForm({
   };
 
   const handleCustomRecurrenceSave = (data: CustomRecurrenceData) => {
+    const startTime = watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime);
     const pattern = createRecurrencePattern(
       RecurrenceOption.CUSTOM,
-      watchStartTime,
+      startTime,
       data.selectedDays,
       data.endDate ? data.endDate.toISOString().split('T')[0] : undefined
     );
@@ -299,13 +309,16 @@ export function AvailabilityCreationForm({
                             const currentStartTime = form.getValues('startTime');
                             const currentEndTime = form.getValues('endTime');
 
+                            const startTimeDate = currentStartTime instanceof Date ? currentStartTime : new Date(currentStartTime);
+                            const endTimeDate = currentEndTime instanceof Date ? currentEndTime : new Date(currentEndTime);
+
                             form.setValue(
                               'startTime',
-                              updateDatePreservingTime(currentStartTime, date)
+                              updateDatePreservingTime(startTimeDate, date)
                             );
                             form.setValue(
                               'endTime',
-                              updateDatePreservingTime(currentEndTime, date)
+                              updateDatePreservingTime(endTimeDate, date)
                             );
                           }
                         }}
@@ -326,7 +339,10 @@ export function AvailabilityCreationForm({
                     <FormItem>
                       <FormLabel>Start Time</FormLabel>
                       <FormControl>
-                        <TimePicker date={field.value} onChange={field.onChange} />
+                        <TimePicker 
+                          date={field.value instanceof Date ? field.value : new Date(field.value)} 
+                          onChange={field.onChange} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -340,7 +356,10 @@ export function AvailabilityCreationForm({
                     <FormItem>
                       <FormLabel>End Time</FormLabel>
                       <FormControl>
-                        <TimePicker date={field.value} onChange={field.onChange} />
+                        <TimePicker 
+                          date={field.value instanceof Date ? field.value : new Date(field.value)} 
+                          onChange={field.onChange} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -362,7 +381,8 @@ export function AvailabilityCreationForm({
                 control={form.control}
                 name="recurrencePattern"
                 render={({ field }) => {
-                  const recurrenceOptions = getRecurrenceOptions(watchStartTime);
+                  const startTime = watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime);
+                  const recurrenceOptions = getRecurrenceOptions(startTime);
 
                   return (
                     <FormItem>
@@ -374,7 +394,8 @@ export function AvailabilityCreationForm({
                           if (option === RecurrenceOption.CUSTOM) {
                             setCustomRecurrenceModalOpen(true);
                           } else {
-                            const pattern = createRecurrencePattern(option, watchStartTime);
+                            const startTime = watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime);
+                            const pattern = createRecurrencePattern(option, startTime);
                             field.onChange(pattern);
                             form.setValue('isRecurring', option !== RecurrenceOption.NONE);
                           }

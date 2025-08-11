@@ -40,7 +40,11 @@ import {
   getRecurrenceOptions,
 } from '@/features/calendar/lib/recurrence-utils';
 import { createAvailabilityDataSchema } from '@/features/calendar/types/schemas';
-import { CreateAvailabilityData, CustomRecurrenceData, RecurrenceOption } from '@/features/calendar/types/types';
+import { CustomRecurrenceData, RecurrenceOption } from '@/features/calendar/types/types';
+import { type RouterInputs } from '@/utils/api';
+
+// Extract input type from tRPC procedure for zero type drift
+type CreateAvailabilityInput = RouterInputs['calendar']['create'];
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
@@ -65,7 +69,7 @@ interface AvailabilityProposalFormProps {
   onCancel?: () => void;
 }
 
-interface ProposalFormData extends CreateAvailabilityData {
+interface ProposalFormData extends CreateAvailabilityInput {
   proposalNote?: string;
 }
 

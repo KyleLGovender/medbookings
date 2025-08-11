@@ -37,13 +37,15 @@ import {
 } from '@/features/calendar/hooks/use-availability';
 import { updateAvailabilityDataSchema } from '@/features/calendar/types/schemas';
 import type { RecurrencePattern } from '@/features/calendar/types/types';
-import { type UpdateAvailabilityData } from '@/features/calendar/types/types';
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useToast } from '@/hooks/use-toast';
-import { type RouterOutputs } from '@/utils/api';
+import { type RouterOutputs, type RouterInputs } from '@/utils/api';
 import { SchedulingRule } from '@prisma/client';
+
+// Extract input type from tRPC procedure for zero type drift
+type UpdateAvailabilityInput = RouterInputs['calendar']['update'];
 type AvailabilityWithRelations = RouterOutputs['calendar']['getById'];
 type CalculatedAvailabilitySlotWithRelations = NonNullable<
   AvailabilityWithRelations['calculatedSlots']
@@ -62,7 +64,7 @@ interface AvailabilityEditFormProps {
   onCancel?: () => void;
 }
 
-type FormValues = UpdateAvailabilityData;
+type FormValues = UpdateAvailabilityInput;
 
 export function AvailabilityEditForm({
   availabilityId,
