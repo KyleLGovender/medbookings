@@ -35,10 +35,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import { 
-  useManageOrganizationProviderConnection,
-  type ProviderConnection
-} from '@/features/organizations/hooks/use-provider-connections';
+import { useManageOrganizationProviderConnection } from '@/features/organizations/hooks/use-provider-connections';
+import { type RouterOutputs } from '@/utils/api';
+
+// Extract ProviderConnection type from tRPC output
+type ProviderConnection = RouterOutputs['organizations']['getProviderConnections'][number];
 import { useToast } from '@/hooks/use-toast';
 
 interface ProviderConnectionCardProps {

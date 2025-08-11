@@ -1,7 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { ProviderInvitationStatus, ConnectionStatus } from '@prisma/client';
 
-import { api } from '@/utils/api';
+import { api, type RouterInputs } from '@/utils/api';
+
+// Extract types from tRPC input for type safety
+type GetInvitationsInput = RouterInputs['providers']['getInvitations'];
+type InvitationStatus = GetInvitationsInput['status'];
 
 /**
  * Hook for fetching provider invitations
@@ -9,12 +13,15 @@ import { api } from '@/utils/api';
  * @returns Query object with provider invitations data
  */
 export function useProviderInvitations(
-  status?: ProviderInvitationStatus
+  status?: InvitationStatus
 ) {
-  return api.providers.getInvitations.useQuery(status ? { status } : {}, {
-    // Always enabled since it handles auth internally
-    retry: false,
-  });
+  return api.providers.getInvitations.useQuery(
+    status ? { status } : {},
+    {
+      // Always enabled since it handles auth internally
+      retry: false,
+    }
+  );
 }
 
 /**

@@ -1,5 +1,4 @@
-import { OrganizationLocation } from '@/features/organizations/types/types';
-import { api } from '@/utils/api';
+import { api, type RouterInputs } from '@/utils/api';
 
 /**
  * Hook for updating an organization's basic information
@@ -22,10 +21,8 @@ export function useUpdateOrganizationBasicInfo(options?: {
   });
 }
 
-// Define the type for billing model data
-interface OrganizationBillingData {
-  billingModel: 'CONSOLIDATED' | 'PER_LOCATION';
-}
+// Extract types from tRPC procedures - OPTION C COMPLIANT
+type OrganizationUpdateInput = RouterInputs['organizations']['update'];
 
 /**
  * Hook for updating an organization's billing model using tRPC
@@ -48,10 +45,7 @@ export function useUpdateOrganizationBilling(options?: {
   });
 }
 
-interface UpdateOrganizationLocationsParams {
-  organizationId: string;
-  locations: OrganizationLocation[];
-}
+type UpdateOrganizationLocationsInput = RouterInputs['organizations']['updateLocations'];
 
 /**
  * Hook for updating an organization's locations using tRPC

@@ -32,7 +32,7 @@ export function useManageOrganizationProviderConnection(
       utils.organizations.getProviderConnections.invalidate({ organizationId });
       options.onSuccess?.(data, variables);
     },
-    onError: options.onError,
+    onError: (error) => options.onError?.(error as any),
   });
 
   // Delete provider connection
@@ -42,7 +42,7 @@ export function useManageOrganizationProviderConnection(
       utils.organizations.getProviderConnections.invalidate({ organizationId });
       options.onSuccess?.(data, variables);
     },
-    onError: options.onError,
+    onError: (error) => options.onError?.(error as any),
   });
 
   return {
@@ -64,7 +64,7 @@ export function useManageOrganizationProviderConnection(
         });
       }
     },
-    isLoading: updateConnection.isLoading || deleteConnection.isLoading,
+    isLoading: updateConnection.isPending || deleteConnection.isPending,
     error: updateConnection.error || deleteConnection.error,
   };
 }
