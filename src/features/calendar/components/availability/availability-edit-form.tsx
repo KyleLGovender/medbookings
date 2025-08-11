@@ -336,7 +336,7 @@ export function AvailabilityEditForm({
                     <FormControl>
                       <div className="flex gap-2">
                         <DatePicker
-                          date={field.value}
+                          date={field.value instanceof Date ? field.value : (field.value ? new Date(field.value) : undefined)}
                           onChange={(date) => {
                             if (date && field.value && !hasExistingBookings) {
                               const newDateTime = new Date(field.value);
@@ -348,7 +348,7 @@ export function AvailabilityEditForm({
                           }}
                         />
                         <TimePicker
-                          date={field.value}
+                          date={field.value instanceof Date ? field.value : (field.value ? new Date(field.value) : undefined)}
                           onChange={hasExistingBookings ? undefined : field.onChange}
                         />
                       </div>
@@ -370,7 +370,7 @@ export function AvailabilityEditForm({
                     <FormControl>
                       <div className="flex gap-2">
                         <DatePicker
-                          date={field.value}
+                          date={field.value instanceof Date ? field.value : (field.value ? new Date(field.value) : undefined)}
                           onChange={(date) => {
                             if (date && field.value && !hasExistingBookings) {
                               const newDateTime = new Date(field.value);
@@ -382,7 +382,7 @@ export function AvailabilityEditForm({
                           }}
                         />
                         <TimePicker
-                          date={field.value}
+                          date={field.value instanceof Date ? field.value : (field.value ? new Date(field.value) : undefined)}
                           onChange={hasExistingBookings ? undefined : field.onChange}
                         />
                       </div>

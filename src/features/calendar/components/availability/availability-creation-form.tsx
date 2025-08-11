@@ -302,7 +302,7 @@ export function AvailabilityCreationForm({
                     <FormLabel>Date</FormLabel>
                     <FormControl>
                       <DatePicker
-                        date={field.value}
+                        date={field.value instanceof Date ? field.value : (field.value ? new Date(field.value) : undefined)}
                         onChange={(date) => {
                           if (date) {
                             // Update both start and end time dates
