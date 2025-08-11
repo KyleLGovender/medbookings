@@ -16,6 +16,108 @@ import { adminProcedure, createTRPCRouter } from '@/server/trpc';
 export const adminRouter = createTRPCRouter({
   /*
    * ====================================
+   * DASHBOARD STATISTICS - QUERIES
+   * ====================================
+   * Endpoints for admin dashboard data
+   */
+
+  /**
+   * Get dashboard statistics (admin)
+   * Provides platform-wide statistics for admin dashboard
+   */
+  getDashboardStats: adminProcedure.query(async ({ ctx }) => {
+    // Get platform statistics
+    const [
+      totalUsers,
+      totalProviders,
+      totalOrganizations,
+      pendingProvidersCount,
+      pendingOrganizationsCount,
+      activeBookings,
+    ] = await Promise.all([
+      ctx.prisma.user.count(),
+      ctx.prisma.provider.count({ where: { status: 'ACTIVE' } }),
+      ctx.prisma.organization.count({ where: { status: 'ACTIVE' } }),
+      ctx.prisma.provider.count({ where: { status: 'PENDING_APPROVAL' } }),
+      ctx.prisma.organization.count({ where: { status: 'PENDING_APPROVAL' } }),
+      ctx.prisma.booking.count({ where: { status: 'CONFIRMED' } }),
+    ]);
+
+    return {
+      totalUsers,
+      totalProviders,
+      totalOrganizations,
+      pendingProviders: pendingProvidersCount,
+      pendingOrganizations: pendingOrganizationsCount,
+      activeBookings,
+    };
+  }),
+
+  /**
+   * Get pending providers for dashboard (admin)
+   * Provides summary data of providers awaiting approval
+   */
+  getPendingProviders: adminProcedure.query(async ({ ctx }) => {
+    const pendingProvidersData = await ctx.prisma.provider.findMany({
+      where: { status: 'PENDING_APPROVAL' },
+      include: {
+        user: true,
+        typeAssignments: {
+          include: { providerType: true },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return pendingProvidersData.map((provider) => {
+      const providerTypeName = provider.typeAssignments[0]?.providerType?.name || 'Unknown';
+
+      return {
+        id: provider.id,
+        email: provider.user.email || 'No email',
+        name: provider.name,
+        providerType: providerTypeName,
+        submittedAt: provider.createdAt,
+        requirementsStatus: 'pending' as const,
+        totalRequirements: 0,
+        approvedRequirements: 0,
+      };
+    });
+  }),
+
+  /**
+   * Get pending organizations for dashboard (admin)
+   * Provides summary data of organizations awaiting approval
+   */
+  getPendingOrganizations: adminProcedure.query(async ({ ctx }) => {
+    const pendingOrganizationsData = await ctx.prisma.organization.findMany({
+      where: { status: 'PENDING_APPROVAL' },
+      include: {
+        locations: true,
+        memberships: {
+          where: { role: 'OWNER' },
+          include: { user: true },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return pendingOrganizationsData.map((org) => {
+      const owner = org.memberships.find((m) => m.role === 'OWNER')?.user;
+
+      return {
+        id: org.id,
+        name: org.name,
+        type: 'Healthcare Facility' as const,
+        ownerEmail: owner?.email || 'No email',
+        submittedAt: org.createdAt,
+        locationsCount: org.locations.length,
+      };
+    });
+  }),
+
+  /*
+   * ====================================
    * PROVIDER MANAGEMENT - QUERIES
    * ====================================
    * Endpoints for retrieving provider data

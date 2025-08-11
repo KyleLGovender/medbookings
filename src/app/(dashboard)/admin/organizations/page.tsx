@@ -2,8 +2,14 @@ import { redirect } from 'next/navigation';
 import { OrganizationStatus } from '@prisma/client';
 
 import { OrganizationList } from '@/features/admin/components/organizations';
-import type { AdminOrganizationsPageProps } from '@/features/admin/types/types';
 import { getCurrentUser } from '@/lib/auth';
+
+// Extract page props type for admin organizations page
+interface AdminOrganizationsPageProps {
+  searchParams: {
+    status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+  };
+}
 
 export default async function AdminOrganizationsPage({
   searchParams,

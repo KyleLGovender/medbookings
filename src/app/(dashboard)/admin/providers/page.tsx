@@ -2,8 +2,14 @@ import { redirect } from 'next/navigation';
 import { ProviderStatus } from '@prisma/client';
 
 import { ProviderList } from '@/features/admin/components/providers';
-import type { AdminProvidersPageProps } from '@/features/admin/types/types';
 import { getCurrentUser } from '@/lib/auth';
+
+// Extract page props type for admin providers page
+interface AdminProvidersPageProps {
+  searchParams: {
+    status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+  };
+}
 
 export default async function AdminProvidersPage({ searchParams }: AdminProvidersPageProps) {
   const currentUser = await getCurrentUser();
