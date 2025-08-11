@@ -26,7 +26,7 @@ export async function validateProfileUpdate(data: {
     if (data.email && data.email.trim().length === 0) {
       return { success: false, error: 'Email cannot be empty' };
     }
-    
+
     if (data.name && data.name.trim().length === 0) {
       return { success: false, error: 'Name cannot be empty' };
     }
@@ -71,9 +71,9 @@ export async function validateProfileUpdate(data: {
  */
 export async function validateAccountDeletion(): Promise<{
   success: boolean;
-  validatedData?: { 
+  validatedData?: {
     userId: string;
-    userEmail: string; 
+    userEmail: string;
   };
   error?: string;
 }> {

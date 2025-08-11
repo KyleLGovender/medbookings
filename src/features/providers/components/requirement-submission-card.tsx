@@ -1,8 +1,7 @@
 'use client';
 
-import { Calendar, Check, FileText, Info, X } from 'lucide-react';
-
 import { RequirementsValidationStatus } from '@prisma/client';
+import { Calendar, Check, FileText, Info, X } from 'lucide-react';
 
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
@@ -130,11 +129,15 @@ export function RequirementSubmissionCard({
     submission.documentMetadata?.value;
 
   const shouldShowPendingButtons =
-    isAdminView && submission.status === RequirementsValidationStatus.PENDING && onApprove && onReject;
+    isAdminView &&
+    submission.status === RequirementsValidationStatus.PENDING &&
+    onApprove &&
+    onReject;
 
   const shouldShowReapproveButton =
     isAdminView &&
-    (submission.status === RequirementsValidationStatus.REJECTED || submission.status?.includes('REJECT')) &&
+    (submission.status === RequirementsValidationStatus.REJECTED ||
+      submission.status?.includes('REJECT')) &&
     onApprove;
 
   const shouldShowStatusBadge =
@@ -185,7 +188,8 @@ export function RequirementSubmissionCard({
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
                 {/* Show rejection details icon for rejected requirements */}
-                {(submission.status === RequirementsValidationStatus.REJECTED || submission.status?.includes('REJECT')) && (
+                {(submission.status === RequirementsValidationStatus.REJECTED ||
+                  submission.status?.includes('REJECT')) && (
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button

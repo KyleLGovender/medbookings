@@ -3,9 +3,8 @@
 // =============================================================================
 // All Zod validation schemas for the communications feature in one place
 // Organized by: Entity Schemas -> Request Schemas -> Response Schemas
+import { CommunicationChannel, CommunicationType } from '@prisma/client';
 import { z } from 'zod';
-
-import { CommunicationType, CommunicationChannel } from '@prisma/client';
 
 // =============================================================================
 // ENUM SCHEMAS

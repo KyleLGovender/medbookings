@@ -3,11 +3,12 @@ import { type NextRequest, NextResponse } from 'next/server';
 import twilio from 'twilio';
 
 import env from '@/config/env/server';
-import { type RouterOutputs } from '@/utils/api';
-// Use the same type as the communications action expects
-type BookingWithDetails = RouterOutputs['calendar']['getBookingWithDetails'];
 import { sendGuestVCardToProvider } from '@/features/communications/lib/server-helper';
 import { prisma } from '@/lib/prisma';
+import { type RouterOutputs } from '@/utils/api';
+
+// Use the same type as the communications action expects
+type BookingWithDetails = RouterOutputs['calendar']['getBookingWithDetails'];
 
 // Helper function to normalize phone numbers to E.164 format (reuse from previous example)
 function normalizePhoneNumber(phoneNumber: string): string | null {
@@ -150,7 +151,7 @@ export async function POST(request: NextRequest) {
 
       // 5. Use the booking data directly - it already has the right shape from Prisma query
       // The booking is already typed correctly for sendGuestVCardToProvider function
-      
+
       // 6. Call the Core Logic
       await sendGuestVCardToProvider(booking); // Pass the booking directly
 

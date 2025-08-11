@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { AvailabilityStatus } from '@prisma/client';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Repeat } from 'lucide-react';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -27,21 +28,21 @@ import {
   getEventStyle,
   navigateCalendarDate,
 } from '@/features/calendar/lib/calendar-utils';
-// Performance monitoring functions removed - using simplified approach
-const measureCalendarDataProcessing = (fn: () => any) => fn();
-const measureCalendarRendering = (fn: () => any) => fn();
-const recordCalendarCyclePerformance = (eventCount: number, viewMode: string, dateRange: any) => {};
-const usePerformanceMonitor = (name: string, deps: any[]) => ({ startMeasurement: () => {}, endMeasurement: () => {} });
 import {
   filterEventsInTimeRange,
   groupEventsByDate,
   sortEventsForRendering,
 } from '@/features/calendar/lib/virtualization-helpers';
-import { AvailabilityStatus } from '@prisma/client';
-import {
-  CalendarEvent,
-  CalendarViewMode,
-} from '@/features/calendar/types/types';
+import { CalendarEvent, CalendarViewMode } from '@/features/calendar/types/types';
+
+// Performance monitoring functions removed - using simplified approach
+const measureCalendarDataProcessing = (fn: () => any) => fn();
+const measureCalendarRendering = (fn: () => any) => fn();
+const recordCalendarCyclePerformance = (eventCount: number, viewMode: string, dateRange: any) => {};
+const usePerformanceMonitor = (name: string, deps: any[]) => ({
+  startMeasurement: () => {},
+  endMeasurement: () => {},
+});
 
 export interface ProviderCalendarViewProps {
   providerId: string;

@@ -38,9 +38,14 @@ export async function validateSubscriptionCreation(data: {
     }
 
     // Validate only one entity type is specified (polymorphic relationship)
-    const entityCount = [data.organizationId, data.locationId, data.providerId].filter(Boolean).length;
+    const entityCount = [data.organizationId, data.locationId, data.providerId].filter(
+      Boolean
+    ).length;
     if (entityCount !== 1) {
-      return { success: false, error: 'Exactly one entity (organization, location, or provider) must be specified' };
+      return {
+        success: false,
+        error: 'Exactly one entity (organization, location, or provider) must be specified',
+      };
     }
 
     // Validate date logic
@@ -49,7 +54,7 @@ export async function validateSubscriptionCreation(data: {
     }
 
     // TODO: Send subscription creation notification
-    console.log(`=ç Subscription creation notification would be sent for plan: ${data.planId}`);
+    console.log(`=ï¿½ Subscription creation notification would be sent for plan: ${data.planId}`);
 
     // Calculate billing cycle end (30 days from start)
     const billingCycleEnd = new Date(data.startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -107,14 +112,16 @@ export async function validateSubscriptionUpdate(data: {
 
     // Handle polymorphic relationship updates
     let polymorphicUpdateData: any = {};
-    
+
     if (
       data.organizationId !== undefined ||
       data.locationId !== undefined ||
       data.providerId !== undefined
     ) {
       // Validate only one entity type is specified when updating relationship
-      const providedEntities = [data.organizationId, data.locationId, data.providerId].filter(val => val !== undefined);
+      const providedEntities = [data.organizationId, data.locationId, data.providerId].filter(
+        (val) => val !== undefined
+      );
       if (providedEntities.length > 1) {
         return { success: false, error: 'Can only specify one entity type at a time' };
       }
@@ -136,7 +143,7 @@ export async function validateSubscriptionUpdate(data: {
     }
 
     // TODO: Send subscription update notification
-    console.log(`=ç Subscription update notification would be sent for: ${data.id}`);
+    console.log(`=ï¿½ Subscription update notification would be sent for: ${data.id}`);
 
     return {
       success: true,
@@ -183,7 +190,7 @@ export async function validateSubscriptionCancellation(data: {
     }
 
     // TODO: Send subscription cancellation notification
-    console.log(`=ç Subscription cancellation notification would be sent for: ${data.id}`);
+    console.log(`=ï¿½ Subscription cancellation notification would be sent for: ${data.id}`);
 
     return {
       success: true,
@@ -198,7 +205,8 @@ export async function validateSubscriptionCancellation(data: {
     console.error('Subscription cancellation validation error:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to validate subscription cancellation',
+      error:
+        error instanceof Error ? error.message : 'Failed to validate subscription cancellation',
     };
   }
 }

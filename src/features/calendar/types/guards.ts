@@ -2,8 +2,10 @@
 // CALENDAR FEATURE TYPE GUARDS
 // =============================================================================
 // Runtime type validation for calendar-specific types and API responses
-import { isValidDate, isValidDateString, isValidUUID } from '@/types/guards';
 import { AvailabilityStatus, BookingStatus, SchedulingRule, SlotStatus } from '@prisma/client';
+
+import { isValidDate, isValidDateString, isValidUUID } from '@/types/guards';
+
 import { RecurrenceOption } from './types';
 
 // =============================================================================
@@ -11,7 +13,10 @@ import { RecurrenceOption } from './types';
 // =============================================================================
 
 export function isAvailabilityStatus(value: unknown): value is AvailabilityStatus {
-  return typeof value === 'string' && Object.values(AvailabilityStatus).includes(value as AvailabilityStatus);
+  return (
+    typeof value === 'string' &&
+    Object.values(AvailabilityStatus).includes(value as AvailabilityStatus)
+  );
 }
 
 export function isBookingStatus(value: unknown): value is BookingStatus {
@@ -19,7 +24,9 @@ export function isBookingStatus(value: unknown): value is BookingStatus {
 }
 
 export function isSchedulingRule(value: unknown): value is SchedulingRule {
-  return typeof value === 'string' && Object.values(SchedulingRule).includes(value as SchedulingRule);
+  return (
+    typeof value === 'string' && Object.values(SchedulingRule).includes(value as SchedulingRule)
+  );
 }
 
 export function isSlotStatus(value: unknown): value is SlotStatus {
@@ -27,7 +34,9 @@ export function isSlotStatus(value: unknown): value is SlotStatus {
 }
 
 export function isRecurrenceOption(value: unknown): value is RecurrenceOption {
-  return typeof value === 'string' && Object.values(RecurrenceOption).includes(value as RecurrenceOption);
+  return (
+    typeof value === 'string' && Object.values(RecurrenceOption).includes(value as RecurrenceOption)
+  );
 }
 
 // =============================================================================

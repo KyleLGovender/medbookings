@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { api, type RouterOutputs } from '@/utils/api';
-import { useQueryClient } from '@tanstack/react-query';
+import { type RouterOutputs, api } from '@/utils/api';
 
 // Infer types from tRPC router outputs
 type InvitationsResponse = RouterOutputs['providers']['getInvitations'];
@@ -32,13 +32,14 @@ export function PostRegistrationInvitationHandler({
   const queryClient = useQueryClient();
 
   // Fetch all pending invitations for the current user
-  const { data: pendingInvitations, isLoading: isLoadingInvitations } = api.providers.getInvitations.useQuery(
-    { status: 'PENDING' },
-    {
-      enabled: status === 'authenticated',
-      retry: false,
-    }
-  );
+  const { data: pendingInvitations, isLoading: isLoadingInvitations } =
+    api.providers.getInvitations.useQuery(
+      { status: 'PENDING' },
+      {
+        enabled: status === 'authenticated',
+        retry: false,
+      }
+    );
 
   // Get the first pending invitation (we'll show one at a time)
   const invitationsArray = pendingInvitations?.invitations || [];
@@ -48,7 +49,7 @@ export function PostRegistrationInvitationHandler({
   const acceptInvitationMutation = api.providers.respondToInvitation.useMutation({
     onMutate: async (variables) => {
       setIsProcessing(true);
-      
+
       // Cancel outgoing queries
       await queryClient.cancelQueries({
         predicate: (query) => {
@@ -62,7 +63,7 @@ export function PostRegistrationInvitationHandler({
       const allQueries = cache.getAll();
       let previousData;
       let actualKey;
-      
+
       for (const query of allQueries) {
         const keyStr = JSON.stringify(query.queryKey);
         if (keyStr.includes('getInvitations')) {
@@ -79,9 +80,7 @@ export function PostRegistrationInvitationHandler({
 
           return {
             ...old,
-            invitations: old.invitations.filter(
-              (inv: Invitation) => inv.token !== variables.token
-            ),
+            invitations: old.invitations.filter((inv: Invitation) => inv.token !== variables.token),
           };
         });
       }
@@ -91,12 +90,12 @@ export function PostRegistrationInvitationHandler({
 
     onError: (err, variables, context) => {
       console.error('Banner invitation acceptance failed, rolling back:', err);
-      
+
       // Roll back to previous state
       if (context?.previousData && context?.actualKey) {
         queryClient.setQueryData(context.actualKey, context.previousData);
       }
-      
+
       setIsProcessing(false);
     },
 
@@ -105,9 +104,11 @@ export function PostRegistrationInvitationHandler({
       await queryClient.invalidateQueries({
         predicate: (query) => {
           const keyStr = JSON.stringify(query.queryKey);
-          return keyStr.includes('getInvitations') || 
-                 keyStr.includes('validate') ||
-                 keyStr.includes('getProviderConnections');
+          return (
+            keyStr.includes('getInvitations') ||
+            keyStr.includes('validate') ||
+            keyStr.includes('getProviderConnections')
+          );
         },
       });
 
@@ -115,7 +116,6 @@ export function PostRegistrationInvitationHandler({
       onInvitationHandled?.();
     },
   });
-
 
   const handleAcceptInvitation = () => {
     if (pendingInvitation) {
@@ -149,14 +149,15 @@ export function PostRegistrationInvitationHandler({
       <CardContent className="space-y-4">
         <div className="text-sm text-muted-foreground">
           <p>
-            You can accept this invitation from <strong>{pendingInvitation.organization.name}</strong> to join their organization.
+            You can accept this invitation from{' '}
+            <strong>{pendingInvitation.organization.name}</strong> to join their organization.
           </p>
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row">
-          <Button 
-            onClick={handleAcceptInvitation} 
-            disabled={acceptInvitationMutation.isPending} 
+          <Button
+            onClick={handleAcceptInvitation}
+            disabled={acceptInvitationMutation.isPending}
             className="flex-1"
           >
             {acceptInvitationMutation.isPending ? 'Accepting...' : 'Accept Invitation'}

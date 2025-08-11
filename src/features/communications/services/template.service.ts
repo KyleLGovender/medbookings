@@ -1,4 +1,5 @@
 import { CommunicationType } from '@prisma/client';
+
 import { TemplateData } from '../types/types';
 
 export class TemplateService {

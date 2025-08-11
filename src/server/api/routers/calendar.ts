@@ -4,15 +4,15 @@ import { AvailabilityStatus, Prisma, SchedulingRule } from '@prisma/client';
 import { z } from 'zod';
 
 import {
-    validateAvailabilityCreation,
-    validateAvailabilityDeletion,
-    validateAvailabilityUpdate
+  validateAvailabilityCreation,
+  validateAvailabilityDeletion,
+  validateAvailabilityUpdate,
 } from '@/features/calendar/lib/actions';
 import { generateSlotDataForAvailability } from '@/features/calendar/lib/slot-generation';
 import {
-    availabilityCreateSchema,
-    availabilitySearchParamsSchema,
-    updateAvailabilityDataSchema
+  availabilityCreateSchema,
+  availabilitySearchParamsSchema,
+  updateAvailabilityDataSchema,
 } from '@/features/calendar/types/schemas';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
@@ -96,7 +96,7 @@ export const calendarRouter = createTRPCRouter({
   create: protectedProcedure.input(availabilityCreateSchema).mutation(async ({ ctx, input }) => {
     // 1. Call business logic validation
     const validation = await validateAvailabilityCreation(input);
-    
+
     if (!validation.success) {
       throw new Error(validation.error || 'Failed to validate availability creation');
     }
@@ -120,7 +120,9 @@ export const calendarRouter = createTRPCRouter({
               startTime: instance.startTime,
               endTime: instance.endTime,
               isRecurring: validatedData.isRecurring,
-              recurrencePattern: validatedData.recurrencePattern ? (validatedData.recurrencePattern as any) : Prisma.JsonNull,
+              recurrencePattern: validatedData.recurrencePattern
+                ? (validatedData.recurrencePattern as any)
+                : Prisma.JsonNull,
               seriesId: validatedData.seriesId || null,
               schedulingRule: validatedData.schedulingRule,
               schedulingInterval: validatedData.schedulingInterval,
@@ -186,7 +188,10 @@ export const calendarRouter = createTRPCRouter({
             });
 
             if (slotData.errors.length > 0) {
-              console.warn(`Slot generation failed for availability ${availability.id}:`, slotData.errors.join(', '));
+              console.warn(
+                `Slot generation failed for availability ${availability.id}:`,
+                slotData.errors.join(', ')
+              );
             } else if (slotData.slotRecords.length > 0) {
               // Create slots in database (Option C: database operations in tRPC)
               await tx.calculatedAvailabilitySlot.createMany({
@@ -205,7 +210,9 @@ export const calendarRouter = createTRPCRouter({
 
     // 3. Handle notifications and cache revalidation
     if (validation.notificationNeeded) {
-      console.log(`📧 Availability proposal notification would be sent for availability ${result.availabilities[0]?.id}`);
+      console.log(
+        `📧 Availability proposal notification would be sent for availability ${result.availabilities[0]?.id}`
+      );
     }
 
     // Revalidate relevant paths
@@ -219,7 +226,7 @@ export const calendarRouter = createTRPCRouter({
     return {
       availability: result.availabilities[0], // Full availability object with relations
       allAvailabilities: result.availabilities,
-      allAvailabilityIds: result.availabilities.map(a => a.id),
+      allAvailabilityIds: result.availabilities.map((a) => a.id),
       seriesId: validatedData.seriesId,
       slotsGenerated: result.totalSlotsGenerated,
       requiresApproval: validation.requiresApproval || false,
@@ -236,7 +243,7 @@ export const calendarRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // 1. Call business logic validation
       const validation = await validateAvailabilityUpdate(input);
-      
+
       if (!validation.success) {
         throw new Error(validation.error || 'Failed to validate availability update');
       }
@@ -252,19 +259,27 @@ export const calendarRouter = createTRPCRouter({
         const updateData: any = {};
         if (validatedData.startTime !== undefined) updateData.startTime = validatedData.startTime;
         if (validatedData.endTime !== undefined) updateData.endTime = validatedData.endTime;
-        if (validatedData.isRecurring !== undefined) updateData.isRecurring = validatedData.isRecurring;
+        if (validatedData.isRecurring !== undefined)
+          updateData.isRecurring = validatedData.isRecurring;
         if (validatedData.recurrencePattern !== undefined) {
-          updateData.recurrencePattern = validatedData.recurrencePattern ? (validatedData.recurrencePattern as any) : Prisma.JsonNull;
+          updateData.recurrencePattern = validatedData.recurrencePattern
+            ? (validatedData.recurrencePattern as any)
+            : Prisma.JsonNull;
         }
-        if (validatedData.schedulingRule !== undefined) updateData.schedulingRule = validatedData.schedulingRule;
-        if (validatedData.schedulingInterval !== undefined) updateData.schedulingInterval = validatedData.schedulingInterval;
-        if (validatedData.isOnlineAvailable !== undefined) updateData.isOnlineAvailable = validatedData.isOnlineAvailable;
-        if (validatedData.requiresConfirmation !== undefined) updateData.requiresConfirmation = validatedData.requiresConfirmation;
-        if (validatedData.billingEntity !== undefined) updateData.billingEntity = validatedData.billingEntity;
+        if (validatedData.schedulingRule !== undefined)
+          updateData.schedulingRule = validatedData.schedulingRule;
+        if (validatedData.schedulingInterval !== undefined)
+          updateData.schedulingInterval = validatedData.schedulingInterval;
+        if (validatedData.isOnlineAvailable !== undefined)
+          updateData.isOnlineAvailable = validatedData.isOnlineAvailable;
+        if (validatedData.requiresConfirmation !== undefined)
+          updateData.requiresConfirmation = validatedData.requiresConfirmation;
+        if (validatedData.billingEntity !== undefined)
+          updateData.billingEntity = validatedData.billingEntity;
 
         // Handle scope-based updates
         let updatedAvailabilities;
-        
+
         if (validatedData.updateStrategy === 'single') {
           // Update only the target availability
           const updated = await tx.availability.update({
@@ -302,14 +317,15 @@ export const calendarRouter = createTRPCRouter({
           // Handle scope-based batch updates (future/all)
           const { existingAvailability } = validatedData;
           const currentDate = new Date(existingAvailability.startTime);
-          
+
           let whereCondition: any;
           if (validatedData.updateStrategy === 'future') {
             whereCondition = {
               seriesId: existingAvailability.seriesId,
               startTime: { gte: currentDate },
             };
-          } else { // 'all'
+          } else {
+            // 'all'
             whereCondition = {
               seriesId: existingAvailability.seriesId,
             };
@@ -357,12 +373,12 @@ export const calendarRouter = createTRPCRouter({
         if (validatedData.services) {
           // Delete existing service configs for affected availabilities
           await tx.serviceAvailabilityConfig.deleteMany({
-            where: { 
-              availabilities: { 
-                some: { 
-                  id: { in: validatedData.affectedAvailabilityIds || [] } 
-                } 
-              } 
+            where: {
+              availabilities: {
+                some: {
+                  id: { in: validatedData.affectedAvailabilityIds || [] },
+                },
+              },
             },
           });
 
@@ -391,14 +407,14 @@ export const calendarRouter = createTRPCRouter({
             if (availability.status === AvailabilityStatus.ACCEPTED) {
               try {
                 // Check for existing bookings before modifying slots
-                const bookedSlots = availability.calculatedSlots.filter(slot => slot.booking);
-                
+                const bookedSlots = availability.calculatedSlots.filter((slot) => slot.booking);
+
                 if (bookedSlots.length > 0) {
                   // Delete only unbooked slots
                   const unbookedSlotIds = availability.calculatedSlots
-                    .filter(slot => !slot.booking)
-                    .map(slot => slot.id);
-                    
+                    .filter((slot) => !slot.booking)
+                    .map((slot) => slot.id);
+
                   if (unbookedSlotIds.length > 0) {
                     await tx.calculatedAvailabilitySlot.deleteMany({
                       where: { id: { in: unbookedSlotIds } },
@@ -429,7 +445,10 @@ export const calendarRouter = createTRPCRouter({
                 });
 
                 if (slotData.errors.length > 0) {
-                  console.warn(`Slot regeneration failed for availability ${availability.id}:`, slotData.errors.join(', '));
+                  console.warn(
+                    `Slot regeneration failed for availability ${availability.id}:`,
+                    slotData.errors.join(', ')
+                  );
                 } else if (slotData.slotRecords.length > 0) {
                   // Create new slots in database (Option C: database operations in tRPC)
                   await tx.calculatedAvailabilitySlot.createMany({
@@ -449,11 +468,13 @@ export const calendarRouter = createTRPCRouter({
 
       // 3. Handle cache revalidation
       const { existingAvailability } = validatedData;
-      
+
       revalidatePath('/dashboard/availability');
       revalidatePath('/dashboard/calendar');
       if (existingAvailability.organizationId) {
-        revalidatePath(`/dashboard/organizations/${existingAvailability.organizationId}/availability`);
+        revalidatePath(
+          `/dashboard/organizations/${existingAvailability.organizationId}/availability`
+        );
       }
 
       // 4. Return full typed data (automatic inference from Prisma includes)
@@ -481,7 +502,7 @@ export const calendarRouter = createTRPCRouter({
       // Handle single availability deletion with scope
       if (input.ids.length === 1 && input.scope) {
         return deleteSingleAvailability(ctx, input.ids[0], input.scope);
-      } 
+      }
       // Handle batch deletion (no scope support for batch)
       else {
         return deleteBatchAvailabilities(ctx, input.ids);
@@ -508,7 +529,7 @@ export const calendarRouter = createTRPCRouter({
       }
 
       const where: any = {};
-      
+
       if (input.providerId) {
         where.providerId = input.providerId;
       }
@@ -868,7 +889,10 @@ export const calendarRouter = createTRPCRouter({
 
         let slotsGenerated = 0;
         if (slotData.errors.length > 0) {
-          console.warn(`Slot generation failed for accepted availability ${updatedAvailability.id}:`, slotData.errors.join(', '));
+          console.warn(
+            `Slot generation failed for accepted availability ${updatedAvailability.id}:`,
+            slotData.errors.join(', ')
+          );
         } else if (slotData.slotRecords.length > 0) {
           // Create slots in database (Option C: database operations in tRPC)
           await ctx.prisma.calculatedAvailabilitySlot.createMany({
@@ -877,19 +901,21 @@ export const calendarRouter = createTRPCRouter({
           slotsGenerated = slotData.totalSlots;
         }
 
-        console.log(`📧 Availability accepted notification would be sent for availability ${input.id}`);
+        console.log(
+          `📧 Availability accepted notification would be sent for availability ${input.id}`
+        );
 
-        return { 
-          success: true, 
+        return {
+          success: true,
           id: input.id,
-          slotsGenerated
+          slotsGenerated,
         };
       } catch (slotGenError) {
         console.warn(`Slot generation error for accepted availability ${input.id}:`, slotGenError);
-        return { 
-          success: true, 
+        return {
+          success: true,
           id: input.id,
-          slotsGenerated: 0
+          slotsGenerated: 0,
         };
       }
     }),
@@ -928,14 +954,16 @@ export const calendarRouter = createTRPCRouter({
         },
       });
 
-      console.log(`📧 Availability rejected notification would be sent for availability ${input.id}`);
+      console.log(
+        `📧 Availability rejected notification would be sent for availability ${input.id}`
+      );
       if (input.reason) {
         console.log(`📝 Rejection reason: ${input.reason}`);
       }
 
-      return { 
-        success: true, 
-        id: input.id 
+      return {
+        success: true,
+        id: input.id,
       };
     }),
 
@@ -1051,7 +1079,7 @@ export const calendarRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const { startDate, endDate, maxResults, ...filters } = input;
-      
+
       const availabilities = await ctx.prisma.availability.findMany({
         where: {
           ...filters,
@@ -1073,8 +1101,8 @@ export const calendarRouter = createTRPCRouter({
         orderBy: { startTime: 'asc' },
       });
 
-      const allSlots = availabilities.flatMap(availability => 
-        availability.calculatedSlots.map(slot => ({
+      const allSlots = availabilities.flatMap((availability) =>
+        availability.calculatedSlots.map((slot) => ({
           ...slot,
           provider: availability.provider,
           location: availability.location,
@@ -1120,7 +1148,6 @@ export const calendarRouter = createTRPCRouter({
 
       return booking;
     }),
-
 });
 
 /**
@@ -1133,7 +1160,7 @@ async function deleteSingleAvailability(
 ) {
   // 1. Call business logic validation
   const validation = await validateAvailabilityDeletion(id, scope);
-  
+
   if (!validation.success) {
     throw new Error(validation.error || 'Failed to validate availability deletion');
   }
@@ -1192,7 +1219,7 @@ async function deleteSingleAvailability(
 
   // 3. Handle cache revalidation
   const { existingAvailability } = validatedData;
-  
+
   revalidatePath('/dashboard/availability');
   revalidatePath('/dashboard/calendar');
   if (existingAvailability.organizationId) {
@@ -1214,7 +1241,7 @@ async function deleteSingleAvailability(
  * Handle batch availability deletion (no scope support)
  */
 async function deleteBatchAvailabilities(
-  ctx: { prisma: typeof import('@/lib/prisma').prisma; session: { user: { id: string } } }, 
+  ctx: { prisma: typeof import('@/lib/prisma').prisma; session: { user: { id: string } } },
   ids: string[]
 ) {
   const results = [];
@@ -1234,11 +1261,13 @@ async function deleteBatchAvailabilities(
   }
 
   if (errors.length > 0) {
-    throw new Error(`Failed to delete ${errors.length} availability(s): ${errors.map(e => `${e.id}: ${e.error}`).join(', ')}`);
+    throw new Error(
+      `Failed to delete ${errors.length} availability(s): ${errors.map((e) => `${e.id}: ${e.error}`).join(', ')}`
+    );
   }
 
   // Combine results
-  const allDeletedAvailabilities = results.flatMap(r => r.deletedAvailabilities);
+  const allDeletedAvailabilities = results.flatMap((r) => r.deletedAvailabilities);
   const totalDeleted = results.reduce((sum, r) => sum + r.deletedCount, 0);
   const totalSlotsDeleted = results.reduce((sum, r) => sum + r.slotsDeleted, 0);
 

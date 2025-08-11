@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 
+import { AvailabilityStatus } from '@prisma/client';
 import { Calendar, Check, Edit, Pause, Trash2, X } from 'lucide-react';
 
 import {
@@ -32,11 +33,7 @@ import {
   useDeleteAvailability,
   useRejectAvailabilityProposal,
 } from '@/features/calendar/hooks/use-availability';
-import { AvailabilityStatus } from '@prisma/client';
-import {
-  CalendarEvent,
-  OrganizationProvider,
-} from '@/features/calendar/types/types';
+import { CalendarEvent, OrganizationProvider } from '@/features/calendar/types/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface OrganizationAvailabilityPageProps {

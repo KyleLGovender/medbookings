@@ -4,10 +4,10 @@ import { RequirementsValidationStatus } from '@prisma/client';
 
 /**
  * Business logic for checking if all required requirements are approved for a provider
- * 
+ *
  * OPTION C COMPLIANT: This function only handles business logic validation.
  * Database queries are performed by the tRPC procedure that calls this function.
- * 
+ *
  * @param typeAssignments - Provider's type assignments with requirements
  * @param requirementSubmissions - Provider's requirement submissions
  * @returns Business logic validation result with minimal metadata
@@ -68,9 +68,7 @@ export async function validateProviderRequirementsBusinessLogic(
       typeId: assignment.providerType.id,
       pendingRequirements: assignment.providerType.requirements.filter(
         (requirement) =>
-          !approvedSubmissions.some(
-            (submission) => submission.requirementTypeId === requirement.id
-          )
+          !approvedSubmissions.some((submission) => submission.requirementTypeId === requirement.id)
       ),
     }))
     .filter((typeInfo) => typeInfo.pendingRequirements.length > 0);

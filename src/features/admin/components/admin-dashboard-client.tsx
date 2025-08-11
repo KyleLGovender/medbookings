@@ -10,7 +10,7 @@ type PendingOrganizations = RouterOutputs['admin']['getPendingOrganizations'];
 
 /**
  * AdminDashboardClient - Client component for admin dashboard
- * 
+ *
  * Fetches dashboard data using tRPC hooks and provides the data
  * to the OversightDashboard component. This replaces server-side
  * data fetching with client-side tRPC calls for better separation
@@ -18,22 +18,22 @@ type PendingOrganizations = RouterOutputs['admin']['getPendingOrganizations'];
  */
 export function AdminDashboardClient() {
   // Use tRPC hooks for data fetching
-  const { 
-    data: stats, 
-    isLoading: isStatsLoading, 
-    error: statsError 
+  const {
+    data: stats,
+    isLoading: isStatsLoading,
+    error: statsError,
   } = api.admin.getDashboardStats.useQuery();
-  
-  const { 
-    data: pendingProviders, 
-    isLoading: isProvidersLoading, 
-    error: providersError 
+
+  const {
+    data: pendingProviders,
+    isLoading: isProvidersLoading,
+    error: providersError,
   } = api.admin.getPendingProviders.useQuery();
-  
-  const { 
-    data: pendingOrganizations, 
-    isLoading: isOrganizationsLoading, 
-    error: organizationsError 
+
+  const {
+    data: pendingOrganizations,
+    isLoading: isOrganizationsLoading,
+    error: organizationsError,
   } = api.admin.getPendingOrganizations.useQuery();
 
   // Handle loading states
@@ -64,11 +64,8 @@ export function AdminDashboardClient() {
           </div>
           <div className="flex items-center justify-center py-12">
             <div className="text-destructive">
-              Error loading dashboard data: {
-                statsError?.message || 
-                providersError?.message || 
-                organizationsError?.message
-              }
+              Error loading dashboard data:{' '}
+              {statsError?.message || providersError?.message || organizationsError?.message}
             </div>
           </div>
         </div>

@@ -36,11 +36,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { useManageOrganizationProviderConnection } from '@/features/organizations/hooks/use-provider-connections';
+import { useToast } from '@/hooks/use-toast';
 import { type RouterOutputs } from '@/utils/api';
 
 // Extract ProviderConnection type from tRPC output
 type ProviderConnection = RouterOutputs['organizations']['getProviderConnections'][number];
-import { useToast } from '@/hooks/use-toast';
 
 interface ProviderConnectionCardProps {
   connection: ProviderConnection;
@@ -190,14 +190,10 @@ export function ProviderConnectionCard({
             <div className="flex items-start gap-3">
               <Avatar className="h-12 w-12">
                 <AvatarImage
-                  src={
-                    connection.provider.image || connection.provider.user.image || ''
-                  }
+                  src={connection.provider.image || connection.provider.user.image || ''}
                   alt={connection.provider.name}
                 />
-                <AvatarFallback>
-                  {connection.provider.name.charAt(0).toUpperCase()}
-                </AvatarFallback>
+                <AvatarFallback>{connection.provider.name.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <CardTitle className="text-lg">{connection.provider.name}</CardTitle>

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Languages } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { FormProvider, useForm } from 'react-hook-form';
@@ -26,11 +27,10 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { ProfileImageUploader } from '@/features/providers/components/onboarding/profile-image-uploader';
 import { ProviderTypeSection } from '@/features/providers/components/onboarding/provider-type-section';
-import { basicInfoSchema } from '@/features/providers/types/schemas';
-import { Languages } from '@prisma/client';
 import { useProvider } from '@/features/providers/hooks/use-provider';
 import { useProviderTypes } from '@/features/providers/hooks/use-provider-types';
 import { useUpdateProviderBasicInfo } from '@/features/providers/hooks/use-provider-updates';
+import { basicInfoSchema } from '@/features/providers/types/schemas';
 import { useToast } from '@/hooks/use-toast';
 
 interface EditBasicInfoProps {
@@ -435,13 +435,13 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
                         <SelectValue placeholder="Select languages you speak" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.values(Languages).filter(
-                          (lang) => !selectedLanguages.includes(lang)
-                        ).map((language) => (
-                          <SelectItem key={language} value={language}>
-                            {language}
-                          </SelectItem>
-                        ))}
+                        {Object.values(Languages)
+                          .filter((lang) => !selectedLanguages.includes(lang))
+                          .map((language) => (
+                            <SelectItem key={language} value={language}>
+                              {language}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>

@@ -95,6 +95,7 @@
     "src/features/service-provider/lib/helper.ts",
     "src/features/service-provider/lib/render-requirement-input.tsx",
     "next.config.js",
-    "next.config.mjs"
+    "next.config.mjs",
+    "eslint-rules/**/*"
   ]
 }

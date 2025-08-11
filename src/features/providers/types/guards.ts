@@ -6,29 +6,27 @@
 // OPTION C COMPLIANT: Using Prisma enums for validation
 // =============================================================================
 import {
+  Languages,
+  ProviderStatus,
+  RequirementValidationType,
+  RequirementsValidationStatus,
+} from '@prisma/client';
+
+import {
   isValidDate,
   isValidDateString,
   isValidEmail,
   isValidPhone,
   isValidUUID,
 } from '@/types/guards';
-import {
-  ProviderStatus,
-  RequirementsValidationStatus,
-  RequirementValidationType,
-  Languages
-} from '@prisma/client';
 
 // =============================================================================
 // ENUM GUARDS
 // =============================================================================
 
-export function isProviderStatus(
-  value: unknown
-): value is ProviderStatus {
+export function isProviderStatus(value: unknown): value is ProviderStatus {
   return (
-    typeof value === 'string' &&
-    Object.values(ProviderStatus).includes(value as ProviderStatus)
+    typeof value === 'string' && Object.values(ProviderStatus).includes(value as ProviderStatus)
   );
 }
 
@@ -36,14 +34,12 @@ export function isRequirementSubmissionStatus(
   value: unknown
 ): value is RequirementsValidationStatus {
   return (
-    typeof value === 'string' && 
+    typeof value === 'string' &&
     Object.values(RequirementsValidationStatus).includes(value as RequirementsValidationStatus)
   );
 }
 
-export function isRequirementValidationType(
-  value: unknown
-): value is RequirementValidationType {
+export function isRequirementValidationType(value: unknown): value is RequirementValidationType {
   return (
     typeof value === 'string' &&
     Object.values(RequirementValidationType).includes(value as RequirementValidationType)
@@ -51,10 +47,7 @@ export function isRequirementValidationType(
 }
 
 export function isSupportedLanguage(value: unknown): value is Languages {
-  return (
-    typeof value === 'string' && 
-    Object.values(Languages).includes(value as Languages)
-  );
+  return typeof value === 'string' && Object.values(Languages).includes(value as Languages);
 }
 
 // =============================================================================

@@ -6,13 +6,13 @@
 //
 // OPTION C COMPLIANT: Using z.nativeEnum() with Prisma enums
 // =============================================================================
-import { z } from 'zod';
-import { 
+import {
+  ConnectionStatus,
+  Languages,
   ProviderStatus,
   RequirementsValidationStatus,
-  Languages,
-  ConnectionStatus
 } from '@prisma/client';
+import { z } from 'zod';
 
 // =============================================================================
 // INPUT SCHEMAS
@@ -158,7 +158,7 @@ export const InvitationResponseSchema = z.object({
 
 export type InvitationResponse = z.infer<typeof InvitationResponseSchema>;
 
-// Schema for connection management  
+// Schema for connection management
 export const ConnectionUpdateSchema = z.object({
   status: z.nativeEnum(ConnectionStatus),
 });

@@ -26,7 +26,7 @@ export function DeleteAccountButton({ hasServiceProvider }: { hasServiceProvider
   const handleDeleteAccount = async () => {
     try {
       await deleteAccountMutation.mutateAsync();
-      
+
       toast({
         title: 'Account deleted',
         description: 'Your account has been successfully deleted.',

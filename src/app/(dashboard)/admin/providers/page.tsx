@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+
 import { ProviderStatus } from '@prisma/client';
 
 import { ProviderList } from '@/features/admin/components/providers';

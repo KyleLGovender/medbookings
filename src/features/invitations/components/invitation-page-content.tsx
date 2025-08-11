@@ -2,21 +2,20 @@
 
 import { useEffect, useState } from 'react';
 
-import { useSession } from 'next-auth/react';
-
 import { ProviderInvitationStatus } from '@prisma/client';
+import { useSession } from 'next-auth/react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { api, type RouterOutputs } from '@/utils/api';
-
-// Infer types from tRPC router outputs
-type InvitationValidationResponse = RouterOutputs['providers']['validateInvitation'];
-type InvitationData = InvitationValidationResponse['invitation'];
+import { type RouterOutputs, api } from '@/utils/api';
 
 import { ExistingUserInvitationFlow } from './existing-user-invitation-flow';
 import { InvitationErrorState } from './invitation-error-state';
 import { NewUserInvitationFlow } from './new-user-invitation-flow';
+
+// Infer types from tRPC router outputs
+type InvitationValidationResponse = RouterOutputs['providers']['validateInvitation'];
+type InvitationData = InvitationValidationResponse['invitation'];
 
 interface InvitationPageContentProps {
   token: string;
@@ -80,7 +79,8 @@ export function InvitationPageContent({ token }: InvitationPageContentProps) {
   }
 
   // Check if invitation is expired
-  const expiresAt = invitation.expiresAt instanceof Date ? invitation.expiresAt : new Date(invitation.expiresAt);
+  const expiresAt =
+    invitation.expiresAt instanceof Date ? invitation.expiresAt : new Date(invitation.expiresAt);
   const isExpired = expiresAt < new Date();
   if (isExpired) {
     return (

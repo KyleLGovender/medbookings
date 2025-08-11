@@ -19,10 +19,11 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useDeleteAvailability } from '@/features/calendar/hooks/use-availability';
+// Temporary fix - needs proper tRPC procedure with relations
+import { useToast } from '@/hooks/use-toast';
 import { type RouterOutputs } from '@/utils/api';
 
 type AvailabilityWithRelations = any; // Temporary fix - needs proper tRPC procedure with relations
-import { useToast } from '@/hooks/use-toast';
 
 interface AvailabilityDeleteDialogProps {
   availability: AvailabilityWithRelations;
@@ -52,7 +53,8 @@ export function AvailabilityDeleteDialog({
 
   // Calculate booking statistics
   const totalSlots = availability.calculatedSlots?.length || 0;
-  const bookedSlots = availability.calculatedSlots?.filter((slot: any) => slot.booking)?.length || 0;
+  const bookedSlots =
+    availability.calculatedSlots?.filter((slot: any) => slot.booking)?.length || 0;
   const hasBookings = bookedSlots > 0;
 
   // Check if this is a recurring series

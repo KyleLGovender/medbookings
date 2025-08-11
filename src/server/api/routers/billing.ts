@@ -9,7 +9,7 @@ import {
   cancelSubscriptionRequestSchema,
   createSubscriptionRequestSchema,
   getSubscriptionsQuerySchema,
-  updateSubscriptionRequestSchema
+  updateSubscriptionRequestSchema,
 } from '@/features/billing/types/schemas';
 import { createTRPCRouter, protectedProcedure } from '@/server/trpc';
 
@@ -92,7 +92,7 @@ export const billingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Call server action for business logic validation
       const validation = await validateSubscriptionCreation(input);
-      
+
       if (!validation.success) {
         throw new Error(validation.error);
       }
@@ -116,13 +116,13 @@ export const billingRouter = createTRPCRouter({
           // Connect to related entities (Prisma will validate existence automatically)
           plan: { connect: { id: validation.validatedData!.planId } },
           ...(validation.validatedData!.organizationId && {
-            organization: { connect: { id: validation.validatedData!.organizationId } }
+            organization: { connect: { id: validation.validatedData!.organizationId } },
           }),
           ...(validation.validatedData!.locationId && {
-            location: { connect: { id: validation.validatedData!.locationId } }
+            location: { connect: { id: validation.validatedData!.locationId } },
           }),
           ...(validation.validatedData!.providerId && {
-            provider: { connect: { id: validation.validatedData!.providerId } }
+            provider: { connect: { id: validation.validatedData!.providerId } },
           }),
         },
         include: {
@@ -146,7 +146,7 @@ export const billingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Call server action for business logic validation
       const validation = await validateSubscriptionUpdate(input);
-      
+
       if (!validation.success) {
         throw new Error(validation.error);
       }
@@ -167,16 +167,16 @@ export const billingRouter = createTRPCRouter({
           ...updateData,
           // Connect to related entities if updated (Prisma will validate existence automatically)
           ...(input.planId && {
-            plan: { connect: { id: input.planId } }
+            plan: { connect: { id: input.planId } },
           }),
           ...(updateData.organizationId && {
-            organization: { connect: { id: updateData.organizationId } }
+            organization: { connect: { id: updateData.organizationId } },
           }),
           ...(updateData.locationId && {
-            location: { connect: { id: updateData.locationId } }
+            location: { connect: { id: updateData.locationId } },
           }),
           ...(updateData.providerId && {
-            provider: { connect: { id: updateData.providerId } }
+            provider: { connect: { id: updateData.providerId } },
           }),
         },
         include: {
@@ -200,7 +200,7 @@ export const billingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Call server action for business logic validation
       const validation = await validateSubscriptionCancellation(input);
-      
+
       if (!validation.success) {
         throw new Error(validation.error);
       }

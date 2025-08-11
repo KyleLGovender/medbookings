@@ -14,13 +14,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { RequirementValidationType } from '@/features/providers/types/types';
+import { extractFilenameFromUrl } from '@/lib/utils/document-utils';
 import { type RouterOutputs } from '@/utils/api';
 
-type RequirementType = RouterOutputs['admin']['getProviderRequirements'][number]['requirementType'] & {
-  index: number;
-  existingSubmission?: RouterOutputs['admin']['getProviderRequirements'][number];
-};
-import { extractFilenameFromUrl } from '@/lib/utils/document-utils';
+type RequirementType =
+  RouterOutputs['admin']['getProviderRequirements'][number]['requirementType'] & {
+    index: number;
+    existingSubmission?: RouterOutputs['admin']['getProviderRequirements'][number];
+  };
 
 // Define a specific type for our form structure to match how we're accessing requirements
 interface RequirementForm {

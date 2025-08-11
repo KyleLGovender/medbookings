@@ -448,7 +448,11 @@ function DynamicBreadcrumb() {
 }
 
 // We'll create this as a function to make it dynamic
-const createNavData = (providers: Provider[] = [], organizations: Organization[] = [], user?: SessionUser) => ({
+const createNavData = (
+  providers: Provider[] = [],
+  organizations: Organization[] = [],
+  user?: SessionUser
+) => ({
   title: 'MedBookings',
   url: '/',
   navMain: [

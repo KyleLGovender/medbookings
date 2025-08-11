@@ -7,10 +7,10 @@ import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { useOrganizationByUserId } from '@/features/organizations/hooks/use-organization-by-user-id';
 import { type RouterOutputs } from '@/utils/api';
 
+import { DeleteAccountButton } from './delete-account-button';
+
 type UserProfile = RouterOutputs['profile']['get'];
 type SerializedProvider = NonNullable<RouterOutputs['providers']['getById']>;
-
-import { DeleteAccountButton } from './delete-account-button';
 
 interface ProfileClientProps {
   profile: UserProfile;

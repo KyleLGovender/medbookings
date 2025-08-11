@@ -1,33 +1,23 @@
 'use server';
 
-
 import { AvailabilityStatus, BillingEntity, OrganizationRole, UserRole } from '@prisma/client';
 
 import {
   createAvailabilityDataSchema,
   updateAvailabilityDataSchema,
 } from '@/features/calendar/types/schemas';
-import {
-  CreateAvailabilityData,
-  UpdateAvailabilityData
-} from '@/features/calendar/types/types';
-
+import { CreateAvailabilityData, UpdateAvailabilityData } from '@/features/calendar/types/types';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-import {
-  validateAvailability,
-  validateRecurringAvailability
-} from './availability-validation';
+import { validateAvailability, validateRecurringAvailability } from './availability-validation';
 import { generateRecurringInstances } from './recurrence-utils';
 
 /**
  * Validate availability creation and prepare data for database operations
  * OPTION C: Business logic only - no database operations
  */
-export async function validateAvailabilityCreation(
-  data: CreateAvailabilityData
-): Promise<{ 
+export async function validateAvailabilityCreation(data: CreateAvailabilityData): Promise<{
   success: boolean;
   validatedData?: CreateAvailabilityData & {
     instances: Array<{ startTime: Date; endTime: Date }>;
@@ -182,7 +172,7 @@ export async function validateAvailabilityCreation(
     }
 
     // Return validated data for tRPC procedure to process
-    return { 
+    return {
       success: true,
       validatedData: {
         ...validatedData,
@@ -208,9 +198,7 @@ export async function validateAvailabilityCreation(
  * Validate availability update and prepare data for database operations
  * OPTION C: Business logic only - no database operations
  */
-export async function validateAvailabilityUpdate(
-  data: UpdateAvailabilityData
-): Promise<{ 
+export async function validateAvailabilityUpdate(data: UpdateAvailabilityData): Promise<{
   success: boolean;
   validatedData?: UpdateAvailabilityData & {
     updateStrategy: 'single' | 'future' | 'all';
@@ -325,22 +313,22 @@ export async function validateAvailabilityUpdate(
 
     // Determine update strategy
     const updateStrategy = validatedData.scope || 'single';
-    
+
     // Determine if slot regeneration is needed
     const needsSlotRegeneration = !!(
-      validatedData.startTime || 
-      validatedData.endTime || 
-      validatedData.services || 
-      validatedData.schedulingRule || 
+      validatedData.startTime ||
+      validatedData.endTime ||
+      validatedData.services ||
+      validatedData.schedulingRule ||
       validatedData.schedulingInterval !== undefined
     );
 
     // Calculate affected availability IDs for scope operations
     let affectedAvailabilityIds: string[] = [validatedData.id];
-    
+
     if (validatedData.scope && existingAvailability.isRecurring && existingAvailability.seriesId) {
       const currentDate = new Date(existingAvailability.startTime);
-      
+
       if (validatedData.scope === 'future') {
         const futureAvailabilities = await prisma.availability.findMany({
           where: {
@@ -349,18 +337,18 @@ export async function validateAvailabilityUpdate(
           },
           select: { id: true },
         });
-        affectedAvailabilityIds = futureAvailabilities.map(a => a.id);
+        affectedAvailabilityIds = futureAvailabilities.map((a) => a.id);
       } else if (validatedData.scope === 'all') {
         const allAvailabilities = await prisma.availability.findMany({
           where: { seriesId: existingAvailability.seriesId },
           select: { id: true },
         });
-        affectedAvailabilityIds = allAvailabilities.map(a => a.id);
+        affectedAvailabilityIds = allAvailabilities.map((a) => a.id);
       }
     }
 
     // Return validated data for tRPC procedure to process
-    return { 
+    return {
       success: true,
       validatedData: {
         ...validatedData,
@@ -385,7 +373,7 @@ export async function validateAvailabilityUpdate(
 export async function validateAvailabilityDeletion(
   id: string,
   scope?: 'single' | 'future' | 'all'
-): Promise<{ 
+): Promise<{
   success: boolean;
   validatedData?: {
     targetAvailabilityId: string;
@@ -448,13 +436,13 @@ export async function validateAvailabilityDeletion(
 
     // Determine delete strategy
     const deleteStrategy = scope || 'single';
-    
+
     // Calculate affected availability IDs for scope operations
     let affectedAvailabilityIds: string[] = [id];
-    
+
     if (scope && existingAvailability.seriesId) {
       const currentDate = new Date(existingAvailability.startTime);
-      
+
       if (scope === 'future') {
         const futureAvailabilities = await prisma.availability.findMany({
           where: {
@@ -463,13 +451,13 @@ export async function validateAvailabilityDeletion(
           },
           select: { id: true },
         });
-        affectedAvailabilityIds = futureAvailabilities.map(a => a.id);
+        affectedAvailabilityIds = futureAvailabilities.map((a) => a.id);
       } else if (scope === 'all') {
         const allAvailabilities = await prisma.availability.findMany({
           where: { seriesId: existingAvailability.seriesId },
           select: { id: true },
         });
-        affectedAvailabilityIds = allAvailabilities.map(a => a.id);
+        affectedAvailabilityIds = allAvailabilities.map((a) => a.id);
       }
     }
 
@@ -509,7 +497,7 @@ export async function validateAvailabilityDeletion(
     }
 
     // Return validated data for tRPC procedure to process
-    return { 
+    return {
       success: true,
       validatedData: {
         targetAvailabilityId: id,
@@ -526,4 +514,3 @@ export async function validateAvailabilityDeletion(
     };
   }
 }
-

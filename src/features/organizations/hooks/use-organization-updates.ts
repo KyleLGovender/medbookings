@@ -1,4 +1,4 @@
-import { api, type RouterInputs } from '@/utils/api';
+import { type RouterInputs, api } from '@/utils/api';
 
 /**
  * Hook for updating an organization's basic information

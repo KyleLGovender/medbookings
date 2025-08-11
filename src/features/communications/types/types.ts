@@ -3,16 +3,11 @@
 // =============================================================================
 // All type definitions for the communications feature in one place
 // Organized by: Prisma Imports -> Domain Enums -> Business Logic -> Communication Interfaces
-
 // =============================================================================
 // PRISMA TYPE IMPORTS
 // =============================================================================
 // Import database enums directly from Prisma to prevent type drift
-
-import {
-  CommunicationType,
-  CommunicationChannel
-} from '@prisma/client';
+import { CommunicationChannel, CommunicationType } from '@prisma/client';
 
 // =============================================================================
 // MIGRATION NOTES - CROSS-FEATURE IMPORTS REMOVED

@@ -1,6 +1,12 @@
 import { OrganizationBillingModel } from '@prisma/client';
 import { z } from 'zod';
 
+import { logEmail } from '@/features/communications/lib/helper';
+import {
+  generateInvitationEmail,
+  generateInvitationToken,
+  getInvitationExpiryDate,
+} from '@/features/invitations/lib/utils';
 import {
   registerOrganization,
   validateInvitationAcceptance,
@@ -12,12 +18,6 @@ import {
 } from '@/features/organizations/lib/actions';
 import { organizationRegistrationSchema } from '@/features/organizations/types/schemas';
 import { getCurrentUser } from '@/lib/auth';
-import { logEmail } from '@/features/communications/lib/helper';
-import {
-  generateInvitationEmail,
-  generateInvitationToken,
-  getInvitationExpiryDate,
-} from '@/features/invitations/lib/utils';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
 export const organizationsRouter = createTRPCRouter({
@@ -102,9 +102,10 @@ export const organizationsRouter = createTRPCRouter({
             phone: validatedData.organization.phone || '',
             website: validatedData.organization.website || '',
             logo: validatedData.organization.logo || '',
-            billingModel: validatedData.organization.billingModel === 'SLOT_BASED' 
-              ? OrganizationBillingModel.PER_LOCATION 
-              : OrganizationBillingModel.CONSOLIDATED,
+            billingModel:
+              validatedData.organization.billingModel === 'SLOT_BASED'
+                ? OrganizationBillingModel.PER_LOCATION
+                : OrganizationBillingModel.CONSOLIDATED,
             // Connect the current user as an admin via memberships
             memberships: {
               create: {
@@ -112,7 +113,7 @@ export const organizationsRouter = createTRPCRouter({
                 role: 'ADMIN',
                 permissions: [
                   'MANAGE_PROVIDERS',
-                  'MANAGE_BOOKINGS', 
+                  'MANAGE_BOOKINGS',
                   'MANAGE_LOCATIONS',
                   'MANAGE_STAFF',
                   'VIEW_ANALYTICS',
@@ -503,7 +504,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       // Transform the response to match the TypeScript interface
-      return connections.map(connection => ({
+      return connections.map((connection) => ({
         ...connection,
         provider: {
           ...connection.provider,
@@ -512,7 +513,7 @@ export const organizationsRouter = createTRPCRouter({
       }));
     }),
 
-      /**
+  /**
    * Update provider connection
    * Migrated from: PUT /api/organizations/[id]/provider-connections/[connectionId]
    */
@@ -1527,6 +1528,4 @@ export const organizationsRouter = createTRPCRouter({
         },
       };
     }),
-
-
 });

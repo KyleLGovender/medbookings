@@ -4,12 +4,11 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { OrganizationBillingModel } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { CreditCard, Save } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-
-import { OrganizationBillingModel } from '@prisma/client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

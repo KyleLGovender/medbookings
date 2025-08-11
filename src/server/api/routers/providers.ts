@@ -1,9 +1,8 @@
+import { Languages } from '@prisma/client';
 import { z } from 'zod';
 
-import { Languages } from '@prisma/client';
-
-import { serializeProvider } from '@/features/providers/lib/helper';
 import { sendProviderWhatsappConfirmation } from '@/features/communications/lib/server-helper';
+import { serializeProvider } from '@/features/providers/lib/helper';
 import {
   ConnectionUpdateSchema,
   InvitationResponseSchema,
@@ -128,10 +127,12 @@ export const providersRouter = createTRPCRouter({
    * Additional procedure for filtering providers by type
    */
   getByType: publicProcedure
-    .input(z.object({ 
-      providerTypeId: z.string(),
-      status: z.enum(['APPROVED', 'PENDING_APPROVAL', 'REJECTED']).optional()
-    }))
+    .input(
+      z.object({
+        providerTypeId: z.string(),
+        status: z.enum(['APPROVED', 'PENDING_APPROVAL', 'REJECTED']).optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const providers = await ctx.prisma.provider.findMany({
         where: {
@@ -171,7 +172,7 @@ export const providersRouter = createTRPCRouter({
     }),
 
   /**
-   * Get all approved providers  
+   * Get all approved providers
    * Migrated from: getApprovedProviders() lib function
    * Database query moved to tRPC procedure for Option C compliance
    */
@@ -423,7 +424,7 @@ export const providersRouter = createTRPCRouter({
       for (const req of requirements) {
         if (req.requirementTypeId) {
           let documentMetadata: Record<string, any> = {};
-          
+
           if (req.documentMetadata) {
             documentMetadata = req.documentMetadata;
           } else if (req.value !== undefined) {
@@ -442,7 +443,10 @@ export const providersRouter = createTRPCRouter({
 
       // Send WhatsApp confirmation
       try {
-        await sendProviderWhatsappConfirmation(input.basicInfo.name, input.basicInfo.whatsapp || '');
+        await sendProviderWhatsappConfirmation(
+          input.basicInfo.name,
+          input.basicInfo.whatsapp || ''
+        );
       } catch (error) {
         console.error('Failed to send WhatsApp confirmation:', error);
         // Don't fail registration if WhatsApp fails
@@ -574,7 +578,10 @@ export const providersRouter = createTRPCRouter({
       if (input.whatsapp !== undefined && input.whatsapp !== currentProvider.whatsapp)
         updateData.whatsapp = input.whatsapp;
       if (input.website !== currentProvider.website) updateData.website = input.website;
-      if (input.languages && JSON.stringify(input.languages) !== JSON.stringify(currentProvider.languages)) {
+      if (
+        input.languages &&
+        JSON.stringify(input.languages) !== JSON.stringify(currentProvider.languages)
+      ) {
         updateData.languages = input.languages as Languages[];
       }
       if (input.showPrice !== undefined && input.showPrice !== currentProvider.showPrice) {
@@ -590,7 +597,8 @@ export const providersRouter = createTRPCRouter({
 
       // Check if type assignments changed
       const typeAssignmentsChanged =
-        newTypeIds.length > 0 && JSON.stringify(currentTypeIds.sort()) !== JSON.stringify(newTypeIds.sort());
+        newTypeIds.length > 0 &&
+        JSON.stringify(currentTypeIds.sort()) !== JSON.stringify(newTypeIds.sort());
 
       if (typeAssignmentsChanged) {
         updateData.typeAssignments = {
@@ -605,7 +613,7 @@ export const providersRouter = createTRPCRouter({
       if (input.whatsapp && input.whatsapp !== currentProvider.whatsapp) {
         try {
           await sendProviderWhatsappConfirmation(
-            input.name || currentProvider.name, 
+            input.name || currentProvider.name,
             input.whatsapp
           );
         } catch (error) {
@@ -655,105 +663,107 @@ export const providersRouter = createTRPCRouter({
    * Delete a provider
    * Migrated from: DELETE /api/providers/[id]
    */
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
-    const userId = ctx.session?.user?.id;
+  delete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session?.user?.id;
 
-    if (!userId) {
-      throw new Error('You must be logged in to delete a provider');
-    }
-
-    // Get the provider to check ownership and relations
-    const provider = await ctx.prisma.provider.findUnique({
-      where: { id: input.id },
-      include: {
-        user: true,
-        requirementSubmissions: true,
-        availabilityConfigs: true,
-        services: true,
-      },
-    });
-
-    if (!provider) {
-      throw new Error('Provider not found');
-    }
-
-    // Check if user is authorized (either the owner or an admin)
-    const isAuthorized =
-      provider.userId === userId ||
-      ctx.session.user.role === 'ADMIN' ||
-      ctx.session.user.role === 'SUPER_ADMIN';
-
-    if (!isAuthorized) {
-      throw new Error('You are not authorized to delete this provider');
-    }
-
-    // Delete all related records in the correct order using transaction
-    await ctx.prisma.$transaction(async (tx) => {
-      // 1. Delete requirement submissions
-      if (provider.requirementSubmissions.length > 0) {
-        await tx.requirementSubmission.deleteMany({
-          where: { providerId: input.id },
-        });
+      if (!userId) {
+        throw new Error('You must be logged in to delete a provider');
       }
 
-      // 2. Delete calculated availability slots for each config
-      for (const config of provider.availabilityConfigs) {
-        await tx.calculatedAvailabilitySlot.deleteMany({
-          where: { serviceConfigId: config.id },
-        });
-      }
-
-      // 3. Delete availability configs
-      if (provider.availabilityConfigs.length > 0) {
-        await tx.serviceAvailabilityConfig.deleteMany({
-          where: { providerId: input.id },
-        });
-      }
-
-      // 4. Delete availability records
-      await tx.availability.deleteMany({
-        where: { providerId: input.id },
-      });
-
-      // 5. Find all slots associated with this provider's availability configs
-      const slotIds: string[] = [];
-      for (const config of provider.availabilityConfigs) {
-        const slots = await tx.calculatedAvailabilitySlot.findMany({
-          where: { serviceConfigId: config.id },
-          select: { id: true },
-        });
-        slotIds.push(...slots.map((slot) => slot.id));
-      }
-
-      // 6. Delete bookings associated with those slots
-      if (slotIds.length > 0) {
-        await tx.booking.deleteMany({
-          where: {
-            slotId: { in: slotIds },
-          },
-        });
-      }
-
-      // 7. Disconnect services
-      if (provider.services.length > 0) {
-        await tx.provider.update({
-          where: { id: input.id },
-          data: {
-            services: {
-              set: [],
-            },
-          },
-        });
-      }
-
-      // 8. Finally delete the provider
-      await tx.provider.delete({
+      // Get the provider to check ownership and relations
+      const provider = await ctx.prisma.provider.findUnique({
         where: { id: input.id },
+        include: {
+          user: true,
+          requirementSubmissions: true,
+          availabilityConfigs: true,
+          services: true,
+        },
       });
-    });
 
-    return { success: true };
-  }),
+      if (!provider) {
+        throw new Error('Provider not found');
+      }
+
+      // Check if user is authorized (either the owner or an admin)
+      const isAuthorized =
+        provider.userId === userId ||
+        ctx.session.user.role === 'ADMIN' ||
+        ctx.session.user.role === 'SUPER_ADMIN';
+
+      if (!isAuthorized) {
+        throw new Error('You are not authorized to delete this provider');
+      }
+
+      // Delete all related records in the correct order using transaction
+      await ctx.prisma.$transaction(async (tx) => {
+        // 1. Delete requirement submissions
+        if (provider.requirementSubmissions.length > 0) {
+          await tx.requirementSubmission.deleteMany({
+            where: { providerId: input.id },
+          });
+        }
+
+        // 2. Delete calculated availability slots for each config
+        for (const config of provider.availabilityConfigs) {
+          await tx.calculatedAvailabilitySlot.deleteMany({
+            where: { serviceConfigId: config.id },
+          });
+        }
+
+        // 3. Delete availability configs
+        if (provider.availabilityConfigs.length > 0) {
+          await tx.serviceAvailabilityConfig.deleteMany({
+            where: { providerId: input.id },
+          });
+        }
+
+        // 4. Delete availability records
+        await tx.availability.deleteMany({
+          where: { providerId: input.id },
+        });
+
+        // 5. Find all slots associated with this provider's availability configs
+        const slotIds: string[] = [];
+        for (const config of provider.availabilityConfigs) {
+          const slots = await tx.calculatedAvailabilitySlot.findMany({
+            where: { serviceConfigId: config.id },
+            select: { id: true },
+          });
+          slotIds.push(...slots.map((slot) => slot.id));
+        }
+
+        // 6. Delete bookings associated with those slots
+        if (slotIds.length > 0) {
+          await tx.booking.deleteMany({
+            where: {
+              slotId: { in: slotIds },
+            },
+          });
+        }
+
+        // 7. Disconnect services
+        if (provider.services.length > 0) {
+          await tx.provider.update({
+            where: { id: input.id },
+            data: {
+              services: {
+                set: [],
+              },
+            },
+          });
+        }
+
+        // 8. Finally delete the provider
+        await tx.provider.delete({
+          where: { id: input.id },
+        });
+      });
+
+      return { success: true };
+    }),
 
   // ============================================================================
   // PROVIDER TYPES & SERVICES MANAGEMENT
@@ -1305,7 +1315,8 @@ export const providersRouter = createTRPCRouter({
         if (existingSubmission) {
           // Check if the document has changed
           const hasChanged =
-            JSON.stringify(documentMetadata) !== JSON.stringify(existingSubmission.documentMetadata);
+            JSON.stringify(documentMetadata) !==
+            JSON.stringify(existingSubmission.documentMetadata);
 
           if (hasChanged) {
             requirementsChanged = true;
@@ -1723,7 +1734,6 @@ export const providersRouter = createTRPCRouter({
         .merge(InvitationResponseSchema)
     )
     .mutation(async ({ ctx, input }) => {
-
       // Find the invitation
       const invitation = await ctx.prisma.providerInvitation.findUnique({
         where: { token: input.token },

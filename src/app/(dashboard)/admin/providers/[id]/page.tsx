@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { ProviderDetail } from '@/features/admin/components/providers';
 import { getCurrentUser } from '@/lib/auth';
 
-// Extract page props type for admin provider detail page  
+// Extract page props type for admin provider detail page
 interface AdminProviderDetailPageProps {
   params: {
     id: string;

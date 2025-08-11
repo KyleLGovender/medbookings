@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { SchedulingRule } from '@prisma/client';
 import { AlertTriangle, Calendar, Clock, MapPin, Repeat, Save } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
@@ -41,8 +42,7 @@ import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useToast } from '@/hooks/use-toast';
-import { type RouterOutputs, type RouterInputs } from '@/utils/api';
-import { SchedulingRule } from '@prisma/client';
+import { type RouterInputs, type RouterOutputs } from '@/utils/api';
 
 // Extract input type from tRPC procedure for zero type drift
 type UpdateAvailabilityInput = RouterInputs['calendar']['update'];
@@ -336,7 +336,13 @@ export function AvailabilityEditForm({
                     <FormControl>
                       <div className="flex gap-2">
                         <DatePicker
-                          date={field.value instanceof Date ? field.value : (field.value ? new Date(field.value) : undefined)}
+                          date={
+                            field.value instanceof Date
+                              ? field.value
+                              : field.value
+                                ? new Date(field.value)
+                                : undefined
+                          }
                           onChange={(date) => {
                             if (date && field.value && !hasExistingBookings) {
                               const newDateTime = new Date(field.value);
@@ -348,7 +354,13 @@ export function AvailabilityEditForm({
                           }}
                         />
                         <TimePicker
-                          date={field.value instanceof Date ? field.value : (field.value ? new Date(field.value) : undefined)}
+                          date={
+                            field.value instanceof Date
+                              ? field.value
+                              : field.value
+                                ? new Date(field.value)
+                                : undefined
+                          }
                           onChange={hasExistingBookings ? undefined : field.onChange}
                         />
                       </div>
@@ -370,7 +382,13 @@ export function AvailabilityEditForm({
                     <FormControl>
                       <div className="flex gap-2">
                         <DatePicker
-                          date={field.value instanceof Date ? field.value : (field.value ? new Date(field.value) : undefined)}
+                          date={
+                            field.value instanceof Date
+                              ? field.value
+                              : field.value
+                                ? new Date(field.value)
+                                : undefined
+                          }
                           onChange={(date) => {
                             if (date && field.value && !hasExistingBookings) {
                               const newDateTime = new Date(field.value);
@@ -382,7 +400,13 @@ export function AvailabilityEditForm({
                           }}
                         />
                         <TimePicker
-                          date={field.value instanceof Date ? field.value : (field.value ? new Date(field.value) : undefined)}
+                          date={
+                            field.value instanceof Date
+                              ? field.value
+                              : field.value
+                                ? new Date(field.value)
+                                : undefined
+                          }
                           onChange={hasExistingBookings ? undefined : field.onChange}
                         />
                       </div>

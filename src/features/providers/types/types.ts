@@ -4,21 +4,19 @@
 // All type definitions for the providers feature in one place
 // Domain enums, business logic types, and form schemas only
 //
-// OPTION C COMPLIANT: 
+// OPTION C COMPLIANT:
 // - NO Prisma enum re-exports (import directly from @prisma/client where used)
 // - Server data interfaces removed (use tRPC RouterOutputs)
 // - Only domain logic and client-only types remain
 // =============================================================================
-
 // =============================================================================
 // PRISMA ENUM IMPORTS
 // =============================================================================
-
 import {
-  ProviderStatus,
-  RequirementsValidationStatus,
-  RequirementValidationType,
   Languages,
+  ProviderStatus,
+  RequirementValidationType,
+  RequirementsValidationStatus,
 } from '@prisma/client';
 
 // =============================================================================
@@ -270,13 +268,13 @@ export const getDefaultProviderData = (): Partial<CreateProviderData> => ({
 // NOTE ON SERVER DATA TYPES
 // =============================================================================
 //
-// For all server data (providers, services, requirements, etc.), 
+// For all server data (providers, services, requirements, etc.),
 // components should extract types directly from tRPC RouterOutputs:
 //
 // Example usage in components:
 // ```typescript
 // import { type RouterOutputs } from '@/utils/api';
-// 
+//
 // type Provider = RouterOutputs['providers']['getById'];
 // type ProviderList = RouterOutputs['providers']['search']['providers'];
 // type ServiceDetail = RouterOutputs['providers']['getServices'][number];

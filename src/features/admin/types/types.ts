@@ -3,17 +3,15 @@
 // =============================================================================
 // All type definitions for the admin feature in one place
 // Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
-
 // =============================================================================
 // PRISMA TYPE IMPORTS
 // =============================================================================
 // Import database enums directly from Prisma to prevent type drift
-
 import {
-  ProviderStatus,
   OrganizationStatus,
+  ProviderStatus,
   RequirementsValidationStatus,
-  UserRole
+  UserRole,
 } from '@prisma/client';
 
 // =============================================================================
@@ -36,7 +34,7 @@ export enum ApprovalEntityType {
 // BASE INTERFACES AND TYPES
 // =============================================================================
 
-// Basic Admin Action Types  
+// Basic Admin Action Types
 export type AdminActionType = 'APPROVE' | 'REJECT' | 'SUSPEND';
 
 // Approval status type that handles both Provider and Organization statuses
@@ -204,13 +202,13 @@ export interface RejectionModalProps {
 // =============================================================================
 // MIGRATION NOTES
 // =============================================================================
-// 
+//
 // ✅ TASK 3.2 COMPLETE: Prisma Type Import Migration
-// 
+//
 // REMOVED duplicate enums (now using Prisma imports):
 // - AdminApprovalStatus → Use ApprovalStatus (union of ProviderStatus | OrganizationStatus)
 // - AdminProviderStatus → Use ProviderStatus from @prisma/client
-// - AdminOrganizationStatus → Use OrganizationStatus from @prisma/client  
+// - AdminOrganizationStatus → Use OrganizationStatus from @prisma/client
 // - RequirementValidationStatus → Use RequirementsValidationStatus from @prisma/client
 //
 // KEPT domain-specific enums (not in Prisma):

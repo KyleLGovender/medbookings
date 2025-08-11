@@ -2,9 +2,11 @@
 // ADMIN FEATURE TYPE GUARDS
 // =============================================================================
 // Runtime type validation for admin-specific types and API responses
-import { isValidDateString, isValidEmail, isValidPhone, isValidUUID } from '@/types/guards';
 import { UserRole } from '@prisma/client';
-import { AdminActionType, AdminAction } from './types';
+
+import { isValidDateString, isValidEmail, isValidPhone, isValidUUID } from '@/types/guards';
+
+import { AdminAction, AdminActionType } from './types';
 
 // =============================================================================
 // ENUM GUARDS
@@ -391,7 +393,7 @@ export function isValidBroadcastMessage(value: unknown): value is {
 //
 // Removed guards:
 // - isUserListResponse (server data validation)
-// - isAuditLogListResponse (server data validation)  
+// - isAuditLogListResponse (server data validation)
 // - isSystemConfigListResponse (server data validation)
 //
 // Domain logic guards (enum validation, user input validation, etc.) remain

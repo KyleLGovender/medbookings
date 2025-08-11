@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { ProviderInvitationStatus, ConnectionStatus } from '@prisma/client';
+import { ConnectionStatus, ProviderInvitationStatus } from '@prisma/client';
 import { Building2, Mail, Users } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,9 +28,9 @@ export function OrganizationConnectionsManager() {
   const [invitationsStatusFilter, setInvitationsStatusFilter] = useState<
     'all' | ProviderInvitationStatus
   >('all');
-  const [connectionsStatusFilter, setConnectionsStatusFilter] = useState<
-    'all' | ConnectionStatus
-  >('all');
+  const [connectionsStatusFilter, setConnectionsStatusFilter] = useState<'all' | ConnectionStatus>(
+    'all'
+  );
   const [searchQuery, setSearchQuery] = useState('');
 
   const {
@@ -257,7 +257,8 @@ export function OrganizationConnectionsManager() {
                   key={invitation.id}
                   invitation={invitation}
                   showActions={
-                    invitation.status === ProviderInvitationStatus.PENDING && new Date(invitation.expiresAt) > new Date()
+                    invitation.status === ProviderInvitationStatus.PENDING &&
+                    new Date(invitation.expiresAt) > new Date()
                   }
                 />
               ))}

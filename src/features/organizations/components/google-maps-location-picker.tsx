@@ -32,6 +32,7 @@ declare global {
 }
 
 export function GoogleMapsLocationPicker({
+  // @ts-ignore - False positive: function props are valid between client components
   onLocationSelect,
   initialLocation,
   className,
@@ -50,6 +51,134 @@ export function GoogleMapsLocationPicker({
   // Check if we have the API key
   // eslint-disable-next-line no-process-env
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+  const processLocationResult = useCallback(async (result: any) => {
+    try {
+      console.log('Processing location result:', result);
+
+      if (!result || !result.place_id) {
+        console.error('Invalid location result:', result);
+        return;
+      }
+
+      // Ensure we have valid coordinates
+      let coordinates;
+      if (result.geometry.location.lat && result.geometry.location.lng) {
+        coordinates = {
+          lat: result.geometry.location.lat(),
+          lng: result.geometry.location.lng(),
+        };
+      } else if (result.geometry.location.lat && result.geometry.location.lng) {
+        coordinates = {
+          lat: result.geometry.location.lat,
+          lng: result.geometry.location.lng,
+        };
+      } else {
+        console.error('Invalid coordinates in result');
+        return;
+      }
+
+      const locationData = {
+        googlePlaceId: result.place_id,
+        formattedAddress: result.formatted_address,
+        coordinates,
+      };
+
+      console.log('Final location data:', locationData);
+
+      setSelectedLocation(locationData);
+      onLocationSelect(locationData);
+    } catch (error) {
+      console.error('Error processing location result:', error);
+    }
+  }, [onLocationSelect]);
+
+  const reverseGeocode = useCallback(async (lat: number, lng: number) => {
+    if (!window.google || typeof lat !== 'number' || typeof lng !== 'number') return;
+
+    const geocoder = new window.google.maps.Geocoder();
+
+    try {
+      const response = await new Promise((resolve, reject) => {
+        geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
+          if (status === 'OK' && results && results.length > 0) {
+            resolve(results);
+          } else {
+            reject(new Error(`Geocoding failed: ${status}`));
+          }
+        });
+      });
+
+      const results = response as any[];
+      if (results && results[0]) {
+        processLocationResult(results[0]);
+      }
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+    }
+  }, [processLocationResult]);
+
+  const placeMarker = useCallback(async (mapInstance: any, position: { lat: number; lng: number }) => {
+    if (!mapInstance || !window.google || !position) return;
+
+    try {
+      // Remove existing marker
+      if (marker) {
+        marker.map = null;
+      }
+
+      // Import the marker library
+      const { AdvancedMarkerElement } = (await window.google.maps.importLibrary('marker')) as any;
+
+      // Create new advanced marker
+      const newMarker = new AdvancedMarkerElement({
+        position,
+        map: mapInstance,
+        gmpDraggable: true,
+      });
+
+      // Add drag listener
+      newMarker.addListener('dragend', (event: any) => {
+        try {
+          if (event && event.latLng) {
+            const lat = event.latLng.lat();
+            const lng = event.latLng.lng();
+            if (typeof lat === 'number' && typeof lng === 'number') {
+              reverseGeocode(lat, lng);
+            }
+          }
+        } catch (error) {
+          console.error('Error handling advanced marker drag:', error);
+        }
+      });
+
+      setMarker(newMarker);
+    } catch (error) {
+      console.error('Error placing marker:', error);
+    }
+  }, [marker, reverseGeocode]);
+
+  const handleMapClick = useCallback((event: any) => {
+    try {
+      if (!event || !event.latLng) {
+        console.error('Invalid map click event');
+        return;
+      }
+
+      const lat = event.latLng.lat();
+      const lng = event.latLng.lng();
+
+      if (typeof lat !== 'number' || typeof lng !== 'number') {
+        console.error('Invalid coordinates from map click');
+        return;
+      }
+
+      placeMarker(map, { lat, lng }).catch(console.error);
+      reverseGeocode(lat, lng);
+    } catch (error) {
+      console.error('Error handling map click:', error);
+    }
+  }, [map, placeMarker, reverseGeocode]);
 
   // Initialize the map with retry logic
   const initializeMap = useCallback(async () => {
@@ -125,7 +254,7 @@ export function GoogleMapsLocationPicker({
       setIsLoading(false);
       initializationAttempted.current = false; // Allow retry
     }
-  }, [initialLocation]);
+  }, [initialLocation, handleMapClick, placeMarker]);
 
   // Load Google Maps API
   const loadGoogleMapsAPI = useCallback(() => {
@@ -170,7 +299,7 @@ export function GoogleMapsLocationPicker({
     console.log('Loading Google Maps API...');
 
     // Create a unique callback name
-    const callbackName = `initGoogleMaps_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const callbackName = `initGoogleMaps_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
     // Set up the callback
     window[callbackName] = () => {
@@ -205,93 +334,6 @@ export function GoogleMapsLocationPicker({
 
     return () => clearTimeout(timer);
   }, [loadGoogleMapsAPI]);
-
-  const handleMapClick = (event: any) => {
-    try {
-      if (!event || !event.latLng) {
-        console.error('Invalid map click event');
-        return;
-      }
-
-      const lat = event.latLng.lat();
-      const lng = event.latLng.lng();
-
-      if (typeof lat !== 'number' || typeof lng !== 'number') {
-        console.error('Invalid coordinates from map click');
-        return;
-      }
-
-      placeMarker(map, { lat, lng }).catch(console.error);
-      reverseGeocode(lat, lng);
-    } catch (error) {
-      console.error('Error handling map click:', error);
-    }
-  };
-
-  const placeMarker = async (mapInstance: any, position: { lat: number; lng: number }) => {
-    if (!mapInstance || !window.google || !position) return;
-
-    try {
-      // Remove existing marker
-      if (marker) {
-        marker.map = null;
-      }
-
-      // Import the marker library
-      const { AdvancedMarkerElement } = (await window.google.maps.importLibrary('marker')) as any;
-
-      // Create new advanced marker
-      const newMarker = new AdvancedMarkerElement({
-        position,
-        map: mapInstance,
-        gmpDraggable: true,
-      });
-
-      // Add drag listener
-      newMarker.addListener('dragend', (event: any) => {
-        try {
-          if (event && event.latLng) {
-            const lat = event.latLng.lat();
-            const lng = event.latLng.lng();
-            if (typeof lat === 'number' && typeof lng === 'number') {
-              reverseGeocode(lat, lng);
-            }
-          }
-        } catch (error) {
-          console.error('Error handling advanced marker drag:', error);
-        }
-      });
-
-      setMarker(newMarker);
-    } catch (error) {
-      console.error('Error placing marker:', error);
-    }
-  };
-
-  const reverseGeocode = async (lat: number, lng: number) => {
-    if (!window.google || typeof lat !== 'number' || typeof lng !== 'number') return;
-
-    const geocoder = new window.google.maps.Geocoder();
-
-    try {
-      const response = await new Promise((resolve, reject) => {
-        geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
-          if (status === 'OK' && results && results.length > 0) {
-            resolve(results);
-          } else {
-            reject(new Error(`Geocoding failed: ${status}`));
-          }
-        });
-      });
-
-      const results = response as any[];
-      if (results && results[0]) {
-        processLocationResult(results[0]);
-      }
-    } catch (error) {
-      console.error('Reverse geocoding error:', error);
-    }
-  };
 
   const searchPlaces = async (query: string) => {
     if (!query.trim() || !window.google || !map) return;
@@ -340,47 +382,6 @@ export function GoogleMapsLocationPicker({
       setSearchResults([]);
     } finally {
       setIsSearching(false);
-    }
-  };
-
-  const processLocationResult = async (result: any) => {
-    try {
-      console.log('Processing location result:', result);
-
-      if (!result || !result.place_id) {
-        console.error('Invalid location result:', result);
-        return;
-      }
-
-      // Ensure we have valid coordinates
-      let coordinates;
-      if (result.geometry.location.lat && result.geometry.location.lng) {
-        coordinates = {
-          lat: result.geometry.location.lat(),
-          lng: result.geometry.location.lng(),
-        };
-      } else if (result.geometry.location.lat && result.geometry.location.lng) {
-        coordinates = {
-          lat: result.geometry.location.lat,
-          lng: result.geometry.location.lng,
-        };
-      } else {
-        console.error('Invalid coordinates in result');
-        return;
-      }
-
-      const locationData = {
-        googlePlaceId: result.place_id,
-        formattedAddress: result.formatted_address,
-        coordinates,
-      };
-
-      console.log('Final location data:', locationData);
-
-      setSelectedLocation(locationData);
-      onLocationSelect(locationData);
-    } catch (error) {
-      console.error('Error processing location result:', error);
     }
   };
 

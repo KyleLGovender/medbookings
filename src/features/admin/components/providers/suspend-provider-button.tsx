@@ -3,11 +3,12 @@
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
+
 // Temporary placeholder until useSuspendProvider hook is implemented
 const useSuspendProvider = () => ({
   mutateAsync: async ({ id }: { id: string }) => {
     throw new Error('Suspend provider functionality is temporarily disabled');
-  }
+  },
 });
 
 interface SuspendProviderButtonProps {

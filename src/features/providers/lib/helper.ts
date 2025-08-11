@@ -62,4 +62,3 @@ export function serializeProvider(provider: any): any {
     updatedAt: provider.updatedAt?.toISOString(),
   };
 }
-

@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { ProviderStatus } from '@prisma/client';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,20 +26,19 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ProviderStatus } from '@prisma/client';
 import type { AdminFilterStatus } from '@/features/admin/types/types';
-import { type RouterOutputs } from '@/utils/api';
-
-type AdminProviders = RouterOutputs['admin']['getProviders'];
-type AdminProvider = AdminProviders[number];
 import {
   useApproveProvider,
   useRejectProvider,
 } from '@/features/providers/hooks/use-admin-provider-approval';
 import { useAdminProviders } from '@/features/providers/hooks/use-admin-providers';
+import { type RouterOutputs } from '@/utils/api';
 
 import { StatusBadge } from '../../../../components/status-badge';
 import { RejectionModal } from '../ui/rejection-modal';
+
+type AdminProviders = RouterOutputs['admin']['getProviders'];
+type AdminProvider = AdminProviders[number];
 
 interface ProviderListProps {
   initialStatus?: AdminFilterStatus;

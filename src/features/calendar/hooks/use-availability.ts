@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { api, type RouterInputs, type RouterOutputs } from '@/utils/api';
+import { type RouterInputs, type RouterOutputs, api } from '@/utils/api';
 
 // Extract types from tRPC procedures - OPTION C COMPLIANT
 type AvailabilityWithRelations = RouterOutputs['calendar']['getById'];
@@ -72,7 +72,8 @@ export function useAvailabilitySearch(params: AvailabilitySearchParams) {
       organizationId: params.organizationId,
       locationId: params.locationId,
       serviceId: params.serviceId,
-      startDate: params.startDate instanceof Date ? params.startDate.toISOString() : params.startDate,
+      startDate:
+        params.startDate instanceof Date ? params.startDate.toISOString() : params.startDate,
       endDate: params.endDate instanceof Date ? params.endDate.toISOString() : params.endDate,
       status: params.status,
       seriesId: params.seriesId,
@@ -168,13 +169,15 @@ export function useUpdateAvailability(options?: {
       // Invalidate relevant queries using tRPC utils
       utils.calendar.searchAvailability.invalidate();
       utils.calendar.getById.invalidate({ id: variables.id });
-      
+
       // Invalidate provider/organization specific queries
       if (data.availability?.providerId) {
         utils.calendar.getByProviderId.invalidate({ providerId: data.availability.providerId });
       }
       if (data.availability?.organizationId) {
-        utils.calendar.getByOrganizationId.invalidate({ organizationId: data.availability.organizationId });
+        utils.calendar.getByOrganizationId.invalidate({
+          organizationId: data.availability.organizationId,
+        });
       }
       if (data.availability?.seriesId) {
         utils.calendar.getBySeriesId.invalidate({ seriesId: data.availability.seriesId });
@@ -186,10 +189,7 @@ export function useUpdateAvailability(options?: {
 }
 
 export function useCancelAvailability(options?: {
-  onSuccess?: (variables: {
-    ids: string[];
-    scope?: 'single' | 'future' | 'all';
-  }) => void;
+  onSuccess?: (variables: { ids: string[]; scope?: 'single' | 'future' | 'all' }) => void;
 }) {
   const utils = api.useUtils();
 

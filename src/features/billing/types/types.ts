@@ -3,18 +3,11 @@
 // =============================================================================
 // All type definitions for the billing feature in one place
 // Organized by: Prisma Imports -> Domain Enums -> Business Logic -> Request Types -> Component Props
-
 // =============================================================================
 // PRISMA TYPE IMPORTS
 // =============================================================================
 // Import database enums directly from Prisma to prevent type drift
-
-import {
-  PaymentStatus,
-  SubscriptionStatus,
-  BillingEntity,
-  BillingInterval
-} from '@prisma/client';
+import { BillingEntity, BillingInterval, PaymentStatus, SubscriptionStatus } from '@prisma/client';
 
 // =============================================================================
 // DOMAIN ENUMS AND BUSINESS LOGIC

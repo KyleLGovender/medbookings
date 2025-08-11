@@ -1,7 +1,7 @@
+import { ConnectionStatus, ProviderInvitationStatus } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { ProviderInvitationStatus, ConnectionStatus } from '@prisma/client';
 
-import { api, type RouterInputs } from '@/utils/api';
+import { type RouterInputs, api } from '@/utils/api';
 
 // Extract types from tRPC input for type safety
 type GetInvitationsInput = RouterInputs['providers']['getInvitations'];
@@ -12,16 +12,11 @@ type InvitationStatus = GetInvitationsInput['status'];
  * @param status Optional status filter
  * @returns Query object with provider invitations data
  */
-export function useProviderInvitations(
-  status?: InvitationStatus
-) {
-  return api.providers.getInvitations.useQuery(
-    status ? { status } : {},
-    {
-      // Always enabled since it handles auth internally
-      retry: false,
-    }
-  );
+export function useProviderInvitations(status?: InvitationStatus) {
+  return api.providers.getInvitations.useQuery(status ? { status } : {}, {
+    // Always enabled since it handles auth internally
+    retry: false,
+  });
 }
 
 /**
@@ -51,9 +46,7 @@ export function useRespondToInvitation(options?: {
  * @param status Optional status filter
  * @returns Query object with organization connections data
  */
-export function useOrganizationConnections(
-  status?: ConnectionStatus
-) {
+export function useOrganizationConnections(status?: ConnectionStatus) {
   return api.providers.getConnections.useQuery(status ? { status } : {}, {
     // Always enabled since it handles auth internally
     retry: false,

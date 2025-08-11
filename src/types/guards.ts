@@ -39,7 +39,6 @@ export function isApiResponse<T>(
   );
 }
 
-
 // =============================================================================
 // USER INPUT GUARDS
 // =============================================================================
@@ -113,7 +112,6 @@ export function isValidDateString(value: unknown): value is string {
 export function isValidUserRole(value: unknown): value is 'USER' | 'ADMIN' | 'SUPER_ADMIN' {
   return typeof value === 'string' && ['USER', 'ADMIN', 'SUPER_ADMIN'].includes(value);
 }
-
 
 // =============================================================================
 // EXTERNAL DATA GUARDS

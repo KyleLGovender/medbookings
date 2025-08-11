@@ -1,13 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
-import { BookingStatus } from '@prisma/client';
 
-import { api, type RouterInputs, type RouterOutputs } from '@/utils/api';
+import { BookingStatus } from '@prisma/client';
 import { AvailabilityStatus } from '@prisma/client';
 
 import { calculateDateRange } from '@/features/calendar/lib/calendar-utils';
 import { CalendarViewMode } from '@/features/calendar/types/types';
+import { type RouterInputs, type RouterOutputs, api } from '@/utils/api';
 
 // =============================================================================
 // tRPC TYPE EXTRACTION - OPTION C COMPLIANT
@@ -57,21 +57,21 @@ export function useCalendarData(params: CalendarDataParams) {
   );
 
   // Build search parameters for availability
-  const searchParams: AvailabilitySearchParams = useMemo(() => ({
-    providerId,
-    startDate: dateRange.start.toISOString(),
-    endDate: dateRange.end.toISOString(),
-    ...(statusFilter !== 'ALL' && { status: statusFilter }),
-  }), [providerId, dateRange.start, dateRange.end, statusFilter]);
+  const searchParams: AvailabilitySearchParams = useMemo(
+    () => ({
+      providerId,
+      startDate: dateRange.start.toISOString(),
+      endDate: dateRange.end.toISOString(),
+      ...(statusFilter !== 'ALL' && { status: statusFilter }),
+    }),
+    [providerId, dateRange.start, dateRange.end, statusFilter]
+  );
 
   // Fetch availability data using tRPC
-  const availabilityQuery = api.calendar.searchAvailability.useQuery(
-    searchParams,
-    {
-      enabled: !!providerId,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    }
-  );
+  const availabilityQuery = api.calendar.searchAvailability.useQuery(searchParams, {
+    enabled: !!providerId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   // Return raw tRPC query results with computed date range
   return {

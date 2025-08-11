@@ -1,8 +1,9 @@
+import { CommunicationChannel, CommunicationType } from '@prisma/client';
+
 import { EmailService } from '@/features/communications/services/email.service';
 import { TemplateService } from '@/features/communications/services/template.service';
 import { WhatsAppService } from '@/features/communications/services/whatsapp.service';
 
-import { CommunicationType, CommunicationChannel } from '@prisma/client';
 import {
   NotificationContent,
   NotificationOptions,

@@ -66,7 +66,7 @@ export function EditProfileForm() {
   async function onSubmit(data: ProfileFormValues) {
     try {
       await updateProfileMutation.mutateAsync(data);
-      
+
       toast({
         title: 'Profile updated',
         description: 'Your profile has been updated successfully.',

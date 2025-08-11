@@ -2,9 +2,9 @@
 
 import React from 'react';
 
+import { OrganizationStatus } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { OrganizationStatus } from '@prisma/client';
 import { api } from '@/utils/api';
 
 interface ApproveOrganizationParams {

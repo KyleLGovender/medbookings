@@ -39,7 +39,8 @@ export const ProviderInvitationStatus = {
   CANCELLED: 'CANCELLED',
 } as const;
 
-export type ProviderInvitationStatus = (typeof ProviderInvitationStatus)[keyof typeof ProviderInvitationStatus];
+export type ProviderInvitationStatus =
+  (typeof ProviderInvitationStatus)[keyof typeof ProviderInvitationStatus];
 
 // Organization roles
 export const OrganizationRole = {
@@ -60,7 +61,8 @@ export const OrganizationPermission = {
   VIEW_ANALYTICS: 'VIEW_ANALYTICS',
 } as const;
 
-export type OrganizationPermission = (typeof OrganizationPermission)[keyof typeof OrganizationPermission];
+export type OrganizationPermission =
+  (typeof OrganizationPermission)[keyof typeof OrganizationPermission];
 
 // Invitation action types
 export enum InvitationAction {

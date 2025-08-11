@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { AlertCircle, Building, Info, MapPin, Plus, Trash2 } from 'lucide-react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
@@ -33,14 +33,8 @@ export function LocationSetupStep() {
 
   const [formErrors, setFormErrors] = useState<string[]>([]);
 
-  // Watch for validation errors and update when form state changes
-  useEffect(() => {
-    if (form.formState.isSubmitted) {
-      updateFormErrors();
-    }
-  }, [form.formState.isSubmitted, form.formState.errors]);
-
-  const updateFormErrors = () => {
+  // Function to update form errors
+  const updateFormErrors = useCallback(() => {
     // Collect location errors
     const locationErrors = form.formState.errors.locations
       ? (form.formState.errors.locations as unknown as any[]).flatMap((locationError, index) => {
@@ -57,7 +51,14 @@ export function LocationSetupStep() {
       : [];
 
     setFormErrors(locationErrors);
-  };
+  }, [form.formState.errors]);
+
+  // Watch for validation errors and update when form state changes
+  useEffect(() => {
+    if (form.formState.isSubmitted) {
+      updateFormErrors();
+    }
+  }, [form.formState.isSubmitted, form.formState.errors, updateFormErrors]);
 
   const addLocation = () => {
     append({
@@ -71,30 +72,36 @@ export function LocationSetupStep() {
     });
   };
 
-  const handleLocationSelect = async (locationIndex: number, locationData: any) => {
-    console.log('Setting location data for index:', locationIndex, locationData);
+  const handleLocationSelect = useCallback(
+    async (locationIndex: number, locationData: any) => {
+      console.log('Setting location data for index:', locationIndex, locationData);
 
-    form.setValue(`locations.${locationIndex}.googlePlaceId`, locationData.googlePlaceId);
-    form.setValue(`locations.${locationIndex}.formattedAddress`, locationData.formattedAddress);
-    form.setValue(`locations.${locationIndex}.coordinates`, locationData.coordinates);
+      form.setValue(`locations.${locationIndex}.googlePlaceId`, locationData.googlePlaceId);
+      form.setValue(`locations.${locationIndex}.formattedAddress`, locationData.formattedAddress);
+      form.setValue(`locations.${locationIndex}.coordinates`, locationData.coordinates);
 
-    // Set search terms if available
-    if (locationData.searchTerms && locationData.searchTerms.length > 0) {
-      form.setValue(`locations.${locationIndex}.searchTerms`, locationData.searchTerms);
-    }
+      // Set search terms if available
+      if (locationData.searchTerms && locationData.searchTerms.length > 0) {
+        form.setValue(`locations.${locationIndex}.searchTerms`, locationData.searchTerms);
+      }
 
-    // Trigger validation for the updated fields
-    await form.trigger([
-      `locations.${locationIndex}.googlePlaceId`,
-      `locations.${locationIndex}.formattedAddress`,
-    ]);
+      // Trigger validation for the updated fields
+      await form.trigger([
+        `locations.${locationIndex}.googlePlaceId`,
+        `locations.${locationIndex}.formattedAddress`,
+      ]);
 
-    console.log('Form values after location select:', form.getValues(`locations.${locationIndex}`));
-    console.log(
-      'Form errors after location select:',
-      (form.formState.errors.locations as any)?.[locationIndex]
-    );
-  };
+      console.log(
+        'Form values after location select:',
+        form.getValues(`locations.${locationIndex}`)
+      );
+      console.log(
+        'Form errors after location select:',
+        (form.formState.errors.locations as any)?.[locationIndex]
+      );
+    },
+    [form]
+  );
 
   return (
     <div className="space-y-6">

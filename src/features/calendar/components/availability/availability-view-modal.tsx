@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { useAvailabilityById } from '@/features/calendar/hooks/use-availability';
+
 // Temporary type fix - needs proper tRPC procedure with relations
 type AvailabilityWithRelations = any;
 

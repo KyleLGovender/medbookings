@@ -15,17 +15,15 @@
 // - All Prisma GetPayload types (OrganizationDetailSelect, etc.)
 //
 // Components will use tRPC RouterOutputs for server data in Task 4.0
-
 // =============================================================================
 // PRISMA ENUM IMPORTS
 // =============================================================================
-
 import {
-  OrganizationStatus,
-  OrganizationRole,
-  OrganizationBillingModel,
-  MembershipStatus,
   InvitationStatus,
+  MembershipStatus,
+  OrganizationBillingModel,
+  OrganizationRole,
+  OrganizationStatus,
 } from '@prisma/client';
 
 // =============================================================================

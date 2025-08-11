@@ -1,15 +1,17 @@
 // Removed unused import - OrganizationBillingModel validation now handled in tRPC procedure
+import { OrganizationRole } from '@prisma/client';
 
 import { OrganizationRegistrationData } from '@/features/organizations/types/types';
 import { getCurrentUser } from '@/lib/auth';
-import { OrganizationRole } from '@prisma/client';
 
 /**
  * Validates organization registration data and handles business logic
  * @param data Organization registration data
  * @returns Minimal metadata for tRPC procedure to use
  */
-export async function registerOrganization(data: OrganizationRegistrationData): Promise<
+export async function registerOrganization(
+  data: OrganizationRegistrationData
+): Promise<
   | { success: false; error: string }
   | { success: true; userId: string; validatedData: OrganizationRegistrationData }
 > {
@@ -29,23 +31,24 @@ export async function registerOrganization(data: OrganizationRegistrationData): 
     }
 
     // TODO: Send organization registration notification email
-    console.log(`📧 Organization registration notification would be sent for: ${data.organization.name}`);
+    console.log(
+      `📧 Organization registration notification would be sent for: ${data.organization.name}`
+    );
 
     // Return minimal metadata for tRPC procedure to create organization
-    return { 
-      success: true, 
+    return {
+      success: true,
       userId: currentUser.id,
-      validatedData: data
+      validatedData: data,
     };
   } catch (error) {
     console.error('Organization registration validation error:', error);
-    return { 
-      success: false, 
-      error: 'Failed to validate organization data. Please try again.' 
+    return {
+      success: false,
+      error: 'Failed to validate organization data. Please try again.',
     };
   }
 }
-
 
 // =============================================================================
 // MEMBER MANAGEMENT BUSINESS LOGIC
@@ -158,7 +161,7 @@ export async function validateInvitationRejection(token: string): Promise<Member
     }
 
     // TODO: Send rejection notification email to inviter
-    console.log(`📧 Invitation rejection notification would be sent`);
+    console.log('📧 Invitation rejection notification would be sent');
 
     return {
       success: true,
@@ -281,7 +284,9 @@ export async function validateInvitationCancellation(
     }
 
     // TODO: Send invitation cancellation email
-    console.log(`📧 Invitation cancellation notification would be sent for invitation: ${invitationId}`);
+    console.log(
+      `📧 Invitation cancellation notification would be sent for invitation: ${invitationId}`
+    );
 
     return {
       success: true,

@@ -1,8 +1,8 @@
 'use client';
 
+import { ProviderStatus, RequirementsValidationStatus } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { RequirementsValidationStatus, ProviderStatus } from '@prisma/client';
 import { api } from '@/utils/api';
 
 /**
@@ -25,7 +25,9 @@ export function useRequiredRequirementsStatus(providerId: string | undefined) {
         return {
           allRequiredApproved: allApproved,
           requiredCount: requiredSubmissions.length,
-          approvedCount: requiredSubmissions.filter((s) => s.status === RequirementsValidationStatus.APPROVED).length,
+          approvedCount: requiredSubmissions.filter(
+            (s) => s.status === RequirementsValidationStatus.APPROVED
+          ).length,
         };
       },
     }

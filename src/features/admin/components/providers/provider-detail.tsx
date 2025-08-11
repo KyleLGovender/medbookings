@@ -4,9 +4,13 @@ import { useEffect, useState } from 'react';
 
 import { ProviderStatus, RequirementsValidationStatus } from '@prisma/client';
 
+import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ProviderDetailSkeleton } from '@/features/admin/components/ui/admin-loading-states';
+import { ApprovalButtons } from '@/features/admin/components/ui/approval-buttons';
+import { RejectionModal } from '@/features/admin/components/ui/rejection-modal';
 import { RequirementSubmissionCard } from '@/features/providers/components/requirement-submission-card';
 import {
   useApproveProvider,
@@ -19,12 +23,6 @@ import {
   useAdminProvider,
   useAdminProviderRequirements,
 } from '@/features/providers/hooks/use-admin-providers';
-
-
-import { StatusBadge } from '@/components/status-badge';
-import { ProviderDetailSkeleton } from '@/features/admin/components/ui/admin-loading-states';
-import { ApprovalButtons } from '@/features/admin/components/ui/approval-buttons';
-import { RejectionModal } from '@/features/admin/components/ui/rejection-modal';
 import { type RouterOutputs } from '@/utils/api';
 
 // Infer types from tRPC router outputs
@@ -201,7 +199,9 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
   }
 
   const approvedRequirements =
-    requirements?.filter((req: RequirementSubmission) => req.status === RequirementsValidationStatus.APPROVED).length || 0;
+    requirements?.filter(
+      (req: RequirementSubmission) => req.status === RequirementsValidationStatus.APPROVED
+    ).length || 0;
   const totalRequirements = requirements?.length || 0;
 
   // Check if all REQUIRED requirements are approved (to match server-side logic)
@@ -227,23 +227,28 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
             status={
               provider?.status === ProviderStatus.PENDING_APPROVAL
                 ? 'PENDING'
-                : provider?.status === ProviderStatus.TRIAL || provider?.status === ProviderStatus.TRIAL_EXPIRED || provider?.status === ProviderStatus.ACTIVE || provider?.status === ProviderStatus.PAYMENT_OVERDUE || provider?.status === ProviderStatus.CANCELLED
-                ? 'APPROVED'
-                : provider?.status === ProviderStatus.SUSPENDED
-                ? 'SUSPENDED'
-                : provider?.status === ProviderStatus.REJECTED
-                ? 'REJECTED'
-                : 'PENDING'
+                : provider?.status === ProviderStatus.TRIAL ||
+                    provider?.status === ProviderStatus.TRIAL_EXPIRED ||
+                    provider?.status === ProviderStatus.ACTIVE ||
+                    provider?.status === ProviderStatus.PAYMENT_OVERDUE ||
+                    provider?.status === ProviderStatus.CANCELLED
+                  ? 'APPROVED'
+                  : provider?.status === ProviderStatus.SUSPENDED
+                    ? 'SUSPENDED'
+                    : provider?.status === ProviderStatus.REJECTED
+                      ? 'REJECTED'
+                      : 'PENDING'
             }
           />
-          {provider?.status === ProviderStatus.PENDING_APPROVAL && allRequiredRequirementsApproved && (
-            <ApprovalButtons
-              onApprove={handleApproveProvider}
-              onReject={handleRejectProviderClick}
-              isApproving={approveProviderMutation.isPending}
-              isRejecting={rejectProviderMutation.isPending}
-            />
-          )}
+          {provider?.status === ProviderStatus.PENDING_APPROVAL &&
+            allRequiredRequirementsApproved && (
+              <ApprovalButtons
+                onApprove={handleApproveProvider}
+                onReject={handleRejectProviderClick}
+                isApproving={approveProviderMutation.isPending}
+                isRejecting={rejectProviderMutation.isPending}
+              />
+            )}
           {provider?.status === ProviderStatus.REJECTED && (
             <Button
               onClick={handleResetProviderStatus}
@@ -309,13 +314,17 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                     status={
                       provider?.status === ProviderStatus.PENDING_APPROVAL
                         ? 'PENDING'
-                        : provider?.status === ProviderStatus.TRIAL || provider?.status === ProviderStatus.TRIAL_EXPIRED || provider?.status === ProviderStatus.ACTIVE || provider?.status === ProviderStatus.PAYMENT_OVERDUE || provider?.status === ProviderStatus.CANCELLED
-                        ? 'APPROVED'
-                        : provider?.status === ProviderStatus.SUSPENDED
-                        ? 'SUSPENDED'
-                        : provider?.status === ProviderStatus.REJECTED
-                        ? 'REJECTED'
-                        : 'PENDING'
+                        : provider?.status === ProviderStatus.TRIAL ||
+                            provider?.status === ProviderStatus.TRIAL_EXPIRED ||
+                            provider?.status === ProviderStatus.ACTIVE ||
+                            provider?.status === ProviderStatus.PAYMENT_OVERDUE ||
+                            provider?.status === ProviderStatus.CANCELLED
+                          ? 'APPROVED'
+                          : provider?.status === ProviderStatus.SUSPENDED
+                            ? 'SUSPENDED'
+                            : provider?.status === ProviderStatus.REJECTED
+                              ? 'REJECTED'
+                              : 'PENDING'
                     }
                   />
                 </div>
@@ -415,19 +424,28 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div className="rounded-lg bg-green-50 p-2 text-center dark:bg-green-900/20">
                     <div className="font-semibold text-green-700 dark:text-green-300">
-                      {requirements?.filter((req: RequirementSubmission) => req.status === RequirementsValidationStatus.APPROVED).length || 0}
+                      {requirements?.filter(
+                        (req: RequirementSubmission) =>
+                          req.status === RequirementsValidationStatus.APPROVED
+                      ).length || 0}
                     </div>
                     <div className="text-green-600 dark:text-green-400">Approved</div>
                   </div>
                   <div className="rounded-lg bg-yellow-50 p-2 text-center dark:bg-yellow-900/20">
                     <div className="font-semibold text-yellow-700 dark:text-yellow-300">
-                      {requirements?.filter((req: RequirementSubmission) => req.status === RequirementsValidationStatus.PENDING).length || 0}
+                      {requirements?.filter(
+                        (req: RequirementSubmission) =>
+                          req.status === RequirementsValidationStatus.PENDING
+                      ).length || 0}
                     </div>
                     <div className="text-yellow-600 dark:text-yellow-400">Pending</div>
                   </div>
                   <div className="rounded-lg bg-red-50 p-2 text-center dark:bg-red-900/20">
                     <div className="font-semibold text-red-700 dark:text-red-300">
-                      {requirements?.filter((req: RequirementSubmission) => req.status === RequirementsValidationStatus.REJECTED).length || 0}
+                      {requirements?.filter(
+                        (req: RequirementSubmission) =>
+                          req.status === RequirementsValidationStatus.REJECTED
+                      ).length || 0}
                     </div>
                     <div className="text-red-600 dark:text-red-400">Rejected</div>
                   </div>
@@ -500,22 +518,23 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
               </div>
             )}
 
-            {allRequiredRequirementsApproved && provider?.status === ProviderStatus.PENDING_APPROVAL && (
-              <div className="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
-                <div className="flex items-start gap-2">
-                  <div className="text-green-600 dark:text-green-400">✅</div>
-                  <div>
-                    <h4 className="text-sm font-medium text-green-800 dark:text-green-300">
-                      Ready for Approval
-                    </h4>
-                    <p className="text-xs text-green-700 dark:text-green-400">
-                      All requirements have been approved. This provider is ready for final
-                      approval.
-                    </p>
+            {allRequiredRequirementsApproved &&
+              provider?.status === ProviderStatus.PENDING_APPROVAL && (
+                <div className="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
+                  <div className="flex items-start gap-2">
+                    <div className="text-green-600 dark:text-green-400">✅</div>
+                    <div>
+                      <h4 className="text-sm font-medium text-green-800 dark:text-green-300">
+                        Ready for Approval
+                      </h4>
+                      <p className="text-xs text-green-700 dark:text-green-400">
+                        All requirements have been approved. This provider is ready for final
+                        approval.
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
           </CardContent>
         </Card>
 

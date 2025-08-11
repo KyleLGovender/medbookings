@@ -12,10 +12,9 @@
  *
  * @author MedBookings Development Team
  */
-import {
-  CalendarEvent
-} from '@/features/calendar/types/types';
 import { AvailabilityStatus } from '@prisma/client';
+
+import { CalendarEvent } from '@/features/calendar/types/types';
 
 // =============================================================================
 // EVENT STYLING UTILITIES

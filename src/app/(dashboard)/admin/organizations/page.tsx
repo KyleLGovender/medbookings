@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+
 import { OrganizationStatus } from '@prisma/client';
 
 import { OrganizationList } from '@/features/admin/components/organizations';

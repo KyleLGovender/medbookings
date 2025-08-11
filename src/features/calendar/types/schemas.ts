@@ -1,11 +1,13 @@
-import { z } from 'zod';
-import { AvailabilityStatus, BillingEntity, BookingStatus, SchedulingRule, SlotStatus } from '@prisma/client';
-
 import {
-  AvailabilityContext,
-  DayOfWeek,
-  RecurrenceOption,
-} from '@/features/calendar/types/types';
+  AvailabilityStatus,
+  BillingEntity,
+  BookingStatus,
+  SchedulingRule,
+  SlotStatus,
+} from '@prisma/client';
+import { z } from 'zod';
+
+import { AvailabilityContext, DayOfWeek, RecurrenceOption } from '@/features/calendar/types/types';
 
 // Base Zod schemas for enums
 export const availabilityStatusSchema = z.nativeEnum(AvailabilityStatus);

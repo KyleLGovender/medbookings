@@ -2,15 +2,19 @@
 // BILLING FEATURE TYPE GUARDS
 // =============================================================================
 // Runtime type validation for billing-specific types and API responses
+import { BillingEntity, BillingInterval, PaymentStatus, SubscriptionStatus } from '@prisma/client';
+
 import { isValidDateString, isValidUUID } from '@/types/guards';
-import { PaymentStatus, SubscriptionStatus, BillingInterval, BillingEntity } from '@prisma/client';
 
 // =============================================================================
 // ENUM GUARDS
 // =============================================================================
 
 export function isSubscriptionStatus(value: unknown): value is SubscriptionStatus {
-  return typeof value === 'string' && Object.values(SubscriptionStatus).includes(value as SubscriptionStatus);
+  return (
+    typeof value === 'string' &&
+    Object.values(SubscriptionStatus).includes(value as SubscriptionStatus)
+  );
 }
 
 export function isPaymentStatus(value: unknown): value is PaymentStatus {
@@ -25,10 +29,15 @@ export function isInvoiceStatus(
   );
 }
 
-export function isBillingInterval(value: unknown): value is BillingInterval | 'YEARLY' | 'ONE_TIME' {
+export function isBillingInterval(
+  value: unknown
+): value is BillingInterval | 'YEARLY' | 'ONE_TIME' {
   // Check Prisma enum first, then domain-specific extensions
-  return typeof value === 'string' && 
-    (Object.values(BillingInterval).includes(value as BillingInterval) || ['YEARLY', 'ONE_TIME'].includes(value));
+  return (
+    typeof value === 'string' &&
+    (Object.values(BillingInterval).includes(value as BillingInterval) ||
+      ['YEARLY', 'ONE_TIME'].includes(value))
+  );
 }
 
 export function isSubscriptionEntityType(

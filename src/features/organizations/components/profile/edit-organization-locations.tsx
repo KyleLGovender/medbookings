@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
@@ -121,27 +121,30 @@ export function EditOrganizationLocations({ organizationId }: EditOrganizationLo
     });
   };
 
-  const handleLocationSelect = async (
-    locationIndex: number,
-    locationData: {
-      googlePlaceId: string;
-      formattedAddress: string;
-      coordinates: { lat: number; lng: number };
-    }
-  ) => {
-    update(locationIndex, {
-      ...form.getValues(`locations.${locationIndex}`),
-      googlePlaceId: locationData.googlePlaceId,
-      formattedAddress: locationData.formattedAddress,
-      coordinates: locationData.coordinates,
-    });
+  const handleLocationSelect = useCallback(
+    async (
+      locationIndex: number,
+      locationData: {
+        googlePlaceId: string;
+        formattedAddress: string;
+        coordinates: { lat: number; lng: number };
+      }
+    ) => {
+      update(locationIndex, {
+        ...form.getValues(`locations.${locationIndex}`),
+        googlePlaceId: locationData.googlePlaceId,
+        formattedAddress: locationData.formattedAddress,
+        coordinates: locationData.coordinates,
+      });
 
-    // Trigger validation for the updated fields
-    await form.trigger([
-      `locations.${locationIndex}.googlePlaceId`,
-      `locations.${locationIndex}.formattedAddress`,
-    ]);
-  };
+      // Trigger validation for the updated fields
+      await form.trigger([
+        `locations.${locationIndex}.googlePlaceId`,
+        `locations.${locationIndex}.formattedAddress`,
+      ]);
+    },
+    [update, form]
+  );
 
   async function onSubmit(data: OrganizationLocationsData) {
     setIsSubmitting(true);

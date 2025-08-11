@@ -2,18 +2,19 @@
 
 import { useEffect, useState } from 'react';
 
+import { RequirementValidationType } from '@prisma/client';
 import { useFormContext } from 'react-hook-form';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { renderRequirementInput } from '@/features/providers/components/render-requirement-input';
-import { RequirementValidationType } from '@prisma/client';
 import { type RouterOutputs } from '@/utils/api';
 
-type RequirementType = RouterOutputs['admin']['getProviderRequirements'][number]['requirementType'] & {
-  index: number;
-  existingSubmission?: RouterOutputs['admin']['getProviderRequirements'][number];
-};
+type RequirementType =
+  RouterOutputs['admin']['getProviderRequirements'][number]['requirementType'] & {
+    index: number;
+    existingSubmission?: RouterOutputs['admin']['getProviderRequirements'][number];
+  };
 
 interface RegulatoryRequirementsSectionProps {
   requirements: Array<{

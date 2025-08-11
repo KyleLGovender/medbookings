@@ -3,9 +3,8 @@
 // =============================================================================
 // Zod validation schemas for profile feature form inputs only
 // Response types are automatically inferred from tRPC procedures
-import { z } from 'zod';
-
 import { UserRole } from '@prisma/client';
+import { z } from 'zod';
 
 // =============================================================================
 // ENUM SCHEMAS

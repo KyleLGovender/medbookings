@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { ConnectionStatus } from '@prisma/client';
 import { format } from 'date-fns';
 import {
   Building2,
@@ -14,8 +15,6 @@ import {
   Trash2,
   User,
 } from 'lucide-react';
-
-import { ConnectionStatus } from '@prisma/client';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,10 +39,11 @@ import {
   useDeleteConnection,
   useUpdateConnection,
 } from '@/features/providers/hooks/use-organization-connections';
+import { useToast } from '@/hooks/use-toast';
 import { type RouterOutputs } from '@/utils/api';
 
-type OrganizationConnectionWithDetails = RouterOutputs['providers']['getOrganizationConnections'][number];
-import { useToast } from '@/hooks/use-toast';
+type OrganizationConnectionWithDetails =
+  RouterOutputs['providers']['getOrganizationConnections'][number];
 
 interface ConnectionCardProps {
   connection: OrganizationConnectionWithDetails;
@@ -151,7 +151,8 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
     } else {
       updateConnectionMutation.mutate({
         connectionId: connection.id,
-        status: pendingAction === 'suspend' ? ConnectionStatus.SUSPENDED : ConnectionStatus.ACCEPTED,
+        status:
+          pendingAction === 'suspend' ? ConnectionStatus.SUSPENDED : ConnectionStatus.ACCEPTED,
       });
     }
   };

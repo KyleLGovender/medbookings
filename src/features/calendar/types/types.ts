@@ -19,14 +19,13 @@
  * @author MedBookings Development Team
  * @version 1.0.0
  */
-
 // Import database enums from Prisma to prevent type drift
-import { 
-  AvailabilityStatus, 
-  BillingEntity, 
+import {
+  AvailabilityStatus,
+  BillingEntity,
   BookingStatus,
-  SchedulingRule, 
-  SlotStatus 
+  SchedulingRule,
+  SlotStatus,
 } from '@prisma/client';
 
 // =============================================================================
@@ -37,7 +36,7 @@ import {
 // - Prisma client types (Organization, User, etc.)
 // - Cross-feature dependencies (Provider, Service from providers)
 // - Decimal type from Prisma runtime
-// 
+//
 // Components will use tRPC RouterOutputs for server data in Task 4.0
 // Cross-feature types will be handled through tRPC procedures
 
@@ -45,7 +44,7 @@ import {
 // ENUMS (UI-SPECIFIC ONLY - Database enums imported from Prisma)
 // =============================================================================
 
-// NOTE: Database enums (AvailabilityStatus, BillingEntity, SchedulingRule, SlotStatus) 
+// NOTE: Database enums (AvailabilityStatus, BillingEntity, SchedulingRule, SlotStatus)
 // are imported from @prisma/client to prevent type drift
 
 // Simplified recurrence options (Google Calendar style)
@@ -335,7 +334,7 @@ export interface Availability {
 //
 // Server data interfaces with relations have been removed:
 // - AvailabilityWithRelations (server data + Prisma relations)
-// - ServiceAvailabilityConfigWithRelations (server data + relations) 
+// - ServiceAvailabilityConfigWithRelations (server data + relations)
 // - CalculatedAvailabilitySlotWithRelations (server data + relations)
 //
 // Components will extract server data types from tRPC RouterOutputs in Task 4.0
@@ -1200,7 +1199,7 @@ export const getDefaultExportConfig = (): ExportConfig => ({
 // - ServiceConfigDetailSelect (server data with service relations)
 //
 // Components will extract equivalent types from tRPC RouterOutputs:
-// - RouterOutputs['calendar']['getAvailabilityDetail'] 
+// - RouterOutputs['calendar']['getAvailabilityDetail']
 // - RouterOutputs['calendar']['getAvailabilityList']
 // - RouterOutputs['calendar']['getCalculatedSlotDetail']
 // - RouterOutputs['calendar']['getServiceConfigDetail']

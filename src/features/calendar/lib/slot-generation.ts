@@ -1,9 +1,6 @@
 import { SchedulingRule } from '@prisma/client';
 
-import {
-  SlotGenerationOptions,
-  SlotCreateData,
-} from '@/features/calendar/types/types';
+import { SlotCreateData, SlotGenerationOptions } from '@/features/calendar/types/types';
 
 import { generateTimeSlots } from './scheduling-rules';
 
@@ -11,9 +8,7 @@ import { generateTimeSlots } from './scheduling-rules';
  * Generate slot data for a given availability (Option C: Pure utility function)
  * Returns slot data for tRPC procedures to create in database
  */
-export function generateSlotDataForAvailability(
-  options: SlotGenerationOptions
-): {
+export function generateSlotDataForAvailability(options: SlotGenerationOptions): {
   slotRecords: SlotCreateData[];
   errors: string[];
   totalSlots: number;
@@ -137,23 +132,21 @@ export function generateSlotDataForMultipleAvailability(
  * Generate slot data from availability data (Option C: Pure utility function)
  * Used for regenerating slots - tRPC procedures handle database queries
  */
-export function generateSlotDataFromAvailability(
-  availability: {
-    id: string;
-    startTime: Date;
-    endTime: Date;
-    providerId: string;
-    organizationId: string | null;
-    locationId: string | null;
-    schedulingRule: SchedulingRule;
-    schedulingInterval: number | null;
-    availableServices: Array<{
-      serviceId: string;
-      duration: number;
-      price: number;
-    }>;
-  }
-): {
+export function generateSlotDataFromAvailability(availability: {
+  id: string;
+  startTime: Date;
+  endTime: Date;
+  providerId: string;
+  organizationId: string | null;
+  locationId: string | null;
+  schedulingRule: SchedulingRule;
+  schedulingInterval: number | null;
+  availableServices: Array<{
+    serviceId: string;
+    duration: number;
+    price: number;
+  }>;
+}): {
   slotRecords: SlotCreateData[];
   errors: string[];
   totalSlots: number;

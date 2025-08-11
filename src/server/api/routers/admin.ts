@@ -8,7 +8,7 @@ import {
   approveRequirementRequestSchema,
   rejectOrganizationRequestSchema,
   rejectProviderRequestSchema,
-  rejectRequirementRequestSchema
+  rejectRequirementRequestSchema,
 } from '@/features/admin/types/schemas';
 import { validateProviderRequirementsBusinessLogic } from '@/features/providers/lib/actions';
 import { adminProcedure, createTRPCRouter } from '@/server/trpc';
@@ -283,9 +283,9 @@ export const adminRouter = createTRPCRouter({
       // Check if all required requirements are approved
       if (!validationResult.allRequiredApproved) {
         const pendingDetails = validationResult.pendingByType
-          .map(type => `${type.typeName}: ${type.pendingCount} pending`)
+          .map((type) => `${type.typeName}: ${type.pendingCount} pending`)
           .join(', ');
-        
+
         throw new Error(
           `Cannot approve provider: ${validationResult.pendingRequirementsCount} required requirements are not approved. ${pendingDetails}`
         );

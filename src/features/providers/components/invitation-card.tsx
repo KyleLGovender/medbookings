@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { ProviderInvitationStatus } from '@prisma/client';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   AlertTriangle,
@@ -15,8 +16,6 @@ import {
   User,
   X,
 } from 'lucide-react';
-
-import { ProviderInvitationStatus } from '@prisma/client';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,10 +31,11 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useRespondToInvitation } from '@/features/providers/hooks/use-organization-connections';
+import { useToast } from '@/hooks/use-toast';
 import { type RouterOutputs } from '@/utils/api';
 
-type ProviderInvitationWithOrganization = RouterOutputs['providers']['getProviderInvitations'][number];
-import { useToast } from '@/hooks/use-toast';
+type ProviderInvitationWithOrganization =
+  RouterOutputs['providers']['getProviderInvitations'][number];
 
 interface InvitationCardProps {
   invitation: ProviderInvitationWithOrganization;

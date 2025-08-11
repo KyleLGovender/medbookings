@@ -2,37 +2,50 @@
 // ORGANIZATIONS FEATURE TYPE GUARDS
 // =============================================================================
 // Runtime type validation for organization-specific types and API responses
-import { isValidDateString, isValidEmail, isValidPhone, isValidUUID } from '@/types/guards';
 import {
-  OrganizationStatus,
-  OrganizationRole,
-  OrganizationBillingModel,
-  MembershipStatus,
   InvitationStatus,
+  MembershipStatus,
+  OrganizationBillingModel,
+  OrganizationRole,
+  OrganizationStatus,
 } from '@prisma/client';
+
+import { isValidDateString, isValidEmail, isValidPhone, isValidUUID } from '@/types/guards';
 
 // =============================================================================
 // ENUM GUARDS
 // =============================================================================
 
 export function isOrganizationStatus(value: unknown): value is OrganizationStatus {
-  return typeof value === 'string' && Object.values(OrganizationStatus).includes(value as OrganizationStatus);
+  return (
+    typeof value === 'string' &&
+    Object.values(OrganizationStatus).includes(value as OrganizationStatus)
+  );
 }
 
 export function isOrganizationRole(value: unknown): value is OrganizationRole {
-  return typeof value === 'string' && Object.values(OrganizationRole).includes(value as OrganizationRole);
+  return (
+    typeof value === 'string' && Object.values(OrganizationRole).includes(value as OrganizationRole)
+  );
 }
 
 export function isMembershipStatus(value: unknown): value is MembershipStatus {
-  return typeof value === 'string' && Object.values(MembershipStatus).includes(value as MembershipStatus);
+  return (
+    typeof value === 'string' && Object.values(MembershipStatus).includes(value as MembershipStatus)
+  );
 }
 
 export function isInvitationStatus(value: unknown): value is InvitationStatus {
-  return typeof value === 'string' && Object.values(InvitationStatus).includes(value as InvitationStatus);
+  return (
+    typeof value === 'string' && Object.values(InvitationStatus).includes(value as InvitationStatus)
+  );
 }
 
 export function isOrganizationBillingModel(value: unknown): value is OrganizationBillingModel {
-  return typeof value === 'string' && Object.values(OrganizationBillingModel).includes(value as OrganizationBillingModel);
+  return (
+    typeof value === 'string' &&
+    Object.values(OrganizationBillingModel).includes(value as OrganizationBillingModel)
+  );
 }
 
 // Keep domain-specific enum (not in Prisma)

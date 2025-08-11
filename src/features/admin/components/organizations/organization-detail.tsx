@@ -21,12 +21,12 @@ import {
   useResetOrganizationStatus,
 } from '@/features/organizations/hooks/use-admin-organization-approval';
 import { useAdminOrganization } from '@/features/organizations/hooks/use-admin-organizations';
+import { type RouterOutputs } from '@/utils/api';
 
 import { StatusBadge } from '../../../../components/status-badge';
 import { OrganizationDetailSkeleton } from '../ui/admin-loading-states';
 import { ApprovalButtons } from '../ui/approval-buttons';
 import { RejectionModal } from '../ui/rejection-modal';
-import { type RouterOutputs } from '@/utils/api';
 
 // Infer types from tRPC router outputs
 type AdminOrganization = RouterOutputs['admin']['getOrganizationById'];
@@ -137,13 +137,17 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
             status={
               organization?.status === 'PENDING_APPROVAL'
                 ? 'PENDING'
-                : organization?.status === 'TRIAL' || organization?.status === 'TRIAL_EXPIRED' || organization?.status === 'ACTIVE' || organization?.status === 'PAYMENT_OVERDUE' || organization?.status === 'CANCELLED'
-                ? 'APPROVED'
-                : organization?.status === 'SUSPENDED'
-                ? 'SUSPENDED'
-                : organization?.status === 'REJECTED'
-                ? 'REJECTED'
-                : 'PENDING'
+                : organization?.status === 'TRIAL' ||
+                    organization?.status === 'TRIAL_EXPIRED' ||
+                    organization?.status === 'ACTIVE' ||
+                    organization?.status === 'PAYMENT_OVERDUE' ||
+                    organization?.status === 'CANCELLED'
+                  ? 'APPROVED'
+                  : organization?.status === 'SUSPENDED'
+                    ? 'SUSPENDED'
+                    : organization?.status === 'REJECTED'
+                      ? 'REJECTED'
+                      : 'PENDING'
             }
           />
           {organization?.status === 'PENDING_APPROVAL' && (
@@ -228,13 +232,17 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                       status={
                         organization?.status === 'PENDING_APPROVAL'
                           ? 'PENDING'
-                          : organization?.status === 'TRIAL' || organization?.status === 'TRIAL_EXPIRED' || organization?.status === 'ACTIVE' || organization?.status === 'PAYMENT_OVERDUE' || organization?.status === 'CANCELLED'
-                          ? 'APPROVED'
-                          : organization?.status === 'SUSPENDED'
-                          ? 'SUSPENDED'
-                          : organization?.status === 'REJECTED'
-                          ? 'REJECTED'
-                          : 'PENDING'
+                          : organization?.status === 'TRIAL' ||
+                              organization?.status === 'TRIAL_EXPIRED' ||
+                              organization?.status === 'ACTIVE' ||
+                              organization?.status === 'PAYMENT_OVERDUE' ||
+                              organization?.status === 'CANCELLED'
+                            ? 'APPROVED'
+                            : organization?.status === 'SUSPENDED'
+                              ? 'SUSPENDED'
+                              : organization?.status === 'REJECTED'
+                                ? 'REJECTED'
+                                : 'PENDING'
                       }
                     />
                   </div>
@@ -306,7 +314,11 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                 <p className="text-xs text-muted-foreground">Total members</p>
                 {organization?.memberships && organization.memberships.length > 0 && (
                   <p className="text-xs text-green-600">
-                    {organization.memberships.filter((m: OrganizationMembership) => m.status === 'ACTIVE').length}{' '}
+                    {
+                      organization.memberships.filter(
+                        (m: OrganizationMembership) => m.status === 'ACTIVE'
+                      ).length
+                    }{' '}
                     active
                   </p>
                 )}
@@ -384,16 +396,17 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                             <Badge variant="outline">{membership.role}</Badge>
                           </TableCell>
                           <TableCell>
-                            <StatusBadge 
+                            <StatusBadge
                               status={
-                                membership.status === 'ACTIVE' 
+                                membership.status === 'ACTIVE'
                                   ? 'APPROVED'
-                                  : membership.status === 'INACTIVE' || membership.status === 'PENDING'
-                                  ? 'PENDING'
-                                  : membership.status === 'SUSPENDED'
-                                  ? 'SUSPENDED'
-                                  : 'PENDING'
-                              } 
+                                  : membership.status === 'INACTIVE' ||
+                                      membership.status === 'PENDING'
+                                    ? 'PENDING'
+                                    : membership.status === 'SUSPENDED'
+                                      ? 'SUSPENDED'
+                                      : 'PENDING'
+                              }
                             />
                           </TableCell>
                           <TableCell>

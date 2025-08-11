@@ -40,11 +40,7 @@ import { useOrganization } from '@/features/organizations/hooks/use-organization
 import { useOrganizationProviderConnections } from '@/features/organizations/hooks/use-provider-connections';
 import { type RouterOutputs } from '@/utils/api';
 
-// Extract tRPC types for server data
-type AvailabilityWithRelations = any; // TODO: Replace with proper tRPC type extraction
-type CalculatedAvailabilitySlotWithRelations = any; // TODO: Replace with proper tRPC type extraction
-type OrganizationProviderConnection = any; // TODO: Replace with proper tRPC type extraction
-
+// TODO: Replace with proper tRPC type extraction
 import { useOrganizationAvailability } from '../hooks/use-availability';
 import {
   CalendarViewMode,
@@ -54,6 +50,11 @@ import {
   OrganizationProvider,
   OrganizationWeekViewProps,
 } from '../types/types';
+
+// Extract tRPC types for server data
+type AvailabilityWithRelations = any; // TODO: Replace with proper tRPC type extraction
+type CalculatedAvailabilitySlotWithRelations = any; // TODO: Replace with proper tRPC type extraction
+type OrganizationProviderConnection = any; // TODO: Replace with proper tRPC type extraction
 
 export function OrganizationCalendarView({
   organizationId,

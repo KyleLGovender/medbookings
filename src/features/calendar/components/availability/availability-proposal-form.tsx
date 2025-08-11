@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { SchedulingRule } from '@prisma/client';
 import { Clock, MapPin, Repeat, Send, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -41,17 +42,16 @@ import {
 } from '@/features/calendar/lib/recurrence-utils';
 import { createAvailabilityDataSchema } from '@/features/calendar/types/schemas';
 import { CustomRecurrenceData, RecurrenceOption } from '@/features/calendar/types/types';
-import { type RouterInputs } from '@/utils/api';
-
-// Extract input type from tRPC procedure for zero type drift
-type CreateAvailabilityInput = RouterInputs['calendar']['create'];
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
+import { type RouterInputs } from '@/utils/api';
 import { type RouterOutputs } from '@/utils/api';
-import { SchedulingRule } from '@prisma/client';
+
+// Extract input type from tRPC procedure for zero type drift
+type CreateAvailabilityInput = RouterInputs['calendar']['create'];
 
 // Extract the availability type from the create mutation response
 type CreateAvailabilityResponse = RouterOutputs['calendar']['create'];

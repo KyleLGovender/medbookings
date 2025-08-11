@@ -2,10 +2,20 @@
 
 import { useState } from 'react';
 
-import { format, formatDistanceToNow } from 'date-fns';
-import { AlertTriangle, Building2, Check, Globe, Mail, MessageSquare, Phone, User, X } from 'lucide-react';
-
 import { ProviderInvitationStatus } from '@prisma/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { format, formatDistanceToNow } from 'date-fns';
+import {
+  AlertTriangle,
+  Building2,
+  Check,
+  Globe,
+  Mail,
+  MessageSquare,
+  Phone,
+  User,
+  X,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,10 +29,9 @@ import {
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { api, type RouterOutputs } from '@/utils/api';
 import { useProviderByUserId } from '@/features/providers/hooks/use-provider-by-user-id';
-import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
+import { type RouterOutputs, api } from '@/utils/api';
 
 // Infer types from tRPC router outputs
 type InvitationsResponse = RouterOutputs['providers']['getInvitations'];
@@ -75,7 +84,11 @@ export function ExistingUserInvitationFlow({
   const queryClient = useQueryClient();
 
   // Check if user has a provider profile
-  const { data: provider, isLoading: isProviderLoading, error: providerError } = useProviderByUserId(user?.id);
+  const {
+    data: provider,
+    isLoading: isProviderLoading,
+    error: providerError,
+  } = useProviderByUserId(user?.id);
 
   const respondToInvitationMutation = api.providers.respondToInvitation.useMutation({
     // Step 1: Implement optimistic updates
@@ -84,8 +97,10 @@ export function ExistingUserInvitationFlow({
       await queryClient.cancelQueries({
         predicate: (query) => {
           const keyStr = JSON.stringify(query.queryKey);
-          return keyStr.includes('getInvitations') || 
-                 keyStr.includes('validate') && keyStr.includes(token);
+          return (
+            keyStr.includes('getInvitations') ||
+            (keyStr.includes('validate') && keyStr.includes(token))
+          );
         },
       });
 
@@ -96,16 +111,16 @@ export function ExistingUserInvitationFlow({
       let invitationsKey;
       let previousValidationData;
       let validationKey;
-      
+
       for (const query of allQueries) {
         const keyStr = JSON.stringify(query.queryKey);
-        
+
         // Find invitations query
         if (keyStr.includes('getInvitations')) {
           invitationsKey = query.queryKey;
           previousInvitationsData = query.state.data;
         }
-        
+
         // Find validation query for this token
         if (keyStr.includes('validate') && keyStr.includes(token)) {
           validationKey = query.queryKey;
@@ -124,11 +139,14 @@ export function ExistingUserInvitationFlow({
               inv.token === token
                 ? {
                     ...inv,
-                    status: action === 'accept' ? ProviderInvitationStatus.ACCEPTED : ProviderInvitationStatus.REJECTED,
+                    status:
+                      action === 'accept'
+                        ? ProviderInvitationStatus.ACCEPTED
+                        : ProviderInvitationStatus.REJECTED,
                     ...(action === 'accept' && { acceptedAt: new Date().toISOString() }),
-                    ...(action === 'reject' && { 
+                    ...(action === 'reject' && {
                       rejectedAt: new Date().toISOString(),
-                      rejectionReason: rejectionReason || null 
+                      rejectionReason: rejectionReason || null,
                     }),
                   }
                 : inv
@@ -146,9 +164,9 @@ export function ExistingUserInvitationFlow({
             ...old,
             status: action === 'accept' ? 'ACCEPTED' : 'REJECTED',
             ...(action === 'accept' && { acceptedAt: new Date().toISOString() }),
-            ...(action === 'reject' && { 
+            ...(action === 'reject' && {
               rejectedAt: new Date().toISOString(),
-              rejectionReason: rejectionReason || null 
+              rejectionReason: rejectionReason || null,
             }),
           };
         });
@@ -162,25 +180,25 @@ export function ExistingUserInvitationFlow({
       }
 
       // 1.6: Return context for rollback
-      return { 
-        previousInvitationsData, 
+      return {
+        previousInvitationsData,
         invitationsKey,
         previousValidationData,
         validationKey,
         token,
-        action 
+        action,
       };
     },
 
     // Step 2: Handle errors with rollback
     onError: (err, variables, context) => {
       console.error('Invitation response failed, rolling back:', err);
-      
+
       // Roll back cache data
       if (context?.previousInvitationsData && context?.invitationsKey) {
         queryClient.setQueryData(context.invitationsKey, context.previousInvitationsData);
       }
-      
+
       if (context?.previousValidationData && context?.validationKey) {
         queryClient.setQueryData(context.validationKey, context.previousValidationData);
       }
@@ -204,9 +222,11 @@ export function ExistingUserInvitationFlow({
       await queryClient.invalidateQueries({
         predicate: (query) => {
           const keyStr = JSON.stringify(query.queryKey);
-          return keyStr.includes('getInvitations') || 
-                 keyStr.includes('validate') ||
-                 keyStr.includes('getProviderConnections');
+          return (
+            keyStr.includes('getInvitations') ||
+            keyStr.includes('validate') ||
+            keyStr.includes('getProviderConnections')
+          );
         },
       });
 
@@ -305,7 +325,9 @@ export function ExistingUserInvitationFlow({
                     Provider Profile Required
                   </p>
                   <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                    Before you can accept or decline invitations from organizations, you need to complete your provider profile setup. This includes basic information, credentials, and service offerings.
+                    Before you can accept or decline invitations from organizations, you need to
+                    complete your provider profile setup. This includes basic information,
+                    credentials, and service offerings.
                   </p>
                 </div>
               </div>
@@ -315,13 +337,19 @@ export function ExistingUserInvitationFlow({
             <div className="rounded-lg border bg-muted/50 p-4">
               <h3 className="mb-3 font-semibold">{invitation.organization.name} is waiting</h3>
               <p className="mb-3 text-sm text-muted-foreground">
-                {invitation.invitedBy?.name || 'Someone'} from {invitation.organization.name} has invited you to join their organization. Complete your provider setup to respond to this invitation.
+                {invitation.invitedBy?.name || 'Someone'} from {invitation.organization.name} has
+                invited you to join their organization. Complete your provider setup to respond to
+                this invitation.
               </p>
-              
+
               {invitation.customMessage && (
                 <div className="mt-3 rounded bg-blue-50 p-3 dark:bg-blue-950/30">
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">Their message:</p>
-                  <p className="mt-1 text-sm text-blue-800 dark:text-blue-200">{invitation.customMessage}</p>
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    Their message:
+                  </p>
+                  <p className="mt-1 text-sm text-blue-800 dark:text-blue-200">
+                    {invitation.customMessage}
+                  </p>
                 </div>
               )}
             </div>
@@ -352,7 +380,8 @@ export function ExistingUserInvitationFlow({
             {/* What happens next */}
             <div className="text-center text-sm text-muted-foreground">
               <p>
-                After completing your provider setup, you'll be able to accept invitations and start offering your services through organizations on MedBookings.
+                After completing your provider setup, you&apos;ll be able to accept invitations and
+                start offering your services through organizations on MedBookings.
               </p>
             </div>
           </CardContent>
@@ -591,9 +620,9 @@ export function ExistingUserInvitationFlow({
             >
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleReject} 
+            <Button
+              variant="destructive"
+              onClick={handleReject}
               disabled={respondToInvitationMutation.isPending}
             >
               {respondToInvitationMutation.isPending ? 'Declining...' : 'Decline Invitation'}
