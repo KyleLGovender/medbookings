@@ -33,7 +33,11 @@ import { useProviderByUserId } from '@/features/providers/hooks/use-provider-by-
 import { useToast } from '@/hooks/use-toast';
 import { type RouterOutputs, api } from '@/utils/api';
 
-// Infer types from tRPC router outputs
+// Extract types from tRPC response
+type InvitationValidationResponse = RouterOutputs['providers']['validateInvitation'];
+type InvitationData = InvitationValidationResponse['invitation'];
+
+// Types for the invitations list (used in optimistic updates)
 type InvitationsResponse = RouterOutputs['providers']['getInvitations'];
 type Invitation = InvitationsResponse['invitations'][number];
 
@@ -42,27 +46,6 @@ interface User {
   id: string;
   name?: string | null;
   email?: string | null;
-}
-
-interface InvitationData {
-  id: string;
-  email: string;
-  customMessage?: string;
-  status: string;
-  expiresAt: string;
-  organization: {
-    id: string;
-    name: string;
-    description?: string;
-    logo?: string;
-    email?: string;
-    phone?: string;
-    website?: string;
-  };
-  invitedBy: {
-    name?: string;
-    email?: string;
-  };
 }
 
 interface ExistingUserInvitationFlowProps {
@@ -87,7 +70,6 @@ export function ExistingUserInvitationFlow({
   const {
     data: provider,
     isLoading: isProviderLoading,
-    error: providerError,
   } = useProviderByUserId(user?.id);
 
   const respondToInvitationMutation = api.providers.respondToInvitation.useMutation({
@@ -217,7 +199,7 @@ export function ExistingUserInvitationFlow({
     },
 
     // Step 3: Handle success with cache invalidation
-    onSuccess: async (data, variables) => {
+    onSuccess: async (_, variables) => {
       // Invalidate relevant queries to ensure fresh data
       await queryClient.invalidateQueries({
         predicate: (query) => {

@@ -211,7 +211,7 @@ export function ProviderConnectionCard({
             {showActions && connection.status !== 'REJECTED' && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" disabled={manageConnectionMutation.isPending}>
+                  <Button variant="ghost" size="sm" disabled={manageConnectionMutation.isLoading}>
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -372,16 +372,16 @@ export function ProviderConnectionCard({
               <Button
                 variant="outline"
                 onClick={() => setIsActionDialogOpen(false)}
-                disabled={manageConnectionMutation.isPending}
+                disabled={manageConnectionMutation.isLoading}
               >
                 Cancel
               </Button>
               <Button
                 variant={dialogContent.variant}
                 onClick={confirmAction}
-                disabled={manageConnectionMutation.isPending}
+                disabled={manageConnectionMutation.isLoading}
               >
-                {manageConnectionMutation.isPending ? 'Processing...' : dialogContent.confirmText}
+                {manageConnectionMutation.isLoading ? 'Processing...' : dialogContent.confirmText}
               </Button>
             </DialogFooter>
           </DialogContent>

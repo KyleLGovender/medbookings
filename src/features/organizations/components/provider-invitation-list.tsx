@@ -34,10 +34,12 @@ import {
   useCancelProviderInvitation,
   useResendProviderInvitation,
 } from '@/features/organizations/hooks/use-provider-invitations';
-import type {
-  ProviderInvitationStatus,
-  ProviderInvitationWithDetails,
-} from '@/features/organizations/types/types';
+import { ProviderInvitationStatus } from '@prisma/client';
+import { type RouterOutputs } from '@/utils/api';
+
+// Extract type from tRPC response
+type ProviderInvitationsResponse = RouterOutputs['organizations']['getProviderInvitations'];
+type ProviderInvitationWithDetails = ProviderInvitationsResponse[number];
 import { useToast } from '@/hooks/use-toast';
 
 interface ProviderInvitationListProps {
@@ -175,9 +177,9 @@ export function ProviderInvitationList({
                 <TableCell className="font-medium">
                   <div className="flex flex-col">
                     <span>{invitation.email}</span>
-                    {invitation.connection && (
+                    {invitation.connectionId && (
                       <span className="text-sm text-muted-foreground">
-                        Connected (Provider ID: {invitation.connection.providerId})
+                        Connected (Connection ID: {invitation.connectionId})
                       </span>
                     )}
                   </div>

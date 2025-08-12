@@ -6,15 +6,11 @@ import { signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { type RouterOutputs } from '@/utils/api';
 
-interface InvitationData {
-  id: string;
-  email: string;
-  organization: {
-    name: string;
-    logo?: string;
-  };
-}
+// Extract type from tRPC response
+type InvitationValidationResponse = RouterOutputs['providers']['validateInvitation'];
+type InvitationData = InvitationValidationResponse['invitation'];
 
 interface InvitationErrorStateProps {
   error: string;
