@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 
 import { CalendarDataParams } from '@/features/calendar/types/types';
-import { type RouterInputs, api } from '@/utils/api';
+import { type RouterInputs, type RouterOutputs, api } from '@/utils/api';
 
 // =============================================================================
 // tRPC TYPE EXTRACTION - OPTION C COMPLIANT
@@ -12,14 +12,34 @@ import { type RouterInputs, api } from '@/utils/api';
 type AvailabilitySearchParams = RouterInputs['calendar']['searchAvailability'];
 
 // =============================================================================
-// INTERFACE DEFINITIONS FOR RETURN TYPE
+// OPTION B: BETTER-TYPED HOOK WITH EXPLICIT TYPE EXTRACTION
 // =============================================================================
 
+// Extract the actual data types from tRPC router
+type ProviderData = RouterOutputs['providers']['getById'];
+type AvailabilityData = RouterOutputs['calendar']['searchAvailability'];
+
+// Individual provider's calendar data with proper types
 interface ProviderCalendarData {
-  provider: ReturnType<typeof api.providers.getById.useQuery>;
-  availability: ReturnType<typeof api.calendar.searchAvailability.useQuery>;
+  provider: {
+    data: ProviderData | undefined;
+    isLoading: boolean;
+    isSuccess: boolean;
+    isError: boolean;
+    error: any;
+    refetch: () => void;
+  };
+  availability: {
+    data: AvailabilityData | undefined;
+    isLoading: boolean;
+    isSuccess: boolean;
+    isError: boolean;
+    error: any;
+    refetch: () => void;
+  };
 }
 
+// Return type with proper type safety
 interface CalendarDataResult {
   providers: Map<string, ProviderCalendarData>;
   isLoading: boolean;
@@ -31,11 +51,11 @@ interface CalendarDataResult {
 // =============================================================================
 
 /**
- * Standardized hook for fetching calendar data for multiple providers.
- * OPTION C COMPLIANT: Thin wrapper around tRPC queries with automatic type inference.
+ * OPTION B: Better-typed hook for fetching calendar data for multiple providers.
+ * Provides explicit type safety throughout the entire data flow.
  *
  * @param params - Calendar data parameters with multiple provider IDs and date range
- * @returns Structured calendar data object with provider and availability data for each provider
+ * @returns Structured calendar data with fully typed provider and availability data
  */
 export function useCalendarData(params: CalendarDataParams): CalendarDataResult {
   const { providerIds, dateRange, statusFilter = 'ALL' } = params;
@@ -72,14 +92,29 @@ export function useCalendarData(params: CalendarDataParams): CalendarDataResult 
     };
   });
 
-  // Build the structured calendarData object
+  // Build the structured calendarData object with proper type mapping
   const calendarData = useMemo(() => {
     const providers = new Map<string, ProviderCalendarData>();
     
     providerQueries.forEach(({ providerId, provider, availability }) => {
+      // Explicitly type the queries to ensure type safety
       providers.set(providerId, {
-        provider,
-        availability,
+        provider: {
+          data: provider.data as ProviderData | undefined,
+          isLoading: provider.isLoading,
+          isSuccess: provider.isSuccess,
+          isError: provider.isError,
+          error: provider.error,
+          refetch: provider.refetch,
+        },
+        availability: {
+          data: availability.data as AvailabilityData | undefined,
+          isLoading: availability.isLoading,
+          isSuccess: availability.isSuccess,
+          isError: availability.isError,
+          error: availability.error,
+          refetch: availability.refetch,
+        },
       });
     });
 

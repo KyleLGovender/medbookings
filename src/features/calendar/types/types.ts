@@ -271,7 +271,7 @@ export interface CalendarEvent {
   /** Whether this event is part of a recurring series */
   isRecurring?: boolean;
   /** Series identifier for recurring events */
-  seriesId?: string;
+  seriesId?: string | null;
   /** Location information where the event takes place */
   location?: {
     id: string;

@@ -25,9 +25,8 @@ import { WeekView } from '@/features/calendar/components/views/week-view';
 import { useCalendarData } from '@/features/calendar/hooks/use-calendar-data';
 import {
   calculateDateRange,
-  getCalendarViewTitle,
   getEventStyle,
-  navigateCalendarDate,
+  navigateCalendarDate
 } from '@/features/calendar/lib/calendar-utils';
 import {
   groupEventsByDate,
@@ -352,10 +351,6 @@ export function ProviderCalendarView({
     [onDateClick]
   );
 
-  const getViewTitle = useCallback((): string => {
-    return getCalendarViewTitle(currentDate, viewMode);
-  }, [currentDate, viewMode]);
-
   // Use shared event styling utility with memoization
   const getEventStyleLocal = useCallback((event: CalendarEvent): string => {
     return getEventStyle(event);
@@ -385,17 +380,36 @@ export function ProviderCalendarView({
     }
   }, [calendarEvents, viewMode, dateRange]);
 
+  // Early return for loading state
   if (isLoading) {
     return <CalendarSkeleton />;
   }
 
-  if (!providerQuery?.data || !providerData) {
+  // Early return if no provider data
+  if (!providerData || !providerQuery) {
     return (
       <Card>
         <CardContent className="pt-6">
           <div className="py-8 text-center text-muted-foreground">
             <CalendarIcon className="mx-auto mb-4 h-12 w-12 opacity-50" />
             <p>No calendar data available</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Extract provider data - now properly typed from the hook
+  const provider = providerQuery.data;
+  
+  // Early return if provider data is not loaded
+  if (!provider) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="py-8 text-center text-muted-foreground">
+            <CalendarIcon className="mx-auto mb-4 h-12 w-12 opacity-50" />
+            <p>No provider data available</p>
           </div>
         </CardContent>
       </Card>
@@ -412,14 +426,11 @@ export function ProviderCalendarView({
               <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
                   <AvatarFallback>
-                    {(providerQuery?.data?.user?.name || 'U')
-                      .split(' ')
-                      .map((n: string) => n[0])
-                      .join('')}
+                    {provider.user?.name}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <CardTitle className="text-xl">{providerQuery?.data?.user?.name || 'Provider'}</CardTitle>
+                  <CardTitle className="text-xl">{provider.user?.name || 'Provider'}</CardTitle>
                   <p className="text-sm text-muted-foreground">Healthcare Provider</p>
                 </div>
               </div>

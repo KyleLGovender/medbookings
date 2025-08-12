@@ -50,7 +50,10 @@ export const providersRouter = createTRPCRouter({
         },
         user: {
           select: {
+            id: true,
             email: true,
+            name: true,
+            image: true,
           },
         },
         typeAssignments: {
@@ -92,7 +95,10 @@ export const providersRouter = createTRPCRouter({
           services: true,
           user: {
             select: {
+              id: true,
               email: true,
+              name: true,
+              image: true,
             },
           },
           typeAssignments: {
@@ -625,7 +631,10 @@ export const providersRouter = createTRPCRouter({
           services: true,
           user: {
             select: {
+              id: true,
               email: true,
+              name: true,
+              image: true,
             },
           },
           typeAssignments: {
@@ -1363,7 +1372,10 @@ export const providersRouter = createTRPCRouter({
           services: true,
           user: {
             select: {
+              id: true,
               email: true,
+              name: true,
+              image: true,
             },
           },
           typeAssignments: {
