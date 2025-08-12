@@ -2,7 +2,6 @@ import { Languages } from '@prisma/client';
 import { z } from 'zod';
 
 import { sendProviderWhatsappConfirmation } from '@/features/communications/lib/server-helper';
-import { serializeProvider } from '@/features/providers/lib/helper';
 import {
   ConnectionUpdateSchema,
   InvitationResponseSchema,
@@ -77,7 +76,7 @@ export const providersRouter = createTRPCRouter({
       throw new Error('Provider not found');
     }
 
-    return serializeProvider(provider);
+    return provider;
   }),
 
   /**
@@ -118,8 +117,7 @@ export const providersRouter = createTRPCRouter({
         return null;
       }
 
-      // Serialize the provider data to handle Decimal values and dates
-      return serializeProvider(provider);
+      return provider;
     }),
 
   /**
@@ -210,7 +208,7 @@ export const providersRouter = createTRPCRouter({
       },
     });
 
-    return providers.map((provider) => serializeProvider(provider));
+    return providers;
   }),
 
   // ============================================================================
@@ -334,11 +332,8 @@ export const providersRouter = createTRPCRouter({
         ctx.prisma.provider.count({ where }),
       ]);
 
-      // Serialize providers for JSON response
-      const serializedProviders = providers.map((provider) => serializeProvider(provider));
-
       return {
-        providers: serializedProviders,
+        providers: providers,
         pagination: {
           total,
           limit,
@@ -529,7 +524,7 @@ export const providersRouter = createTRPCRouter({
         return newProvider;
       });
 
-      return { success: true, data: serializeProvider(provider), redirect: '/profile' };
+      return { success: true, data: provider, redirect: '/profile' };
     }),
 
   /**
@@ -654,7 +649,7 @@ export const providersRouter = createTRPCRouter({
 
       return {
         success: true,
-        data: serializeProvider(updatedProvider),
+        data: updatedProvider,
         redirect: `/providers/${input.id}`,
       };
     }),
@@ -1396,7 +1391,7 @@ export const providersRouter = createTRPCRouter({
 
       return {
         success: true,
-        data: serializeProvider(updatedProvider),
+        data: updatedProvider,
         redirect: `/providers/${input.id}`,
       };
     }),

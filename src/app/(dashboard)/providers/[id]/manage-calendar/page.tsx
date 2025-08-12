@@ -158,7 +158,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
       setShowCancelDialog(true);
     } else if (selectedEvent) {
       // Provider-created availability - no reason needed
-      cancelMutation.mutate({ id: selectedEvent.id });
+      cancelMutation.mutate({ ids: [selectedEvent.id] });
     }
   };
 
@@ -223,10 +223,9 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
 
   const handleCancelConfirm = () => {
     if (selectedEvent) {
-      cancelMutation.mutate({
+      rejectMutation.mutate({
         id: selectedEvent.id,
         reason: cancellationReason,
-        scope: pendingSeriesScope || 'single',
       });
     }
     setShowCancelDialog(false);
@@ -271,7 +270,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
           setShowCancelDialog(true);
         } else {
           // Provider-created availability - no reason needed
-          cancelMutation.mutate({ id: selectedEvent.id, scope });
+          cancelMutation.mutate({ ids: [selectedEvent.id], scope });
         }
         break;
     }
@@ -648,9 +647,9 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
             <Button
               onClick={handleCancelConfirm}
               variant="secondary"
-              disabled={cancelMutation.isPending}
+              disabled={rejectMutation.isPending}
             >
-              {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Availability'}
+              {rejectMutation.isPending ? 'Cancelling...' : 'Cancel Availability'}
             </Button>
           </div>
         </DialogContent>

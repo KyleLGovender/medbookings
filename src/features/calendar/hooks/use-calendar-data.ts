@@ -2,30 +2,28 @@
 
 import { useMemo } from 'react';
 
-import { BookingStatus } from '@prisma/client';
-import { AvailabilityStatus } from '@prisma/client';
-
-import { calculateDateRange } from '@/features/calendar/lib/calendar-utils';
-import { CalendarViewMode } from '@/features/calendar/types/types';
-import { type RouterInputs, type RouterOutputs, api } from '@/utils/api';
+import { CalendarDataParams } from '@/features/calendar/types/types';
+import { type RouterInputs, api } from '@/utils/api';
 
 // =============================================================================
 // tRPC TYPE EXTRACTION - OPTION C COMPLIANT
 // =============================================================================
 
-type ProviderData = RouterOutputs['providers']['getById'];
-type AvailabilityData = RouterOutputs['calendar']['searchAvailability'];
 type AvailabilitySearchParams = RouterInputs['calendar']['searchAvailability'];
 
 // =============================================================================
-// INTERFACE DEFINITIONS FOR UI COMPONENTS
+// INTERFACE DEFINITIONS FOR RETURN TYPE
 // =============================================================================
 
-interface CalendarDataParams {
-  providerId: string;
-  currentDate: Date;
-  viewMode: CalendarViewMode;
-  statusFilter?: AvailabilityStatus | 'ALL';
+interface ProviderCalendarData {
+  provider: ReturnType<typeof api.providers.getById.useQuery>;
+  availability: ReturnType<typeof api.calendar.searchAvailability.useQuery>;
+}
+
+interface CalendarDataResult {
+  providers: Map<string, ProviderCalendarData>;
+  isLoading: boolean;
+  hasError: boolean;
 }
 
 // =============================================================================
@@ -33,53 +31,74 @@ interface CalendarDataParams {
 // =============================================================================
 
 /**
- * Standardized hook for fetching calendar data using tRPC procedures.
+ * Standardized hook for fetching calendar data for multiple providers.
  * OPTION C COMPLIANT: Thin wrapper around tRPC queries with automatic type inference.
  *
- * @param params - Calendar data parameters
- * @returns Calendar data with loading and error states from tRPC
+ * @param params - Calendar data parameters with multiple provider IDs and date range
+ * @returns Structured calendar data object with provider and availability data for each provider
  */
-export function useCalendarData(params: CalendarDataParams) {
-  const { providerId, currentDate, viewMode, statusFilter = 'ALL' } = params;
+export function useCalendarData(params: CalendarDataParams): CalendarDataResult {
+  const { providerIds, dateRange, statusFilter = 'ALL' } = params;
 
-  // Memoize date range calculation
-  const dateRange = useMemo(() => {
-    return calculateDateRange(currentDate, viewMode);
-  }, [currentDate, viewMode]);
+  // Create queries for each provider
+  const providerQueries = providerIds.map(providerId => {
+    // Fetch provider data using tRPC
+    const providerQuery = api.providers.getById.useQuery(
+      { id: providerId },
+      {
+        enabled: !!providerId,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+      }
+    );
 
-  // Fetch provider data using tRPC
-  const providerQuery = api.providers.getById.useQuery(
-    { id: providerId },
-    {
-      enabled: !!providerId,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    }
-  );
-
-  // Build search parameters for availability
-  const searchParams: AvailabilitySearchParams = useMemo(
-    () => ({
+    // Build search parameters for availability
+    const searchParams: AvailabilitySearchParams = {
       providerId,
       startDate: dateRange.start.toISOString(),
       endDate: dateRange.end.toISOString(),
       ...(statusFilter !== 'ALL' && { status: statusFilter }),
-    }),
-    [providerId, dateRange.start, dateRange.end, statusFilter]
-  );
+    };
 
-  // Fetch availability data using tRPC
-  const availabilityQuery = api.calendar.searchAvailability.useQuery(searchParams, {
-    enabled: !!providerId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    // Fetch availability data using tRPC
+    const availabilityQuery = api.calendar.searchAvailability.useQuery(searchParams, {
+      enabled: !!providerId,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+
+    return {
+      providerId,
+      provider: providerQuery,
+      availability: availabilityQuery,
+    };
   });
 
-  // Return raw tRPC query results with computed date range
+  // Build the structured calendarData object
+  const calendarData = useMemo(() => {
+    const providers = new Map<string, ProviderCalendarData>();
+    
+    providerQueries.forEach(({ providerId, provider, availability }) => {
+      providers.set(providerId, {
+        provider,
+        availability,
+      });
+    });
+
+    return providers;
+  }, [providerQueries]);
+
+  // Calculate combined loading and error states
+  const isLoading = providerQueries.some(
+    q => q.provider.isLoading || q.availability.isLoading
+  );
+  
+  const hasError = providerQueries.some(
+    q => !!q.provider.error || !!q.availability.error
+  );
+
   return {
-    provider: providerQuery,
-    availability: availabilityQuery,
-    dateRange,
-    isLoading: providerQuery.isLoading || availabilityQuery.isLoading,
-    error: providerQuery.error || availabilityQuery.error,
+    providers: calendarData,
+    isLoading,
+    hasError,
   };
 }
 

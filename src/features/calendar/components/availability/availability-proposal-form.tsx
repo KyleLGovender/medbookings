@@ -48,6 +48,12 @@ import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-u
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
 import { type RouterInputs } from '@/utils/api';
+
+// Helper function to ensure we have a Date object
+const ensureDate = (value: string | Date | undefined): Date | undefined => {
+  if (!value) return undefined;
+  return typeof value === 'string' ? new Date(value) : value;
+};
 import { type RouterOutputs } from '@/utils/api';
 
 // Extract input type from tRPC procedure for zero type drift
@@ -203,9 +209,10 @@ export function AvailabilityProposalForm({
 
   const handleCustomRecurrenceSave = (data: CustomRecurrenceData) => {
     const startTime = form.watch('startTime');
+    const startTimeDate = typeof startTime === 'string' ? new Date(startTime) : startTime;
     const pattern = createRecurrencePattern(
       RecurrenceOption.CUSTOM,
-      startTime,
+      startTimeDate,
       data.selectedDays,
       data.endDate ? data.endDate.toISOString().split('T')[0] : undefined
     );
@@ -289,7 +296,7 @@ export function AvailabilityProposalForm({
                     <FormLabel>Date</FormLabel>
                     <FormControl>
                       <DatePicker
-                        date={field.value}
+                        date={ensureDate(field.value)}
                         onChange={(date) => {
                           if (date) {
                             // Update both start and end time dates
@@ -327,7 +334,7 @@ export function AvailabilityProposalForm({
                     <FormItem>
                       <FormLabel>Start Time</FormLabel>
                       <FormControl>
-                        <TimePicker date={field.value} onChange={field.onChange} />
+                        <TimePicker date={ensureDate(field.value)} onChange={field.onChange} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -341,7 +348,7 @@ export function AvailabilityProposalForm({
                     <FormItem>
                       <FormLabel>End Time</FormLabel>
                       <FormControl>
-                        <TimePicker date={field.value} onChange={field.onChange} />
+                        <TimePicker date={ensureDate(field.value)} onChange={field.onChange} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -364,7 +371,8 @@ export function AvailabilityProposalForm({
                 name="recurrencePattern"
                 render={({ field }) => {
                   const startTime = form.watch('startTime');
-                  const recurrenceOptions = getRecurrenceOptions(startTime);
+                  const startTimeDate = ensureDate(startTime);
+                  const recurrenceOptions = startTimeDate ? getRecurrenceOptions(startTimeDate) : [];
 
                   return (
                     <FormItem>
@@ -376,8 +384,8 @@ export function AvailabilityProposalForm({
 
                           if (option === RecurrenceOption.CUSTOM) {
                             setCustomRecurrenceModalOpen(true);
-                          } else {
-                            const pattern = createRecurrencePattern(option, startTime);
+                          } else if (startTimeDate) {
+                            const pattern = createRecurrencePattern(option, startTimeDate);
                             field.onChange(pattern);
                             form.setValue('isRecurring', option !== RecurrenceOption.NONE);
                           }

@@ -100,7 +100,7 @@ export function AvailabilityEditForm({
         title: 'Success',
         description: 'Availability updated successfully',
       });
-      onSuccess?.(data);
+      onSuccess?.(data.availability as any);
     },
   });
 

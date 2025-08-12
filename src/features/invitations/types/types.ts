@@ -102,19 +102,19 @@ export interface InvitationInfo {
 export interface OrganizationContext {
   id: string;
   name: string;
-  description?: string;
-  logo?: string;
-  email?: string;
-  phone?: string;
-  website?: string;
+  description?: string | null;
+  logo?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
 }
 
 // User context for invitations
 export interface UserContext {
   id: string;
-  name?: string;
-  email?: string;
-  image?: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
 }
 
 // =============================================================================
@@ -125,7 +125,7 @@ export interface UserContext {
 export interface InvitationData {
   id: string;
   email: string;
-  customMessage?: string;
+  customMessage?: string | null;
   status: string;
   expiresAt: string;
   organization: OrganizationContext;

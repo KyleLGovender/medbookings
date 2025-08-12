@@ -141,6 +141,17 @@ export interface OrganizationCalendarData {
 
 export type CalendarViewMode = 'day' | '3-day' | 'week' | 'month';
 
+export interface DateRange {
+  start: Date;
+  end: Date;
+}
+
+export interface CalendarDataParams {
+  providerIds: string[];
+  dateRange: DateRange;
+  statusFilter?: AvailabilityStatus | 'ALL';
+}
+
 // Calendar view type constants and types moved from global directory
 export const CalendarViewType = {
   slots: 'slots',
