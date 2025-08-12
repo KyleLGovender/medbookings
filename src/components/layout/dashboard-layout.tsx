@@ -503,7 +503,7 @@ const createNavData = (
         },
       ],
     },
-    ...(providers.length > 0
+    ...(providers.length > 0 && providers[0]
       ? [
           {
             title: 'My Provider Profile',
