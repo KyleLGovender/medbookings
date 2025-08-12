@@ -10,11 +10,11 @@ import { type RouterOutputs } from '@/utils/api';
 import { DeleteAccountButton } from './delete-account-button';
 
 type UserProfile = RouterOutputs['profile']['get'];
-type SerializedProvider = NonNullable<RouterOutputs['providers']['getById']>;
+type Provider = NonNullable<RouterOutputs['providers']['getByUserId']>;
 
 interface ProfileClientProps {
   profile: UserProfile;
-  provider?: SerializedProvider | null;
+  provider?: Provider | null;
   isProfileLoading: boolean;
   profileError: Error | null;
   hasServiceProvider: boolean;
@@ -93,8 +93,14 @@ export function ProfileClient({
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center space-y-4">
-                {provider?.providerType?.name && (
-                  <p className="text-lg font-semibold">{provider.providerType.name}</p>
+                {provider?.typeAssignments && provider.typeAssignments.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {provider.typeAssignments.map((assignment) => (
+                      <p key={assignment.id} className="text-lg font-semibold">
+                        {assignment.providerType.name}
+                      </p>
+                    ))}
+                  </div>
                 )}
                 <div className="text-sm text-muted-foreground">
                   {provider?.status ? (
