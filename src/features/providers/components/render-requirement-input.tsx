@@ -17,11 +17,18 @@ import { RequirementValidationType } from '@/features/providers/types/types';
 import { extractFilenameFromUrl } from '@/lib/utils/document-utils';
 import { type RouterOutputs } from '@/utils/api';
 
-type RequirementType =
-  RouterOutputs['admin']['getProviderRequirements'][number]['requirementType'] & {
-    index: number;
-    existingSubmission?: RouterOutputs['admin']['getProviderRequirements'][number];
-  };
+// Extract the actual requirement type from the onboarding data tRPC response
+type OnboardingData = RouterOutputs['providers']['getOnboardingData'];
+type RequirementFromOnboarding = OnboardingData['requirements'][string][number];
+
+// For admin context, we might have existing submissions
+type AdminRequirement = RouterOutputs['admin']['getProviderRequirements'][number];
+
+// Union type to support both contexts
+type RequirementType = (RequirementFromOnboarding & {
+  index: number;
+  existingSubmission?: AdminRequirement;
+});
 
 // Define a specific type for our form structure to match how we're accessing requirements
 interface RequirementForm {

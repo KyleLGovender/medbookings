@@ -1,3 +1,4 @@
+import { SubscriptionType } from '@prisma/client';
 import { z } from 'zod';
 
 import {
@@ -104,7 +105,7 @@ export const billingRouter = createTRPCRouter({
           organizationId: validation.validatedData!.organizationId,
           locationId: validation.validatedData!.locationId,
           providerId: validation.validatedData!.providerId,
-          type: validation.validatedData!.type,
+          type: validation.validatedData!.type as SubscriptionType,
           status: input.status,
           startDate: validation.validatedData!.startDate,
           endDate: validation.validatedData!.endDate,
@@ -113,17 +114,6 @@ export const billingRouter = createTRPCRouter({
           billingCycleStart: validation.validatedData!.startDate,
           billingCycleEnd: validation.validatedData!.billingCycleEnd,
           currentMonthSlots: validation.validatedData!.currentMonthSlots,
-          // Connect to related entities (Prisma will validate existence automatically)
-          plan: { connect: { id: validation.validatedData!.planId } },
-          ...(validation.validatedData!.organizationId && {
-            organization: { connect: { id: validation.validatedData!.organizationId } },
-          }),
-          ...(validation.validatedData!.locationId && {
-            location: { connect: { id: validation.validatedData!.locationId } },
-          }),
-          ...(validation.validatedData!.providerId && {
-            provider: { connect: { id: validation.validatedData!.providerId } },
-          }),
         },
         include: {
           plan: true,

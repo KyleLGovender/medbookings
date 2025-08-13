@@ -47,7 +47,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
   // Fetch provider data
   const { data: provider, isLoading, error, refetch } = useProvider(providerId);
 
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [selectedLanguages, setSelectedLanguages] = useState<Languages[]>([]);
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
   // Update state when provider data is loaded
@@ -89,14 +89,11 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
   // Update form values when provider data is loaded
   useEffect(() => {
     if (provider) {
-      // Get provider type IDs from the providerTypes array or fall back to legacy field
+      // Get provider type IDs from the typeAssignments array
       const providerTypeIds =
-        provider.providerTypes?.length > 0
-          ? provider.providerTypes.map((type: any) => type.id)
-          : provider.providerTypeId
-            ? [provider.providerTypeId]
-            : [];
-      const legacyProviderTypeId = provider.providerTypeId || '';
+        provider.typeAssignments?.length > 0
+          ? provider.typeAssignments.map((assignment: any) => assignment.providerType.id)
+          : [];
 
       // Set form values including provider type IDs
       methods.reset({
@@ -108,13 +105,11 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
         email: provider.email || '',
         whatsapp: provider.whatsapp || '',
         providerTypeIds: providerTypeIds,
-        providerTypeId: legacyProviderTypeId, // Keep for backward compatibility
         showPrice: provider.showPrice !== undefined ? provider.showPrice : true, // Default to true if not set
       });
 
       // Force set the values directly to ensure they're updated
       methods.setValue('providerTypeIds', providerTypeIds);
-      methods.setValue('providerTypeId', legacyProviderTypeId);
     }
   }, [provider, methods]);
 
@@ -131,7 +126,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
     methods.setValue('image', imageUrl || 'placeholder');
   };
 
-  const addLanguage = (language: string) => {
+  const addLanguage = (language: Languages) => {
     if (!selectedLanguages.includes(language)) {
       const newLanguages = [...selectedLanguages, language];
       setSelectedLanguages(newLanguages);
@@ -139,7 +134,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
     }
   };
 
-  const removeLanguage = (languageToRemove: string) => {
+  const removeLanguage = (languageToRemove: Languages) => {
     const newLanguages = selectedLanguages.filter((lang) => lang !== languageToRemove);
     setSelectedLanguages(newLanguages);
     methods.setValue('languages', newLanguages);
@@ -174,9 +169,11 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
         formData.append('providerTypeIds', typeId);
       });
 
-      // Also include the legacy single type for backward compatibility
-      const selectedProviderTypeId = data.providerTypeId || provider.providerTypeId || '';
-      formData.append('providerTypeId', selectedProviderTypeId);
+      // Include the first provider type ID for backward compatibility (if needed)
+      const firstProviderTypeId = data.providerTypeIds?.[0] || '';
+      if (firstProviderTypeId) {
+        formData.append('providerTypeId', firstProviderTypeId);
+      }
 
       // Add languages
       selectedLanguages.forEach((lang) => {
@@ -217,8 +214,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
           website: data.website || '',
           email: data.email,
           whatsapp: data.whatsapp,
-          providerTypeId: selectedProviderTypeId,
-          providerTypeIds: selectedProviderTypeIds,
+          providerTypeIds: data.providerTypeIds || [],
           showPrice: data.showPrice,
         };
 
@@ -295,10 +291,10 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
             <div className="space-y-6">
               <h3 className="mb-2 font-medium">Current Types</h3>
               <div className="mb-4 flex flex-wrap gap-2">
-                {provider?.providerTypes && provider.providerTypes.length > 0 ? (
-                  provider.providerTypes.map((type: any) => (
-                    <Badge key={type.id} variant="secondary">
-                      {type.name}
+                {provider?.typeAssignments && provider.typeAssignments.length > 0 ? (
+                  provider.typeAssignments.map((assignment: any) => (
+                    <Badge key={assignment.id} variant="secondary">
+                      {assignment.providerType.name}
                     </Badge>
                   ))
                 ) : (
@@ -430,7 +426,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
                 <div className="space-y-3">
                   <FormLabel>Languages Spoken *</FormLabel>
                   <div className="flex gap-2">
-                    <Select onValueChange={addLanguage}>
+                    <Select onValueChange={(value) => addLanguage(value as Languages)}>
                       <SelectTrigger className="flex-1">
                         <SelectValue placeholder="Select languages you speak" />
                       </SelectTrigger>

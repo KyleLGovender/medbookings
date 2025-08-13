@@ -83,6 +83,10 @@ export async function validateAccountDeletion(): Promise<{
       return { success: false, error: 'Authentication required' };
     }
 
+    if (!currentUser.email) {
+      return { success: false, error: 'User email is required for account deletion' };
+    }
+
     // Business logic checks would go here
     // For example: check for active subscriptions, pending obligations, etc.
 

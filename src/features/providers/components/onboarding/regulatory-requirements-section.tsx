@@ -10,11 +10,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { renderRequirementInput } from '@/features/providers/components/render-requirement-input';
 import { type RouterOutputs } from '@/utils/api';
 
-type RequirementType =
-  RouterOutputs['admin']['getProviderRequirements'][number]['requirementType'] & {
-    index: number;
-    existingSubmission?: RouterOutputs['admin']['getProviderRequirements'][number];
-  };
+// Extract the actual requirement type from the onboarding data tRPC response
+type OnboardingData = RouterOutputs['providers']['getOnboardingData'];
+type RequirementFromOnboarding = OnboardingData['requirements'][string][number];
+
+// Type with index added for form handling
+type RequirementType = RequirementFromOnboarding & {
+  index: number;
+};
 
 interface RegulatoryRequirementsSectionProps {
   requirements: Array<{
@@ -53,7 +56,7 @@ export function RegulatoryRequirementsSection({
     const transformedReqs: RequirementType[] = requirements.map((req, idx) => ({
       id: req.id,
       name: req.name,
-      description: req.description || '',
+      description: req.description,
       validationType: req.validationType as RequirementValidationType,
       isRequired: req.isRequired,
       validationConfig: req.validationConfig,

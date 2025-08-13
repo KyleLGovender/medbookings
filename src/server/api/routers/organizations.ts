@@ -1,4 +1,4 @@
-import { OrganizationBillingModel } from '@prisma/client';
+import { OrganizationBillingModel, OrganizationRole } from '@prisma/client';
 import { z } from 'zod';
 
 import { logEmail } from '@/features/communications/lib/helper';
@@ -102,10 +102,7 @@ export const organizationsRouter = createTRPCRouter({
             phone: validatedData.organization.phone || '',
             website: validatedData.organization.website || '',
             logo: validatedData.organization.logo || '',
-            billingModel:
-              validatedData.organization.billingModel === 'SLOT_BASED'
-                ? OrganizationBillingModel.PER_LOCATION
-                : OrganizationBillingModel.CONSOLIDATED,
+            billingModel: validatedData.organization.billingModel as OrganizationBillingModel,
             // Connect the current user as an admin via memberships
             memberships: {
               create: {
@@ -1091,7 +1088,7 @@ export const organizationsRouter = createTRPCRouter({
       z.object({
         organizationId: z.string(),
         email: z.string().email(),
-        role: z.enum(['OWNER', 'ADMIN', 'MANAGER', 'STAFF']),
+        role: z.nativeEnum(OrganizationRole),
         message: z.string().optional(),
       })
     )
@@ -1325,7 +1322,7 @@ export const organizationsRouter = createTRPCRouter({
       z.object({
         organizationId: z.string(),
         memberId: z.string(),
-        newRole: z.enum(['OWNER', 'ADMIN', 'MANAGER', 'STAFF']),
+        newRole: z.nativeEnum(OrganizationRole),
       })
     )
     .mutation(async ({ ctx, input }) => {

@@ -13,7 +13,7 @@ export function useProviderRequirementTypes(providerId: string | undefined) {
   );
 
   // Extract provider type IDs from the provider data
-  const providerTypeIds = providerQuery.data?.providerTypes?.map((type: any) => type.id) || [];
+  const providerTypeIds = providerQuery.data?.typeAssignments?.map((assignment: any) => assignment.providerType.id) || [];
 
   // Fetch requirements based on all provider type IDs
   return api.providers.getRequirementsForMultipleTypes.useQuery(

@@ -1,4 +1,4 @@
-import { Languages } from '@prisma/client';
+import { ConnectionStatus, Languages, ProviderInvitationStatus, ProviderStatus } from '@prisma/client';
 import { z } from 'zod';
 
 import { sendProviderWhatsappConfirmation } from '@/features/communications/lib/server-helper';
@@ -134,7 +134,7 @@ export const providersRouter = createTRPCRouter({
     .input(
       z.object({
         providerTypeId: z.string(),
-        status: z.enum(['APPROVED', 'PENDING_APPROVAL', 'REJECTED']).optional(),
+        status: z.nativeEnum(ProviderStatus).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -1419,7 +1419,7 @@ export const providersRouter = createTRPCRouter({
   getConnections: protectedProcedure
     .input(
       z.object({
-        status: z.enum(['PENDING', 'ACCEPTED', 'REJECTED', 'SUSPENDED']).optional(),
+        status: z.nativeEnum(ConnectionStatus).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -1620,7 +1620,7 @@ export const providersRouter = createTRPCRouter({
   getInvitations: protectedProcedure
     .input(
       z.object({
-        status: z.enum(['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'EXPIRED']).optional(),
+        status: z.nativeEnum(ProviderInvitationStatus).optional(),
       })
     )
     .query(async ({ ctx, input }) => {

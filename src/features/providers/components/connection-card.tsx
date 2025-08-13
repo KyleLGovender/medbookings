@@ -43,7 +43,7 @@ import { useToast } from '@/hooks/use-toast';
 import { type RouterOutputs } from '@/utils/api';
 
 type OrganizationConnectionWithDetails =
-  RouterOutputs['providers']['getOrganizationConnections'][number];
+  RouterOutputs['providers']['getConnections']['connections'][number];
 
 interface ConnectionCardProps {
   connection: OrganizationConnectionWithDetails;

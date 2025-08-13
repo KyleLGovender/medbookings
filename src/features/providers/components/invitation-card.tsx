@@ -35,7 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { type RouterOutputs } from '@/utils/api';
 
 type ProviderInvitationWithOrganization =
-  RouterOutputs['providers']['getProviderInvitations'][number];
+  RouterOutputs['providers']['getInvitations']['invitations'][number];
 
 interface InvitationCardProps {
   invitation: ProviderInvitationWithOrganization;
