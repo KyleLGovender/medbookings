@@ -2,7 +2,8 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Repeat } from 'lucide-react';
+import { AvailabilityStatus } from '@prisma/client';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -23,26 +24,24 @@ import { ThreeDayView } from '@/features/calendar/components/views/three-day-vie
 import { WeekView } from '@/features/calendar/components/views/week-view';
 import { useCalendarData } from '@/features/calendar/hooks/use-calendar-data';
 import {
-  getCalendarViewTitle,
+  calculateDateRange,
   getEventStyle,
-  navigateCalendarDate,
+  navigateCalendarDate
 } from '@/features/calendar/lib/calendar-utils';
 import {
-  measureCalendarDataProcessing,
-  measureCalendarRendering,
-  recordCalendarCyclePerformance,
-  usePerformanceMonitor,
-} from '@/features/calendar/lib/performance-monitor';
-import {
-  filterEventsInTimeRange,
   groupEventsByDate,
-  sortEventsForRendering,
+  sortEventsForRendering
 } from '@/features/calendar/lib/virtualization-helpers';
-import {
-  AvailabilityStatus,
-  CalendarEvent,
-  CalendarViewMode,
-} from '@/features/calendar/types/types';
+import { CalendarEvent, CalendarViewMode } from '@/features/calendar/types/types';
+
+// Performance monitoring functions removed - using simplified approach
+const measureCalendarDataProcessing = (fn: () => any) => fn();
+const measureCalendarRendering = (fn: () => any) => fn();
+const recordCalendarCyclePerformance = (eventCount: number, viewMode: string, dateRange: any) => {};
+const usePerformanceMonitor = (name: string, deps: any[]) => ({
+  startMeasurement: () => {},
+  endMeasurement: () => {},
+});
 
 export interface ProviderCalendarViewProps {
   providerId: string;
@@ -170,18 +169,170 @@ export function ProviderCalendarView({
     [getStatusBreakdown]
   );
 
+  // Calculate date range using the helper function
+  const dateRange = useMemo(() => {
+    return calculateDateRange(currentDate, viewMode);
+  }, [currentDate, viewMode]);
+
   // Use standardized calendar data hook with optimized caching and memoization
-  const {
-    data: calendarData,
-    filteredEvents,
-    isLoading,
-    error: calendarError,
-  } = useCalendarData({
-    providerId,
-    currentDate,
-    viewMode,
+  const calendarDataResult = useCalendarData({
+    providerIds: [providerId],
+    dateRange,
     statusFilter,
   });
+
+  // Extract data for the single provider
+  const providerData = calendarDataResult.providers.get(providerId);
+  const providerQuery = providerData?.provider;
+  const availabilityQuery = providerData?.availability;
+  const isLoading = calendarDataResult.isLoading;
+  const hasError = calendarDataResult.hasError;
+
+  // Transform availability data to calendar events
+  const calendarEvents: CalendarEvent[] = useMemo(() => {
+    const availabilities = availabilityQuery?.data || [];
+    if (!Array.isArray(availabilities)) return [];
+    
+    // Transform availabilities to CalendarEvent format
+    const events: CalendarEvent[] = [];
+    
+    // Add availability events
+    availabilities.forEach(availability => {
+      events.push({
+        id: availability.id,
+        type: 'availability' as const,
+        title: `Available - ${availability.provider?.user?.name || 'Provider'}`,
+        startTime: new Date(availability.startTime),
+        endTime: new Date(availability.endTime),
+        status: availability.status,
+        schedulingRule: availability.schedulingRule,
+        isRecurring: availability.isRecurring,
+        seriesId: availability.seriesId,
+        location: availability.location ? {
+          id: availability.location.id,
+          name: availability.location.name || 'Location',
+          isOnline: availability.isOnlineAvailable,
+        } : undefined,
+        organization: availability.organization ? {
+          id: availability.organization.id,
+          name: availability.organization.name,
+        } : undefined,
+        isProviderCreated: availability.createdById === availability.providerId,
+      });
+      
+      // Add booking events from calculated slots
+      if (availability.calculatedSlots) {
+        availability.calculatedSlots.forEach((slot: any) => {
+          if (slot.booking) {
+            events.push({
+              id: slot.booking.id,
+              type: 'booking' as const,
+              title: `Booking - ${slot.booking.customerName || 'Customer'}`,
+              startTime: new Date(slot.startTime),
+              endTime: new Date(slot.endTime),
+              status: slot.booking.status,
+              customer: {
+                id: slot.booking.customerId || slot.booking.id,
+                name: slot.booking.customerName || 'Customer',
+                email: slot.booking.customerEmail,
+              },
+            });
+          }
+        });
+      }
+    });
+    
+    return events;
+  }, [availabilityQuery?.data]);
+
+  // Calculate stats from availability data
+  const stats = useMemo(() => {
+    const events = calendarEvents;
+    
+    // Calculate total available hours
+    const totalAvailableHours = events.reduce((total, event) => {
+      if (event.type === 'availability') {
+        const hours = (event.endTime.getTime() - event.startTime.getTime()) / (1000 * 60 * 60);
+        return total + hours;
+      }
+      return total;
+    }, 0);
+
+    // Calculate booked hours
+    const bookedHours = events.reduce((total, event) => {
+      if (event.type === 'booking' && event.status === 'CONFIRMED') {
+        const hours = (event.endTime.getTime() - event.startTime.getTime()) / (1000 * 60 * 60);
+        return total + hours;
+      }
+      return total;
+    }, 0);
+
+    // Count pending and completed bookings
+    const pendingBookings = events.filter(
+      event => event.type === 'booking' && event.status === 'PENDING'
+    ).length;
+    
+    const completedBookings = events.filter(
+      event => event.type === 'booking' && event.status === 'COMPLETED'
+    ).length;
+
+    // Calculate utilization rate
+    const utilizationRate = totalAvailableHours > 0 
+      ? Math.round((bookedHours / totalAvailableHours) * 100)
+      : 0;
+
+    return {
+      utilizationRate,
+      bookedHours: Math.round(bookedHours),
+      pendingBookings,
+      completedBookings,
+      totalAvailableHours: Math.round(totalAvailableHours),
+    };
+  }, [calendarEvents]);
+
+  // Derive working hours from availability data or use defaults
+  const workingHours = useMemo(() => {
+    const events = calendarEvents;
+    const availabilityEvents = events.filter(e => e.type === 'availability');
+    
+    if (availabilityEvents.length === 0) {
+      // Default working hours
+      return { start: '09:00', end: '17:00' };
+    }
+    
+    // Find earliest start and latest end times
+    let earliestHour = 24;
+    let latestHour = 0;
+    
+    availabilityEvents.forEach(event => {
+      const startHour = event.startTime.getHours();
+      const startMinutes = event.startTime.getMinutes();
+      const endHour = event.endTime.getHours();
+      const endMinutes = event.endTime.getMinutes();
+      
+      const startDecimal = startHour + startMinutes / 60;
+      const endDecimal = endHour + endMinutes / 60;
+      
+      if (startDecimal < earliestHour) {
+        earliestHour = startDecimal;
+      }
+      if (endDecimal > latestHour) {
+        latestHour = endDecimal;
+      }
+    });
+    
+    // Convert back to HH:MM format
+    const formatTime = (decimal: number) => {
+      const hours = Math.floor(decimal);
+      const minutes = Math.round((decimal - hours) * 60);
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    };
+    
+    return {
+      start: earliestHour < 24 ? formatTime(earliestHour) : '09:00',
+      end: latestHour > 0 ? formatTime(latestHour) : '17:00',
+    };
+  }, [calendarEvents]);
 
   const navigateDate = useCallback(
     (direction: 'prev' | 'next') => {
@@ -200,10 +351,6 @@ export function ProviderCalendarView({
     [onDateClick]
   );
 
-  const getViewTitle = useCallback((): string => {
-    return getCalendarViewTitle(currentDate, viewMode);
-  }, [currentDate, viewMode]);
-
   // Use shared event styling utility with memoization
   const getEventStyleLocal = useCallback((event: CalendarEvent): string => {
     return getEventStyle(event);
@@ -211,10 +358,11 @@ export function ProviderCalendarView({
 
   // Optimized event filtering and sorting for large datasets
   const optimizedEvents = useMemo(() => {
-    if (!filteredEvents.length) return [];
+    const events = calendarEvents;
+    if (!events.length) return [];
 
     // Sort events for optimal rendering performance
-    const sorted = sortEventsForRendering(filteredEvents);
+    const sorted = sortEventsForRendering(events);
 
     // For month view, group events by date for efficient rendering
     if (viewMode === 'month') {
@@ -223,26 +371,45 @@ export function ProviderCalendarView({
     }
 
     return sorted;
-  }, [filteredEvents, viewMode]);
+  }, [calendarEvents, viewMode]);
 
   // Record performance metrics when data changes
   useEffect(() => {
-    if (calendarData) {
-      recordCalendarCyclePerformance(calendarData.events.length, viewMode, calendarData.dateRange);
+    if (calendarEvents.length > 0) {
+      recordCalendarCyclePerformance(calendarEvents.length, viewMode, dateRange);
     }
-  }, [calendarData, viewMode]);
+  }, [calendarEvents, viewMode, dateRange]);
 
+  // Early return for loading state
   if (isLoading) {
     return <CalendarSkeleton />;
   }
 
-  if (!calendarData) {
+  // Early return if no provider data
+  if (!providerData || !providerQuery) {
     return (
       <Card>
         <CardContent className="pt-6">
           <div className="py-8 text-center text-muted-foreground">
             <CalendarIcon className="mx-auto mb-4 h-12 w-12 opacity-50" />
             <p>No calendar data available</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Extract provider data - now properly typed from the hook
+  const provider = providerQuery.data;
+  
+  // Early return if provider data is not loaded
+  if (!provider) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="py-8 text-center text-muted-foreground">
+            <CalendarIcon className="mx-auto mb-4 h-12 w-12 opacity-50" />
+            <p>No provider data available</p>
           </div>
         </CardContent>
       </Card>
@@ -259,15 +426,12 @@ export function ProviderCalendarView({
               <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
                   <AvatarFallback>
-                    {calendarData.providerName
-                      .split(' ')
-                      .map((n: string) => n[0])
-                      .join('')}
+                    {provider.user?.name}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <CardTitle className="text-xl">{calendarData.providerName}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{calendarData.providerType}</p>
+                  <CardTitle className="text-xl">{provider.user?.name || 'Provider'}</CardTitle>
+                  <p className="text-sm text-muted-foreground">Healthcare Provider</p>
                 </div>
               </div>
 
@@ -275,25 +439,25 @@ export function ProviderCalendarView({
                 <div className="grid grid-cols-2 gap-3 text-center md:grid-cols-4 md:gap-4">
                   <div>
                     <div className="text-lg font-bold text-blue-600 md:text-2xl">
-                      {calendarData.stats.utilizationRate}%
+                      {stats.utilizationRate}%
                     </div>
                     <div className="text-xs text-muted-foreground">Utilization</div>
                   </div>
                   <div>
                     <div className="text-lg font-bold text-green-600 md:text-2xl">
-                      {calendarData.stats.bookedHours}
+                      {stats.bookedHours}
                     </div>
                     <div className="text-xs text-muted-foreground">Booked Hours</div>
                   </div>
                   <div>
                     <div className="text-lg font-bold text-orange-600 md:text-2xl">
-                      {calendarData.stats.pendingBookings}
+                      {stats.pendingBookings}
                     </div>
                     <div className="text-xs text-muted-foreground">Pending</div>
                   </div>
                   <div>
                     <div className="text-lg font-bold text-purple-600 md:text-2xl">
-                      {calendarData.stats.completedBookings}
+                      {stats.completedBookings}
                     </div>
                     <div className="text-xs text-muted-foreground">Completed</div>
                   </div>
@@ -381,7 +545,7 @@ export function ProviderCalendarView({
               <DayView
                 currentDate={currentDate}
                 events={optimizedEvents}
-                workingHours={calendarData.workingHours}
+                workingHours={workingHours}
                 onEventClick={(event, clickEvent) =>
                   onEventClick?.(event, clickEvent || ({} as React.MouseEvent))
                 }
@@ -393,7 +557,7 @@ export function ProviderCalendarView({
               <ThreeDayView
                 currentDate={currentDate}
                 events={optimizedEvents}
-                workingHours={calendarData.workingHours}
+                workingHours={workingHours}
                 onEventClick={(event, clickEvent) =>
                   onEventClick?.(event, clickEvent || ({} as React.MouseEvent))
                 }
@@ -405,7 +569,7 @@ export function ProviderCalendarView({
               <WeekView
                 currentDate={currentDate}
                 events={optimizedEvents}
-                workingHours={calendarData.workingHours}
+                workingHours={workingHours}
                 onEventClick={(event, clickEvent) =>
                   onEventClick?.(event, clickEvent || ({} as React.MouseEvent))
                 }

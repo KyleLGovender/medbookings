@@ -2,45 +2,57 @@
 // ORGANIZATIONS FEATURE TYPE GUARDS
 // =============================================================================
 // Runtime type validation for organization-specific types and API responses
+import {
+  InvitationStatus,
+  MembershipStatus,
+  OrganizationBillingModel,
+  OrganizationRole,
+  OrganizationStatus,
+} from '@prisma/client';
+
 import { isValidDateString, isValidEmail, isValidPhone, isValidUUID } from '@/types/guards';
 
 // =============================================================================
 // ENUM GUARDS
 // =============================================================================
 
-export function isOrganizationStatus(
-  value: unknown
-): value is 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUSPENDED' {
+export function isOrganizationStatus(value: unknown): value is OrganizationStatus {
   return (
     typeof value === 'string' &&
-    ['PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED'].includes(value)
+    Object.values(OrganizationStatus).includes(value as OrganizationStatus)
   );
 }
 
-export function isMembershipRole(value: unknown): value is 'ADMIN' | 'MANAGER' | 'MEMBER' {
-  return typeof value === 'string' && ['ADMIN', 'MANAGER', 'MEMBER'].includes(value);
-}
-
-export function isMembershipStatus(value: unknown): value is 'PENDING' | 'ACTIVE' | 'INACTIVE' {
-  return typeof value === 'string' && ['PENDING', 'ACTIVE', 'INACTIVE'].includes(value);
-}
-
-export function isProviderInvitationStatus(
-  value: unknown
-): value is 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' {
+export function isOrganizationRole(value: unknown): value is OrganizationRole {
   return (
-    typeof value === 'string' && ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED'].includes(value)
+    typeof value === 'string' && Object.values(OrganizationRole).includes(value as OrganizationRole)
   );
 }
 
+export function isMembershipStatus(value: unknown): value is MembershipStatus {
+  return (
+    typeof value === 'string' && Object.values(MembershipStatus).includes(value as MembershipStatus)
+  );
+}
+
+export function isInvitationStatus(value: unknown): value is InvitationStatus {
+  return (
+    typeof value === 'string' && Object.values(InvitationStatus).includes(value as InvitationStatus)
+  );
+}
+
+export function isOrganizationBillingModel(value: unknown): value is OrganizationBillingModel {
+  return (
+    typeof value === 'string' &&
+    Object.values(OrganizationBillingModel).includes(value as OrganizationBillingModel)
+  );
+}
+
+// Keep domain-specific enum (not in Prisma)
 export function isInvitationAction(
   value: unknown
 ): value is 'ACCEPT' | 'REJECT' | 'CANCEL' | 'RESEND' {
   return typeof value === 'string' && ['ACCEPT', 'REJECT', 'CANCEL', 'RESEND'].includes(value);
-}
-
-export function isBillingModel(value: unknown): value is 'CONSOLIDATED' | 'PER_LOCATION' {
-  return typeof value === 'string' && ['CONSOLIDATED', 'PER_LOCATION'].includes(value);
 }
 
 // =============================================================================
@@ -93,7 +105,7 @@ export function isValidUpdateOrganizationData(value: unknown): value is {
     (!(value as any).description || typeof (value as any).description === 'string') &&
     (!(value as any).logo || typeof (value as any).logo === 'string') &&
     (!(value as any).status || isOrganizationStatus((value as any).status)) &&
-    (!(value as any).billingModel || isBillingModel((value as any).billingModel))
+    (!(value as any).billingModel || isOrganizationBillingModel((value as any).billingModel))
   );
 }
 
@@ -140,7 +152,7 @@ export function isValidCreateMembershipData(value: unknown): value is {
     'role' in value &&
     isValidUUID((value as any).organizationId) &&
     isValidUUID((value as any).userId) &&
-    isMembershipRole((value as any).role)
+    isOrganizationRole((value as any).role)
   );
 }
 
@@ -154,7 +166,7 @@ export function isValidMembershipUpdate(value: unknown): value is {
     value !== null &&
     'id' in value &&
     isValidUUID((value as any).id) &&
-    (!(value as any).role || isMembershipRole((value as any).role)) &&
+    (!(value as any).role || isOrganizationRole((value as any).role)) &&
     (!(value as any).status || isMembershipStatus((value as any).status))
   );
 }
@@ -297,7 +309,7 @@ export function isValidProviderInvitationWithDetails(value: unknown): value is {
     'organization' in value &&
     isValidUUID((value as any).id) &&
     isValidEmail((value as any).email) &&
-    isProviderInvitationStatus((value as any).status) &&
+    isInvitationStatus((value as any).status) &&
     isValidDateString((value as any).createdAt) &&
     isValidDateString((value as any).expiresAt) &&
     typeof (value as any).organization === 'object' &&
@@ -350,94 +362,17 @@ export function isValidProviderConnection(value: unknown): value is {
 }
 
 // =============================================================================
-// API RESPONSE GUARDS
+// API RESPONSE GUARDS REMOVED
 // =============================================================================
-
-export function isOrganizationListResponse(value: unknown): value is Array<{
-  id: string;
-  name: string;
-  email?: string;
-  status: string;
-  billingModel?: string;
-  _count?: { memberships: number; locations: number; providerConnections: number };
-}> {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item: unknown) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        'name' in item &&
-        'status' in item &&
-        isValidUUID((item as any).id) &&
-        typeof (item as any).name === 'string' &&
-        isOrganizationStatus((item as any).status) &&
-        (!(item as any).email || isValidEmail((item as any).email)) &&
-        (!(item as any).billingModel || isBillingModel((item as any).billingModel))
-    )
-  );
-}
-
-export function isMembershipListResponse(value: unknown): value is Array<{
-  id: string;
-  role: string;
-  status: string;
-  user: { id: string; name: string; email: string };
-  organization: { id: string; name: string };
-}> {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item: unknown) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        'role' in item &&
-        'status' in item &&
-        'user' in item &&
-        'organization' in item &&
-        isValidUUID((item as any).id) &&
-        isMembershipRole((item as any).role) &&
-        isMembershipStatus((item as any).status) &&
-        typeof (item as any).user === 'object' &&
-        (item as any).user !== null &&
-        'id' in (item as any).user &&
-        'name' in (item as any).user &&
-        'email' in (item as any).user &&
-        isValidUUID((item as any).user.id) &&
-        typeof (item as any).user.name === 'string' &&
-        isValidEmail((item as any).user.email)
-    )
-  );
-}
-
-export function isLocationListResponse(value: unknown): value is Array<{
-  id: string;
-  name: string;
-  formattedAddress?: string;
-  phone?: string;
-  email?: string;
-  organizationId: string;
-}> {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item: unknown) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        'name' in item &&
-        'organizationId' in item &&
-        isValidUUID((item as any).id) &&
-        typeof (item as any).name === 'string' &&
-        isValidUUID((item as any).organizationId) &&
-        (!(item as any).formattedAddress || typeof (item as any).formattedAddress === 'string') &&
-        (!(item as any).phone || isValidPhone((item as any).phone)) &&
-        (!(item as any).email || isValidEmail((item as any).email))
-    )
-  );
-}
+//
+// Server response validation guards have been removed as part of the dual-source
+// type safety migration. Components will use tRPC RouterOutputs for server
+// data validation in Task 4.0.
+//
+// Removed:
+// - isOrganizationListResponse
+// - isMembershipListResponse
+// - isLocationListResponse
 
 // =============================================================================
 // SEARCH AND FILTER GUARDS
@@ -457,7 +392,7 @@ export function isValidOrganizationSearchParams(value: unknown): value is {
     (!(value as any).name || typeof (value as any).name === 'string') &&
     (!(value as any).email || typeof (value as any).email === 'string') &&
     (!(value as any).status || isOrganizationStatus((value as any).status)) &&
-    (!(value as any).billingModel || isBillingModel((value as any).billingModel)) &&
+    (!(value as any).billingModel || isOrganizationBillingModel((value as any).billingModel)) &&
     (!(value as any).hasLocations || typeof (value as any).hasLocations === 'boolean') &&
     (!(value as any).hasProviders || typeof (value as any).hasProviders === 'boolean')
   );
@@ -499,7 +434,7 @@ export function isValidMembershipSearchParams(value: unknown): value is {
     value !== null &&
     (!(value as any).organizationId || isValidUUID((value as any).organizationId)) &&
     (!(value as any).userId || isValidUUID((value as any).userId)) &&
-    (!(value as any).role || isMembershipRole((value as any).role)) &&
+    (!(value as any).role || isOrganizationRole((value as any).role)) &&
     (!(value as any).status || isMembershipStatus((value as any).status))
   );
 }

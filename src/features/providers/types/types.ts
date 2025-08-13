@@ -1,115 +1,37 @@
 // =============================================================================
 // PROVIDERS FEATURE TYPES
 // =============================================================================
-
-/**
- * @fileoverview Comprehensive type definitions for the providers feature.
- *
- * This module defines all types related to healthcare service providers including:
- * - Provider onboarding and registration
- * - Requirement submission and validation
- * - Service configuration and offerings
- * - Organization connections and invitations
- * - Provider types and specializations
- * - Regulatory compliance tracking
- *
- * The types support the complete provider lifecycle from initial registration
- * through approval, service setup, and ongoing compliance management.
- *
- * @author MedBookings Development Team
- * @version 1.0.0
- */
 // All type definitions for the providers feature in one place
-// Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
+// Domain enums, business logic types, and form schemas only
+//
+// OPTION C COMPLIANT:
+// - NO Prisma enum re-exports (import directly from @prisma/client where used)
+// - Server data interfaces removed (use tRPC RouterOutputs)
+// - Only domain logic and client-only types remain
+// =============================================================================
+// =============================================================================
+// PRISMA ENUM IMPORTS
+// =============================================================================
 import {
-  ConnectionStatus,
-  Organization,
-  OrganizationProviderConnection,
-  Prisma,
-  Provider as PrismaProvider,
-  RequirementSubmission as PrismaRequirementSubmission,
-  RequirementType as PrismaRequirementType,
-  Service as PrismaService,
-  ProviderInvitation,
-  ProviderInvitationStatus,
-  ProviderType,
-  User,
+  Languages,
+  ProviderStatus,
+  RequirementValidationType,
+  RequirementsValidationStatus,
 } from '@prisma/client';
 
 // =============================================================================
-// ENUMS
+// DOMAIN-SPECIFIC TYPES (Not in Prisma)
 // =============================================================================
 
-// Provider-related enums (matching Prisma schema)
-export enum ProviderStatus {
-  PENDING_APPROVAL = 'PENDING_APPROVAL',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  SUSPENDED = 'SUSPENDED',
-}
-
-export enum RequirementSubmissionStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-}
-
-// Enum for requirement validation types (matching Prisma schema)
-export enum RequirementValidationType {
-  BOOLEAN = 'BOOLEAN', // Yes/No or True/False answers
-  DOCUMENT = 'DOCUMENT', // Document upload required
-  TEXT = 'TEXT', // Free text input
-  DATE = 'DATE', // Regular date input
-  FUTURE_DATE = 'FUTURE_DATE', // Date that must be in the future (e.g., expiry dates)
-  PAST_DATE = 'PAST_DATE', // Date that must be in the past (e.g., graduation date)
-  NUMBER = 'NUMBER', // Numeric input
-  PREDEFINED_LIST = 'PREDEFINED_LIST', // Selection from a predefined list of options
-}
-
-// Enum for requirements validation status (matching Prisma schema)
-export enum RequirementsValidationStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-}
+// Export enums for backward compatibility
+export const SUPPORTED_LANGUAGES = Languages;
+export { RequirementValidationType };
 
 // =============================================================================
-// CONSTANTS
+// BASE INTERFACES (Client-only types)
 // =============================================================================
 
-/**
- * Supported languages for service providers
- * This should match the Languages enum from the Prisma schema
- */
-export const SUPPORTED_LANGUAGES = [
-  'English',
-  'IsiZulu',
-  'IsiXhosa',
-  'Afrikaans',
-  'Sepedi',
-  'Setswana',
-  'Sesotho',
-  'IsiNdebele',
-  'SiSwati',
-  'Tshivenda',
-  'Xitsonga',
-  'Portuguese',
-  'French',
-  'Hindi',
-  'German',
-  'Mandarin',
-] as const;
-
-/**
- * Type for supported languages
- */
-export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
-
-// =============================================================================
-// BASE INTERFACES
-// =============================================================================
-
-// Provider-related base interfaces
+// Provider-related base interfaces for client-side use
 export interface BasicProviderInfo {
   id: string;
   name: string;
@@ -120,7 +42,7 @@ export interface BasicProviderInfo {
   isActive: boolean;
 }
 
-// Types moved from provider-types.ts
+// Types for client-side data structures
 export type ProviderTypeData = {
   id: string;
   name: string;
@@ -131,7 +53,7 @@ export type RequirementTypeData = {
   id: string;
   name: string;
   description: string | null;
-  validationType: string;
+  validationType: RequirementValidationType;
   isRequired: boolean;
   validationConfig: any;
   displayPriority?: number;
@@ -162,111 +84,10 @@ export interface ServiceInfo {
 }
 
 // =============================================================================
-// COMPLEX INTERFACES
+// VALIDATION CONFIGURATION TYPES (Domain Logic)
 // =============================================================================
 
-// Provider with full relations
-export interface ProviderWithRelations extends Provider {
-  user: User;
-  typeAssignments: Array<{
-    id: string;
-    providerType: ProviderTypeInfo;
-  }>;
-  services: ServiceInfo[];
-  requirementSubmissions: Array<{
-    id: string;
-    status: RequirementSubmissionStatus;
-    notes?: string;
-    validatedAt?: Date;
-    requirementType: PrismaRequirementType;
-    validatedBy?: User;
-  }>;
-  approvedBy?: User;
-}
-
-// Serialized types (moved from hooks/types.ts)
-export interface SerializedService {
-  id: string;
-  name: string;
-  description?: string | null;
-  defaultDuration: number | null;
-  defaultPrice: number | null;
-  displayPriority: number;
-  createdAt?: string;
-  updatedAt?: string;
-  // Fields added by provider services API
-  isSelected?: boolean;
-  currentPrice?: number | null;
-  currentDuration?: number | null;
-  hasCustomConfig?: boolean;
-  customConfig?: {
-    id: string;
-    duration: number;
-    price: number | null;
-    isOnlineAvailable: boolean;
-    isInPerson: boolean;
-    locationId: string | null;
-  };
-}
-
-export interface SerializedProvider {
-  id: string;
-  userId: string;
-  name: string;
-  bio: string | null;
-  image: string | null;
-  email: string;
-  whatsapp: string | null;
-  website: string | null;
-  languages: string[];
-  showPrice: boolean;
-  billingType: string | null;
-  status: string;
-  providerTypeId: string;
-  createdAt: string;
-  updatedAt: string;
-  services: SerializedService[];
-  serviceConfigs?: Array<{
-    id: string;
-    serviceId: string;
-    duration: number;
-    price: number;
-    isOnlineAvailable: boolean;
-    isInPerson: boolean;
-    locationId: string | null;
-    createdAt: string;
-    updatedAt: string;
-    service: SerializedService;
-  }>;
-  providerType: {
-    name: string;
-    description: string | null;
-  };
-  requirementSubmissions?: Array<{
-    id: string;
-    requirementTypeId: string;
-    documentUrl: string | null;
-    documentMetadata: Record<string, any> | null;
-    createdAt: string;
-    updatedAt: string;
-    status?: RequirementsValidationStatus;
-    requirementType?: {
-      id: string;
-      name: string;
-      description: string | null;
-      validationType: string;
-    };
-  }>;
-  user: {
-    email: string;
-  };
-}
-
-// =============================================================================
-// VALIDATION CONFIGURATION TYPES
-// =============================================================================
-
-// Types for validation configurations (moved from hooks/types.ts)
+// Types for validation configurations
 export interface ValidationConfigBase {
   helpText?: string;
   validationError?: string;
@@ -330,7 +151,7 @@ export type RequirementType = {
   id: string;
   name: string;
   description?: string | null;
-  validationType: RequirementValidationType | string;
+  validationType: RequirementValidationType;
   isRequired: boolean;
   validationConfig?: ValidationConfig;
   displayPriority?: number;
@@ -345,33 +166,6 @@ export type RequirementType = {
 /**
  * Represents a provider's submission for a regulatory or business requirement.
  * Supports various submission types including documents, forms, and boolean validations.
- *
- * @interface RequirementSubmission
- *
- * @example
- * ```typescript
- * // Document submission for medical license
- * const licenseSubmission: RequirementSubmission = {
- *   requirementTypeId: "req-medical-license",
- *   providerId: "provider-123",
- *   status: RequirementsValidationStatus.PENDING,
- *   documentMetadata: {
- *     filename: "medical_license.pdf",
- *     url: "https://storage.example.com/docs/license.pdf",
- *     uploadedAt: "2024-01-15T10:30:00Z"
- *   },
- *   expiresAt: new Date("2025-12-31"),
- *   notes: "Medical license valid through 2025"
- * };
- *
- * // Boolean form submission
- * const consentSubmission: RequirementSubmission = {
- *   requirementTypeId: "req-hipaa-consent",
- *   value: true,
- *   status: RequirementsValidationStatus.APPROVED,
- *   validatedAt: new Date()
- * };
- * ```
  */
 export type RequirementSubmission = {
   /** Unique identifier for the submission (generated on save) */
@@ -383,7 +177,7 @@ export type RequirementSubmission = {
   /** Current validation status of the submission */
   status?: RequirementsValidationStatus;
   /** Metadata for document submissions including URLs and file info */
-  documentMetadata?: Record<string, any> | null; // Includes document URLs in the value field
+  documentMetadata?: Record<string, any> | null;
   /** Expiration date for time-sensitive requirements (e.g., licenses) */
   expiresAt?: Date | null;
   /** Additional notes or comments about the submission */
@@ -393,13 +187,13 @@ export type RequirementSubmission = {
   /** ID of the admin user who validated the submission */
   validatedById?: string | null;
   /** Form value for non-document submissions (text, boolean, number) */
-  value?: string | boolean | number | null; // For form submissions
+  value?: string | boolean | number | null;
   /** Additional value for "other" option in predefined lists */
-  otherValue?: string; // For "other" option in predefined lists
+  otherValue?: string;
 };
 
 // =============================================================================
-// FORM AND INPUT TYPES
+// FORM AND INPUT TYPES (Client-side)
 // =============================================================================
 
 export interface CreateProviderData {
@@ -420,7 +214,7 @@ export interface UpdateProviderData extends Partial<CreateProviderData> {
 }
 
 // =============================================================================
-// API RESPONSE TYPES
+// API RESPONSE TYPES (Client-side)
 // =============================================================================
 
 export interface ProviderApiResponse<T = any> {
@@ -431,49 +225,10 @@ export interface ProviderApiResponse<T = any> {
 }
 
 // =============================================================================
-// UTILITY TYPES
+// CLIENT-ONLY SERVICE TYPE
 // =============================================================================
 
-export type ProviderStatusType = keyof typeof ProviderStatus;
-export type RequirementStatusType = keyof typeof RequirementSubmissionStatus;
-
-// =============================================================================
-// PROVIDER INVITATION AND CONNECTION TYPES (moved from barrel export)
-// =============================================================================
-
-// Provider invitation types
-export type ProviderInvitationWithOrganization = ProviderInvitation & {
-  organization: Organization;
-  invitedBy?: {
-    name: string | null;
-    email: string | null;
-  } | null;
-  connection?: {
-    id: string;
-    status: ConnectionStatus;
-    acceptedAt: Date | null;
-  } | null;
-};
-
-export type OrganizationConnectionWithDetails = OrganizationProviderConnection & {
-  organization: Organization;
-  invitation?: {
-    id: string;
-    customMessage: string | null;
-    createdAt: Date;
-    invitedBy: {
-      name: string | null;
-      email: string | null;
-    } | null;
-  } | null;
-};
-
-// Enhanced Provider interface
-export interface Provider extends PrismaProvider {
-  showPrice: boolean; // Whether to display prices to patients looking to book
-}
-
-// Enhanced Service interface
+// Enhanced Service interface for client-side use
 export interface Service {
   id: string;
   name: string;
@@ -481,36 +236,6 @@ export interface Service {
   price: number;
   duration: number;
 }
-
-// Re-export Prisma types for convenience
-export type {
-  ConnectionStatus,
-  OrganizationProviderConnection,
-  ProviderInvitation,
-  ProviderInvitationStatus,
-};
-
-// =============================================================================
-// PRISMA INCLUDE CONFIGURATIONS
-// =============================================================================
-
-// Helper configuration for including provider relations
-export const includeProviderRelations = {
-  user: true,
-  typeAssignments: {
-    include: {
-      providerType: true,
-    },
-  },
-  services: true,
-  requirementSubmissions: {
-    include: {
-      requirementType: true,
-      validatedBy: true,
-    },
-  },
-  approvedBy: true,
-};
 
 // =============================================================================
 // DEFAULT CONFIGURATIONS
@@ -523,247 +248,37 @@ export const getDefaultProviderData = (): Partial<CreateProviderData> => ({
 });
 
 // =============================================================================
-// PRISMA-DERIVED TYPES
+// NOTE ON PRISMA ENUMS
 // =============================================================================
-
-// Provider with comprehensive relations for detailed views
-export type ProviderDetailSelect = Prisma.ProviderGetPayload<{
-  include: {
-    user: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-        phone: true;
-        whatsapp: true;
-        image: true;
-        role: true;
-      };
-    };
-    typeAssignments: {
-      include: {
-        providerType: {
-          select: {
-            id: true;
-            name: true;
-            description: true;
-            category: true;
-            isActive: true;
-          };
-        };
-      };
-    };
-    services: {
-      include: {
-        providerType: {
-          select: {
-            id: true;
-            name: true;
-            category: true;
-            description: true;
-          };
-        };
-      };
-    };
-    requirementSubmissions: {
-      include: {
-        requirementType: {
-          select: {
-            id: true;
-            name: true;
-            description: true;
-            category: true;
-            isRequired: true;
-            allowedFileTypes: true;
-            maxFileSize: true;
-          };
-        };
-        validatedBy: {
-          select: {
-            id: true;
-            name: true;
-            email: true;
-          };
-        };
-      };
-    };
-    organizationConnections: {
-      include: {
-        organization: {
-          select: {
-            id: true;
-            name: true;
-            email: true;
-            status: true;
-          };
-        };
-      };
-    };
-    approvedBy: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-    subscriptions: {
-      include: {
-        plan: {
-          select: {
-            id: true;
-            name: true;
-            basePrice: true;
-            currency: true;
-            interval: true;
-            includedSlots: true;
-          };
-        };
-      };
-    };
-  };
-}>;
-
-// Provider for list views (minimal relations)
-export type ProviderListSelect = Prisma.ProviderGetPayload<{
-  include: {
-    user: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-        image: true;
-      };
-    };
-    typeAssignments: {
-      include: {
-        providerType: {
-          select: {
-            id: true;
-            name: true;
-          };
-        };
-      };
-    };
-    _count: {
-      select: {
-        services: true;
-        requirementSubmissions: true;
-        organizationConnections: true;
-      };
-    };
-  };
-}>;
-
-// Provider with basic info for dropdowns and selectors
-export type ProviderBasicSelect = Prisma.ProviderGetPayload<{
-  include: {
-    user: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-    typeAssignments: {
-      include: {
-        providerType: {
-          select: {
-            name: true;
-          };
-        };
-      };
-    };
-  };
-}>;
-
-// Service with relations for provider service management
-export type ServiceDetailSelect = Prisma.ServiceGetPayload<{
-  include: {
-    providerType: {
-      select: {
-        id: true;
-        name: true;
-        category: true;
-        description: true;
-      };
-    };
-    providers: {
-      include: {
-        user: {
-          select: {
-            id: true;
-            name: true;
-          };
-        };
-      };
-    };
-    availabilityConfigs: {
-      select: {
-        id: true;
-        duration: true;
-        price: true;
-        isOnlineAvailable: true;
-        locationId: true;
-      };
-    };
-  };
-}>;
-
-// Requirement submission with relations for compliance tracking
-export type RequirementSubmissionDetailSelect = Prisma.RequirementSubmissionGetPayload<{
-  include: {
-    requirementType: {
-      select: {
-        id: true;
-        name: true;
-        description: true;
-        category: true;
-        isRequired: true;
-        allowedFileTypes: true;
-        maxFileSize: true;
-        displayPriority: true;
-      };
-    };
-    provider: {
-      include: {
-        user: {
-          select: {
-            id: true;
-            name: true;
-            email: true;
-          };
-        };
-      };
-    };
-    validatedBy: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-  };
-}>;
-
-// Provider invitation with relations
-export type ProviderInvitationDetailSelect = Prisma.ProviderInvitationGetPayload<{
-  include: {
-    organization: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-        description: true;
-        logo: true;
-        website: true;
-      };
-    };
-    invitedBy: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-  };
-}>;
+//
+// The following enums are defined in Prisma schema and should be imported
+// directly from '@prisma/client' where needed:
+//
+// - ProviderStatus (PENDING_APPROVAL, APPROVED, REJECTED, etc.)
+// - RequirementsValidationStatus (PENDING, APPROVED, REJECTED)
+// - RequirementValidationType (BOOLEAN, DOCUMENT, TEXT, etc.)
+// - Languages (English, IsiZulu, IsiXhosa, etc.)
+//
+// Example usage:
+// ```typescript
+// import { ProviderStatus, Languages } from '@prisma/client';
+// ```
+//
+// =============================================================================
+// NOTE ON SERVER DATA TYPES
+// =============================================================================
+//
+// For all server data (providers, services, requirements, etc.),
+// components should extract types directly from tRPC RouterOutputs:
+//
+// Example usage in components:
+// ```typescript
+// import { type RouterOutputs } from '@/utils/api';
+//
+// type Provider = RouterOutputs['providers']['getById'];
+// type ProviderList = RouterOutputs['providers']['search']['providers'];
+// type ServiceDetail = RouterOutputs['providers']['getServices'][number];
+// ```
+//
+// This ensures zero type drift between server and client code.
+// =============================================================================

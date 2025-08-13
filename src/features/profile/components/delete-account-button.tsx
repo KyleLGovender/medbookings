@@ -25,21 +25,13 @@ export function DeleteAccountButton({ hasServiceProvider }: { hasServiceProvider
 
   const handleDeleteAccount = async () => {
     try {
-      const result = await deleteAccountMutation.mutateAsync();
+      await deleteAccountMutation.mutateAsync();
 
-      if (result.success) {
-        toast({
-          title: 'Account deleted',
-          description: 'Your account has been successfully deleted.',
-        });
-        router.push('/');
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: result.error || 'Failed to delete account. Please try again.',
-        });
-      }
+      toast({
+        title: 'Account deleted',
+        description: 'Your account has been successfully deleted.',
+      });
+      router.push('/');
     } catch (error) {
       toast({
         variant: 'destructive',

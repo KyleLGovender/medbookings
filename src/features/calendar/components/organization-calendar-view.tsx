@@ -35,15 +35,12 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { CalendarErrorBoundary } from '@/features/calendar/components/error-boundary';
 import { CalendarSkeleton } from '@/features/calendar/components/loading';
-import {
-  AvailabilityWithRelations,
-  CalculatedAvailabilitySlotWithRelations,
-  CalendarEvent,
-} from '@/features/calendar/types/types';
+import { CalendarEvent } from '@/features/calendar/types/types';
 import { useOrganization } from '@/features/organizations/hooks/use-organization';
 import { useOrganizationProviderConnections } from '@/features/organizations/hooks/use-provider-connections';
-import { OrganizationProviderConnection } from '@/features/organizations/types/types';
+import { type RouterOutputs } from '@/utils/api';
 
+// TODO: Replace with proper tRPC type extraction
 import { useOrganizationAvailability } from '../hooks/use-availability';
 import {
   CalendarViewMode,
@@ -53,6 +50,11 @@ import {
   OrganizationProvider,
   OrganizationWeekViewProps,
 } from '../types/types';
+
+// Extract tRPC types for server data
+type AvailabilityWithRelations = any; // TODO: Replace with proper tRPC type extraction
+type CalculatedAvailabilitySlotWithRelations = any; // TODO: Replace with proper tRPC type extraction
+type OrganizationProviderConnection = any; // TODO: Replace with proper tRPC type extraction
 
 export function OrganizationCalendarView({
   organizationId,

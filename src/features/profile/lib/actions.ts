@@ -1,98 +1,110 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { getCurrentUser } from '@/lib/auth';
 
-import { getServerSession } from 'next-auth';
-
-import type { UpdateProfileRequestInput } from '@/features/profile/types/schemas';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-
-export async function checkServiceProvider(userId: string) {
-  const provider = await prisma.provider.findFirst({
-    where: { userId },
-  });
-  return !!provider;
-}
-
-export async function updateProfile(data: UpdateProfileRequestInput) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    return { success: false, error: 'Unauthorized' };
-  }
-
+/**
+ * Validate profile update and handle business logic
+ * OPTION C: Business logic only - returns minimal metadata for tRPC procedure
+ */
+export async function validateProfileUpdate(data: {
+  name?: string;
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+}): Promise<{
+  success: boolean;
+  validatedData?: typeof data & { userId: string };
+  error?: string;
+}> {
   try {
-    const updatedUser = await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        whatsapp: data.whatsapp,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        phone: true,
-        whatsapp: true,
-        role: true,
-      },
-    });
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return { success: false, error: 'Authentication required' };
+    }
 
-    // Revalidate the profile page
-    revalidatePath('/profile');
+    // Business logic validations
+    if (data.email && data.email.trim().length === 0) {
+      return { success: false, error: 'Email cannot be empty' };
+    }
 
-    return { success: true, user: updatedUser };
+    if (data.name && data.name.trim().length === 0) {
+      return { success: false, error: 'Name cannot be empty' };
+    }
+
+    // Email format validation
+    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      return { success: false, error: 'Invalid email format' };
+    }
+
+    // Phone format validation (basic)
+    if (data.phone && data.phone.length > 0 && !/^[+]?[\d\s\-()]+$/.test(data.phone)) {
+      return { success: false, error: 'Invalid phone number format' };
+    }
+
+    // WhatsApp format validation (basic)
+    if (data.whatsapp && data.whatsapp.length > 0 && !/^[+]?[\d\s\-()]+$/.test(data.whatsapp)) {
+      return { success: false, error: 'Invalid WhatsApp number format' };
+    }
+
+    // TODO: Send profile update notification
+    console.log(`📧 Profile update notification would be sent to: ${currentUser.email}`);
+
+    return {
+      success: true,
+      validatedData: {
+        ...data,
+        userId: currentUser.id,
+      },
+    };
   } catch (error) {
-    console.error('Update profile error:', error);
+    console.error('Profile update validation error:', error);
     return {
       success: false,
-      error: 'Failed to update profile. Please try again.',
+      error: error instanceof Error ? error.message : 'Failed to validate profile update',
     };
   }
 }
 
-export async function deleteUser() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    return { success: false, error: 'Unauthorized' };
-  }
-
-  const hasServiceProvider = await checkServiceProvider(session.user.id);
-  if (hasServiceProvider) {
-    return {
-      success: false,
-      error: 'Please delete your service provider profile first before deleting your account.',
-    };
-  }
-
+/**
+ * Validate account deletion and handle business logic
+ * OPTION C: Business logic only - returns minimal metadata for tRPC procedure
+ */
+export async function validateAccountDeletion(): Promise<{
+  success: boolean;
+  validatedData?: {
+    userId: string;
+    userEmail: string;
+  };
+  error?: string;
+}> {
   try {
-    // Delete the user and all related records in a transaction
-    await prisma.$transaction(async (tx) => {
-      // Delete account connections (OAuth)
-      await tx.account.deleteMany({
-        where: { userId: session.user.id },
-      });
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return { success: false, error: 'Authentication required' };
+    }
 
-      // Finally delete the user
-      await tx.user.delete({
-        where: { id: session.user.id },
-      });
-    });
+    if (!currentUser.email) {
+      return { success: false, error: 'User email is required for account deletion' };
+    }
 
-    // Revalidate the profile page
-    revalidatePath('/profile');
+    // Business logic checks would go here
+    // For example: check for active subscriptions, pending obligations, etc.
 
-    return { success: true };
+    // TODO: Send account deletion notification
+    console.log(`📧 Account deletion notification would be sent to: ${currentUser.email}`);
+
+    return {
+      success: true,
+      validatedData: {
+        userId: currentUser.id,
+        userEmail: currentUser.email,
+      },
+    };
   } catch (error) {
-    console.error('Delete user error:', error);
+    console.error('Account deletion validation error:', error);
     return {
       success: false,
-      error: 'Failed to delete account. Please try again or contact support.',
+      error: error instanceof Error ? error.message : 'Failed to validate account deletion',
     };
   }
 }

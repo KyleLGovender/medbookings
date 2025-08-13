@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { OrganizationBillingModel } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { CreditCard, Save } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -28,7 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 
 // Define schema for billing model updates
 const organizationBillingSchema = z.object({
-  billingModel: z.enum(['CONSOLIDATED', 'PER_LOCATION']),
+  billingModel: z.nativeEnum(OrganizationBillingModel),
 });
 
 // Define type based on the schema

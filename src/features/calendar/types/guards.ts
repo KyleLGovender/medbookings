@@ -2,38 +2,41 @@
 // CALENDAR FEATURE TYPE GUARDS
 // =============================================================================
 // Runtime type validation for calendar-specific types and API responses
+import { AvailabilityStatus, BookingStatus, SchedulingRule, SlotStatus } from '@prisma/client';
+
 import { isValidDate, isValidDateString, isValidUUID } from '@/types/guards';
+
+import { RecurrenceOption } from './types';
 
 // =============================================================================
 // ENUM GUARDS
 // =============================================================================
 
-export function isAvailabilityStatus(
-  value: unknown
-): value is 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' {
+export function isAvailabilityStatus(value: unknown): value is AvailabilityStatus {
   return (
-    typeof value === 'string' && ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED'].includes(value)
+    typeof value === 'string' &&
+    Object.values(AvailabilityStatus).includes(value as AvailabilityStatus)
   );
 }
 
-export function isSchedulingRule(
-  value: unknown
-): value is 'CONTINUOUS' | 'ON_THE_HOUR' | 'ON_THE_HALF_HOUR' {
+export function isBookingStatus(value: unknown): value is BookingStatus {
+  return typeof value === 'string' && Object.values(BookingStatus).includes(value as BookingStatus);
+}
+
+export function isSchedulingRule(value: unknown): value is SchedulingRule {
   return (
-    typeof value === 'string' && ['CONTINUOUS', 'ON_THE_HOUR', 'ON_THE_HALF_HOUR'].includes(value)
+    typeof value === 'string' && Object.values(SchedulingRule).includes(value as SchedulingRule)
   );
 }
 
-export function isSlotStatus(
-  value: unknown
-): value is 'AVAILABLE' | 'BOOKED' | 'BLOCKED' | 'INVALID' {
-  return typeof value === 'string' && ['AVAILABLE', 'BOOKED', 'BLOCKED', 'INVALID'].includes(value);
+export function isSlotStatus(value: unknown): value is SlotStatus {
+  return typeof value === 'string' && Object.values(SlotStatus).includes(value as SlotStatus);
 }
 
-export function isRecurrenceOption(
-  value: unknown
-): value is 'none' | 'daily' | 'weekly' | 'custom' {
-  return typeof value === 'string' && ['none', 'daily', 'weekly', 'custom'].includes(value);
+export function isRecurrenceOption(value: unknown): value is RecurrenceOption {
+  return (
+    typeof value === 'string' && Object.values(RecurrenceOption).includes(value as RecurrenceOption)
+  );
 }
 
 // =============================================================================
@@ -237,73 +240,16 @@ export function isValidSearchParams(value: unknown): value is {
 }
 
 // =============================================================================
-// API RESPONSE GUARDS
+// MIGRATION NOTES - API RESPONSE GUARDS REMOVED
 // =============================================================================
-
-export function isAvailabilityListResponse(value: unknown): value is Array<{
-  id: string;
-  title: string;
-  startTime: string;
-  endTime: string;
-  status: string;
-  provider: { user: { name: string } };
-}> {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item: unknown) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        'title' in item &&
-        'startTime' in item &&
-        'endTime' in item &&
-        'status' in item &&
-        'provider' in item &&
-        isValidUUID((item as any).id) &&
-        typeof (item as any).title === 'string' &&
-        isValidDateString((item as any).startTime) &&
-        isValidDateString((item as any).endTime) &&
-        isAvailabilityStatus((item as any).status) &&
-        typeof (item as any).provider === 'object' &&
-        (item as any).provider !== null &&
-        'user' in (item as any).provider &&
-        typeof (item as any).provider.user === 'object' &&
-        (item as any).provider.user !== null &&
-        'name' in (item as any).provider.user &&
-        typeof (item as any).provider.user.name === 'string'
-    )
-  );
-}
-
-export function isSlotSearchResponse(value: unknown): value is Array<{
-  id: string;
-  startTime: string;
-  endTime: string;
-  status: string;
-  service: { name: string; description?: string };
-  availability: { provider: { user: { name: string } } };
-}> {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item: unknown) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        'startTime' in item &&
-        'endTime' in item &&
-        'status' in item &&
-        'service' in item &&
-        'availability' in item &&
-        isValidUUID((item as any).id) &&
-        isValidDateString((item as any).startTime) &&
-        isValidDateString((item as any).endTime) &&
-        isSlotStatus((item as any).status) &&
-        typeof (item as any).service === 'object' &&
-        (item as any).service !== null &&
-        'name' in (item as any).service &&
-        typeof (item as any).service.name === 'string'
-    )
-  );
-}
+//
+// Server data validation guards have been removed as part of the dual-source
+// type safety architecture migration. These validated server response shapes
+// that are now handled by tRPC's automatic type inference.
+//
+// Removed guards:
+// - isAvailabilityListResponse (server availability list validation)
+// - isSlotSearchResponse (server slot search validation)
+//
+// Domain logic guards (enum validation, user input validation, etc.) remain
+// below as they represent client-side business logic validation.

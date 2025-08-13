@@ -3,6 +3,15 @@
 // =============================================================================
 // Validation schemas for providers feature forms and API endpoints
 // Organized by: Input Schemas -> Response Schemas -> Utility Schemas
+//
+// OPTION C COMPLIANT: Using z.nativeEnum() with Prisma enums
+// =============================================================================
+import {
+  ConnectionStatus,
+  Languages,
+  ProviderStatus,
+  RequirementsValidationStatus,
+} from '@prisma/client';
 import { z } from 'zod';
 
 // =============================================================================
@@ -30,14 +39,10 @@ export const updateProviderSchema = createProviderSchema.partial().extend({
   id: z.string().uuid(),
 });
 
-export const providerStatusSchema = z.enum([
-  'PENDING_APPROVAL',
-  'APPROVED',
-  'REJECTED',
-  'SUSPENDED',
-]);
+// Use Prisma enums directly with z.nativeEnum
+export const providerStatusSchema = z.nativeEnum(ProviderStatus);
 
-export const requirementStatusSchema = z.enum(['PENDING', 'APPROVED', 'REJECTED']);
+export const requirementStatusSchema = z.nativeEnum(RequirementsValidationStatus);
 
 // =============================================================================
 // RESPONSE SCHEMAS
@@ -79,7 +84,7 @@ export const basicInfoSchema = z.object({
     .min(50, 'Bio must be at least 50 characters')
     .max(500, 'Bio must be less than 500 characters'),
   image: z.string().min(1, 'Profile image is required'),
-  languages: z.array(z.string()).min(1, 'Please select at least one language'),
+  languages: z.array(z.nativeEnum(Languages)).min(1, 'Please select at least one language'),
   website: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
   email: z.string().email('Please enter a valid email address'),
   whatsapp: z.string().min(10, 'Please enter a valid WhatsApp number'),
@@ -109,6 +114,8 @@ export const servicesSchema = z.object({
       z.object({
         duration: z.coerce.number().min(1, 'Duration must be at least 1 minute'),
         price: z.coerce.number().min(0, 'Price cannot be negative'),
+        isOnlineAvailable: z.boolean().optional(),
+        isInPerson: z.boolean().optional(),
       })
     )
     .optional(),
@@ -153,7 +160,7 @@ export type InvitationResponse = z.infer<typeof InvitationResponseSchema>;
 
 // Schema for connection management
 export const ConnectionUpdateSchema = z.object({
-  status: z.enum(['ACCEPTED', 'SUSPENDED'] as const),
+  status: z.nativeEnum(ConnectionStatus),
 });
 
 export type ConnectionUpdate = z.infer<typeof ConnectionUpdateSchema>;

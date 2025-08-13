@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Organization } from '@prisma/client';
+import { SchedulingRule } from '@prisma/client';
 import { Calendar, Clock, MapPin, Repeat } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
@@ -37,28 +37,31 @@ import {
   getRecurrenceOptions,
 } from '@/features/calendar/lib/recurrence-utils';
 import { createAvailabilityDataSchema } from '@/features/calendar/types/schemas';
-import {
-  AvailabilityWithRelations,
-  CreateAvailabilityData,
-  CustomRecurrenceData,
-  RecurrenceOption,
-  SchedulingRule,
-} from '@/features/calendar/types/types';
+import { CustomRecurrenceData, RecurrenceOption } from '@/features/calendar/types/types';
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
+import { type RouterInputs, type RouterOutputs } from '@/utils/api';
+
+// Extract input type from tRPC procedure for zero type drift
+type CreateAvailabilityInput = RouterInputs['calendar']['create'];
+
+// Extract the availability type from the create mutation response
+// The create mutation returns an object with availability property that includes relations
+type CreateAvailabilityResponse = RouterOutputs['calendar']['create'];
+type CreatedAvailability = NonNullable<CreateAvailabilityResponse['availability']>;
 
 interface AvailabilityCreationFormProps {
   providerId: string;
   organizationId?: string;
   locationId?: string;
-  onSuccess?: (data: AvailabilityWithRelations) => void;
+  onSuccess?: (data: CreatedAvailability) => void;
   onCancel?: () => void;
 }
 
-type FormValues = CreateAvailabilityData;
+type FormValues = CreateAvailabilityInput;
 
 /**
  * Helper function to update date while preserving time
@@ -123,7 +126,7 @@ export function AvailabilityCreationForm({
   } = useProviderAssociatedServices(selectedProviderId);
 
   // Fetch organization locations
-  const organizationIds = userOrganizations.map((org: Organization) => org.id);
+  const organizationIds = userOrganizations.map((org) => org.id);
   const { data: availableLocations = [], isLoading: isLocationsLoading } =
     useOrganizationLocations(organizationIds);
 
@@ -178,7 +181,14 @@ export function AvailabilityCreationForm({
 
     setIsSubmitting(true);
     try {
-      await createMutation.mutateAsync(data);
+      // Ensure all Date fields are properly converted from form strings to Date objects
+      const submitData: CreateAvailabilityInput = {
+        ...data,
+        startTime: data.startTime instanceof Date ? data.startTime : new Date(data.startTime),
+        endTime: data.endTime instanceof Date ? data.endTime : new Date(data.endTime),
+      };
+
+      await createMutation.mutateAsync(submitData);
     } catch (error) {
       // Error handled by mutation onError callback
       console.error('Failed to create availability:', error);
@@ -188,9 +198,10 @@ export function AvailabilityCreationForm({
   };
 
   const handleCustomRecurrenceSave = (data: CustomRecurrenceData) => {
+    const startTime = watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime);
     const pattern = createRecurrencePattern(
       RecurrenceOption.CUSTOM,
-      watchStartTime,
+      startTime,
       data.selectedDays,
       data.endDate ? data.endDate.toISOString().split('T')[0] : undefined
     );
@@ -288,21 +299,33 @@ export function AvailabilityCreationForm({
                     <FormLabel>Date</FormLabel>
                     <FormControl>
                       <DatePicker
-                        date={field.value}
+                        date={
+                          field.value instanceof Date
+                            ? field.value
+                            : field.value
+                              ? new Date(field.value)
+                              : undefined
+                        }
                         onChange={(date) => {
                           if (date) {
                             // Update both start and end time dates
                             const currentStartTime = form.getValues('startTime');
                             const currentEndTime = form.getValues('endTime');
 
+                            const startTimeDate =
+                              currentStartTime instanceof Date
+                                ? currentStartTime
+                                : new Date(currentStartTime);
+                            const endTimeDate =
+                              currentEndTime instanceof Date
+                                ? currentEndTime
+                                : new Date(currentEndTime);
+
                             form.setValue(
                               'startTime',
-                              updateDatePreservingTime(currentStartTime, date)
+                              updateDatePreservingTime(startTimeDate, date)
                             );
-                            form.setValue(
-                              'endTime',
-                              updateDatePreservingTime(currentEndTime, date)
-                            );
+                            form.setValue('endTime', updateDatePreservingTime(endTimeDate, date));
                           }
                         }}
                       />
@@ -322,7 +345,10 @@ export function AvailabilityCreationForm({
                     <FormItem>
                       <FormLabel>Start Time</FormLabel>
                       <FormControl>
-                        <TimePicker date={field.value} onChange={field.onChange} />
+                        <TimePicker
+                          date={field.value instanceof Date ? field.value : new Date(field.value)}
+                          onChange={field.onChange}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -336,7 +362,10 @@ export function AvailabilityCreationForm({
                     <FormItem>
                       <FormLabel>End Time</FormLabel>
                       <FormControl>
-                        <TimePicker date={field.value} onChange={field.onChange} />
+                        <TimePicker
+                          date={field.value instanceof Date ? field.value : new Date(field.value)}
+                          onChange={field.onChange}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -358,7 +387,9 @@ export function AvailabilityCreationForm({
                 control={form.control}
                 name="recurrencePattern"
                 render={({ field }) => {
-                  const recurrenceOptions = getRecurrenceOptions(watchStartTime);
+                  const startTime =
+                    watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime);
+                  const recurrenceOptions = getRecurrenceOptions(startTime);
 
                   return (
                     <FormItem>
@@ -370,7 +401,11 @@ export function AvailabilityCreationForm({
                           if (option === RecurrenceOption.CUSTOM) {
                             setCustomRecurrenceModalOpen(true);
                           } else {
-                            const pattern = createRecurrencePattern(option, watchStartTime);
+                            const startTime =
+                              watchStartTime instanceof Date
+                                ? watchStartTime
+                                : new Date(watchStartTime);
+                            const pattern = createRecurrencePattern(option, startTime);
                             field.onChange(pattern);
                             form.setValue('isRecurring', option !== RecurrenceOption.NONE);
                           }

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Organization } from '@prisma/client';
+import { SchedulingRule } from '@prisma/client';
 import { Clock, MapPin, Repeat, Send, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -41,19 +41,27 @@ import {
   getRecurrenceOptions,
 } from '@/features/calendar/lib/recurrence-utils';
 import { createAvailabilityDataSchema } from '@/features/calendar/types/schemas';
-import {
-  AvailabilityWithRelations,
-  CreateAvailabilityData,
-  CustomRecurrenceData,
-  RecurrenceOption,
-  SchedulingRule,
-} from '@/features/calendar/types/types';
+import { CustomRecurrenceData, RecurrenceOption } from '@/features/calendar/types/types';
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
-import { OrganizationLocation } from '@/features/organizations/types/types';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
+import { type RouterInputs } from '@/utils/api';
+
+// Helper function to ensure we have a Date object
+const ensureDate = (value: string | Date | undefined): Date | undefined => {
+  if (!value) return undefined;
+  return typeof value === 'string' ? new Date(value) : value;
+};
+import { type RouterOutputs } from '@/utils/api';
+
+// Extract input type from tRPC procedure for zero type drift
+type CreateAvailabilityInput = RouterInputs['calendar']['create'];
+
+// Extract the availability type from the create mutation response
+type CreateAvailabilityResponse = RouterOutputs['calendar']['create'];
+type CreatedAvailability = NonNullable<CreateAvailabilityResponse['availability']>;
 
 // Using centralized OrganizationLocation type instead of local interface
 
@@ -63,11 +71,11 @@ interface AvailabilityProposalFormProps {
   locationId?: string;
   connectionId?: string;
   providerName?: string;
-  onSuccess?: (data: AvailabilityWithRelations) => void;
+  onSuccess?: (data: CreatedAvailability) => void;
   onCancel?: () => void;
 }
 
-interface ProposalFormData extends CreateAvailabilityData {
+interface ProposalFormData extends CreateAvailabilityInput {
   proposalNote?: string;
 }
 
@@ -128,7 +136,7 @@ export function AvailabilityProposalForm({
   } = useProviderAssociatedServices(providerId);
 
   // Fetch organization locations
-  const organizationIds = userOrganizations.map((org: Organization) => org.id);
+  const organizationIds = userOrganizations.map((org: any) => org.id);
   const { data: availableLocations = [], isLoading: isLocationsLoading } =
     useOrganizationLocations(organizationIds);
 
@@ -201,9 +209,10 @@ export function AvailabilityProposalForm({
 
   const handleCustomRecurrenceSave = (data: CustomRecurrenceData) => {
     const startTime = form.watch('startTime');
+    const startTimeDate = typeof startTime === 'string' ? new Date(startTime) : startTime;
     const pattern = createRecurrencePattern(
       RecurrenceOption.CUSTOM,
-      startTime,
+      startTimeDate,
       data.selectedDays,
       data.endDate ? data.endDate.toISOString().split('T')[0] : undefined
     );
@@ -287,7 +296,7 @@ export function AvailabilityProposalForm({
                     <FormLabel>Date</FormLabel>
                     <FormControl>
                       <DatePicker
-                        date={field.value}
+                        date={ensureDate(field.value)}
                         onChange={(date) => {
                           if (date) {
                             // Update both start and end time dates
@@ -325,7 +334,7 @@ export function AvailabilityProposalForm({
                     <FormItem>
                       <FormLabel>Start Time</FormLabel>
                       <FormControl>
-                        <TimePicker date={field.value} onChange={field.onChange} />
+                        <TimePicker date={ensureDate(field.value)} onChange={field.onChange} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -339,7 +348,7 @@ export function AvailabilityProposalForm({
                     <FormItem>
                       <FormLabel>End Time</FormLabel>
                       <FormControl>
-                        <TimePicker date={field.value} onChange={field.onChange} />
+                        <TimePicker date={ensureDate(field.value)} onChange={field.onChange} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -362,7 +371,8 @@ export function AvailabilityProposalForm({
                 name="recurrencePattern"
                 render={({ field }) => {
                   const startTime = form.watch('startTime');
-                  const recurrenceOptions = getRecurrenceOptions(startTime);
+                  const startTimeDate = ensureDate(startTime);
+                  const recurrenceOptions = startTimeDate ? getRecurrenceOptions(startTimeDate) : [];
 
                   return (
                     <FormItem>
@@ -374,8 +384,8 @@ export function AvailabilityProposalForm({
 
                           if (option === RecurrenceOption.CUSTOM) {
                             setCustomRecurrenceModalOpen(true);
-                          } else {
-                            const pattern = createRecurrencePattern(option, startTime);
+                          } else if (startTimeDate) {
+                            const pattern = createRecurrencePattern(option, startTimeDate);
                             field.onChange(pattern);
                             form.setValue('isRecurring', option !== RecurrenceOption.NONE);
                           }

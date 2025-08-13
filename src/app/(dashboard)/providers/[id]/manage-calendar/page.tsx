@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 
+import { AvailabilityStatus } from '@prisma/client';
 import { Calendar, Check, Edit, Pause, Trash2, X } from 'lucide-react';
 
 import {
@@ -32,7 +33,7 @@ import {
   useDeleteAvailability,
   useRejectAvailabilityProposal,
 } from '@/features/calendar/hooks/use-availability';
-import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
+import { CalendarEvent } from '@/features/calendar/types/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProviderAvailabilityPageProps {
@@ -157,7 +158,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
       setShowCancelDialog(true);
     } else if (selectedEvent) {
       // Provider-created availability - no reason needed
-      cancelMutation.mutate({ id: selectedEvent.id });
+      cancelMutation.mutate({ ids: [selectedEvent.id] });
     }
   };
 
@@ -222,10 +223,9 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
 
   const handleCancelConfirm = () => {
     if (selectedEvent) {
-      cancelMutation.mutate({
+      rejectMutation.mutate({
         id: selectedEvent.id,
         reason: cancellationReason,
-        scope: pendingSeriesScope || 'single',
       });
     }
     setShowCancelDialog(false);
@@ -270,7 +270,7 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
           setShowCancelDialog(true);
         } else {
           // Provider-created availability - no reason needed
-          cancelMutation.mutate({ id: selectedEvent.id, scope });
+          cancelMutation.mutate({ ids: [selectedEvent.id], scope });
         }
         break;
     }
@@ -647,9 +647,9 @@ export default function ProviderAvailabilityPage({ params }: ProviderAvailabilit
             <Button
               onClick={handleCancelConfirm}
               variant="secondary"
-              disabled={cancelMutation.isPending}
+              disabled={rejectMutation.isPending}
             >
-              {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Availability'}
+              {rejectMutation.isPending ? 'Cancelling...' : 'Cancel Availability'}
             </Button>
           </div>
         </DialogContent>

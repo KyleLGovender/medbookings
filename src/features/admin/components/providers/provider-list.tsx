@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { ProviderStatus } from '@prisma/client';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,19 +26,22 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { AdminProviderListSelect } from '@/features/admin/types/types';
-import type { AdminApprovalStatus } from '@/features/admin/types/types';
+import type { AdminFilterStatus } from '@/features/admin/types/types';
 import {
   useApproveProvider,
   useRejectProvider,
 } from '@/features/providers/hooks/use-admin-provider-approval';
 import { useAdminProviders } from '@/features/providers/hooks/use-admin-providers';
+import { type RouterOutputs } from '@/utils/api';
 
 import { StatusBadge } from '../../../../components/status-badge';
 import { RejectionModal } from '../ui/rejection-modal';
 
+type AdminProviders = RouterOutputs['admin']['getProviders'];
+type AdminProvider = AdminProviders[number];
+
 interface ProviderListProps {
-  initialStatus?: AdminApprovalStatus;
+  initialStatus?: AdminFilterStatus;
 }
 
 export function ProviderList({ initialStatus }: ProviderListProps) {
@@ -56,12 +61,12 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
     data: providers,
     isLoading,
     error,
-  } = useAdminProviders(statusFilter === 'all' ? undefined : (statusFilter as AdminApprovalStatus));
+  } = useAdminProviders(statusFilter === 'all' ? undefined : (statusFilter as AdminFilterStatus));
 
   const approveProviderMutation = useApproveProvider();
   const rejectProviderMutation = useRejectProvider();
 
-  const filteredProviders = providers?.filter((provider: AdminProviderListSelect) => {
+  const filteredProviders = providers?.filter((provider: AdminProvider) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -127,9 +132,9 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="PENDING_APPROVAL">Pending</SelectItem>
-                  <SelectItem value="APPROVED">Approved</SelectItem>
-                  <SelectItem value="REJECTED">Rejected</SelectItem>
+                  <SelectItem value={ProviderStatus.PENDING_APPROVAL}>Pending</SelectItem>
+                  <SelectItem value={ProviderStatus.APPROVED}>Approved</SelectItem>
+                  <SelectItem value={ProviderStatus.REJECTED}>Rejected</SelectItem>
                 </SelectContent>
               </Select>
               <Input
@@ -178,7 +183,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredProviders?.map((provider: AdminProviderListSelect) => (
+                    filteredProviders?.map((provider: AdminProvider) => (
                       <TableRow key={provider.id}>
                         <TableCell>
                           <div className="flex flex-col">
@@ -205,11 +210,11 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                         <TableCell>
                           <StatusBadge
                             status={
-                              provider.status === 'PENDING_APPROVAL'
+                              provider.status === ProviderStatus.PENDING_APPROVAL
                                 ? 'PENDING'
-                                : provider.status === 'REJECTED'
+                                : provider.status === ProviderStatus.REJECTED
                                   ? 'REJECTED'
-                                  : provider.status === 'SUSPENDED'
+                                  : provider.status === ProviderStatus.SUSPENDED
                                     ? 'SUSPENDED'
                                     : 'APPROVED'
                             }
@@ -229,7 +234,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          {provider.status === 'PENDING_APPROVAL' ? (
+                          {provider.status === ProviderStatus.PENDING_APPROVAL ? (
                             (() => {
                               const approvedRequirements =
                                 provider.requirementSubmissions?.filter(

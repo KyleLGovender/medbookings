@@ -1,3 +1,4 @@
+import { AvailabilityStatus } from '@prisma/client';
 import { Repeat } from 'lucide-react';
 
 import {
@@ -5,7 +6,7 @@ import {
   getEventsForDay,
   getWorkingTimeRange,
 } from '@/features/calendar/lib/calendar-utils';
-import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
+import { CalendarEvent } from '@/features/calendar/types/types';
 
 import { DayViewProps } from './types';
 

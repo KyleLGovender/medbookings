@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { ProviderInvitationStatus } from '@prisma/client';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   AlertTriangle,
@@ -30,8 +31,11 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useRespondToInvitation } from '@/features/providers/hooks/use-organization-connections';
-import type { ProviderInvitationWithOrganization } from '@/features/providers/types/types';
 import { useToast } from '@/hooks/use-toast';
+import { type RouterOutputs } from '@/utils/api';
+
+type ProviderInvitationWithOrganization =
+  RouterOutputs['providers']['getInvitations']['invitations'][number];
 
 interface InvitationCardProps {
   invitation: ProviderInvitationWithOrganization;
@@ -40,37 +44,37 @@ interface InvitationCardProps {
 
 // Status configuration for badges and icons
 const statusConfig = {
-  PENDING: {
+  [ProviderInvitationStatus.PENDING]: {
     icon: Clock,
     label: 'Pending',
     variant: 'secondary' as const,
     description: 'Awaiting your response',
   },
-  ACCEPTED: {
+  [ProviderInvitationStatus.ACCEPTED]: {
     icon: Check,
     label: 'Accepted',
     variant: 'default' as const,
     description: 'You have joined this organization',
   },
-  REJECTED: {
+  [ProviderInvitationStatus.REJECTED]: {
     icon: X,
     label: 'Rejected',
     variant: 'destructive' as const,
     description: 'You declined this invitation',
   },
-  CANCELLED: {
+  [ProviderInvitationStatus.CANCELLED]: {
     icon: X,
     label: 'Cancelled',
     variant: 'outline' as const,
     description: 'Invitation was cancelled',
   },
-  EXPIRED: {
+  [ProviderInvitationStatus.EXPIRED]: {
     icon: AlertTriangle,
     label: 'Expired',
     variant: 'destructive' as const,
     description: 'Invitation has expired',
   },
-  DELIVERY_FAILED: {
+  [ProviderInvitationStatus.DELIVERY_FAILED]: {
     icon: Mail,
     label: 'Delivery Failed',
     variant: 'destructive' as const,
@@ -116,7 +120,7 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
     });
   };
 
-  const StatusBadge = ({ status }: { status: keyof typeof statusConfig }) => {
+  const StatusBadge = ({ status }: { status: ProviderInvitationStatus }) => {
     const config = statusConfig[status];
     const IconComponent = config.icon;
 
@@ -129,7 +133,7 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
   };
 
   const isExpired = new Date(invitation.expiresAt) < new Date();
-  const isPending = invitation.status === 'PENDING' && !isExpired;
+  const isPending = invitation.status === ProviderInvitationStatus.PENDING && !isExpired;
 
   return (
     <>
@@ -265,7 +269,7 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
           )}
 
           {/* Status Messages */}
-          {invitation.status === 'ACCEPTED' && invitation.connection && (
+          {invitation.status === ProviderInvitationStatus.ACCEPTED && invitation.connection && (
             <div className="rounded-md bg-green-50 p-3 dark:bg-green-950/30">
               <p className="text-sm text-green-800 dark:text-green-200">
                 ✅ You are connected to this organization and can now schedule availability with
@@ -274,7 +278,7 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
             </div>
           )}
 
-          {invitation.status === 'REJECTED' && (
+          {invitation.status === ProviderInvitationStatus.REJECTED && (
             <div className="rounded-md bg-red-50 p-3 dark:bg-red-950/30">
               <p className="text-sm text-red-800 dark:text-red-200">
                 You declined this invitation.
@@ -285,7 +289,7 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
             </div>
           )}
 
-          {isExpired && invitation.status === 'PENDING' && (
+          {isExpired && invitation.status === ProviderInvitationStatus.PENDING && (
             <div className="rounded-md bg-orange-50 p-3 dark:bg-orange-950/30">
               <p className="text-sm text-orange-800 dark:text-orange-200">
                 ⏰ This invitation has expired. Contact the organization if you&apos;re still

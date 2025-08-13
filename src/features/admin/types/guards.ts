@@ -2,23 +2,23 @@
 // ADMIN FEATURE TYPE GUARDS
 // =============================================================================
 // Runtime type validation for admin-specific types and API responses
+import { UserRole } from '@prisma/client';
+
 import { isValidDateString, isValidEmail, isValidPhone, isValidUUID } from '@/types/guards';
+
+import { AdminAction, AdminActionType } from './types';
 
 // =============================================================================
 // ENUM GUARDS
 // =============================================================================
 
-export function isUserRole(value: unknown): value is 'USER' | 'ADMIN' | 'SUPER_ADMIN' {
-  return typeof value === 'string' && ['USER', 'ADMIN', 'SUPER_ADMIN'].includes(value);
+export function isUserRole(value: unknown): value is UserRole {
+  return typeof value === 'string' && Object.values(UserRole).includes(value as UserRole);
 }
 
-export function isAdminActionType(
-  value: unknown
-): value is 'APPROVE' | 'REJECT' | 'SUSPEND' | 'ACTIVATE' | 'DELETE' {
-  return (
-    typeof value === 'string' &&
-    ['APPROVE', 'REJECT', 'SUSPEND', 'ACTIVATE', 'DELETE'].includes(value)
-  );
+export function isAdminActionType(value: unknown): value is AdminActionType {
+  // Use the AdminAction enum values to validate
+  return typeof value === 'string' && Object.values(AdminAction).includes(value as any);
 }
 
 export function isEntityType(
@@ -384,103 +384,20 @@ export function isValidBroadcastMessage(value: unknown): value is {
 }
 
 // =============================================================================
-// API RESPONSE GUARDS
+// MIGRATION NOTES - API RESPONSE GUARDS REMOVED
 // =============================================================================
-
-export function isUserListResponse(value: unknown): value is Array<{
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  isActive: boolean;
-  createdAt: string;
-  lastLoginAt?: string;
-}> {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item: unknown) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        'name' in item &&
-        'email' in item &&
-        'role' in item &&
-        'isActive' in item &&
-        'createdAt' in item &&
-        isValidUUID((item as any).id) &&
-        typeof (item as any).name === 'string' &&
-        isValidEmail((item as any).email) &&
-        isUserRole((item as any).role) &&
-        typeof (item as any).isActive === 'boolean' &&
-        isValidDateString((item as any).createdAt) &&
-        (!(item as any).lastLoginAt || isValidDateString((item as any).lastLoginAt))
-    )
-  );
-}
-
-export function isAuditLogListResponse(value: unknown): value is Array<{
-  id: string;
-  userId: string;
-  userName: string;
-  action: string;
-  entityType: string;
-  entityId: string;
-  timestamp: string;
-  ipAddress?: string;
-}> {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item: unknown) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        'userId' in item &&
-        'userName' in item &&
-        'action' in item &&
-        'entityType' in item &&
-        'entityId' in item &&
-        'timestamp' in item &&
-        isValidUUID((item as any).id) &&
-        isValidUUID((item as any).userId) &&
-        typeof (item as any).userName === 'string' &&
-        isAuditActionType((item as any).action) &&
-        isEntityType((item as any).entityType) &&
-        isValidUUID((item as any).entityId) &&
-        isValidDateString((item as any).timestamp) &&
-        (!(item as any).ipAddress || typeof (item as any).ipAddress === 'string')
-    )
-  );
-}
-
-export function isSystemConfigListResponse(value: unknown): value is Array<{
-  key: string;
-  value: string | number | boolean | null;
-  description?: string;
-  category?: string;
-  isPublic: boolean;
-}> {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item: unknown) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'key' in item &&
-        'value' in item &&
-        'isPublic' in item &&
-        typeof (item as any).key === 'string' &&
-        ((item as any).value === null ||
-          typeof (item as any).value === 'string' ||
-          typeof (item as any).value === 'number' ||
-          typeof (item as any).value === 'boolean') &&
-        typeof (item as any).isPublic === 'boolean' &&
-        (!(item as any).description || typeof (item as any).description === 'string') &&
-        (!(item as any).category || typeof (item as any).category === 'string')
-    )
-  );
-}
+//
+// API response guards for server data structures have been removed as part of
+// the dual-source type safety architecture migration. These validated server
+// response shapes that are now handled by tRPC's automatic type inference.
+//
+// Removed guards:
+// - isUserListResponse (server data validation)
+// - isAuditLogListResponse (server data validation)
+// - isSystemConfigListResponse (server data validation)
+//
+// Domain logic guards (enum validation, user input validation, etc.) remain
+// below as they represent client-side business logic validation.
 
 // =============================================================================
 // SEARCH AND FILTER GUARDS

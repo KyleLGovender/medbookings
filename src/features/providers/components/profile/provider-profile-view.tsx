@@ -51,8 +51,8 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
   // Check if current user is the owner of this profile
   const isOwner = userId === provider.userId;
 
-  // Get all provider types from the providerTypes array
-  const providerTypes = provider.providerTypes || [];
+  // Get all provider types from the typeAssignments array
+  const providerTypes = provider.typeAssignments?.map(assignment => assignment.providerType) || [];
   const hasMultipleTypes = providerTypes.length > 1;
 
   return (
@@ -208,7 +208,7 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
               .sort((a: any, b: any) => (a.displayPriority ?? 999) - (b.displayPriority ?? 999))
               .map((service: any) => {
                 // Get service configuration with fallback to defaults (client-side logic)
-                const customConfig = provider.serviceConfigs?.find(
+                const customConfig = provider.availabilityConfigs?.find(
                   (config: any) => config.serviceId === service.id
                 );
                 const isCustomConfig = !!customConfig;

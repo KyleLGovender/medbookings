@@ -2,45 +2,23 @@
 // BILLING FEATURE TYPE GUARDS
 // =============================================================================
 // Runtime type validation for billing-specific types and API responses
-import { isValidDateString, isValidEmail, isValidUUID } from '@/types/guards';
+import { BillingEntity, BillingInterval, PaymentStatus, SubscriptionStatus } from '@prisma/client';
+
+import { isValidDateString, isValidUUID } from '@/types/guards';
 
 // =============================================================================
 // ENUM GUARDS
 // =============================================================================
 
-export function isSubscriptionStatus(
-  value: unknown
-): value is
-  | 'ACTIVE'
-  | 'CANCELLED'
-  | 'PAST_DUE'
-  | 'UNPAID'
-  | 'INCOMPLETE'
-  | 'INCOMPLETE_EXPIRED'
-  | 'TRIALING'
-  | 'PAUSED' {
+export function isSubscriptionStatus(value: unknown): value is SubscriptionStatus {
   return (
     typeof value === 'string' &&
-    [
-      'ACTIVE',
-      'CANCELLED',
-      'PAST_DUE',
-      'UNPAID',
-      'INCOMPLETE',
-      'INCOMPLETE_EXPIRED',
-      'TRIALING',
-      'PAUSED',
-    ].includes(value)
+    Object.values(SubscriptionStatus).includes(value as SubscriptionStatus)
   );
 }
 
-export function isPaymentStatus(
-  value: unknown
-): value is 'PENDING' | 'PROCESSING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED' | 'REFUNDED' {
-  return (
-    typeof value === 'string' &&
-    ['PENDING', 'PROCESSING', 'SUCCEEDED', 'FAILED', 'CANCELLED', 'REFUNDED'].includes(value)
-  );
+export function isPaymentStatus(value: unknown): value is PaymentStatus {
+  return typeof value === 'string' && Object.values(PaymentStatus).includes(value as PaymentStatus);
 }
 
 export function isInvoiceStatus(
@@ -51,8 +29,15 @@ export function isInvoiceStatus(
   );
 }
 
-export function isBillingInterval(value: unknown): value is 'MONTHLY' | 'YEARLY' | 'ONE_TIME' {
-  return typeof value === 'string' && ['MONTHLY', 'YEARLY', 'ONE_TIME'].includes(value);
+export function isBillingInterval(
+  value: unknown
+): value is BillingInterval | 'YEARLY' | 'ONE_TIME' {
+  // Check Prisma enum first, then domain-specific extensions
+  return (
+    typeof value === 'string' &&
+    (Object.values(BillingInterval).includes(value as BillingInterval) ||
+      ['YEARLY', 'ONE_TIME'].includes(value))
+  );
 }
 
 export function isSubscriptionEntityType(
@@ -399,133 +384,20 @@ export function isValidUsageAggregation(value: unknown): value is {
 }
 
 // =============================================================================
-// API RESPONSE GUARDS
+// MIGRATION NOTES - API RESPONSE GUARDS REMOVED
 // =============================================================================
-
-export function isSubscriptionListResponse(value: unknown): value is Array<{
-  id: string;
-  status: string;
-  currentPeriodStart: string;
-  currentPeriodEnd: string;
-  plan: { id: string; name: string; basePrice: number; currency: string };
-  entity: { type: string; id: string; name: string };
-}> {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item: unknown) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        'status' in item &&
-        'currentPeriodStart' in item &&
-        'currentPeriodEnd' in item &&
-        'plan' in item &&
-        'entity' in item &&
-        isValidUUID((item as any).id) &&
-        isSubscriptionStatus((item as any).status) &&
-        isValidDateString((item as any).currentPeriodStart) &&
-        isValidDateString((item as any).currentPeriodEnd) &&
-        typeof (item as any).plan === 'object' &&
-        (item as any).plan !== null &&
-        'id' in (item as any).plan &&
-        'name' in (item as any).plan &&
-        'basePrice' in (item as any).plan &&
-        'currency' in (item as any).plan &&
-        isValidUUID((item as any).plan.id) &&
-        typeof (item as any).plan.name === 'string' &&
-        typeof (item as any).plan.basePrice === 'number' &&
-        typeof (item as any).plan.currency === 'string' &&
-        isValidSubscriptionEntity((item as any).entity)
-    )
-  );
-}
-
-export function isPaymentListResponse(value: unknown): value is Array<{
-  id: string;
-  amount: number;
-  currency: string;
-  status: string;
-  createdAt: string;
-  description?: string;
-  customer: { id: string; name: string; email: string };
-}> {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item: unknown) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        'amount' in item &&
-        'currency' in item &&
-        'status' in item &&
-        'createdAt' in item &&
-        'customer' in item &&
-        isValidUUID((item as any).id) &&
-        typeof (item as any).amount === 'number' &&
-        (item as any).amount >= 0 &&
-        typeof (item as any).currency === 'string' &&
-        (item as any).currency.length === 3 &&
-        isPaymentStatus((item as any).status) &&
-        isValidDateString((item as any).createdAt) &&
-        typeof (item as any).customer === 'object' &&
-        (item as any).customer !== null &&
-        'id' in (item as any).customer &&
-        'name' in (item as any).customer &&
-        'email' in (item as any).customer &&
-        isValidUUID((item as any).customer.id) &&
-        typeof (item as any).customer.name === 'string' &&
-        isValidEmail((item as any).customer.email) &&
-        (!(item as any).description || typeof (item as any).description === 'string')
-    )
-  );
-}
-
-export function isInvoiceListResponse(value: unknown): value is Array<{
-  id: string;
-  status: string;
-  amountDue: number;
-  amountPaid: number;
-  currency: string;
-  invoiceDate: string;
-  dueDate?: string;
-  customer: { id: string; name: string; email: string };
-}> {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item: unknown) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        'status' in item &&
-        'amountDue' in item &&
-        'amountPaid' in item &&
-        'currency' in item &&
-        'invoiceDate' in item &&
-        'customer' in item &&
-        isValidUUID((item as any).id) &&
-        isInvoiceStatus((item as any).status) &&
-        typeof (item as any).amountDue === 'number' &&
-        (item as any).amountDue >= 0 &&
-        typeof (item as any).amountPaid === 'number' &&
-        (item as any).amountPaid >= 0 &&
-        typeof (item as any).currency === 'string' &&
-        (item as any).currency.length === 3 &&
-        isValidDateString((item as any).invoiceDate) &&
-        (!(item as any).dueDate || isValidDateString((item as any).dueDate)) &&
-        typeof (item as any).customer === 'object' &&
-        (item as any).customer !== null &&
-        'id' in (item as any).customer &&
-        'name' in (item as any).customer &&
-        'email' in (item as any).customer &&
-        isValidUUID((item as any).customer.id) &&
-        typeof (item as any).customer.name === 'string' &&
-        isValidEmail((item as any).customer.email)
-    )
-  );
-}
+//
+// Server data validation guards have been removed as part of the dual-source
+// type safety architecture migration. These validated server response shapes
+// that are now handled by tRPC's automatic type inference.
+//
+// Removed guards:
+// - isSubscriptionListResponse (server subscription list validation)
+// - isPaymentListResponse (server payment list validation)
+// - isInvoiceListResponse (server invoice list validation)
+//
+// Domain logic guards (enum validation, user input validation, etc.) remain
+// below as they represent client-side business logic validation.
 
 // =============================================================================
 // SEARCH AND FILTER GUARDS

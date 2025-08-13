@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { ConnectionStatus } from '@prisma/client';
 import { format } from 'date-fns';
 import {
   Building2,
@@ -38,8 +39,11 @@ import {
   useDeleteConnection,
   useUpdateConnection,
 } from '@/features/providers/hooks/use-organization-connections';
-import type { OrganizationConnectionWithDetails } from '@/features/providers/types/types';
 import { useToast } from '@/hooks/use-toast';
+import { type RouterOutputs } from '@/utils/api';
+
+type OrganizationConnectionWithDetails =
+  RouterOutputs['providers']['getConnections']['connections'][number];
 
 interface ConnectionCardProps {
   connection: OrganizationConnectionWithDetails;
@@ -48,22 +52,22 @@ interface ConnectionCardProps {
 
 // Status configuration for badges
 const statusConfig = {
-  PENDING: {
+  [ConnectionStatus.PENDING]: {
     label: 'Pending',
     variant: 'secondary' as const,
     description: 'Connection is being established',
   },
-  ACCEPTED: {
+  [ConnectionStatus.ACCEPTED]: {
     label: 'Active',
     variant: 'default' as const,
     description: 'You can schedule availability',
   },
-  REJECTED: {
+  [ConnectionStatus.REJECTED]: {
     label: 'Rejected',
     variant: 'destructive' as const,
     description: 'Connection was rejected',
   },
-  SUSPENDED: {
+  [ConnectionStatus.SUSPENDED]: {
     label: 'Suspended',
     variant: 'outline' as const,
     description: 'Connection is temporarily suspended',
@@ -147,12 +151,13 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
     } else {
       updateConnectionMutation.mutate({
         connectionId: connection.id,
-        status: pendingAction === 'suspend' ? 'SUSPENDED' : 'ACCEPTED',
+        status:
+          pendingAction === 'suspend' ? ConnectionStatus.SUSPENDED : ConnectionStatus.ACCEPTED,
       });
     }
   };
 
-  const StatusBadge = ({ status }: { status: keyof typeof statusConfig }) => {
+  const StatusBadge = ({ status }: { status: ConnectionStatus }) => {
     const config = statusConfig[status];
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
@@ -217,7 +222,7 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
               </div>
             </div>
 
-            {showActions && connection.status !== 'REJECTED' && (
+            {showActions && connection.status !== ConnectionStatus.REJECTED && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -231,14 +236,14 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {connection.status === 'ACCEPTED' && (
+                  {connection.status === ConnectionStatus.ACCEPTED && (
                     <DropdownMenuItem onClick={handleSuspend} className="flex items-center gap-2">
                       <Pause className="h-4 w-4" />
                       Suspend Connection
                     </DropdownMenuItem>
                   )}
 
-                  {connection.status === 'SUSPENDED' && (
+                  {connection.status === ConnectionStatus.SUSPENDED && (
                     <DropdownMenuItem
                       onClick={handleReactivate}
                       className="flex items-center gap-2"
@@ -342,7 +347,7 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
           )}
 
           {/* Status Messages */}
-          {connection.status === 'SUSPENDED' && (
+          {connection.status === ConnectionStatus.SUSPENDED && (
             <div className="rounded-md bg-orange-50 p-3 dark:bg-orange-950/30">
               <p className="text-sm text-orange-800 dark:text-orange-200">
                 ⏸️ This connection is suspended. Reactivate it to schedule availability again.
@@ -350,7 +355,7 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
             </div>
           )}
 
-          {connection.status === 'ACCEPTED' && (
+          {connection.status === ConnectionStatus.ACCEPTED && (
             <div className="rounded-md bg-green-50 p-3 dark:bg-green-950/30">
               <p className="text-sm text-green-800 dark:text-green-200">
                 ✅ Active connection - you can schedule availability with this organization.

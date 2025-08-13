@@ -1,7 +1,9 @@
-import { api, type RouterOutputs } from '@/utils/api';
+import { ConnectionStatus } from '@prisma/client';
 
-// Infer the type from the tRPC router output
-export type ProviderConnection = RouterOutputs['organizations']['getProviderConnections'][number];
+import { api } from '@/utils/api';
+
+// Type for connection statuses that can be updated
+type UpdatableConnectionStatus = Extract<ConnectionStatus, 'ACCEPTED' | 'SUSPENDED'>;
 
 export function useOrganizationProviderConnections(organizationId: string) {
   return api.organizations.getProviderConnections.useQuery(
@@ -30,7 +32,7 @@ export function useManageOrganizationProviderConnection(
       utils.organizations.getProviderConnections.invalidate({ organizationId });
       options.onSuccess?.(data, variables);
     },
-    onError: options.onError,
+    onError: (error) => options.onError?.(error as any),
   });
 
   // Delete provider connection
@@ -40,14 +42,14 @@ export function useManageOrganizationProviderConnection(
       utils.organizations.getProviderConnections.invalidate({ organizationId });
       options.onSuccess?.(data, variables);
     },
-    onError: options.onError,
+    onError: (error) => options.onError?.(error as any),
   });
 
   return {
     mutate: (params: {
       connectionId: string;
       action: 'update' | 'delete';
-      data?: { status: 'ACCEPTED' | 'SUSPENDED' };
+      data?: { status: UpdatableConnectionStatus };
     }) => {
       if (params.action === 'update' && params.data?.status) {
         updateConnection.mutate({
@@ -62,7 +64,7 @@ export function useManageOrganizationProviderConnection(
         });
       }
     },
-    isLoading: updateConnection.isLoading || deleteConnection.isLoading,
+    isLoading: updateConnection.isPending || deleteConnection.isPending,
     error: updateConnection.error || deleteConnection.error,
   };
 }

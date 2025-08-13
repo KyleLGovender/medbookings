@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { Languages } from '@prisma/client';
 import { X } from 'lucide-react';
 import { useFormContext } from 'react-hook-form';
 
@@ -18,7 +19,6 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { SUPPORTED_LANGUAGES } from '@/features/providers/hooks/types';
 
 import { ProfileImageUploader } from './profile-image-uploader';
 
@@ -170,13 +170,13 @@ export function BasicInfoSection() {
                 <SelectValue placeholder="Select languages you speak" />
               </SelectTrigger>
               <SelectContent>
-                {SUPPORTED_LANGUAGES.filter((lang) => !selectedLanguages.includes(lang)).map(
-                  (language) => (
+                {Object.values(Languages)
+                  .filter((lang) => !selectedLanguages.includes(lang))
+                  .map((language) => (
                     <SelectItem key={language} value={language}>
                       {language}
                     </SelectItem>
-                  )
-                )}
+                  ))}
               </SelectContent>
             </Select>
           </div>

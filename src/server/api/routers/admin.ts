@@ -1,8 +1,6 @@
-import { OrganizationStatus, ProviderStatus } from '@prisma/client';
 import { z } from 'zod';
 
 import {
-  adminRequirementRouteParamsSchema,
   adminRouteParamsSchema,
   adminSearchParamsSchema,
   approveOrganizationRequestSchema,
@@ -12,9 +10,119 @@ import {
   rejectProviderRequestSchema,
   rejectRequirementRequestSchema,
 } from '@/features/admin/types/schemas';
+import { validateProviderRequirementsBusinessLogic } from '@/features/providers/lib/actions';
 import { adminProcedure, createTRPCRouter } from '@/server/trpc';
 
 export const adminRouter = createTRPCRouter({
+  /*
+   * ====================================
+   * DASHBOARD STATISTICS - QUERIES
+   * ====================================
+   * Endpoints for admin dashboard data
+   */
+
+  /**
+   * Get dashboard statistics (admin)
+   * Provides platform-wide statistics for admin dashboard
+   */
+  getDashboardStats: adminProcedure.query(async ({ ctx }) => {
+    // Get platform statistics
+    const [
+      totalUsers,
+      totalProviders,
+      totalOrganizations,
+      pendingProvidersCount,
+      pendingOrganizationsCount,
+      activeBookings,
+    ] = await Promise.all([
+      ctx.prisma.user.count(),
+      ctx.prisma.provider.count({ where: { status: 'ACTIVE' } }),
+      ctx.prisma.organization.count({ where: { status: 'ACTIVE' } }),
+      ctx.prisma.provider.count({ where: { status: 'PENDING_APPROVAL' } }),
+      ctx.prisma.organization.count({ where: { status: 'PENDING_APPROVAL' } }),
+      ctx.prisma.booking.count({ where: { status: 'CONFIRMED' } }),
+    ]);
+
+    return {
+      totalUsers,
+      totalProviders,
+      totalOrganizations,
+      pendingProviders: pendingProvidersCount,
+      pendingOrganizations: pendingOrganizationsCount,
+      activeBookings,
+    };
+  }),
+
+  /**
+   * Get pending providers for dashboard (admin)
+   * Provides summary data of providers awaiting approval
+   */
+  getPendingProviders: adminProcedure.query(async ({ ctx }) => {
+    const pendingProvidersData = await ctx.prisma.provider.findMany({
+      where: { status: 'PENDING_APPROVAL' },
+      include: {
+        user: true,
+        typeAssignments: {
+          include: { providerType: true },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return pendingProvidersData.map((provider) => {
+      const providerTypeName = provider.typeAssignments[0]?.providerType?.name || 'Unknown';
+
+      return {
+        id: provider.id,
+        email: provider.user.email || 'No email',
+        name: provider.name,
+        providerType: providerTypeName,
+        submittedAt: provider.createdAt,
+        requirementsStatus: 'pending' as const,
+        totalRequirements: 0,
+        approvedRequirements: 0,
+      };
+    });
+  }),
+
+  /**
+   * Get pending organizations for dashboard (admin)
+   * Provides summary data of organizations awaiting approval
+   */
+  getPendingOrganizations: adminProcedure.query(async ({ ctx }) => {
+    const pendingOrganizationsData = await ctx.prisma.organization.findMany({
+      where: { status: 'PENDING_APPROVAL' },
+      include: {
+        locations: true,
+        memberships: {
+          where: { role: 'OWNER' },
+          include: { user: true },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return pendingOrganizationsData.map((org) => {
+      const owner = org.memberships.find((m) => m.role === 'OWNER')?.user;
+
+      return {
+        id: org.id,
+        name: org.name,
+        type: 'Healthcare Facility' as const,
+        ownerEmail: owner?.email || 'No email',
+        submittedAt: org.createdAt,
+        locationsCount: org.locations.length,
+      };
+    });
+  }),
+
+  /*
+   * ====================================
+   * PROVIDER MANAGEMENT - QUERIES
+   * ====================================
+   * Endpoints for retrieving provider data
+   */
+
   /**
    * Get all providers (admin)
    * Migrated from: GET /api/admin/providers
@@ -119,18 +227,42 @@ export const adminRouter = createTRPCRouter({
       return provider.requirementSubmissions;
     }),
 
+  /*
+   * ====================================
+   * PROVIDER MANAGEMENT - MUTATIONS
+   * ====================================
+   * Endpoints for provider approval/rejection workflows
+   */
+
   /**
    * Approve provider
    * Migrated from: POST /api/admin/providers/[id]/approve
+   * OPTION C COMPLIANT: Uses business logic validation from server action
    */
   approveProvider: adminProcedure
     .input(adminRouteParamsSchema.merge(approveProviderRequestSchema))
     .mutation(async ({ ctx, input }) => {
-      // Check if all required requirements are approved
+      // Get provider with all requirements data for validation
       const provider = await ctx.prisma.provider.findUnique({
         where: { id: input.id },
         include: {
+          typeAssignments: {
+            include: {
+              providerType: {
+                include: {
+                  requirements: {
+                    where: { isRequired: true },
+                  },
+                },
+              },
+            },
+          },
           requirementSubmissions: {
+            where: {
+              requirementType: {
+                isRequired: true,
+              },
+            },
             include: {
               requirementType: true,
             },
@@ -142,20 +274,20 @@ export const adminRouter = createTRPCRouter({
         throw new Error('Provider not found');
       }
 
+      // Use the business logic validation function (Option C compliant)
+      const validationResult = await validateProviderRequirementsBusinessLogic(
+        provider.typeAssignments,
+        provider.requirementSubmissions
+      );
+
       // Check if all required requirements are approved
-      const requiredSubmissions = provider.requirementSubmissions.filter(
-        (submission) => submission.requirementType.isRequired
-      );
+      if (!validationResult.allRequiredApproved) {
+        const pendingDetails = validationResult.pendingByType
+          .map((type) => `${type.typeName}: ${type.pendingCount} pending`)
+          .join(', ');
 
-      const unapprovedRequired = requiredSubmissions.filter(
-        (submission) => submission.status !== 'APPROVED'
-      );
-
-      if (unapprovedRequired.length > 0) {
         throw new Error(
-          `Cannot approve provider: not all required requirements are approved. Unapproved: ${unapprovedRequired
-            .map((sub) => sub.requirementType.name)
-            .join(', ')}`
+          `Cannot approve provider: ${validationResult.pendingRequirementsCount} required requirements are not approved. ${pendingDetails}`
         );
       }
 
@@ -173,13 +305,17 @@ export const adminRouter = createTRPCRouter({
 
       // Log admin action
       console.log('ADMIN_ACTION: Provider approved', {
-        providerId: provider.id,
-        providerName: provider.name,
-        providerEmail: provider.email,
+        providerId: updatedProvider.id,
+        providerName: updatedProvider.name,
+        providerEmail: updatedProvider.email,
         adminId: ctx.session.user.id,
         adminEmail: ctx.session.user.email,
         timestamp: new Date().toISOString(),
         action: 'PROVIDER_APPROVED',
+        requirementsValidation: {
+          totalRequired: validationResult.totalRequired,
+          totalApproved: validationResult.totalApproved,
+        },
       });
 
       return updatedProvider;
@@ -277,6 +413,13 @@ export const adminRouter = createTRPCRouter({
 
       return updatedProvider;
     }),
+
+  /*
+   * ====================================
+   * REQUIREMENT MANAGEMENT
+   * ====================================
+   * Endpoints for managing provider requirement submissions
+   */
 
   /**
    * Approve provider requirement
@@ -386,6 +529,13 @@ export const adminRouter = createTRPCRouter({
       return updatedSubmission;
     }),
 
+  /*
+   * ====================================
+   * ORGANIZATION MANAGEMENT - QUERIES
+   * ====================================
+   * Endpoints for retrieving organization data
+   */
+
   /**
    * Get all organizations (admin)
    * Migrated from: GET /api/admin/organizations
@@ -454,6 +604,13 @@ export const adminRouter = createTRPCRouter({
 
       return organization;
     }),
+
+  /*
+   * ====================================
+   * ORGANIZATION MANAGEMENT - MUTATIONS
+   * ====================================
+   * Endpoints for organization approval/rejection workflows
+   */
 
   /**
    * Approve organization
@@ -586,6 +743,13 @@ export const adminRouter = createTRPCRouter({
 
       return updatedOrganization;
     }),
+
+  /*
+   * ====================================
+   * ADMIN UTILITIES
+   * ====================================
+   * Special administrative functions
+   */
 
   /**
    * Admin override login

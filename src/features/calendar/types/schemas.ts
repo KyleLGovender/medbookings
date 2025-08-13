@@ -1,18 +1,18 @@
-import { z } from 'zod';
-
 import {
-  AvailabilityContext,
   AvailabilityStatus,
   BillingEntity,
-  DayOfWeek,
-  RecurrenceOption,
+  BookingStatus,
   SchedulingRule,
   SlotStatus,
-} from '@/features/calendar/types/types';
+} from '@prisma/client';
+import { z } from 'zod';
+
+import { AvailabilityContext, DayOfWeek, RecurrenceOption } from '@/features/calendar/types/types';
 
 // Base Zod schemas for enums
 export const availabilityStatusSchema = z.nativeEnum(AvailabilityStatus);
 export const billingEntitySchema = z.nativeEnum(BillingEntity);
+export const bookingStatusSchema = z.nativeEnum(BookingStatus);
 export const schedulingRuleSchema = z.nativeEnum(SchedulingRule);
 export const slotStatusSchema = z.nativeEnum(SlotStatus);
 export const dayOfWeekSchema = z.nativeEnum(DayOfWeek);
@@ -178,7 +178,7 @@ export const availabilitySearchParamsSchema = z
     isOnlineAvailable: z.boolean().optional(),
     status: availabilityStatusSchema.optional(),
     schedulingRule: schedulingRuleSchema.optional(),
-    seriesId: z.string().min(1).optional(),
+    limit: z.number().int().positive().max(1000).default(1000).optional(),
   })
   .refine((data) => !data.startDate || !data.endDate || data.endDate >= data.startDate, {
     message: 'End date must be after or equal to start date',

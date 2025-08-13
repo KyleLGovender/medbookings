@@ -27,7 +27,7 @@ import { isMobileForUI } from '@/lib/utils/responsive';
 import { type RouterOutputs } from '@/utils/api';
 
 // Infer types from tRPC router outputs
-type UserOrganizations = RouterOutputs['organizations']['getCurrentUserOrganizations'];
+type UserOrganizations = RouterOutputs['organizations']['getByUserId'];
 type Organization = UserOrganizations[number];
 type Provider = RouterOutputs['providers']['getByUserId'];
 
@@ -448,7 +448,11 @@ function DynamicBreadcrumb() {
 }
 
 // We'll create this as a function to make it dynamic
-const createNavData = (providers: Provider[] = [], organizations: Organization[] = [], user?: SessionUser) => ({
+const createNavData = (
+  providers: Provider[] = [],
+  organizations: Organization[] = [],
+  user?: SessionUser
+) => ({
   title: 'MedBookings',
   url: '/',
   navMain: [
@@ -471,7 +475,7 @@ const createNavData = (providers: Provider[] = [], organizations: Organization[]
       ],
     },
     // Only show Admin section for users with admin privileges
-    ...(user && ['ADMIN', 'SUPER_ADMIN'].includes(user.role)
+    ...(user?.role && ['ADMIN', 'SUPER_ADMIN'].includes(user.role)
       ? [
           {
             title: 'Admin',
@@ -499,7 +503,7 @@ const createNavData = (providers: Provider[] = [], organizations: Organization[]
         },
       ],
     },
-    ...(providers.length > 0
+    ...(providers.length > 0 && providers[0]
       ? [
           {
             title: 'My Provider Profile',

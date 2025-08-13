@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { OrganizationStatus } from '@prisma/client';
+
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,20 +25,23 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { AdminOrganizationListSelect } from '@/features/admin/types/types';
-import type { AdminApprovalStatus } from '@/features/admin/types/types';
+import type { AdminFilterStatus } from '@/features/admin/types/types';
 import {
   useApproveOrganization,
   useRejectOrganization,
 } from '@/features/organizations/hooks/use-admin-organization-approval';
 import { useAdminOrganizations } from '@/features/organizations/hooks/use-admin-organizations';
+import { type RouterOutputs } from '@/utils/api';
 
 import { StatusBadge } from '../../../../components/status-badge';
 import { ApprovalButtons } from '../ui/approval-buttons';
 import { RejectionModal } from '../ui/rejection-modal';
 
+type AdminOrganizations = RouterOutputs['admin']['getOrganizations'];
+type AdminOrganization = AdminOrganizations[number];
+
 interface OrganizationListProps {
-  initialStatus?: AdminApprovalStatus;
+  initialStatus?: AdminFilterStatus;
 }
 
 export function OrganizationList({ initialStatus }: OrganizationListProps) {
@@ -56,12 +61,14 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
     data: organizations,
     isLoading,
     error,
-  } = useAdminOrganizations(statusFilter === 'all' ? undefined : (statusFilter as AdminApprovalStatus));
+  } = useAdminOrganizations(
+    statusFilter === 'all' ? undefined : (statusFilter as AdminFilterStatus)
+  );
 
   const approveOrganizationMutation = useApproveOrganization();
   const rejectOrganizationMutation = useRejectOrganization();
 
-  const filteredOrganizations = organizations?.filter((organization: AdminOrganizationListSelect) => {
+  const filteredOrganizations = organizations?.filter((organization: AdminOrganization) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -128,8 +135,8 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="APPROVED">Approved</SelectItem>
-                  <SelectItem value="REJECTED">Rejected</SelectItem>
+                  <SelectItem value={OrganizationStatus.APPROVED}>Approved</SelectItem>
+                  <SelectItem value={OrganizationStatus.REJECTED}>Rejected</SelectItem>
                 </SelectContent>
               </Select>
               <Input
@@ -179,7 +186,7 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredOrganizations?.map((organization: AdminOrganizationListSelect) => (
+                    filteredOrganizations?.map((organization: AdminOrganization) => (
                       <TableRow key={organization.id}>
                         <TableCell>
                           <div className="flex flex-col">
@@ -207,11 +214,11 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                         <TableCell>
                           <StatusBadge
                             status={
-                              organization.status === 'PENDING_APPROVAL'
+                              organization.status === OrganizationStatus.PENDING_APPROVAL
                                 ? 'PENDING'
-                                : organization.status === 'REJECTED'
+                                : organization.status === OrganizationStatus.REJECTED
                                   ? 'REJECTED'
-                                  : organization.status === 'SUSPENDED'
+                                  : organization.status === OrganizationStatus.SUSPENDED
                                     ? 'SUSPENDED'
                                     : 'APPROVED'
                             }
@@ -219,12 +226,12 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            {organization._count?.memberships || 0} members
+                            {organization.memberships?.length ?? 0} members
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            {organization._count?.locations || 0} locations
+                            {organization.locations?.length ?? 0} locations
                           </div>
                         </TableCell>
                         <TableCell>
@@ -233,7 +240,7 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          {organization.status === 'PENDING_APPROVAL' ? (
+                          {organization.status === OrganizationStatus.PENDING_APPROVAL ? (
                             <div className="flex justify-end gap-2">
                               <NavigationOutlineButton
                                 href={`/admin/organizations/${organization.id}`}

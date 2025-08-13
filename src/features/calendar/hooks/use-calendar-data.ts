@@ -2,263 +2,204 @@
 
 import { useMemo } from 'react';
 
-import { useQuery } from '@tanstack/react-query';
-
-import {
-  availabilityKeys,
-  useAvailabilitySearch,
-} from '@/features/calendar/hooks/use-availability';
-import { calculateDateRange } from '@/features/calendar/lib/calendar-utils';
-import {
-  AvailabilityStatus,
-  AvailabilityWithRelations,
-  CalculatedAvailabilitySlotWithRelations,
-  CalendarEvent,
-  CalendarViewMode,
-  SchedulingRule,
-} from '@/features/calendar/types/types';
-import { useProvider } from '@/features/providers/hooks/use-provider';
+import { CalendarDataParams } from '@/features/calendar/types/types';
+import { type RouterInputs, type RouterOutputs, api } from '@/utils/api';
 
 // =============================================================================
-// TYPES
+// tRPC TYPE EXTRACTION - OPTION C COMPLIANT
 // =============================================================================
 
-interface CalendarDataParams {
-  providerId: string;
-  currentDate: Date;
-  viewMode: CalendarViewMode;
-  statusFilter?: AvailabilityStatus | 'ALL';
-}
+type AvailabilitySearchParams = RouterInputs['calendar']['searchAvailability'];
 
-interface CalendarData {
-  providerId: string;
-  providerName: string;
-  providerType: string;
-  workingHours: { start: string; end: string };
-  events: CalendarEvent[];
-  stats: {
-    totalAvailabilityHours: number;
-    bookedHours: number;
-    utilizationRate: number;
-    pendingBookings: number;
-    completedBookings: number;
+// =============================================================================
+// OPTION B: BETTER-TYPED HOOK WITH EXPLICIT TYPE EXTRACTION
+// =============================================================================
+
+// Extract the actual data types from tRPC router
+type ProviderData = RouterOutputs['providers']['getById'];
+type AvailabilityData = RouterOutputs['calendar']['searchAvailability'];
+
+// Individual provider's calendar data with proper types
+interface ProviderCalendarData {
+  provider: {
+    data: ProviderData | undefined;
+    isLoading: boolean;
+    isSuccess: boolean;
+    isError: boolean;
+    error: any;
+    refetch: () => void;
   };
-  dateRange: { start: Date; end: Date };
+  availability: {
+    data: AvailabilityData | undefined;
+    isLoading: boolean;
+    isSuccess: boolean;
+    isError: boolean;
+    error: any;
+    refetch: () => void;
+  };
 }
 
-// Client-safe enum (matches Prisma BookingStatus)
-enum BookingStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED',
-  COMPLETED = 'COMPLETED',
-  NO_SHOW = 'NO_SHOW',
+// Return type with proper type safety
+interface CalendarDataResult {
+  providers: Map<string, ProviderCalendarData>;
+  isLoading: boolean;
+  hasError: boolean;
 }
 
 // =============================================================================
-// MAIN HOOK
+// MAIN HOOK - THIN tRPC WRAPPER
 // =============================================================================
 
 /**
- * Standardized hook for fetching and transforming calendar data.
- * Provides consistent caching, error handling, and data transformation
- * for all calendar components.
+ * OPTION B: Better-typed hook for fetching calendar data for multiple providers.
+ * Provides explicit type safety throughout the entire data flow.
  *
- * @param params - Calendar data parameters
- * @returns Calendar data with loading and error states
+ * @param params - Calendar data parameters with multiple provider IDs and date range
+ * @returns Structured calendar data with fully typed provider and availability data
  */
-export function useCalendarData(params: CalendarDataParams) {
-  const { providerId, currentDate, viewMode, statusFilter = 'ALL' } = params;
+export function useCalendarData(params: CalendarDataParams): CalendarDataResult {
+  const { providerIds, dateRange, statusFilter = 'ALL' } = params;
 
-  // Memoize date range calculation
-  const dateRange = useMemo(() => {
-    return calculateDateRange(currentDate, viewMode);
-  }, [currentDate, viewMode]);
-
-  // Fetch provider data with standardized caching
-  const {
-    data: provider,
-    isLoading: isProviderLoading,
-    error: providerError,
-  } = useProvider(providerId);
-
-  // Fetch availability data with standardized caching
-  const {
-    data: availabilityData,
-    isLoading: isAvailabilityLoading,
-    error: availabilityError,
-  } = useAvailabilitySearch({
-    providerId,
-    startDate: dateRange.start,
-    endDate: dateRange.end,
-    ...(statusFilter !== 'ALL' && { status: statusFilter }),
-  });
-
-  // Transform data with optimized memoization
-  const calendarData: CalendarData | null = useMemo(() => {
-    if (!provider || !availabilityData) return null;
-
-    // Transform availability records into calendar events
-    const events: CalendarEvent[] = [];
-
-    // Add availability blocks
-    availabilityData.forEach((availability: AvailabilityWithRelations) => {
-      // Determine creator information
-      const isProviderCreated =
-        availability.isProviderCreated ||
-        (!availability.organizationId && !availability.createdByMembershipId);
-
-      const event: CalendarEvent = {
-        id: availability.id,
-        type: 'availability' as const,
-        title: availability.availableServices?.[0]?.service?.name || 'General Consultation',
-        startTime: new Date(availability.startTime),
-        endTime: new Date(availability.endTime),
-        status: availability.status,
-        schedulingRule: availability.schedulingRule as SchedulingRule,
-        isRecurring: availability.isRecurring,
-        seriesId: availability.seriesId || undefined,
-        location: availability.location
-          ? {
-              id: availability.location.id,
-              name: availability.location.name,
-              isOnline: !availability.locationId,
-            }
-          : undefined,
-        service: availability.availableServices?.[0]
-          ? {
-              id: availability.availableServices[0].service.id,
-              name: availability.availableServices[0].service.name,
-              duration: availability.availableServices[0].duration || 30,
-              price: Number(availability.availableServices[0].price) || 0,
-            }
-          : undefined,
-        // Creator information
-        isProviderCreated,
-        createdBy: availability.createdBy
-          ? {
-              id: availability.createdBy.id,
-              name: availability.createdBy.name || 'Unknown',
-              type: isProviderCreated ? 'provider' : 'organization',
-            }
-          : undefined,
-        organization: availability.organization
-          ? {
-              id: availability.organization.id,
-              name: availability.organization.name,
-            }
-          : undefined,
-      };
-
-      events.push(event);
-
-      // Add booked slots from this availability's calculated slots
-      availability.calculatedSlots
-        ?.filter((slot) => slot.status === 'BOOKED')
-        .forEach((slot) => {
-          events.push({
-            id: slot.id,
-            type: 'booking' as const,
-            title: slot.service?.name || 'Appointment',
-            startTime: new Date(slot.startTime),
-            endTime: new Date(slot.endTime),
-            status: slot.status,
-            schedulingRule: availability.schedulingRule as SchedulingRule,
-            isRecurring: false,
-            location: slot.serviceConfig?.location
-              ? {
-                  id: slot.serviceConfig.location.id,
-                  name: slot.serviceConfig.location.name,
-                  isOnline: slot.serviceConfig.isOnlineAvailable,
-                }
-              : undefined,
-            service:
-              slot.service && slot.serviceConfig
-                ? {
-                    id: slot.service.id,
-                    name: slot.service.name,
-                    duration: slot.serviceConfig.duration || 30,
-                    price: Number(slot.serviceConfig.price) || 0,
-                  }
-                : undefined,
-            // Customer data will be populated when booking relationship is available
-          });
-        });
-    });
-
-    // Calculate stats from all calculated slots
-    const allSlots = availabilityData.flatMap(
-      (availability: AvailabilityWithRelations) => availability.calculatedSlots || []
+  // Create queries for each provider
+  const providerQueries = providerIds.map(providerId => {
+    // Fetch provider data using tRPC
+    const providerQuery = api.providers.getById.useQuery(
+      { id: providerId },
+      {
+        enabled: !!providerId,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+      }
     );
-    const bookedSlots = allSlots.filter(
-      (slot: CalculatedAvailabilitySlotWithRelations) => slot.status === 'BOOKED'
-    ).length;
-    const pendingSlots = allSlots.filter(
-      (slot: CalculatedAvailabilitySlotWithRelations) =>
-        slot.booking?.status === BookingStatus.PENDING
-    ).length;
+
+    // Build search parameters for availability
+    const searchParams: AvailabilitySearchParams = {
+      providerId,
+      startDate: dateRange.start.toISOString(),
+      endDate: dateRange.end.toISOString(),
+      ...(statusFilter !== 'ALL' && { status: statusFilter }),
+    };
+
+    // Fetch availability data using tRPC
+    const availabilityQuery = api.calendar.searchAvailability.useQuery(searchParams, {
+      enabled: !!providerId,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    });
 
     return {
       providerId,
-      providerName: provider.name,
-      providerType: 'Healthcare Provider', // TODO: Add type information to SerializedProvider
-      workingHours: { start: '09:00', end: '17:00' }, // Default working hours
-      events,
-      stats: {
-        totalAvailabilityHours: availabilityData.length,
-        bookedHours: bookedSlots,
-        utilizationRate:
-          allSlots.length > 0 ? Math.round((bookedSlots / allSlots.length) * 100) : 0,
-        pendingBookings: pendingSlots,
-        completedBookings: bookedSlots,
-      },
-      dateRange,
+      provider: providerQuery,
+      availability: availabilityQuery,
     };
-  }, [provider, availabilityData, providerId, dateRange]);
+  });
 
-  // Memoize filtered events for performance
-  const filteredEvents = useMemo(() => {
-    if (!calendarData?.events) return [];
-
-    return calendarData.events.filter((event) => {
-      const eventDate = new Date(event.startTime);
-      return eventDate >= dateRange.start && eventDate <= dateRange.end;
+  // Build the structured calendarData object with proper type mapping
+  const calendarData = useMemo(() => {
+    const providers = new Map<string, ProviderCalendarData>();
+    
+    providerQueries.forEach(({ providerId, provider, availability }) => {
+      // Explicitly type the queries to ensure type safety
+      providers.set(providerId, {
+        provider: {
+          data: provider.data as ProviderData | undefined,
+          isLoading: provider.isLoading,
+          isSuccess: provider.isSuccess,
+          isError: provider.isError,
+          error: provider.error,
+          refetch: provider.refetch,
+        },
+        availability: {
+          data: availability.data as AvailabilityData | undefined,
+          isLoading: availability.isLoading,
+          isSuccess: availability.isSuccess,
+          isError: availability.isError,
+          error: availability.error,
+          refetch: availability.refetch,
+        },
+      });
     });
-  }, [calendarData?.events, dateRange]);
+
+    return providers;
+  }, [providerQueries]);
+
+  // Calculate combined loading and error states
+  const isLoading = providerQueries.some(
+    q => q.provider.isLoading || q.availability.isLoading
+  );
+  
+  const hasError = providerQueries.some(
+    q => !!q.provider.error || !!q.availability.error
+  );
 
   return {
-    data: calendarData,
-    filteredEvents,
-    isLoading: isProviderLoading || isAvailabilityLoading,
-    error: providerError || availabilityError,
-    dateRange,
+    providers: calendarData,
+    isLoading,
+    hasError,
   };
 }
 
 // =============================================================================
-// UTILITY HOOKS
+// UTILITY HOOKS - THIN tRPC WRAPPERS
 // =============================================================================
 
 /**
- * Hook for invalidating calendar data caches.
- * Useful for mutations that affect calendar data.
+ * Hook for provider availability with proper tRPC caching
+ */
+export function useProviderAvailability(providerId: string | undefined) {
+  return api.calendar.getByProviderId.useQuery(
+    { providerId: providerId || '' },
+    {
+      enabled: !!providerId,
+      staleTime: 5 * 60 * 1000,
+    }
+  );
+}
+
+/**
+ * Hook for organization availability with proper tRPC caching
+ */
+export function useOrganizationAvailability(organizationId: string | undefined) {
+  return api.calendar.getByOrganizationId.useQuery(
+    { organizationId: organizationId || '' },
+    {
+      enabled: !!organizationId,
+      staleTime: 5 * 60 * 1000,
+    }
+  );
+}
+
+/**
+ * Hook for series availability with proper tRPC caching
+ */
+export function useAvailabilitySeries(seriesId: string | undefined) {
+  return api.calendar.getBySeriesId.useQuery(
+    { seriesId: seriesId || '' },
+    {
+      enabled: !!seriesId,
+      staleTime: 5 * 60 * 1000,
+    }
+  );
+}
+
+/**
+ * Hook for invalidating calendar data caches using tRPC utils.
  */
 export function useInvalidateCalendarData() {
-  const { useQueryClient } = require('@tanstack/react-query');
-  const queryClient = useQueryClient();
+  const utils = api.useUtils();
 
   return {
     invalidateAll: () => {
-      queryClient.invalidateQueries({ queryKey: availabilityKeys.all });
+      utils.calendar.invalidate();
     },
     invalidateProvider: (providerId: string) => {
-      queryClient.invalidateQueries({ queryKey: availabilityKeys.provider(providerId) });
+      utils.calendar.getByProviderId.invalidate({ providerId });
+      utils.calendar.searchAvailability.invalidate();
     },
-    invalidateSearch: () => {
-      queryClient.invalidateQueries({
-        predicate: (query: any) =>
-          query.queryKey[0] === 'availability' && query.queryKey[1] === 'search',
-      });
+    invalidateOrganization: (organizationId: string) => {
+      utils.calendar.getByOrganizationId.invalidate({ organizationId });
+      utils.calendar.searchAvailability.invalidate();
+    },
+    invalidateSeries: (seriesId: string) => {
+      utils.calendar.getBySeriesId.invalidate({ seriesId });
     },
   };
 }

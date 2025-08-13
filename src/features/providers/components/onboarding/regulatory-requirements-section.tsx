@@ -2,12 +2,22 @@
 
 import { useEffect, useState } from 'react';
 
+import { RequirementValidationType } from '@prisma/client';
 import { useFormContext } from 'react-hook-form';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { renderRequirementInput } from '@/features/providers/components/render-requirement-input';
-import { RequirementType, RequirementValidationType } from '@/features/providers/hooks/types';
+import { type RouterOutputs } from '@/utils/api';
+
+// Extract the actual requirement type from the onboarding data tRPC response
+type OnboardingData = RouterOutputs['providers']['getOnboardingData'];
+type RequirementFromOnboarding = OnboardingData['requirements'][string][number];
+
+// Type with index added for form handling
+type RequirementType = RequirementFromOnboarding & {
+  index: number;
+};
 
 interface RegulatoryRequirementsSectionProps {
   requirements: Array<{
@@ -46,7 +56,7 @@ export function RegulatoryRequirementsSection({
     const transformedReqs: RequirementType[] = requirements.map((req, idx) => ({
       id: req.id,
       name: req.name,
-      description: req.description || '',
+      description: req.description,
       validationType: req.validationType as RequirementValidationType,
       isRequired: req.isRequired,
       validationConfig: req.validationConfig,

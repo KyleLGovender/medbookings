@@ -1,8 +1,8 @@
+import { SchedulingRule } from '@prisma/client';
 import { addMinutes, setMinutes, startOfDay, startOfHour } from 'date-fns';
 
 import {
   SchedulingOptions,
-  SchedulingRule,
   SchedulingRuleConfig,
   TimeSlot,
   TimeSlotGenerationResult,

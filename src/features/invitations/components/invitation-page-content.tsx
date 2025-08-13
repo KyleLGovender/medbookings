@@ -2,39 +2,20 @@
 
 import { useEffect, useState } from 'react';
 
+import { ProviderInvitationStatus } from '@prisma/client';
 import { useSession } from 'next-auth/react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { api, type RouterOutputs } from '@/utils/api';
-
-// Infer types from tRPC router outputs
-type InvitationValidationResponse = RouterOutputs['invitations']['validate'];
+import { type RouterOutputs, api } from '@/utils/api';
 
 import { ExistingUserInvitationFlow } from './existing-user-invitation-flow';
 import { InvitationErrorState } from './invitation-error-state';
 import { NewUserInvitationFlow } from './new-user-invitation-flow';
 
-interface InvitationData {
-  id: string;
-  email: string;
-  customMessage?: string;
-  status: string;
-  expiresAt: string;
-  organization: {
-    id: string;
-    name: string;
-    description?: string;
-    logo?: string;
-    email?: string;
-    phone?: string;
-    website?: string;
-  };
-  invitedBy: {
-    name?: string;
-    email?: string;
-  };
-}
+// Infer types from tRPC router outputs
+type InvitationValidationResponse = RouterOutputs['providers']['validateInvitation'];
+type InvitationData = InvitationValidationResponse['invitation'];
 
 interface InvitationPageContentProps {
   token: string;
@@ -47,7 +28,7 @@ export function InvitationPageContent({ token }: InvitationPageContentProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Use tRPC query for invitation validation
-  const invitationQuery = api.invitations.validate.useQuery(
+  const invitationQuery = api.providers.validateInvitation.useQuery(
     { token },
     {
       enabled: !!token,
@@ -98,7 +79,9 @@ export function InvitationPageContent({ token }: InvitationPageContentProps) {
   }
 
   // Check if invitation is expired
-  const isExpired = new Date(invitation.expiresAt) < new Date();
+  const expiresAt =
+    invitation.expiresAt instanceof Date ? invitation.expiresAt : new Date(invitation.expiresAt);
+  const isExpired = expiresAt < new Date();
   if (isExpired) {
     return (
       <InvitationErrorState error="This invitation has expired" token={token} isExpired={true} />
@@ -106,13 +89,13 @@ export function InvitationPageContent({ token }: InvitationPageContentProps) {
   }
 
   // Check if invitation is already used
-  if (invitation.status !== 'PENDING') {
+  if (invitation.status !== ProviderInvitationStatus.PENDING) {
     let statusMessage = 'This invitation has already been responded to';
-    if (invitation.status === 'ACCEPTED') {
+    if (invitation.status === ProviderInvitationStatus.ACCEPTED) {
       statusMessage = 'This invitation has already been accepted';
-    } else if (invitation.status === 'REJECTED') {
+    } else if (invitation.status === ProviderInvitationStatus.REJECTED) {
       statusMessage = 'This invitation has been declined';
-    } else if (invitation.status === 'CANCELLED') {
+    } else if (invitation.status === ProviderInvitationStatus.CANCELLED) {
       statusMessage = 'This invitation has been cancelled';
     }
 

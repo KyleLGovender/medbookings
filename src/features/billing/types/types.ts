@@ -2,36 +2,18 @@
 // BILLING FEATURE TYPES
 // =============================================================================
 // All type definitions for the billing feature in one place
-// Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
-import {
-  BillingEntity,
-  BillingInterval,
-  OrganizationBillingModel,
-  Payment,
-  PaymentStatus,
-  Subscription,
-  SubscriptionPlan,
-  SubscriptionStatus,
-  SubscriptionType,
-  TrialStatus,
-  UsageRecord,
-} from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
+// Organized by: Prisma Imports -> Domain Enums -> Business Logic -> Request Types -> Component Props
+// =============================================================================
+// PRISMA TYPE IMPORTS
+// =============================================================================
+// Import database enums directly from Prisma to prevent type drift
+import { BillingEntity, BillingInterval, PaymentStatus, SubscriptionStatus } from '@prisma/client';
 
 // =============================================================================
-// ENUMS
+// DOMAIN ENUMS AND BUSINESS LOGIC
 // =============================================================================
-
-// Re-export Prisma billing-related enums for convenience
-export {
-  BillingEntity,
-  BillingInterval,
-  OrganizationBillingModel,
-  PaymentStatus,
-  SubscriptionStatus,
-  SubscriptionType,
-  TrialStatus,
-};
+// Note: Database enums are now imported from Prisma above.
+// Components will use tRPC RouterOutputs for server data types.
 
 // =============================================================================
 // BASE INTERFACES
@@ -43,35 +25,35 @@ export type SubscriptionEntity =
   | { type: 'location'; id: string }
   | { type: 'provider'; id: string };
 
-// Basic subscription info
+// Basic subscription info (business logic)
 export interface SubscriptionInfo {
   id: string;
-  status: SubscriptionStatus;
-  type: SubscriptionType;
+  status: SubscriptionStatus; // Use Prisma enum
+  type: 'BASE' | 'TRIAL' | 'PROMOTIONAL'; // Domain enum (not in Prisma)
   startDate: Date;
   endDate?: Date;
   isActive: boolean;
 }
 
-// Payment information
+// Payment information (business logic)
 export interface PaymentInfo {
   id: string;
-  amount: Decimal;
-  baseAmount?: Decimal;
-  usageAmount?: Decimal;
+  amount: number; // Changed from Decimal to number for client-side calculations
+  baseAmount?: number;
+  usageAmount?: number;
   currency: string;
-  status: PaymentStatus;
+  status: PaymentStatus; // Use Prisma enum
   paidAt?: Date;
   billingPeriodStart?: Date;
   billingPeriodEnd?: Date;
   slotsCovered?: number;
 }
 
-// Trial management
+// Trial management (business logic)
 export interface TrialInfo {
   trialStarted?: Date;
   trialEnded?: Date;
-  trialStatus?: TrialStatus;
+  trialStatus?: 'ACTIVE' | 'EXPIRED' | 'CONVERTED' | 'CANCELLED'; // Domain enum
   paymentMethodAdded: boolean;
   trialReminderSent: boolean;
   trialConversionDate?: Date;
@@ -81,55 +63,45 @@ export interface TrialInfo {
 // COMPLEX INTERFACES
 // =============================================================================
 
-// Extended subscription with all relations
-export interface SubscriptionWithRelations extends Subscription {
-  plan?: SubscriptionPlan;
-  organization?: {
-    id: string;
-    name: string;
-    billingModel: OrganizationBillingModel;
-  };
-  location?: {
-    id: string;
-    name: string;
-    formattedAddress: string;
-  };
-  provider?: {
-    id: string;
-    user: {
-      name: string;
-      email: string;
-    };
-  };
-  payments?: Payment[];
-  usageRecords?: UsageRecord[];
-}
+// =============================================================================
+// MIGRATION NOTES - SERVER DATA INTERFACES REMOVED
+// =============================================================================
+//
+// Server data interfaces have been removed from this manual type file:
+// - SubscriptionWithRelations (server data + relations)
+//
+// Components will extract server data types from tRPC RouterOutputs in Task 4.0
+// using patterns like: RouterOutputs['billing']['getSubscriptionWithRelations']
 
-// Billing configuration data
+// Billing configuration data (domain logic)
 export interface BillingConfigurationData {
-  billingModel: OrganizationBillingModel;
-  defaultBillingEntity?: BillingEntity;
+  billingModel: BillingEntity; // Use Prisma enum
+  defaultBillingEntity?: BillingEntity; // Use Prisma enum
   paymentMethodAdded?: boolean;
 }
 
-// Usage tracking data
+// Usage tracking data (business logic calculation)
 export interface UsageData {
   currentMonthSlots: number;
   billingCycleStart: Date;
   billingCycleEnd: Date;
   includedSlots: number;
   overageSlots: number;
-  overageRate: Decimal;
+  overageRate: number; // Changed from Decimal to number for client-side calculations
 }
 
-// Subscription plan with pricing tiers
-export interface PlanWithPricing extends Omit<SubscriptionPlan, 'stripePriceId'> {
-  basePrice: Decimal;
+// Subscription plan with pricing tiers (business logic calculation)
+export interface PlanWithPricing {
+  id: string;
+  name: string;
+  description?: string;
+  basePrice: number; // Changed from Decimal to number for client-side calculations
   currency: string;
-  interval: BillingInterval;
+  interval: BillingInterval | 'YEARLY' | 'ONE_TIME'; // Use Prisma enum + domain-specific extensions
   includedSlots: number;
-  overagePrice: Decimal;
+  overagePrice: number; // Changed from Decimal to number for client-side calculations
   stripePriceId?: string;
+  isActive: boolean;
 }
 
 // =============================================================================
@@ -141,7 +113,7 @@ export interface CreateSubscriptionRequest {
   entityType: 'organization' | 'location' | 'provider';
   entityId: string;
   planId: string;
-  type: SubscriptionType;
+  type: 'BASE' | 'TRIAL' | 'PROMOTIONAL'; // Domain enum
   trialStart?: Date;
   trialEnd?: Date;
 }
@@ -149,21 +121,21 @@ export interface CreateSubscriptionRequest {
 // Update subscription request
 export interface UpdateSubscriptionRequest {
   planId?: string;
-  status?: SubscriptionStatus;
+  status?: SubscriptionStatus; // Use Prisma enum
   isActive?: boolean;
   endDate?: Date;
 }
 
 // Update billing configuration request
 export interface UpdateBillingConfigRequest {
-  billingModel?: OrganizationBillingModel;
-  defaultBillingEntity?: BillingEntity;
+  billingModel?: BillingEntity; // Use Prisma enum
+  defaultBillingEntity?: BillingEntity; // Use Prisma enum
 }
 
 // Process payment request
 export interface ProcessPaymentRequest {
   subscriptionId: string;
-  amount: Decimal;
+  amount: number; // Changed from Decimal to number for client-side usage
   currency: string;
   paymentMethodId?: string;
   billingPeriodStart: Date;
@@ -187,8 +159,8 @@ export interface CreateUsageRecordRequest {
 // Subscription query options
 export interface SubscriptionQueryOptions {
   includeRelations?: boolean;
-  status?: SubscriptionStatus;
-  type?: SubscriptionType;
+  status?: SubscriptionStatus; // Use Prisma enum
+  type?: 'BASE' | 'TRIAL' | 'PROMOTIONAL'; // Domain enum (not in Prisma)
   isActive?: boolean;
 }
 
@@ -209,10 +181,12 @@ export interface BillingConfigurationProps {
   onUpdate?: (config: BillingConfigurationData) => void;
 }
 
+// Component props will use tRPC RouterOutputs for server data in Task 4.0
+// Example: RouterOutputs['billing']['getSubscriptions'] instead of manual interfaces
 export interface SubscriptionListProps {
-  subscriptions: SubscriptionWithRelations[];
   entityType: 'organization' | 'location' | 'provider';
   onSubscriptionUpdate?: (subscriptionId: string) => void;
+  // subscriptions prop will be typed using tRPC RouterOutputs in component migration
 }
 
 export interface PaymentHistoryProps {

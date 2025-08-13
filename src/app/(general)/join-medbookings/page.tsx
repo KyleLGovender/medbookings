@@ -37,7 +37,7 @@ export default function JoinMedbookingsPage() {
             </div>
             <div className="relative hidden h-[400px] md:block">
               <Image
-                src="/medbookings-providers-landing.png"
+                src="/medbookings-doctor-clipboard.png"
                 alt="Medbookings Professional Dashboard"
                 fill
                 className="rounded-lg object-cover shadow-xl"

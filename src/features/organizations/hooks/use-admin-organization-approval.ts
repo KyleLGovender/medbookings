@@ -2,6 +2,7 @@
 
 import React from 'react';
 
+import { OrganizationStatus } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { api } from '@/utils/api';
@@ -133,7 +134,7 @@ export function useResetOrganizationStatus(options?: {
 
         const updated = {
           ...old,
-          status: 'PENDING_APPROVAL',
+          status: OrganizationStatus.PENDING_APPROVAL,
           rejectedAt: null,
           rejectionReason: null,
           approvedAt: null,

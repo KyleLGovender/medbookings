@@ -1,17 +1,33 @@
+import { OrganizationBillingModel, OrganizationRole } from '@prisma/client';
 import { z } from 'zod';
 
-import { registerOrganization } from '@/features/organizations/lib/actions';
-import { organizationRegistrationSchema } from '@/features/organizations/types/schemas';
-import { getCurrentUser } from '@/lib/auth';
+import { logEmail } from '@/features/communications/lib/helper';
 import {
   generateInvitationEmail,
   generateInvitationToken,
   getInvitationExpiryDate,
-  logEmail,
-} from '@/lib/invitation-utils';
+} from '@/features/invitations/lib/utils';
+import {
+  registerOrganization,
+  validateInvitationAcceptance,
+  validateInvitationCancellation,
+  validateInvitationRejection,
+  validateMemberInvitation,
+  validateMemberRemoval,
+  validateMemberRoleChange,
+} from '@/features/organizations/lib/actions';
+import { organizationRegistrationSchema } from '@/features/organizations/types/schemas';
+import { getCurrentUser } from '@/lib/auth';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
 export const organizationsRouter = createTRPCRouter({
+  /*
+   * ====================================
+   * ORGANIZATION CRUD OPERATIONS
+   * ====================================
+   * Core CRUD operations for organization management
+   */
+
   /**
    * Get organization by ID
    * Migrated from: GET /api/organizations/[id]
@@ -65,8 +81,95 @@ export const organizationsRouter = createTRPCRouter({
         throw new Error('User not authenticated');
       }
 
-      const organization = await registerOrganization(input);
-      return organization;
+      // Call server action for business logic and validation only
+      const result = await registerOrganization(input);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to register organization');
+      }
+
+      // Type guard ensures we have the success case
+      const { userId, validatedData } = result;
+
+      // Single database query in tRPC procedure for automatic type inference
+      const organization = await ctx.prisma.$transaction(async (tx) => {
+        // Create the organization
+        const org = await tx.organization.create({
+          data: {
+            name: validatedData.organization.name,
+            description: validatedData.organization.description || '',
+            email: validatedData.organization.email || '',
+            phone: validatedData.organization.phone || '',
+            website: validatedData.organization.website || '',
+            logo: validatedData.organization.logo || '',
+            billingModel: validatedData.organization.billingModel as OrganizationBillingModel,
+            // Connect the current user as an admin via memberships
+            memberships: {
+              create: {
+                userId,
+                role: 'ADMIN',
+                permissions: [
+                  'MANAGE_PROVIDERS',
+                  'MANAGE_BOOKINGS',
+                  'MANAGE_LOCATIONS',
+                  'MANAGE_STAFF',
+                  'VIEW_ANALYTICS',
+                  'MANAGE_BILLING',
+                ],
+                status: 'ACTIVE',
+              },
+            },
+          },
+        });
+
+        // Create locations if provided
+        if (validatedData.locations && validatedData.locations.length > 0) {
+          for (const location of validatedData.locations) {
+            await tx.location.create({
+              data: {
+                name: location.name,
+                googlePlaceId: location.googlePlaceId || `temp-${Date.now()}`,
+                formattedAddress: location.formattedAddress || '',
+                coordinates: {
+                  lat: location.coordinates.lat,
+                  lng: location.coordinates.lng,
+                },
+                searchTerms: location.searchTerms || [],
+                phone: location.phone || '',
+                email: location.email || '',
+                organizationId: org.id,
+              },
+            });
+          }
+        }
+
+        return org;
+      });
+
+      // Query for complete organization with relations for type inference
+      const createdOrganization = await ctx.prisma.organization.findUnique({
+        where: { id: organization.id },
+        include: {
+          locations: true,
+          memberships: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!createdOrganization) {
+        throw new Error('Failed to retrieve created organization');
+      }
+
+      return createdOrganization;
     }),
 
   /**
@@ -142,6 +245,13 @@ export const organizationsRouter = createTRPCRouter({
       return { success: true };
     }),
 
+  /*
+   * ====================================
+   * ORGANIZATION QUERY OPERATIONS
+   * ====================================
+   * Various ways to query and filter organization data
+   */
+
   /**
    * Get user's organizations
    * Migrated from: GET /api/organizations/user/[userId]
@@ -175,6 +285,13 @@ export const organizationsRouter = createTRPCRouter({
 
       return organizations;
     }),
+
+  /*
+   * ====================================
+   * LOCATION MANAGEMENT
+   * ====================================
+   * Endpoints for managing organization locations
+   */
 
   /**
    * Get organization locations
@@ -244,6 +361,84 @@ export const organizationsRouter = createTRPCRouter({
     }),
 
   /**
+   * Update organization locations
+   * Replaces all locations for an organization
+   */
+  updateLocations: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        locations: z.array(
+          z.object({
+            id: z.string().optional(),
+            organizationId: z.string(),
+            name: z.string().min(1, 'Location name is required'),
+            formattedAddress: z.string().min(1, 'Address is required'),
+            phone: z.string().optional().or(z.literal('')),
+            email: z.string().email('Invalid email format').optional().or(z.literal('')),
+            googlePlaceId: z.string().optional().or(z.literal('')),
+            coordinates: z.any().optional(),
+            searchTerms: z.array(z.string()).optional(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { organizationId, locations } = input;
+
+      // Check if user is an admin of the organization
+      const membership = await ctx.prisma.organizationMembership.findFirst({
+        where: {
+          organizationId,
+          userId: ctx.session.user.id,
+          role: { in: ['OWNER', 'ADMIN'] },
+          status: 'ACTIVE',
+        },
+      });
+
+      if (!membership) {
+        throw new Error('Forbidden: Admin access required');
+      }
+
+      // Use transaction to update locations
+      const result = await ctx.prisma.$transaction(async (tx) => {
+        // Delete existing locations
+        await tx.location.deleteMany({
+          where: { organizationId },
+        });
+
+        // Create new locations
+        const createdLocations = await Promise.all(
+          locations.map((location) =>
+            tx.location.create({
+              data: {
+                organizationId,
+                name: location.name,
+                formattedAddress: location.formattedAddress,
+                phone: location.phone || '',
+                email: location.email || '',
+                googlePlaceId: location.googlePlaceId || '',
+                coordinates: location.coordinates,
+                searchTerms: location.searchTerms || [],
+              },
+            })
+          )
+        );
+
+        return createdLocations;
+      });
+
+      return { locations: result };
+    }),
+
+  /*
+   * ====================================
+   * PROVIDER CONNECTION MANAGEMENT
+   * ====================================
+   * Endpoints for managing provider-organization relationships
+   */
+
+  /**
    * Get organization provider connections
    * Migrated from: GET /api/organizations/[id]/provider-connections
    */
@@ -306,7 +501,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       // Transform the response to match the TypeScript interface
-      return connections.map(connection => ({
+      return connections.map((connection) => ({
         ...connection,
         provider: {
           ...connection.provider,
@@ -314,6 +509,171 @@ export const organizationsRouter = createTRPCRouter({
         },
       }));
     }),
+
+  /**
+   * Update provider connection
+   * Migrated from: PUT /api/organizations/[id]/provider-connections/[connectionId]
+   */
+  updateProviderConnection: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        connectionId: z.string(),
+        status: z.enum(['ACCEPTED', 'SUSPENDED']),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = await getCurrentUser();
+
+      if (!user) {
+        throw new Error('Unauthorized');
+      }
+
+      // Verify user has admin access to this organization
+      const membership = await ctx.prisma.organizationMembership.findFirst({
+        where: {
+          organizationId: input.organizationId,
+          userId: user.id,
+          role: {
+            in: ['OWNER', 'ADMIN'],
+          },
+        },
+      });
+
+      if (!membership) {
+        throw new Error('Unauthorized');
+      }
+
+      // Verify connection belongs to this organization
+      const existingConnection = await ctx.prisma.organizationProviderConnection.findFirst({
+        where: {
+          id: input.connectionId,
+          organizationId: input.organizationId,
+        },
+      });
+
+      if (!existingConnection) {
+        throw new Error('Connection not found');
+      }
+
+      // Update the connection
+      const updatedConnection = await ctx.prisma.organizationProviderConnection.update({
+        where: {
+          id: input.connectionId,
+        },
+        data: {
+          status: input.status,
+          ...(input.status === 'SUSPENDED' && { suspendedAt: new Date() }),
+          ...(input.status === 'ACCEPTED' && { suspendedAt: null }),
+        },
+        include: {
+          provider: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  image: true,
+                },
+              },
+              typeAssignments: {
+                include: {
+                  providerType: {
+                    select: {
+                      id: true,
+                      name: true,
+                      description: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return { connection: updatedConnection };
+    }),
+
+  /**
+   * Delete provider connection
+   * Migrated from: DELETE /api/organizations/[id]/provider-connections/[connectionId]
+   */
+  deleteProviderConnection: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        connectionId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = await getCurrentUser();
+
+      if (!user) {
+        throw new Error('Unauthorized');
+      }
+
+      // Verify user has admin access to this organization
+      const membership = await ctx.prisma.organizationMembership.findFirst({
+        where: {
+          organizationId: input.organizationId,
+          userId: user.id,
+          role: {
+            in: ['OWNER', 'ADMIN'],
+          },
+        },
+      });
+
+      if (!membership) {
+        throw new Error('Unauthorized');
+      }
+
+      // Verify connection belongs to this organization
+      const existingConnection = await ctx.prisma.organizationProviderConnection.findFirst({
+        where: {
+          id: input.connectionId,
+          organizationId: input.organizationId,
+        },
+      });
+
+      if (!existingConnection) {
+        throw new Error('Connection not found');
+      }
+
+      // Check if provider has any active availability with this organization
+      const activeAvailabilities = await ctx.prisma.availability.findMany({
+        where: {
+          providerId: existingConnection.providerId,
+          organizationId: input.organizationId,
+          endTime: {
+            gte: new Date(),
+          },
+        },
+      });
+
+      if (activeAvailabilities.length > 0) {
+        throw new Error(
+          'Cannot delete connection with active future availability. Please cancel all future availability first.'
+        );
+      }
+
+      // Delete the connection
+      await ctx.prisma.organizationProviderConnection.delete({
+        where: {
+          id: input.connectionId,
+        },
+      });
+
+      return { message: 'Connection deleted successfully' };
+    }),
+
+  /*
+   * ====================================
+   * PROVIDER INVITATION MANAGEMENT
+   * ====================================
+   * Endpoints for managing provider invitations to organizations
+   */
 
   /**
    * Get organization provider invitations
@@ -631,194 +991,112 @@ export const organizationsRouter = createTRPCRouter({
       };
     }),
 
-  /**
-   * Update provider connection
-   * Migrated from: PUT /api/organizations/[id]/provider-connections/[connectionId]
+  /*
+   * ====================================
+   * MEMBER MANAGEMENT
+   * ====================================
+   * Endpoints for managing organization memberships and invitations
    */
-  updateProviderConnection: protectedProcedure
-    .input(
-      z.object({
-        organizationId: z.string(),
-        connectionId: z.string(),
-        status: z.enum(['ACCEPTED', 'SUSPENDED']),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const user = await getCurrentUser();
 
-      if (!user) {
-        throw new Error('Unauthorized');
-      }
-
-      // Verify user has admin access to this organization
+  /**
+   * Get organization members
+   */
+  getMembers: protectedProcedure
+    .input(z.object({ organizationId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Verify user has access to this organization
       const membership = await ctx.prisma.organizationMembership.findFirst({
         where: {
           organizationId: input.organizationId,
-          userId: user.id,
-          role: {
-            in: ['OWNER', 'ADMIN'],
-          },
+          userId: ctx.session.user.id,
+          status: 'ACTIVE',
         },
       });
 
       if (!membership) {
-        throw new Error('Unauthorized');
+        throw new Error('Forbidden');
       }
 
-      // Verify connection belongs to this organization
-      const existingConnection = await ctx.prisma.organizationProviderConnection.findFirst({
+      const members = await ctx.prisma.organizationMembership.findMany({
         where: {
-          id: input.connectionId,
           organizationId: input.organizationId,
-        },
-      });
-
-      if (!existingConnection) {
-        throw new Error('Connection not found');
-      }
-
-      // Update the connection
-      const updatedConnection = await ctx.prisma.organizationProviderConnection.update({
-        where: {
-          id: input.connectionId,
-        },
-        data: {
-          status: input.status,
-          ...(input.status === 'SUSPENDED' && { suspendedAt: new Date() }),
-          ...(input.status === 'ACCEPTED' && { suspendedAt: null }),
+          status: 'ACTIVE',
         },
         include: {
-          provider: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  image: true,
-                },
-              },
-              typeAssignments: {
-                include: {
-                  providerType: {
-                    select: {
-                      id: true,
-                      name: true,
-                      description: true,
-                    },
-                  },
-                },
-              },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
             },
           },
         },
+        orderBy: {
+          createdAt: 'desc',
+        },
       });
 
-      return { connection: updatedConnection };
+      return members;
     }),
 
   /**
-   * Delete provider connection
-   * Migrated from: DELETE /api/organizations/[id]/provider-connections/[connectionId]
+   * Get organization member invitations
    */
-  deleteProviderConnection: protectedProcedure
-    .input(
-      z.object({
-        organizationId: z.string(),
-        connectionId: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const user = await getCurrentUser();
-
-      if (!user) {
-        throw new Error('Unauthorized');
-      }
-
-      // Verify user has admin access to this organization
+  getMemberInvitations: protectedProcedure
+    .input(z.object({ organizationId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Verify user has access to this organization
       const membership = await ctx.prisma.organizationMembership.findFirst({
         where: {
           organizationId: input.organizationId,
-          userId: user.id,
-          role: {
-            in: ['OWNER', 'ADMIN'],
-          },
+          userId: ctx.session.user.id,
+          status: 'ACTIVE',
         },
       });
 
       if (!membership) {
-        throw new Error('Unauthorized');
+        throw new Error('Forbidden');
       }
 
-      // Verify connection belongs to this organization
-      const existingConnection = await ctx.prisma.organizationProviderConnection.findFirst({
+      const invitations = await ctx.prisma.organizationInvitation.findMany({
         where: {
-          id: input.connectionId,
           organizationId: input.organizationId,
         },
-      });
-
-      if (!existingConnection) {
-        throw new Error('Connection not found');
-      }
-
-      // Check if provider has any active availability with this organization
-      const activeAvailabilities = await ctx.prisma.availability.findMany({
-        where: {
-          providerId: existingConnection.providerId,
-          organizationId: input.organizationId,
-          endTime: {
-            gte: new Date(),
+        include: {
+          invitedBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
-      });
-
-      if (activeAvailabilities.length > 0) {
-        throw new Error(
-          'Cannot delete connection with active future availability. Please cancel all future availability first.'
-        );
-      }
-
-      // Delete the connection
-      await ctx.prisma.organizationProviderConnection.delete({
-        where: {
-          id: input.connectionId,
+        orderBy: {
+          createdAt: 'desc',
         },
       });
 
-      return { message: 'Connection deleted successfully' };
+      return invitations;
     }),
 
   /**
-   * Update organization locations
-   * Replaces all locations for an organization
+   * Invite a member to join the organization
    */
-  updateLocations: protectedProcedure
+  inviteMember: protectedProcedure
     .input(
       z.object({
         organizationId: z.string(),
-        locations: z.array(
-          z.object({
-            id: z.string().optional(),
-            organizationId: z.string(),
-            name: z.string().min(1, 'Location name is required'),
-            formattedAddress: z.string().min(1, 'Address is required'),
-            phone: z.string().optional().or(z.literal('')),
-            email: z.string().email('Invalid email format').optional().or(z.literal('')),
-            googlePlaceId: z.string().optional().or(z.literal('')),
-            coordinates: z.any().optional(),
-            searchTerms: z.array(z.string()).optional(),
-          })
-        ),
+        email: z.string().email(),
+        role: z.nativeEnum(OrganizationRole),
+        message: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { organizationId, locations } = input;
-
       // Check if user is an admin of the organization
       const membership = await ctx.prisma.organizationMembership.findFirst({
         where: {
-          organizationId,
+          organizationId: input.organizationId,
           userId: ctx.session.user.id,
           role: { in: ['OWNER', 'ADMIN'] },
           status: 'ACTIVE',
@@ -829,34 +1107,422 @@ export const organizationsRouter = createTRPCRouter({
         throw new Error('Forbidden: Admin access required');
       }
 
-      // Use transaction to update locations
-      const result = await ctx.prisma.$transaction(async (tx) => {
-        // Delete existing locations
-        await tx.location.deleteMany({
-          where: { organizationId },
-        });
+      // Call business logic validation
+      const validation = await validateMemberInvitation(input);
 
-        // Create new locations
-        const createdLocations = await Promise.all(
-          locations.map((location) =>
-            tx.location.create({
-              data: {
-                organizationId,
-                name: location.name,
-                formattedAddress: location.formattedAddress,
-                phone: location.phone || '',
-                email: location.email || '',
-                googlePlaceId: location.googlePlaceId || '',
-                coordinates: location.coordinates,
-                searchTerms: location.searchTerms || [],
-              },
-            })
-          )
-        );
+      if (!validation.success) {
+        throw new Error(validation.message);
+      }
 
-        return createdLocations;
+      // Check if organization exists and user isn't already a member
+      const organization = await ctx.prisma.organization.findUnique({
+        where: { id: input.organizationId },
+        include: {
+          memberships: {
+            include: { user: true },
+          },
+        },
       });
 
-      return { locations: result };
+      if (!organization) {
+        throw new Error('Organization not found');
+      }
+
+      // Check if user is already a member
+      const existingMembership = organization.memberships.find(
+        (membership) => membership.user.email?.toLowerCase() === input.email.toLowerCase()
+      );
+
+      if (existingMembership) {
+        throw new Error('User is already a member of this organization');
+      }
+
+      // Check for existing pending invitation
+      const existingInvitation = await ctx.prisma.organizationInvitation.findFirst({
+        where: {
+          organizationId: input.organizationId,
+          email: input.email.toLowerCase(),
+          status: 'PENDING',
+        },
+      });
+
+      if (existingInvitation) {
+        throw new Error('Invitation already sent to this email address');
+      }
+
+      // Create invitation using business logic data
+      const invitation = await ctx.prisma.organizationInvitation.create({
+        data: {
+          organizationId: input.organizationId,
+          email: input.email.toLowerCase(),
+          role: input.role,
+          token: validation.invitationToken!,
+          expiresAt: validation.expiresAt!,
+          invitedById: validation.data.currentUserId,
+          status: 'PENDING',
+        },
+        include: {
+          organization: true,
+          invitedBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      return invitation;
+    }),
+
+  /**
+   * Accept an organization invitation
+   */
+  acceptInvitation: protectedProcedure
+    .input(z.object({ token: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // Call business logic validation
+      const validation = await validateInvitationAcceptance(input.token);
+
+      if (!validation.success) {
+        throw new Error(validation.message);
+      }
+
+      // Find invitation
+      const invitation = await ctx.prisma.organizationInvitation.findUnique({
+        where: { token: input.token },
+        include: {
+          organization: true,
+          invitedBy: true,
+        },
+      });
+
+      if (!invitation) {
+        throw new Error('Invalid invitation token');
+      }
+
+      if (invitation.status !== 'PENDING') {
+        throw new Error(`Invitation has already been ${invitation.status.toLowerCase()}`);
+      }
+
+      if (invitation.expiresAt < new Date()) {
+        throw new Error('Invitation has expired');
+      }
+
+      if (invitation.email.toLowerCase() !== validation.data.currentUserEmail.toLowerCase()) {
+        throw new Error('This invitation is not for your email address');
+      }
+
+      // Check if user is already a member
+      const existingMembership = await ctx.prisma.organizationMembership.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: invitation.organizationId,
+            userId: validation.data.currentUserId,
+          },
+        },
+      });
+
+      if (existingMembership) {
+        throw new Error('You are already a member of this organization');
+      }
+
+      // Create membership and update invitation in transaction
+      const result = await ctx.prisma.$transaction(async (tx) => {
+        // Create membership
+        const membership = await tx.organizationMembership.create({
+          data: {
+            userId: validation.data.currentUserId,
+            organizationId: invitation.organizationId,
+            role: invitation.role,
+            status: 'ACTIVE',
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            organization: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        });
+
+        // Update invitation status
+        await tx.organizationInvitation.update({
+          where: { id: invitation.id },
+          data: {
+            status: 'ACCEPTED',
+            acceptedAt: new Date(),
+          },
+        });
+
+        return membership;
+      });
+
+      return result;
+    }),
+
+  /**
+   * Reject an organization invitation
+   */
+  rejectInvitation: publicProcedure
+    .input(z.object({ token: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // Call business logic validation
+      const validation = await validateInvitationRejection(input.token);
+
+      if (!validation.success) {
+        throw new Error(validation.message);
+      }
+
+      // Find invitation
+      const invitation = await ctx.prisma.organizationInvitation.findUnique({
+        where: { token: input.token },
+        include: { organization: true },
+      });
+
+      if (!invitation) {
+        throw new Error('Invalid invitation token');
+      }
+
+      if (invitation.status !== 'PENDING') {
+        throw new Error(`Invitation has already been ${invitation.status.toLowerCase()}`);
+      }
+
+      // Update invitation status
+      const updatedInvitation = await ctx.prisma.organizationInvitation.update({
+        where: { id: invitation.id },
+        data: {
+          status: 'DECLINED',
+        },
+      });
+
+      return {
+        message: `Invitation to ${invitation.organization.name} declined`,
+        invitation: {
+          id: updatedInvitation.id,
+          status: updatedInvitation.status,
+        },
+      };
+    }),
+
+  /**
+   * Change a member's role in the organization
+   */
+  changeMemberRole: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        memberId: z.string(),
+        newRole: z.nativeEnum(OrganizationRole),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is an admin of the organization
+      const membership = await ctx.prisma.organizationMembership.findFirst({
+        where: {
+          organizationId: input.organizationId,
+          userId: ctx.session.user.id,
+          role: { in: ['OWNER', 'ADMIN'] },
+          status: 'ACTIVE',
+        },
+      });
+
+      if (!membership) {
+        throw new Error('Forbidden: Admin access required');
+      }
+
+      // Call business logic validation
+      const validation = await validateMemberRoleChange(
+        input.organizationId,
+        input.memberId,
+        input.newRole
+      );
+
+      if (!validation.success) {
+        throw new Error(validation.message);
+      }
+
+      // Get the membership to be modified
+      const targetMembership = await ctx.prisma.organizationMembership.findUnique({
+        where: { id: input.memberId },
+        include: { user: true },
+      });
+
+      if (!targetMembership || targetMembership.organizationId !== input.organizationId) {
+        throw new Error('Member not found');
+      }
+
+      // Cannot change own role
+      if (targetMembership.userId === validation.data.currentUserId) {
+        throw new Error('Cannot change your own role');
+      }
+
+      // Update role
+      const updatedMembership = await ctx.prisma.organizationMembership.update({
+        where: { id: input.memberId },
+        data: { role: input.newRole },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      return updatedMembership;
+    }),
+
+  /**
+   * Remove a member from the organization
+   */
+  removeMember: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        memberId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is an admin of the organization
+      const membership = await ctx.prisma.organizationMembership.findFirst({
+        where: {
+          organizationId: input.organizationId,
+          userId: ctx.session.user.id,
+          role: { in: ['OWNER', 'ADMIN'] },
+          status: 'ACTIVE',
+        },
+      });
+
+      if (!membership) {
+        throw new Error('Forbidden: Admin access required');
+      }
+
+      // Call business logic validation
+      const validation = await validateMemberRemoval(input.organizationId, input.memberId);
+
+      if (!validation.success) {
+        throw new Error(validation.message);
+      }
+
+      // Get the membership to be removed
+      const targetMembership = await ctx.prisma.organizationMembership.findUnique({
+        where: { id: input.memberId },
+        include: { user: true },
+      });
+
+      if (!targetMembership || targetMembership.organizationId !== input.organizationId) {
+        throw new Error('Member not found');
+      }
+
+      // Cannot remove yourself
+      if (targetMembership.userId === validation.data.currentUserId) {
+        throw new Error('Cannot remove yourself from the organization');
+      }
+
+      // Cannot remove the last owner
+      if (targetMembership.role === 'OWNER') {
+        const ownerCount = await ctx.prisma.organizationMembership.count({
+          where: {
+            organizationId: input.organizationId,
+            role: 'OWNER',
+            status: 'ACTIVE',
+          },
+        });
+
+        if (ownerCount <= 1) {
+          throw new Error('Cannot remove the last owner. Transfer ownership first.');
+        }
+      }
+
+      // Remove member
+      await ctx.prisma.organizationMembership.delete({
+        where: { id: input.memberId },
+      });
+
+      return {
+        message: `${targetMembership.user.email} removed from organization`,
+        removedMember: {
+          id: targetMembership.id,
+          userId: targetMembership.userId,
+          email: targetMembership.user.email,
+        },
+      };
+    }),
+
+  /**
+   * Cancel a pending member invitation
+   */
+  cancelMemberInvitation: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        invitationId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is an admin of the organization
+      const membership = await ctx.prisma.organizationMembership.findFirst({
+        where: {
+          organizationId: input.organizationId,
+          userId: ctx.session.user.id,
+          role: { in: ['OWNER', 'ADMIN'] },
+          status: 'ACTIVE',
+        },
+      });
+
+      if (!membership) {
+        throw new Error('Forbidden: Admin access required');
+      }
+
+      // Call business logic validation
+      const validation = await validateInvitationCancellation(
+        input.organizationId,
+        input.invitationId
+      );
+
+      if (!validation.success) {
+        throw new Error(validation.message);
+      }
+
+      // Find the invitation
+      const invitation = await ctx.prisma.organizationInvitation.findUnique({
+        where: { id: input.invitationId },
+      });
+
+      if (!invitation || invitation.organizationId !== input.organizationId) {
+        throw new Error('Invitation not found');
+      }
+
+      if (invitation.status !== 'PENDING') {
+        throw new Error('Can only cancel pending invitations');
+      }
+
+      // Cancel invitation
+      const updatedInvitation = await ctx.prisma.organizationInvitation.update({
+        where: { id: input.invitationId },
+        data: {
+          status: 'CANCELLED',
+        },
+      });
+
+      return {
+        message: `Invitation to ${invitation.email} cancelled`,
+        invitation: {
+          id: updatedInvitation.id,
+          status: updatedInvitation.status,
+        },
+      };
     }),
 });

@@ -2,6 +2,16 @@
 // PROVIDERS FEATURE TYPE GUARDS
 // =============================================================================
 // Runtime type validation for provider-specific types and API responses
+//
+// OPTION C COMPLIANT: Using Prisma enums for validation
+// =============================================================================
+import {
+  Languages,
+  ProviderStatus,
+  RequirementValidationType,
+  RequirementsValidationStatus,
+} from '@prisma/client';
+
 import {
   isValidDate,
   isValidDateString,
@@ -14,67 +24,30 @@ import {
 // ENUM GUARDS
 // =============================================================================
 
-export function isProviderStatus(
-  value: unknown
-): value is 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUSPENDED' {
+export function isProviderStatus(value: unknown): value is ProviderStatus {
   return (
-    typeof value === 'string' &&
-    ['PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED'].includes(value)
+    typeof value === 'string' && Object.values(ProviderStatus).includes(value as ProviderStatus)
   );
 }
 
 export function isRequirementSubmissionStatus(
   value: unknown
-): value is 'PENDING' | 'APPROVED' | 'REJECTED' {
-  return typeof value === 'string' && ['PENDING', 'APPROVED', 'REJECTED'].includes(value);
-}
-
-export function isRequirementValidationType(
-  value: unknown
-): value is
-  | 'BOOLEAN'
-  | 'DOCUMENT'
-  | 'TEXT'
-  | 'DATE'
-  | 'FUTURE_DATE'
-  | 'PAST_DATE'
-  | 'NUMBER'
-  | 'PREDEFINED_LIST' {
+): value is RequirementsValidationStatus {
   return (
     typeof value === 'string' &&
-    [
-      'BOOLEAN',
-      'DOCUMENT',
-      'TEXT',
-      'DATE',
-      'FUTURE_DATE',
-      'PAST_DATE',
-      'NUMBER',
-      'PREDEFINED_LIST',
-    ].includes(value)
+    Object.values(RequirementsValidationStatus).includes(value as RequirementsValidationStatus)
   );
 }
 
-export function isSupportedLanguage(value: unknown): value is string {
-  const supportedLanguages = [
-    'English',
-    'IsiZulu',
-    'IsiXhosa',
-    'Afrikaans',
-    'Sepedi',
-    'Setswana',
-    'Sesotho',
-    'IsiNdebele',
-    'SiSwati',
-    'Tshivenda',
-    'Xitsonga',
-    'Portuguese',
-    'French',
-    'Hindi',
-    'German',
-    'Mandarin',
-  ];
-  return typeof value === 'string' && supportedLanguages.includes(value);
+export function isRequirementValidationType(value: unknown): value is RequirementValidationType {
+  return (
+    typeof value === 'string' &&
+    Object.values(RequirementValidationType).includes(value as RequirementValidationType)
+  );
+}
+
+export function isSupportedLanguage(value: unknown): value is Languages {
+  return typeof value === 'string' && Object.values(Languages).includes(value as Languages);
 }
 
 // =============================================================================

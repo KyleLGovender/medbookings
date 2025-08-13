@@ -35,11 +35,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import { 
-  useManageOrganizationProviderConnection,
-  type ProviderConnection
-} from '@/features/organizations/hooks/use-provider-connections';
+import { useManageOrganizationProviderConnection } from '@/features/organizations/hooks/use-provider-connections';
 import { useToast } from '@/hooks/use-toast';
+import { type RouterOutputs } from '@/utils/api';
+
+// Extract ProviderConnection type from tRPC output
+type ProviderConnection = RouterOutputs['organizations']['getProviderConnections'][number];
 
 interface ProviderConnectionCardProps {
   connection: ProviderConnection;
@@ -189,14 +190,10 @@ export function ProviderConnectionCard({
             <div className="flex items-start gap-3">
               <Avatar className="h-12 w-12">
                 <AvatarImage
-                  src={
-                    connection.provider.image || connection.provider.user.image || ''
-                  }
+                  src={connection.provider.image || connection.provider.user.image || ''}
                   alt={connection.provider.name}
                 />
-                <AvatarFallback>
-                  {connection.provider.name.charAt(0).toUpperCase()}
-                </AvatarFallback>
+                <AvatarFallback>{connection.provider.name.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <CardTitle className="text-lg">{connection.provider.name}</CardTitle>
@@ -214,7 +211,7 @@ export function ProviderConnectionCard({
             {showActions && connection.status !== 'REJECTED' && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" disabled={manageConnectionMutation.isPending}>
+                  <Button variant="ghost" size="sm" disabled={manageConnectionMutation.isLoading}>
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -375,16 +372,16 @@ export function ProviderConnectionCard({
               <Button
                 variant="outline"
                 onClick={() => setIsActionDialogOpen(false)}
-                disabled={manageConnectionMutation.isPending}
+                disabled={manageConnectionMutation.isLoading}
               >
                 Cancel
               </Button>
               <Button
                 variant={dialogContent.variant}
                 onClick={confirmAction}
-                disabled={manageConnectionMutation.isPending}
+                disabled={manageConnectionMutation.isLoading}
               >
-                {manageConnectionMutation.isPending ? 'Processing...' : dialogContent.confirmText}
+                {manageConnectionMutation.isLoading ? 'Processing...' : dialogContent.confirmText}
               </Button>
             </DialogFooter>
           </DialogContent>

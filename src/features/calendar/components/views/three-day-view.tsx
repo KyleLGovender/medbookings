@@ -1,9 +1,10 @@
 'use client';
 
+import { AvailabilityStatus } from '@prisma/client';
 import { Repeat } from 'lucide-react';
 
 import { getEventsForDay } from '@/features/calendar/lib/calendar-utils';
-import { AvailabilityStatus, CalendarEvent } from '@/features/calendar/types/types';
+import { CalendarEvent } from '@/features/calendar/types/types';
 
 import { ThreeDayViewProps } from './types';
 

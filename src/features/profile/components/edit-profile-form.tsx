@@ -65,22 +65,14 @@ export function EditProfileForm() {
 
   async function onSubmit(data: ProfileFormValues) {
     try {
-      const result = await updateProfileMutation.mutateAsync(data);
+      await updateProfileMutation.mutateAsync(data);
 
-      if (result.success) {
-        toast({
-          title: 'Profile updated',
-          description: 'Your profile has been updated successfully.',
-        });
-        router.push('/profile');
-        router.refresh();
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: result.error || 'Failed to update profile. Please try again.',
-        });
-      }
+      toast({
+        title: 'Profile updated',
+        description: 'Your profile has been updated successfully.',
+      });
+      router.push('/profile');
+      router.refresh();
     } catch (error) {
       toast({
         variant: 'destructive',

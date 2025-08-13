@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 
+import { AvailabilityStatus } from '@prisma/client';
 import { Calendar, Check, Edit, Pause, Trash2, X } from 'lucide-react';
 
 import {
@@ -32,11 +33,7 @@ import {
   useDeleteAvailability,
   useRejectAvailabilityProposal,
 } from '@/features/calendar/hooks/use-availability';
-import {
-  AvailabilityStatus,
-  CalendarEvent,
-  OrganizationProvider,
-} from '@/features/calendar/types/types';
+import { CalendarEvent, OrganizationProvider } from '@/features/calendar/types/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface OrganizationAvailabilityPageProps {
@@ -168,7 +165,7 @@ export default function OrganizationAvailabilityPage({
     } else {
       // Provider-created availability - no reason needed
       if (selectedEvent) {
-        cancelMutation.mutate({ id: selectedEvent.id });
+        cancelMutation.mutate({ ids: [selectedEvent.id] });
       }
     }
   };
@@ -195,7 +192,7 @@ export default function OrganizationAvailabilityPage({
           setShowCancelDialog(true);
         } else {
           // Provider-created availability - no reason needed
-          cancelMutation.mutate({ id: selectedEvent.id, scope });
+          cancelMutation.mutate({ ids: [selectedEvent.id], scope });
         }
         break;
     }

@@ -1,24 +1,22 @@
-import { addMinutes } from 'date-fns';
+import { SchedulingRule } from '@prisma/client';
 
-import {
-  SchedulingRule,
-  SlotGenerationOptions,
-  SlotGenerationResult,
-} from '@/features/calendar/types/types';
-import { prisma } from '@/lib/prisma';
+import { SlotCreateData, SlotGenerationOptions } from '@/features/calendar/types/types';
 
 import { generateTimeSlots } from './scheduling-rules';
 
 /**
- * Generate CalculatedAvailabilitySlots for a given availability
+ * Generate slot data for a given availability (Option C: Pure utility function)
+ * Returns slot data for tRPC procedures to create in database
  */
-export async function generateSlotsForAvailability(
-  options: SlotGenerationOptions
-): Promise<SlotGenerationResult> {
-  try {
-    const errors: string[] = [];
-    let totalSlotsGenerated = 0;
+export function generateSlotDataForAvailability(options: SlotGenerationOptions): {
+  slotRecords: SlotCreateData[];
+  errors: string[];
+  totalSlots: number;
+} {
+  const errors: string[] = [];
+  const allSlotRecords: SlotCreateData[] = [];
 
+  try {
     // Generate slots for each service
     for (const service of options.services) {
       const slotResult = generateTimeSlots({
@@ -34,7 +32,7 @@ export async function generateSlotsForAvailability(
         continue;
       }
 
-      // Create CalculatedAvailabilitySlot records
+      // Prepare slot records for database creation (no Prisma operations)
       const slotRecords = slotResult.slots.map((slot) => ({
         availabilityId: options.availabilityId,
         serviceId: service.serviceId,
@@ -53,32 +51,28 @@ export async function generateSlotsForAvailability(
         updatedAt: new Date(),
       }));
 
-      if (slotRecords.length > 0) {
-        await prisma.calculatedAvailabilitySlot.createMany({
-          data: slotRecords,
-        });
-        totalSlotsGenerated += slotRecords.length;
-      }
+      allSlotRecords.push(...slotRecords);
     }
 
     return {
-      success: errors.length === 0,
-      slotsGenerated: totalSlotsGenerated,
-      errors: errors.length > 0 ? errors : undefined,
+      slotRecords: allSlotRecords,
+      errors,
+      totalSlots: allSlotRecords.length,
     };
   } catch (error) {
     return {
-      success: false,
-      slotsGenerated: 0,
+      slotRecords: [],
       errors: [error instanceof Error ? error.message : 'Unknown error occurred'],
+      totalSlots: 0,
     };
   }
 }
 
 /**
- * Generate slots for multiple availability records (for recurring availability)
+ * Generate slot data for multiple availability records (Option C: Pure utility function)
+ * Returns combined slot data for tRPC procedures to create in database
  */
-export async function generateSlotsForMultipleAvailability(
+export function generateSlotDataForMultipleAvailability(
   availabilities: Array<{
     id: string;
     startTime: Date;
@@ -94,13 +88,17 @@ export async function generateSlotsForMultipleAvailability(
       price: number;
     }>;
   }>
-): Promise<SlotGenerationResult> {
-  try {
-    let totalSlotsGenerated = 0;
-    const allErrors: string[] = [];
+): {
+  slotRecords: SlotCreateData[];
+  errors: string[];
+  totalSlots: number;
+} {
+  const allSlotRecords: SlotCreateData[] = [];
+  const allErrors: string[] = [];
 
+  try {
     for (const availability of availabilities) {
-      const result = await generateSlotsForAvailability({
+      const result = generateSlotDataForAvailability({
         availabilityId: availability.id,
         startTime: availability.startTime,
         endTime: availability.endTime,
@@ -112,80 +110,60 @@ export async function generateSlotsForMultipleAvailability(
         services: availability.availableServices,
       });
 
-      if (result.success) {
-        totalSlotsGenerated += result.slotsGenerated;
-      } else {
-        allErrors.push(...(result.errors || []));
-      }
+      allSlotRecords.push(...result.slotRecords);
+      allErrors.push(...result.errors);
     }
 
     return {
-      success: allErrors.length === 0,
-      slotsGenerated: totalSlotsGenerated,
-      errors: allErrors.length > 0 ? allErrors : undefined,
+      slotRecords: allSlotRecords,
+      errors: allErrors,
+      totalSlots: allSlotRecords.length,
     };
   } catch (error) {
     return {
-      success: false,
-      slotsGenerated: 0,
+      slotRecords: [],
       errors: [error instanceof Error ? error.message : 'Unknown error occurred'],
+      totalSlots: 0,
     };
   }
 }
 
 /**
- * Regenerate slots for an availability (useful for updates)
+ * Generate slot data from availability data (Option C: Pure utility function)
+ * Used for regenerating slots - tRPC procedures handle database queries
  */
-export async function regenerateSlotsForAvailability(
-  availabilityId: string
-): Promise<SlotGenerationResult> {
-  try {
-    // Get the availability with its services
-    const availability = await prisma.availability.findUnique({
-      where: { id: availabilityId },
-      include: {
-        availableServices: {
-          include: {
-            service: true,
-          },
-        },
-      },
-    });
-
-    if (!availability) {
-      return {
-        success: false,
-        slotsGenerated: 0,
-        errors: ['Availability not found'],
-      };
-    }
-
-    // Delete existing slots
-    await prisma.calculatedAvailabilitySlot.deleteMany({
-      where: { availabilityId: availabilityId },
-    });
-
-    // Generate new slots
-    return await generateSlotsForAvailability({
-      availabilityId: availability.id,
-      startTime: availability.startTime,
-      endTime: availability.endTime,
-      providerId: availability.providerId,
-      organizationId: availability.organizationId || '',
-      locationId: availability.locationId || undefined,
-      schedulingRule: availability.schedulingRule as SchedulingRule,
-      schedulingInterval: availability.schedulingInterval || undefined,
-      services: availability.availableServices.map((as) => ({
-        serviceId: as.serviceId,
-        duration: as.duration,
-        price: Number(as.price),
-      })),
-    });
-  } catch (error) {
-    return {
-      success: false,
-      slotsGenerated: 0,
-      errors: [error instanceof Error ? error.message : 'Unknown error occurred'],
-    };
-  }
+export function generateSlotDataFromAvailability(availability: {
+  id: string;
+  startTime: Date;
+  endTime: Date;
+  providerId: string;
+  organizationId: string | null;
+  locationId: string | null;
+  schedulingRule: SchedulingRule;
+  schedulingInterval: number | null;
+  availableServices: Array<{
+    serviceId: string;
+    duration: number;
+    price: number;
+  }>;
+}): {
+  slotRecords: SlotCreateData[];
+  errors: string[];
+  totalSlots: number;
+} {
+  return generateSlotDataForAvailability({
+    availabilityId: availability.id,
+    startTime: availability.startTime,
+    endTime: availability.endTime,
+    providerId: availability.providerId,
+    organizationId: availability.organizationId || '',
+    locationId: availability.locationId || undefined,
+    schedulingRule: availability.schedulingRule,
+    schedulingInterval: availability.schedulingInterval || undefined,
+    services: availability.availableServices.map((as) => ({
+      serviceId: as.serviceId,
+      duration: as.duration,
+      price: Number(as.price),
+    })),
+  });
 }

@@ -3,6 +3,13 @@
 // =============================================================================
 // Validation schemas for organizations feature forms and API endpoints
 // Organized by: Input Schemas -> Response Schemas -> Utility Schemas
+import {
+  InvitationStatus,
+  MembershipStatus,
+  OrganizationBillingModel,
+  OrganizationRole,
+  OrganizationStatus,
+} from '@prisma/client';
 import { z } from 'zod';
 
 // =============================================================================
@@ -24,7 +31,7 @@ export const updateOrganizationSchema = createOrganizationSchema.partial().exten
 export const createMembershipSchema = z.object({
   organizationId: z.string(),
   userId: z.string(),
-  role: z.enum(['ADMIN', 'MANAGER', 'MEMBER']),
+  role: z.nativeEnum(OrganizationRole),
 });
 
 export const createLocationSchema = z.object({
@@ -44,7 +51,7 @@ export const organizationBasicInfoSchema = createOrganizationSchema;
 
 export const organizationRegistrationSchema = z.object({
   organization: createOrganizationSchema.extend({
-    billingModel: z.enum(['CONSOLIDATED', 'SLOT_BASED']).default('CONSOLIDATED'),
+    billingModel: z.nativeEnum(OrganizationBillingModel).default('CONSOLIDATED'),
     logo: z.string().optional().or(z.literal('')),
   }),
   locations: z
@@ -62,16 +69,11 @@ export const ProviderInvitationSchema = z.object({
   customMessage: z.string().optional().or(z.literal('')),
 });
 
-export const organizationStatusSchema = z.enum([
-  'PENDING_APPROVAL',
-  'APPROVED',
-  'REJECTED',
-  'SUSPENDED',
-]);
+export const organizationStatusSchema = z.nativeEnum(OrganizationStatus);
 
-export const membershipRoleSchema = z.enum(['ADMIN', 'MANAGER', 'MEMBER']);
+export const membershipRoleSchema = z.nativeEnum(OrganizationRole);
 
-export const membershipStatusSchema = z.enum(['PENDING', 'ACTIVE', 'INACTIVE']);
+export const membershipStatusSchema = z.nativeEnum(MembershipStatus);
 
 // =============================================================================
 // RESPONSE SCHEMAS

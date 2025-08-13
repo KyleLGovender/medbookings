@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { AvailabilityStatus, SchedulingRule } from '@prisma/client';
 import { Building, Calendar, Check, Clock, MapPin, Monitor, X } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -25,13 +26,11 @@ import {
   useProviderAvailability,
   useRejectAvailabilityProposal,
 } from '@/features/calendar/hooks/use-availability';
-import {
-  AvailabilityStatus,
-  AvailabilityWithRelations,
-  SchedulingRule,
-  ServiceAvailabilityConfigWithRelations,
-} from '@/features/calendar/types/types';
 import { useToast } from '@/hooks/use-toast';
+
+// Temporary type fixes - need proper tRPC procedures with relations
+type AvailabilityWithRelations = any;
+type ServiceAvailabilityConfigWithRelations = any;
 
 interface AvailabilityProposalsListProps {
   providerId: string;

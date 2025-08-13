@@ -3,8 +3,6 @@
 // =============================================================================
 // All Zod validation schemas for the billing feature in one place
 // Organized by: Entity Schemas -> Request Schemas -> Response Schemas
-import { z } from 'zod';
-
 import {
   BillingEntity,
   BillingInterval,
@@ -13,7 +11,8 @@ import {
   SubscriptionStatus,
   SubscriptionType,
   TrialStatus,
-} from './types';
+} from '@prisma/client';
+import { z } from 'zod';
 
 // =============================================================================
 // ENUM SCHEMAS
@@ -204,7 +203,7 @@ export const subscriptionQueryOptionsSchema = z.object({
 
 // Billing dashboard query schema
 export const billingDashboardQuerySchema = z.object({
-  entityType: z.enum(['organization', 'location', 'provider']),
+  entityType: billingEntitySchema,
   entityId: z.string().uuid(),
   includeTrialInfo: z.boolean().optional(),
   paymentLimit: z.number().int().min(1).max(100).optional().default(10),
@@ -221,7 +220,7 @@ export const subscriptionRouteParamsSchema = z.object({
 
 // Entity route params schema
 export const entityRouteParamsSchema = z.object({
-  entityType: z.enum(['organization', 'location', 'provider']),
+  entityType: billingEntitySchema,
   entityId: z.string().uuid(),
 });
 

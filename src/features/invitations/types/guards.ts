@@ -436,101 +436,16 @@ export function isValidInvitationTemplate(value: unknown): value is {
 }
 
 // =============================================================================
-// API RESPONSE GUARDS
+// API RESPONSE GUARDS REMOVED
 // =============================================================================
-
-export function isOrganizationInvitationListResponse(value: unknown): value is Array<{
-  id: string;
-  email: string;
-  status: string;
-  role: string;
-  createdAt: string;
-  expiresAt: string;
-  organization: { id: string; name: string };
-  invitedBy: { id: string; name: string; email: string };
-}> {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item: unknown) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        'email' in item &&
-        'status' in item &&
-        'role' in item &&
-        'createdAt' in item &&
-        'expiresAt' in item &&
-        'organization' in item &&
-        'invitedBy' in item &&
-        isValidUUID((item as any).id) &&
-        isValidEmail((item as any).email) &&
-        isInvitationStatus((item as any).status) &&
-        isMembershipRole((item as any).role) &&
-        isValidDateString((item as any).createdAt) &&
-        isValidDateString((item as any).expiresAt) &&
-        typeof (item as any).organization === 'object' &&
-        (item as any).organization !== null &&
-        'id' in (item as any).organization &&
-        'name' in (item as any).organization &&
-        isValidUUID((item as any).organization.id) &&
-        typeof (item as any).organization.name === 'string' &&
-        typeof (item as any).invitedBy === 'object' &&
-        (item as any).invitedBy !== null &&
-        'id' in (item as any).invitedBy &&
-        'name' in (item as any).invitedBy &&
-        'email' in (item as any).invitedBy &&
-        isValidUUID((item as any).invitedBy.id) &&
-        typeof (item as any).invitedBy.name === 'string' &&
-        isValidEmail((item as any).invitedBy.email)
-    )
-  );
-}
-
-export function isProviderInvitationListResponse(value: unknown): value is Array<{
-  id: string;
-  email: string;
-  status: string;
-  createdAt: string;
-  expiresAt: string;
-  organization: { id: string; name: string };
-  provider?: { id: string; name: string; email: string };
-}> {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item: unknown) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        'email' in item &&
-        'status' in item &&
-        'createdAt' in item &&
-        'expiresAt' in item &&
-        'organization' in item &&
-        isValidUUID((item as any).id) &&
-        isValidEmail((item as any).email) &&
-        isInvitationStatus((item as any).status) &&
-        isValidDateString((item as any).createdAt) &&
-        isValidDateString((item as any).expiresAt) &&
-        typeof (item as any).organization === 'object' &&
-        (item as any).organization !== null &&
-        'id' in (item as any).organization &&
-        'name' in (item as any).organization &&
-        isValidUUID((item as any).organization.id) &&
-        typeof (item as any).organization.name === 'string' &&
-        (!(item as any).provider ||
-          (typeof (item as any).provider === 'object' &&
-            (item as any).provider !== null &&
-            'id' in (item as any).provider &&
-            'name' in (item as any).provider &&
-            'email' in (item as any).provider &&
-            isValidUUID((item as any).provider.id) &&
-            typeof (item as any).provider.name === 'string' &&
-            isValidEmail((item as any).provider.email)))
-    )
-  );
-}
+//
+// Server response validation guards have been removed as part of the dual-source
+// type safety migration. Components will use tRPC RouterOutputs for server
+// data validation in Task 4.0.
+//
+// Removed:
+// - isOrganizationInvitationListResponse
+// - isProviderInvitationListResponse
 
 // =============================================================================
 // SEARCH AND FILTER GUARDS

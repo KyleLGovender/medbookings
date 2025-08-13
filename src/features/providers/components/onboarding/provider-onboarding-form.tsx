@@ -21,47 +21,18 @@ import {
 } from '@/components/ui/dialog';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { ProviderFormType, providerFormSchema } from '@/features/providers/hooks/types';
 import { useCreateProvider } from '@/features/providers/hooks/use-create-provider';
+import { ProviderFormType, providerFormSchema } from '@/features/providers/types/schemas';
 import { useToast } from '@/hooks/use-toast';
-import { api } from '@/utils/api';
+import { type RouterOutputs, api } from '@/utils/api';
 
 import { BasicInfoSection } from './basic-info-section';
 import { ProviderTypeSection } from './provider-type-section';
 import { RegulatoryRequirementsSection } from './regulatory-requirements-section';
 import { ServicesSection } from './services-section';
 
-// Type for the consolidated onboarding data
-interface OnboardingData {
-  providerTypes: Array<{
-    id: string;
-    name: string;
-    description: string | null;
-  }>;
-  requirements: Record<
-    string,
-    Array<{
-      id: string;
-      name: string;
-      description: string | null;
-      validationType: string;
-      isRequired: boolean;
-      validationConfig: any;
-      displayPriority?: number;
-    }>
-  >;
-  services: Record<
-    string,
-    Array<{
-      id: string;
-      name: string;
-      description: string | null;
-      defaultDuration: number;
-      defaultPrice: string;
-      displayPriority: number;
-    }>
-  >;
-}
+// Extract OnboardingData type from tRPC procedure output for zero type drift
+type OnboardingData = RouterOutputs['providers']['getOnboardingData'];
 
 export function ProviderOnboardingForm() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);

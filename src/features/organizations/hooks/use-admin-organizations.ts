@@ -9,7 +9,7 @@ import { api } from '@/utils/api';
  * @param status Optional status filter for organizations
  * @returns Query result with organizations list
  */
-export function useAdminOrganizations(status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED') {
+export function useAdminOrganizations(status?: OrganizationStatus) {
   return api.admin.getOrganizations.useQuery({ status });
 }
 
@@ -39,7 +39,7 @@ export function useAdminOrganizationCounts() {
         // Calculate counts by status
         const counts = organizations.reduce(
           (acc: Record<string, number>, organization: any) => {
-            const status = organization.status || 'PENDING';
+            const status = organization.status || OrganizationStatus.PENDING_APPROVAL;
             acc[status] = (acc[status] || 0) + 1;
             acc.total = (acc.total || 0) + 1;
             return acc;
@@ -80,7 +80,7 @@ export function useAdminOrganizationCounts() {
  * @returns Query result with organizations that are pending approval
  */
 export function useAdminOrganizationsPendingApproval() {
-  return api.admin.getOrganizations.useQuery({ status: 'PENDING_APPROVAL' });
+  return api.admin.getOrganizations.useQuery({ status: OrganizationStatus.PENDING_APPROVAL });
 }
 
 /**
@@ -95,7 +95,7 @@ export function useAdminOrganizationsNeedingReview() {
         // Filter organizations that need review
         return organizations.filter((organization: any) => {
           // Organizations that are pending
-          if (organization.status === 'PENDING') return true;
+          if (organization.status === OrganizationStatus.PENDING_APPROVAL) return true;
 
           // Organizations with no members (potential issues)
           if (!organization.memberships || organization.memberships.length === 0) return true;
@@ -117,7 +117,7 @@ export function useAdminOrganizationsNeedingReview() {
  */
 export function useAdminRecentlyApprovedOrganizations(days: number = 30) {
   return api.admin.getOrganizations.useQuery(
-    { status: 'APPROVED' },
+    { status: OrganizationStatus.APPROVED },
     {
       select: (organizations) => {
         // Filter organizations approved within the specified days

@@ -2,40 +2,35 @@
 // ORGANIZATIONS FEATURE TYPES
 // =============================================================================
 // All type definitions for the organizations feature in one place
-// Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
-import { Organization, OrganizationMembership, Prisma, User } from '@prisma/client';
+// Domain enums, business logic types, and form schemas only
+//
+// =============================================================================
+// MIGRATION NOTES - SERVER DATA REMOVED
+// =============================================================================
+//
+// Removed server data:
+// - All Prisma imports and derived types
+// - OrganizationWithRelations interface
+// - All Prisma select/include configurations
+// - All Prisma GetPayload types (OrganizationDetailSelect, etc.)
+//
+// Components will use tRPC RouterOutputs for server data in Task 4.0
+// =============================================================================
+// PRISMA ENUM IMPORTS
+// =============================================================================
+import {
+  InvitationStatus,
+  MembershipStatus,
+  OrganizationBillingModel,
+  OrganizationRole,
+  OrganizationStatus,
+} from '@prisma/client';
 
 // =============================================================================
-// ENUMS
+// DOMAIN ENUMS - CLIENT-ONLY BUSINESS LOGIC
 // =============================================================================
 
-// Organization-related enums (matching Prisma schema)
-export enum OrganizationStatus {
-  PENDING_APPROVAL = 'PENDING_APPROVAL',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  SUSPENDED = 'SUSPENDED',
-}
-
-export enum MembershipRole {
-  ADMIN = 'ADMIN',
-  MANAGER = 'MANAGER',
-  MEMBER = 'MEMBER',
-}
-
-export enum MembershipStatus {
-  PENDING = 'PENDING',
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-}
-
-export enum ProviderInvitationStatus {
-  PENDING = 'PENDING',
-  ACCEPTED = 'ACCEPTED',
-  REJECTED = 'REJECTED',
-  CANCELLED = 'CANCELLED',
-}
-
+// Domain-specific enum for UI actions (not in Prisma)
 export enum InvitationAction {
   ACCEPT = 'ACCEPT',
   REJECT = 'REJECT',
@@ -73,63 +68,13 @@ export interface OrganizationLocation {
   [key: string]: any; // Allow other properties from the API response
 }
 
-export interface OrganizationProviderConnection {
-  id: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'SUSPENDED';
-  acceptedAt: string | null;
-  suspendedAt: string | null;
-  createdAt: string;
-  provider: {
-    id: string;
-    name: string;
-    email: string;
-    whatsapp: string | null;
-    website: string | null;
-    bio: string | null;
-    image: string | null;
-    user: {
-      id: string;
-      name: string | null;
-      email: string;
-      image: string | null;
-    };
-    serviceProviderType: {
-      id: string;
-      name: string;
-      description: string | null;
-    } | null;
-  };
-  invitation?: {
-    id: string;
-    [key: string]: any;
-  };
-}
+// OrganizationProviderConnection moved to server data - use tRPC RouterOutputs
 
 // =============================================================================
 // COMPLEX INTERFACES
 // =============================================================================
 
-// Organization with full relations
-export interface OrganizationWithRelations extends Organization {
-  approvedBy?: User;
-  memberships: Array<{
-    id: string;
-    role: MembershipRole;
-    status: MembershipStatus;
-    user: {
-      id: string;
-      name: string;
-      email: string;
-    };
-  }>;
-  locations: OrganizationLocation[];
-  providerConnections: OrganizationProviderConnection[];
-  _count?: {
-    memberships: number;
-    locations: number;
-    providerConnections: number;
-  };
-}
+// Server data interfaces removed - components will use tRPC RouterOutputs
 
 // =============================================================================
 // FORM AND INPUT TYPES
@@ -149,7 +94,7 @@ export type OrganizationBasicInfoData = CreateOrganizationData;
 
 export interface OrganizationRegistrationData {
   organization: CreateOrganizationData & {
-    billingModel: 'CONSOLIDATED' | 'SLOT_BASED';
+    billingModel: OrganizationBillingModel;
     logo?: string;
   };
   locations?: Array<{
@@ -171,7 +116,7 @@ export interface UpdateOrganizationData extends Partial<CreateOrganizationData> 
 export interface CreateMembershipData {
   organizationId: string;
   userId: string;
-  role: MembershipRole;
+  role: OrganizationRole;
 }
 
 export interface CreateLocationData {
@@ -200,36 +145,7 @@ export interface OrganizationLocationForMutation {
   searchTerms?: string[];
 }
 
-export interface ProviderInvitationWithDetails {
-  id: string;
-  email: string;
-  status: ProviderInvitationStatus;
-  customMessage?: string;
-  createdAt: string | Date;
-  expiresAt: string | Date;
-  acceptedAt?: string | Date;
-  rejectedAt?: string | Date;
-  cancelledAt?: string | Date;
-  organization: {
-    id: string;
-    name: string;
-  };
-  provider?: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  connection?: {
-    providerId: string;
-    status: string;
-    [key: string]: any;
-  };
-  invitedBy?: {
-    id: string;
-    name: string;
-    email: string;
-  };
-}
+// ProviderInvitationWithDetails moved to server data - use tRPC RouterOutputs
 
 // =============================================================================
 // API RESPONSE TYPES
@@ -246,78 +162,15 @@ export interface OrganizationApiResponse<T = any> {
 // UTILITY TYPES
 // =============================================================================
 
-export type OrganizationStatusType = keyof typeof OrganizationStatus;
-export type MembershipRoleType = keyof typeof MembershipRole;
-export type MembershipStatusType = keyof typeof MembershipStatus;
+// Utility types - import specific Prisma types where needed
+// Example: import type { OrganizationStatus } from '@prisma/client'
 
 // =============================================================================
-// PRISMA INCLUDE CONFIGURATIONS
+// PRISMA CONFIGURATIONS REMOVED
 // =============================================================================
-
-// Helper configuration for including organization relations
-export const includeOrganizationRelations = {
-  approvedBy: {
-    select: {
-      id: true,
-      name: true,
-      email: true,
-    },
-  },
-  memberships: {
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-    },
-  },
-  locations: {
-    select: {
-      id: true,
-      name: true,
-      formattedAddress: true,
-      phone: true,
-      email: true,
-      createdAt: true,
-      googlePlaceId: true,
-    },
-  },
-  providerConnections: {
-    include: {
-      provider: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              phone: true,
-            },
-          },
-          typeAssignments: {
-            include: {
-              providerType: {
-                select: {
-                  name: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  },
-  _count: {
-    select: {
-      memberships: true,
-      locations: true,
-      providerConnections: true,
-    },
-  },
-};
+//
+// Prisma include/select configurations moved to server actions.
+// tRPC procedures will handle data fetching patterns in server layer.
 
 // =============================================================================
 // DEFAULT CONFIGURATIONS
@@ -332,245 +185,15 @@ export const getDefaultOrganizationData = (): Partial<CreateOrganizationData> =>
 });
 
 // =============================================================================
-// PRISMA-DERIVED TYPES
+// PRISMA-DERIVED TYPES REMOVED
 // =============================================================================
-
-// Organization with comprehensive relations for detailed views
-export type OrganizationDetailSelect = Prisma.OrganizationGetPayload<{
-  include: {
-    memberships: {
-      include: {
-        user: {
-          select: {
-            id: true;
-            name: true;
-            email: true;
-            phone: true;
-            image: true;
-          };
-        };
-      };
-    };
-    locations: {
-      select: {
-        id: true;
-        name: true;
-        formattedAddress: true;
-        phone: true;
-        email: true;
-        googlePlaceId: true;
-        coordinates: true;
-        createdAt: true;
-      };
-    };
-    providerConnections: {
-      include: {
-        provider: {
-          include: {
-            user: {
-              select: {
-                id: true;
-                name: true;
-                email: true;
-                phone: true;
-              };
-            };
-            typeAssignments: {
-              include: {
-                providerType: {
-                  select: {
-                    id: true;
-                    name: true;
-                  };
-                };
-              };
-            };
-          };
-        };
-      };
-    };
-    providerInvitations: {
-      include: {
-        invitedBy: {
-          select: {
-            id: true;
-            name: true;
-            email: true;
-          };
-        };
-      };
-    };
-    subscriptions: {
-      include: {
-        plan: {
-          select: {
-            id: true;
-            name: true;
-            basePrice: true;
-            currency: true;
-            interval: true;
-          };
-        };
-      };
-    };
-    approvedBy: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-    _count: {
-      select: {
-        memberships: true;
-        locations: true;
-        providerConnections: true;
-        providerInvitations: true;
-      };
-    };
-  };
-}>;
-
-// Organization for list views (minimal relations)
-export type OrganizationListSelect = Prisma.OrganizationGetPayload<{
-  include: {
-    _count: {
-      select: {
-        memberships: true;
-        locations: true;
-        providerConnections: true;
-      };
-    };
-  };
-}>;
-
-// Organization with basic info for dropdowns and selectors
-export type OrganizationBasicSelect = Prisma.OrganizationGetPayload<{
-  select: {
-    id: true;
-    name: true;
-    email: true;
-    status: true;
-    billingModel: true;
-  };
-}>;
-
-// Location with organization context
-export type LocationDetailSelect = Prisma.LocationGetPayload<{
-  include: {
-    organization: {
-      select: {
-        id: true;
-        name: true;
-        billingModel: true;
-      };
-    };
-    subscriptions: {
-      include: {
-        plan: {
-          select: {
-            id: true;
-            name: true;
-            basePrice: true;
-            currency: true;
-          };
-        };
-      };
-    };
-    availabilities: {
-      select: {
-        id: true;
-        title: true;
-        startTime: true;
-        endTime: true;
-        status: true;
-        provider: {
-          include: {
-            user: {
-              select: {
-                id: true;
-                name: true;
-              };
-            };
-          };
-        };
-      };
-    };
-  };
-}>;
-
-// Organization membership with user and organization context
-export type MembershipDetailSelect = Prisma.OrganizationMembershipGetPayload<{
-  include: {
-    user: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-        phone: true;
-        image: true;
-        role: true;
-      };
-    };
-    organization: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-  };
-}>;
-
-// Provider connection with full context
-export type ProviderConnectionDetailSelect = Prisma.OrganizationProviderConnectionGetPayload<{
-  include: {
-    organization: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-        billingModel: true;
-      };
-    };
-    provider: {
-      include: {
-        user: {
-          select: {
-            id: true;
-            name: true;
-            email: true;
-            phone: true;
-          };
-        };
-        typeAssignments: {
-          include: {
-            providerType: {
-              select: {
-                id: true;
-                name: true;
-                category: true;
-              };
-            };
-          };
-        };
-        services: {
-          select: {
-            id: true;
-            name: true;
-            description: true;
-          };
-        };
-      };
-    };
-    availabilities: {
-      select: {
-        id: true;
-        title: true;
-        startTime: true;
-        endTime: true;
-        status: true;
-      };
-    };
-  };
-}>;
+//
+// All Prisma GetPayload types removed:
+// - OrganizationDetailSelect → Use RouterOutputs['organizations']['getOrganizationDetail']
+// - OrganizationListSelect → Use RouterOutputs['organizations']['getOrganizations']
+// - OrganizationBasicSelect → Use RouterOutputs['organizations']['getOrganizationBasic']
+// - LocationDetailSelect → Use RouterOutputs['organizations']['getLocationDetail']
+// - MembershipDetailSelect → Use RouterOutputs['organizations']['getMembershipDetail']
+// - ProviderConnectionDetailSelect → Use RouterOutputs['organizations']['getProviderConnectionDetail']
+//
+// Components will extract types directly from tRPC RouterOutputs in Task 4.0

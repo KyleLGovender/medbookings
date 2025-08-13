@@ -3,10 +3,19 @@
 // =============================================================================
 // All type definitions for the admin feature in one place
 // Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
-import { Prisma } from '@prisma/client';
+// =============================================================================
+// PRISMA TYPE IMPORTS
+// =============================================================================
+// Import database enums directly from Prisma to prevent type drift
+import {
+  OrganizationStatus,
+  ProviderStatus,
+  RequirementsValidationStatus,
+  UserRole,
+} from '@prisma/client';
 
 // =============================================================================
-// ENUMS
+// DOMAIN-SPECIFIC ENUMS (Not in Prisma)
 // =============================================================================
 
 export enum AdminAction {
@@ -21,49 +30,19 @@ export enum ApprovalEntityType {
   REQUIREMENT = 'REQUIREMENT',
 }
 
-export enum AdminApprovalStatus {
-  PENDING_APPROVAL = 'PENDING_APPROVAL',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-}
-
-export enum AdminProviderStatus {
-  PENDING_APPROVAL = 'PENDING_APPROVAL',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  TRIAL = 'TRIAL',
-  TRIAL_EXPIRED = 'TRIAL_EXPIRED',
-  ACTIVE = 'ACTIVE',
-  PAYMENT_OVERDUE = 'PAYMENT_OVERDUE',
-  SUSPENDED = 'SUSPENDED',
-  CANCELLED = 'CANCELLED',
-}
-
-export enum AdminOrganizationStatus {
-  PENDING_APPROVAL = 'PENDING_APPROVAL',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  TRIAL = 'TRIAL',
-  TRIAL_EXPIRED = 'TRIAL_EXPIRED',
-  ACTIVE = 'ACTIVE',
-  PAYMENT_OVERDUE = 'PAYMENT_OVERDUE',
-  SUSPENDED = 'SUSPENDED',
-  CANCELLED = 'CANCELLED',
-}
-
-export enum RequirementValidationStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-}
-
 // =============================================================================
 // BASE INTERFACES AND TYPES
 // =============================================================================
 
 // Basic Admin Action Types
 export type AdminActionType = 'APPROVE' | 'REJECT' | 'SUSPEND';
-export type ApprovalStatus = 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+
+// Approval status type that handles both Provider and Organization statuses
+// Note: Using union type since admin can approve both providers and organizations
+export type ApprovalStatus = ProviderStatus | OrganizationStatus;
+
+// Specific approval statuses for filtering (common values across provider and organization)
+export type AdminFilterStatus = 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
 
 // API Response Types
 export interface AdminApiResponse<T = any> {
@@ -142,17 +121,18 @@ export type RejectRequirementAction = (
 ) => Promise<ServerActionResult>;
 
 // Dashboard Data Types
+// Note: Using Prisma enum values as keys for count aggregation
 export interface AdminProviderCounts {
-  PENDING_APPROVAL: number;
-  APPROVED: number;
-  REJECTED: number;
+  [ProviderStatus.PENDING_APPROVAL]: number;
+  [ProviderStatus.APPROVED]: number;
+  [ProviderStatus.REJECTED]: number;
   total: number;
 }
 
 export interface AdminOrganizationCounts {
-  PENDING_APPROVAL: number;
-  APPROVED: number;
-  REJECTED: number;
+  [OrganizationStatus.PENDING_APPROVAL]: number;
+  [OrganizationStatus.APPROVED]: number;
+  [OrganizationStatus.REJECTED]: number;
   total: number;
 }
 
@@ -163,7 +143,7 @@ export interface AdminDashboardData {
 
 // List Filter Types
 export interface AdminListFilters {
-  status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+  status?: AdminFilterStatus;
   search?: string;
 }
 
@@ -178,7 +158,7 @@ export interface AdminRequirementRouteParams {
 }
 
 export interface AdminSearchParams {
-  status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+  status?: AdminFilterStatus;
 }
 
 // Page Props Types
@@ -198,242 +178,8 @@ export interface AdminOrganizationDetailPageProps {
   params: AdminRouteParams;
 }
 
-// Prisma Select Types for Admin Queries
-export type AdminOrganizationSelect = Prisma.OrganizationGetPayload<{
-  include: {
-    approvedBy: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-    memberships: {
-      include: {
-        user: {
-          select: {
-            id: true;
-            name: true;
-            email: true;
-          };
-        };
-      };
-    };
-    locations: {
-      select: {
-        id: true;
-        name: true;
-        formattedAddress: true;
-        phone: true;
-        email: true;
-        createdAt: true;
-        googlePlaceId: true;
-      };
-    };
-    providerConnections: {
-      include: {
-        provider: {
-          include: {
-            user: {
-              select: {
-                id: true;
-                name: true;
-                email: true;
-                phone: true;
-              };
-            };
-            typeAssignments: {
-              include: {
-                providerType: {
-                  select: {
-                    name: true;
-                  };
-                };
-              };
-            };
-          };
-        };
-      };
-    };
-    _count: {
-      select: {
-        memberships: true;
-        locations: true;
-        providerConnections: true;
-      };
-    };
-  };
-}>;
-
-export type AdminProviderSelect = Prisma.ProviderGetPayload<{
-  include: {
-    user: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-        phone: true;
-        whatsapp: true;
-      };
-    };
-    typeAssignments: {
-      include: {
-        providerType: {
-          select: {
-            id: true;
-            name: true;
-          };
-        };
-      };
-    };
-    services: {
-      select: {
-        id: true;
-        name: true;
-      };
-    };
-    requirementSubmissions: {
-      include: {
-        requirementType: {
-          select: {
-            id: true;
-            name: true;
-            displayPriority: true;
-            isRequired: true;
-          };
-        };
-        validatedBy: {
-          select: {
-            id: true;
-            name: true;
-          };
-        };
-      };
-    };
-    approvedBy: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-  };
-}>;
-
-export type AdminProviderListSelect = Prisma.ProviderGetPayload<{
-  include: {
-    user: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-    typeAssignments: {
-      include: {
-        providerType: {
-          select: {
-            name: true;
-          };
-        };
-      };
-    };
-    requirementSubmissions: {
-      select: {
-        status: true;
-      };
-    };
-  };
-}>;
-
-export type AdminOrganizationListSelect = Prisma.OrganizationGetPayload<{
-  include: {
-    _count: {
-      select: {
-        memberships: true;
-        locations: true;
-      };
-    };
-  };
-}>;
-
-// Component-Specific Types
-export interface AdminRequirementSubmission {
-  id: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  notes?: string;
-  validatedAt?: string;
-  requirementType: {
-    id: string;
-    name: string;
-    displayPriority?: number;
-    isRequired: boolean;
-  };
-  validatedBy?: {
-    id: string;
-    name: string;
-  };
-}
-
-export interface OrganizationMembership {
-  id: string;
-  role: string;
-  status: string;
-  createdAt: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
-}
-
-export interface OrganizationLocation {
-  id: string;
-  name: string;
-  formattedAddress: string;
-  phone?: string;
-  email?: string;
-  createdAt: string;
-  googlePlaceId?: string;
-}
-
-export interface OrganizationProviderConnection {
-  id: string;
-  createdAt: string;
-  provider: {
-    status: string;
-    user: {
-      id: string;
-      name: string;
-      email: string;
-      phone?: string;
-    };
-    typeAssignments: {
-      providerType: {
-        name: string;
-      };
-    }[];
-  };
-}
-
-// Component Props Types
-export interface AdminProviderDetailProps {
-  provider: AdminProviderSelect;
-}
-
-export interface AdminOrganizationDetailProps {
-  organization: AdminOrganizationSelect;
-}
-
-export interface AdminProviderListProps {
-  providers: AdminProviderListSelect[];
-  initialStatus?: string;
-}
-
-export interface AdminOrganizationListProps {
-  organizations: AdminOrganizationListSelect[];
-  initialStatus?: string;
-}
+// Component Props Types (using tRPC types, not manual interfaces)
+// These will be migrated to use RouterOutputs extraction in Task 4.0
 
 export interface ApprovalButtonsProps {
   entityType: ApprovalEntityType;
@@ -454,145 +200,29 @@ export interface RejectionModalProps {
 }
 
 // =============================================================================
-// HOOK INTERFACES (consolidated from interfaces.ts)
+// MIGRATION NOTES
 // =============================================================================
-
-// Hook interfaces for TanStack Query
-export interface UseAdminProvidersResult {
-  data: AdminProviderSelect[] | undefined;
-  isLoading: boolean;
-  error: Error | null;
-  refetch: () => void;
-}
-
-export interface UseAdminOrganizationsResult {
-  data: AdminOrganizationSelect[] | undefined;
-  isLoading: boolean;
-  error: Error | null;
-  refetch: () => void;
-}
-
-export interface UseAdminProviderResult {
-  data: AdminProviderSelect | undefined;
-  isLoading: boolean;
-  error: Error | null;
-  refetch: () => void;
-}
-
-export interface UseAdminOrganizationResult {
-  data: AdminOrganizationSelect | undefined;
-  isLoading: boolean;
-  error: Error | null;
-  refetch: () => void;
-}
-
-// Mutation interfaces
-export interface AdminMutationOptions {
-  onSuccess?: () => void;
-  onError?: (error: Error) => void;
-}
-
-export interface UseApproveProviderMutation {
-  mutate: (providerId: string) => void;
-  mutateAsync: (providerId: string) => Promise<void>;
-  isLoading: boolean;
-  error: Error | null;
-}
-
-export interface UseRejectProviderMutation {
-  mutate: (data: { providerId: string; reason: string }) => void;
-  mutateAsync: (data: { providerId: string; reason: string }) => Promise<void>;
-  isLoading: boolean;
-  error: Error | null;
-}
-
-export interface UseApproveOrganizationMutation {
-  mutate: (organizationId: string) => void;
-  mutateAsync: (organizationId: string) => Promise<void>;
-  isLoading: boolean;
-  error: Error | null;
-}
-
-export interface UseRejectOrganizationMutation {
-  mutate: (data: { organizationId: string; reason: string }) => void;
-  mutateAsync: (data: { organizationId: string; reason: string }) => Promise<void>;
-  isLoading: boolean;
-  error: Error | null;
-}
-
-export interface UseApproveRequirementMutation {
-  mutate: (data: { providerId: string; requirementId: string }) => void;
-  mutateAsync: (data: { providerId: string; requirementId: string }) => Promise<void>;
-  isLoading: boolean;
-  error: Error | null;
-}
-
-export interface UseRejectRequirementMutation {
-  mutate: (data: { providerId: string; requirementId: string; reason: string }) => void;
-  mutateAsync: (data: {
-    providerId: string;
-    requirementId: string;
-    reason: string;
-  }) => Promise<void>;
-  isLoading: boolean;
-  error: Error | null;
-}
-
-// Count interfaces
-export interface UseAdminProviderCountsResult {
-  data:
-    | {
-        PENDING_APPROVAL: number;
-        APPROVED: number;
-        REJECTED: number;
-        total: number;
-      }
-    | undefined;
-  isLoading: boolean;
-  error: Error | null;
-}
-
-export interface UseAdminOrganizationCountsResult {
-  data:
-    | {
-        PENDING_APPROVAL: number;
-        APPROVED: number;
-        REJECTED: number;
-        total: number;
-      }
-    | undefined;
-  isLoading: boolean;
-  error: Error | null;
-}
-
-// API client interfaces
-export interface AdminApiClient {
-  providers: {
-    list: (filters?: { status?: string }) => Promise<AdminProviderSelect[]>;
-    get: (id: string) => Promise<AdminProviderSelect>;
-    approve: (id: string) => Promise<void>;
-    reject: (id: string, reason: string) => Promise<void>;
-    counts: () => Promise<{
-      PENDING_APPROVAL: number;
-      APPROVED: number;
-      REJECTED: number;
-      total: number;
-    }>;
-  };
-  organizations: {
-    list: (filters?: { status?: string }) => Promise<AdminOrganizationSelect[]>;
-    get: (id: string) => Promise<AdminOrganizationSelect>;
-    approve: (id: string) => Promise<void>;
-    reject: (id: string, reason: string) => Promise<void>;
-    counts: () => Promise<{
-      PENDING_APPROVAL: number;
-      APPROVED: number;
-      REJECTED: number;
-      total: number;
-    }>;
-  };
-  requirements: {
-    approve: (providerId: string, requirementId: string) => Promise<void>;
-    reject: (providerId: string, requirementId: string, reason: string) => Promise<void>;
-  };
-}
+//
+// ✅ TASK 3.2 COMPLETE: Prisma Type Import Migration
+//
+// REMOVED duplicate enums (now using Prisma imports):
+// - AdminApprovalStatus → Use ApprovalStatus (union of ProviderStatus | OrganizationStatus)
+// - AdminProviderStatus → Use ProviderStatus from @prisma/client
+// - AdminOrganizationStatus → Use OrganizationStatus from @prisma/client
+// - RequirementValidationStatus → Use RequirementsValidationStatus from @prisma/client
+//
+// KEPT domain-specific enums (not in Prisma):
+// - AdminAction (UI-specific approval actions)
+// - ApprovalEntityType (UI-specific entity categorization)
+//
+// All server data types, hook interfaces, and API client interfaces have been
+// removed from this manual type file as part of the dual-source type safety
+// architecture migration.
+//
+// These will be replaced with:
+// - tRPC RouterOutputs for server data (Task 6.0 component migration)
+// - Hook return types inferred from tRPC hooks (Task 5.0 hook migration)
+// - Direct tRPC client usage instead of manual API client interfaces
+//
+// Domain logic types (enums, form data, request types, route params) remain
+// in this file as they represent client-side business logic, not server data.

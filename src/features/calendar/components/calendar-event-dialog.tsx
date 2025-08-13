@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { AvailabilityStatus, SlotStatus } from '@prisma/client';
 import {
   AlertCircle,
   Calendar,
@@ -26,7 +27,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { AvailabilityStatus, CalendarEvent, SlotStatus } from '@/features/calendar/types/types';
+import { CalendarEvent } from '@/features/calendar/types/types';
 
 interface CalendarEventDialogProps {
   event: CalendarEvent | null;

@@ -1,8 +1,14 @@
 import { notFound, redirect } from 'next/navigation';
 
 import { ProviderDetail } from '@/features/admin/components/providers';
-import type { AdminProviderDetailPageProps } from '@/features/admin/types/types';
 import { getCurrentUser } from '@/lib/auth';
+
+// Extract page props type for admin provider detail page
+interface AdminProviderDetailPageProps {
+  params: {
+    id: string;
+  };
+}
 
 export default async function AdminProviderDetailPage({ params }: AdminProviderDetailPageProps) {
   const currentUser = await getCurrentUser();

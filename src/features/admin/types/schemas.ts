@@ -1,3 +1,4 @@
+import { OrganizationStatus, ProviderStatus } from '@prisma/client';
 import { z } from 'zod';
 
 import { AdminAction, ApprovalEntityType } from './types';
@@ -54,8 +55,9 @@ export const rejectRequirementRequestSchema = z.object({
 });
 
 // Search params schemas
+// Note: Using union of Prisma enums to allow filtering by either provider or organization status
 export const adminSearchParamsSchema = z.object({
-  status: z.enum(['PENDING_APPROVAL', 'APPROVED', 'REJECTED']).optional(),
+  status: z.union([z.nativeEnum(ProviderStatus), z.nativeEnum(OrganizationStatus)]).optional(),
   search: z.string().optional(),
 });
 

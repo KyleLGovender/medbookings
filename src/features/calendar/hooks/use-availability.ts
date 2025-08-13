@@ -2,19 +2,15 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import {
-  type ApiError,
-  apiRequest,
-  logApiError,
-  shouldRetry,
-} from '@/features/calendar/lib/api-error-handler';
-import {
-  AvailabilitySearchParams,
-  AvailabilityWithRelations,
-  CreateAvailabilityData,
-  UpdateAvailabilityData,
-} from '@/features/calendar/types/types';
-import { api } from '@/utils/api';
+import { type RouterInputs, type RouterOutputs, api } from '@/utils/api';
+
+// Extract types from tRPC procedures - OPTION C COMPLIANT
+type AvailabilityWithRelations = RouterOutputs['calendar']['getById'];
+type CreateAvailabilityResponse = RouterOutputs['calendar']['create'];
+type CreatedAvailability = NonNullable<CreateAvailabilityResponse['availability']>;
+type AvailabilitySearchParams = RouterInputs['calendar']['searchAvailability'];
+type CreateAvailabilityData = RouterInputs['calendar']['create'];
+type UpdateAvailabilityData = RouterInputs['calendar']['update'];
 
 // =============================================================================
 // QUERY KEY FACTORY
@@ -55,21 +51,7 @@ const DEFAULT_STALE_TIME = 5 * 60 * 1000; // 5 minutes
  */
 const DEFAULT_CACHE_TIME = 30 * 60 * 1000; // 30 minutes
 
-// Add context type definitions at the top of the file
-type UpdateAvailabilityContext = {
-  previousAvailability: AvailabilityWithRelations | null;
-  availabilityId: string;
-};
-
-type AcceptAvailabilityContext = {
-  previousAvailability: AvailabilityWithRelations | null;
-  availabilityId: string;
-};
-
-type RejectAvailabilityContext = {
-  previousAvailability: AvailabilityWithRelations | null;
-  availabilityId: string;
-};
+// All mutations now use tRPC with automatic optimistic updates and cache invalidation
 
 // Query hooks
 export function useAvailabilityById(availabilityId: string | undefined) {
@@ -90,8 +72,9 @@ export function useAvailabilitySearch(params: AvailabilitySearchParams) {
       organizationId: params.organizationId,
       locationId: params.locationId,
       serviceId: params.serviceId,
-      startDate: params.startDate?.toISOString(),
-      endDate: params.endDate?.toISOString(),
+      startDate:
+        params.startDate instanceof Date ? params.startDate.toISOString() : params.startDate,
+      endDate: params.endDate instanceof Date ? params.endDate.toISOString() : params.endDate,
       status: params.status,
       seriesId: params.seriesId,
     },
@@ -155,7 +138,7 @@ export function useAvailabilitySeries(seriesId: string | undefined) {
 
 // Mutation hooks
 export function useCreateAvailability(options?: {
-  onSuccess?: (data: AvailabilityWithRelations, variables: CreateAvailabilityData) => void;
+  onSuccess?: (data: CreatedAvailability, variables: CreateAvailabilityData) => void;
 }) {
   const utils = api.useUtils();
 
@@ -165,8 +148,9 @@ export function useCreateAvailability(options?: {
       utils.calendar.searchAvailability.invalidate();
       utils.calendar.getById.invalidate();
 
-      if (data) {
-        options?.onSuccess?.(data, variables as any);
+      // The tRPC mutation returns an object with availability property
+      if (data?.availability) {
+        options?.onSuccess?.(data.availability, variables as any);
       }
     },
   });
@@ -174,102 +158,42 @@ export function useCreateAvailability(options?: {
 
 export function useUpdateAvailability(options?: {
   onSuccess?: (
-    data: AvailabilityWithRelations,
-    variables: UpdateAvailabilityData & { scope?: 'single' | 'future' | 'all' }
+    data: RouterOutputs['calendar']['update'],
+    variables: UpdateAvailabilityData
   ) => void;
 }) {
-  const queryClient = useQueryClient();
+  const utils = api.useUtils();
 
-  return useMutation<
-    AvailabilityWithRelations,
-    Error,
-    UpdateAvailabilityData & { scope?: 'single' | 'future' | 'all' },
-    UpdateAvailabilityContext
-  >({
-    mutationFn: async (data) => {
-      const response = await fetch('/api/calendar/availability/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update availability');
-      }
-
-      return response.json();
-    },
-    onMutate: async (variables) => {
-      // Cancel any outgoing refetches for this specific availability
-      await queryClient.cancelQueries({
-        queryKey: availabilityKeys.detail(variables.id),
-      });
-
-      // Snapshot the previous value
-      const previousAvailability = queryClient.getQueryData(
-        availabilityKeys.detail(variables.id)
-      ) as AvailabilityWithRelations | null;
-
-      // Optimistically update the specific availability
-      if (previousAvailability) {
-        queryClient.setQueryData(
-          availabilityKeys.detail(variables.id),
-          (old: AvailabilityWithRelations | undefined) => ({
-            ...old,
-            ...variables,
-          })
-        );
-      }
-
-      return { previousAvailability, availabilityId: variables.id };
-    },
+  return api.calendar.update.useMutation({
     onSuccess: (data, variables) => {
-      // Update the specific availability in cache
-      queryClient.setQueryData(availabilityKeys.detail(variables.id), data);
+      // Invalidate relevant queries using tRPC utils
+      utils.calendar.searchAvailability.invalidate();
+      utils.calendar.getById.invalidate({ id: variables.id });
 
-      // Invalidate related queries using patterns
-      queryClient.invalidateQueries({ queryKey: availabilityKeys.lists() });
-      queryClient.invalidateQueries({
-        predicate: (query) =>
-          query.queryKey[0] === 'availability' &&
-          (query.queryKey[1] === 'search' ||
-            query.queryKey[1] === 'provider' ||
-            query.queryKey[1] === 'organization'),
-      });
-
-      if (data.seriesId) {
-        queryClient.invalidateQueries({
-          queryKey: availabilityKeys.series(data.seriesId),
+      // Invalidate provider/organization specific queries
+      if (data.availability?.providerId) {
+        utils.calendar.getByProviderId.invalidate({ providerId: data.availability.providerId });
+      }
+      if (data.availability?.organizationId) {
+        utils.calendar.getByOrganizationId.invalidate({
+          organizationId: data.availability.organizationId,
         });
+      }
+      if (data.availability?.seriesId) {
+        utils.calendar.getBySeriesId.invalidate({ seriesId: data.availability.seriesId });
       }
 
       options?.onSuccess?.(data, variables);
-    },
-    onError: (error, variables, context) => {
-      // Rollback optimistic update
-      if (context?.previousAvailability) {
-        queryClient.setQueryData(
-          availabilityKeys.detail(context.availabilityId),
-          context.previousAvailability
-        );
-      }
     },
   });
 }
 
 export function useCancelAvailability(options?: {
-  onSuccess?: (variables: {
-    id: string;
-    reason?: string;
-    scope?: 'single' | 'future' | 'all';
-  }) => void;
+  onSuccess?: (variables: { ids: string[]; scope?: 'single' | 'future' | 'all' }) => void;
 }) {
   const utils = api.useUtils();
 
-  return api.calendar.cancel.useMutation({
+  return api.calendar.delete.useMutation({
     onSuccess: (_, variables) => {
       // Invalidate all availability queries
       utils.calendar.invalidate();
@@ -296,7 +220,7 @@ export function useDeleteAvailability(options?: {
 }
 
 export function useAcceptAvailabilityProposal(options?: {
-  onSuccess?: (data: AvailabilityWithRelations, variables: { id: string }) => void;
+  onSuccess?: (data: any, variables: { id: string }) => void;
 }) {
   const utils = api.useUtils();
 

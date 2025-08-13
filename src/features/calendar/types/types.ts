@@ -19,49 +19,33 @@
  * @author MedBookings Development Team
  * @version 1.0.0
  */
-// All type definitions for the calendar availability feature in one place
-// Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
+// Import database enums from Prisma to prevent type drift
 import {
-  Organization,
-  OrganizationMembership,
-  OrganizationProviderConnection,
-  Prisma,
-  User,
+  AvailabilityStatus,
+  BillingEntity,
+  BookingStatus,
+  SchedulingRule,
+  SlotStatus,
 } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
-
-import { Provider, Service } from '@/features/providers/types/types';
 
 // =============================================================================
-// ENUMS
+// MIGRATION NOTES - SERVER DATA IMPORTS REMOVED
+// =============================================================================
+//
+// Removed server data imports:
+// - Prisma client types (Organization, User, etc.)
+// - Cross-feature dependencies (Provider, Service from providers)
+// - Decimal type from Prisma runtime
+//
+// Components will use tRPC RouterOutputs for server data in Task 4.0
+// Cross-feature types will be handled through tRPC procedures
+
+// =============================================================================
+// ENUMS (UI-SPECIFIC ONLY - Database enums imported from Prisma)
 // =============================================================================
 
-// Core availability enums (matching Prisma schema)
-export enum AvailabilityStatus {
-  PENDING = 'PENDING',
-  ACCEPTED = 'ACCEPTED',
-  REJECTED = 'REJECTED',
-  CANCELLED = 'CANCELLED',
-}
-
-export enum SchedulingRule {
-  CONTINUOUS = 'CONTINUOUS',
-  ON_THE_HOUR = 'ON_THE_HOUR',
-  ON_THE_HALF_HOUR = 'ON_THE_HALF_HOUR',
-}
-
-export enum SlotStatus {
-  AVAILABLE = 'AVAILABLE',
-  BOOKED = 'BOOKED',
-  BLOCKED = 'BLOCKED',
-  INVALID = 'INVALID',
-}
-
-export enum BillingEntity {
-  ORGANIZATION = 'ORGANIZATION',
-  LOCATION = 'LOCATION',
-  PROVIDER = 'PROVIDER',
-}
+// NOTE: Database enums (AvailabilityStatus, BillingEntity, SchedulingRule, SlotStatus)
+// are imported from @prisma/client to prevent type drift
 
 // Simplified recurrence options (Google Calendar style)
 export enum RecurrenceOption {
@@ -97,6 +81,25 @@ export enum SlotGenerationStatus {
 // =============================================================================
 // BASE INTERFACES (Client-safe versions of Prisma types)
 // =============================================================================
+
+// Slot creation data for database operations (used by slot-generation utilities)
+export interface SlotCreateData {
+  availabilityId: string;
+  serviceId: string;
+  serviceConfigId: string;
+  providerId: string;
+  organizationId: string;
+  locationId?: string;
+  startTime: Date;
+  endTime: Date;
+  duration: number;
+  price: number;
+  status: SlotStatus;
+  isBlocked: boolean;
+  lastCalculated: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export interface OrganizationProvider {
   id: string;
@@ -137,6 +140,17 @@ export interface OrganizationCalendarData {
 // =============================================================================
 
 export type CalendarViewMode = 'day' | '3-day' | 'week' | 'month';
+
+export interface DateRange {
+  start: Date;
+  end: Date;
+}
+
+export interface CalendarDataParams {
+  providerIds: string[];
+  dateRange: DateRange;
+  statusFilter?: AvailabilityStatus | 'ALL';
+}
 
 // Calendar view type constants and types moved from global directory
 export const CalendarViewType = {
@@ -209,7 +223,7 @@ export interface Subscription {
 
 export interface Booking {
   id: string;
-  status: string;
+  status: BookingStatus;
   startTime: Date;
   endTime: Date;
 }
@@ -257,7 +271,7 @@ export interface CalendarEvent {
   /** Whether this event is part of a recurring series */
   isRecurring?: boolean;
   /** Series identifier for recurring events */
-  seriesId?: string;
+  seriesId?: string | null;
   /** Location information where the event takes place */
   location?: {
     id: string;
@@ -325,18 +339,17 @@ export interface Availability {
   updatedAt: Date;
 }
 
-export interface AvailabilityWithRelations extends Availability {
-  provider: Provider;
-  organization?: Organization | null;
-  location?: Location | null;
-  providerConnection?: OrganizationProviderConnection | null;
-  createdBy: User;
-  createdByMembership?: OrganizationMembership | null;
-  acceptedBy?: User | null;
-  defaultSubscription?: Subscription | null;
-  availableServices?: ServiceAvailabilityConfigWithRelations[];
-  calculatedSlots?: CalculatedAvailabilitySlotWithRelations[];
-}
+// =============================================================================
+// MIGRATION NOTES - SERVER DATA INTERFACES REMOVED
+// =============================================================================
+//
+// Server data interfaces with relations have been removed:
+// - AvailabilityWithRelations (server data + Prisma relations)
+// - ServiceAvailabilityConfigWithRelations (server data + relations)
+// - CalculatedAvailabilitySlotWithRelations (server data + relations)
+//
+// Components will extract server data types from tRPC RouterOutputs in Task 4.0
+// using patterns like: RouterOutputs['calendar']['getAvailabilityWithRelations']
 
 export interface ServiceAvailabilityConfig {
   id: string;
@@ -344,19 +357,11 @@ export interface ServiceAvailabilityConfig {
   providerId: string;
   locationId?: string | null;
   duration: number;
-  price: Decimal;
+  price: number; // Changed from Decimal to number for client-side calculations
   isOnlineAvailable: boolean;
   isInPerson: boolean;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface ServiceAvailabilityConfigWithRelations extends ServiceAvailabilityConfig {
-  service: Service;
-  provider?: Provider;
-  location?: Location | null;
-  availabilities?: Availability[];
-  calculatedSlots?: CalculatedAvailabilitySlot[];
 }
 
 export interface CalculatedAvailabilitySlot {
@@ -372,15 +377,6 @@ export interface CalculatedAvailabilitySlot {
   blockedByCalendarEventId?: string | null;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface CalculatedAvailabilitySlotWithRelations extends CalculatedAvailabilitySlot {
-  availability?: AvailabilityWithRelations;
-  service?: Service;
-  serviceConfig?: ServiceAvailabilityConfigWithRelations;
-  booking?: Booking | null;
-  billedToSubscription?: Subscription | null;
-  blockedByCalendarEvent?: CalendarEvent | null;
 }
 
 // =============================================================================
@@ -703,7 +699,8 @@ export interface SlotGenerationResult {
 // Workflow Service Types
 export interface WorkflowResult {
   success: boolean;
-  availability?: AvailabilityWithRelations;
+  // availability will be typed using tRPC RouterOutputs in Task 4.0
+  availability?: any; // Temporary - will use RouterOutputs['calendar']['createAvailability']
   slotsGenerated?: number;
   error?: string;
   notifications?: {
@@ -775,7 +772,7 @@ export interface SeriesCleanupResult extends CleanupResult {
 // Communication Service Type (moved from types.ts)
 export interface BookingView {
   id: string;
-  status: string;
+  status: BookingStatus;
   notificationPreferences: {
     whatsapp: boolean;
   };
@@ -824,7 +821,8 @@ export interface NotificationPayload {
 }
 
 export interface AvailabilityNotificationContext {
-  availability: AvailabilityWithRelations;
+  // availability will be typed using tRPC RouterOutputs in Task 4.0
+  availability: any; // Temporary - will use RouterOutputs['calendar']['getAvailabilityDetail']
   previousStatus?: AvailabilityStatus;
   newStatus: AvailabilityStatus;
   actionBy: {
@@ -1150,35 +1148,17 @@ export interface AvailabilityBillingContext {
 }
 
 // =============================================================================
-// PRISMA INCLUDE CONFIGURATIONS
+// MIGRATION NOTES - PRISMA CONFIGURATIONS REMOVED
 // =============================================================================
-
-// Helper function to include common availability relations
-export const includeAvailabilityRelations = {
-  serviceProvider: true,
-  organization: true,
-  location: true,
-  providerConnection: true,
-  createdBy: true,
-  createdByMembership: true,
-  acceptedBy: true,
-  defaultSubscription: true,
-  availableServices: {
-    include: {
-      service: true,
-      serviceProvider: true,
-      location: true,
-    },
-  },
-  calculatedSlots: {
-    include: {
-      service: true,
-      booking: true,
-      billedToSubscription: true,
-      blockedByCalendarEvent: true,
-    },
-  },
-};
+//
+// Prisma include configurations have been removed as they represent server-side
+// data fetching patterns. These are now handled by tRPC procedures that return
+// properly typed data automatically.
+//
+// Removed:
+// - includeAvailabilityRelations (Prisma include configuration)
+//
+// Server procedures will handle data fetching and return appropriately typed data.
 
 // =============================================================================
 // UTILITY TYPES AND HELPERS
@@ -1217,268 +1197,20 @@ export const getDefaultExportConfig = (): ExportConfig => ({
 });
 
 // =============================================================================
-// PRISMA-DERIVED TYPES
+// MIGRATION NOTES - PRISMA-DERIVED TYPES REMOVED
 // =============================================================================
-
-// Availability with comprehensive relations for detailed views
-export type AvailabilityDetailSelect = Prisma.AvailabilityGetPayload<{
-  include: {
-    provider: {
-      include: {
-        user: {
-          select: {
-            id: true;
-            name: true;
-            email: true;
-            phone: true;
-          };
-        };
-        typeAssignments: {
-          include: {
-            providerType: {
-              select: {
-                id: true;
-                name: true;
-              };
-            };
-          };
-        };
-      };
-    };
-    organization: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-    location: {
-      select: {
-        id: true;
-        name: true;
-        formattedAddress: true;
-        phone: true;
-        email: true;
-      };
-    };
-    providerConnection: {
-      select: {
-        id: true;
-        status: true;
-        defaultBilledBy: true;
-      };
-    };
-    createdBy: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-    acceptedBy: {
-      select: {
-        id: true;
-        name: true;
-        email: true;
-      };
-    };
-    defaultSubscription: {
-      select: {
-        id: true;
-        status: true;
-        type: true;
-        plan: {
-          select: {
-            id: true;
-            name: true;
-            basePrice: true;
-            currency: true;
-          };
-        };
-      };
-    };
-    availableServices: {
-      include: {
-        service: {
-          select: {
-            id: true;
-            name: true;
-            description: true;
-            serviceType: {
-              select: {
-                id: true;
-                name: true;
-                category: true;
-              };
-            };
-          };
-        };
-      };
-    };
-    calculatedSlots: {
-      select: {
-        id: true;
-        startTime: true;
-        endTime: true;
-        status: true;
-        booking: {
-          select: {
-            id: true;
-            status: true;
-            guestName: true;
-            guestEmail: true;
-          };
-        };
-      };
-    };
-  };
-}>;
-
-// Availability for list views (minimal relations)
-export type AvailabilityListSelect = Prisma.AvailabilityGetPayload<{
-  include: {
-    provider: {
-      include: {
-        user: {
-          select: {
-            id: true;
-            name: true;
-          };
-        };
-      };
-    };
-    organization: {
-      select: {
-        id: true;
-        name: true;
-      };
-    };
-    location: {
-      select: {
-        id: true;
-        name: true;
-        formattedAddress: true;
-      };
-    };
-    _count: {
-      select: {
-        calculatedSlots: true;
-        availableServices: true;
-      };
-    };
-  };
-}>;
-
-// Calculated slot with full relations for booking views
-export type CalculatedSlotDetailSelect = Prisma.CalculatedAvailabilitySlotGetPayload<{
-  include: {
-    availability: {
-      include: {
-        provider: {
-          include: {
-            user: {
-              select: {
-                id: true;
-                name: true;
-                email: true;
-                phone: true;
-              };
-            };
-          };
-        };
-        organization: {
-          select: {
-            id: true;
-            name: true;
-            email: true;
-          };
-        };
-        location: {
-          select: {
-            id: true;
-            name: true;
-            formattedAddress: true;
-            phone: true;
-          };
-        };
-      };
-    };
-    service: {
-      select: {
-        id: true;
-        name: true;
-        description: true;
-        serviceType: {
-          select: {
-            id: true;
-            name: true;
-            category: true;
-          };
-        };
-      };
-    };
-    serviceConfig: {
-      select: {
-        id: true;
-        duration: true;
-        price: true;
-        isOnlineAvailable: true;
-      };
-    };
-    booking: {
-      select: {
-        id: true;
-        status: true;
-        guestName: true;
-        guestEmail: true;
-        guestPhone: true;
-        notes: true;
-        createdAt: true;
-      };
-    };
-    billedToSubscription: {
-      select: {
-        id: true;
-        status: true;
-        type: true;
-      };
-    };
-  };
-}>;
-
-// Service availability config with relations
-export type ServiceConfigDetailSelect = Prisma.ServiceAvailabilityConfigGetPayload<{
-  include: {
-    service: {
-      select: {
-        id: true;
-        name: true;
-        description: true;
-        serviceType: {
-          select: {
-            id: true;
-            name: true;
-            category: true;
-          };
-        };
-      };
-    };
-    provider: {
-      include: {
-        user: {
-          select: {
-            id: true;
-            name: true;
-          };
-        };
-      };
-    };
-    location: {
-      select: {
-        id: true;
-        name: true;
-        formattedAddress: true;
-      };
-    };
-  };
-}>;
+//
+// All Prisma-derived select types have been removed as they represent server-side
+// data shapes that are now handled by tRPC's automatic type inference.
+//
+// Removed types:
+// - AvailabilityDetailSelect (complex server data with relations)
+// - AvailabilityListSelect (server data for list views)
+// - CalculatedSlotDetailSelect (server data for booking views)
+// - ServiceConfigDetailSelect (server data with service relations)
+//
+// Components will extract equivalent types from tRPC RouterOutputs:
+// - RouterOutputs['calendar']['getAvailabilityDetail']
+// - RouterOutputs['calendar']['getAvailabilityList']
+// - RouterOutputs['calendar']['getCalculatedSlotDetail']
+// - RouterOutputs['calendar']['getServiceConfigDetail']

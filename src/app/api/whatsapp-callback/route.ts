@@ -3,9 +3,12 @@ import { type NextRequest, NextResponse } from 'next/server';
 import twilio from 'twilio';
 
 import env from '@/config/env/server';
-import { type BookingView } from '@/features/calendar/types/types';
 import { sendGuestVCardToProvider } from '@/features/communications/lib/server-helper';
 import { prisma } from '@/lib/prisma';
+import { type RouterOutputs } from '@/utils/api';
+
+// Use the same type as the communications action expects
+type BookingWithDetails = RouterOutputs['calendar']['getBookingWithDetails'];
 
 // Helper function to normalize phone numbers to E.164 format (reuse from previous example)
 function normalizePhoneNumber(phoneNumber: string): string | null {
@@ -146,46 +149,11 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Booking slot details not found.' }, { status: 400 });
       }
 
-      // 5. Prepare Data for Helper Function
-      const bookingView: BookingView = {
-        // ... construct bookingView as before using 'booking' data ...
-        id: booking.id,
-        status: booking.status,
-        notificationPreferences: { whatsapp: true }, // From provider's perspective
-        guestInfo: {
-          name: booking.guestName || 'Guest',
-          whatsapp: booking.guestWhatsapp!,
-        },
-        slot: {
-          id: booking.slot.id,
-          startTime: booking.slot.startTime,
-          endTime: booking.slot.endTime,
-          status: booking.slot.status,
-          service: {
-            id: booking.slot.service.id,
-            name: booking.slot.service.name,
-            description: booking.slot.service.description ?? undefined,
-            displayPriority: booking.slot.service.displayPriority,
-          },
-          serviceConfig: {
-            id: booking.slot.serviceConfig.id,
-            price: Number(booking.slot.serviceConfig.price),
-            duration: booking.slot.serviceConfig.duration,
-            isOnlineAvailable: booking.slot.serviceConfig.isOnlineAvailable,
-            isInPerson: booking.slot.serviceConfig.isInPerson,
-            location: booking.slot.serviceConfig.locationId ?? undefined,
-          },
-          provider: {
-            id: booking.slot.availability?.provider?.id || '',
-            name: booking.slot.availability?.provider?.name || '',
-            whatsapp: booking.slot.availability?.provider?.whatsapp,
-            image: booking.slot.availability?.provider?.image,
-          },
-        },
-      };
+      // 5. Use the booking data directly - it already has the right shape from Prisma query
+      // The booking is already typed correctly for sendGuestVCardToProvider function
 
       // 6. Call the Core Logic
-      await sendGuestVCardToProvider(bookingView); // Assume this throws on error
+      await sendGuestVCardToProvider(booking); // Pass the booking directly
 
       console.log(`[WHATSAPP CALLBACK] vCard sent successfully for booking ${booking.id}.`);
       // Return success acknowledgment to Twilio
