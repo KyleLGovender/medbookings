@@ -34,11 +34,10 @@ export function getProviderCalendarPermissions(
 
   return {
     canView: true,
-    // Provider can edit their own availabilities (both provider-created and organization-created accepted ones)
-    canEdit: isProviderCreated || (isAccepted && !isPending) || isAdmin,
-    // Provider can delete their own availabilities 
+    // Provider can edit their own provider-created availabilities always, or accepted org-created ones
+    canEdit: isProviderCreated || (isAccepted && !isProviderCreated) || isAdmin,
+    // Provider can delete their own provider-created availabilities always
     canDelete: isProviderCreated || isAdmin,
-    // Provider can cancel accepted availabilities
     // Provider can accept organization-proposed availabilities that are pending
     canAccept: !isProviderCreated && isPending,
     // Provider can reject organization-proposed availabilities that are pending

@@ -1,10 +1,8 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AvailabilityCreationForm } from '@/features/calendar/components/availability/availability-creation-form';
-import { AvailabilityEditForm } from '@/features/calendar/components/availability/availability-edit-form';
 import { CalendarEventModal } from '@/features/calendar/components/modal/calendar-event-modal';
 import { ProviderCalendarView } from '@/features/calendar/components/provider-calendar-view';
 import {
@@ -26,6 +24,7 @@ interface ProviderCalendarPageProps {
 }
 
 export default function ProviderCalendarPage({ params }: ProviderCalendarPageProps) {
+  const router = useRouter();
   const { toast } = useToast();
   
   // Data fetching
@@ -42,7 +41,6 @@ export default function ProviderCalendarPage({ params }: ProviderCalendarPagePro
       });
     },
   });
-
 
   const acceptMutation = useAcceptAvailabilityProposal({
     onSuccess: () => {
@@ -62,16 +60,16 @@ export default function ProviderCalendarPage({ params }: ProviderCalendarPagePro
     },
   });
 
-  // Edit form state
-  const [showEditForm, setShowEditForm] = React.useState(false);
-  const [editFormScope, setEditFormScope] = React.useState<SeriesActionScope>('single');
-  const [showCreateForm, setShowCreateForm] = React.useState(false);
-
   // Calendar event modal
   const modal = useCalendarEventModal({
-    onEdit: (_event, scope) => {
-      setEditFormScope(scope);
-      setShowEditForm(true);
+    onEdit: (event, scope) => {
+      // Navigate to edit page with scope parameter and return URL
+      const searchParams = new URLSearchParams();
+      if (scope !== 'single') {
+        searchParams.set('scope', scope);
+      }
+      searchParams.set('returnUrl', `/providers/${params.id}/manage-calendar`);
+      router.push(`/availability/${event.id}/edit?${searchParams.toString()}`);
     },
     onDelete: (event, scope) => {
       deleteMutation.mutate({ ids: [event.id], scope });
@@ -92,23 +90,11 @@ export default function ProviderCalendarPage({ params }: ProviderCalendarPagePro
 
   // Event handlers
   const handleCreateAvailability = () => {
-    setShowCreateForm(true);
-  };
-
-  const handleCreateSuccess = () => {
-    setShowCreateForm(false);
-  };
-
-  const handleCreateCancel = () => {
-    setShowCreateForm(false);
-  };
-
-  const handleEditSuccess = () => {
-    setShowEditForm(false);
-  };
-
-  const handleEditCancel = () => {
-    setShowEditForm(false);
+    // Navigate to create page with provider ID and return URL
+    const searchParams = new URLSearchParams();
+    searchParams.set('providerId', params.id);
+    searchParams.set('returnUrl', `/providers/${params.id}/manage-calendar`);
+    router.push(`/availability/create?${searchParams.toString()}`);
   };
 
   return (
@@ -120,7 +106,7 @@ export default function ProviderCalendarPage({ params }: ProviderCalendarPagePro
         onEventClick={(event) => modal.actions.openEvent(event)}
       />
 
-      {/* New Modal System */}
+      {/* Calendar Event Modal - for actions like delete, accept, reject */}
       <CalendarEventModal
         state={modal.state}
         permissions={permissions}
@@ -130,36 +116,6 @@ export default function ProviderCalendarPage({ params }: ProviderCalendarPagePro
         onExecuteAction={modal.actions.executeAction}
         onClose={modal.actions.close}
       />
-
-      {/* Create Availability Dialog */}
-      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="max-h-[90vh] max-w-4xl overflow-auto">
-          <DialogHeader>
-            <DialogTitle>Create Availability</DialogTitle>
-          </DialogHeader>
-          <AvailabilityCreationForm
-            onSuccess={handleCreateSuccess}
-            onCancel={handleCreateCancel}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Availability Dialog */}
-      <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
-        <DialogContent className="max-h-[90vh] max-w-4xl overflow-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Availability</DialogTitle>
-          </DialogHeader>
-          {modal.state.selectedEvent && (
-            <AvailabilityEditForm
-              availabilityId={modal.state.selectedEvent.id}
-              scope={editFormScope}
-              onSuccess={handleEditSuccess}
-              onCancel={handleEditCancel}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

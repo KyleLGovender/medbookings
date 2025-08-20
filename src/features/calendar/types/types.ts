@@ -82,23 +82,18 @@ export enum SlotGenerationStatus {
 // BASE INTERFACES (Client-safe versions of Prisma types)
 // =============================================================================
 
-// Slot creation data for database operations (used by slot-generation utilities)
+// Slot creation data for database operations (matches CalculatedAvailabilitySlot schema)
 export interface SlotCreateData {
   availabilityId: string;
   serviceId: string;
   serviceConfigId: string;
-  providerId: string;
-  organizationId: string;
-  locationId?: string;
   startTime: Date;
   endTime: Date;
-  duration: number;
-  price: number;
   status: SlotStatus;
-  isBlocked: boolean;
   lastCalculated: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  version: number;
+  billedToSubscriptionId?: string;
+  blockedByEventId?: string;
 }
 
 export interface OrganizationProvider {
@@ -306,6 +301,12 @@ export interface CalendarEvent {
   };
   /** Whether the event was created by a provider (vs organization admin) */
   isProviderCreated?: boolean;
+  /** Available services for availability events (from server data) */
+  availableServices?: any; // Will be typed properly with tRPC RouterOutputs
+  /** Recurrence pattern for recurring events (from server data) */
+  recurrencePattern?: any; // Will be typed properly with tRPC RouterOutputs
+  /** Whether bookings require confirmation */
+  requiresConfirmation?: boolean;
 }
 
 // =============================================================================
@@ -678,13 +679,11 @@ export interface SlotGenerationOptions {
   availabilityId: string;
   startTime: Date;
   endTime: Date;
-  providerId: string;
-  organizationId: string;
-  locationId?: string;
   schedulingRule: SchedulingRule;
   schedulingInterval?: number;
   services: Array<{
     serviceId: string;
+    serviceConfigId: string;
     duration: number;
     price: number;
   }>;

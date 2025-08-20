@@ -127,7 +127,12 @@ export const createAvailabilityDataSchema = baseAvailabilitySchema
       // Ensure start and end times are on the same day
       const startDate = new Date(data.startTime);
       const endDate = new Date(data.endTime);
-      return startDate.toDateString() === endDate.toDateString();
+      
+      // Compare dates using UTC to avoid timezone issues
+      const startDateUTC = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
+      const endDateUTC = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()));
+      
+      return startDateUTC.getTime() === endDateUTC.getTime();
     },
     {
       message: 'Start and end times must be on the same day',
