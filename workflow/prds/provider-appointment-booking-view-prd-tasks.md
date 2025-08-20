@@ -13,14 +13,12 @@
 - `src/features/calendar/components/provider-slot-view.tsx` - Main calendar component displaying provider slots
 - `src/features/calendar/components/booking-calendar-grid.tsx` - Calendar grid for displaying availability slots
 - `src/features/calendar/components/booking-calendar-header.tsx` - Calendar navigation and view controls
-- `src/features/calendar/components/booking-filter-bar.tsx` - Filter controls for searching availability
 - `src/features/calendar/components/booking-slot-item.tsx` - Individual slot component with click handling
 - `src/features/calendar/hooks/use-available-slots.ts` - Hook for fetching and managing availability data
-- `src/features/calendar/hooks/use-booking-filters.ts` - Hook for managing filter state
 - `src/features/calendar/types/booking-types.ts` - Type definitions for booking view
 
 ### Existing Files to Modify
-- `src/server/api/routers/calendar.ts` - Add tRPC procedures for fetching filtered availability
+- `src/server/api/routers/calendar.ts` - Add tRPC procedures for fetching availability data
 - `src/components/ui/calendar-loader.tsx` - Reuse for loading states
 
 ### Notes
@@ -40,34 +38,28 @@
 - [ ] 2.0 Create provider-slot-view calendar components
   - [ ] 2.1 Create provider-slot-view.tsx as the main container component
   - [ ] 2.2 Build booking-calendar-grid.tsx with day/3-day/week view layouts
-  - [ ] 2.3 Implement booking-calendar-header.tsx with navigation controls (matching provider-calendar-view)
+  - [ ] 2.3 Implement booking-calendar-header.tsx with navigation controls (exactly matching provider-calendar-view with date picker, left/right arrows, and Today button)
   - [ ] 2.4 Create booking-slot-item.tsx component with green/grey status colors
   - [ ] 2.5 Add duration text display on slot items
   - [ ] 2.6 Implement time grid with proper slot positioning based on time/duration
 
-- [ ] 3.0 Implement filtering system
-  - [ ] 3.1 Create booking-filter-bar.tsx with all required filter controls
-  - [ ] 3.2 Implement date picker filter
-  - [ ] 3.3 Add time range filter
-  - [ ] 3.4 Create location/online toggle filter
-  - [ ] 3.5 Add provider type dropdown filter
-  - [ ] 3.6 Implement service selection filter
-  - [ ] 3.7 Add duration filter control
-  - [ ] 3.8 Create price range filter
-  - [ ] 3.9 Add "clear all filters" button
-  - [ ] 3.10 Create use-booking-filters.ts hook for filter state management
-  - [ ] 3.11 Implement filter persistence across navigation
+- [ ] 3.0 Implement calendar navigation (based on provider-calendar-view.tsx)
+  - [ ] 3.1 Add date picker component matching provider-calendar-view pattern
+  - [ ] 3.2 Implement left/right arrow navigation for dates
+  - [ ] 3.3 Add "Today" button to return to current date
+  - [ ] 3.4 Ensure navigation controls match provider-calendar-view styling
+  - [ ] 3.5 Add view mode selector (day/3-day/week) matching provider-calendar-view
 
 - [ ] 4.0 Integrate availability data
   - [ ] 4.1 Create use-available-slots.ts hook for data fetching
   - [ ] 4.2 Add tRPC procedure in calendar router for fetching CalculatedAvailabilitySlot data
   - [ ] 4.3 Implement real-time availability checking to prevent double-booking
-  - [ ] 4.4 Add filtering logic in tRPC procedure based on filter parameters
+  - [ ] 4.4 Remove any filtering logic - display all available slots
   - [ ] 4.5 Hide past time slots for current day automatically
   - [ ] 4.6 Enforce 3-day advance booking limit in data query
   - [ ] 4.7 Implement loading states using calendar-loader.tsx
   - [ ] 4.8 Add error handling and retry logic
-  - [ ] 4.9 Handle empty state when no slots match filters
+  - [ ] 4.9 Handle empty state when no slots are available for selected dates
 
 - [ ] 5.0 Add slot interaction and booking initiation
   - [ ] 5.1 Implement click handler for available (green) slots
@@ -82,7 +74,7 @@
   - [ ] 6.2 Implement day view for mobile devices
   - [ ] 6.3 Add 3-day view option for mobile
   - [ ] 6.4 Implement week view for desktop
-  - [ ] 6.5 Ensure filter bar is accessible and doesn't obstruct calendar on mobile
+  - [ ] 6.5 Ensure navigation controls are accessible and work well on mobile
   - [ ] 6.6 Optimize slot display for high density (40+ slots per day)
   - [ ] 6.7 Test and adjust touch targets for mobile interaction
   - [ ] 6.8 Implement view mode switcher UI
