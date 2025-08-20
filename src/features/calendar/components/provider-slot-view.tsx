@@ -215,8 +215,8 @@ export function ProviderSlotView({ providerId, searchParams }: ProviderSlotViewP
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="hidden md:flex md:items-center md:space-x-6">
+            {/* Quick Stats - Desktop */}
+            <div className="hidden lg:flex lg:items-center lg:space-x-6">
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">{stats.availableSlots}</div>
                 <div className="text-xs text-muted-foreground">Available Slots</div>
@@ -225,6 +225,18 @@ export function ProviderSlotView({ providerId, searchParams }: ProviderSlotViewP
                 <div className="text-2xl font-bold text-blue-600">{stats.avgDuration}min</div>
                 <div className="text-xs text-muted-foreground">Avg Duration</div>
               </div>
+            </div>
+          </div>
+
+          {/* Quick Stats - Mobile */}
+          <div className="mt-4 flex justify-center space-x-8 lg:hidden">
+            <div className="text-center">
+              <div className="text-xl font-bold text-green-600">{stats.availableSlots}</div>
+              <div className="text-xs text-muted-foreground">Available</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xl font-bold text-blue-600">{stats.avgDuration}min</div>
+              <div className="text-xs text-muted-foreground">Duration</div>
             </div>
           </div>
         </CardHeader>

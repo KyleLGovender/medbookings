@@ -7,6 +7,7 @@ import { Clock } from 'lucide-react';
 import CalendarLoader from '@/components/calendar-loader';
 import { Card, CardContent } from '@/components/ui/card';
 import { BookingSlotItem } from '@/features/calendar/components/booking-slot-item';
+import { MobileSlotList } from '@/features/calendar/components/mobile-slot-list';
 import { BookingSlot, CalendarGridProps } from '@/features/calendar/types/booking-types';
 
 export function BookingCalendarGrid({
@@ -135,16 +136,29 @@ export function BookingCalendarGrid({
   }
 
   return (
-    <Card>
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <div 
-            className="grid min-w-full"
-            style={{
-              gridTemplateColumns: `80px repeat(${dateColumns.length}, 1fr)`,
-              gridTemplateRows: `auto repeat(${timeGrid.length}, 60px)`,
-            }}
-          >
+    <>
+      {/* Mobile View - Show list layout on small screens */}
+      <div className="block lg:hidden">
+        <MobileSlotList
+          slots={slots}
+          currentDate={currentDate}
+          onSlotClick={onSlotClick}
+          selectedSlot={selectedSlot}
+        />
+      </div>
+
+      {/* Desktop View - Show grid layout on large screens */}
+      <div className="hidden lg:block">
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <div 
+                className="grid min-w-full"
+                style={{
+                  gridTemplateColumns: `80px repeat(${dateColumns.length}, 1fr)`,
+                  gridTemplateRows: `auto repeat(${timeGrid.length}, 60px)`,
+                }}
+              >
             {/* Header row with dates */}
             <div className="border-b border-r bg-gray-50 p-2">
               <span className="text-xs font-medium text-muted-foreground">Time</span>
@@ -203,9 +217,11 @@ export function BookingCalendarGrid({
                 })}
               </React.Fragment>
             ))}
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
+  </>
   );
 }
