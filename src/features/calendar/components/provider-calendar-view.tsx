@@ -461,7 +461,13 @@ export function ProviderCalendarView({
               </div>
 
               <div className="flex items-center space-x-4">
-                <div className="grid grid-cols-2 gap-3 text-center md:grid-cols-4 md:gap-4">
+                <div className="grid grid-cols-2 gap-3 text-center md:grid-cols-5 md:gap-4">
+                  <div>
+                    <div className="text-lg font-bold text-indigo-600 md:text-2xl">
+                      {stats.totalAvailableHours}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Available Hours</div>
+                  </div>
                   <div>
                     <div className="text-lg font-bold text-blue-600 md:text-2xl">
                       {stats.utilizationRate}%
