@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SchedulingRule } from '@prisma/client';
@@ -248,6 +249,7 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
   const [hasExistingBookings, setHasExistingBookings] = useState(false);
   const [bookingCount, setBookingCount] = useState(0);
   const { toast } = useToast();
+  const router = useRouter();
 
   // Fetch existing availability data
   const { data: availability, isLoading: isAvailabilityLoading, error: availabilityError } = useAvailabilityById(availabilityId);
@@ -312,7 +314,12 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
         description: 'Availability updated successfully',
       });
       if (data.availability) {
-        onSuccess?.(data.availability);
+        if (onSuccess) {
+          onSuccess(data.availability);
+        } else {
+          // Navigate back if no callback provided
+          router.back();
+        }
       }
     },
     onError: (error) => {
@@ -350,15 +357,13 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
           <p className="mt-1 text-sm text-muted-foreground">
             Please refresh the page or contact support if the problem persists.
           </p>
-          {onCancel && (
-            <Button
-              variant="outline"
-              onClick={onCancel}
-              className="mt-4"
-            >
-              Go Back
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            onClick={onCancel || (() => router.back())}
+            className="mt-4"
+          >
+            Go Back
+          </Button>
         </CardContent>
       </Card>
     );
@@ -893,16 +898,14 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
 
             {/* Form Actions */}
             <div className="flex justify-end gap-3 pt-6">
-              {onCancel && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onCancel}
-                  disabled={isSubmitting || updateMutation.isPending}
-                >
-                  Cancel
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel || (() => router.back())}
+                disabled={isSubmitting || updateMutation.isPending}
+              >
+                Cancel
+              </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting || updateMutation.isPending || !form.formState.isValid}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { BarChart, Calendar, Download, Plus, Settings } from 'lucide-react';
 
@@ -8,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 // import { CalendarExportDialog } from '@/features/calendar/availability/components/calendar-export-dialog';
-import { AvailabilityCreationForm } from '@/features/calendar/components/availability/availability-creation-form';
 import { AvailabilityProposalsList } from '@/features/calendar/components/availability/availability-proposals-list';
 // import { ProviderSearchInterface } from '@/features/calendar/availability/components/provider-search-interface';
 // import { DragDropCalendar } from '@/features/calendar/availability/components/drag-drop-calendar';
@@ -23,12 +23,12 @@ interface ProviderCalendarProps {
   searchParams?: { [key: string]: string | string[] | undefined };
 }
 
-export function ProviderCalendar({ searchParams }: ProviderCalendarProps) {
+export function ProviderCalendar() {
   const [activeTab, setActiveTab] = useState('calendar');
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const router = useRouter();
   // const [showExportDialog, setShowExportDialog] = useState(false);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
+  const currentDate = new Date();
+  const viewMode = 'week';
 
   // Mock configurations - these would come from user preferences/settings
   // const [dragDropConfig, setDragDropConfig] = useState({
@@ -57,7 +57,10 @@ export function ProviderCalendar({ searchParams }: ProviderCalendarProps) {
       {/* Header Actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button onClick={() => setShowCreateForm(true)} className="flex items-center gap-2">
+          <Button 
+            onClick={() => router.push(`/availability/create?returnUrl=${encodeURIComponent(window.location.pathname)}`)} 
+            className="flex items-center gap-2"
+          >
             <Plus className="h-4 w-4" />
             Add Availability
           </Button>
@@ -208,29 +211,6 @@ export function ProviderCalendar({ searchParams }: ProviderCalendarProps) {
         </TabsContent>
       </Tabs>
 
-      {/* Create Availability Form Modal */}
-      {showCreateForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="m-4 max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg bg-white">
-            <div className="p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Create Availability</h2>
-                <Button variant="ghost" onClick={() => setShowCreateForm(false)}>
-                  ×
-                </Button>
-              </div>
-              <AvailabilityCreationForm
-                providerId="current-provider" // This would come from auth context
-                onSuccess={() => {
-                  setShowCreateForm(false);
-                  // Refresh calendar data
-                }}
-                onCancel={() => setShowCreateForm(false)}
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Export Dialog - Functionality disabled due to missing component */}
     </div>

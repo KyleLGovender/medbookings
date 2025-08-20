@@ -17,11 +17,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { AvailabilityCreationForm } from '@/features/calendar/components/availability/availability-creation-form';
-import { AvailabilityEditForm } from '@/features/calendar/components/availability/availability-edit-form';
 import { AvailabilityViewModal } from '@/features/calendar/components/availability/availability-view-modal';
 import {
   SeriesActionDialog,
@@ -45,8 +42,7 @@ interface OrganizationAvailabilityPageProps {
 export default function OrganizationAvailabilityPage({
   params,
 }: OrganizationAvailabilityPageProps) {
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showEditForm, setShowEditForm] = useState(false);
+  const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<OrganizationProvider | null>(null);
@@ -58,10 +54,6 @@ export default function OrganizationAvailabilityPage({
   const [showSeriesActionDialog, setShowSeriesActionDialog] = useState(false);
   const [seriesActionType, setSeriesActionType] = useState<'edit' | 'delete' | 'cancel'>('edit');
   const [pendingSeriesScope, setPendingSeriesScope] = useState<SeriesActionScope | null>(null);
-  const [editFormScope, setEditFormScope] = useState<SeriesActionScope>('single');
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [viewingAvailabilityId, setViewingAvailabilityId] = useState<string | null>(null);
-  const [createProviderId, setCreateProviderId] = useState<string | null>(null);
 
   const { toast } = useToast();
 
@@ -99,16 +91,13 @@ export default function OrganizationAvailabilityPage({
 
 
   const handleCreateAvailability = (providerId?: string) => {
-    setCreateProviderId(providerId || null);
-    setShowCreateForm(true);
-  };
-
-  const handleCreateSuccess = () => {
-    setShowCreateForm(false);
-  };
-
-  const handleCreateCancel = () => {
-    setShowCreateForm(false);
+    const returnUrl = encodeURIComponent(window.location.pathname);
+    const searchParams = new URLSearchParams();
+    searchParams.set('returnUrl', returnUrl);
+    if (providerId) searchParams.set('providerId', providerId);
+    searchParams.set('organizationId', params.id);
+    
+    router.push(`/availability/create?${searchParams.toString()}`);
   };
 
   const handleEventClick = (event: CalendarEvent, provider: OrganizationProvider) => {
@@ -127,8 +116,9 @@ export default function OrganizationAvailabilityPage({
       setSeriesActionType('edit');
       setShowSeriesActionDialog(true);
     } else {
-      // Direct edit for single availability
-      setShowEditForm(true);
+      // Navigate to edit page for single availability
+      const returnUrl = encodeURIComponent(window.location.pathname);
+      router.push(`/availability/${selectedEvent?.id}/edit?returnUrl=${returnUrl}&scope=single`);
     }
   };
 
@@ -167,9 +157,9 @@ export default function OrganizationAvailabilityPage({
 
     switch (seriesActionType) {
       case 'edit':
-        // For series editing, pass scope to edit form
-        setEditFormScope(scope);
-        setShowEditForm(true);
+        // Navigate to edit page with scope parameter
+        const returnUrl = encodeURIComponent(window.location.pathname);
+        router.push(`/availability/${selectedEvent.id}/edit?returnUrl=${returnUrl}&scope=${scope}`);
         break;
       case 'delete':
         // Delete with scope parameter - pass as array with scope
@@ -195,15 +185,6 @@ export default function OrganizationAvailabilityPage({
     setSelectedEvent(null);
   };
 
-  const handleEditSuccess = () => {
-    setShowEditForm(false);
-    setSelectedEvent(null);
-  };
-
-  const handleEditCancel = () => {
-    setShowEditForm(false);
-    setSelectedEvent(null);
-  };
 
   return (
     <>
@@ -213,43 +194,6 @@ export default function OrganizationAvailabilityPage({
         onEventClick={handleEventClick}
       />
 
-      {/* Create Availability Dialog */}
-      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="max-h-[90vh] max-w-4xl overflow-auto">
-          <DialogHeader>
-            <DialogTitle>Create Availability</DialogTitle>
-          </DialogHeader>
-          {createProviderId ? (
-            <AvailabilityCreationForm
-              providerId={createProviderId}
-              organizationId={params.id}
-              onSuccess={handleCreateSuccess}
-              onCancel={handleCreateCancel}
-            />
-          ) : (
-            <div className="p-4 text-center text-muted-foreground">
-              Please select a provider to create availability
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Availability Dialog */}
-      <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
-        <DialogContent className="max-h-[90vh] max-w-4xl overflow-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Availability</DialogTitle>
-          </DialogHeader>
-          {selectedEvent && (
-            <AvailabilityEditForm
-              availabilityId={selectedEvent.id}
-              scope={editFormScope}
-              onSuccess={handleEditSuccess}
-              onCancel={handleEditCancel}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Series Action Dialog */}
       {selectedEvent && (

@@ -134,7 +134,12 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
         title: 'Success',
         description: 'Availability created successfully',
       });
-      onSuccess?.(data);
+      if (onSuccess) {
+        onSuccess(data);
+      } else {
+        // Navigate back to calendar if no callback provided
+        router.back();
+      }
     },
   });
 
@@ -604,16 +609,14 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
 
             {/* Form Actions */}
             <div className="flex justify-end gap-3 pt-6">
-              {onCancel && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onCancel}
-                  disabled={isSubmitting || createMutation.isPending}
-                >
-                  Cancel
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel || (() => router.back())}
+                disabled={isSubmitting || createMutation.isPending}
+              >
+                Cancel
+              </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting || createMutation.isPending || !form.formState.isValid}
