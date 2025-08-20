@@ -52,14 +52,14 @@
 ## Tasks
 
 ### Phase 1: Cleanup Previous Implementation
-- [ ] 1.0 Remove unnecessary files from previous complex implementation
-  - [ ] 1.1 Delete `booking-calendar-grid.tsx`
-  - [ ] 1.2 Delete `booking-calendar-header.tsx`
-  - [ ] 1.3 Delete `booking-slot-item.tsx`
-  - [ ] 1.4 Delete `booking-filter-bar.tsx`
-  - [ ] 1.5 Delete `use-booking-filters.ts`
-  - [ ] 1.6 Delete `mobile-slot-list.tsx`
-  - [ ] 1.7 Rename/simplify `provider-slot-view.tsx` to `provider-calendar-slot-view.tsx`
+- [x] 1.0 Remove unnecessary files from previous complex implementation
+  - [x] 1.1 Delete `booking-calendar-grid.tsx`
+  - [x] 1.2 Delete `booking-calendar-header.tsx`
+  - [x] 1.3 Delete `booking-slot-item.tsx`
+  - [x] 1.4 Delete `booking-filter-bar.tsx` (already deleted)
+  - [x] 1.5 Delete `use-booking-filters.ts`
+  - [x] 1.6 Delete `mobile-slot-list.tsx`
+  - [x] 1.7 Delete `provider-slot-view.tsx` (to be replaced)
 
 ### Phase 2: Create Simplified Provider Calendar Slot View
 - [ ] 2.0 Create `provider-calendar-slot-view.tsx` (based on provider-calendar-view.tsx)
