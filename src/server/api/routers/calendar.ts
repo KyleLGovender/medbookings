@@ -1245,6 +1245,144 @@ export const calendarRouter = createTRPCRouter({
     }),
 
   /**
+   * Get available slots for public booking view
+   * Public endpoint for customer-facing booking interface
+   */
+  getAvailableSlots: publicProcedure
+    .input(
+      z.object({
+        providerId: z.string(),
+        startDate: z.date(),
+        endDate: z.date(),
+        filters: z.object({
+          timeRange: z.object({
+            startTime: z.string(),
+            endTime: z.string(),
+          }).optional(),
+          location: z.enum(['online', 'in-person', 'all']).optional(),
+          services: z.array(z.string()).optional(),
+          duration: z.object({
+            min: z.number(),
+            max: z.number(),
+          }).optional(),
+          priceRange: z.object({
+            min: z.number(),
+            max: z.number(),
+          }).optional(),
+        }).optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const now = new Date();
+      const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+      // Enforce 3-day advance booking limit
+      const effectiveStartDate = input.startDate < threeDaysFromNow ? threeDaysFromNow : input.startDate;
+
+      const where: any = {
+        availability: {
+          providerId: input.providerId,
+          status: AvailabilityStatus.ACCEPTED,
+          startTime: { gte: effectiveStartDate },
+          endTime: { lte: input.endDate },
+        },
+        startTime: { gte: now }, // Only future slots
+        booking: null, // Only unbooked slots
+      };
+
+      // Apply filters
+      if (input.filters) {
+        // Location filter
+        if (input.filters.location && input.filters.location !== 'all') {
+          if (input.filters.location === 'online') {
+            where.availability.isOnlineAvailable = true;
+          } else {
+            where.availability.isOnlineAvailable = false;
+            where.availability.locationId = { not: null };
+          }
+        }
+
+        // Service filter
+        if (input.filters.services && input.filters.services.length > 0) {
+          where.serviceId = { in: input.filters.services };
+        }
+
+        // Duration filter
+        if (input.filters.duration) {
+          if (input.filters.duration.min) {
+            where.durationMinutes = { gte: input.filters.duration.min };
+          }
+          if (input.filters.duration.max) {
+            where.durationMinutes = { ...where.durationMinutes, lte: input.filters.duration.max };
+          }
+        }
+
+        // Price filter
+        if (input.filters.priceRange) {
+          if (input.filters.priceRange.min) {
+            where.price = { gte: input.filters.priceRange.min };
+          }
+          if (input.filters.priceRange.max) {
+            where.price = { ...where.price, lte: input.filters.priceRange.max };
+          }
+        }
+      }
+
+      const slots = await ctx.prisma.calculatedAvailabilitySlot.findMany({
+        where,
+        include: {
+          service: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
+          availability: {
+            include: {
+              provider: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                      image: true,
+                    },
+                  },
+                },
+              },
+              location: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: [
+          { startTime: 'asc' },
+          { service: { name: 'asc' } },
+        ],
+        take: 1000, // Limit results
+      });
+
+      // Apply time range filter post-query (more efficient for time comparisons)
+      if (input.filters?.timeRange) {
+        const { startTime: filterStartTime, endTime: filterEndTime } = input.filters.timeRange;
+        
+        return slots.filter(slot => {
+          const slotStartTime = slot.startTime.toTimeString().substring(0, 5);
+          const slotEndTime = slot.endTime.toTimeString().substring(0, 5);
+          
+          return slotStartTime >= filterStartTime && slotEndTime <= filterEndTime;
+        });
+      }
+
+      return slots;
+    }),
+
+  /**
    * Get booking with all relations needed for communications
    * OPTION C: Direct database query in tRPC for automatic type inference
    */

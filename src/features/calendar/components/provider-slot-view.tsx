@@ -4,13 +4,17 @@ import React, { useState, useMemo, useCallback } from 'react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserAvatar } from '@/components/user-avatar';
+import CalendarLoader from '@/components/calendar-loader';
 import { BookingCalendarGrid } from '@/features/calendar/components/booking-calendar-grid';
 import { BookingCalendarHeader } from '@/features/calendar/components/booking-calendar-header';
 import { BookingFilterBar } from '@/features/calendar/components/booking-filter-bar';
 import { useAvailableSlots } from '@/features/calendar/hooks/use-available-slots';
 import { useBookingFilters } from '@/features/calendar/hooks/use-booking-filters';
 import { BookingSlot, CalendarViewMode } from '@/features/calendar/types/booking-types';
-import { api } from '@/utils/api';
+import { api, type RouterOutputs } from '@/utils/api';
+
+// Extract provider type from tRPC
+type Provider = RouterOutputs['providers']['getById'];
 
 export interface ProviderSlotViewProps {
   providerId: string;
@@ -26,13 +30,32 @@ export function ProviderSlotView({ providerId, searchParams }: ProviderSlotViewP
   const filters = useBookingFilters(searchParams);
 
   // Fetch provider data
-  const { data: provider, isLoading: isProviderLoading } = api.providers.getPublicById.useQuery(
+  const { data: providerData, isLoading: isProviderLoading } = api.providers.getById.useQuery(
     { id: providerId },
     { 
       enabled: !!providerId,
       retry: false,
     }
   );
+
+  // Transform provider data to match ProviderPublicData interface
+  const provider = useMemo(() => {
+    if (!providerData) return null;
+    
+    return {
+      id: providerData.id,
+      user: providerData.user ? {
+        id: providerData.user.id,
+        name: providerData.user.name ?? undefined,
+        email: providerData.user.email ?? undefined,
+        image: providerData.user.image ?? undefined,
+      } : undefined,
+      status: providerData.status,
+      specialties: providerData.typeAssignments?.map(assignment => 
+        assignment.providerType?.name
+      ).filter(Boolean) || [],
+    };
+  }, [providerData]);
 
   // Fetch available slots with filters
   const { 
@@ -102,7 +125,7 @@ export function ProviderSlotView({ providerId, searchParams }: ProviderSlotViewP
   }
 
   // Provider not found
-  if (!provider) {
+  if (!provider || !providerData) {
     return (
       <Card className="mx-auto max-w-md">
         <CardContent className="py-8 text-center">
@@ -123,22 +146,22 @@ export function ProviderSlotView({ providerId, searchParams }: ProviderSlotViewP
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <UserAvatar
-                name={provider.user?.name}
-                image={provider.user?.image}
-                email={provider.user?.email}
+                name={providerData.user?.name}
+                image={providerData.user?.image}
+                email={providerData.user?.email}
                 className="h-16 w-16"
               />
               <div>
-                <CardTitle className="text-2xl">{provider.user?.name || 'Healthcare Provider'}</CardTitle>
+                <CardTitle className="text-2xl">{providerData.user?.name || 'Healthcare Provider'}</CardTitle>
                 <p className="text-muted-foreground">Healthcare Provider</p>
-                {provider.specialties && provider.specialties.length > 0 && (
+                {providerData.typeAssignments && providerData.typeAssignments.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {provider.specialties.slice(0, 3).map((specialty, index) => (
+                    {providerData.typeAssignments.slice(0, 3).map((assignment) => (
                       <span 
-                        key={index}
+                        key={assignment.id}
                         className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700"
                       >
-                        {specialty}
+                        {assignment.providerType?.name}
                       </span>
                     ))}
                   </div>

@@ -3,6 +3,7 @@
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
+
 import CalendarLoader from '@/components/calendar-loader';
 import { ProviderSlotView } from '@/features/calendar/components/provider-slot-view';
 
