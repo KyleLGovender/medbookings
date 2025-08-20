@@ -31,11 +31,11 @@
 
 ## Tasks
 
-- [ ] 1.0 Set up route and page structure at /app/(general)/calendar/[id]/
-  - [ ] 1.1 Create page.tsx at /app/(general)/calendar/[id]/ with proper params handling
-  - [ ] 1.2 Set up layout structure for public access (no auth required)
-  - [ ] 1.3 Add metadata and SEO configuration for the page
-  - [ ] 1.4 Implement provider ID validation and error handling
+- [x] 1.0 Set up route and page structure at /app/(general)/calendar/[id]/
+  - [x] 1.1 Create page.tsx at /app/(general)/calendar/[id]/ with proper params handling
+  - [x] 1.2 Set up layout structure for public access (no auth required)
+  - [x] 1.3 Add metadata and SEO configuration for the page
+  - [x] 1.4 Implement provider ID validation and error handling
 
 - [ ] 2.0 Create provider-slot-view calendar components
   - [ ] 2.1 Create provider-slot-view.tsx as the main container component

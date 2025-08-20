@@ -48,12 +48,3 @@ export default function ProviderBookingPage({ params, searchParams }: ProviderBo
   );
 }
 
-// Metadata for SEO
-export const metadata = {
-  title: 'Book Appointment - MedBookings',
-  description: 'View available appointment slots and book with healthcare providers',
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
