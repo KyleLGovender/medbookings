@@ -1,12 +1,19 @@
-import React from 'react';
 import { AvailabilityStatus } from '@prisma/client';
-import { Calendar, Check, Edit, Trash2, X } from 'lucide-react';
+import { Calendar, Check, Clock, Edit, Repeat, Trash2, X } from 'lucide-react';
+import React from 'react';
+
+import type { RouterOutputs } from '@/utils/api';
 
 import { Button } from '@/components/ui/button';
-import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
+import type { CalendarEventAction, CalendarEventPermissions, SeriesActionScope } from '@/features/calendar/types/modal';
 import type { CalendarEvent } from '@/features/calendar/types/types';
-import type { CalendarEventPermissions, CalendarEventAction, SeriesActionScope } from '@/features/calendar/types/modal';
+import { DayOfWeek } from '@/features/calendar/types/types';
+
+// Extract proper types for availability with services
+type AvailabilityData = RouterOutputs['calendar']['searchAvailability'][number];
+type AvailableService = AvailabilityData['availableServices'][number];
 
 interface EventDetailsStepProps {
   event: CalendarEvent;
@@ -90,58 +97,338 @@ export function EventDetailsStep({
           </div>
         </div>
 
-        {/* Event Details Grid */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Service Details */}
-          {event.service && (
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-gray-700">Service Details</div>
-              <div className="text-sm">
-                <strong>Service:</strong> {event.service.name}
-              </div>
-              {event.service.duration && (
-                <div className="text-sm">
-                  <strong>Duration:</strong> {event.service.duration} minutes
+        {/* Date and Time Information */}
+        <div className="rounded-lg border bg-gray-50 p-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">
+                  {event.startTime.toLocaleDateString([], {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
                 </div>
-              )}
-              {event.service.price && (
-                <div className="text-sm">
-                  <strong>Price:</strong> R{event.service.price}
+                <div className="text-xs text-gray-600">
+                  {event.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
+                  {event.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {(() => {
+                    const diffMs = event.endTime.getTime() - event.startTime.getTime();
+                    const diffMins = Math.round(diffMs / (1000 * 60));
+                    const hours = Math.floor(diffMins / 60);
+                    const minutes = diffMins % 60;
+                    const duration = hours > 0 ? `${hours}h ${minutes > 0 ? `${minutes}m` : ''}` : `${minutes}m`;
+                    return ` (${duration})`;
+                  })()}
+                </div>
+              </div>
+              <div className={`rounded-full px-2 py-1 text-xs font-medium ${
+                event.status === AvailabilityStatus.ACCEPTED ? 'bg-green-100 text-green-800' :
+                event.status === AvailabilityStatus.PENDING ? 'bg-yellow-100 text-yellow-800' :
+                event.status === AvailabilityStatus.REJECTED ? 'bg-red-100 text-red-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {event.status.toLowerCase().replace('_', ' ')}
+              </div>
+            </div>
+          </div>
+
+          {/* Recurrence Pattern - integrated into same section */}
+          {(event.isRecurring || event.seriesId || event.recurrencePattern) && (
+            <div className="mt-4 space-y-3 border-t pt-4">
+              <div className="flex items-center gap-2">
+                <Repeat className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium">
+                  {(() => {
+                    const pattern = event.recurrencePattern;
+                    
+                    // Handle both object and string patterns
+                    const patternData = typeof pattern === 'string' ? 
+                      (() => {
+                        try {
+                          return JSON.parse(pattern);
+                        } catch {
+                          return null;
+                        }
+                      })() : 
+                      pattern;
+
+                    if (patternData) {
+                      if (patternData.option === 'DAILY') return 'Daily Recurrence';
+                      if (patternData.option === 'WEEKLY') return 'Weekly Recurrence';
+                      if (patternData.option === 'custom') return 'Custom Recurrence';
+                      return 'Recurring Series';
+                    }
+                    return event.seriesId ? 'Recurring Series' : 'Recurring Event';
+                  })()}
+                </span>
+              </div>
+
+              {event.recurrencePattern && (
+                <div className="space-y-3">
+                  {(() => {
+                    const pattern = event.recurrencePattern;
+                    
+                    // Handle both object and string patterns  
+                    const patternData = typeof pattern === 'string' ? 
+                      (() => {
+                        try {
+                          return JSON.parse(pattern);
+                        } catch {
+                          return null;
+                        }
+                      })() : 
+                      pattern;
+
+                    if (patternData) {
+                      if (patternData.option === 'custom' && patternData.customDays) {
+                        return (
+                          <div className="space-y-3">
+                            <div className="text-sm font-medium">Repeat every 1 week</div>
+                            
+                            <div>
+                              <div className="mb-2 text-sm font-medium">Repeat on</div>
+                              <div className="flex gap-2">
+                                {[
+                                  { label: 'M', value: DayOfWeek.MONDAY },
+                                  { label: 'T', value: DayOfWeek.TUESDAY },
+                                  { label: 'W', value: DayOfWeek.WEDNESDAY },
+                                  { label: 'T', value: DayOfWeek.THURSDAY },
+                                  { label: 'F', value: DayOfWeek.FRIDAY },
+                                  { label: 'S', value: DayOfWeek.SATURDAY },
+                                  { label: 'S', value: DayOfWeek.SUNDAY },
+                                ].map((day, index) => {
+                                  const isSelected = patternData.customDays.includes(day.value);
+                                  return (
+                                    <div
+                                      key={index}
+                                      className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
+                                        isSelected ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
+                                      }`}
+                                    >
+                                      {day.label}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {patternData.endDate && (
+                              <div>
+                                <div className="mb-1 text-sm font-medium">Ends on</div>
+                                <div className="text-sm text-gray-700">
+                                  {new Date(patternData.endDate).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                      
+                      if (patternData.option === 'DAILY') {
+                        return (
+                          <div className="space-y-2">
+                            <div className="text-sm">Repeat every 1 day</div>
+                            {patternData.endDate && (
+                              <div className="text-xs text-gray-600">
+                                Ends on {new Date(patternData.endDate).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric',
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                      
+                      if (patternData.option === 'WEEKLY') {
+                        return (
+                          <div className="space-y-2">
+                            <div className="text-sm">Repeat every 1 week</div>
+                            {patternData.endDate && (
+                              <div className="text-xs text-gray-600">
+                                Ends on {new Date(patternData.endDate).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric',
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                    }
+                    
+                    return (
+                      <div className="text-sm text-gray-600">
+                        Custom recurrence pattern
+                      </div>
+                    );
+                  })()}
+                  
+                  {event.seriesId && (
+                    <div className="text-xs text-gray-500">
+                      Series ID: {event.seriesId}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
+        </div>
 
-          {/* Additional Information */}
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-gray-700">Additional Information</div>
-            {event.location && (
-              <div className="text-sm">
-                <strong>Location:</strong>{' '}
-                {event.location.isOnline ? 'Online' : event.location.name}
+        {/* Services and Additional Information */}
+        <div className="space-y-4">
+          {/* Services Information */}
+          {event.type === 'availability' && event.availableServices && event.availableServices.length > 0 && (
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <div className="text-sm font-medium text-gray-700">Available Services</div>
+                <div className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
+                  {event.availableServices.length} service{event.availableServices.length !== 1 ? 's' : ''}
+                </div>
               </div>
-            )}
-            {event.customer && (
-              <div className="text-sm">
-                <strong>Customer:</strong> {event.customer.name}
+              <div className="grid grid-cols-1 gap-2">
+                {event.availableServices.map((service: AvailableService, index: number) => (
+                  <div key={index} className="flex items-center justify-between rounded-md border bg-white p-3">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <div className="text-sm font-medium">{service.service?.name || 'Service'}</div>
+                        <div className="text-xs text-gray-600 flex items-center gap-2">
+                          <Clock className="h-3 w-3" />
+                          {service.duration} minutes
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-sm font-semibold text-green-600">
+                      R{typeof service.price === 'string' ? service.price : Number(service.price)?.toFixed(2)}
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-            <div className="text-sm">
-              <strong>Status:</strong>{' '}
-              <span className="capitalize">
-                {event.status.toLowerCase().replace('_', ' ')}
-              </span>
             </div>
-            {event.isRecurring && (
-              <div className="text-sm">
-                <strong>Recurring:</strong> Yes
-                {event.seriesId && (
-                  <div className="text-xs text-gray-600">
-                    Series ID: {event.seriesId}
+          )}
+
+          {/* Single Service Details (for bookings) */}
+          {event.service && (
+            <div>
+              <div className="mb-3 text-sm font-medium text-gray-700">Service Details</div>
+              <div className="flex items-center justify-between rounded-md border bg-white p-3">
+                <div>
+                  <div className="text-sm font-medium">{event.service.name}</div>
+                  <div className="text-xs text-gray-600 flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {event.service.duration} minutes
+                  </div>
+                </div>
+                <div className="text-sm font-semibold text-green-600">
+                  R{event.service.price}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Location & Access */}
+          {event.location && (
+            <div>
+              <div className="mb-3 text-sm font-medium text-gray-700">Location</div>
+              <div className="rounded-md border bg-white p-3">
+                {event.location.isOnline ? (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-green-700">Online Available</div>
+                      <div className="text-xs text-gray-600">Video consultation</div>
+                    </div>
+                    <div className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+                      Online
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium">{event.location.name}</div>
+                      <div className="text-xs text-gray-600">In-person appointment</div>
+                    </div>
+                    <div className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
+                      In-Person
+                    </div>
                   </div>
                 )}
               </div>
-            )}
+            </div>
+          )}
+
+          {/* Booking & Scheduling Settings */}
+          {event.type === 'availability' && (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {/* Scheduling Rule */}
+              {event.schedulingRule && (
+                <div>
+                  <div className="mb-2 text-sm font-medium text-gray-700">Scheduling Rule</div>
+                  <div className="rounded-md border bg-white p-3">
+                    <div className="text-sm font-medium">
+                      {event.schedulingRule.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                    </div>
+                    <div className="text-xs text-gray-600">How appointments are scheduled</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Requires Confirmation */}
+              {event.requiresConfirmation !== undefined && (
+                <div>
+                  <div className="mb-2 text-sm font-medium text-gray-700">Requires Confirmation</div>
+                  <div className="rounded-md border bg-white p-3">
+                    <div className={`text-sm font-medium ${
+                      event.requiresConfirmation ? 'text-amber-700' : 'text-green-700'
+                    }`}>
+                      {event.requiresConfirmation ? 'Yes' : 'No'}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {event.requiresConfirmation ? 'Provider must confirm bookings' : 'Instant booking available'}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Customer Information */}
+        {event.customer && (
+          <div className="space-y-3">
+            <div className="text-sm font-medium text-gray-700">Customer Information</div>
+            <div className="rounded-md border bg-gray-50 p-3">
+              <div className="text-sm font-medium">{event.customer.name}</div>
+              {event.customer.email && (
+                <div className="text-xs text-gray-600">{event.customer.email}</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Status Information */}
+        <div className="space-y-3">
+          <div className="text-sm font-medium text-gray-700">Status Information</div>
+          <div className="flex items-center justify-between rounded-md border bg-gray-50 p-3">
+            <div>
+              <div className="text-sm font-medium">Current Status</div>
+              <div className="text-xs text-gray-600">Event status</div>
+            </div>
+            <div className={`rounded-full px-2 py-1 text-xs font-medium capitalize ${
+              event.status === AvailabilityStatus.ACCEPTED ? 'bg-green-100 text-green-800' :
+              event.status === AvailabilityStatus.PENDING ? 'bg-yellow-100 text-yellow-800' :
+              event.status === AvailabilityStatus.REJECTED ? 'bg-red-100 text-red-800' :
+              'bg-gray-100 text-gray-800'
+            }`}>
+              {event.status.toLowerCase().replace('_', ' ')}
+            </div>
           </div>
         </div>
 

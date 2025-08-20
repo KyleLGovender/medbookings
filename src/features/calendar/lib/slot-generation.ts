@@ -36,19 +36,12 @@ export function generateSlotDataForAvailability(options: SlotGenerationOptions):
       const slotRecords = slotResult.slots.map((slot) => ({
         availabilityId: options.availabilityId,
         serviceId: service.serviceId,
-        serviceConfigId: 'default-config-id',
-        providerId: options.providerId,
-        organizationId: options.organizationId,
-        locationId: options.locationId,
+        serviceConfigId: service.serviceConfigId, // Use the actual ServiceAvailabilityConfig ID
         startTime: slot.startTime,
         endTime: slot.endTime,
-        duration: slot.duration,
-        price: service.price,
         status: 'AVAILABLE' as const,
-        isBlocked: false,
         lastCalculated: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        version: 1,
       }));
 
       allSlotRecords.push(...slotRecords);

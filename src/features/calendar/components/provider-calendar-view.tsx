@@ -7,7 +7,6 @@ import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus } from 'lucid
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserAvatar } from '@/components/user-avatar';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   Select,
@@ -16,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { UserAvatar } from '@/components/user-avatar';
 import { CalendarErrorBoundary } from '@/features/calendar/components/error-boundary';
 import { CalendarSkeleton } from '@/features/calendar/components/loading';
 import { DayView } from '@/features/calendar/components/views/day-view';
@@ -33,6 +33,11 @@ import {
   sortEventsForRendering,
 } from '@/features/calendar/lib/virtualization-helpers';
 import { CalendarEvent, CalendarViewMode } from '@/features/calendar/types/types';
+import type { RouterOutputs } from '@/utils/api';
+
+// Extract proper types for strong typing
+type AvailabilitySearchResult = RouterOutputs['calendar']['searchAvailability'];
+type AvailabilityData = AvailabilitySearchResult[number];
 
 // Performance monitoring functions removed - using simplified approach
 const measureCalendarDataProcessing = (fn: () => any) => fn();
@@ -68,6 +73,7 @@ export function ProviderCalendarView({
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialViewMode);
   const [statusFilter, setStatusFilter] = useState<AvailabilityStatus | 'ALL'>('ALL');
   const [isMobile, setIsMobile] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   // Performance monitoring
   usePerformanceMonitor('ProviderCalendarView', [currentDate, viewMode, statusFilter]);
@@ -187,16 +193,29 @@ export function ProviderCalendarView({
   const isLoading = calendarDataResult.isLoading;
   const hasError = calendarDataResult.hasError;
 
+  // Extract provider data early for image loading
+  const provider = providerQuery?.data;
+
+  // Preload the image when provider data is available - must be before early returns
+  useEffect(() => {
+    if (provider?.user?.image) {
+      const img = new window.Image();
+      img.onload = () => setImageLoaded(true);
+      img.onerror = () => setImageLoaded(false);
+      img.src = provider.user.image;
+    }
+  }, [provider?.user?.image]);
+
   // Transform availability data to calendar events
   const calendarEvents: CalendarEvent[] = useMemo(() => {
-    const availabilities = availabilityQuery?.data || [];
+    const availabilities: AvailabilitySearchResult = availabilityQuery?.data || [];
     if (!Array.isArray(availabilities)) return [];
 
     // Transform availabilities to CalendarEvent format
     const events: CalendarEvent[] = [];
 
     // Add availability events
-    availabilities.forEach((availability) => {
+    availabilities.forEach((availability: AvailabilityData) => {
       events.push({
         id: availability.id,
         type: 'availability' as const,
@@ -221,6 +240,10 @@ export function ProviderCalendarView({
             }
           : undefined,
         isProviderCreated: availability.isProviderCreated ?? (availability.createdById === availability.provider?.userId),
+        // Include additional data for modal display
+        ...(availability.availableServices && { availableServices: availability.availableServices }),
+        ...(availability.recurrencePattern && { recurrencePattern: availability.recurrencePattern }),
+        ...(availability.requiresConfirmation !== undefined && { requiresConfirmation: availability.requiresConfirmation }),
       });
 
       // Add booking events from calculated slots
@@ -401,8 +424,7 @@ export function ProviderCalendarView({
     );
   }
 
-  // Extract provider data - now properly typed from the hook
-  const provider = providerQuery.data;
+  // Provider data already extracted above before early returns
 
   // Early return if provider data is not loaded
   if (!provider) {
@@ -595,57 +617,7 @@ export function ProviderCalendarView({
           </CardContent>
         </Card>
 
-        {/* Legend */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Legend</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="text-xs font-medium text-muted-foreground">Provider Created</div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="flex items-center space-x-2">
-                  <div className="h-4 w-4 rounded border border-green-400 bg-green-100"></div>
-                  <span>✅ Active</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="h-4 w-4 rounded border border-green-300 bg-green-50"></div>
-                </div>
-              </div>
-
-              <div className="text-xs font-medium text-muted-foreground">Organization Created</div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="flex items-center space-x-2">
-                  <div className="h-4 w-4 rounded border border-yellow-400 bg-yellow-100"></div>
-                  <span>🟡 Pending</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="h-4 w-4 rounded border border-blue-400 bg-blue-100"></div>
-                  <span>✅ Accepted</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="h-4 w-4 rounded border border-red-400 bg-red-100"></div>
-                  <span>❌ Rejected</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="h-4 w-4 rounded border border-gray-400 bg-gray-100"></div>
-                </div>
-              </div>
-
-              <div className="text-xs font-medium text-muted-foreground">Bookings</div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="flex items-center space-x-2">
-                  <div className="h-4 w-4 rounded border border-purple-300 bg-purple-100"></div>
-                  <span>📅 Booked</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="h-4 w-4 rounded border border-orange-300 bg-orange-100"></div>
-                  <span>⏳ Booking Pending</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        
       </div>
     </CalendarErrorBoundary>
   );

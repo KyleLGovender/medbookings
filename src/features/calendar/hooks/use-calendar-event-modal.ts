@@ -1,12 +1,12 @@
-import { useReducer, useCallback } from 'react';
 import type {
-  CalendarEventModalState,
-  CalendarEventModalAction,
   CalendarEventAction,
+  CalendarEventModalAction,
   CalendarEventModalOptions,
+  CalendarEventModalState,
   SeriesActionScope,
 } from '@/features/calendar/types/modal';
 import type { CalendarEvent } from '@/features/calendar/types/types';
+import { useCallback, useReducer } from 'react';
 
 const initialState: CalendarEventModalState = {
   isOpen: false,
@@ -83,7 +83,13 @@ export const useCalendarEventModal = (options: CalendarEventModalOptions = {}) =
 
   const setPendingAction = useCallback((action: CalendarEventAction) => {
     dispatch({ type: 'SET_PENDING_ACTION', action });
-  }, []);
+    
+    // For edit action, execute immediately since it doesn't need confirmation
+    if (action === 'edit' && state.selectedEvent && state.selectedScope) {
+      options.onEdit?.(state.selectedEvent, state.selectedScope);
+      dispatch({ type: 'CLOSE' });
+    }
+  }, [state.selectedEvent, state.selectedScope, options]);
 
   const setActionData = useCallback((data: Record<string, any>) => {
     dispatch({ type: 'SET_ACTION_DATA', data });
@@ -104,9 +110,6 @@ export const useCalendarEventModal = (options: CalendarEventModalOptions = {}) =
         break;
       case 'delete':
         options.onDelete?.(selectedEvent, selectedScope);
-        break;
-      case 'cancel':
-        options.onCancel?.(selectedEvent, selectedScope, actionData.reason);
         break;
       case 'accept':
         options.onAccept?.(selectedEvent);

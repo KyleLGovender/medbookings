@@ -4,11 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SchedulingRule } from '@prisma/client';
-import { AlertTriangle, Calendar, Clock, MapPin, Repeat, Save } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { Calendar, Clock, Loader2, Repeat } from 'lucide-react';
+import { useForm, useWatch } from 'react-hook-form';
 
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
+import CalendarLoader from '@/components/calendar-loader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -31,393 +30,738 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { TimePicker } from '@/components/ui/time-picker';
+import { CustomRecurrenceModal } from '@/features/calendar/components/availability/custom-recurrence-modal';
 import { ServiceSelectionSection } from '@/features/calendar/components/availability/service-selection-section';
+import { useAvailabilityById } from '@/features/calendar/hooks/use-availability';
 import {
-  useAvailabilityById,
-  useUpdateAvailability,
-} from '@/features/calendar/hooks/use-availability';
+  createRecurrencePattern,
+  getRecurrenceOptions,
+} from '@/features/calendar/lib/recurrence-utils';
 import { updateAvailabilityDataSchema } from '@/features/calendar/types/schemas';
-import type { RecurrencePattern } from '@/features/calendar/types/types';
-import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
-import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
-import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
+import { CustomRecurrenceData, DayOfWeek, RecurrenceOption } from '@/features/calendar/types/types';
+import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
-import { type RouterInputs, type RouterOutputs } from '@/utils/api';
+import { api, type RouterInputs, type RouterOutputs } from '@/utils/api';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Extract input type from tRPC procedure for zero type drift
 type UpdateAvailabilityInput = RouterInputs['calendar']['update'];
 type AvailabilityWithRelations = RouterOutputs['calendar']['getById'];
-type CalculatedAvailabilitySlotWithRelations = NonNullable<
-  AvailabilityWithRelations['calculatedSlots']
->[number];
-type ServiceAvailabilityConfigWithRelations = NonNullable<
-  AvailabilityWithRelations['availableServices']
->[number];
-
-// Using centralized OrganizationLocation type instead of local interface
 
 interface AvailabilityEditFormProps {
   availabilityId: string;
-  editMode?: 'single' | 'series' | 'future'; // How to handle recurring series
-  scope?: 'single' | 'future' | 'all'; // SeriesActionScope for recurring availability
-  onSuccess?: (data: AvailabilityWithRelations) => void;
+  scope?: 'single' | 'future' | 'all'; // Scope passed from the modal dialog
+  onSuccess?: (data: NonNullable<RouterOutputs['calendar']['update']['availability']>) => void;
   onCancel?: () => void;
 }
 
-type FormValues = UpdateAvailabilityInput;
+type FormValues = Omit<UpdateAvailabilityInput, 'id'>;
 
-export function AvailabilityEditForm({
-  availabilityId,
-  editMode = 'single',
-  scope = 'single',
-  onSuccess,
-  onCancel,
-}: AvailabilityEditFormProps) {
+/**
+ * Custom hook for updating availability with optimistic updates
+ */
+function useUpdateAvailabilityOptimistic(availabilityId: string, options?: {
+  onSuccess?: (data: RouterOutputs['calendar']['update']) => void;
+  onError?: (error: Error) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  return api.calendar.update.useMutation({
+    onMutate: async (variables) => {
+      console.log('Optimistic update - updating availability:', variables.id);
+
+      // Cancel outgoing refetches for this availability
+      await queryClient.cancelQueries({
+        predicate: (query) => {
+          const keyStr = JSON.stringify(query.queryKey);
+          return keyStr.includes('getById') && keyStr.includes(availabilityId);
+        },
+      });
+
+      // Find the actual cache key and snapshot current data
+      const cache = queryClient.getQueryCache();
+      const allQueries = cache.getAll();
+      let previousData;
+      let actualKey;
+
+      for (const query of allQueries) {
+        const keyStr = JSON.stringify(query.queryKey);
+        if (keyStr.includes('getById') && keyStr.includes(availabilityId)) {
+          actualKey = query.queryKey;
+          previousData = query.state.data;
+          break;
+        }
+      }
+
+      if (!previousData || !actualKey) {
+        console.warn('Could not find availability data to snapshot');
+        return { previousData: null, actualKey: null };
+      }
+
+      // Optimistically update the availability cache
+      queryClient.setQueryData(actualKey, (old: any) => {
+        if (!old) return old;
+
+        return {
+          ...old,
+          startTime: variables.startTime || old.startTime,
+          endTime: variables.endTime || old.endTime,
+          isRecurring: variables.isRecurring ?? old.isRecurring,
+          recurrencePattern: variables.recurrencePattern || old.recurrencePattern,
+          schedulingRule: variables.schedulingRule || old.schedulingRule,
+          isOnlineAvailable: variables.isOnlineAvailable ?? old.isOnlineAvailable,
+          requiresConfirmation: variables.requiresConfirmation ?? old.requiresConfirmation,
+          // Update service configurations if provided
+          availableServices: variables.services?.map((service: any) => ({
+            serviceId: service.serviceId,
+            durationMinutes: service.duration,
+            price: service.price,
+          })) || old.availableServices,
+        };
+      });
+
+      return { previousData, actualKey };
+    },
+
+    onError: (err, _variables, context) => {
+      console.error('Update availability failed, rolling back:', err);
+
+      // Roll back to previous state
+      if (context?.previousData && context?.actualKey) {
+        queryClient.setQueryData(context.actualKey, context.previousData);
+      }
+
+      if (options?.onError) {
+        options.onError(err as any);
+      }
+    },
+
+    onSuccess: async (data, variables) => {
+      console.log('Update availability success - invalidating queries');
+
+      // For series updates (future/all), the old ID no longer exists - skip getById invalidation
+      const isSeriesUpdate = variables.scope && variables.scope !== 'single';
+      
+      if (!isSeriesUpdate) {
+        // Only invalidate getById for single updates where the ID is preserved
+        await queryClient.invalidateQueries({
+          predicate: (query) => {
+            const keyStr = JSON.stringify(query.queryKey);
+            return keyStr.includes('getById') && keyStr.includes(variables.id);
+          },
+        });
+      }
+
+      // Invalidate provider availability queries
+      if (data.availability?.providerId) {
+        await queryClient.invalidateQueries({
+          predicate: (query) => {
+            const keyStr = JSON.stringify(query.queryKey);
+            return keyStr.includes('getByProviderId') && keyStr.includes(data.availability!.providerId);
+          },
+        });
+      }
+
+      // Invalidate series queries if it's part of a series
+      if (data.availability?.seriesId) {
+        await queryClient.invalidateQueries({
+          predicate: (query) => {
+            const keyStr = JSON.stringify(query.queryKey);
+            return keyStr.includes('getBySeriesId') && keyStr.includes(data.availability!.seriesId!);
+          },
+        });
+      }
+
+      // Invalidate search availability queries
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const keyStr = JSON.stringify(query.queryKey);
+          return keyStr.includes('searchAvailability');
+        },
+      });
+
+      if (options?.onSuccess) {
+        options.onSuccess(data);
+      }
+    },
+  });
+}
+
+/**
+ * Helper function to update date while preserving time
+ */
+const updateDatePreservingTime = (currentTime: Date, newDate: Date): Date => {
+  const updatedTime = new Date(currentTime);
+  updatedTime.setFullYear(newDate.getFullYear());
+  updatedTime.setMonth(newDate.getMonth());
+  updatedTime.setDate(newDate.getDate());
+  return updatedTime;
+};
+
+/**
+ * Transform availability data from database format to form format
+ */
+const transformAvailabilityToForm = (availability: NonNullable<AvailabilityWithRelations>): FormValues => {
+  return {
+    providerId: availability.providerId,
+    startTime: new Date(availability.startTime),
+    endTime: new Date(availability.endTime),
+    isRecurring: availability.isRecurring,
+    recurrencePattern: availability.recurrencePattern,
+    schedulingRule: availability.schedulingRule,
+    isOnlineAvailable: availability.isOnlineAvailable,
+    locationId: availability.locationId || undefined,
+    requiresConfirmation: availability.requiresConfirmation,
+    services: availability.availableServices?.length > 0 
+      ? availability.availableServices.map((service: any) => ({
+          serviceId: service.serviceId,
+          duration: service.durationMinutes || service.duration,
+          price: typeof service.price === 'string' ? parseFloat(service.price) : service.price,
+        }))
+      : [], // Empty array as fallback - this might cause validation to fail
+  };
+};
+
+/**
+ * AvailabilityEditForm - A comprehensive form for editing provider availability
+ *
+ * This form handles:
+ * - Loading existing availability data
+ * - Profile context display (read-only creator info)
+ * - Time settings with booking constraints
+ * - Recurrence editing with series update options
+ * - Service selection and configuration
+ * - Location constraints (online-only for provider-created)
+ * - Form validation and error handling
+ * - Update mutation with optimistic updates
+ *
+ * @param availabilityId - ID of the availability to edit
+ * @param onSuccess - Callback fired when availability is updated successfully
+ * @param onCancel - Callback fired when the form is cancelled
+ */
+export function AvailabilityEditForm({ availabilityId, scope = 'single', onSuccess, onCancel }: AvailabilityEditFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customRecurrenceModalOpen, setCustomRecurrenceModalOpen] = useState(false);
+  const [customRecurrenceData, setCustomRecurrenceData] = useState<
+    CustomRecurrenceData | undefined
+  >();
   const [hasExistingBookings, setHasExistingBookings] = useState(false);
+  const [bookingCount, setBookingCount] = useState(0);
   const { toast } = useToast();
 
   // Fetch existing availability data
-  const { data: availability, isLoading, error } = useAvailabilityById(availabilityId);
+  const { data: availability, isLoading: isAvailabilityLoading, error: availabilityError } = useAvailabilityById(availabilityId);
 
-  // Fetch user data for profile information
-  const { data: currentUserProvider } = useCurrentUserProvider();
-  const { data: userOrganizations = [] } = useCurrentUserOrganizations();
-
-  // Fetch organization locations
-  const organizationIds = userOrganizations.map((org: any) => org.id);
-  const { data: availableLocations = [], isLoading: isLocationsLoading } =
-    useOrganizationLocations(organizationIds);
+  // Fetch provider's services - must call hook unconditionally
+  const {
+    data: availableServices,
+    isLoading: isServicesLoading,
+    error: servicesError,
+  } = useProviderAssociatedServices(availability?.providerId || '');
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(updateAvailabilityDataSchema),
-    mode: 'onChange',
+    resolver: zodResolver(updateAvailabilityDataSchema.omit({ id: true })),
+    defaultValues: {
+      providerId: '',
+      startTime: new Date(),
+      endTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
+      isRecurring: false,
+      schedulingRule: SchedulingRule.CONTINUOUS,
+      isOnlineAvailable: true,
+      requiresConfirmation: false,
+      services: [],
+    },
+    mode: 'all', // Changed from 'onChange' to 'all' for better validation timing
   });
 
-  const updateMutation = useUpdateAvailability({
+  // Populate form when availability data is loaded
+  useEffect(() => {
+    if (availability) {
+      const formData = transformAvailabilityToForm(availability);
+      form.reset(formData);
+      
+      // Trigger validation after reset to ensure form state is updated
+      setTimeout(() => {
+        form.trigger();
+      }, 100);
+      
+      // Check for existing bookings
+      if (availability.calculatedSlots) {
+        const bookedSlots = availability.calculatedSlots.filter((slot: any) => slot.booking);
+        setHasExistingBookings(bookedSlots.length > 0);
+        setBookingCount(bookedSlots.length);
+      }
+      
+      // If there's custom recurrence data, extract it
+      if (availability.recurrencePattern && typeof availability.recurrencePattern === 'object') {
+        const pattern = availability.recurrencePattern as any;
+        if (pattern.option === RecurrenceOption.CUSTOM && pattern.customDays && pattern.endDate) {
+          setCustomRecurrenceData({
+            selectedDays: pattern.customDays,
+            endDate: new Date(pattern.endDate),
+          });
+        }
+      }
+    }
+  }, [availability, form]);
+
+  const updateMutation = useUpdateAvailabilityOptimistic(availabilityId, {
     onSuccess: (data) => {
       toast({
         title: 'Success',
         description: 'Availability updated successfully',
       });
-      onSuccess?.(data.availability as any);
+      if (data.availability) {
+        onSuccess?.(data.availability);
+      }
+    },
+    onError: (error) => {
+      // Error handling is already in the form submission, but this provides additional coverage
+      console.error('Optimistic update error:', error);
     },
   });
 
-  // Populate form with existing data
-  useEffect(() => {
-    if (availability) {
-      // Check for existing bookings
-      const availabilityWithSlots = availability as AvailabilityWithRelations;
-      const bookingCount =
-        availabilityWithSlots.calculatedSlots?.filter(
-          (slot: CalculatedAvailabilitySlotWithRelations) => slot.booking
-        ).length || 0;
-      setHasExistingBookings(bookingCount > 0);
+  // Watch form values for reactive UI updates - optimized with useWatch
+  const watchStartTime = useWatch({ control: form.control, name: 'startTime' });
 
-      // Populate form with current values
-      const availabilityWithId = availability as AvailabilityWithRelations;
-      form.reset({
-        id: availabilityWithId.id,
-        providerId: availabilityWithId.providerId,
-        organizationId: availabilityWithId.organizationId || undefined,
-        locationId: availabilityWithId.locationId || undefined,
-        startTime: availabilityWithId.startTime,
-        endTime: availabilityWithId.endTime,
-        isRecurring: availabilityWithId.isRecurring,
-        recurrencePattern:
-          typeof availabilityWithId.recurrencePattern === 'object' &&
-          availabilityWithId.recurrencePattern !== null
-            ? (availabilityWithId.recurrencePattern as unknown as RecurrencePattern)
-            : undefined,
-        schedulingRule: availabilityWithId.schedulingRule,
-        schedulingInterval: availabilityWithId.schedulingInterval || undefined,
-        isOnlineAvailable: availabilityWithId.isOnlineAvailable,
-        requiresConfirmation: availabilityWithId.requiresConfirmation,
-        services: availabilityWithId.availableServices?.map(
-          (config: ServiceAvailabilityConfigWithRelations) => ({
-            serviceId: config.serviceId,
-            duration: config.duration,
-            price: Number(config.price),
-          })
-        ),
-      });
-    }
-  }, [availability, form]);
+  // Memoize expensive recurrence options computation
+  const recurrenceOptions = useMemo(() => {
+    const startTime = watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime || new Date());
+    return getRecurrenceOptions(startTime);
+  }, [watchStartTime]);
 
-  const watchIsRecurring = form.watch('isRecurring');
-  const watchSchedulingRule = form.watch('schedulingRule');
-  const watchIsOnlineAvailable = form.watch('isOnlineAvailable');
-  const watchLocationId = form.watch('locationId');
-
-  // Memoize selected location to avoid repeated lookups
-  const selectedLocation = useMemo(() => {
-    if (!watchLocationId) return null;
+  // Show loading state while availability data is being fetched
+  if (isAvailabilityLoading) {
     return (
-      availableLocations.filter((loc) => loc.id).find((loc: any) => loc.id === watchLocationId) ||
-      null
+      <CalendarLoader
+        message="Loading availability data"
+        submessage="Fetching existing availability information..."
+        showAfterMs={300}
+      />
     );
-  }, [watchLocationId, availableLocations]);
+  }
 
+  // Show error state if availability data cannot be loaded
+  if (availabilityError || !availability) {
+    return (
+      <Card className="mx-auto w-full max-w-4xl">
+        <CardContent className="py-8 text-center">
+          <p className="font-medium text-destructive">Failed to load availability data</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Please refresh the page or contact support if the problem persists.
+          </p>
+          {onCancel && (
+            <Button
+              variant="outline"
+              onClick={onCancel}
+              className="mt-4"
+            >
+              Go Back
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  /**
+   * Handles form submission
+   * Validates data, enforces constraints, and updates the availability
+   */
   const onSubmit = async (data: FormValues) => {
     if (updateMutation.isPending) return;
 
-    // Validate scope for recurring availability
-    const typedAvailability = availability as AvailabilityWithRelations;
-    if (typedAvailability?.isRecurring) {
-      if (!scope || !['single', 'future', 'all'].includes(scope)) {
-        toast({
-          title: 'Error',
-          description: 'Invalid scope parameter for recurring availability',
-          variant: 'destructive',
-        });
-        return;
-      }
-    }
-
     setIsSubmitting(true);
     try {
-      // Include scope parameter for recurring availability edits
-      const updatePayload = {
+      // Ensure all Date fields are properly converted and maintain provider constraints
+      const startTime = data.startTime instanceof Date ? data.startTime : new Date(data.startTime || new Date());
+      const endTime = data.endTime instanceof Date ? data.endTime : new Date(data.endTime || new Date());
+      
+      // Round times to clean minutes (zero seconds and milliseconds)
+      startTime.setSeconds(0, 0);
+      endTime.setSeconds(0, 0);
+      
+      const submitData: UpdateAvailabilityInput = {
+        id: availabilityId,
+        scope,
         ...data,
-        ...(typedAvailability?.isRecurring && { scope }),
+        startTime,
+        endTime,
+        // Enforce online-only for provider-created availability
+        isOnlineAvailable: true,
+        locationId: undefined,
       };
-      await updateMutation.mutateAsync(updatePayload);
+
+      await updateMutation.mutateAsync(submitData);
     } catch (error) {
-      // Error handled by mutation onError callback
+      console.error('Failed to update availability:', error);
+
+      // Enhanced error handling with specific error types
+      let errorTitle = 'Failed to update availability';
+      let errorMessage = 'An unexpected error occurred while updating availability';
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Handle specific error cases
+        if (error.message.includes('booking')) {
+          errorTitle = 'Cannot modify availability';
+          errorMessage = 'This availability cannot be modified because it has existing bookings.';
+        } else if (error.message.includes('validation')) {
+          errorTitle = 'Invalid data';
+          errorMessage = 'Please check your input and try again.';
+        } else if (error.message.includes('permission') || error.message.includes('unauthorized')) {
+          errorTitle = 'Access denied';
+          errorMessage = 'You do not have permission to modify this availability.';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorTitle = 'Connection error';
+          errorMessage = 'Please check your internet connection and try again.';
+        }
+      }
+
+      toast({
+        title: errorTitle,
+        description: errorMessage,
+        variant: 'destructive',
+        action: (
+          <button
+            onClick={() => {
+              // Retry the last form submission
+              form.handleSubmit(onSubmit)();
+            }}
+            className="text-sm underline"
+          >
+            Retry
+          </button>
+        ),
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <Card className="mx-auto w-full max-w-4xl">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-pulse text-muted-foreground">Loading availability...</div>
-          </div>
-        </CardContent>
-      </Card>
+  /**
+   * Handles saving custom recurrence pattern from the modal
+   * Converts the selected days and end date into a recurrence pattern
+   */
+  const handleCustomRecurrenceSave = (data: CustomRecurrenceData) => {
+    const startTime = watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime || new Date());
+    const pattern = createRecurrencePattern(
+      RecurrenceOption.CUSTOM,
+      startTime,
+      data.selectedDays,
+      data.endDate ? data.endDate.toISOString().split('T')[0] : undefined
     );
-  }
 
-  if (error) {
-    return (
-      <Card className="mx-auto w-full max-w-4xl">
-        <CardContent className="pt-6">
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>
-              Failed to load availability:{' '}
-              {error instanceof Error ? error.message : 'Unknown error'}
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
+    // Set values and mark them as dirty to enable form submission
+    form.setValue('recurrencePattern', pattern, { shouldDirty: true, shouldValidate: true });
+    form.setValue('isRecurring', true, { shouldDirty: true, shouldValidate: true });
+    setCustomRecurrenceData(data);
+    setCustomRecurrenceModalOpen(false);
+  };
 
-  if (!availability) {
-    return (
-      <Card className="mx-auto w-full max-w-4xl">
-        <CardContent className="pt-6">
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Not Found</AlertTitle>
-            <AlertDescription>
-              Availability not found or you don&apos;t have permission to edit it.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleCustomRecurrenceCancel = () => {
+    setCustomRecurrenceModalOpen(false);
+  };
 
   return (
     <Card className="mx-auto w-full max-w-4xl">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Edit Availability
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            {(availability as AvailabilityWithRelations)?.isRecurring && (
-              <Badge variant="secondary">
-                <Repeat className="mr-1 h-3 w-3" />
-                Recurring
-              </Badge>
-            )}
-            {hasExistingBookings && (
-              <Badge variant="outline">
-                <AlertTriangle className="mr-1 h-3 w-3" />
-                Has Bookings
-              </Badge>
-            )}
-          </div>
-        </div>
+        <CardTitle className="flex items-center gap-2">
+          <Calendar className="h-5 w-5" />
+          Edit Availability
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Warnings for existing bookings */}
-        {hasExistingBookings && (
-          <Alert className="mb-6">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Existing Bookings</AlertTitle>
-            <AlertDescription>
-              This availability has existing bookings. Changes to time and date will be restricted
-              to prevent conflicts. You can modify other settings like confirmation requirements.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Recurring series edit mode selection */}
-        {(availability as AvailabilityWithRelations)?.isRecurring && (
-          <Alert className="mb-6">
-            <Repeat className="h-4 w-4" />
-            <AlertTitle>Recurring Availability</AlertTitle>
-            <AlertDescription>
-              Changes will apply to{' '}
-              {editMode === 'single'
-                ? 'this occurrence only'
-                : editMode === 'series'
-                  ? 'all occurrences in the series'
-                  : 'this and future occurrences'}
-              .
-            </AlertDescription>
-          </Alert>
-        )}
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Profile Information (Read-only) */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Availability Information</h3>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Created by</label>
-                  <div className="rounded-md border bg-gray-50 p-3">
-                    <div className="text-sm font-medium">
-                      {(availability as AvailabilityWithRelations)?.createdBy?.name || 'Unknown'}
-                    </div>
-                    <div className="text-xs text-gray-600">
-                      {(availability as AvailabilityWithRelations)?.providerId ===
-                      (availability as AvailabilityWithRelations)?.createdBy?.id
-                        ? 'Provider (Self)'
-                        : 'Organization Role'}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Provider</label>
-                  <div className="rounded-md border bg-gray-50 p-3">
-                    <div className="text-sm font-medium">
-                      {(availability as AvailabilityWithRelations)?.provider?.name ||
-                        'Unknown Provider'}
-                    </div>
-                    <div className="text-xs text-gray-600">Service Provider</div>
-                  </div>
+            {/* Read-only Context Header */}
+            <div className="rounded-lg bg-muted/50 p-4">
+              <div className="space-y-2">
+                <p className="text-sm font-medium">
+                  Editing availability for {availability.provider?.user?.name || 'Provider'}
+                </p>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>Created by Provider</span>
+                  <span>•</span>
+                  <span>Online appointments only</span>
+                  {availability.seriesId && (
+                    <>
+                      <span>•</span>
+                      <span>Part of recurring series</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
 
+            {/* Booking Constraint Warning */}
+            {hasExistingBookings && (
+              <div 
+                className="rounded-lg border border-amber-200 bg-amber-50 p-4"
+                role="alert"
+                aria-live="polite"
+              >
+                <div className="flex items-start gap-2">
+                  <svg
+                    className="h-5 w-5 flex-shrink-0 text-amber-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  <div className="flex-1">
+                    <h4 className="font-medium text-amber-900">
+                      This availability has {bookingCount} existing booking{bookingCount !== 1 ? 's' : ''}
+                    </h4>
+                    <p className="mt-1 text-sm text-amber-700">
+                      Time and date changes are restricted to prevent disrupting scheduled appointments.
+                      You can still modify services, scheduling rules, and confirmation settings.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <Separator />
 
             {/* Basic Time Settings */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-4">
+              {/* Single Date Picker */}
               <FormField
                 control={form.control}
                 name="startTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Date & Time</FormLabel>
+                    <FormLabel>Date</FormLabel>
                     <FormControl>
-                      <div className="flex gap-2">
-                        <DatePicker
-                          date={
-                            field.value instanceof Date
-                              ? field.value
-                              : field.value
-                                ? new Date(field.value)
-                                : undefined
+                      <DatePicker
+                        date={
+                          field.value instanceof Date
+                            ? field.value
+                            : field.value
+                              ? new Date(field.value)
+                              : undefined
+                        }
+                        onChange={(date) => {
+                          if (date) {
+                            // Update both start and end time dates
+                            const currentStartTime = form.getValues('startTime');
+                            const currentEndTime = form.getValues('endTime');
+
+                            const startTimeDate =
+                              currentStartTime instanceof Date
+                                ? currentStartTime
+                                : new Date(currentStartTime || new Date());
+                            const endTimeDate =
+                              currentEndTime instanceof Date
+                                ? currentEndTime
+                                : new Date(currentEndTime || new Date());
+
+                            form.setValue(
+                              'startTime',
+                              updateDatePreservingTime(startTimeDate, date)
+                            );
+                            form.setValue('endTime', updateDatePreservingTime(endTimeDate, date));
                           }
-                          onChange={(date) => {
-                            if (date && field.value && !hasExistingBookings) {
-                              const newDateTime = new Date(field.value);
-                              newDateTime.setFullYear(date.getFullYear());
-                              newDateTime.setMonth(date.getMonth());
-                              newDateTime.setDate(date.getDate());
-                              field.onChange(newDateTime);
-                            }
-                          }}
-                        />
-                        <TimePicker
-                          date={
-                            field.value instanceof Date
-                              ? field.value
-                              : field.value
-                                ? new Date(field.value)
-                                : undefined
-                          }
-                          onChange={hasExistingBookings ? undefined : field.onChange}
-                        />
-                      </div>
+                        }}
+                      />
                     </FormControl>
-                    {hasExistingBookings && (
-                      <FormDescription>Cannot modify time when bookings exist</FormDescription>
-                    )}
+                    <FormDescription>
+                      {hasExistingBookings 
+                        ? "Date changes are restricted due to existing bookings"
+                        : "Select the date for your availability slot"
+                      }
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="endTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End Date & Time</FormLabel>
-                    <FormControl>
-                      <div className="flex gap-2">
-                        <DatePicker
-                          date={
-                            field.value instanceof Date
-                              ? field.value
-                              : field.value
-                                ? new Date(field.value)
-                                : undefined
-                          }
-                          onChange={(date) => {
-                            if (date && field.value && !hasExistingBookings) {
-                              const newDateTime = new Date(field.value);
-                              newDateTime.setFullYear(date.getFullYear());
-                              newDateTime.setMonth(date.getMonth());
-                              newDateTime.setDate(date.getDate());
-                              field.onChange(newDateTime);
-                            }
+              {/* Time Pickers */}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="startTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Start Time</FormLabel>
+                      <FormControl>
+                        <TimePicker
+                          date={field.value instanceof Date ? field.value : new Date(field.value || new Date())}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      {hasExistingBookings && (
+                        <FormDescription className="text-amber-600">
+                          Time changes are restricted due to existing bookings
+                        </FormDescription>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="endTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>End Time</FormLabel>
+                      <FormControl>
+                        <TimePicker
+                          date={field.value instanceof Date ? field.value : new Date(field.value || new Date())}
+                          onChange={(newTime) => {
+                            // Get the current date from the start time (which is updated by DatePicker)
+                            const currentStartTime = form.getValues('startTime');
+                            const baseDate = currentStartTime instanceof Date ? currentStartTime : new Date(currentStartTime || new Date());
+                            
+                            // Create new end time using the base date but with the selected time
+                            const updatedEndTime = new Date(baseDate);
+                            updatedEndTime.setHours(newTime.getHours(), newTime.getMinutes(), 0, 0);
+                            
+                            field.onChange(updatedEndTime);
                           }}
                         />
-                        <TimePicker
-                          date={
-                            field.value instanceof Date
-                              ? field.value
-                              : field.value
-                                ? new Date(field.value)
-                                : undefined
+                      </FormControl>
+                      {hasExistingBookings && (
+                        <FormDescription className="text-amber-600">
+                          Time changes are restricted due to existing bookings
+                        </FormDescription>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Recurrence Settings */}
+            <div className="space-y-4">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
+                <Repeat className="h-4 w-4" />
+                Recurrence Settings
+              </h3>
+
+              <FormField
+                control={form.control}
+                name="recurrencePattern"
+                render={({ field }) => {
+                  return (
+                    <FormItem>
+                      <FormLabel>Recurrence</FormLabel>
+                      <Select
+                        onValueChange={(value) => {
+                          const option = value as RecurrenceOption;
+
+                          if (option === RecurrenceOption.CUSTOM) {
+                            setCustomRecurrenceModalOpen(true);
+                          } else {
+                            const startTime =
+                              watchStartTime instanceof Date
+                                ? watchStartTime
+                                : new Date(watchStartTime || new Date());
+                            const pattern = createRecurrencePattern(option, startTime);
+                            field.onChange(pattern);
+                            form.setValue('isRecurring', option !== RecurrenceOption.NONE, { shouldDirty: true, shouldValidate: true });
                           }
-                          onChange={hasExistingBookings ? undefined : field.onChange}
-                        />
-                      </div>
-                    </FormControl>
-                    {hasExistingBookings && (
-                      <FormDescription>Cannot modify time when bookings exist</FormDescription>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
+                        }}
+                        defaultValue={field.value?.option || RecurrenceOption.NONE}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select recurrence" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {recurrenceOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Choose how often this availability should repeat.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
+
+              {/* Display Custom Recurrence Details */}
+              {customRecurrenceData && (
+                <div className="space-y-4 rounded-lg border p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Repeat className="h-4 w-4" />
+                      <span className="font-medium">Custom recurrence</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCustomRecurrenceModalOpen(true)}
+                    >
+                      Edit
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-sm font-medium">Repeat every 1 week</span>
+                    </div>
+
+                    <div>
+                      <span className="mb-2 block text-sm font-medium">Repeat on</span>
+                      <div className="flex gap-2">
+                        {[
+                          { label: 'M', value: DayOfWeek.MONDAY },
+                          { label: 'T', value: DayOfWeek.TUESDAY },
+                          { label: 'W', value: DayOfWeek.WEDNESDAY },
+                          { label: 'T', value: DayOfWeek.THURSDAY },
+                          { label: 'F', value: DayOfWeek.FRIDAY },
+                          { label: 'S', value: DayOfWeek.SATURDAY },
+                          { label: 'S', value: DayOfWeek.SUNDAY },
+                        ].map((day, index) => {
+                          const isSelected = customRecurrenceData.selectedDays.includes(day.value);
+                          return (
+                            <div
+                              key={index}
+                              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium ${
+                                isSelected ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
+                              {day.label}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-sm font-medium">Ends on</span>
+                      <div className="mt-1 text-sm text-gray-600">
+                        {customRecurrenceData.endDate.toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <Separator />
@@ -435,11 +779,7 @@ export function AvailabilityEditForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Appointment Scheduling</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      disabled={hasExistingBookings}
-                    >
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select scheduling rule" />
@@ -458,11 +798,10 @@ export function AvailabilityEditForm({
                         </SelectItem>
                       </SelectContent>
                     </Select>
-                    {hasExistingBookings && (
-                      <FormDescription>
-                        Cannot modify scheduling rule when bookings exist
-                      </FormDescription>
-                    )}
+                    <FormDescription>
+                      This determines when appointments can be scheduled within your availability
+                      period.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -471,133 +810,61 @@ export function AvailabilityEditForm({
 
             <Separator />
 
-            {/* Location Section */}
+            {/* Availability Type */}
             <div className="space-y-4">
               <h3 className="flex items-center gap-2 text-lg font-medium">
-                <MapPin className="h-4 w-4" />
-                Location
+                <Clock className="h-4 w-4" />
+                Availability Type
               </h3>
-
-              {/* Online Availability Toggle */}
-              <FormField
-                control={form.control}
-                name="isOnlineAvailable"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={hasExistingBookings}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Available Online</FormLabel>
-                      <FormDescription>Allow virtual appointments via video call</FormDescription>
-                      {hasExistingBookings && (
-                        <FormDescription className="text-yellow-600">
-                          Cannot modify online availability when bookings exist
-                        </FormDescription>
-                      )}
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              {/* Physical Location Selection */}
-              {isLocationsLoading ? (
-                <div className="py-4 text-center text-muted-foreground">Loading locations...</div>
-              ) : (
-                <FormField
-                  control={form.control}
-                  name="locationId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Physical Location{!watchIsOnlineAvailable && ' (Required)'}
-                      </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value || undefined}
-                        required={!watchIsOnlineAvailable}
-                        disabled={hasExistingBookings}
-                        aria-label="Physical location selection"
-                      >
-                        <FormControl>
-                          <SelectTrigger
-                            className={field.value ? 'border-green-500 bg-green-50' : ''}
-                            aria-describedby="location-description"
-                          >
-                            <SelectValue placeholder="Choose a physical location" />
-                            {field.value && (
-                              <div
-                                className="flex items-center gap-2"
-                                aria-label="Location selected"
-                              >
-                                <svg
-                                  className="h-4 w-4 text-green-600"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M5 13l4 4L19 7"
-                                  />
-                                </svg>
-                              </div>
-                            )}
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {availableLocations
-                            .filter((location) => location.id)
-                            .map((location: any) => (
-                              <SelectItem key={location.id} value={location.id!}>
-                                {location.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription id="location-description">
-                        {selectedLocation ? (
-                          <div className="font-medium text-green-700">
-                            ✓ Selected: {selectedLocation.name}
-                            {selectedLocation.formattedAddress && (
-                              <div className="mt-1 text-sm text-muted-foreground">
-                                {selectedLocation.formattedAddress}
-                              </div>
-                            )}
-                          </div>
-                        ) : watchIsOnlineAvailable ? (
-                          'Select a physical location for in-person appointments (optional)'
-                        ) : (
-                          'You must select a physical location when online availability is disabled'
-                        )}
-                        {hasExistingBookings && (
-                          <div className="mt-1 text-yellow-600">
-                            Cannot modify location when bookings exist
-                          </div>
-                        )}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <div className="flex items-center gap-2 text-blue-700">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                  <span className="font-medium">Online Appointments Only</span>
+                </div>
+                <p className="mt-1 text-sm text-blue-600">
+                  Provider-created availability is limited to virtual appointments via video call
+                </p>
+              </div>
             </div>
 
             <Separator />
 
             {/* Service Selection */}
-            <ServiceSelectionSection
-              providerId={(availability as AvailabilityWithRelations).providerId}
-              organizationId={
-                (availability as AvailabilityWithRelations).organizationId || undefined
-              }
-            />
+            {isServicesLoading ? (
+              <div className="py-8 text-center">
+                <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Loading available services...</p>
+              </div>
+            ) : servicesError ? (
+              <div className="py-8 text-center">
+                <p className="font-medium text-destructive">Failed to load services</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Please refresh the page or contact support if the problem persists.
+                </p>
+              </div>
+            ) : !availableServices || availableServices.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="font-medium text-muted-foreground">No services configured</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Please configure your services before editing availability.
+                </p>
+              </div>
+            ) : (
+              <ServiceSelectionSection
+                providerId={availability.providerId}
+                availableServices={(availableServices || []).map((s) => ({
+                  ...s,
+                  description: s.description ?? undefined,
+                }))}
+              />
+            )}
 
             <Separator />
 
@@ -639,15 +906,29 @@ export function AvailabilityEditForm({
               <Button
                 type="submit"
                 disabled={isSubmitting || updateMutation.isPending || !form.formState.isValid}
-                className="flex min-w-[140px] items-center gap-2"
+                className="min-w-[140px]"
               >
-                <Save className="h-4 w-4" />
-                {isSubmitting || updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+                {isSubmitting || updateMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {updateMutation.isPending ? 'Saving...' : 'Updating...'}
+                  </>
+                ) : (
+                  'Update Availability'
+                )}
               </Button>
             </div>
           </form>
         </Form>
       </CardContent>
+
+      {/* Custom Recurrence Modal */}
+      <CustomRecurrenceModal
+        isOpen={customRecurrenceModalOpen}
+        onClose={handleCustomRecurrenceCancel}
+        onSave={handleCustomRecurrenceSave}
+        initialData={customRecurrenceData}
+      />
     </Card>
   );
 }

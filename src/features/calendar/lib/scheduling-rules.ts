@@ -63,7 +63,9 @@ export function generateTimeSlots(options: SchedulingOptions): TimeSlotGeneratio
  */
 function generateContinuousSlots(options: SchedulingOptions): TimeSlot[] {
   const slots: TimeSlot[] = [];
+  // Round start time to clean minutes (zero seconds and milliseconds)
   let currentStart = new Date(options.availabilityStart);
+  currentStart.setSeconds(0, 0);
 
   while (currentStart < options.availabilityEnd) {
     const currentEnd = addMinutes(currentStart, options.serviceDuration);
@@ -95,8 +97,12 @@ function generateOnTheHourSlots(options: SchedulingOptions): TimeSlot[] {
   // For on-the-hour scheduling, appointments start only at the top of each hour
   const intervalMinutes = 60;
 
+  // Round availability start to clean minutes first
+  const cleanStart = new Date(options.availabilityStart);
+  cleanStart.setSeconds(0, 0);
+  
   // Find the first hour start time at or after availability start
-  let currentStart = getNextAlignedTime(options.availabilityStart, intervalMinutes);
+  let currentStart = getNextAlignedTime(cleanStart, intervalMinutes);
 
   // If the aligned time is before availability start, move to next hour
   if (currentStart < options.availabilityStart) {
@@ -133,8 +139,12 @@ function generateOnTheHalfHourSlots(options: SchedulingOptions): TimeSlot[] {
   // For on-the-half-hour scheduling, appointments start at :00 or :30 minutes
   const intervalMinutes = 30;
 
+  // Round availability start to clean minutes first
+  const cleanStart = new Date(options.availabilityStart);
+  cleanStart.setSeconds(0, 0);
+  
   // Find the first half-hour start time at or after availability start
-  let currentStart = getNextAlignedTime(options.availabilityStart, intervalMinutes);
+  let currentStart = getNextAlignedTime(cleanStart, intervalMinutes);
 
   // If the aligned time is before availability start, move to next interval
   if (currentStart < options.availabilityStart) {

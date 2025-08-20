@@ -1,6 +1,6 @@
 import { revalidatePath } from 'next/cache';
 
-import { AvailabilityStatus, Prisma, SchedulingRule } from '@prisma/client';
+import { Availability, AvailabilityStatus, Booking, CalculatedAvailabilitySlot, Prisma, SchedulingRule, ServiceAvailabilityConfig } from '@prisma/client';
 import { z } from 'zod';
 
 import {
@@ -8,6 +8,7 @@ import {
   validateAvailabilityDeletion,
   validateAvailabilityUpdate,
 } from '@/features/calendar/lib/actions';
+import { generateRecurringInstances } from '@/features/calendar/lib/recurrence-utils';
 import { generateSlotDataForAvailability } from '@/features/calendar/lib/slot-generation';
 import {
   availabilityCreateSchema,
@@ -182,12 +183,14 @@ export const calendarRouter = createTRPCRouter({
               availabilityId: availability.id,
               startTime: availability.startTime,
               endTime: availability.endTime,
-              providerId: availability.providerId,
-              organizationId: availability.organizationId || '',
-              locationId: availability.locationId || undefined,
               schedulingRule: availability.schedulingRule as SchedulingRule,
               schedulingInterval: availability.schedulingInterval || undefined,
-              services: validatedData.services,
+              services: availability.availableServices.map((as) => ({
+                serviceId: as.serviceId,
+                serviceConfigId: as.id, // Use the ServiceAvailabilityConfig ID
+                duration: as.duration,
+                price: Number(as.price),
+              })),
             });
 
             if (slotData.errors.length > 0) {
@@ -261,10 +264,12 @@ export const calendarRouter = createTRPCRouter({
         throw new Error('Validation data is missing');
       }
 
-      // 2. Perform all database operations in single transaction
-      const result = await ctx.prisma.$transaction(async (tx) => {
-        // Prepare update data
-        const updateData: any = {};
+      // 2. Perform all database operations in single transaction with timeout
+      let result;
+      try {
+        result = await ctx.prisma.$transaction(async (tx) => {
+          // Prepare update data
+          const updateData: any = {};
         if (validatedData.startTime !== undefined) updateData.startTime = validatedData.startTime;
         if (validatedData.endTime !== undefined) updateData.endTime = validatedData.endTime;
         if (validatedData.isRecurring !== undefined)
@@ -285,11 +290,11 @@ export const calendarRouter = createTRPCRouter({
         if (validatedData.billingEntity !== undefined)
           updateData.billingEntity = validatedData.billingEntity;
 
-        // Handle scope-based updates
+        // Handle different update strategies with guard clauses
         let updatedAvailabilities;
 
+        // Single availability update - simple case
         if (validatedData.updateStrategy === 'single') {
-          // Update only the target availability
           const updated = await tx.availability.update({
             where: { id: validatedData.id },
             data: updateData,
@@ -321,91 +326,157 @@ export const calendarRouter = createTRPCRouter({
             },
           });
           updatedAvailabilities = [updated];
-        } else {
-          // Handle scope-based batch updates (future/all)
-          const { existingAvailability } = validatedData;
-          const currentDate = new Date(existingAvailability.startTime);
 
-          let whereCondition: any;
-          if (validatedData.updateStrategy === 'future') {
-            whereCondition = {
-              seriesId: existingAvailability.seriesId,
-              startTime: { gte: currentDate },
-            };
-          } else {
-            // 'all'
-            whereCondition = {
-              seriesId: existingAvailability.seriesId,
-            };
+          // Handle services for single update
+          if (validatedData.services) {
+            await tx.calculatedAvailabilitySlot.deleteMany({
+              where: { availabilityId: validatedData.id },
+            });
+
+            await tx.serviceAvailabilityConfig.deleteMany({
+              where: {
+                availabilities: { some: { id: validatedData.id } },
+              },
+            });
+
+            await createServiceConfigsForAvailabilities(
+              tx,
+              updatedAvailabilities,
+              validatedData.services,
+              validatedData.existingAvailability.providerId,
+              validatedData.isOnlineAvailable,
+              validatedData.locationId
+            );
+            
+            updatedAvailabilities = await fetchAvailabilitiesWithRelations(tx, [validatedData.id]);
           }
 
-          // Batch update
-          await tx.availability.updateMany({
-            where: whereCondition,
-            data: updateData,
-          });
+          return { updatedAvailabilities, totalSlotsRegenerated: 0 };
+        }
 
-          // Get updated availabilities with relations
-          updatedAvailabilities = await tx.availability.findMany({
-            where: { id: { in: validatedData.affectedAvailabilityIds || [] } },
-            include: {
-              provider: {
-                include: {
-                  user: {
-                    select: {
-                      id: true,
-                      name: true,
-                      email: true,
-                      image: true,
+        // Series updates (future/all) - delete and recreate approach
+        const { existingAvailability } = validatedData;
+        
+        // Step 1: Clean up existing data
+        await tx.calculatedAvailabilitySlot.deleteMany({
+          where: {
+            availabilityId: { in: validatedData.affectedAvailabilityIds || [] },
+          },
+        });
+
+        await tx.serviceAvailabilityConfig.deleteMany({
+          where: {
+            availabilities: {
+              some: {
+                id: { in: validatedData.affectedAvailabilityIds || [] },
+              },
+            },
+          },
+        });
+
+        await tx.availability.deleteMany({
+          where: { id: { in: validatedData.affectedAvailabilityIds || [] } },
+        });
+
+        // Step 2: Prepare new values
+        const newStartTime = validatedData.startTime || existingAvailability.startTime;
+        const newEndTime = validatedData.endTime || existingAvailability.endTime;
+        const newRecurrencePattern = validatedData.recurrencePattern !== undefined 
+          ? validatedData.recurrencePattern 
+          : existingAvailability.recurrencePattern;
+
+        // Step 3: Generate instances based on strategy
+        const instances = generateInstancesForStrategy(
+          validatedData.updateStrategy,
+          existingAvailability,
+          newStartTime,
+          newEndTime,
+          newRecurrencePattern
+        );
+
+        // Step 4: Create new availabilities
+        const newAvailabilities = await Promise.all(
+          instances.map(async (instance) => {
+            return tx.availability.create({
+              data: {
+                providerId: existingAvailability.providerId,
+                organizationId: existingAvailability.organizationId,
+                locationId: existingAvailability.locationId,
+                connectionId: existingAvailability.connectionId,
+                startTime: instance.startTime,
+                endTime: instance.endTime,
+                isRecurring: validatedData.isRecurring !== undefined 
+                  ? validatedData.isRecurring 
+                  : existingAvailability.isRecurring,
+                recurrencePattern: newRecurrencePattern 
+                  ? (newRecurrencePattern as any)
+                  : Prisma.JsonNull,
+                seriesId: existingAvailability.seriesId,
+                schedulingRule: validatedData.schedulingRule || existingAvailability.schedulingRule,
+                schedulingInterval: validatedData.schedulingInterval !== undefined
+                  ? validatedData.schedulingInterval
+                  : existingAvailability.schedulingInterval,
+                isOnlineAvailable: validatedData.isOnlineAvailable !== undefined
+                  ? validatedData.isOnlineAvailable
+                  : existingAvailability.isOnlineAvailable,
+                requiresConfirmation: validatedData.requiresConfirmation !== undefined
+                  ? validatedData.requiresConfirmation
+                  : existingAvailability.requiresConfirmation,
+                billingEntity: validatedData.billingEntity || existingAvailability.billingEntity,
+                status: existingAvailability.status,
+                createdById: existingAvailability.createdById,
+                createdByMembershipId: existingAvailability.createdByMembershipId,
+                isProviderCreated: existingAvailability.isProviderCreated,
+                defaultSubscriptionId: existingAvailability.defaultSubscriptionId,
+              },
+              include: {
+                provider: {
+                  include: {
+                    user: {
+                      select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        image: true,
+                      },
                     },
                   },
                 },
-              },
-              organization: true,
-              location: true,
-              availableServices: {
-                include: {
-                  service: true,
+                organization: true,
+                location: true,
+                availableServices: {
+                  include: {
+                    service: true,
+                  },
+                },
+                calculatedSlots: {
+                  include: {
+                    booking: true,
+                  },
                 },
               },
-              calculatedSlots: {
-                include: {
-                  booking: true,
-                },
-              },
-            },
-          });
-        }
+            });
+          })
+        );
 
-        // Update services if provided
+        updatedAvailabilities = newAvailabilities;
+
+        // Handle services for series updates
         if (validatedData.services) {
-          // Delete existing service configs for affected availabilities
-          await tx.serviceAvailabilityConfig.deleteMany({
-            where: {
-              availabilities: {
-                some: {
-                  id: { in: validatedData.affectedAvailabilityIds || [] },
-                },
-              },
-            },
-          });
-
-          // Create new service configs for all affected availabilities
-          const serviceConfigs = (validatedData.affectedAvailabilityIds || []).flatMap(() =>
-            validatedData.services!.map((service) => ({
-              serviceId: service.serviceId,
-              providerId: validatedData.existingAvailability.providerId,
-              duration: service.duration,
-              price: service.price,
-              isOnlineAvailable: validatedData.isOnlineAvailable || false,
-              isInPerson: !validatedData.isOnlineAvailable || !!validatedData.locationId,
-              locationId: validatedData.locationId,
-            }))
+          await createServiceConfigsForAvailabilities(
+            tx,
+            updatedAvailabilities,
+            validatedData.services,
+            validatedData.existingAvailability.providerId,
+            validatedData.isOnlineAvailable,
+            validatedData.locationId
           );
-
-          await tx.serviceAvailabilityConfig.createMany({
-            data: serviceConfigs,
-          });
+          
+          // Re-fetch with service configs
+          updatedAvailabilities = await fetchAvailabilitiesWithRelations(
+            tx, 
+            updatedAvailabilities.map(a => a.id)
+          );
         }
 
         // Handle slot regeneration if needed
@@ -414,42 +485,45 @@ export const calendarRouter = createTRPCRouter({
           for (const availability of updatedAvailabilities) {
             if (availability.status === AvailabilityStatus.ACCEPTED) {
               try {
-                // Check for existing bookings before modifying slots
-                const bookedSlots = availability.calculatedSlots.filter((slot) => slot.booking);
+                // If services were updated, slots were already deleted above
+                // Otherwise, we need to delete slots for this specific availability
+                if (!validatedData.services) {
+                  // Check for existing bookings before modifying slots
+                  const bookedSlots = availability.calculatedSlots.filter((slot: CalculatedAvailabilitySlot & { booking: Booking | null }) => slot.booking);
 
-                if (bookedSlots.length > 0) {
-                  // Delete only unbooked slots
-                  const unbookedSlotIds = availability.calculatedSlots
-                    .filter((slot) => !slot.booking)
-                    .map((slot) => slot.id);
+                  if (bookedSlots.length > 0) {
+                    // Delete only unbooked slots
+                    const unbookedSlotIds = availability.calculatedSlots
+                      .filter((slot: CalculatedAvailabilitySlot & { booking: Booking | null }) => !slot.booking)
+                      .map((slot: CalculatedAvailabilitySlot) => slot.id);
 
-                  if (unbookedSlotIds.length > 0) {
+                    if (unbookedSlotIds.length > 0) {
+                      await tx.calculatedAvailabilitySlot.deleteMany({
+                        where: { id: { in: unbookedSlotIds } },
+                      });
+                    }
+                  } else {
+                    // No bookings, safe to regenerate all slots
                     await tx.calculatedAvailabilitySlot.deleteMany({
-                      where: { id: { in: unbookedSlotIds } },
+                      where: { availabilityId: availability.id },
                     });
                   }
-                } else {
-                  // No bookings, safe to regenerate all slots
-                  await tx.calculatedAvailabilitySlot.deleteMany({
-                    where: { availabilityId: availability.id },
-                  });
                 }
+                // Note: If services were updated, slots were already deleted above
 
                 // Generate new slots with updated parameters
                 const slotData = generateSlotDataForAvailability({
                   availabilityId: availability.id,
-                  providerId: availability.providerId,
-                  organizationId: availability.organizationId || '',
-                  locationId: availability.locationId || undefined,
                   startTime: availability.startTime,
                   endTime: availability.endTime,
-                  services: availability.availableServices.map((as) => ({
+                  schedulingRule: availability.schedulingRule as SchedulingRule,
+                  schedulingInterval: availability.schedulingInterval || undefined,
+                  services: availability.availableServices.map((as: ServiceAvailabilityConfig) => ({
                     serviceId: as.serviceId,
+                    serviceConfigId: as.id, // Use the ServiceAvailabilityConfig ID
                     duration: as.duration,
                     price: Number(as.price),
                   })),
-                  schedulingRule: availability.schedulingRule as SchedulingRule,
-                  schedulingInterval: availability.schedulingInterval || undefined,
                 });
 
                 if (slotData.errors.length > 0) {
@@ -458,10 +532,16 @@ export const calendarRouter = createTRPCRouter({
                     slotData.errors.join(', ')
                   );
                 } else if (slotData.slotRecords.length > 0) {
-                  // Create new slots in database (Option C: database operations in tRPC)
-                  await tx.calculatedAvailabilitySlot.createMany({
-                    data: slotData.slotRecords,
-                  });
+                  // Create new slots in database with chunking to prevent timeout
+                  const CHUNK_SIZE = 100; // Process slots in chunks of 100
+                  console.log(`Creating ${slotData.slotRecords.length} slots for availability ${availability.id}`);
+                  
+                  for (let i = 0; i < slotData.slotRecords.length; i += CHUNK_SIZE) {
+                    const chunk = slotData.slotRecords.slice(i, i + CHUNK_SIZE);
+                    await tx.calculatedAvailabilitySlot.createMany({
+                      data: chunk,
+                    });
+                  }
                   totalSlotsRegenerated += slotData.totalSlots;
                 }
               } catch (slotGenError) {
@@ -472,7 +552,24 @@ export const calendarRouter = createTRPCRouter({
         }
 
         return { updatedAvailabilities, totalSlotsRegenerated };
+      }, {
+        maxWait: 20000, // 20 seconds max wait time
+        timeout: 30000, // 30 seconds timeout
       });
+      } catch (transactionError: any) {
+        console.error('Transaction failed during availability update:', transactionError);
+        
+        // Provide specific error messages for different transaction failures
+        if (transactionError.code === 'P2028') {
+          throw new Error('Database transaction timed out. This may be due to high server load. Please try again in a moment.');
+        } else if (transactionError.code === 'P2034') {
+          throw new Error('Database transaction failed due to a conflict. Please refresh and try again.');
+        } else if (transactionError.message?.includes('timeout')) {
+          throw new Error('Operation timed out. Please try updating with fewer changes or try again later.');
+        } else {
+          throw new Error(`Failed to update availability: ${transactionError.message || 'Unknown database error'}`);
+        }
+      }
 
       // 3. Handle cache revalidation
       const { existingAvailability } = validatedData;
@@ -486,12 +583,20 @@ export const calendarRouter = createTRPCRouter({
       }
 
       // 4. Return full typed data (automatic inference from Prisma includes)
+      const primaryAvailability = result.updatedAvailabilities[0];
+      const allUpdatedIds = result.updatedAvailabilities.map((a: Availability) => a.id);
+      
       return {
-        availability: result.updatedAvailabilities[0], // Primary updated availability with relations
+        availability: primaryAvailability, // Primary updated availability with relations
         allUpdatedAvailabilities: result.updatedAvailabilities,
-        affectedAvailabilityIds: validatedData.affectedAvailabilityIds || [],
+        affectedAvailabilityIds: allUpdatedIds,
         updateScope: validatedData.updateStrategy,
         slotsRegenerated: result.totalSlotsRegenerated,
+        // Additional info for series updates
+        ...(validatedData.updateStrategy !== 'single' && {
+          seriesRecreated: true,
+          totalAvailabilitiesCreated: result.updatedAvailabilities.length,
+        }),
       };
     }),
 
@@ -619,6 +724,11 @@ export const calendarRouter = createTRPCRouter({
           },
           organization: true,
           location: true,
+          availableServices: {
+            include: {
+              service: true,
+            },
+          },
           calculatedSlots: {
             include: {
               booking: true,
@@ -684,6 +794,11 @@ export const calendarRouter = createTRPCRouter({
           },
           organization: true,
           location: true,
+          availableServices: {
+            include: {
+              service: true,
+            },
+          },
           calculatedSlots: {
             include: {
               booking: true,
@@ -749,6 +864,11 @@ export const calendarRouter = createTRPCRouter({
           },
           organization: true,
           location: true,
+          availableServices: {
+            include: {
+              service: true,
+            },
+          },
           calculatedSlots: {
             include: {
               booking: true,
@@ -814,6 +934,11 @@ export const calendarRouter = createTRPCRouter({
           },
           organization: true,
           location: true,
+          availableServices: {
+            include: {
+              service: true,
+            },
+          },
           calculatedSlots: {
             include: {
               booking: true,
@@ -881,18 +1006,16 @@ export const calendarRouter = createTRPCRouter({
       try {
         const slotData = generateSlotDataForAvailability({
           availabilityId: updatedAvailability.id,
-          providerId: updatedAvailability.providerId,
-          organizationId: updatedAvailability.organizationId || '',
-          locationId: updatedAvailability.locationId || undefined,
           startTime: updatedAvailability.startTime,
           endTime: updatedAvailability.endTime,
+          schedulingRule: updatedAvailability.schedulingRule as SchedulingRule,
+          schedulingInterval: updatedAvailability.schedulingInterval || undefined,
           services: updatedAvailability.availableServices.map((as) => ({
             serviceId: as.serviceId,
+            serviceConfigId: as.id, // Use the ServiceAvailabilityConfig ID
             duration: as.duration,
             price: Number(as.price),
           })),
-          schedulingRule: updatedAvailability.schedulingRule as SchedulingRule,
-          schedulingInterval: updatedAvailability.schedulingInterval || undefined,
         });
 
         let slotsGenerated = 0;
@@ -1157,6 +1280,110 @@ export const calendarRouter = createTRPCRouter({
       return booking;
     }),
 });
+
+/**
+ * Generate instances based on update strategy
+ */
+function generateInstancesForStrategy(
+  strategy: 'future' | 'all',
+  existingAvailability: any,
+  newStartTime: Date,
+  newEndTime: Date,
+  newRecurrencePattern: any
+): Array<{ startTime: Date; endTime: Date }> {
+  if (strategy === 'future') {
+    const currentDate = new Date(existingAvailability.startTime);
+    
+    if (newRecurrencePattern && existingAvailability.isRecurring) {
+      return generateRecurringInstances(
+        newRecurrencePattern,
+        newStartTime,
+        newEndTime,
+        365
+      ).filter(instance => instance.startTime >= currentDate);
+    }
+    
+    return [{ startTime: newStartTime, endTime: newEndTime }];
+  }
+
+  // 'all' strategy
+  if (newRecurrencePattern && existingAvailability.isRecurring) {
+    return generateRecurringInstances(
+      newRecurrencePattern,
+      newStartTime,
+      newEndTime,
+      365
+    );
+  }
+  
+  return [{ startTime: newStartTime, endTime: newEndTime }];
+}
+
+/**
+ * Create service configurations for availabilities
+ */
+async function createServiceConfigsForAvailabilities(
+  tx: any,
+  availabilities: any[],
+  services: any[],
+  providerId: string,
+  isOnlineAvailable?: boolean,
+  locationId?: string
+) {
+  for (const availability of availabilities) {
+    for (const service of services) {
+      await tx.serviceAvailabilityConfig.create({
+        data: {
+          serviceId: service.serviceId,
+          providerId: providerId,
+          duration: service.duration,
+          price: service.price,
+          isOnlineAvailable: isOnlineAvailable || false,
+          isInPerson: !isOnlineAvailable || !!locationId,
+          locationId: locationId,
+          availabilities: {
+            connect: { id: availability.id }
+          }
+        }
+      });
+    }
+  }
+}
+
+/**
+ * Fetch availabilities with all relations
+ */
+async function fetchAvailabilitiesWithRelations(tx: any, availabilityIds: string[]) {
+  return tx.availability.findMany({
+    where: { id: { in: availabilityIds } },
+    include: {
+      provider: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+            },
+          },
+        },
+      },
+      organization: true,
+      location: true,
+      availableServices: {
+        include: {
+          service: true,
+        },
+      },
+      calculatedSlots: {
+        include: {
+          booking: true,
+        },
+      },
+    },
+  });
+}
 
 /**
  * Handle single availability deletion with scope support

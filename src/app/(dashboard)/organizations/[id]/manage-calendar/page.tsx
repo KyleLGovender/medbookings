@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { AvailabilityStatus } from '@prisma/client';
 import { Calendar, Check, Edit, Pause, Trash2, X } from 'lucide-react';
