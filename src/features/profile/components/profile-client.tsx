@@ -1,8 +1,8 @@
 'use client';
 
 import { StatusBadge } from '@/components/status-badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { UserAvatar } from '@/components/user-avatar';
 import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { useOrganizationByUserId } from '@/features/organizations/hooks/use-organization-by-user-id';
 import { type RouterOutputs } from '@/utils/api';
@@ -53,10 +53,13 @@ export function ProfileClient({
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center space-y-4">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={profile.image ?? undefined} />
-                  <AvatarFallback className="text-lg">{profile.name?.[0] ?? '?'}</AvatarFallback>
-                </Avatar>
+                <UserAvatar
+                  name={profile.name}
+                  image={profile.image}
+                  email={profile.email}
+                  className="h-24 w-24"
+                  fallbackClassName="text-lg"
+                />
                 <div className="space-y-1 text-center">
                   <h2 className="text-xl font-semibold text-foreground dark:text-foreground">
                     {profile.name ?? 'User'}

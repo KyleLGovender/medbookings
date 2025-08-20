@@ -5,9 +5,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AvailabilityStatus } from '@prisma/client';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { UserAvatar } from '@/components/user-avatar';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   Select,
@@ -426,9 +426,12 @@ export function ProviderCalendarView({
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <Avatar className="h-12 w-12">
-                  <AvatarFallback>{provider.user?.name}</AvatarFallback>
-                </Avatar>
+                <UserAvatar
+                  name={provider.user?.name}
+                  image={provider.user?.image}
+                  email={provider.user?.email}
+                  className="h-12 w-12"
+                />
                 <div>
                   <CardTitle className="text-xl">{provider.user?.name || 'Provider'}</CardTitle>
                   <p className="text-sm text-muted-foreground">Healthcare Provider</p>

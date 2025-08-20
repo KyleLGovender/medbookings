@@ -15,10 +15,10 @@ import {
   User,
 } from 'lucide-react';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { UserAvatar } from '@/components/user-avatar';
 import {
   Dialog,
   DialogContent,
@@ -188,13 +188,12 @@ export function ProviderConnectionCard({
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
-              <Avatar className="h-12 w-12">
-                <AvatarImage
-                  src={connection.provider.image || connection.provider.user.image || ''}
-                  alt={connection.provider.name}
-                />
-                <AvatarFallback>{connection.provider.name.charAt(0).toUpperCase()}</AvatarFallback>
-              </Avatar>
+              <UserAvatar
+                name={connection.provider.name}
+                image={connection.provider.image || connection.provider.user.image}
+                email={connection.provider.user.email}
+                className="h-12 w-12"
+              />
               <div className="flex-1">
                 <CardTitle className="text-lg">{connection.provider.name}</CardTitle>
                 <CardDescription className="mt-1 flex items-center gap-2">

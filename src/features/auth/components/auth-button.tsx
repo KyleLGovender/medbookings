@@ -1,12 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 
 import { signIn, signOut, useSession } from 'next-auth/react';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { UserAvatar } from '@/components/user-avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,21 +25,10 @@ interface AuthButtonProps {
 
 export default function AuthButton({ profileMenuItems = [], className }: AuthButtonProps) {
   const { data, status } = useSession();
-  const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/' });
   };
-
-  // Preload the image when session data is available
-  useEffect(() => {
-    if (data?.user?.image) {
-      const img = new window.Image();
-      img.onload = () => setImageLoaded(true);
-      img.onerror = () => setImageLoaded(false);
-      img.src = data.user.image;
-    }
-  }, [data?.user?.image]);
 
   // Show sign-in button for unauthenticated users
   if (status === 'unauthenticated') {
@@ -80,18 +68,13 @@ export default function AuthButton({ profileMenuItems = [], className }: AuthBut
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className={className} aria-label="Open user menu">
-            <Avatar className="h-8 w-8">
-              {status === 'authenticated' && data?.user?.image && imageLoaded ? (
-                <AvatarImage
-                  src={data.user.image}
-                  alt={data.user.name || 'User avatar'}
-                  referrerPolicy="no-referrer"
-                />
-              ) : null}
-              <AvatarFallback className="text-sm font-medium">
-                {status === 'loading' ? '...' : data?.user?.name?.[0] || '?'}
-              </AvatarFallback>
-            </Avatar>
+            <UserAvatar
+              name={data?.user?.name}
+              image={data?.user?.image}
+              email={data?.user?.email}
+              className="h-8 w-8"
+              showLoading={status === 'loading'}
+            />
           </Button>
         </DropdownMenuTrigger>
 

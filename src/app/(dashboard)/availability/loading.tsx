@@ -1,5 +1,5 @@
 import CalendarLoader from '@/components/calendar-loader';
 
 export default function CalendarPageLoading() {
-  return <CalendarLoader message="Loading Calendar" submessage="Preparing your schedule..." />;
+  return <CalendarLoader message="Loading" submessage="Preparing your data..." />;
 }

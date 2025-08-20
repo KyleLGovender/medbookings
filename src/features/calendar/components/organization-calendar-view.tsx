@@ -14,10 +14,10 @@ import {
   Users,
 } from 'lucide-react';
 
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { UserAvatar } from '@/components/user-avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -541,14 +541,11 @@ export function OrganizationCalendarView({
                         onChange={() => {}}
                       />
 
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="text-xs">
-                          {provider.name
-                            .split(' ')
-                            .map((n) => n[0])
-                            .join('')}
-                        </AvatarFallback>
-                      </Avatar>
+                      <UserAvatar
+                        name={provider.name}
+                        className="h-8 w-8"
+                        fallbackClassName="text-xs"
+                      />
 
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-medium">{provider.name}</div>
@@ -754,14 +751,11 @@ function OrganizationWeekView({
         <div className="grid gap-3">
           {providers.map((provider) => (
             <div key={provider.id} className="flex items-center space-x-4 rounded-lg border p-3">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="text-xs">
-                  {provider.name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar
+                name={provider.name}
+                className="h-8 w-8"
+                fallbackClassName="text-xs"
+              />
 
               <div className="flex-1">
                 <div className="text-sm font-medium">{provider.name}</div>
@@ -829,14 +823,11 @@ function OrganizationWeekView({
         {providers.map((provider) => (
           <div key={provider.id} className="mb-1 grid grid-cols-8 gap-1">
             <div className="flex items-center space-x-2 border-r bg-gray-50 p-2">
-              <Avatar className="h-6 w-6">
-                <AvatarFallback className="text-xs">
-                  {provider.name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar
+                name={provider.name}
+                className="h-6 w-6"
+                fallbackClassName="text-xs"
+              />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-xs font-medium">{provider.name}</div>
                 <div className="truncate text-xs text-muted-foreground">{provider.type}</div>
@@ -941,14 +932,11 @@ function OrganizationDayView({
           <div key={provider.id} className="rounded-lg border p-4">
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="text-xs">
-                    {provider.name
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar
+                  name={provider.name}
+                  className="h-8 w-8"
+                  fallbackClassName="text-xs"
+                />
                 <div>
                   <div className="text-sm font-medium">{provider.name}</div>
                   <div className="text-xs text-muted-foreground">{provider.type}</div>
