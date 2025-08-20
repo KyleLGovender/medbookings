@@ -1383,6 +1383,108 @@ export const calendarRouter = createTRPCRouter({
     }),
 
   /**
+   * Create a new booking from public booking page
+   * Public procedure for customer booking
+   */
+  createPublicBooking: publicProcedure
+    .input(
+      z.object({
+        slotId: z.string(),
+        clientName: z.string().min(1, 'Name is required'),
+        clientEmail: z.string().email('Valid email is required'),
+        clientPhone: z.string().min(1, 'Phone number is required'),
+        notes: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify slot exists and is available
+      const slot = await ctx.prisma.calculatedAvailabilitySlot.findUnique({
+        where: { id: input.slotId },
+        include: {
+          booking: true,
+          availability: {
+            include: {
+              provider: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                    },
+                  },
+                },
+              },
+              organization: true,
+              location: true,
+            },
+          },
+          service: true,
+        },
+      });
+
+      if (!slot) {
+        throw new Error('Slot not found');
+      }
+
+      if (slot.booking) {
+        throw new Error('Slot is already booked');
+      }
+
+      if (slot.startTime <= new Date()) {
+        throw new Error('Cannot book past slots');
+      }
+
+      // Create booking
+      const booking = await ctx.prisma.booking.create({
+        data: {
+          slotId: input.slotId,
+          clientName: input.clientName,
+          clientEmail: input.clientEmail,
+          clientPhone: input.clientPhone,
+          notes: input.notes || '',
+          status: 'PENDING', // Default status, may require provider confirmation
+          bookedAt: new Date(),
+          price: slot.price,
+          duration: slot.durationMinutes,
+        },
+        include: {
+          slot: {
+            include: {
+              service: true,
+              availability: {
+                include: {
+                  provider: {
+                    include: {
+                      user: {
+                        select: {
+                          id: true,
+                          name: true,
+                          email: true,
+                        },
+                      },
+                    },
+                  },
+                  location: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // TODO: Send confirmation emails to both client and provider
+      // TODO: Send calendar invites if applicable
+      // TODO: Trigger notification workflows
+
+      return {
+        success: true,
+        booking,
+        message: 'Booking created successfully',
+      };
+    }),
+
+  /**
    * Get booking with all relations needed for communications
    * OPTION C: Direct database query in tRPC for automatic type inference
    */

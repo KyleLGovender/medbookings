@@ -2,14 +2,19 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 
+import { format } from 'date-fns';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserAvatar } from '@/components/user-avatar';
 import CalendarLoader from '@/components/calendar-loader';
 import { BookingCalendarGrid } from '@/features/calendar/components/booking-calendar-grid';
 import { BookingCalendarHeader } from '@/features/calendar/components/booking-calendar-header';
 import { BookingFilterBar } from '@/features/calendar/components/booking-filter-bar';
+import { BookingSlotModal, type BookingFormData } from '@/features/calendar/components/booking-slot-modal';
+import { BookingSuccessToast } from '@/features/calendar/components/booking-success-toast';
 import { useAvailableSlots } from '@/features/calendar/hooks/use-available-slots';
 import { useBookingFilters } from '@/features/calendar/hooks/use-booking-filters';
+import { useCreateBooking } from '@/features/calendar/hooks/use-create-booking';
 import { BookingSlot, CalendarViewMode } from '@/features/calendar/types/booking-types';
 import { api, type RouterOutputs } from '@/utils/api';
 
@@ -25,6 +30,9 @@ export function ProviderSlotView({ providerId, searchParams }: ProviderSlotViewP
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>('week');
   const [selectedSlot, setSelectedSlot] = useState<BookingSlot | null>(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [lastBookedSlot, setLastBookedSlot] = useState<BookingSlot | null>(null);
 
   // Initialize filters from search params
   const filters = useBookingFilters(searchParams);
@@ -56,6 +64,9 @@ export function ProviderSlotView({ providerId, searchParams }: ProviderSlotViewP
       ).filter(Boolean) || [],
     };
   }, [providerData]);
+
+  // Booking mutation
+  const createBookingMutation = useCreateBooking();
 
   // Fetch available slots with filters
   const { 
@@ -106,8 +117,43 @@ export function ProviderSlotView({ providerId, searchParams }: ProviderSlotViewP
   const handleSlotClick = useCallback((slot: BookingSlot) => {
     if (slot.isAvailable) {
       setSelectedSlot(slot);
-      // TODO: Navigate to booking form or open booking modal
-      console.log('Selected slot for booking:', slot);
+      setIsBookingModalOpen(true);
+    }
+  }, []);
+
+  const handleBookingConfirm = useCallback(async (bookingData: BookingFormData) => {
+    try {
+      const result = await createBookingMutation.mutateAsync({
+        slotId: bookingData.slotId,
+        clientName: bookingData.clientName,
+        clientEmail: bookingData.clientEmail,
+        clientPhone: bookingData.clientPhone,
+        notes: bookingData.notes,
+      });
+
+      // Close modal on success
+      setIsBookingModalOpen(false);
+      setLastBookedSlot(selectedSlot);
+      setSelectedSlot(null);
+
+      // Show success toast
+      setShowSuccessToast(true);
+
+      // Refetch slots to update availability
+      // The useAvailableSlots hook will automatically refetch every 5 minutes,
+      // but we can trigger a manual refetch for immediate feedback
+      
+    } catch (error) {
+      // Error is handled by the mutation's onError callback
+      console.error('Booking failed:', error);
+      alert('Failed to create booking. Please try again.');
+    }
+  }, [createBookingMutation]);
+
+  const handleBookingModalClose = useCallback((open: boolean) => {
+    setIsBookingModalOpen(open);
+    if (!open) {
+      setSelectedSlot(null);
     }
   }, []);
 
@@ -210,6 +256,25 @@ export function ProviderSlotView({ providerId, searchParams }: ProviderSlotViewP
         onSlotClick={handleSlotClick}
         selectedSlot={selectedSlot}
       />
+
+      {/* Booking Modal */}
+      <BookingSlotModal
+        slot={selectedSlot}
+        open={isBookingModalOpen}
+        onOpenChange={handleBookingModalClose}
+        onBookingConfirm={handleBookingConfirm}
+        isLoading={createBookingMutation.isPending}
+      />
+
+      {/* Success Toast */}
+      {lastBookedSlot && (
+        <BookingSuccessToast
+          show={showSuccessToast}
+          onClose={() => setShowSuccessToast(false)}
+          providerName={lastBookedSlot.provider.name}
+          appointmentTime={format(lastBookedSlot.startTime, 'EEEE, MMMM d \'at\' h:mm a')}
+        />
+      )}
     </div>
   );
 }
