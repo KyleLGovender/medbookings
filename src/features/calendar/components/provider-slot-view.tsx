@@ -206,7 +206,7 @@ export function ProviderSlotView({ providerId, searchParams }: ProviderSlotViewP
         viewMode={viewMode}
         slots={slots || []}
         isLoading={isSlotsLoading}
-        error={slotsError}
+        error={slotsError ? new Error(slotsError.message) : null}
         onSlotClick={handleSlotClick}
         selectedSlot={selectedSlot}
       />

@@ -1,4 +1,4 @@
-import type { AvailabilityStatus, SchedulingRule } from '@prisma/client';
+import type { ProviderStatus, SchedulingRule } from '@prisma/client';
 
 export type CalendarViewMode = 'day' | '3-day' | 'week';
 
@@ -40,12 +40,12 @@ export interface BookingFilters {
   providerTypes?: string[];
   services?: string[];
   duration?: {
-    min: number;
-    max: number;
+    min?: number;
+    max?: number;
   };
   priceRange?: {
-    min: number;
-    max: number;
+    min?: number;
+    max?: number;
   };
 }
 
@@ -62,7 +62,7 @@ export interface ProviderPublicData {
     email?: string;
     image?: string;
   };
-  status: AvailabilityStatus;
+  status: ProviderStatus;
   specialties?: string[];
   bio?: string;
   languages?: string[];

@@ -54,18 +54,26 @@ export function useBookingFilters(searchParams?: { [key: string]: string | strin
       
       // Duration filter from search params
       if (searchParams.minDuration || searchParams.maxDuration) {
-        filters.duration = {
-          min: searchParams.minDuration ? parseInt(searchParams.minDuration as string) : undefined,
-          max: searchParams.maxDuration ? parseInt(searchParams.maxDuration as string) : undefined,
-        };
+        const duration: { min?: number; max?: number } = {};
+        if (searchParams.minDuration) {
+          duration.min = parseInt(searchParams.minDuration as string);
+        }
+        if (searchParams.maxDuration) {
+          duration.max = parseInt(searchParams.maxDuration as string);
+        }
+        filters.duration = duration;
       }
       
       // Price range from search params
       if (searchParams.minPrice || searchParams.maxPrice) {
-        filters.priceRange = {
-          min: searchParams.minPrice ? parseFloat(searchParams.minPrice as string) : undefined,
-          max: searchParams.maxPrice ? parseFloat(searchParams.maxPrice as string) : undefined,
-        };
+        const priceRange: { min?: number; max?: number } = {};
+        if (searchParams.minPrice) {
+          priceRange.min = parseFloat(searchParams.minPrice as string);
+        }
+        if (searchParams.maxPrice) {
+          priceRange.max = parseFloat(searchParams.maxPrice as string);
+        }
+        filters.priceRange = priceRange;
       }
     }
     

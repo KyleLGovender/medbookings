@@ -1262,12 +1262,12 @@ export const calendarRouter = createTRPCRouter({
           location: z.enum(['online', 'in-person', 'all']).optional(),
           services: z.array(z.string()).optional(),
           duration: z.object({
-            min: z.number(),
-            max: z.number(),
+            min: z.number().optional(),
+            max: z.number().optional(),
           }).optional(),
           priceRange: z.object({
-            min: z.number(),
-            max: z.number(),
+            min: z.number().optional(),
+            max: z.number().optional(),
           }).optional(),
         }).optional(),
       })

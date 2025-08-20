@@ -42,7 +42,7 @@ export function useAvailableSlots({
       startTime: new Date(slot.startTime),
       endTime: new Date(slot.endTime),
       durationMinutes: slot.durationMinutes,
-      isAvailable: !slot.isBooked && slot.startTime > new Date(), // Check if slot is available and in future
+      isAvailable: !slot.booking && slot.startTime > new Date(), // Check if slot is available and in future
       price: slot.price ? parseFloat(slot.price.toString()) : undefined,
       service: slot.service ? {
         id: slot.service.id,
@@ -56,7 +56,7 @@ export function useAvailableSlots({
       },
       location: slot.availability.location ? {
         id: slot.availability.location.id,
-        name: slot.availability.location.name || 'Location',
+        name: slot.availability.location.name,
         isOnline: slot.availability.isOnlineAvailable,
       } : undefined,
     }));

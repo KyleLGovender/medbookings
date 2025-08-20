@@ -42,7 +42,7 @@ export function BookingCalendarHeader({
         break;
     }
     
-    if (viewMode !== 'day') {
+    if (viewMode === '3-day' || viewMode === 'week') {
       const startStr = currentDate.toLocaleDateString('en-US', { 
         month: 'short',
         day: 'numeric'
