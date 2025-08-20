@@ -107,7 +107,9 @@ export const calendarRouter = createTRPCRouter({
     }
 
     // 2. Perform all database operations in single transaction
-    const result = await ctx.prisma.$transaction(async (tx) => {
+    // Extended timeout for complex availability creation with slot generation
+    const result = await ctx.prisma.$transaction(
+      async (tx) => {
       // Create all availability instances
       const availabilities = await Promise.all(
         validatedData.instances.map(async (instance) => {
@@ -132,6 +134,7 @@ export const calendarRouter = createTRPCRouter({
               status: validatedData.initialStatus,
               createdById: ctx.session.user.id,
               createdByMembershipId: validatedData.createdByMembershipId,
+              isProviderCreated: validatedData.isProviderCreated,
               defaultSubscriptionId: validatedData.defaultSubscriptionId,
               availableServices: {
                 create: validatedData.services.map((service) => ({
@@ -206,7 +209,12 @@ export const calendarRouter = createTRPCRouter({
       }
 
       return { availabilities, totalSlotsGenerated };
-    });
+    },
+    {
+      maxWait: 10000, // Wait up to 10 seconds for a transaction slot
+      timeout: 30000, // Allow up to 30 seconds for complex operations with slot generation
+    }
+  );
 
     // 3. Handle notifications and cache revalidation
     if (validation.notificationNeeded) {

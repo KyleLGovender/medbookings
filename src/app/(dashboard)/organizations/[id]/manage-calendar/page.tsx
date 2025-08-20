@@ -29,7 +29,6 @@ import {
 import { OrganizationCalendarView } from '@/features/calendar/components/organization-calendar-view';
 import {
   useAcceptAvailabilityProposal,
-  useCancelAvailability,
   useDeleteAvailability,
   useRejectAvailabilityProposal,
 } from '@/features/calendar/hooks/use-availability';
@@ -97,15 +96,6 @@ export default function OrganizationAvailabilityPage({
     },
   });
 
-  const cancelMutation = useCancelAvailability({
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Availability cancelled successfully',
-      });
-      setSelectedEvent(null);
-    },
-  });
 
   const handleCreateAvailability = (providerId?: string) => {
     setCreateProviderId(providerId || null);

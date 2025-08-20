@@ -296,8 +296,7 @@ export function EditRegulatoryRequirements({
                             setValue: methods.setValue,
                             errors: methods.formState.errors,
                             fieldName,
-                            existingValue:
-                              (existingSubmission?.documentMetadata as any)?.value,
+                            existingValue: (existingSubmission?.documentMetadata as any)?.value,
                           })}
                           {fieldError && (
                             <p className="mt-1 text-xs text-red-500">

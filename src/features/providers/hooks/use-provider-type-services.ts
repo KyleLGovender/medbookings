@@ -13,7 +13,8 @@ export function useProviderTypeServices(providerId: string | undefined) {
   );
 
   // Extract provider type IDs from the provider data
-  const providerTypeIds = providerQuery.data?.typeAssignments?.map((assignment: any) => assignment.providerType.id) || [];
+  const providerTypeIds =
+    providerQuery.data?.typeAssignments?.map((assignment: any) => assignment.providerType.id) || [];
 
   // Fetch services based on all provider type IDs
   return api.providers.getServicesForMultipleTypes.useQuery(

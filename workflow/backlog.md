@@ -3,9 +3,6 @@
 ----------------------------------------------------------------------------------------
 
 ## 🚀 Current Sprint (In Progress)
-- [ ] tRPC migration
-- [ ] Implement testing throughout the application. https://github.com/microsoft/playwright-mcp 
-
 - [ ] **Technical Debt**: Critical cleanup of availability-creation-form.tsx as reference pattern - `src/features/calendar/availability/components/availability-creation-form.tsx:1`
   - **Issue**: The availability-creation-form.tsx component needs comprehensive cleanup to serve as a clean reference pattern before it can be used as a template for standardizing the edit form. Current issues include: potential legacy code, inconsistent patterns, TODO comments (line 237), unused variables, complex state management that may not follow CLAUDE.md patterns, and general code quality issues that make it difficult to maintain and use as a reliable reference.
   - **Impact**: Without a clean reference pattern, attempts to standardize the edit form will propagate existing technical debt and inconsistencies. This prevents the availability forms from serving as reliable patterns for other calendar implementations and makes future development more error-prone.
@@ -22,6 +19,11 @@
     10. **Documentation**: Add JSDoc comments for complex logic and ensure code is self-documenting
     11. **CLAUDE.md Compliance**: Ensure all patterns follow the standards specified in CLAUDE.md
   - **Estimated Time**: 4-5 hours
+- [ ] Display availability edit options correctly
+  - [ ] Right now it only shows cancel... remove cancel availability
+  - [ ] Add Edit availability
+  - [ ] Add Delete availability
+- [ ] Display profile image or initials in circle
 - [ ] **Technical Debt**: Standardize availability-edit-form.tsx to match cleaned creation form pattern - `src/features/calendar/availability/components/availability-edit-form.tsx:1`
   - **Issue**: The availability-edit-form.tsx component doesn't follow the same comprehensive pattern as the availability-creation-form.tsx. It's missing key sections like profile selection, recurrence settings, location management, and doesn't have the same level of form organization and structure. This inconsistency makes the codebase harder to maintain and creates confusion for developers working with both forms.
   - **Impact**: Inconsistent form patterns across the availability system create maintenance burden, confuse developers, and make it difficult to ensure feature parity between creation and editing workflows. Users may expect similar functionality in both forms but find missing features in the edit form.
@@ -54,6 +56,7 @@
 ----------------------------------------------------------------------------------------
 
 ## 📝 Quick Capture (New Issues)
+- [ ] Implement testing throughout the application. https://github.com/microsoft/playwright-mcp 
 - [ ] Populate provider and organization and user email addresses with the associated Google email. Not possible to edit.
 - [ ] Remove Calendar from Menu based on user logged in
 - [ ] Protect Calendar routes based on authentication
@@ -69,6 +72,7 @@
 ----------------------------------------------------------------------------------------
 
 ## ✅ Recently Completed
+- [x] tRPC migration
 - [x] Implement user roles system (guest, user, provider, organization manager, admin)
 - [x] Context 7 documentation
 - [x] Firecrawl

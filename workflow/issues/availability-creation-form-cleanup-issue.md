@@ -1,159 +1,197 @@
-# Availability Creation Form Cleanup Issue
+# Issue Specification: availability-creation-form-cleanup
 
 ## Issue Summary
 
-The `availability-creation-form.tsx` component requires comprehensive cleanup to serve as a clean reference pattern for other availability forms. The component currently contains technical debt including type safety issues, complex state management, and inconsistent patterns that prevent it from being used as a reliable template for standardizing the edit form and other calendar implementations.
+The `availability-creation-form.tsx` component requires comprehensive technical debt cleanup to serve as a clean reference pattern for provider self-scheduling. The component will be simplified to focus solely on provider self-scheduling (online-only), with organization-created availability workflows moved to the `availability-proposal-form.tsx`. This separation will eliminate workflow confusion and several related bugs while establishing a clean reference pattern.
 
 ## Problem Description
 
-The availability creation form component (~634 lines) has accumulated technical debt that makes it difficult to maintain and use as a reference pattern. Key issues include:
+The availability creation form is a critical component in the calendar feature that manages provider availability scheduling. While it appears to function for basic operations, it contains several issues that compromise code quality and maintainability:
 
-- **Type Safety Weaknesses**: Areas where type definitions could be stronger and more explicit
-- **Complex State Management**: Multiple `useState` hooks and form watchers that create unnecessary complexity and potential performance issues
-- **Inconsistent Patterns**: Code that doesn't fully align with CLAUDE.md standards and best practices
-- **Maintainability Concerns**: Code structure that makes future development and debugging more difficult
+1. **Functional Bugs**:
+   - Location selection should not exist for provider self-scheduling (providers can only create online availability, locations are organization-only)
+   - Custom recurrence pattern details are not displayed after selection
+   - Mixed workflow confusion: form currently tries to handle both provider self-scheduling AND organization-created scheduling (should be separated)
+
+2. **Code Quality Issues**:
+   - Complex state management that may not follow CLAUDE.md patterns
+   - Potential legacy code and development artifacts
+   - Inconsistent type safety patterns
+   - Missing proper error handling and loading states
+
+3. **Architecture Concerns**:
+   - Not fully utilizing tRPC's type safety features
+   - May not follow the dual-source type safety approach (tRPC for server data, manual types for domain logic)
+   - Unclear separation between business logic and UI concerns
 
 ## Expected vs Actual Behavior
 
-**Expected**: A clean, well-structured form component that follows all CLAUDE.md patterns and serves as a reliable template for other availability forms.
+### Expected Behavior
+- **Single Purpose**: Form should handle ONLY provider self-scheduling
+- **Clear Context Header**: Display informational text at top: "Creating online availability for [Provider Name]"
+- **No Location Selection**: Remove location UI entirely - provider availability is automatically online-only
+- **Organization Workflow**: Organization-created availability should use `availability-proposal-form.tsx` (separate workflow)
+- **Custom Recurrence**: Display selected recurrence pattern details after configuration
+- **Type Safety**: Full utilization of tRPC's automatic type inference
+- **Code Quality**: Clean, maintainable code following CLAUDE.md patterns
 
-**Actual**: A functional but complex component with technical debt that hinders its use as a reference pattern and makes maintenance challenging.
+### Actual Behavior
+- **Mixed Purpose**: Form attempts to handle both provider and organization workflows
+- **Location Selection**: Incorrectly shows location selection UI (locations are organization-only)
+- **Organization Role**: "Creating as" selector causes confusion and errors
+- **Custom Recurrence**: Selected pattern details are not visible to users
+- **Type Safety**: May not be fully utilizing tRPC type extraction patterns
+- **Code Quality**: Contains complex state management and potential legacy patterns
 
 ## Reproduction Steps
 
-1. Navigate to `src/features/calendar/components/availability/availability-creation-form.tsx`
-2. Review code structure and patterns
-3. Identify areas where:
-   - Type safety could be improved
-   - State management is overly complex
-   - Patterns don't align with CLAUDE.md standards
-   - Code organization could be cleaner
+1. Navigate to the availability creation form as a provider
+2. Observe that location selection UI is present (incorrect - should not exist for providers)
+3. Observe that "Creating as" selector is present (should be removed)
+4. Select a custom recurrence pattern
+5. Note that selected recurrence details are not displayed in the UI
+6. Review code for type safety patterns and CLAUDE.md compliance
 
 ## Affected Users/Scope
 
-- **Developers**: Working on availability-related features and calendar implementations
-- **Maintainers**: Needing to debug, modify, or extend availability functionality
-- **Future Development**: Teams using this component as a reference pattern
+- **All providers** attempting to create availability
+- **Organization administrators** managing provider schedules
+- **Developers** using this component as a reference pattern for:
+  - `availability-edit-form.tsx`
+  - `availability-proposal-form.tsx`
+  - Other calendar-related forms
 
 ## Impact Assessment
 
-- **Severity**: Medium-High (Technical Debt)
-- **Frequency**: Ongoing impact on development velocity
-- **Business Impact**: Slows down calendar feature development and increases maintenance burden
+- **Severity**: High - Core functionality with data integrity implications
+- **Frequency**: Every availability creation operation
+- **Business Impact**: 
+  - Incorrect availability settings could lead to booking conflicts
+  - Poor user experience during critical onboarding/setup flows
+  - Technical debt propagation to related components
+  - Increased maintenance burden and bug likelihood
 
 ## Error Details
 
-Current issues identified in the component:
-- Complex state management with multiple watchers that could be simplified
-- Type definitions that could be more explicit and stronger
-- Component structure that could be more maintainable
-- Patterns that don't fully align with CLAUDE.md standards
+1. **Workflow Confusion** (Lines 230-287):
+   - "Creating as" selector and organization role logic should be removed entirely
+   - This complexity is causing unnecessary state management and conditional logic
+
+2. **Type Safety Concerns**:
+   - Component may not be using `RouterOutputs` for type extraction
+   - Potential mixing of manual types where tRPC types should be used
+
+3. **State Management Complexity**:
+   - Multiple `useState` hooks that could be consolidated
+   - Complex form watching logic that may cause unnecessary re-renders
+   - Unnecessary organization-related state that should be removed
 
 ## Environment Information
 
-- **Component**: `availability-creation-form.tsx`
-- **Location**: `src/features/calendar/components/availability/`
-- **Framework**: Next.js 14 with React Hook Form and Zod validation
-- **Dependencies**: React Hook Form, Zod, TanStack Query, shadcn/ui components
+- **Component**: `/src/features/calendar/components/availability/availability-creation-form.tsx`
+- **Dependencies**: 
+  - tRPC for API calls
+  - React Hook Form for form management
+  - Zod for validation
+  - TanStack Query for data fetching
+- **Related Components**:
+  - `availability-edit-form.tsx`
+  - `availability-proposal-form.tsx`
+  - `custom-recurrence-modal.tsx`
+  - `service-selection-section.tsx`
 
-## Root Cause Analysis
+## Root Cause Analysis (if known)
 
-The component has grown organically over time, accumulating technical debt through:
-1. Multiple development iterations without comprehensive cleanup
-2. Complex state management patterns that could be simplified
-3. Type definitions that could be more explicit
-4. Patterns that don't fully align with current CLAUDE.md standards
+1. **Business Logic Confusion**: The component tries to handle both provider self-scheduling and organization-created scheduling in one form, leading to complex conditional logic
+
+2. **Incomplete Migration**: The component may have been partially migrated to new patterns but not fully completed
+
+3. **Type System Migration**: Recent comprehensive type system migration may not have been fully applied to this component
+
+4. **Missing Validation**: Business rules about location availability are not properly enforced in the UI
 
 ## Potential Solutions
 
-### 1. Type Safety Improvements
-- Remove any `any` types and replace with explicit type definitions
-- Strengthen interface definitions and type constraints
-- Ensure all props and state have proper TypeScript coverage
+### 1. **Simplify to Single Purpose**
+- Remove ALL organization-related logic and UI elements
+- Remove the "Creating as" selector entirely
+- Add clear informational header: "Creating online availability for [Provider Name]"
+- Focus this form ONLY on provider self-scheduling
+- Ensure organization workflows use `availability-proposal-form.tsx` exclusively
 
-### 2. State Management Cleanup
-- Simplify multiple `useState` hooks and form watchers
-- Reduce unnecessary re-renders through optimized state patterns
-- Follow CLAUDE.md form implementation patterns more closely
+### 2. **Remove All Location UI for Providers**
+- Remove ALL location-related UI elements (both online toggle and location selection)
+- Automatically set `isOnlineAvailable` to true in the backend submission
+- Locations are exclusively for organization-managed availability
+- Provider self-scheduling is ALWAYS online-only without needing UI selection
 
-### 3. Code Organization and Structure
-- Group related logic together for better maintainability
-- Extract reusable functions where appropriate
-- Ensure consistent error handling patterns
-- Improve code readability and self-documentation
+### 3. **Remove Organization Code**
+- Remove all organization-related imports and hooks
+- Remove organization-related state variables
+- Simplify component props to remove organizationId
+- Clean up any conditional logic based on creator type
 
-### 4. CLAUDE.md Standards Alignment
-- **Import Organization**: Ensure imports follow the specified order and patterns
-- **Type Safety**: Remove `any` types, improve interfaces
-- **Error Handling**: Standardize error handling patterns
-- **State Management**: Align with form implementation patterns
-- **Code Style**: Follow all specified code style guidelines
+### 4. **Implement Type Safety Patterns**
+```typescript
+// Extract types from RouterOutputs
+type AvailabilityData = RouterOutputs['calendar']['getAvailability'];
+type LocationData = RouterOutputs['organizations']['getLocations'];
 
-### 5. Component Modularity Assessment
-Evaluate whether the component should be broken down into smaller components:
-- **Keep as single component** if the logic is tightly coupled and breaking it apart would create unnecessary complexity
-- **Extract sub-components** only if there are clear, logical boundaries that would improve maintainability without sacrificing clarity
+// Use domain types from manual files
+import { RecurrenceOption } from '@/features/calendar/types/types';
+```
+
+### 5. **Display Custom Recurrence Details**
+- Add UI component to show selected recurrence pattern
+- Update form state to track and display pattern details
+
+### 6. **Simplify State Management**
+- Consolidate related state into single objects
+- Use form.watch more efficiently
+- Implement proper memoization
+
+### 7. **Add Proper Error Handling**
+- Implement comprehensive error boundaries
+- Add loading states for all async operations
+- Provide clear user feedback for all actions
 
 ## Workarounds
 
-Currently, developers can:
-- Work around complex state management by carefully reviewing existing patterns
-- Use the component as-is while being aware of its technical debt
-- Avoid using it as a direct template until cleanup is complete
+1. **For Providers**: Only use online availability option until location bug is fixed
+2. **For Organizations**: Use the availability proposal workflow directly instead of this form
+3. **For Custom Recurrence**: Document the selected pattern externally until UI is fixed
+4. **For Developers**: Reference CLAUDE.md patterns directly rather than this component
 
 ## Definition of Done
 
-### Functional Requirements
-- [ ] All existing functionality works exactly as before
-- [ ] No console errors or warnings
-- [ ] TypeScript compilation without warnings
-- [ ] Form validation works correctly
-- [ ] All form fields and interactions function properly
-- [ ] Custom recurrence modal works correctly
-- [ ] Service selection works as expected
-- [ ] Location selection functions properly
-- [ ] Profile selection works for both provider and organization modes
-
-### Code Quality Requirements
-- [ ] **Type Safety**: All `any` types removed and replaced with explicit types
-- [ ] **State Management**: Complex state patterns simplified following CLAUDE.md guidelines
-- [ ] **Code Organization**: Related logic grouped together, reusable functions extracted where appropriate
-- [ ] **Error Handling**: Consistent error handling patterns throughout
-- [ ] **CLAUDE.md Compliance**: All patterns align with specified standards
-- [ ] **Import Organization**: Imports follow the specified order and patterns
-- [ ] **Code Style**: Follows all ESLint rules and formatting standards
-- [ ] **Self-Documentation**: Code is clearly readable with appropriate comments for complex logic
-
-### Template Readiness
-- [ ] Component serves as a clean reference pattern for other availability forms
-- [ ] Code structure is maintainable and easily debuggable
-- [ ] Patterns can be confidently replicated in other components
-- [ ] No technical debt that would be propagated to other implementations
-
-### Implementation Approach
-- [ ] **Maintain identical functionality** - no breaking changes to component behavior
-- [ ] **Internal refactoring only** - public API remains the same
-- [ ] **Performance improvements** through cleaner patterns, not at the expense of clarity
-- [ ] **Modular breakdown** only if logical boundaries clearly improve maintainability
+- [ ] **Single Purpose Form**: All organization-related code removed, form handles ONLY provider self-scheduling
+- [ ] **Clear Context Header**: Informational text displays "Creating online availability for [Provider Name]"
+- [ ] **No Location UI**: All location selection UI removed, availability automatically set as online-only
+- [ ] **"Creating as" Selector Removed**: No workflow confusion, no Select errors
+- [ ] **Custom Recurrence Display**: Selected pattern details are visible in the UI
+- [ ] **Type Safety Implemented**: Full tRPC type extraction patterns applied per CLAUDE.md
+- [ ] **State Management Simplified**: Consolidated state, efficient form watching, proper memoization
+- [ ] **Error Handling Added**: Comprehensive error boundaries and loading states
+- [ ] **Code Quality**: No ESLint warnings, no unused variables, no commented code
+- [ ] **Performance Optimized**: Minimal re-renders, efficient data fetching
+- [ ] **CLAUDE.md Compliant**: All patterns follow documented standards
+- [ ] **Ready as Reference**: Clean enough to serve as template for edit and proposal forms
+- [ ] **Testing**: Manual testing confirms all bugs are fixed
+- [ ] **Documentation**: Complex logic has appropriate JSDoc comments
 
 ## Additional Notes
 
-- **Leave TODO comment** (lines 266-268) about organization provider selection as-is for now
-- **Focus on functionality and best practices** rather than performance optimizations
-- **Maintain clarity** - don't sacrifice code readability for performance gains
-- **Component size** (~634 lines) is acceptable if the logic is cohesive; only break down if clear logical boundaries exist
-- **Discuss all breaking changes** with stakeholders before implementation
-- **Priority focus areas**: Type safety improvements and state management cleanup
+- **Clear Separation of Concerns**: This form is for provider self-scheduling ONLY
+- **Locations are organization-only**: Providers cannot specify locations - their availability is always online
+- **Organization workflows** should use `availability-proposal-form.tsx` where locations can be specified
+- This cleanup is critical before using this component as a reference for standardizing other forms
+- Consider splitting into smaller, more focused components during cleanup
+- Ensure backward compatibility is not a concern (v0 - breaking changes allowed)
+- Focus on making this a exemplary implementation of CLAUDE.md patterns
+- After cleanup, this simpler form will serve as the reference pattern for `availability-edit-form.tsx`
 
-## Implementation Strategy
+---
 
-This cleanup should be approached systematically:
+Is this Issue Specification correct and complete? Are there any additional details or clarifications needed?
 
-1. **Type Safety Pass**: Review and strengthen all type definitions
-2. **State Management Review**: Simplify complex useState and form watcher patterns
-3. **Code Organization**: Group related logic and extract reusable functions
-4. **Standards Alignment**: Ensure all patterns follow CLAUDE.md guidelines
-5. **Validation**: Verify all functionality works exactly as before
-6. **Documentation**: Add JSDoc comments for complex logic
-
-The goal is to create a component that serves as a gold standard reference pattern for availability forms while maintaining 100% functional compatibility.
+**Respond with 'Complete Issue Specification' to finalize this document.**

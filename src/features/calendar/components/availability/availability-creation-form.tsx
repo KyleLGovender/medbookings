@@ -1,12 +1,14 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SchedulingRule } from '@prisma/client';
-import { Calendar, Clock, MapPin, Repeat } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { Calendar, Clock, Loader2, Repeat } from 'lucide-react';
+import { useForm, useWatch } from 'react-hook-form';
 
+import CalendarLoader from '@/components/calendar-loader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -37,9 +39,7 @@ import {
   getRecurrenceOptions,
 } from '@/features/calendar/lib/recurrence-utils';
 import { createAvailabilityDataSchema } from '@/features/calendar/types/schemas';
-import { CustomRecurrenceData, RecurrenceOption } from '@/features/calendar/types/types';
-import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
-import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
+import { CustomRecurrenceData, DayOfWeek, RecurrenceOption } from '@/features/calendar/types/types';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
@@ -54,9 +54,6 @@ type CreateAvailabilityResponse = RouterOutputs['calendar']['create'];
 type CreatedAvailability = NonNullable<CreateAvailabilityResponse['availability']>;
 
 interface AvailabilityCreationFormProps {
-  providerId: string;
-  organizationId?: string;
-  locationId?: string;
   onSuccess?: (data: CreatedAvailability) => void;
   onCancel?: () => void;
 }
@@ -86,56 +83,33 @@ const updateDatePreservingTime = (currentTime: Date, newDate: Date): Date => {
  * - Service selection and configuration
  * - Additional settings (confirmation requirements)
  *
- * @param providerId - The ID of the provider
- * @param organizationId - Optional organization ID for organization-created availability
- * @param locationId - Optional pre-selected location ID
+ * Uses currentUserProvider for provider self-scheduling
  * @param onSuccess - Callback fired when availability is created successfully
  * @param onCancel - Callback fired when the form is cancelled
  */
-export function AvailabilityCreationForm({
-  providerId,
-  organizationId,
-  locationId,
-  onSuccess,
-  onCancel,
-}: AvailabilityCreationFormProps) {
+export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCreationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customRecurrenceModalOpen, setCustomRecurrenceModalOpen] = useState(false);
   const [customRecurrenceData, setCustomRecurrenceData] = useState<
     CustomRecurrenceData | undefined
   >();
   const { toast } = useToast();
+  const router = useRouter();
 
-  // Fetch user data for profile selection
-  const { data: currentUserProvider } = useCurrentUserProvider();
-  const { data: userOrganizations = [] } = useCurrentUserOrganizations();
+  // Fetch current provider data - required for this form
+  const { data: currentUserProvider, isLoading: isProviderLoading } = useCurrentUserProvider();
 
-  // State for profile selection
-  const [selectedCreatorType, setSelectedCreatorType] = useState<'provider' | 'organization'>(
-    currentUserProvider ? 'provider' : 'organization'
-  );
-  const [selectedProviderId, setSelectedProviderId] = useState<string>(
-    providerId || currentUserProvider?.id || ''
-  );
-
-  // Fetch provider's services
+  // Fetch provider's services - must call hook unconditionally
   const {
     data: availableServices,
     isLoading: isServicesLoading,
     error: servicesError,
-  } = useProviderAssociatedServices(selectedProviderId);
-
-  // Fetch organization locations
-  const organizationIds = userOrganizations.map((org) => org.id);
-  const { data: availableLocations = [], isLoading: isLocationsLoading } =
-    useOrganizationLocations(organizationIds);
+  } = useProviderAssociatedServices(currentUserProvider?.id || '');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(createAvailabilityDataSchema),
     defaultValues: {
-      providerId: selectedProviderId,
-      organizationId,
-      locationId: locationId || undefined,
+      providerId: currentUserProvider?.id || '',
       startTime: new Date(),
       endTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
       isRecurring: false,
@@ -147,10 +121,12 @@ export function AvailabilityCreationForm({
     mode: 'onChange',
   });
 
-  // Update form when selectedProviderId changes
+  // Update form when currentUserProvider changes
   useEffect(() => {
-    form.setValue('providerId', selectedProviderId);
-  }, [selectedProviderId, form]);
+    if (currentUserProvider?.id) {
+      form.setValue('providerId', currentUserProvider.id);
+    }
+  }, [currentUserProvider?.id, form]);
 
   const createMutation = useCreateAvailability({
     onSuccess: (data) => {
@@ -162,41 +138,80 @@ export function AvailabilityCreationForm({
     },
   });
 
-  // Watch form values for reactive UI updates
-  const watchIsOnlineAvailable = form.watch('isOnlineAvailable');
-  const watchLocationId = form.watch('locationId');
-  const watchStartTime = form.watch('startTime');
+  // Watch form values for reactive UI updates - optimized with useWatch
+  const watchStartTime = useWatch({ control: form.control, name: 'startTime' });
 
-  // Memoize selected location to avoid repeated lookups
-  const selectedLocation = useMemo(() => {
-    if (!watchLocationId) return null;
+  // Memoize expensive recurrence options computation
+  const recurrenceOptions = useMemo(() => {
+    const startTime = watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime);
+    return getRecurrenceOptions(startTime);
+  }, [watchStartTime]);
+
+  // Authorization check - redirect if not a provider
+  useEffect(() => {
+    if (!isProviderLoading && !currentUserProvider?.id) {
+      router.push('/unauthorized');
+    }
+  }, [isProviderLoading, currentUserProvider?.id, router]);
+
+  // Show loading state while provider data is being fetched
+  if (isProviderLoading) {
     return (
-      availableLocations.filter((loc) => loc.id).find((loc) => loc.id === watchLocationId) || null
+      <CalendarLoader
+        message="Loading availability form"
+        submessage="Fetching your provider information..."
+        showAfterMs={300}
+      />
     );
-  }, [watchLocationId, availableLocations]);
+  }
 
-  // Form submission handlers
+  // Show nothing while redirecting (useEffect will handle redirect)
+  if (!currentUserProvider?.id) {
+    return null;
+  }
+
+  /**
+   * Handles form submission
+   * Validates data, enforces online-only availability, and creates the availability
+   */
   const onSubmit = async (data: FormValues) => {
     if (createMutation.isPending) return;
 
     setIsSubmitting(true);
     try {
-      // Ensure all Date fields are properly converted from form strings to Date objects
+      // Ensure all Date fields are properly converted and enforce online-only for provider self-scheduling
       const submitData: CreateAvailabilityInput = {
         ...data,
         startTime: data.startTime instanceof Date ? data.startTime : new Date(data.startTime),
         endTime: data.endTime instanceof Date ? data.endTime : new Date(data.endTime),
+        isOnlineAvailable: true, // Always online for provider self-scheduling
+        locationId: undefined, // Never set location for provider self-scheduling
       };
 
       await createMutation.mutateAsync(submitData);
     } catch (error) {
-      // Error handled by mutation onError callback
       console.error('Failed to create availability:', error);
+
+      // Show user-friendly error message
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'An unexpected error occurred while creating availability';
+
+      toast({
+        title: 'Failed to create availability',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  /**
+   * Handles saving custom recurrence pattern from the modal
+   * Converts the selected days and end date into a recurrence pattern
+   */
   const handleCustomRecurrenceSave = (data: CustomRecurrenceData) => {
     const startTime = watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime);
     const pattern = createRecurrencePattern(
@@ -227,63 +242,11 @@ export function AvailabilityCreationForm({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Profile Selection */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Creating Availability</h3>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Creating as</label>
-                  <Select
-                    value={selectedCreatorType}
-                    onValueChange={(value: 'provider' | 'organization') => {
-                      setSelectedCreatorType(value);
-                      // Reset provider selection when changing creator type
-                      if (value === 'provider' && currentUserProvider) {
-                        setSelectedProviderId(currentUserProvider.id);
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currentUserProvider && (
-                        <SelectItem value="provider">Provider (Self)</SelectItem>
-                      )}
-                      {userOrganizations.length > 0 && (
-                        <SelectItem value="organization">Organization Role</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Provider</label>
-                  <Select
-                    value={selectedProviderId}
-                    onValueChange={(value) => {
-                      setSelectedProviderId(value);
-                      form.setValue('providerId', value);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select provider" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {selectedCreatorType === 'provider' && currentUserProvider && (
-                        <SelectItem value={currentUserProvider.id}>
-                          {currentUserProvider.name} (You)
-                        </SelectItem>
-                      )}
-                      {selectedCreatorType === 'organization' && userOrganizations.length > 0 && (
-                        <SelectItem value="" disabled>
-                          Select an organization first to see providers
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+            {/* Clear Context Header */}
+            <div className="rounded-lg bg-muted/50 p-4">
+              <p className="text-sm font-medium">
+                Creating online availability for {currentUserProvider?.name || 'Provider'}
+              </p>
             </div>
 
             <Separator />
@@ -387,10 +350,6 @@ export function AvailabilityCreationForm({
                 control={form.control}
                 name="recurrencePattern"
                 render={({ field }) => {
-                  const startTime =
-                    watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime);
-                  const recurrenceOptions = getRecurrenceOptions(startTime);
-
                   return (
                     <FormItem>
                       <FormLabel>Recurrence</FormLabel>
@@ -433,6 +392,70 @@ export function AvailabilityCreationForm({
                   );
                 }}
               />
+
+              {/* Display Custom Recurrence Details */}
+              {customRecurrenceData && (
+                <div className="space-y-4 rounded-lg border p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Repeat className="h-4 w-4" />
+                      <span className="font-medium">Custom recurrence</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCustomRecurrenceModalOpen(true)}
+                    >
+                      Edit
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-sm font-medium">Repeat every 1 week</span>
+                    </div>
+
+                    <div>
+                      <span className="mb-2 block text-sm font-medium">Repeat on</span>
+                      <div className="flex gap-2">
+                        {[
+                          { label: 'M', value: DayOfWeek.MONDAY },
+                          { label: 'T', value: DayOfWeek.TUESDAY },
+                          { label: 'W', value: DayOfWeek.WEDNESDAY },
+                          { label: 'T', value: DayOfWeek.THURSDAY },
+                          { label: 'F', value: DayOfWeek.FRIDAY },
+                          { label: 'S', value: DayOfWeek.SATURDAY },
+                          { label: 'S', value: DayOfWeek.SUNDAY },
+                        ].map((day, index) => {
+                          const isSelected = customRecurrenceData.selectedDays.includes(day.value);
+                          return (
+                            <div
+                              key={index}
+                              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium ${
+                                isSelected ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
+                              {day.label}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-sm font-medium">Ends on</span>
+                      <div className="mt-1 text-sm text-gray-600">
+                        {customRecurrenceData.endDate.toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <Separator />
@@ -481,120 +504,55 @@ export function AvailabilityCreationForm({
 
             <Separator />
 
-            {/* Location Section */}
+            {/* Availability Type */}
             <div className="space-y-4">
               <h3 className="flex items-center gap-2 text-lg font-medium">
-                <MapPin className="h-4 w-4" />
-                Location
+                <Clock className="h-4 w-4" />
+                Availability Type
               </h3>
-
-              {/* Online Availability Toggle */}
-              <FormField
-                control={form.control}
-                name="isOnlineAvailable"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Available Online</FormLabel>
-                      <FormDescription>Allow virtual appointments via video call</FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              {/* Physical Location Selection */}
-              {isLocationsLoading ? (
-                <div className="py-4 text-center text-muted-foreground">Loading locations...</div>
-              ) : (
-                <FormField
-                  control={form.control}
-                  name="locationId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Physical Location{!watchIsOnlineAvailable && ' (Required)'}
-                      </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value || undefined}
-                        required={!watchIsOnlineAvailable}
-                        aria-label="Physical location selection"
-                      >
-                        <FormControl>
-                          <SelectTrigger
-                            className={field.value ? 'border-green-500 bg-green-50' : ''}
-                            aria-describedby="location-description"
-                          >
-                            <SelectValue placeholder="Choose a physical location" />
-                            {field.value && (
-                              <div
-                                className="flex items-center gap-2"
-                                aria-label="Location selected"
-                              >
-                                <svg
-                                  className="h-4 w-4 text-green-600"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M5 13l4 4L19 7"
-                                  />
-                                </svg>
-                              </div>
-                            )}
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {availableLocations
-                            .filter((location) => location.id)
-                            .map((location) => (
-                              <SelectItem key={location.id} value={location.id!}>
-                                {location.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription id="location-description">
-                        {selectedLocation ? (
-                          <div className="font-medium text-green-700">
-                            ✓ Selected: {selectedLocation.name}
-                            {selectedLocation.formattedAddress && (
-                              <div className="mt-1 text-sm text-muted-foreground">
-                                {selectedLocation.formattedAddress}
-                              </div>
-                            )}
-                          </div>
-                        ) : watchIsOnlineAvailable ? (
-                          'Select a physical location for in-person appointments (optional)'
-                        ) : (
-                          'You must select a physical location when online availability is disabled'
-                        )}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <div className="flex items-center gap-2 text-blue-700">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                  <span className="font-medium">Online Appointments Only</span>
+                </div>
+                <p className="mt-1 text-sm text-blue-600">
+                  Provider self-scheduling is available for virtual appointments via video call
+                </p>
+              </div>
             </div>
 
             <Separator />
 
             {/* Service Selection */}
             {isServicesLoading ? (
-              <div className="py-8 text-center text-muted-foreground">Loading services...</div>
+              <div className="py-8 text-center">
+                <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Loading available services...</p>
+              </div>
             ) : servicesError ? (
-              <div className="py-8 text-center text-destructive">Failed to load services.</div>
+              <div className="py-8 text-center">
+                <p className="font-medium text-destructive">Failed to load services</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Please refresh the page or contact support if the problem persists.
+                </p>
+              </div>
+            ) : !availableServices || availableServices.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="font-medium text-muted-foreground">No services configured</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Please configure your services before creating availability.
+                </p>
+              </div>
             ) : (
               <ServiceSelectionSection
-                providerId={providerId}
-                organizationId={organizationId}
+                providerId={currentUserProvider?.id || ''}
                 availableServices={(availableServices || []).map((s) => ({
                   ...s,
                   description: s.description ?? undefined,
@@ -644,7 +602,14 @@ export function AvailabilityCreationForm({
                 disabled={isSubmitting || createMutation.isPending || !form.formState.isValid}
                 className="min-w-[140px]"
               >
-                {isSubmitting || createMutation.isPending ? 'Creating...' : 'Create Availability'}
+                {isSubmitting || createMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create Availability'
+                )}
               </Button>
             </div>
           </form>

@@ -1,5 +1,6 @@
 'use client';
 
+import { ProviderInvitationStatus } from '@prisma/client';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   AlertTriangle,
@@ -34,13 +35,12 @@ import {
   useCancelProviderInvitation,
   useResendProviderInvitation,
 } from '@/features/organizations/hooks/use-provider-invitations';
-import { ProviderInvitationStatus } from '@prisma/client';
+import { useToast } from '@/hooks/use-toast';
 import { type RouterOutputs } from '@/utils/api';
 
 // Extract type from tRPC response
 type ProviderInvitationsResponse = RouterOutputs['organizations']['getProviderInvitations'];
 type ProviderInvitationWithDetails = ProviderInvitationsResponse[number];
-import { useToast } from '@/hooks/use-toast';
 
 interface ProviderInvitationListProps {
   organizationId: string;

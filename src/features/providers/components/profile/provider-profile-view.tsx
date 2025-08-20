@@ -52,7 +52,8 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
   const isOwner = userId === provider.userId;
 
   // Get all provider types from the typeAssignments array
-  const providerTypes = provider.typeAssignments?.map(assignment => assignment.providerType) || [];
+  const providerTypes =
+    provider.typeAssignments?.map((assignment) => assignment.providerType) || [];
   const hasMultipleTypes = providerTypes.length > 1;
 
   return (

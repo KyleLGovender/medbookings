@@ -48,13 +48,13 @@ import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-u
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
 import { type RouterInputs } from '@/utils/api';
+import { type RouterOutputs } from '@/utils/api';
 
 // Helper function to ensure we have a Date object
 const ensureDate = (value: string | Date | undefined): Date | undefined => {
   if (!value) return undefined;
   return typeof value === 'string' ? new Date(value) : value;
 };
-import { type RouterOutputs } from '@/utils/api';
 
 // Extract input type from tRPC procedure for zero type drift
 type CreateAvailabilityInput = RouterInputs['calendar']['create'];
@@ -372,7 +372,9 @@ export function AvailabilityProposalForm({
                 render={({ field }) => {
                   const startTime = form.watch('startTime');
                   const startTimeDate = ensureDate(startTime);
-                  const recurrenceOptions = startTimeDate ? getRecurrenceOptions(startTimeDate) : [];
+                  const recurrenceOptions = startTimeDate
+                    ? getRecurrenceOptions(startTimeDate)
+                    : [];
 
                   return (
                     <FormItem>

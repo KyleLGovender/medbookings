@@ -25,10 +25,10 @@ type RequirementFromOnboarding = OnboardingData['requirements'][string][number];
 type AdminRequirement = RouterOutputs['admin']['getProviderRequirements'][number];
 
 // Union type to support both contexts
-type RequirementType = (RequirementFromOnboarding & {
+type RequirementType = RequirementFromOnboarding & {
   index: number;
   existingSubmission?: AdminRequirement;
-});
+};
 
 // Define a specific type for our form structure to match how we're accessing requirements
 interface RequirementForm {

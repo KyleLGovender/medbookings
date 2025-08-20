@@ -150,7 +150,7 @@ export function useCreateAvailability(options?: {
 
       // The tRPC mutation returns an object with availability property
       if (data?.availability) {
-        options?.onSuccess?.(data.availability, variables as any);
+        options?.onSuccess?.(data.availability, variables);
       }
     },
   });
@@ -188,20 +188,6 @@ export function useUpdateAvailability(options?: {
   });
 }
 
-export function useCancelAvailability(options?: {
-  onSuccess?: (variables: { ids: string[]; scope?: 'single' | 'future' | 'all' }) => void;
-}) {
-  const utils = api.useUtils();
-
-  return api.calendar.delete.useMutation({
-    onSuccess: (_, variables) => {
-      // Invalidate all availability queries
-      utils.calendar.invalidate();
-
-      options?.onSuccess?.(variables);
-    },
-  });
-}
 
 export function useDeleteAvailability(options?: {
   onSuccess?: (variables: { ids: string[]; scope?: 'single' | 'future' | 'all' }) => void;

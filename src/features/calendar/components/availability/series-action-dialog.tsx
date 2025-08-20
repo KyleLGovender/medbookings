@@ -26,7 +26,7 @@ export interface SeriesActionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (scope: SeriesActionScope) => void;
-  actionType: 'edit' | 'delete' | 'cancel';
+  actionType: 'edit' | 'delete' | 'cancel' | 'view';
   availabilityTitle: string;
   availabilityDate: string;
   isDestructive?: boolean;
@@ -86,6 +86,8 @@ export function SeriesActionDialog({
         return 'delete';
       case 'cancel':
         return 'cancel';
+      case 'view':
+        return 'view';
       default:
         return 'modify';
     }

@@ -67,10 +67,7 @@ export function ExistingUserInvitationFlow({
   const queryClient = useQueryClient();
 
   // Check if user has a provider profile
-  const {
-    data: provider,
-    isLoading: isProviderLoading,
-  } = useProviderByUserId(user?.id);
+  const { data: provider, isLoading: isProviderLoading } = useProviderByUserId(user?.id);
 
   const respondToInvitationMutation = api.providers.respondToInvitation.useMutation({
     // Step 1: Implement optimistic updates

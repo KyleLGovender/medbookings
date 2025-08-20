@@ -1,4 +1,9 @@
-import { ConnectionStatus, Languages, ProviderInvitationStatus, ProviderStatus } from '@prisma/client';
+import {
+  ConnectionStatus,
+  Languages,
+  ProviderInvitationStatus,
+  ProviderStatus,
+} from '@prisma/client';
 import { z } from 'zod';
 
 import { sendProviderWhatsappConfirmation } from '@/features/communications/lib/server-helper';
@@ -442,19 +447,21 @@ export const providersRouter = createTRPCRouter({
         }
       }
 
-      // Send WhatsApp confirmation
-      try {
-        await sendProviderWhatsappConfirmation(
-          input.basicInfo.name,
-          input.basicInfo.whatsapp || ''
-        );
-      } catch (error) {
-        console.error('Failed to send WhatsApp confirmation:', error);
-        // Don't fail registration if WhatsApp fails
-      }
+      // // Send WhatsApp confirmation
+      // try {
+      //   await sendProviderWhatsappConfirmation(
+      //     input.basicInfo.name,
+      //     input.basicInfo.whatsapp || ''
+      //   );
+      // } catch (error) {
+      //   console.error('Failed to send WhatsApp confirmation:', error);
+      //   // Don't fail registration if WhatsApp fails
+      // }
 
       // Create provider with all relations in a single transaction
-      const provider = await ctx.prisma.$transaction(async (tx) => {
+      // Extended timeout for complex provider creation with multiple relations
+      const provider = await ctx.prisma.$transaction(
+        async (tx) => {
         // Create the provider
         const newProvider = await tx.provider.create({
           data: {
@@ -528,7 +535,12 @@ export const providersRouter = createTRPCRouter({
         }
 
         return newProvider;
-      });
+      },
+      {
+        maxWait: 10000, // Wait up to 10 seconds for a transaction slot
+        timeout: 20000, // Allow up to 20 seconds for provider creation with relations
+      }
+    );
 
       return { success: true, data: provider, redirect: '/profile' };
     }),

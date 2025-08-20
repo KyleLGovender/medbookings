@@ -654,7 +654,7 @@ export const organizationsRouter = createTRPCRouter({
 
       if (activeAvailabilities.length > 0) {
         throw new Error(
-          'Cannot delete connection with active future availability. Please cancel all future availability first.'
+          'Cannot delete connection with active future availability. Please delete all future availability first.'
         );
       }
 

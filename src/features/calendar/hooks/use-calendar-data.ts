@@ -61,7 +61,7 @@ export function useCalendarData(params: CalendarDataParams): CalendarDataResult 
   const { providerIds, dateRange, statusFilter = 'ALL' } = params;
 
   // Create queries for each provider
-  const providerQueries = providerIds.map(providerId => {
+  const providerQueries = providerIds.map((providerId) => {
     // Fetch provider data using tRPC
     const providerQuery = api.providers.getById.useQuery(
       { id: providerId },
@@ -95,7 +95,7 @@ export function useCalendarData(params: CalendarDataParams): CalendarDataResult 
   // Build the structured calendarData object with proper type mapping
   const calendarData = useMemo(() => {
     const providers = new Map<string, ProviderCalendarData>();
-    
+
     providerQueries.forEach(({ providerId, provider, availability }) => {
       // Explicitly type the queries to ensure type safety
       providers.set(providerId, {
@@ -122,13 +122,9 @@ export function useCalendarData(params: CalendarDataParams): CalendarDataResult 
   }, [providerQueries]);
 
   // Calculate combined loading and error states
-  const isLoading = providerQueries.some(
-    q => q.provider.isLoading || q.availability.isLoading
-  );
-  
-  const hasError = providerQueries.some(
-    q => !!q.provider.error || !!q.availability.error
-  );
+  const isLoading = providerQueries.some((q) => q.provider.isLoading || q.availability.isLoading);
+
+  const hasError = providerQueries.some((q) => !!q.provider.error || !!q.availability.error);
 
   return {
     providers: calendarData,

@@ -26,11 +26,11 @@ import { useCalendarData } from '@/features/calendar/hooks/use-calendar-data';
 import {
   calculateDateRange,
   getEventStyle,
-  navigateCalendarDate
+  navigateCalendarDate,
 } from '@/features/calendar/lib/calendar-utils';
 import {
   groupEventsByDate,
-  sortEventsForRendering
+  sortEventsForRendering,
 } from '@/features/calendar/lib/virtualization-helpers';
 import { CalendarEvent, CalendarViewMode } from '@/features/calendar/types/types';
 
@@ -137,7 +137,6 @@ export function ProviderCalendarView({
     const breakdown = {
       [AvailabilityStatus.PENDING]: 0,
       [AvailabilityStatus.ACCEPTED]: 0,
-      [AvailabilityStatus.CANCELLED]: 0,
       [AvailabilityStatus.REJECTED]: 0,
     };
 
@@ -192,12 +191,12 @@ export function ProviderCalendarView({
   const calendarEvents: CalendarEvent[] = useMemo(() => {
     const availabilities = availabilityQuery?.data || [];
     if (!Array.isArray(availabilities)) return [];
-    
+
     // Transform availabilities to CalendarEvent format
     const events: CalendarEvent[] = [];
-    
+
     // Add availability events
-    availabilities.forEach(availability => {
+    availabilities.forEach((availability) => {
       events.push({
         id: availability.id,
         type: 'availability' as const,
@@ -208,18 +207,22 @@ export function ProviderCalendarView({
         schedulingRule: availability.schedulingRule,
         isRecurring: availability.isRecurring,
         seriesId: availability.seriesId,
-        location: availability.location ? {
-          id: availability.location.id,
-          name: availability.location.name || 'Location',
-          isOnline: availability.isOnlineAvailable,
-        } : undefined,
-        organization: availability.organization ? {
-          id: availability.organization.id,
-          name: availability.organization.name,
-        } : undefined,
-        isProviderCreated: availability.createdById === availability.providerId,
+        location: availability.location
+          ? {
+              id: availability.location.id,
+              name: availability.location.name || 'Location',
+              isOnline: availability.isOnlineAvailable,
+            }
+          : undefined,
+        organization: availability.organization
+          ? {
+              id: availability.organization.id,
+              name: availability.organization.name,
+            }
+          : undefined,
+        isProviderCreated: availability.isProviderCreated ?? (availability.createdById === availability.provider?.userId),
       });
-      
+
       // Add booking events from calculated slots
       if (availability.calculatedSlots) {
         availability.calculatedSlots.forEach((slot: any) => {
@@ -241,14 +244,14 @@ export function ProviderCalendarView({
         });
       }
     });
-    
+
     return events;
   }, [availabilityQuery?.data]);
 
   // Calculate stats from availability data
   const stats = useMemo(() => {
     const events = calendarEvents;
-    
+
     // Calculate total available hours
     const totalAvailableHours = events.reduce((total, event) => {
       if (event.type === 'availability') {
@@ -269,17 +272,16 @@ export function ProviderCalendarView({
 
     // Count pending and completed bookings
     const pendingBookings = events.filter(
-      event => event.type === 'booking' && event.status === 'PENDING'
+      (event) => event.type === 'booking' && event.status === 'PENDING'
     ).length;
-    
+
     const completedBookings = events.filter(
-      event => event.type === 'booking' && event.status === 'COMPLETED'
+      (event) => event.type === 'booking' && event.status === 'COMPLETED'
     ).length;
 
     // Calculate utilization rate
-    const utilizationRate = totalAvailableHours > 0 
-      ? Math.round((bookedHours / totalAvailableHours) * 100)
-      : 0;
+    const utilizationRate =
+      totalAvailableHours > 0 ? Math.round((bookedHours / totalAvailableHours) * 100) : 0;
 
     return {
       utilizationRate,
@@ -293,26 +295,26 @@ export function ProviderCalendarView({
   // Derive working hours from availability data or use defaults
   const workingHours = useMemo(() => {
     const events = calendarEvents;
-    const availabilityEvents = events.filter(e => e.type === 'availability');
-    
+    const availabilityEvents = events.filter((e) => e.type === 'availability');
+
     if (availabilityEvents.length === 0) {
       // Default working hours
       return { start: '09:00', end: '17:00' };
     }
-    
+
     // Find earliest start and latest end times
     let earliestHour = 24;
     let latestHour = 0;
-    
-    availabilityEvents.forEach(event => {
+
+    availabilityEvents.forEach((event) => {
       const startHour = event.startTime.getHours();
       const startMinutes = event.startTime.getMinutes();
       const endHour = event.endTime.getHours();
       const endMinutes = event.endTime.getMinutes();
-      
+
       const startDecimal = startHour + startMinutes / 60;
       const endDecimal = endHour + endMinutes / 60;
-      
+
       if (startDecimal < earliestHour) {
         earliestHour = startDecimal;
       }
@@ -320,14 +322,14 @@ export function ProviderCalendarView({
         latestHour = endDecimal;
       }
     });
-    
+
     // Convert back to HH:MM format
     const formatTime = (decimal: number) => {
       const hours = Math.floor(decimal);
       const minutes = Math.round((decimal - hours) * 60);
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     };
-    
+
     return {
       start: earliestHour < 24 ? formatTime(earliestHour) : '09:00',
       end: latestHour > 0 ? formatTime(latestHour) : '17:00',
@@ -401,7 +403,7 @@ export function ProviderCalendarView({
 
   // Extract provider data - now properly typed from the hook
   const provider = providerQuery.data;
-  
+
   // Early return if provider data is not loaded
   if (!provider) {
     return (
@@ -425,9 +427,7 @@ export function ProviderCalendarView({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
-                  <AvatarFallback>
-                    {provider.user?.name}
-                  </AvatarFallback>
+                  <AvatarFallback>{provider.user?.name}</AvatarFallback>
                 </Avatar>
                 <div>
                   <CardTitle className="text-xl">{provider.user?.name || 'Provider'}</CardTitle>
@@ -525,7 +525,6 @@ export function ProviderCalendarView({
                     <SelectItem value="ALL">All Statuses</SelectItem>
                     <SelectItem value={AvailabilityStatus.ACCEPTED}>✅ Active</SelectItem>
                     <SelectItem value={AvailabilityStatus.PENDING}>🟡 Pending</SelectItem>
-                    <SelectItem value={AvailabilityStatus.CANCELLED}>⏸️ Cancelled</SelectItem>
                     <SelectItem value={AvailabilityStatus.REJECTED}>❌ Rejected</SelectItem>
                   </SelectContent>
                 </Select>
@@ -608,7 +607,6 @@ export function ProviderCalendarView({
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="h-4 w-4 rounded border border-green-300 bg-green-50"></div>
-                  <span>⏸️ Cancelled</span>
                 </div>
               </div>
 
@@ -628,7 +626,6 @@ export function ProviderCalendarView({
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="h-4 w-4 rounded border border-gray-400 bg-gray-100"></div>
-                  <span>⏸️ Cancelled</span>
                 </div>
               </div>
 

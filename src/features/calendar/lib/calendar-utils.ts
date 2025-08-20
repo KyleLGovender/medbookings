@@ -38,8 +38,6 @@ export function getEventStyle(event: CalendarEvent): string {
         switch (event.status) {
           case AvailabilityStatus.ACCEPTED:
             return `bg-green-100 border-green-400 text-green-800 ${recurringBorder}`;
-          case AvailabilityStatus.CANCELLED:
-            return `bg-green-50 border-green-300 text-green-600 ${recurringBorder}`;
           default:
             return `bg-green-100 border-green-400 text-green-800 ${recurringBorder}`;
         }
@@ -53,8 +51,6 @@ export function getEventStyle(event: CalendarEvent): string {
             return `bg-blue-100 border-blue-400 text-blue-800 ${recurringBorder}`;
           case AvailabilityStatus.REJECTED:
             return `bg-red-100 border-red-400 text-red-800 ${recurringBorder}`;
-          case AvailabilityStatus.CANCELLED:
-            return `bg-gray-100 border-gray-400 text-gray-800 ${recurringBorder}`;
           default:
             return `bg-blue-100 border-blue-400 text-blue-800 ${recurringBorder}`;
         }
