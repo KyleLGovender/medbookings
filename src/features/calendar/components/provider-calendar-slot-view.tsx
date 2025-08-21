@@ -212,7 +212,7 @@ export function ProviderCalendarSlotView({
             id: slot.service.id,
             name: slot.service.name,
             duration: slot.serviceConfig?.duration || 30, // Default to 30 minutes if not specified
-            price: slot.serviceConfig?.price || slot.service.defaultPrice || 0,
+            price: Number(slot.serviceConfig?.price || slot.service.defaultPrice || 0),
           } : undefined,
           location: slot.availability?.location
             ? {
@@ -239,7 +239,7 @@ export function ProviderCalendarSlotView({
           endTime: new Date(slot.endTime),
           status: slot.booking.status,
           customer: {
-            id: slot.booking.customerId || slot.booking.id,
+            id: slot.booking.clientId || slot.booking.id,
             name: 'Booked', // Don't show customer name for privacy
           },
         });
