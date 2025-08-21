@@ -224,7 +224,7 @@ export function ProviderCalendarSlotView({
           provider: {
             id: slot.availability?.provider?.id || '',
             name: slot.availability?.provider?.user?.name || 'Provider',
-            image: slot.availability?.provider?.user?.image,
+            image: slot.availability?.provider?.user?.image || undefined,
           },
           // Additional slot data for booking
           slotData: slot,
