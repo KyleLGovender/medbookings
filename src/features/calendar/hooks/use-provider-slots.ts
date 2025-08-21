@@ -44,7 +44,7 @@ export function useProviderSlots({ providerId, dateRange, serviceId }: UseProvid
       id: service.id,
       name: service.name,
       description: service.description,
-      price: service.price,
+      price: Number(service.defaultPrice || 0),
     }));
   }, [providerQuery.data]);
 
