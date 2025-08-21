@@ -211,7 +211,8 @@ export function ProviderCalendarSlotView({
           service: slot.service ? {
             id: slot.service.id,
             name: slot.service.name,
-            price: slot.service.price,
+            duration: slot.serviceConfig?.duration || 30, // Default to 30 minutes if not specified
+            price: slot.serviceConfig?.price || slot.service.defaultPrice || 0,
           } : undefined,
           location: slot.availability?.location
             ? {
