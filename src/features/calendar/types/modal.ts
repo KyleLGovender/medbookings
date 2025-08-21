@@ -2,7 +2,7 @@ import { CalendarEvent } from './types';
 
 export type SeriesActionScope = 'single' | 'future' | 'all';
 
-export type CalendarEventAction = 'view' | 'edit' | 'delete' | 'accept' | 'reject' | 'create';
+export type CalendarEventAction = 'view' | 'edit' | 'delete' | 'accept' | 'reject' | 'create' | 'cancel';
 
 export interface CalendarEventModalState {
   isOpen: boolean;
