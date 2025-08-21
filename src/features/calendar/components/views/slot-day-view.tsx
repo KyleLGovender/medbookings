@@ -1,5 +1,5 @@
-import { AvailabilityStatus } from '@prisma/client';
-import { Repeat } from 'lucide-react';
+import { BookingStatus } from '@prisma/client';
+import { MapPin, Monitor } from 'lucide-react';
 
 import {
   calculateEventPosition,
@@ -7,10 +7,10 @@ import {
   getWorkingTimeRange,
 } from '@/features/calendar/lib/calendar-utils';
 
-import { CalendarViewEvent, DayViewProps } from './types';
+import { SlotData, SlotDayViewProps } from './types';
 
-// Day View Component  
-export function DayView({
+// Slot-specific Day View Component
+export function SlotDayView({
   currentDate,
   events,
   workingHours,
@@ -18,10 +18,10 @@ export function DayView({
   onTimeSlotClick,
   onDateClick,
   getEventStyle,
-}: DayViewProps) {
-  const dayEvents = getEventsForDay(events, currentDate);
+}: SlotDayViewProps) {
+  const daySlots = getEventsForDay(events, currentDate);
 
-  // Calculate display time range based on events
+  // Calculate display time range based on slots
   const getDisplayTimeRange = () => {
     const defaultStart = 6; // 6 AM
     const defaultEnd = 18; // 6 PM
@@ -29,10 +29,10 @@ export function DayView({
     let earliestHour = defaultStart;
     let latestHour = defaultEnd;
 
-    // Check all events to extend range if needed
-    dayEvents.forEach((event) => {
-      const startHour = new Date(event.startTime).getHours();
-      const endHour = new Date(event.endTime).getHours();
+    // Check all slots to extend range if needed
+    daySlots.forEach((slot) => {
+      const startHour = new Date(slot.startTime).getHours();
+      const endHour = new Date(slot.endTime).getHours();
 
       if (startHour < earliestHour) earliestHour = startHour;
       if (endHour > latestHour) latestHour = endHour;
@@ -47,9 +47,9 @@ export function DayView({
     (_, i) => timeRange.start + i
   );
 
-  const calculateEventPositionForDay = (event: CalendarEvent) => {
-    const startTime = new Date(event.startTime);
-    const endTime = new Date(event.endTime);
+  const calculateSlotGridPosition = (slot: SlotData) => {
+    const startTime = new Date(slot.startTime);
+    const endTime = new Date(slot.endTime);
 
     // Convert to hour-based grid slots, accounting for display range offset
     // The events grid has hours.length * 2 rows, so we need to multiply by 2
@@ -60,6 +60,27 @@ export function DayView({
     const spanSlots = endSlot - startSlot;
 
     return { gridRow: `${startSlot} / span ${spanSlots}` };
+  };
+
+  const getSlotTitle = (slot: SlotData) => {
+    if (slot.booking) {
+      return 'Booked';
+    } else if (slot.service) {
+      return slot.service.name;
+    } else {
+      return 'Available Slot';
+    }
+  };
+
+  const getSlotPrice = (slot: SlotData) => {
+    if (slot.booking) return null;
+    
+    if (slot.serviceConfig?.price) {
+      return Number(slot.serviceConfig.price);
+    } else if (slot.service?.defaultPrice) {
+      return Number(slot.service.defaultPrice);
+    }
+    return null;
   };
 
   return (
@@ -105,52 +126,72 @@ export function DayView({
                 ))}
               </div>
 
-              {/* Events for this day */}
+              {/* Slots for this day */}
               <ol
                 className="absolute inset-0 grid grid-cols-1"
                 style={{ gridTemplateRows: `repeat(${hours.length * 2}, minmax(0, 1fr))` }}
               >
-                {dayEvents.map((event) => {
-                  const { gridRow } = calculateEventPositionForDay(event);
+                {daySlots.map((slot) => {
+                  const { gridRow } = calculateSlotGridPosition(slot);
+                  const price = getSlotPrice(slot);
+                  
                   return (
-                    <li key={event.id} className="relative mt-px flex" style={{ gridRow }}>
+                    <li key={slot.id} className="relative mt-px flex" style={{ gridRow }}>
                       <a
                         href="#"
-                        className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(event)} shadow-sm hover:opacity-80`}
+                        className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(slot)} shadow-sm hover:opacity-80`}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          onEventClick?.(event, e);
+                          onEventClick?.(slot, e);
                         }}
                       >
-                        <p className="order-1 flex items-center gap-1 font-semibold">
-                          {event.title}
-                          {event.isRecurring && <Repeat className="h-3 w-3 text-blue-500" />}
-                        </p>
+                        <div className="flex items-center justify-between">
+                          <p className="order-1 font-semibold truncate">
+                            {getSlotTitle(slot)}
+                          </p>
+                          {price && (
+                            <span className="ml-1 text-xs font-semibold">
+                              ${price}
+                            </span>
+                          )}
+                        </div>
+                        
                         <p className="text-xs opacity-75">
-                          <time dateTime={event.startTime.toISOString()}>
-                            {event.startTime.toLocaleTimeString([], {
+                          <time dateTime={slot.startTime.toString()}>
+                            {new Date(slot.startTime).toLocaleTimeString([], {
                               hour: '2-digit',
                               minute: '2-digit',
                             })}
                           </time>
-                          {event.type === 'availability' && (
-                            <span>
-                              {' - '}
-                              <time dateTime={event.endTime.toISOString()}>
-                                {event.endTime.toLocaleTimeString([], {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </time>
-                            </span>
-                          )}
+                          <span>
+                            {' - '}
+                            <time dateTime={slot.endTime.toString()}>
+                              {new Date(slot.endTime).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </time>
+                          </span>
                         </p>
-                        {event.type === 'availability' && (
-                          <div className="text-xs">
-                            {event.status === AvailabilityStatus.PENDING && '🟡'}
-                            {event.status === AvailabilityStatus.ACCEPTED && '✅'}
-                            {event.status === AvailabilityStatus.REJECTED && '❌'}
+                        
+                        {slot.availability?.location && (
+                          <div className="flex items-center gap-1 text-xs opacity-75">
+                            <MapPin className="h-2 w-2 flex-shrink-0" />
+                            <span className="truncate">{slot.availability.location.name}</span>
+                          </div>
+                        )}
+                        
+                        {slot.availability?.isOnlineAvailable && (
+                          <div className="flex items-center gap-1 text-xs opacity-75">
+                            <Monitor className="h-2 w-2 flex-shrink-0" />
+                            <span>Online</span>
+                          </div>
+                        )}
+
+                        {slot.booking && (
+                          <div className="text-xs opacity-75">
+                            Status: {slot.booking.status}
                           </div>
                         )}
                       </a>

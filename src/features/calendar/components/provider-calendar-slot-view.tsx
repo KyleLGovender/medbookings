@@ -20,22 +20,16 @@ import { BookingSlotModal, type BookingFormData } from '@/features/calendar/comp
 import { BookingSuccessToast } from '@/features/calendar/components/booking-success-toast';
 import { CalendarErrorBoundary } from '@/features/calendar/components/error-boundary';
 import { CalendarSkeleton } from '@/features/calendar/components/loading';
-import { DayView } from '@/features/calendar/components/views/day-view';
-import { MonthView } from '@/features/calendar/components/views/month-view';
-import { ThreeDayView } from '@/features/calendar/components/views/three-day-view';
-import { WeekView } from '@/features/calendar/components/views/week-view';
+import { SlotDayView } from '@/features/calendar/components/views/slot-day-view';
+import { SlotThreeDayView } from '@/features/calendar/components/views/slot-three-day-view';
+import { SlotWeekView } from '@/features/calendar/components/views/slot-week-view';
 import { useCreateBooking } from '@/features/calendar/hooks/use-create-booking';
 import { useProviderSlots } from '@/features/calendar/hooks/use-provider-slots';
 import {
   calculateDateRange,
-  getEventStyle,
   navigateCalendarDate,
 } from '@/features/calendar/lib/calendar-utils';
-import {
-  groupEventsByDate,
-  sortEventsForRendering,
-} from '@/features/calendar/lib/virtualization-helpers';
-import { CalendarEvent, CalendarViewMode } from '@/features/calendar/types/types';
+import { CalendarViewMode } from '@/features/calendar/types/types';
 import type { RouterOutputs } from '@/utils/api';
 
 // Extract proper types for strong typing
@@ -188,75 +182,57 @@ export function ProviderCalendarSlotView({
     }
   }, [provider?.user?.image]);
 
-  // Transform slot data to calendar events
-  const calendarEvents: CalendarEvent[] = useMemo(() => {
+  // Get unique services from slot data for filtering
+  const availableServices = useMemo(() => {
     const slots: ProviderSlotsResult = slotsData || [];
     if (!Array.isArray(slots)) return [];
-
-    // Transform slots to CalendarEvent format
-    const events: CalendarEvent[] = [];
-
+    
+    const serviceMap = new Map();
+    
     slots.forEach((slot: SlotData) => {
-      // Only show available slots (not booked)
-      if (!slot.booking) {
-        events.push({
-          id: slot.id,
-          type: 'slot' as const,
-          title: slot.service ? `${slot.service.name}` : 'Available Slot',
-          startTime: new Date(slot.startTime),
-          endTime: new Date(slot.endTime),
-          status: 'AVAILABLE',
-          service: slot.service ? {
-            id: slot.service.id,
-            name: slot.service.name,
-            duration: slot.serviceConfig?.duration || 30, // Default to 30 minutes if not specified
-            price: Number(slot.serviceConfig?.price || slot.service.defaultPrice || 0),
-          } : undefined,
-          location: slot.availability?.location
-            ? {
-                id: slot.availability.location.id,
-                name: slot.availability.location.name || 'Location',
-                isOnline: slot.availability.isOnlineAvailable,
-              }
-            : undefined,
-          provider: {
-            id: slot.availability?.provider?.id || '',
-            name: slot.availability?.provider?.user?.name || 'Provider',
-            image: slot.availability?.provider?.user?.image || undefined,
-          },
-          // Additional slot data for booking
-          slotData: slot,
-        });
-      } else {
-        // Show booked slots as unavailable
-        events.push({
-          id: slot.booking.id,
-          type: 'booking' as const,
-          title: 'Booked',
-          startTime: new Date(slot.startTime),
-          endTime: new Date(slot.endTime),
-          status: slot.booking.status,
-          customer: {
-            id: slot.booking.clientId || slot.booking.id,
-            name: 'Booked', // Don't show customer name for privacy
-          },
+      if (slot.service && !serviceMap.has(slot.service.id)) {
+        serviceMap.set(slot.service.id, {
+          id: slot.service.id,
+          name: slot.service.name,
         });
       }
     });
-
-    return events;
+    
+    return Array.from(serviceMap.values());
   }, [slotsData]);
+
+  // Filter slots based on service selection
+  const filteredSlots = useMemo(() => {
+    const slots: ProviderSlotsResult = slotsData || [];
+    if (!Array.isArray(slots)) return [];
+
+    if (serviceFilter === 'ALL') {
+      return slots;
+    }
+
+    return slots.filter((slot: SlotData) => slot.service?.id === serviceFilter);
+  }, [slotsData, serviceFilter]);
 
   // Calculate stats from slot data
   const stats = useMemo(() => {
-    const events = calendarEvents;
+    const slots = filteredSlots;
 
-    // Calculate available slots
-    const availableSlots = events.filter(event => event.type === 'slot').length;
+    // Calculate available slots (slots without bookings)
+    const availableSlots = slots.filter(slot => !slot.booking).length;
 
-    // Calculate total slots
-    const totalSlots = events.filter(event => event.type === 'slot').length;
+    // Calculate booked slots
+    const bookedSlots = slots.filter(slot => slot.booking).length;
 
+    // Total slots
+    const totalSlots = slots.length;
+
+    // Calculate confirmed bookings
+    const confirmedBookings = slots.filter(slot => 
+      slot.booking && slot.booking.status === 'CONFIRMED'
+    ).length;
+
+    // Calculate utilization rate
+    const utilizationRate = totalSlots > 0 ? Math.round((bookedSlots / totalSlots) * 100) : 0;
 
     return {
       utilizationRate,
@@ -265,14 +241,13 @@ export function ProviderCalendarSlotView({
       totalSlots,
       confirmedBookings,
     };
-  }, [calendarEvents]);
+  }, [filteredSlots]);
 
   // Derive working hours from slot data or use defaults
   const workingHours = useMemo(() => {
-    const events = calendarEvents;
-    const slotEvents = events.filter((e) => e.type === 'slot' || e.type === 'booking');
+    const slots = filteredSlots;
 
-    if (slotEvents.length === 0) {
+    if (slots.length === 0) {
       // Default working hours
       return { start: '09:00', end: '17:00' };
     }
@@ -281,11 +256,14 @@ export function ProviderCalendarSlotView({
     let earliestHour = 24;
     let latestHour = 0;
 
-    slotEvents.forEach((event) => {
-      const startHour = event.startTime.getHours();
-      const startMinutes = event.startTime.getMinutes();
-      const endHour = event.endTime.getHours();
-      const endMinutes = event.endTime.getMinutes();
+    slots.forEach((slot) => {
+      const startTime = new Date(slot.startTime);
+      const endTime = new Date(slot.endTime);
+      
+      const startHour = startTime.getHours();
+      const startMinutes = startTime.getMinutes();
+      const endHour = endTime.getHours();
+      const endMinutes = endTime.getMinutes();
 
       const startDecimal = startHour + startMinutes / 60;
       const endDecimal = endHour + endMinutes / 60;
@@ -309,7 +287,7 @@ export function ProviderCalendarSlotView({
       start: earliestHour < 24 ? formatTime(earliestHour) : '09:00',
       end: latestHour > 0 ? formatTime(latestHour) : '17:00',
     };
-  }, [calendarEvents]);
+  }, [filteredSlots]);
 
   const navigateDate = useCallback(
     (direction: 'prev' | 'next') => {
@@ -331,10 +309,10 @@ export function ProviderCalendarSlotView({
 
   // Handle slot click to open booking modal
   const handleSlotClick = useCallback(
-    (event: CalendarEvent, clickEvent?: React.MouseEvent) => {
-      // Only allow booking of available slots
-      if (event.type === 'slot' && event.slotData) {
-        setSelectedSlot(event.slotData);
+    (slot: SlotData, clickEvent?: React.MouseEvent) => {
+      // Only allow booking of available slots (slots without bookings)
+      if (!slot.booking) {
+        setSelectedSlot(slot);
         setIsBookingModalOpen(true);
       }
     },
@@ -355,34 +333,36 @@ export function ProviderCalendarSlotView({
     [createBookingMutation]
   );
 
-  // Use shared event styling utility with memoization
-  const getEventStyleLocal = useCallback((event: CalendarEvent): string => {
-    return getEventStyle(event);
+  // Style slots based on booking status
+  const getSlotStyle = useCallback((slot: SlotData): string => {
+    if (slot.booking) {
+      // Booked slot styling
+      return 'bg-gray-200 border-gray-300 text-gray-600 cursor-not-allowed';
+    } else {
+      // Available slot styling - can be booked
+      return 'bg-green-50 border-green-200 text-green-800 hover:bg-green-100 cursor-pointer transition-colors';
+    }
   }, []);
 
-  // Optimized event filtering and sorting for large datasets
-  const optimizedEvents = useMemo(() => {
-    const events = calendarEvents;
-    if (!events.length) return [];
+  // Process slots for display with performance optimization
+  const displaySlots = useMemo(() => {
+    const slots = filteredSlots;
+    if (!slots.length) return [];
 
-    // Sort events for optimal rendering performance
-    const sorted = sortEventsForRendering(events);
-
-    // For month view, group events by date for efficient rendering
-    if (viewMode === 'month') {
-      const grouped = groupEventsByDate(sorted);
-      return Array.from(grouped.values()).flat();
-    }
+    // Sort slots by start time for consistent display
+    const sorted = [...slots].sort((a, b) => 
+      new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+    );
 
     return sorted;
-  }, [calendarEvents, viewMode]);
+  }, [filteredSlots]);
 
   // Record performance metrics when data changes
   useEffect(() => {
-    if (calendarEvents.length > 0) {
-      recordCalendarCyclePerformance(calendarEvents.length, viewMode, dateRange);
+    if (displaySlots.length > 0) {
+      recordCalendarCyclePerformance(displaySlots.length, viewMode, dateRange);
     }
-  }, [calendarEvents, viewMode, dateRange]);
+  }, [displaySlots, viewMode, dateRange]);
 
   // Early return for loading state
   if (isLoading) {
@@ -542,40 +522,31 @@ export function ProviderCalendarSlotView({
 
           <CardContent>
             {viewMode === 'day' && (
-              <DayView
+              <SlotDayView
                 currentDate={currentDate}
-                events={optimizedEvents}
+                events={displaySlots}
                 workingHours={workingHours}
                 onEventClick={handleSlotClick}
-                getEventStyle={getEventStyleLocal}
+                getEventStyle={getSlotStyle}
               />
             )}
             {viewMode === '3-day' && (
-              <ThreeDayView
+              <SlotThreeDayView
                 currentDate={currentDate}
-                events={optimizedEvents}
+                events={displaySlots}
                 workingHours={workingHours}
                 onEventClick={handleSlotClick}
-                getEventStyle={getEventStyleLocal}
+                getEventStyle={getSlotStyle}
               />
             )}
             {viewMode === 'week' && (
-              <WeekView
+              <SlotWeekView
                 currentDate={currentDate}
-                events={optimizedEvents}
+                events={displaySlots}
                 workingHours={workingHours}
                 onEventClick={handleSlotClick}
                 onDateClick={handleDateClick}
-                getEventStyle={getEventStyleLocal}
-              />
-            )}
-            {viewMode === 'month' && (
-              <MonthView
-                currentDate={currentDate}
-                events={optimizedEvents}
-                onEventClick={handleSlotClick}
-                onDateClick={handleDateClick}
-                getEventStyle={getEventStyleLocal}
+                getEventStyle={getSlotStyle}
               />
             )}
           </CardContent>

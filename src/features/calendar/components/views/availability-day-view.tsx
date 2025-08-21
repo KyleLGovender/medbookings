@@ -7,10 +7,10 @@ import {
   getWorkingTimeRange,
 } from '@/features/calendar/lib/calendar-utils';
 
-import { CalendarViewEvent, DayViewProps } from './types';
+import { AvailabilityData, AvailabilityDayViewProps } from './types';
 
-// Day View Component  
-export function DayView({
+// Availability-specific Day View Component
+export function AvailabilityDayView({
   currentDate,
   events,
   workingHours,
@@ -18,7 +18,7 @@ export function DayView({
   onTimeSlotClick,
   onDateClick,
   getEventStyle,
-}: DayViewProps) {
+}: AvailabilityDayViewProps) {
   const dayEvents = getEventsForDay(events, currentDate);
 
   // Calculate display time range based on events
@@ -30,9 +30,9 @@ export function DayView({
     let latestHour = defaultEnd;
 
     // Check all events to extend range if needed
-    dayEvents.forEach((event) => {
-      const startHour = new Date(event.startTime).getHours();
-      const endHour = new Date(event.endTime).getHours();
+    dayEvents.forEach((availability) => {
+      const startHour = new Date(availability.startTime).getHours();
+      const endHour = new Date(availability.endTime).getHours();
 
       if (startHour < earliestHour) earliestHour = startHour;
       if (endHour > latestHour) latestHour = endHour;
@@ -47,9 +47,9 @@ export function DayView({
     (_, i) => timeRange.start + i
   );
 
-  const calculateEventPositionForDay = (event: CalendarEvent) => {
-    const startTime = new Date(event.startTime);
-    const endTime = new Date(event.endTime);
+  const calculateAvailabilityGridPosition = (availability: AvailabilityData) => {
+    const startTime = new Date(availability.startTime);
+    const endTime = new Date(availability.endTime);
 
     // Convert to hour-based grid slots, accounting for display range offset
     // The events grid has hours.length * 2 rows, so we need to multiply by 2
@@ -105,52 +105,58 @@ export function DayView({
                 ))}
               </div>
 
-              {/* Events for this day */}
+              {/* Availabilities for this day */}
               <ol
                 className="absolute inset-0 grid grid-cols-1"
                 style={{ gridTemplateRows: `repeat(${hours.length * 2}, minmax(0, 1fr))` }}
               >
-                {dayEvents.map((event) => {
-                  const { gridRow } = calculateEventPositionForDay(event);
+                {dayEvents.map((availability) => {
+                  const { gridRow } = calculateAvailabilityGridPosition(availability);
                   return (
-                    <li key={event.id} className="relative mt-px flex" style={{ gridRow }}>
+                    <li key={availability.id} className="relative mt-px flex" style={{ gridRow }}>
                       <a
                         href="#"
-                        className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(event)} shadow-sm hover:opacity-80`}
+                        className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(availability)} shadow-sm hover:opacity-80`}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          onEventClick?.(event, e);
+                          onEventClick?.(availability, e);
                         }}
                       >
                         <p className="order-1 flex items-center gap-1 font-semibold">
-                          {event.title}
-                          {event.isRecurring && <Repeat className="h-3 w-3 text-blue-500" />}
+                          {availability.provider?.user?.name || 'Provider'}
+                          {availability.isRecurring && <Repeat className="h-3 w-3 text-blue-500" />}
                         </p>
                         <p className="text-xs opacity-75">
-                          <time dateTime={event.startTime.toISOString()}>
-                            {event.startTime.toLocaleTimeString([], {
+                          <time dateTime={availability.startTime.toString()}>
+                            {new Date(availability.startTime).toLocaleTimeString([], {
                               hour: '2-digit',
                               minute: '2-digit',
                             })}
                           </time>
-                          {event.type === 'availability' && (
-                            <span>
-                              {' - '}
-                              <time dateTime={event.endTime.toISOString()}>
-                                {event.endTime.toLocaleTimeString([], {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </time>
-                            </span>
-                          )}
+                          <span>
+                            {' - '}
+                            <time dateTime={availability.endTime.toString()}>
+                              {new Date(availability.endTime).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </time>
+                          </span>
                         </p>
-                        {event.type === 'availability' && (
-                          <div className="text-xs">
-                            {event.status === AvailabilityStatus.PENDING && '🟡'}
-                            {event.status === AvailabilityStatus.ACCEPTED && '✅'}
-                            {event.status === AvailabilityStatus.REJECTED && '❌'}
+                        <div className="text-xs">
+                          {availability.status === AvailabilityStatus.PENDING && '🟡'}
+                          {availability.status === AvailabilityStatus.ACCEPTED && '✅'}
+                          {availability.status === AvailabilityStatus.REJECTED && '❌'}
+                        </div>
+                        {availability.location && (
+                          <div className="text-xs opacity-75 truncate">
+                            📍 {availability.location.name}
+                          </div>
+                        )}
+                        {availability.isOnlineAvailable && (
+                          <div className="text-xs opacity-75">
+                            💻 Online
                           </div>
                         )}
                       </a>

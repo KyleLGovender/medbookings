@@ -245,8 +245,10 @@ export function calculateDateRange(
       };
 
     case '3-day':
+      // 3-day view shows: previous day, current day, next day
+      start.setDate(start.getDate() - 1);
       start.setHours(0, 0, 0, 0);
-      end.setDate(start.getDate() + 2);
+      end.setDate(start.getDate() + 2); // start - 1 + 2 = current + 1
       end.setHours(23, 59, 59, 999);
       break;
 
@@ -308,7 +310,7 @@ export function navigateCalendarDate(
       newDate.setDate(newDate.getDate() + increment);
       break;
     case '3-day':
-      newDate.setDate(newDate.getDate() + increment * 3);
+      newDate.setDate(newDate.getDate() + increment);
       break;
     case 'week':
       newDate.setDate(newDate.getDate() + increment * 7);

@@ -29,7 +29,6 @@ import {
 } from '@prisma/client';
 
 // Import tRPC types for server data
-import { type RouterOutputs } from '@/utils/api';
 
 // =============================================================================
 // MIGRATION NOTES - SERVER DATA IMPORTS REMOVED
@@ -226,99 +225,7 @@ export interface Booking {
   endTime: Date;
 }
 
-/**
- * Represents a calendar event that can be displayed in calendar views.
- * Supports different event types including availability slots, bookings, and blocked time.
- *
- * @interface CalendarEvent
- *
- * @example
- * ```typescript
- * const availability: CalendarEvent = {
- *   id: "av-123",
- *   type: "availability",
- *   title: "Available for Consultation",
- *   startTime: new Date("2024-01-15T09:00:00Z"),
- *   endTime: new Date("2024-01-15T17:00:00Z"),
- *   status: "ACCEPTED",
- *   schedulingRule: SchedulingRule.ON_THE_HOUR,
- *   service: {
- *     id: "srv-456",
- *     name: "General Consultation",
- *     duration: 30,
- *     price: 150
- *   }
- * };
- * ```
- */
-export interface CalendarEvent {
-  /** Unique identifier for the calendar event */
-  id: string;
-  /** Type of calendar event - determines display style and behavior */
-  type: 'availability' | 'slot';
-  /** Display title for the event */
-  title: string;
-  /** Event start time */
-  startTime: Date;
-  /** Event end time */
-  endTime: Date;
-  /** Current status of the event */
-  status: string;
-  /** Scheduling rule for slot generation (availability events only) */
-  schedulingRule?: SchedulingRule;
-  /** Whether this event is part of a recurring series */
-  isRecurring?: boolean;
-  /** Series identifier for recurring events */
-  seriesId?: string | null;
-  /** Location information where the event takes place */
-  location?: {
-    id: string;
-    name: string;
-    isOnline: boolean;
-  };
-  /** Service information for the event */
-  service?: {
-    id: string;
-    name: string;
-    duration: number;
-    price: number;
-  };
-  /** Customer information for booking events */
-  customer?: {
-    id: string;
-    name: string;
-    email?: string;
-  };
-  /** Additional notes or description */
-  notes?: string;
-  /** Information about who created the event */
-  createdBy?: {
-    id: string;
-    name: string;
-    type: 'provider' | 'organization';
-  };
-  /** Organization context for the event */
-  organization?: {
-    id: string;
-    name: string;
-  };
-  /** Whether the event was created by a provider (vs organization admin) */
-  isProviderCreated?: boolean;
-  /** Available services for availability events (from server data) */
-  availableServices?: RouterOutputs['calendar']['getProviderSlots'][number]['availability']['availableServices'];
-  /** Recurrence pattern for recurring events (from server data) */
-  recurrencePattern?: RouterOutputs['calendar']['getProviderSlots'][number]['availability']['recurrencePattern'];
-  /** Whether bookings require confirmation */
-  requiresConfirmation?: boolean;
-  /** Full slot data for slot events (used for booking modal) */
-  slotData?: RouterOutputs['calendar']['getProviderSlots'][number];
-  /** Provider information for the event */
-  provider?: {
-    id: string;
-    name: string;
-    image?: string;
-  };
-}
+
 
 // =============================================================================
 // AVAILABILITY INTERFACES
