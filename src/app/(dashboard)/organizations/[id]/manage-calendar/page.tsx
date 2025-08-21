@@ -146,7 +146,7 @@ export default function OrganizationAvailabilityPage({
     } else {
       // Provider-created availability - no reason needed
       if (selectedEvent) {
-        cancelMutation.mutate({ ids: [selectedEvent.id] });
+        deleteMutation.mutate({ ids: [selectedEvent.id] });
       }
     }
   };
@@ -173,7 +173,7 @@ export default function OrganizationAvailabilityPage({
           setShowCancelDialog(true);
         } else {
           // Provider-created availability - no reason needed
-          cancelMutation.mutate({ ids: [selectedEvent.id], scope });
+          deleteMutation.mutate({ ids: [selectedEvent.id], scope });
         }
         break;
     }
