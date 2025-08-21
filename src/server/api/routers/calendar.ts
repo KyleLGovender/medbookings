@@ -1247,6 +1247,7 @@ export const calendarRouter = createTRPCRouter({
   /**
    * Get available slots for public booking view
    * Public endpoint for customer-facing booking interface
+   * Simplified version that only supports service filtering
    */
   getAvailableSlots: publicProcedure
     .input(
@@ -1254,6 +1255,7 @@ export const calendarRouter = createTRPCRouter({
         providerId: z.string(),
         startDate: z.date(),
         endDate: z.date(),
+        serviceId: z.string().optional(), // Simplified to single service filter
         filters: z.object({
           timeRange: z.object({
             startTime: z.string(),
@@ -1287,10 +1289,15 @@ export const calendarRouter = createTRPCRouter({
           endTime: { lte: input.endDate },
         },
         startTime: { gte: now }, // Only future slots
-        booking: null, // Only unbooked slots
+        // Remove booking: null filter to get all slots (both booked and available)
       };
 
-      // Apply filters
+      // Apply simplified service filter
+      if (input.serviceId) {
+        where.serviceId = input.serviceId;
+      }
+
+      // Keep backwards compatibility with old filters if provided
       if (input.filters) {
         // Location filter
         if (input.filters.location && input.filters.location !== 'all') {
@@ -1302,7 +1309,7 @@ export const calendarRouter = createTRPCRouter({
           }
         }
 
-        // Service filter
+        // Service filter (old format)
         if (input.filters.services && input.filters.services.length > 0) {
           where.serviceId = { in: input.filters.services };
         }
@@ -1336,6 +1343,13 @@ export const calendarRouter = createTRPCRouter({
               id: true,
               name: true,
               description: true,
+              defaultPrice: true, // Use correct field name
+            },
+          },
+          serviceConfig: {
+            select: {
+              price: true,
+              duration: true,
             },
           },
           availability: {
@@ -1346,6 +1360,7 @@ export const calendarRouter = createTRPCRouter({
                     select: {
                       id: true,
                       name: true,
+                      email: true, // Include email
                       image: true,
                     },
                   },
@@ -1357,6 +1372,15 @@ export const calendarRouter = createTRPCRouter({
                   name: true,
                 },
               },
+            },
+          },
+          booking: { // Include booking information to show slot status
+            select: {
+              id: true,
+              status: true,
+              clientId: true,
+              guestName: true,
+              guestEmail: true,
             },
           },
         },
@@ -1420,6 +1444,7 @@ export const calendarRouter = createTRPCRouter({
             },
           },
           service: true,
+          serviceConfig: true, // Include serviceConfig for price information
         },
       });
 
@@ -1439,14 +1464,16 @@ export const calendarRouter = createTRPCRouter({
       const booking = await ctx.prisma.booking.create({
         data: {
           slotId: input.slotId,
-          clientName: input.clientName,
-          clientEmail: input.clientEmail,
-          clientPhone: input.clientPhone,
+          guestName: input.clientName,
+          guestEmail: input.clientEmail,
+          guestPhone: input.clientPhone,
+          isGuestBooking: true,
+          isGuestSelfBooking: true,
           notes: input.notes || '',
           status: 'PENDING', // Default status, may require provider confirmation
-          bookedAt: new Date(),
-          price: slot.price,
-          duration: slot.durationMinutes,
+          price: slot.serviceConfig?.price || slot.service?.defaultPrice || 0,
+          isOnline: slot.availability?.isOnlineAvailable || false,
+          isInPerson: !slot.availability?.isOnlineAvailable || false,
         },
         include: {
           slot: {

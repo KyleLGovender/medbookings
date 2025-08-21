@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 
 
 import CalendarLoader from '@/components/calendar-loader';
-import { ProviderSlotView } from '@/features/calendar/components/provider-slot-view';
+import { ProviderCalendarSlotView } from '@/features/calendar/components/provider-calendar-slot-view';
 
 interface ProviderBookingPageProps {
   params: {
@@ -23,7 +23,7 @@ function ProviderBookingPageContent({ params, searchParams }: ProviderBookingPag
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto py-6">
-        <ProviderSlotView 
+        <ProviderCalendarSlotView 
           providerId={params.id}
           searchParams={searchParams}
         />

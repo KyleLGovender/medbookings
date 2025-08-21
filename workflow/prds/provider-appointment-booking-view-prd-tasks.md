@@ -62,50 +62,53 @@
   - [x] 1.7 Delete `provider-slot-view.tsx` (to be replaced)
 
 ### Phase 2: Create Simplified Provider Calendar Slot View
-- [ ] 2.0 Create `provider-calendar-slot-view.tsx` (based on provider-calendar-view.tsx)
-  - [ ] 2.1 Copy structure from provider-calendar-view.tsx as starting point
-  - [ ] 2.2 Replace availability data fetching with slot data fetching
-  - [ ] 2.3 Add service selector dropdown (replacing status filter)
-  - [ ] 2.4 Transform CalculatedAvailabilitySlot data to CalendarEvent format
-  - [ ] 2.5 Keep same header with provider info (avatar, name, stats)
-  - [ ] 2.6 Keep same navigation controls (date picker, left/right arrows, Today button)
-  - [ ] 2.7 Keep same view mode selector (day/3-day/week/month)
-  - [ ] 2.8 Reuse existing DayView, ThreeDayView, WeekView, MonthView components
-  - [ ] 2.9 Change stats to show available slots, booked slots, etc.
-  - [ ] 2.10 Implement slot click handler to open booking modal (instead of edit modal)
+- [x] 2.0 Create `provider-calendar-slot-view.tsx` (based on provider-calendar-view.tsx)
+  - [x] 2.1 Copy structure from provider-calendar-view.tsx as starting point
+  - [x] 2.2 Replace availability data fetching with slot data fetching
+  - [x] 2.3 Add service selector dropdown (replacing status filter)
+  - [x] 2.4 Transform CalculatedAvailabilitySlot data to CalendarEvent format
+  - [x] 2.5 Keep same header with provider info (avatar, name, stats)
+  - [x] 2.6 Keep same navigation controls (date picker, left/right arrows, Today button)
+  - [x] 2.7 Keep same view mode selector (day/3-day/week/month)
+  - [x] 2.8 Reuse existing DayView, ThreeDayView, WeekView, MonthView components
+  - [x] 2.9 Change stats to show available slots, booked slots, etc.
+  - [x] 2.10 Implement slot click handler to open booking modal (instead of edit modal)
+  - [x] 2.11 Add URL state management for date, view, and service parameters
 
 ### Phase 3: Create Data Fetching Hook
-- [ ] 3.0 Create `use-provider-slots.ts` hook
-  - [ ] 3.1 Fetch CalculatedAvailabilitySlot data for provider
-  - [ ] 3.2 Add optional service filter parameter
-  - [ ] 3.3 Include date range filtering based on current view
-  - [ ] 3.4 Transform slot data to match expected format
-  - [ ] 3.5 Include booking status for each slot
-  - [ ] 3.6 Hide past time slots for current day
-  - [ ] 3.7 Enforce 3-day advance booking limit
+- [x] 3.0 Create `use-provider-slots.ts` hook
+  - [x] 3.1 Fetch CalculatedAvailabilitySlot data for provider
+  - [x] 3.2 Add optional service filter parameter
+  - [x] 3.3 Include date range filtering based on current view
+  - [x] 3.4 Transform slot data to match expected format
+  - [x] 3.5 Include booking status for each slot
+  - [x] 3.6 Hide past time slots for current day
+  - [x] 3.7 Enforce 3-day advance booking limit
 
 ### Phase 4: Update/Simplify tRPC Procedures
-- [ ] 4.0 Update calendar router tRPC procedures
-  - [ ] 4.1 Simplify `getAvailableSlots` to remove complex filtering
-  - [ ] 4.2 Add service parameter to filter by specific service
-  - [ ] 4.3 Return slots in format compatible with CalendarEvent
-  - [ ] 4.4 Include provider and service information with each slot
-  - [ ] 4.5 Keep `createPublicBooking` procedure as is
+- [x] 4.0 Update calendar router tRPC procedures
+  - [x] 4.1 Simplify `getAvailableSlots` to remove complex filtering
+  - [x] 4.2 Add service parameter to filter by specific service
+  - [x] 4.3 Return slots in format compatible with CalendarEvent
+  - [x] 4.4 Include provider and service information with each slot
+  - [x] 4.5 Keep `createPublicBooking` procedure as is
+  - [x] 4.6 Include booking information to show slot status
 
 ### Phase 5: Keep Booking-Specific Components
-- [ ] 5.0 Retain and integrate booking components
-  - [ ] 5.1 Keep `booking-slot-modal.tsx` for booking form
-  - [ ] 5.2 Keep `booking-success-toast.tsx` for success notifications
-  - [ ] 5.3 Keep `use-create-booking.ts` for booking mutations
-  - [ ] 5.4 Simplify `booking-types.ts` to only necessary types
-  - [ ] 5.5 Integrate modal with slot click handler in main component
+- [x] 5.0 Retain and integrate booking components
+  - [x] 5.1 Keep `booking-slot-modal.tsx` for booking form
+  - [x] 5.2 Keep `booking-success-toast.tsx` for success notifications
+  - [x] 5.3 Keep `use-create-booking.ts` for booking mutations
+  - [x] 5.4 Simplify `booking-types.ts` to only necessary types
+  - [x] 5.5 Integrate modal with slot click handler in main component
 
 ### Phase 6: Update Page Component
-- [ ] 6.0 Update `/app/(general)/calendar/[id]/page.tsx`
-  - [ ] 6.1 Import and use `provider-calendar-slot-view` instead of `provider-slot-view`
-  - [ ] 6.2 Pass provider ID from route params
-  - [ ] 6.3 Keep existing error boundaries and loading states
-  - [ ] 6.4 Remove any reference to removed components
+- [x] 6.0 Update `/app/(general)/calendar/[id]/page.tsx`
+  - [x] 6.1 Import and use `provider-calendar-slot-view` instead of `provider-slot-view`
+  - [x] 6.2 Pass provider ID from route params
+  - [x] 6.3 Keep existing error boundaries and loading states
+  - [x] 6.4 Remove any reference to removed components
+  - [x] 6.5 Pass searchParams for URL state management
 
 ### Key Implementation Details:
 
