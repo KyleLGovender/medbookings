@@ -107,7 +107,6 @@ export function MonthView({
                           <span className="ml-1">
                             {event.status === AvailabilityStatus.PENDING && '🟡'}
                             {event.status === AvailabilityStatus.ACCEPTED && '✅'}
-                            {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
                             {event.status === AvailabilityStatus.REJECTED && '❌'}
                           </span>
                         )}

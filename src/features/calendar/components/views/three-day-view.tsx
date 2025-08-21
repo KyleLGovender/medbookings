@@ -205,7 +205,6 @@ export function ThreeDayView({
                               <div className="text-xs">
                                 {event.status === AvailabilityStatus.PENDING && '🟡'}
                                 {event.status === AvailabilityStatus.ACCEPTED && '✅'}
-                                {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
                                 {event.status === AvailabilityStatus.REJECTED && '❌'}
                               </div>
                             )}
