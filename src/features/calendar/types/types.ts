@@ -309,6 +309,12 @@ export interface CalendarEvent {
   requiresConfirmation?: boolean;
   /** Full slot data for slot events (used for booking modal) */
   slotData?: any; // Will be typed properly with tRPC RouterOutputs
+  /** Provider information for the event */
+  provider?: {
+    id: string;
+    name: string;
+    image?: string;
+  };
 }
 
 // =============================================================================
