@@ -1245,95 +1245,28 @@ export const calendarRouter = createTRPCRouter({
     }),
 
   /**
-   * Get available slots for public booking view
-   * Public endpoint for customer-facing booking interface
-   * Simplified version that only supports service filtering
+   * Get all provider slots with status information
+   * Returns slots of all statuses (AVAILABLE, BOOKED, BLOCKED, INVALID) for calendar views
+   * Service filtering is handled client-side for better performance
    */
-  getAvailableSlots: publicProcedure
+  getProviderSlots: publicProcedure
     .input(
       z.object({
         providerId: z.string(),
         startDate: z.date(),
         endDate: z.date(),
-        serviceId: z.string().optional(), // Simplified to single service filter
-        filters: z.object({
-          timeRange: z.object({
-            startTime: z.string(),
-            endTime: z.string(),
-          }).optional(),
-          location: z.enum(['online', 'in-person', 'all']).optional(),
-          services: z.array(z.string()).optional(),
-          duration: z.object({
-            min: z.number().optional(),
-            max: z.number().optional(),
-          }).optional(),
-          priceRange: z.object({
-            min: z.number().optional(),
-            max: z.number().optional(),
-          }).optional(),
-        }).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
-      const now = new Date();
-      const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-
-      // Enforce 3-day advance booking limit
-      const effectiveStartDate = input.startDate < threeDaysFromNow ? threeDaysFromNow : input.startDate;
-
-      const where: any = {
+      // Simple query: get ALL slots for this provider in date range
+      const where = {
         availability: {
           providerId: input.providerId,
-          status: AvailabilityStatus.ACCEPTED,
-          startTime: { gte: effectiveStartDate },
-          endTime: { lte: input.endDate },
+          status: AvailabilityStatus.ACCEPTED, // Only from accepted availability
         },
-        startTime: { gte: now }, // Only future slots
-        // Remove booking: null filter to get all slots (both booked and available)
+        startTime: { gte: input.startDate }, // Slot starts within range
+        endTime: { lte: input.endDate }, // Slot ends within range
       };
-
-      // Apply simplified service filter
-      if (input.serviceId) {
-        where.serviceId = input.serviceId;
-      }
-
-      // Keep backwards compatibility with old filters if provided
-      if (input.filters) {
-        // Location filter
-        if (input.filters.location && input.filters.location !== 'all') {
-          if (input.filters.location === 'online') {
-            where.availability.isOnlineAvailable = true;
-          } else {
-            where.availability.isOnlineAvailable = false;
-            where.availability.locationId = { not: null };
-          }
-        }
-
-        // Service filter (old format)
-        if (input.filters.services && input.filters.services.length > 0) {
-          where.serviceId = { in: input.filters.services };
-        }
-
-        // Duration filter
-        if (input.filters.duration) {
-          if (input.filters.duration.min) {
-            where.durationMinutes = { gte: input.filters.duration.min };
-          }
-          if (input.filters.duration.max) {
-            where.durationMinutes = { ...where.durationMinutes, lte: input.filters.duration.max };
-          }
-        }
-
-        // Price filter
-        if (input.filters.priceRange) {
-          if (input.filters.priceRange.min) {
-            where.price = { gte: input.filters.priceRange.min };
-          }
-          if (input.filters.priceRange.max) {
-            where.price = { ...where.price, lte: input.filters.priceRange.max };
-          }
-        }
-      }
 
       const slots = await ctx.prisma.calculatedAvailabilitySlot.findMany({
         where,
@@ -1343,7 +1276,7 @@ export const calendarRouter = createTRPCRouter({
               id: true,
               name: true,
               description: true,
-              defaultPrice: true, // Use correct field name
+              defaultPrice: true,
             },
           },
           serviceConfig: {
@@ -1360,7 +1293,7 @@ export const calendarRouter = createTRPCRouter({
                     select: {
                       id: true,
                       name: true,
-                      email: true, // Include email
+                      email: true,
                       image: true,
                     },
                   },
@@ -1374,7 +1307,7 @@ export const calendarRouter = createTRPCRouter({
               },
             },
           },
-          booking: { // Include booking information to show slot status
+          booking: {
             select: {
               id: true,
               status: true,
@@ -1388,20 +1321,8 @@ export const calendarRouter = createTRPCRouter({
           { startTime: 'asc' },
           { service: { name: 'asc' } },
         ],
-        take: 1000, // Limit results
       });
 
-      // Apply time range filter post-query (more efficient for time comparisons)
-      if (input.filters?.timeRange) {
-        const { startTime: filterStartTime, endTime: filterEndTime } = input.filters.timeRange;
-        
-        return slots.filter(slot => {
-          const slotStartTime = slot.startTime.toTimeString().substring(0, 5);
-          const slotEndTime = slot.endTime.toTimeString().substring(0, 5);
-          
-          return slotStartTime >= filterStartTime && slotEndTime <= filterEndTime;
-        });
-      }
 
       return slots;
     }),

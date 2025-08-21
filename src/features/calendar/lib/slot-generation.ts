@@ -70,12 +70,10 @@ export function generateSlotDataForMultipleAvailability(
     id: string;
     startTime: Date;
     endTime: Date;
-    providerId: string;
-    organizationId: string;
-    locationId?: string;
     schedulingRule: SchedulingRule;
     schedulingInterval?: number;
     availableServices: Array<{
+      id: string;
       serviceId: string;
       duration: number;
       price: number;
@@ -95,12 +93,14 @@ export function generateSlotDataForMultipleAvailability(
         availabilityId: availability.id,
         startTime: availability.startTime,
         endTime: availability.endTime,
-        providerId: availability.providerId,
-        organizationId: availability.organizationId,
-        locationId: availability.locationId,
         schedulingRule: availability.schedulingRule,
         schedulingInterval: availability.schedulingInterval,
-        services: availability.availableServices,
+        services: availability.availableServices.map((as) => ({
+          serviceId: as.serviceId,
+          serviceConfigId: as.id, // Use the ServiceAvailabilityConfig ID
+          duration: as.duration,
+          price: as.price,
+        })),
       });
 
       allSlotRecords.push(...result.slotRecords);
@@ -129,12 +129,10 @@ export function generateSlotDataFromAvailability(availability: {
   id: string;
   startTime: Date;
   endTime: Date;
-  providerId: string;
-  organizationId: string | null;
-  locationId: string | null;
   schedulingRule: SchedulingRule;
   schedulingInterval: number | null;
   availableServices: Array<{
+    id: string;
     serviceId: string;
     duration: number;
     price: number;
@@ -148,13 +146,11 @@ export function generateSlotDataFromAvailability(availability: {
     availabilityId: availability.id,
     startTime: availability.startTime,
     endTime: availability.endTime,
-    providerId: availability.providerId,
-    organizationId: availability.organizationId || '',
-    locationId: availability.locationId || undefined,
     schedulingRule: availability.schedulingRule,
     schedulingInterval: availability.schedulingInterval || undefined,
     services: availability.availableServices.map((as) => ({
       serviceId: as.serviceId,
+      serviceConfigId: as.id, // Use the ServiceAvailabilityConfig ID
       duration: as.duration,
       price: Number(as.price),
     })),

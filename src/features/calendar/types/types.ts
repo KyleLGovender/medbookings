@@ -28,6 +28,9 @@ import {
   SlotStatus,
 } from '@prisma/client';
 
+// Import tRPC types for server data
+import { type RouterOutputs } from '@/utils/api';
+
 // =============================================================================
 // MIGRATION NOTES - SERVER DATA IMPORTS REMOVED
 // =============================================================================
@@ -252,7 +255,7 @@ export interface CalendarEvent {
   /** Unique identifier for the calendar event */
   id: string;
   /** Type of calendar event - determines display style and behavior */
-  type: 'availability' | 'booking' | 'blocked' | 'slot';
+  type: 'availability' | 'slot';
   /** Display title for the event */
   title: string;
   /** Event start time */
@@ -302,13 +305,13 @@ export interface CalendarEvent {
   /** Whether the event was created by a provider (vs organization admin) */
   isProviderCreated?: boolean;
   /** Available services for availability events (from server data) */
-  availableServices?: any; // Will be typed properly with tRPC RouterOutputs
+  availableServices?: RouterOutputs['calendar']['getProviderSlots'][number]['availability']['availableServices'];
   /** Recurrence pattern for recurring events (from server data) */
-  recurrencePattern?: any; // Will be typed properly with tRPC RouterOutputs
+  recurrencePattern?: RouterOutputs['calendar']['getProviderSlots'][number]['availability']['recurrencePattern'];
   /** Whether bookings require confirmation */
   requiresConfirmation?: boolean;
   /** Full slot data for slot events (used for booking modal) */
-  slotData?: any; // Will be typed properly with tRPC RouterOutputs
+  slotData?: RouterOutputs['calendar']['getProviderSlots'][number];
   /** Provider information for the event */
   provider?: {
     id: string;

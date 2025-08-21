@@ -284,24 +284,6 @@ export function ProviderCalendarView({
       return total;
     }, 0);
 
-    // Calculate booked hours
-    const bookedHours = events.reduce((total, event) => {
-      if (event.type === 'booking' && event.status === 'CONFIRMED') {
-        const hours = (event.endTime.getTime() - event.startTime.getTime()) / (1000 * 60 * 60);
-        return total + hours;
-      }
-      return total;
-    }, 0);
-
-    // Count pending and completed bookings
-    const pendingBookings = events.filter(
-      (event) => event.type === 'booking' && event.status === 'PENDING'
-    ).length;
-
-    const completedBookings = events.filter(
-      (event) => event.type === 'booking' && event.status === 'COMPLETED'
-    ).length;
-
     // Calculate utilization rate
     const utilizationRate =
       totalAvailableHours > 0 ? Math.round((bookedHours / totalAvailableHours) * 100) : 0;

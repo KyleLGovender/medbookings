@@ -39,7 +39,7 @@ import { CalendarEvent, CalendarViewMode } from '@/features/calendar/types/types
 import type { RouterOutputs } from '@/utils/api';
 
 // Extract proper types for strong typing
-type ProviderSlotsResult = RouterOutputs['calendar']['getAvailableSlots'];
+type ProviderSlotsResult = RouterOutputs['calendar']['getProviderSlots'];
 type SlotData = ProviderSlotsResult[number];
 
 // Performance monitoring functions removed - using simplified approach
@@ -151,11 +151,9 @@ export function ProviderCalendarSlotView({
     isLoading,
     error: slotsError,
     provider,
-    availableServices,
   } = useProviderSlots({
     providerId,
     dateRange,
-    serviceId: serviceFilter === 'ALL' ? undefined : serviceFilter,
   });
 
   // Create booking mutation
@@ -256,19 +254,9 @@ export function ProviderCalendarSlotView({
     // Calculate available slots
     const availableSlots = events.filter(event => event.type === 'slot').length;
 
-    // Calculate booked slots  
-    const bookedSlots = events.filter(event => event.type === 'booking').length;
-
     // Calculate total slots
-    const totalSlots = availableSlots + bookedSlots;
+    const totalSlots = events.filter(event => event.type === 'slot').length;
 
-    // Calculate utilization rate
-    const utilizationRate = totalSlots > 0 ? Math.round((bookedSlots / totalSlots) * 100) : 0;
-
-    // Calculate confirmed bookings
-    const confirmedBookings = events.filter(
-      event => event.type === 'booking' && event.status === 'CONFIRMED'
-    ).length;
 
     return {
       utilizationRate,
