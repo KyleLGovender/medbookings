@@ -64,6 +64,9 @@ export function getEventStyle(event: CalendarEvent): string {
         default:
           return `bg-purple-100 border-purple-300 text-purple-800 ${recurringBorder}`;
       }
+    case 'slot':
+      // Available slots (green for clickable availability)
+      return `bg-green-100 border-green-400 text-green-800 cursor-pointer hover:bg-green-200 ${recurringBorder}`;
     case 'blocked':
       return `bg-red-100 border-red-300 text-red-800 ${recurringBorder}`;
     default:

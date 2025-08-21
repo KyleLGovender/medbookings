@@ -252,7 +252,7 @@ export interface CalendarEvent {
   /** Unique identifier for the calendar event */
   id: string;
   /** Type of calendar event - determines display style and behavior */
-  type: 'availability' | 'booking' | 'blocked';
+  type: 'availability' | 'booking' | 'blocked' | 'slot';
   /** Display title for the event */
   title: string;
   /** Event start time */
@@ -307,6 +307,8 @@ export interface CalendarEvent {
   recurrencePattern?: any; // Will be typed properly with tRPC RouterOutputs
   /** Whether bookings require confirmation */
   requiresConfirmation?: boolean;
+  /** Full slot data for slot events (used for booking modal) */
+  slotData?: any; // Will be typed properly with tRPC RouterOutputs
 }
 
 // =============================================================================
