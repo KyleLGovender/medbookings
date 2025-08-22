@@ -3,8 +3,9 @@ import { ChevronLeft, ChevronRight, Repeat } from 'lucide-react';
 
 import {
   calculateEventPosition,
-  getEventsForDay,
+  getAvailabilityForDay,
   getWorkingTimeRange,
+  getAvailabilityStyle,
 } from '@/features/calendar/lib/calendar-utils';
 
 import { AvailabilityData, AvailabilityMonthViewProps } from './types';
@@ -16,7 +17,7 @@ export function AvailabilityMonthView({
   onEventClick,
   onDateClick,
   onEditEvent,
-  getEventStyle,
+  getAvailabilityStyle,
 }: AvailabilityMonthViewProps) {
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const firstDayOfCalendar = new Date(firstDayOfMonth);
@@ -96,7 +97,7 @@ export function AvailabilityMonthView({
       <div className="flex-1 overflow-auto">
         <div className="grid grid-cols-7" style={{ minHeight: '100%' }}>
           {days.map((date) => {
-            const dayEvents = getEventsForDay(events, date);
+            const dayEvents = getAvailabilityForDay(events, date);
             const isCurrentMonthDate = isCurrentMonth(date);
             const isTodayDate = isToday(date);
             const isSelectedDate = isCurrentDate(date);
@@ -138,7 +139,7 @@ export function AvailabilityMonthView({
                     return (
                       <div
                         key={availability.id}
-                        className={`truncate rounded px-2 py-1 text-xs ${getEventStyle(availability)}`}
+                        className={`truncate rounded px-2 py-1 text-xs ${getAvailabilityStyle(availability)}`}
                         onClick={(e) => handleEventClick(availability, e)}
                         onDoubleClick={() => handleEditEvent(availability)}
                       >

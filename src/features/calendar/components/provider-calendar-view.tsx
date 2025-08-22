@@ -424,7 +424,7 @@ export function ProviderCalendarView({
                 workingHours={workingHours}
                 onEventClick={handleAvailabilityClick}
                 onTimeSlotClick={onTimeSlotClick}
-                getEventStyle={getAvailabilityStyle}
+                getAvailabilityStyle={getAvailabilityStyle}
               />
             )}
             {viewMode === '3-day' && (
@@ -434,7 +434,7 @@ export function ProviderCalendarView({
                 workingHours={workingHours}
                 onEventClick={handleAvailabilityClick}
                 onTimeSlotClick={onTimeSlotClick}
-                getEventStyle={getAvailabilityStyle}
+                getAvailabilityStyle={getAvailabilityStyle}
               />
             )}
             {viewMode === 'week' && (
@@ -445,7 +445,7 @@ export function ProviderCalendarView({
                 onEventClick={handleAvailabilityClick}
                 onTimeSlotClick={onTimeSlotClick}
                 onDateClick={handleDateClick}
-                getEventStyle={getAvailabilityStyle}
+                getAvailabilityStyle={getAvailabilityStyle}
               />
             )}
             {viewMode === 'month' && (
@@ -455,7 +455,7 @@ export function ProviderCalendarView({
                 onEventClick={handleAvailabilityClick}
                 onDateClick={handleDateClick}
                 onEditEvent={onEditAvailability}
-                getEventStyle={getAvailabilityStyle}
+                getAvailabilityStyle={getAvailabilityStyle}
               />
             )}
           </CardContent>

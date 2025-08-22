@@ -15,7 +15,7 @@ export interface BaseAvailabilityViewProps {
   onEventClick?: (availability: AvailabilityData, clickEvent?: React.MouseEvent) => void;
   onTimeSlotClick?: (date: Date, hour: number) => void;
   onDateClick?: (date: Date) => void;
-  getEventStyle: (availability: AvailabilityData) => string;
+  getAvailabilityStyle: (availability: AvailabilityData) => string;
 }
 
 /**

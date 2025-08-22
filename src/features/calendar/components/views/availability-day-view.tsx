@@ -6,6 +6,7 @@ import {
   getAvailabilityForDay,
   getWorkingTimeRange,
   calculateAvailabilityTimeRange,
+  getAvailabilityStyle,
 } from '@/features/calendar/lib/calendar-utils';
 
 import { AvailabilityData, AvailabilityDayViewProps } from './types';
@@ -18,7 +19,7 @@ export function AvailabilityDayView({
   onEventClick,
   onTimeSlotClick,
   onDateClick,
-  getEventStyle,
+  getAvailabilityStyle,
 }: AvailabilityDayViewProps) {
   const dayEvents = getAvailabilityForDay(events, currentDate);
 
@@ -98,7 +99,7 @@ export function AvailabilityDayView({
                     <li key={availability.id} className="relative mt-px flex" style={{ gridRow }}>
                       <a
                         href="#"
-                        className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(availability)} shadow-sm hover:opacity-80`}
+                        className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getAvailabilityStyle(availability)} shadow-sm hover:opacity-80`}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();

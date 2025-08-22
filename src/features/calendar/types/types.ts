@@ -192,7 +192,7 @@ export interface OrganizationWeekViewProps {
   providers: OrganizationProvider[];
   onEventClick?: (event: AvailabilityData, provider: OrganizationProvider) => void;
   onTimeSlotClick?: (date: Date, hour: number, provider: OrganizationProvider) => void;
-  getEventStyle: (event: AvailabilityData) => string;
+  getAvailabilityStyle: (availability: AvailabilityData) => string;
   showUtilizationOnly: boolean;
 }
 
@@ -200,7 +200,7 @@ export interface OrganizationMonthViewProps {
   currentDate: Date;
   providers: OrganizationProvider[];
   onEventClick?: (event: AvailabilityData, provider: OrganizationProvider) => void;
-  getEventStyle: (event: AvailabilityData) => string;
+  getAvailabilityStyle: (availability: AvailabilityData) => string;
 }
 
 export interface Location {

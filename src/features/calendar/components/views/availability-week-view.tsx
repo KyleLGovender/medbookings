@@ -6,6 +6,7 @@ import {
   getAvailabilityForDay,
   getWorkingTimeRange,
   calculateAvailabilityTimeRange,
+  getAvailabilityStyle,
 } from '@/features/calendar/lib/calendar-utils';
 
 import { AvailabilityData, AvailabilityWeekViewProps } from './types';
@@ -18,7 +19,7 @@ export function AvailabilityWeekView({
   onEventClick,
   onTimeSlotClick,
   onDateClick,
-  getEventStyle,
+  getAvailabilityStyle,
 }: AvailabilityWeekViewProps) {
   // Start week on Monday (matching original pattern)
   const startOfWeek = new Date(currentDate);
@@ -145,7 +146,7 @@ export function AvailabilityWeekView({
                         >
                           <a
                             href="#"
-                            className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(availability)} shadow-sm hover:opacity-80`}
+                            className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getAvailabilityStyle(availability)} shadow-sm hover:opacity-80`}
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();

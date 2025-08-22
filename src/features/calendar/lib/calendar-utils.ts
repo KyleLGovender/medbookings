@@ -25,19 +25,19 @@ type SlotData = RouterOutputs['calendar']['getProviderSlots'][number];
 // =============================================================================
 
 /**
- * Calculates the appropriate CSS classes for styling a calendar event
+ * Calculates the appropriate CSS classes for styling an availability
  * based on its type, status, and properties.
  *
- * @param event - The calendar event to style
- * @returns CSS class string for styling the event
+ * @param availability - The availability to style
+ * @returns CSS class string for styling the availability
  */
-export function getEventStyle(event: AvailabilityData): string {
+export function getAvailabilityStyle(availability: AvailabilityData): string {
   // Base style for recurring events with left border indicator
-  const recurringBorder = event.isRecurring ? 'border-l-4 border-l-blue-600' : '';
+  const recurringBorder = availability.isRecurring ? 'border-l-4 border-l-blue-600' : '';
 
   // Provider-created availabilities (green tones)
-  if (event.isProviderCreated) {
-    switch (event.status) {
+  if (availability.isProviderCreated) {
+    switch (availability.status) {
       case AvailabilityStatus.ACCEPTED:
         return `bg-green-100 border-green-400 text-green-800 ${recurringBorder}`;
       default:
@@ -46,7 +46,7 @@ export function getEventStyle(event: AvailabilityData): string {
   }
   // Organization-created availabilities (blue/yellow tones)
   else {
-    switch (event.status) {
+    switch (availability.status) {
       case AvailabilityStatus.PENDING:
         return `bg-yellow-100 border-yellow-400 text-yellow-800 ${recurringBorder}`;
       case AvailabilityStatus.ACCEPTED:
