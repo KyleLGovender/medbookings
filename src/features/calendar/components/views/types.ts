@@ -53,12 +53,12 @@ export interface AvailabilityMonthViewProps
  */
 export interface BaseSlotViewProps {
   currentDate: Date;
-  events: SlotData[];
+  slots: SlotData[];
   workingHours: { start: string; end: string };
-  onEventClick?: (slot: SlotData, clickEvent?: React.MouseEvent) => void;
+  onSlotClick?: (slot: SlotData, clickEvent?: React.MouseEvent) => void;
   onTimeSlotClick?: (date: Date, hour: number) => void;
   onDateClick?: (date: Date) => void;
-  getEventStyle: (slot: SlotData) => string;
+  getSlotStyle: (slot: SlotData) => string;
 }
 
 /**
@@ -88,7 +88,7 @@ export interface SlotThreeDayViewProps extends BaseSlotViewProps {
 export interface SlotMonthViewProps
   extends Omit<BaseSlotViewProps, 'workingHours' | 'onTimeSlotClick'> {
   // MonthView doesn't need workingHours (shows full day) or timeSlotClick (uses dateClick)
-  onEditEvent?: (slot: SlotData) => void;
+  onEditSlot?: (slot: SlotData) => void;
 }
 
 // Legacy types for backwards compatibility - will be removed after migration

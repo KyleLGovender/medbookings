@@ -3,8 +3,9 @@ import { Repeat } from 'lucide-react';
 
 import {
   calculateEventPosition,
-  getEventsForDay,
+  getAvailabilityForDay,
   getWorkingTimeRange,
+  calculateAvailabilityTimeRange,
 } from '@/features/calendar/lib/calendar-utils';
 
 import { AvailabilityData, AvailabilityDayViewProps } from './types';
@@ -19,29 +20,10 @@ export function AvailabilityDayView({
   onDateClick,
   getEventStyle,
 }: AvailabilityDayViewProps) {
-  const dayEvents = getEventsForDay(events, currentDate);
+  const dayEvents = getAvailabilityForDay(events, currentDate);
 
-  // Calculate display time range based on events
-  const getDisplayTimeRange = () => {
-    const defaultStart = 6; // 6 AM
-    const defaultEnd = 18; // 6 PM
-
-    let earliestHour = defaultStart;
-    let latestHour = defaultEnd;
-
-    // Check all events to extend range if needed
-    dayEvents.forEach((availability) => {
-      const startHour = new Date(availability.startTime).getHours();
-      const endHour = new Date(availability.endTime).getHours();
-
-      if (startHour < earliestHour) earliestHour = startHour;
-      if (endHour > latestHour) latestHour = endHour;
-    });
-
-    return { start: earliestHour, end: latestHour };
-  };
-
-  const timeRange = getDisplayTimeRange();
+  // Calculate display time range using common utility
+  const timeRange = calculateAvailabilityTimeRange(dayEvents);
   const hours = Array.from(
     { length: timeRange.end - timeRange.start },
     (_, i) => timeRange.start + i

@@ -1,10 +1,8 @@
 import { BookingStatus } from '@prisma/client';
-import { MapPin, Monitor } from 'lucide-react';
 
 import {
-  calculateEventPosition,
-  getEventsForDay,
-  getWorkingTimeRange,
+  getSlotsForDay,
+  calculateSlotTimeRange
 } from '@/features/calendar/lib/calendar-utils';
 
 import { SlotData, SlotThreeDayViewProps } from './types';
@@ -12,12 +10,12 @@ import { SlotData, SlotThreeDayViewProps } from './types';
 // Slot-specific Three Day View Component
 export function SlotThreeDayView({
   currentDate,
-  events,
+  slots,
   workingHours,
-  onEventClick,
+  onSlotClick,
   onTimeSlotClick,
   onDateClick,
-  getEventStyle,
+  getSlotStyle,
 }: SlotThreeDayViewProps) {
   // Calculate the three days: previous, current, next
   const getDaysArray = () => {
@@ -32,61 +30,61 @@ export function SlotThreeDayView({
 
   const days = getDaysArray();
 
-  // Calculate display time range based on slots
-  const getDisplayTimeRange = () => {
-    const defaultStart = 6; // 6 AM
-    const defaultEnd = 18; // 6 PM
-
-    let earliestHour = defaultStart;
-    let latestHour = defaultEnd;
-
-    // Check all slots to extend range if needed
-    events.forEach((slot) => {
-      const startHour = new Date(slot.startTime).getHours();
-      const endHour = new Date(slot.endTime).getHours();
-
-      if (startHour < earliestHour) earliestHour = startHour;
-      if (endHour > latestHour) latestHour = endHour;
-    });
-
-    return { start: earliestHour, end: latestHour };
-  };
-
-  const timeRange = getDisplayTimeRange();
+  // Calculate display time range using common utility
+  const timeRange = calculateSlotTimeRange(slots);
   const hours = Array.from(
     { length: timeRange.end - timeRange.start },
     (_, i) => timeRange.start + i
   );
 
-  // Filter events for a specific day
-  const getEventsForDate = (date: Date) => {
-    return getEventsForDay(events, date);
+  const HOUR_HEIGHT = 80; // pixels per hour
+
+  // Filter slots for a specific day
+  const getSlotsForDate = (date: Date) => {
+    return getSlotsForDay(slots, date);
   };
 
-  // Calculate event position in grid
-  const calculateSlotGridPosition = (slot: SlotData) => {
+  // Calculate slot position and height based on time (same as week view)
+  const calculateSlotPosition = (slot: SlotData) => {
     const startTime = new Date(slot.startTime);
     const endTime = new Date(slot.endTime);
 
-    // Convert to hour-based grid slots, accounting for display range offset
-    // The events grid has hours.length * 2 rows, so we need to multiply by 2
-    const startHour = startTime.getHours() - timeRange.start;
-    const endHour = endTime.getHours() - timeRange.start;
-    const startSlot = Math.max(1, startHour * 2 + 1);
-    const endSlot = Math.max(startSlot + 1, endHour * 2 + 1);
-    const spanSlots = endSlot - startSlot;
+    // Calculate position from top (in minutes from start of time range)
+    const minutesFromStart = (startTime.getHours() - timeRange.start) * 60 + startTime.getMinutes();
+    const top = (minutesFromStart / 60) * HOUR_HEIGHT;
 
-    return { gridRow: `${startSlot} / span ${spanSlots}` };
+    // Calculate height based on duration
+    const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
+    const height = Math.max((durationMinutes / 60) * HOUR_HEIGHT, 20); // Min height of 20px
+
+    return { top, height };
   };
 
-  const getSlotTitle = (slot: SlotData) => {
+  const getSlotButtonStyle = (slot: SlotData) => {
     if (slot.booking) {
-      return 'Booked';
-    } else if (slot.service) {
-      return slot.service.name;
-    } else {
-      return 'Available Slot';
+      switch (slot.booking.status) {
+        case BookingStatus.CONFIRMED:
+          return 'bg-blue-100 hover:bg-blue-200 border-blue-300 text-blue-900';
+        case BookingStatus.PENDING:
+          return 'bg-yellow-100 hover:bg-yellow-200 border-yellow-300 text-yellow-900';
+        case BookingStatus.CANCELLED:
+          return 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-500';
+        case BookingStatus.COMPLETED:
+          return 'bg-green-100 hover:bg-green-200 border-green-300 text-green-900';
+        case BookingStatus.NO_SHOW:
+          return 'bg-red-100 hover:bg-red-200 border-red-300 text-red-900';
+        default:
+          return 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-900';
+      }
     }
+    return 'bg-emerald-100 hover:bg-emerald-200 border-emerald-300 text-emerald-900';
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   const getSlotPrice = (slot: SlotData) => {
@@ -109,30 +107,19 @@ export function SlotThreeDayView({
             Time
           </div>
           <div className="flex flex-auto">
-            {days.map((day, index) => {
-              const isToday = day.toDateString() === new Date().toDateString();
-              const isSelected = day.toDateString() === currentDate.toDateString();
-
-              return (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => onDateClick?.(day)}
-                  className={`flex flex-1 items-center justify-center border-l border-gray-100 py-3 text-sm/6 text-gray-500 transition-colors hover:bg-gray-50 ${
-                    isToday ? 'bg-blue-50' : ''
-                  } ${isSelected ? 'bg-blue-100' : ''}`}
-                >
-                  <span>
-                    {day.toLocaleDateString([], { weekday: 'short' })}{' '}
-                    <span
-                      className={`font-semibold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}
-                    >
-                      {day.getDate()}
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
+            {days.map((day, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => onDateClick?.(day)}
+                className="flex flex-1 items-center justify-center border-l border-gray-100 py-3 text-sm/6 text-gray-500 transition-colors hover:bg-gray-50"
+              >
+                <span>
+                  {day.toLocaleDateString([], { weekday: 'short' })}{' '}
+                  <span className="font-semibold text-gray-900">{day.getDate()}</span>
+                </span>
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -143,12 +130,13 @@ export function SlotThreeDayView({
           <div className="flex flex-auto">
             {/* Time column */}
             <div className="sticky left-0 z-10 w-14 flex-none bg-white ring-1 ring-gray-100">
-              <div
-                className="grid"
-                style={{ gridTemplateRows: `repeat(${hours.length}, minmax(3.5rem, 1fr))` }}
-              >
+              <div className="flex flex-col">
                 {hours.map((hour) => (
-                  <div key={hour} className="relative border-b border-gray-100">
+                  <div
+                    key={hour}
+                    className="relative border-b border-gray-100"
+                    style={{ height: `${HOUR_HEIGHT}px` }}
+                  >
                     <div className="absolute -top-2.5 right-2 text-right text-xs/5 text-gray-400">
                       {hour === 0
                         ? '12AM'
@@ -163,95 +151,82 @@ export function SlotThreeDayView({
               </div>
             </div>
 
-            {/* Days columns */}
+            {/* Day columns */}
             <div className="flex flex-auto divide-x divide-gray-100">
-              {days.map((day, dayIndex) => (
-                <div key={dayIndex} className="relative flex-1">
-                  {/* Background grid for this day */}
-                  <div
-                    className="absolute inset-0 grid"
-                    style={{ gridTemplateRows: `repeat(${hours.length}, minmax(3.5rem, 1fr))` }}
-                  >
-                    {hours.map((hour, i) => (
-                      <div
-                        key={i}
-                        className="cursor-pointer border-b border-gray-100 hover:bg-gray-50"
-                        onClick={() => onTimeSlotClick?.(day, hour)}
-                      />
-                    ))}
-                  </div>
+              {days.map((day, dayIndex) => {
+                const daySlots = getSlotsForDate(day);
 
-                  {/* Slots for this day */}
-                  <ol
-                    className="absolute inset-0 grid grid-cols-1"
-                    style={{ gridTemplateRows: `repeat(${hours.length * 2}, minmax(0, 1fr))` }}
-                  >
-                    {getEventsForDate(day).map((slot) => {
-                      const { gridRow } = calculateSlotGridPosition(slot);
-                      const price = getSlotPrice(slot);
+                return (
+                  <div key={dayIndex} className="relative flex-1">
+                    {/* Background grid for this day */}
+                    <div className="absolute inset-0 flex flex-col">
+                      {hours.map((hour, i) => (
+                        <div
+                          key={i}
+                          className="cursor-pointer border-b border-gray-100 hover:bg-gray-50"
+                          style={{ height: `${HOUR_HEIGHT}px` }}
+                          onClick={() => onTimeSlotClick?.(day, hour)}
+                        />
+                      ))}
+                    </div>
 
-                      return (
-                        <li key={slot.id} className="relative mt-px flex" style={{ gridRow }}>
-                          <a
-                            href="#"
-                            className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(slot)} shadow-sm hover:opacity-80`}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              onEventClick?.(slot, e);
+                    {/* Slots positioned absolutely */}
+                    <div className="absolute inset-0">
+                      {daySlots.map((slot) => {
+                        const { top, height } = calculateSlotPosition(slot);
+                        const price = getSlotPrice(slot);
+                        const isBooked = !!slot.booking;
+
+                        // Calculate approximate available width (each day is 1/3 of the container minus borders and padding)
+                        const approximateWidth = Math.max(100, (window.innerWidth - 200) / 3); // Subtract sidebar and padding, min 100px
+                        const hasWideSpace = approximateWidth > 150; // Wide enough for more details
+                        const hasMediumSpace = approximateWidth > 120; // Medium space for some details
+
+                        return (
+                          <button
+                            key={slot.id}
+                            type="button"
+                            className={`absolute left-1 right-1 rounded border px-2 text-left transition-all ${getSlotButtonStyle(slot)} ${
+                              !isBooked ? 'cursor-pointer hover:z-10 hover:shadow-md' : 'cursor-not-allowed opacity-75'
+                            }`}
+                            style={{
+                              top: `${top}px`,
+                              height: `${height}px`,
+                              minHeight: '20px',
                             }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSlotClick?.(slot, e);
+                            }}
+                            disabled={isBooked}
                           >
-                            <div className="flex items-center justify-between">
-                              <p className="order-1 truncate font-semibold">{getSlotTitle(slot)}</p>
-                              {price && (
-                                <span className="ml-1 text-xs font-semibold">${price}</span>
+                            <div className="flex h-full flex-col justify-center">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-semibold">
+                                  {formatTime(new Date(slot.startTime))}
+                                </span>
+                                {price && !isBooked && height > 25 && hasMediumSpace && (
+                                  <span className="text-xs font-bold">R{price}</span>
+                                )}
+                              </div>
+                              {height > 35 && hasMediumSpace && (
+                                <div className="truncate text-xs opacity-75">
+                                  {slot.service?.name || 'Available'}
+                                </div>
+                              )}
+                              {height > 50 && slot.booking && hasWideSpace && (
+                                <div className="truncate text-xs opacity-60">
+                                  {slot.booking.guestName || 'Booked'}
+                                </div>
                               )}
                             </div>
-
-                            <p className="text-xs opacity-75">
-                              <time dateTime={slot.startTime.toString()}>
-                                {new Date(slot.startTime).toLocaleTimeString([], {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </time>
-                              <span>
-                                {' - '}
-                                <time dateTime={slot.endTime.toString()}>
-                                  {new Date(slot.endTime).toLocaleTimeString([], {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })}
-                                </time>
-                              </span>
-                            </p>
-
-                            {slot.availability?.location && (
-                              <div className="flex items-center gap-1 text-xs opacity-75">
-                                <MapPin className="h-2 w-2 flex-shrink-0" />
-                                <span className="truncate">{slot.availability.location.name}</span>
-                              </div>
-                            )}
-
-                            {slot.availability?.isOnlineAvailable && (
-                              <div className="flex items-center gap-1 text-xs opacity-75">
-                                <Monitor className="h-2 w-2 flex-shrink-0" />
-                                <span>Online</span>
-                              </div>
-                            )}
-
-                            {slot.booking && (
-                              <div className="text-xs opacity-75">
-                                Status: {slot.booking.status}
-                              </div>
-                            )}
-                          </a>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </div>
-              ))}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

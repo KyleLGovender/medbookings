@@ -18,6 +18,7 @@ import type { RouterOutputs } from '@/utils/api';
 
 // Extract proper types from tRPC
 type AvailabilityData = RouterOutputs['calendar']['searchAvailability'][number];
+type SlotData = RouterOutputs['calendar']['getProviderSlots'][number];
 
 // =============================================================================
 // EVENT STYLING UTILITIES
@@ -262,14 +263,92 @@ export function calculateDateRange(
 }
 
 /**
- * Gets the events for a specific day
+ * Gets the availability for a specific day
  *
- * @param events - Array of calendar events
- * @param date - The date to get events for
- * @returns Array of events occurring on the specified date
+ * @param availabilities - Array of availability
+ * @param date - The date to get availability for
+ * @returns Array of availability occurring on the specified date
  */
-export function getEventsForDay(events: AvailabilityData[], date: Date): AvailabilityData[] {
-  return events.filter((event) => new Date(event.startTime).toDateString() === date.toDateString());
+export function getAvailabilityForDay(availabilities: AvailabilityData[], date: Date): AvailabilityData[] {
+  return availabilities.filter((availability) => new Date(availability.startTime).toDateString() === date.toDateString());
+}
+
+/**
+ * Gets the slots for a specific day
+ *
+ * @param slots - Array of slots
+ * @param date - The date to get slots for
+ * @returns Array of slots occurring on the specified date
+ */
+export function getSlotsForDay(slots: SlotData[], date: Date): SlotData[] {
+  return slots.filter((slot) => new Date(slot.startTime).toDateString() === date.toDateString());
+}
+
+/**
+ * Calculate display time range based on slots with padding
+ *
+ * @param slots - Array of slots to calculate time range from
+ * @returns Time range object with start and end hours
+ */
+export function calculateSlotTimeRange(slots: SlotData[]): { start: number; end: number } {
+  // If no slots, show default business hours
+  if (slots.length === 0) {
+    return { start: 9, end: 17 }; // 9 AM to 5 PM
+  }
+
+  let earliestHour = 24;
+  let latestHour = 0;
+
+  // Find the actual earliest and latest times from slots
+  slots.forEach((slot) => {
+    const startTime = new Date(slot.startTime);
+    const endTime = new Date(slot.endTime);
+
+    const startHour = startTime.getHours();
+    const endHour = endTime.getHours();
+
+    // Consider minutes for more precise range
+    const startDecimal = startHour + startTime.getMinutes() / 60;
+    const endDecimal = endHour + endTime.getMinutes() / 60;
+
+    if (startDecimal < earliestHour) earliestHour = startDecimal;
+    if (endDecimal > latestHour) latestHour = endDecimal;
+  });
+
+  // Round down for start hour and round up for end hour
+  const startHour = Math.floor(earliestHour);
+  const endHour = Math.ceil(latestHour);
+
+  // Add some padding (1 hour before and after) but keep within reasonable bounds
+  const paddedStart = Math.max(6, startHour - 1); // Don't start before 6 AM
+  const paddedEnd = Math.min(22, endHour + 1); // Don't end after 10 PM
+
+  return { start: paddedStart, end: paddedEnd };
+}
+
+/**
+ * Calculate display time range based on availability without padding
+ *
+ * @param availabilities - Array of availability to calculate time range from
+ * @returns Time range object with start and end hours
+ */
+export function calculateAvailabilityTimeRange(availabilities: AvailabilityData[]): { start: number; end: number } {
+  const defaultStart = 6; // 6 AM
+  const defaultEnd = 18; // 6 PM
+
+  let earliestHour = defaultStart;
+  let latestHour = defaultEnd;
+
+  // Check all availability to extend range if needed
+  availabilities.forEach((availability) => {
+    const startHour = new Date(availability.startTime).getHours();
+    const endHour = new Date(availability.endTime).getHours();
+
+    if (startHour < earliestHour) earliestHour = startHour;
+    if (endHour > latestHour) latestHour = endHour;
+  });
+
+  return { start: earliestHour, end: latestHour };
 }
 
 // =============================================================================

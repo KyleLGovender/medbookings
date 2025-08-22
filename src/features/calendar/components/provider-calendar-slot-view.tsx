@@ -26,7 +26,6 @@ import { CalendarSkeleton } from '@/features/calendar/components/loading';
 import { SlotDayView } from '@/features/calendar/components/views/slot-day-view';
 import { SlotThreeDayView } from '@/features/calendar/components/views/slot-three-day-view';
 import { SlotWeekView } from '@/features/calendar/components/views/slot-week-view';
-import { SlotWeekViewButtons } from '@/features/calendar/components/views/slot-week-view-buttons';
 import { useCreateBooking } from '@/features/calendar/hooks/use-create-booking';
 import { useProviderSlots } from '@/features/calendar/hooks/use-provider-slots';
 import { calculateDateRange, navigateCalendarDate } from '@/features/calendar/lib/calendar-utils';
@@ -610,29 +609,29 @@ export function ProviderCalendarSlotView({
                 {viewMode === 'day' && (
                   <SlotDayView
                     currentDate={currentDate}
-                    events={displaySlots}
+                    slots={displaySlots}
                     workingHours={workingHours}
-                    onEventClick={handleSlotClick}
-                    getEventStyle={getSlotStyle}
+                    onSlotClick={handleSlotClick}
+                    getSlotStyle={getSlotStyle}
                   />
                 )}
                 {viewMode === '3-day' && (
                   <SlotThreeDayView
                     currentDate={currentDate}
-                    events={displaySlots}
+                    slots={displaySlots}
                     workingHours={workingHours}
-                    onEventClick={handleSlotClick}
-                    getEventStyle={getSlotStyle}
+                    onSlotClick={handleSlotClick}
+                    getSlotStyle={getSlotStyle}
                   />
                 )}
                 {viewMode === 'week' && (
-                  <SlotWeekViewButtons
+                  <SlotWeekView
                     currentDate={currentDate}
-                    events={displaySlots}
+                    slots={displaySlots}
                     workingHours={workingHours}
-                    onEventClick={handleSlotClick}
+                    onSlotClick={handleSlotClick}
                     onDateClick={handleDateClick}
-                    getEventStyle={getSlotStyle}
+                    getSlotStyle={getSlotStyle}
                   />
                 )}
               </>
