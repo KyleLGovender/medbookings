@@ -363,11 +363,11 @@ export const calendarRouter = createTRPCRouter({
                 ]);
               }
 
-              return { updatedAvailabilities, totalSlotsRegenerated: 0 };
             }
 
             // Series updates (future/all) - delete and recreate approach
-            const { existingAvailability } = validatedData;
+            if (validatedData.updateStrategy !== 'single') {
+              const { existingAvailability } = validatedData;
 
             // Step 1: Clean up existing data
             await tx.calculatedAvailabilitySlot.deleteMany({
@@ -497,6 +497,7 @@ export const calendarRouter = createTRPCRouter({
                 updatedAvailabilities.map((a) => a.id)
               );
             }
+            } // End of series update block
 
             // Handle slot regeneration if needed
             let totalSlotsRegenerated = 0;
