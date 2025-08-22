@@ -1,5 +1,5 @@
-import { api } from '@/utils/api';
 import { BookingFormData } from '@/features/calendar/components/booking-slot-modal';
+import { api } from '@/utils/api';
 
 interface UseCreateBookingOptions {
   onSuccess?: (data: any, variables: BookingFormData) => void;
@@ -11,7 +11,7 @@ export function useCreateBooking(options?: UseCreateBookingOptions) {
     onSuccess: (data, variables) => {
       // Invalidate related queries to refresh the data
       // This will update the slot availability immediately
-      
+
       console.log('Booking created successfully:', data);
       options?.onSuccess?.(data, variables);
     },

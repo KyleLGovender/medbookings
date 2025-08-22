@@ -33,18 +33,18 @@ export function BookingSuccessToast({
   if (!show) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom duration-300">
+    <div className="fixed bottom-4 right-4 z-50 duration-300 animate-in slide-in-from-bottom">
       <Card className="w-96 border-green-200 bg-green-50">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-            
+            <CheckCircle className="mt-0.5 h-6 w-6 flex-shrink-0 text-green-600" />
+
             <div className="flex-1">
               <h3 className="font-semibold text-green-800">Booking Confirmed!</h3>
-              <p className="text-sm text-green-700 mt-1">
+              <p className="mt-1 text-sm text-green-700">
                 Your appointment with {providerName} on {appointmentTime} has been confirmed.
               </p>
-              <p className="text-sm text-green-600 mt-1">
+              <p className="mt-1 text-sm text-green-600">
                 You will receive a confirmation email shortly.
               </p>
             </div>
@@ -53,7 +53,7 @@ export function BookingSuccessToast({
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="h-6 w-6 p-0 text-green-600 hover:text-green-800 hover:bg-green-100"
+              className="h-6 w-6 p-0 text-green-600 hover:bg-green-100 hover:text-green-800"
             >
               <X className="h-4 w-4" />
             </Button>

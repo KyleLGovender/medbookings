@@ -2,8 +2,8 @@
 
 import { StatusBadge } from '@/components/status-badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserAvatar } from '@/components/user-avatar';
 import { NavigationOutlineButton } from '@/components/ui/navigation-button';
+import { UserAvatar } from '@/components/user-avatar';
 import { useOrganizationByUserId } from '@/features/organizations/hooks/use-organization-by-user-id';
 import { type RouterOutputs } from '@/utils/api';
 

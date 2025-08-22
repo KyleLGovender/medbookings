@@ -150,14 +150,12 @@ export function AvailabilityDayView({
                           {availability.status === AvailabilityStatus.REJECTED && '❌'}
                         </div>
                         {availability.location && (
-                          <div className="text-xs opacity-75 truncate">
+                          <div className="truncate text-xs opacity-75">
                             📍 {availability.location.name}
                           </div>
                         )}
                         {availability.isOnlineAvailable && (
-                          <div className="text-xs opacity-75">
-                            💻 Online
-                          </div>
+                          <div className="text-xs opacity-75">💻 Online</div>
                         )}
                       </a>
                     </li>

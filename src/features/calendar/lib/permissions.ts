@@ -1,6 +1,10 @@
-import type { CalendarEventPermissions } from '@/features/calendar/types/modal';
-import type { CalendarEvent } from '@/features/calendar/types/types';
 import type { User } from '@prisma/client';
+
+import type { AvailabilityPermissions } from '@/features/calendar/types/modal';
+import type { RouterOutputs } from '@/utils/api';
+
+// Extract proper types from tRPC
+type AvailabilityData = RouterOutputs['calendar']['searchAvailability'][number];
 
 // Session user type (subset of full User)
 type SessionUser = {
@@ -13,10 +17,10 @@ type SessionUser = {
 
 // Provider context permissions
 export function getProviderCalendarPermissions(
-  event: CalendarEvent | null,
+  event: AvailabilityData | null,
   currentUser: SessionUser | null,
   currentProvider: any | null // Provider with relations
-): CalendarEventPermissions {
+): AvailabilityPermissions {
   if (!event || !currentUser) {
     return {
       canView: false,
@@ -24,6 +28,7 @@ export function getProviderCalendarPermissions(
       canDelete: false,
       canAccept: false,
       canReject: false,
+      canCreate: false,
     };
   }
 
@@ -42,15 +47,16 @@ export function getProviderCalendarPermissions(
     canAccept: !isProviderCreated && isPending,
     // Provider can reject organization-proposed availabilities that are pending
     canReject: !isProviderCreated && isPending,
+    canCreate: true,
   };
 }
 
-// Organization context permissions  
+// Organization context permissions
 export function getOrganizationCalendarPermissions(
-  event: CalendarEvent | null,
+  event: AvailabilityData | null,
   currentUser: SessionUser | null,
   membership: any | null // OrganizationMembership with permissions
-): CalendarEventPermissions {
+): AvailabilityPermissions {
   if (!event || !currentUser || !membership) {
     return {
       canView: false,
@@ -58,14 +64,15 @@ export function getOrganizationCalendarPermissions(
       canDelete: false,
       canAccept: false,
       canReject: false,
+      canCreate: false,
     };
   }
 
   const isAdmin = currentUser.role === 'ADMIN' || currentUser.role === 'SUPER_ADMIN';
-  const canManageAvailability = 
-    membership.permissions?.includes('MANAGE_AVAILABILITY') || 
+  const canManageAvailability =
+    membership.permissions?.includes('MANAGE_AVAILABILITY') ||
     ['OWNER', 'ADMIN'].includes(membership.role);
-  
+
   const isOrganizationCreated = !event.isProviderCreated;
   const isPending = event.status === 'PENDING';
 
@@ -75,27 +82,32 @@ export function getOrganizationCalendarPermissions(
     canDelete: (canManageAvailability && isOrganizationCreated) || isAdmin,
     canAccept: false, // Organizations don't accept their own availability
     canReject: false, // Organizations don't reject their own availability
+    canCreate: canManageAvailability || isAdmin,
   };
 }
 
 // Admin context permissions (full access)
 export function getAdminCalendarPermissions(
-  event: CalendarEvent | null,
+  event: AvailabilityData | null,
   currentUser: SessionUser | null
-): CalendarEventPermissions {
+): AvailabilityPermissions {
   const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN';
-  
+
   return {
     canView: true,
     canEdit: isAdmin,
     canDelete: isAdmin,
     canAccept: isAdmin,
     canReject: isAdmin,
+    canCreate: isAdmin,
   };
 }
 
 // Helper to get action label based on context
-export function getActionLabel(action: string, context: 'provider' | 'organization' | 'admin'): string {
+export function getActionLabel(
+  action: string,
+  context: 'provider' | 'organization' | 'admin'
+): string {
   const labels: Record<string, Record<string, string>> = {
     provider: {
       accept: 'Accept Proposal',
@@ -109,7 +121,7 @@ export function getActionLabel(action: string, context: 'provider' | 'organizati
     },
     admin: {
       accept: 'Force Accept',
-      reject: 'Force Reject', 
+      reject: 'Force Reject',
       edit: 'Edit Availability',
       delete: 'Delete Availability',
     },

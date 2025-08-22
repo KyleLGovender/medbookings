@@ -34,7 +34,7 @@ export interface BookingFilters {
   };
   timeRange?: {
     startTime: string; // HH:MM format
-    endTime: string;   // HH:MM format
+    endTime: string; // HH:MM format
   };
   location?: 'online' | 'in-person' | 'all';
   providerTypes?: string[];

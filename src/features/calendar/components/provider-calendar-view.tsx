@@ -18,32 +18,18 @@ import {
 import { UserAvatar } from '@/components/user-avatar';
 import { CalendarErrorBoundary } from '@/features/calendar/components/error-boundary';
 import { CalendarSkeleton } from '@/features/calendar/components/loading';
-import { CalendarEventModal } from '@/features/calendar/components/modal/calendar-event-modal';
 import { AvailabilityDayView } from '@/features/calendar/components/views/availability-day-view';
 import { AvailabilityMonthView } from '@/features/calendar/components/views/availability-month-view';
 import { AvailabilityThreeDayView } from '@/features/calendar/components/views/availability-three-day-view';
 import { AvailabilityWeekView } from '@/features/calendar/components/views/availability-week-view';
 import { useCalendarData } from '@/features/calendar/hooks/use-calendar-data';
-import {
-  calculateDateRange,
-  navigateCalendarDate
-} from '@/features/calendar/lib/calendar-utils';
+import { calculateDateRange, navigateCalendarDate } from '@/features/calendar/lib/calendar-utils';
 import { CalendarViewMode } from '@/features/calendar/types/types';
-import type { CalendarEventModalState, CalendarEventPermissions } from '@/features/calendar/types/modal';
 import type { RouterOutputs } from '@/utils/api';
 
 // Extract proper types for strong typing
 type AvailabilitySearchResult = RouterOutputs['calendar']['searchAvailability'];
 type AvailabilityData = AvailabilitySearchResult[number];
-
-// Performance monitoring functions removed - using simplified approach
-const measureCalendarDataProcessing = (fn: () => any) => fn();
-const measureCalendarRendering = (fn: () => any) => fn();
-const recordCalendarCyclePerformance = (eventCount: number, viewMode: string, dateRange: any) => {};
-const usePerformanceMonitor = (name: string, deps: any[]) => ({
-  startMeasurement: () => {},
-  endMeasurement: () => {},
-});
 
 export interface ProviderCalendarViewProps {
   providerId: string;
@@ -69,27 +55,11 @@ export function ProviderCalendarView({
   const [currentDate, setCurrentDate] = useState(initialDate);
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialViewMode);
   const [statusFilter, setStatusFilter] = useState<AvailabilityStatus | 'ALL'>('ALL');
-  const [isMobile, setIsMobile] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-
-  // Calendar Event Modal state
-  const [modalState, setModalState] = useState<CalendarEventModalState>({
-    isOpen: false,
-    selectedEvent: null,
-    currentStep: 'event-details',
-    selectedScope: null,
-    pendingAction: null,
-    actionData: {},
-  });
-
-  // Performance monitoring
-  usePerformanceMonitor('ProviderCalendarView', [currentDate, viewMode, statusFilter]);
 
   // Mobile detection and view mode handling
   useEffect(() => {
     const checkIsMobile = () => {
       const mobile = window.innerWidth < 640; // sm breakpoint
-      setIsMobile(mobile);
 
       // If switching to mobile and current view is not allowed, switch to day view
       if (mobile && (viewMode === 'week' || viewMode === 'month')) {
@@ -104,82 +74,6 @@ export function ProviderCalendarView({
     window.addEventListener('resize', checkIsMobile);
     return () => window.removeEventListener('resize', checkIsMobile);
   }, [viewMode]);
-
-  // Modal state (context menu removed - modal now handled by parent)
-
-  // Calculate total hours for a day with memoization
-  const calculateDayHours = useCallback((availabilities: AvailabilityData[]) => {
-    if (availabilities.length === 0) return 0;
-
-    // Sort availabilities by start time
-    const sortedAvailabilities = [...availabilities].sort(
-      (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-    );
-
-    // Merge overlapping availabilities to avoid double counting
-    const mergedAvailabilities = [];
-    let currentAvailability = sortedAvailabilities[0];
-
-    for (let i = 1; i < sortedAvailabilities.length; i++) {
-      const nextAvailability = sortedAvailabilities[i];
-      const currentEnd = new Date(currentAvailability.endTime);
-      const nextStart = new Date(nextAvailability.startTime);
-
-      // If availabilities overlap, merge them
-      if (currentEnd >= nextStart) {
-        currentAvailability = {
-          ...currentAvailability,
-          endTime: new Date(Math.max(currentEnd.getTime(), new Date(nextAvailability.endTime).getTime())),
-        };
-      } else {
-        mergedAvailabilities.push(currentAvailability);
-        currentAvailability = nextAvailability;
-      }
-    }
-    mergedAvailabilities.push(currentAvailability);
-
-    // Calculate total hours
-    return mergedAvailabilities.reduce((total, availability) => {
-      const duration = (new Date(availability.endTime).getTime() - new Date(availability.startTime).getTime()) / (1000 * 60 * 60);
-      return total + duration;
-    }, 0);
-  }, []);
-
-  // Get status breakdown for a day with memoization
-  const getStatusBreakdown = useCallback((availabilities: AvailabilityData[]) => {
-    const breakdown = {
-      [AvailabilityStatus.PENDING]: 0,
-      [AvailabilityStatus.ACCEPTED]: 0,
-      [AvailabilityStatus.REJECTED]: 0,
-    };
-
-    availabilities.forEach((availability) => {
-      breakdown[availability.status]++;
-    });
-
-    return breakdown;
-  }, []);
-
-  // Get styling based on status mix with memoization
-  const getHoursSummaryStyle = useCallback(
-    (availabilities: AvailabilityData[]) => {
-      const breakdown = getStatusBreakdown(availabilities);
-      const total = Object.values(breakdown).reduce((sum, count) => sum + count, 0);
-
-      if (total === 0) return 'text-gray-400';
-
-      const acceptedRatio = breakdown[AvailabilityStatus.ACCEPTED] / total;
-      const pendingRatio = breakdown[AvailabilityStatus.PENDING] / total;
-      const rejectedRatio = breakdown[AvailabilityStatus.REJECTED] / total;
-
-      if (acceptedRatio > 0.7) return 'text-green-600 bg-green-50';
-      if (pendingRatio > 0.5) return 'text-yellow-600 bg-yellow-50';
-      if (rejectedRatio > 0.3) return 'text-red-600 bg-red-50';
-
-      return 'text-blue-600 bg-blue-50';
-    },
-    [getStatusBreakdown]
-  );
 
   // Calculate date range using the helper function
   const dateRange = useMemo(() => {
@@ -198,20 +92,9 @@ export function ProviderCalendarView({
   const providerQuery = providerData?.provider;
   const availabilityQuery = providerData?.availability;
   const isLoading = calendarDataResult.isLoading;
-  const hasError = calendarDataResult.hasError;
 
-  // Extract provider data early for image loading
+  // Extract provider data
   const provider = providerQuery?.data;
-
-  // Preload the image when provider data is available - must be before early returns
-  useEffect(() => {
-    if (provider?.user?.image) {
-      const img = new window.Image();
-      img.onload = () => setImageLoaded(true);
-      img.onerror = () => setImageLoaded(false);
-      img.src = provider.user.image;
-    }
-  }, [provider?.user?.image]);
 
   // Get availabilities data directly (no transformation needed)
   const availabilities: AvailabilitySearchResult = useMemo(() => {
@@ -222,7 +105,9 @@ export function ProviderCalendarView({
   const stats = useMemo(() => {
     // Calculate total available hours
     const totalAvailableHours = availabilities.reduce((total, availability) => {
-      const hours = (new Date(availability.endTime).getTime() - new Date(availability.startTime).getTime()) / (1000 * 60 * 60);
+      const hours =
+        (new Date(availability.endTime).getTime() - new Date(availability.startTime).getTime()) /
+        (1000 * 60 * 60);
       return total + hours;
     }, 0);
 
@@ -235,9 +120,11 @@ export function ProviderCalendarView({
       if (availability.calculatedSlots) {
         availability.calculatedSlots.forEach((slot: any) => {
           if (slot.booking) {
-            const slotHours = (new Date(slot.endTime).getTime() - new Date(slot.startTime).getTime()) / (1000 * 60 * 60);
+            const slotHours =
+              (new Date(slot.endTime).getTime() - new Date(slot.startTime).getTime()) /
+              (1000 * 60 * 60);
             bookedHours += slotHours;
-            
+
             if (slot.booking.status === 'PENDING') {
               pendingBookings++;
             } else if (slot.booking.status === 'CONFIRMED' || slot.booking.status === 'COMPLETED') {
@@ -275,7 +162,7 @@ export function ProviderCalendarView({
     availabilities.forEach((availability) => {
       const startTime = new Date(availability.startTime);
       const endTime = new Date(availability.endTime);
-      
+
       const startHour = startTime.getHours();
       const startMinutes = startTime.getMinutes();
       const endHour = endTime.getHours();
@@ -339,127 +226,30 @@ export function ProviderCalendarView({
   // Filter and prepare availabilities for display
   const displayAvailabilities = useMemo(() => {
     // Filter by status if needed
-    const filtered = statusFilter === 'ALL' 
-      ? availabilities 
-      : availabilities.filter(a => a.status === statusFilter);
+    const filtered =
+      statusFilter === 'ALL'
+        ? availabilities
+        : availabilities.filter((a) => a.status === statusFilter);
 
     // Sort by start time
-    return filtered.sort((a, b) => 
-      new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+    return filtered.sort(
+      (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
     );
   }, [availabilities, statusFilter]);
 
-  // Handle availability click - open modal with view action by default
-  const handleAvailabilityClick = useCallback((availability: AvailabilityData, clickEvent?: React.MouseEvent) => {
-    if (clickEvent) {
-      clickEvent.preventDefault();
-      clickEvent.stopPropagation();
-    }
-    
-    // Check if this is a recurring availability
-    // If it's recurring, start with scope selection, otherwise go directly to details
-    const isRecurring = availability.isRecurring && availability.seriesId;
-    
-    setModalState({
-      isOpen: true,
-      selectedEvent: availability,
-      currentStep: isRecurring ? 'scope-selection' : 'event-details',
-      selectedScope: isRecurring ? null : 'single',
-      pendingAction: 'view',
-      actionData: {},
-    });
-
-    // Call parent callback if provided
-    if (clickEvent) {
-      onAvailabilityClick?.(availability, clickEvent);
-    }
-  }, [onAvailabilityClick]);
-
-  // Handle modal close
-  const handleModalClose = useCallback(() => {
-    setModalState({
-      isOpen: false,
-      selectedEvent: null,
-      currentStep: 'event-details',
-      selectedScope: null,
-      pendingAction: null,
-      actionData: {},
-    });
-  }, []);
-
-  // Modal action handlers
-  const handleSelectScope = useCallback((scope: any) => {
-    setModalState(prev => ({
-      ...prev,
-      selectedScope: scope,
-      currentStep: 'event-details',
-    }));
-  }, []);
-
-  const handleSetPendingAction = useCallback((action: any) => {
-    setModalState(prev => {
-      const event = prev.selectedEvent;
-      const isRecurring = event?.isRecurring && event?.seriesId;
-      
-      // For recurring events, we need to select scope first (unless it's just viewing)
-      if (isRecurring && action !== 'view' && !prev.selectedScope) {
-        return {
-          ...prev,
-          pendingAction: action,
-          currentStep: 'scope-selection',
-        };
+  // Handle availability click - delegate to parent
+  const handleAvailabilityClick = useCallback(
+    (availability: AvailabilityData, clickEvent?: React.MouseEvent) => {
+      if (clickEvent) {
+        clickEvent.preventDefault();
+        clickEvent.stopPropagation();
       }
-      
-      // For destructive actions, show confirmation
-      if (action === 'delete' || action === 'cancel') {
-        return {
-          ...prev,
-          pendingAction: action,
-          currentStep: 'action-confirmation',
-        };
-      }
-      
-      return {
-        ...prev,
-        pendingAction: action,
-        currentStep: 'event-details',
-      };
-    });
-  }, []);
 
-  const handleSetActionData = useCallback((data: Record<string, any>) => {
-    setModalState(prev => ({
-      ...prev,
-      actionData: { ...prev.actionData, ...data },
-    }));
-  }, []);
-
-  const handleExecuteAction = useCallback(() => {
-    // Handle the actual action execution here
-    // For now, just close the modal
-    handleModalClose();
-    
-    // TODO: Implement actual action execution logic based on modalState.pendingAction
-    // This would call tRPC mutations for edit/delete/accept/reject actions
-  }, [handleModalClose]);
-
-  // Define permissions for calendar events (provider can view/edit/delete their own availability)
-  const modalPermissions: CalendarEventPermissions = useMemo(() => ({
-    canView: true,
-    canEdit: true,
-    canDelete: true,
-    canAccept: false, // Only org members can accept provider availability
-    canReject: false, // Only org members can reject provider availability  
-    canCancel: false, // Bookings can be cancelled, not availability
-    canCreate: true,
-  }), []);
-
-  // Record performance metrics when data changes
-  useEffect(() => {
-    if (availabilities.length > 0) {
-      recordCalendarCyclePerformance(availabilities.length, viewMode, dateRange);
-    }
-  }, [availabilities, viewMode, dateRange]);
+      // Call parent callback to handle modal
+      onAvailabilityClick?.(availability, clickEvent!);
+    },
+    [onAvailabilityClick]
+  );
 
   // Early return for loading state
   if (isLoading) {
@@ -670,17 +460,6 @@ export function ProviderCalendarView({
             )}
           </CardContent>
         </Card>
-
-        {/* Calendar Event Modal */}
-        <CalendarEventModal
-          state={modalState}
-          permissions={modalPermissions}
-          onSelectScope={handleSelectScope}
-          onSetPendingAction={handleSetPendingAction}
-          onSetActionData={handleSetActionData}
-          onExecuteAction={handleExecuteAction}
-          onClose={handleModalClose}
-        />
       </div>
     </CalendarErrorBoundary>
   );

@@ -462,85 +462,85 @@ export const providersRouter = createTRPCRouter({
       // Extended timeout for complex provider creation with multiple relations
       const provider = await ctx.prisma.$transaction(
         async (tx) => {
-        // Create the provider
-        const newProvider = await tx.provider.create({
-          data: {
-            userId,
-            image: input.basicInfo.image || '',
-            name: input.basicInfo.name,
-            bio: input.basicInfo.bio || '',
-            email: input.basicInfo.email,
-            whatsapp: input.basicInfo.whatsapp || '',
-            website: input.basicInfo.website || null,
-            languages: (input.basicInfo.languages || []) as Languages[],
-            services: {
-              connect: services.map((id) => ({ id })),
-            },
-            typeAssignments: {
-              create: input.providerTypeIds.map((typeId) => ({
-                providerTypeId: typeId,
-              })),
-            },
-            requirementSubmissions: {
-              create: requirementSubmissions,
-            },
-          },
-          include: {
-            services: true,
-            user: {
-              select: {
-                email: true,
+          // Create the provider
+          const newProvider = await tx.provider.create({
+            data: {
+              userId,
+              image: input.basicInfo.image || '',
+              name: input.basicInfo.name,
+              bio: input.basicInfo.bio || '',
+              email: input.basicInfo.email,
+              whatsapp: input.basicInfo.whatsapp || '',
+              website: input.basicInfo.website || null,
+              languages: (input.basicInfo.languages || []) as Languages[],
+              services: {
+                connect: services.map((id) => ({ id })),
+              },
+              typeAssignments: {
+                create: input.providerTypeIds.map((typeId) => ({
+                  providerTypeId: typeId,
+                })),
+              },
+              requirementSubmissions: {
+                create: requirementSubmissions,
               },
             },
-            typeAssignments: {
-              include: {
-                providerType: {
-                  select: {
-                    id: true,
-                    name: true,
-                    description: true,
+            include: {
+              services: true,
+              user: {
+                select: {
+                  email: true,
+                },
+              },
+              typeAssignments: {
+                include: {
+                  providerType: {
+                    select: {
+                      id: true,
+                      name: true,
+                      description: true,
+                    },
                   },
                 },
               },
-            },
-            requirementSubmissions: {
-              include: {
-                requirementType: true,
+              requirementSubmissions: {
+                include: {
+                  requirementType: true,
+                },
               },
             },
-          },
-        });
+          });
 
-        // Create ServiceAvailabilityConfig records for services with custom configurations
-        if (Object.keys(serviceConfigs).length > 0) {
-          try {
-            const serviceAvailabilityConfigs = Object.entries(serviceConfigs).map(
-              ([serviceId, config]) => ({
-                serviceId,
-                providerId: newProvider.id,
-                duration: config.duration || 30, // Default to 30 minutes
-                price: config.price || 0, // Default to 0
-                isOnlineAvailable: config.isOnlineAvailable ?? true, // Default to online available
-                isInPerson: config.isInPerson ?? false, // Default to not in-person
-              })
-            );
+          // Create ServiceAvailabilityConfig records for services with custom configurations
+          if (Object.keys(serviceConfigs).length > 0) {
+            try {
+              const serviceAvailabilityConfigs = Object.entries(serviceConfigs).map(
+                ([serviceId, config]) => ({
+                  serviceId,
+                  providerId: newProvider.id,
+                  duration: config.duration || 30, // Default to 30 minutes
+                  price: config.price || 0, // Default to 0
+                  isOnlineAvailable: config.isOnlineAvailable ?? true, // Default to online available
+                  isInPerson: config.isInPerson ?? false, // Default to not in-person
+                })
+              );
 
-            await tx.serviceAvailabilityConfig.createMany({
-              data: serviceAvailabilityConfigs,
-            });
-          } catch (configError) {
-            console.error('Failed to create ServiceAvailabilityConfig records:', configError);
-            // Don't fail the entire registration if ServiceAvailabilityConfig creation fails
+              await tx.serviceAvailabilityConfig.createMany({
+                data: serviceAvailabilityConfigs,
+              });
+            } catch (configError) {
+              console.error('Failed to create ServiceAvailabilityConfig records:', configError);
+              // Don't fail the entire registration if ServiceAvailabilityConfig creation fails
+            }
           }
-        }
 
-        return newProvider;
-      },
-      {
-        maxWait: 10000, // Wait up to 10 seconds for a transaction slot
-        timeout: 20000, // Allow up to 20 seconds for provider creation with relations
-      }
-    );
+          return newProvider;
+        },
+        {
+          maxWait: 10000, // Wait up to 10 seconds for a transaction slot
+          timeout: 20000, // Allow up to 20 seconds for provider creation with relations
+        }
+      );
 
       return { success: true, data: provider, redirect: '/profile' };
     }),

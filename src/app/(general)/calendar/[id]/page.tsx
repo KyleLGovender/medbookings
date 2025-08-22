@@ -3,7 +3,6 @@
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
-
 import CalendarLoader from '@/components/calendar-loader';
 import { ProviderCalendarSlotView } from '@/features/calendar/components/provider-calendar-slot-view';
 
@@ -23,10 +22,7 @@ function ProviderBookingPageContent({ params, searchParams }: ProviderBookingPag
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto py-6">
-        <ProviderCalendarSlotView 
-          providerId={params.id}
-          searchParams={searchParams}
-        />
+        <ProviderCalendarSlotView providerId={params.id} searchParams={searchParams} />
       </div>
     </div>
   );
@@ -34,18 +30,16 @@ function ProviderBookingPageContent({ params, searchParams }: ProviderBookingPag
 
 export default function ProviderBookingPage({ params, searchParams }: ProviderBookingPageProps) {
   return (
-    <Suspense fallback={
-      <CalendarLoader 
-        message="Loading provider availability"
-        submessage="Fetching available appointment slots..."
-        showAfterMs={300}
-      />
-    }>
-      <ProviderBookingPageContent 
-        params={params} 
-        searchParams={searchParams}
-      />
+    <Suspense
+      fallback={
+        <CalendarLoader
+          message="Loading provider availability"
+          submessage="Fetching available appointment slots..."
+          showAfterMs={300}
+        />
+      }
+    >
+      <ProviderBookingPageContent params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
-

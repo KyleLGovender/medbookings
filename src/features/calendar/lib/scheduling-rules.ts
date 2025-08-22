@@ -100,7 +100,7 @@ function generateOnTheHourSlots(options: SchedulingOptions): TimeSlot[] {
   // Round availability start to clean minutes first
   const cleanStart = new Date(options.availabilityStart);
   cleanStart.setSeconds(0, 0);
-  
+
   // Find the first hour start time at or after availability start
   let currentStart = getNextAlignedTime(cleanStart, intervalMinutes);
 
@@ -142,7 +142,7 @@ function generateOnTheHalfHourSlots(options: SchedulingOptions): TimeSlot[] {
   // Round availability start to clean minutes first
   const cleanStart = new Date(options.availabilityStart);
   cleanStart.setSeconds(0, 0);
-  
+
   // Find the first half-hour start time at or after availability start
   let currentStart = getNextAlignedTime(cleanStart, intervalMinutes);
 

@@ -100,7 +100,7 @@ export function AvailabilityMonthView({
             const isCurrentMonthDate = isCurrentMonth(date);
             const isTodayDate = isToday(date);
             const isSelectedDate = isCurrentDate(date);
-            
+
             return (
               <div
                 key={date.toISOString()}
@@ -116,18 +116,16 @@ export function AvailabilityMonthView({
                       isTodayDate
                         ? 'flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white'
                         : isSelectedDate
-                        ? 'text-indigo-600'
-                        : isCurrentMonthDate
-                        ? 'text-gray-900'
-                        : 'text-gray-400'
+                          ? 'text-indigo-600'
+                          : isCurrentMonthDate
+                            ? 'text-gray-900'
+                            : 'text-gray-400'
                     }`}
                   >
                     {date.getDate()}
                   </span>
                   {dayEvents.length > 0 && (
-                    <span className="text-xs text-gray-500">
-                      {dayEvents.length}
-                    </span>
+                    <span className="text-xs text-gray-500">{dayEvents.length}</span>
                   )}
                 </div>
 
@@ -136,7 +134,7 @@ export function AvailabilityMonthView({
                   {dayEvents.slice(0, 3).map((availability) => {
                     const startTime = new Date(availability.startTime);
                     const endTime = new Date(availability.endTime);
-                    
+
                     return (
                       <div
                         key={availability.id}
@@ -145,27 +143,26 @@ export function AvailabilityMonthView({
                         onDoubleClick={() => handleEditEvent(availability)}
                       >
                         <div className="flex items-center space-x-1">
-                          {availability.isRecurring && (
-                            <Repeat className="h-3 w-3 flex-shrink-0" />
-                          )}
+                          {availability.isRecurring && <Repeat className="h-3 w-3 flex-shrink-0" />}
                           <div className="truncate">
-                            <div className="font-medium truncate">
+                            <div className="truncate font-medium">
                               {availability.provider?.user?.name || 'Provider'}
                             </div>
                             <div className="opacity-75">
-                              {startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {startTime.toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
                             </div>
                           </div>
                         </div>
                       </div>
                     );
                   })}
-                  
+
                   {/* Show "+X more" if there are more than 3 events */}
                   {dayEvents.length > 3 && (
-                    <div className="text-xs text-gray-500 px-2">
-                      +{dayEvents.length - 3} more
-                    </div>
+                    <div className="px-2 text-xs text-gray-500">+{dayEvents.length - 3} more</div>
                   )}
                 </div>
               </div>

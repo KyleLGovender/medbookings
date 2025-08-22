@@ -1,21 +1,22 @@
 'use client';
 
-import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import React, { useMemo } from 'react';
 
-import { CalendarEventModal } from '@/features/calendar/components/modal/calendar-event-modal';
+import { useSession } from 'next-auth/react';
+
+import { AvailabilityModal } from '@/features/calendar/components/modal/availability-modal';
 import { ProviderCalendarView } from '@/features/calendar/components/provider-calendar-view';
 import {
   useAcceptAvailabilityProposal,
   useDeleteAvailability,
   useRejectAvailabilityProposal,
 } from '@/features/calendar/hooks/use-availability';
-import { useCalendarEventModal } from '@/features/calendar/hooks/use-calendar-event-modal';
+import { useAvailabilityModal } from '@/features/calendar/hooks/use-availability-modal';
 import { getProviderCalendarPermissions } from '@/features/calendar/lib/permissions';
+import type { SeriesActionScope } from '@/features/calendar/types/modal';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useToast } from '@/hooks/use-toast';
-import { useSession } from 'next-auth/react';
-import type { SeriesActionScope } from '@/features/calendar/types/modal';
 
 interface ProviderCalendarPageProps {
   params: {
@@ -26,7 +27,7 @@ interface ProviderCalendarPageProps {
 export default function ProviderCalendarPage({ params }: ProviderCalendarPageProps) {
   const router = useRouter();
   const { toast } = useToast();
-  
+
   // Data fetching
   const { data: session } = useSession();
   const currentUser = session?.user;
@@ -60,19 +61,22 @@ export default function ProviderCalendarPage({ params }: ProviderCalendarPagePro
     },
   });
 
-  // Calendar event modal
-  const modal = useCalendarEventModal({
+  // Availability modal
+  const modal = useAvailabilityModal({
     onEdit: (event, scope) => {
       // Navigate to edit page with scope parameter and return URL
       const searchParams = new URLSearchParams();
-      if (scope !== 'single') {
+      // Only add scope parameter for recurring availability and non-single scopes
+      if (event.isRecurring && scope !== 'single') {
         searchParams.set('scope', scope);
       }
       searchParams.set('returnUrl', `/providers/${params.id}/manage-calendar`);
       router.push(`/availability/${event.id}/edit?${searchParams.toString()}`);
     },
     onDelete: (event, scope) => {
-      deleteMutation.mutate({ ids: [event.id], scope });
+      // Only pass scope for recurring availability
+      const deleteParams = event.isRecurring ? { ids: [event.id], scope } : { ids: [event.id] };
+      deleteMutation.mutate(deleteParams);
     },
     onAccept: (event) => {
       acceptMutation.mutate({ id: event.id });
@@ -83,9 +87,10 @@ export default function ProviderCalendarPage({ params }: ProviderCalendarPagePro
   });
 
   // Compute permissions based on current context
-  const permissions = useMemo(() => 
-    getProviderCalendarPermissions(modal.state.selectedEvent, currentUser || null, currentUserProvider),
-    [modal.state.selectedEvent, currentUser, currentUserProvider]
+  const permissions = useMemo(
+    () =>
+      getProviderCalendarPermissions(modal.selectedEvent, currentUser || null, currentUserProvider),
+    [modal.selectedEvent, currentUser, currentUserProvider]
   );
 
   // Event handlers
@@ -103,18 +108,19 @@ export default function ProviderCalendarPage({ params }: ProviderCalendarPagePro
       <ProviderCalendarView
         providerId={params.id}
         onCreateAvailability={handleCreateAvailability}
-        onEventClick={(event) => modal.actions.openEvent(event)}
+        onAvailabilityClick={(availability) => modal.openEvent(availability)}
       />
 
-      {/* Calendar Event Modal - for actions like delete, accept, reject */}
-      <CalendarEventModal
-        state={modal.state}
+      {/* Availability Modal - for actions like delete, accept, reject */}
+      <AvailabilityModal
+        isOpen={modal.isOpen}
+        event={modal.selectedEvent}
         permissions={permissions}
-        onSelectScope={modal.actions.selectScope}
-        onSetPendingAction={modal.actions.setPendingAction}
-        onSetActionData={modal.actions.setActionData}
-        onExecuteAction={modal.actions.executeAction}
-        onClose={modal.actions.close}
+        onEdit={modal.handleEdit}
+        onDelete={modal.handleDelete}
+        onAccept={modal.handleAccept}
+        onReject={modal.handleReject}
+        onClose={modal.close}
       />
     </>
   );

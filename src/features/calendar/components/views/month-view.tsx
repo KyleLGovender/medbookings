@@ -83,7 +83,7 @@ export function MonthView({
                       }}
                       role="button"
                       tabIndex={0}
-                      aria-label={`${event.title}, ${event.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                      aria-label={`${event.provider?.user?.name || 'Availability'}, ${event.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
@@ -93,7 +93,7 @@ export function MonthView({
                       }}
                     >
                       <div className="flex items-center gap-1 truncate font-medium">
-                        {event.title}
+                        {event.provider?.user?.name || 'Availability'}
                         {event.isRecurring && (
                           <Repeat className="h-3 w-3 flex-shrink-0 text-blue-500" />
                         )}
@@ -103,13 +103,11 @@ export function MonthView({
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
-                        {event.type === 'availability' && (
-                          <span className="ml-1">
-                            {event.status === AvailabilityStatus.PENDING && '🟡'}
-                            {event.status === AvailabilityStatus.ACCEPTED && '✅'}
-                            {event.status === AvailabilityStatus.REJECTED && '❌'}
-                          </span>
-                        )}
+                        <span className="ml-1">
+                          {event.status === AvailabilityStatus.PENDING && '🟡'}
+                          {event.status === AvailabilityStatus.ACCEPTED && '✅'}
+                          {event.status === AvailabilityStatus.REJECTED && '❌'}
+                        </span>
                       </div>
                     </div>
                   ))}

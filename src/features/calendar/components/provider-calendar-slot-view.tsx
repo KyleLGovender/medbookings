@@ -16,19 +16,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { UserAvatar } from '@/components/user-avatar';
-import { BookingSlotModal, type BookingFormData } from '@/features/calendar/components/booking-slot-modal';
+import {
+  type BookingFormData,
+  BookingSlotModal,
+} from '@/features/calendar/components/booking-slot-modal';
 import { BookingSuccessToast } from '@/features/calendar/components/booking-success-toast';
 import { CalendarErrorBoundary } from '@/features/calendar/components/error-boundary';
 import { CalendarSkeleton } from '@/features/calendar/components/loading';
 import { SlotDayView } from '@/features/calendar/components/views/slot-day-view';
 import { SlotThreeDayView } from '@/features/calendar/components/views/slot-three-day-view';
 import { SlotWeekView } from '@/features/calendar/components/views/slot-week-view';
+import { SlotWeekViewButtons } from '@/features/calendar/components/views/slot-week-view-buttons';
 import { useCreateBooking } from '@/features/calendar/hooks/use-create-booking';
 import { useProviderSlots } from '@/features/calendar/hooks/use-provider-slots';
-import {
-  calculateDateRange,
-  navigateCalendarDate,
-} from '@/features/calendar/lib/calendar-utils';
+import { calculateDateRange, navigateCalendarDate } from '@/features/calendar/lib/calendar-utils';
 import { CalendarViewMode } from '@/features/calendar/types/types';
 import type { RouterOutputs } from '@/utils/api';
 
@@ -60,7 +61,7 @@ export function ProviderCalendarSlotView({
 }: ProviderCalendarSlotViewProps) {
   const router = useRouter();
   const searchParamsObj = useSearchParams();
-  
+
   // Initialize state from URL search params or defaults
   const [currentDate, setCurrentDate] = useState(() => {
     const dateParam = searchParams?.date;
@@ -70,7 +71,7 @@ export function ProviderCalendarSlotView({
     }
     return initialDate;
   });
-  
+
   const [viewMode, setViewMode] = useState<CalendarViewMode>(() => {
     const viewParam = searchParams?.view;
     if (typeof viewParam === 'string' && ['day', '3-day', 'week', 'month'].includes(viewParam)) {
@@ -78,12 +79,12 @@ export function ProviderCalendarSlotView({
     }
     return initialViewMode;
   });
-  
+
   const [serviceFilter, setServiceFilter] = useState<string>(() => {
     const serviceParam = searchParams?.service;
     return typeof serviceParam === 'string' ? serviceParam : 'ALL';
   });
-  
+
   const [isMobile, setIsMobile] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<any>(null);
@@ -98,21 +99,24 @@ export function ProviderCalendarSlotView({
   usePerformanceMonitor('ProviderCalendarSlotView', [currentDate, viewMode, serviceFilter]);
 
   // Function to update URL search params
-  const updateSearchParams = useCallback((updates: { date?: Date; view?: CalendarViewMode; service?: string }) => {
-    const params = new URLSearchParams(searchParamsObj);
-    
-    if (updates.date) {
-      params.set('date', updates.date.toISOString().split('T')[0]);
-    }
-    if (updates.view) {
-      params.set('view', updates.view);
-    }
-    if (updates.service) {
-      params.set('service', updates.service);
-    }
-    
-    router.replace(`/calendar/${providerId}?${params.toString()}`, { scroll: false });
-  }, [router, providerId, searchParamsObj]);
+  const updateSearchParams = useCallback(
+    (updates: { date?: Date; view?: CalendarViewMode; service?: string }) => {
+      const params = new URLSearchParams(searchParamsObj);
+
+      if (updates.date) {
+        params.set('date', updates.date.toISOString().split('T')[0]);
+      }
+      if (updates.view) {
+        params.set('view', updates.view);
+      }
+      if (updates.service) {
+        params.set('service', updates.service);
+      }
+
+      router.replace(`/calendar/${providerId}?${params.toString()}`, { scroll: false });
+    },
+    [router, providerId, searchParamsObj]
+  );
 
   // Mobile detection and view mode handling
   useEffect(() => {
@@ -186,9 +190,9 @@ export function ProviderCalendarSlotView({
   const availableServices = useMemo(() => {
     const slots: ProviderSlotsResult = slotsData || [];
     if (!Array.isArray(slots)) return [];
-    
+
     const serviceMap = new Map();
-    
+
     slots.forEach((slot: SlotData) => {
       if (slot.service && !serviceMap.has(slot.service.id)) {
         serviceMap.set(slot.service.id, {
@@ -197,9 +201,61 @@ export function ProviderCalendarSlotView({
         });
       }
     });
-    
+
     return Array.from(serviceMap.values());
   }, [slotsData]);
+
+  // Helper functions to convert between service names and IDs for URL readability
+  const getServiceIdByName = useCallback(
+    (serviceName: string) => {
+      const service = availableServices.find(
+        (s) => s.name.toLowerCase().replace(/\s+/g, '-') === serviceName.toLowerCase()
+      );
+      return service?.id || serviceName; // Fallback to original if not found
+    },
+    [availableServices]
+  );
+
+  const getServiceNameForUrl = useCallback(
+    (serviceId: string) => {
+      if (serviceId === 'ALL') return 'all';
+      const service = availableServices.find((s) => s.id === serviceId);
+      return service ? service.name.toLowerCase().replace(/\s+/g, '-') : serviceId;
+    },
+    [availableServices]
+  );
+
+  const getServiceIdFromUrl = useCallback(
+    (urlParam: string) => {
+      if (urlParam === 'all') return 'ALL';
+      return getServiceIdByName(urlParam);
+    },
+    [getServiceIdByName]
+  );
+
+  // Initialize service filter from URL param (convert URL name back to ID)
+  useEffect(() => {
+    const serviceParam = searchParams?.service;
+    if (
+      typeof serviceParam === 'string' &&
+      serviceParam !== 'ALL' &&
+      availableServices.length > 0
+    ) {
+      const serviceId = getServiceIdFromUrl(serviceParam);
+      if (serviceId !== serviceFilter) {
+        setServiceFilter(serviceId);
+      }
+    }
+  }, [searchParams?.service, availableServices, serviceFilter, getServiceIdFromUrl]);
+
+  // Auto-select service if there's only one service and no filter is set
+  useEffect(() => {
+    if (availableServices.length === 1 && serviceFilter === 'ALL') {
+      const service = availableServices[0];
+      setServiceFilter(service.id);
+      updateSearchParams({ service: getServiceNameForUrl(service.id) });
+    }
+  }, [availableServices, serviceFilter, updateSearchParams, getServiceNameForUrl]);
 
   // Filter slots based on service selection
   const filteredSlots = useMemo(() => {
@@ -218,17 +274,17 @@ export function ProviderCalendarSlotView({
     const slots = filteredSlots;
 
     // Calculate available slots (slots without bookings)
-    const availableSlots = slots.filter(slot => !slot.booking).length;
+    const availableSlots = slots.filter((slot) => !slot.booking).length;
 
     // Calculate booked slots
-    const bookedSlots = slots.filter(slot => slot.booking).length;
+    const bookedSlots = slots.filter((slot) => slot.booking).length;
 
     // Total slots
     const totalSlots = slots.length;
 
     // Calculate confirmed bookings
-    const confirmedBookings = slots.filter(slot => 
-      slot.booking && slot.booking.status === 'CONFIRMED'
+    const confirmedBookings = slots.filter(
+      (slot) => slot.booking && slot.booking.status === 'CONFIRMED'
     ).length;
 
     // Calculate utilization rate
@@ -259,7 +315,7 @@ export function ProviderCalendarSlotView({
     slots.forEach((slot) => {
       const startTime = new Date(slot.startTime);
       const endTime = new Date(slot.endTime);
-      
+
       const startHour = startTime.getHours();
       const startMinutes = startTime.getMinutes();
       const endHour = endTime.getHours();
@@ -308,16 +364,13 @@ export function ProviderCalendarSlotView({
   );
 
   // Handle slot click to open booking modal
-  const handleSlotClick = useCallback(
-    (slot: SlotData, clickEvent?: React.MouseEvent) => {
-      // Only allow booking of available slots (slots without bookings)
-      if (!slot.booking) {
-        setSelectedSlot(slot);
-        setIsBookingModalOpen(true);
-      }
-    },
-    []
-  );
+  const handleSlotClick = useCallback((slot: SlotData, clickEvent?: React.MouseEvent) => {
+    // Only allow booking of available slots (slots without bookings)
+    if (!slot.booking) {
+      setSelectedSlot(slot);
+      setIsBookingModalOpen(true);
+    }
+  }, []);
 
   // Handle booking confirmation
   const handleBookingConfirm = useCallback(
@@ -350,8 +403,8 @@ export function ProviderCalendarSlotView({
     if (!slots.length) return [];
 
     // Sort slots by start time for consistent display
-    const sorted = [...slots].sort((a, b) => 
-      new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+    const sorted = [...slots].sort(
+      (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
     );
 
     return sorted;
@@ -431,7 +484,6 @@ export function ProviderCalendarSlotView({
                     </div>
                     <div className="text-xs text-muted-foreground">Available</div>
                   </div>
-                  
                 </div>
               </div>
             </div>
@@ -463,11 +515,15 @@ export function ProviderCalendarSlotView({
                 </div>
 
                 <div className="flex items-center justify-center space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => {
-                    const today = new Date();
-                    setCurrentDate(today);
-                    updateSearchParams({ date: today });
-                  }}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const today = new Date();
+                      setCurrentDate(today);
+                      updateSearchParams({ date: today });
+                    }}
+                  >
                     Today
                   </Button>
                 </div>
@@ -491,9 +547,6 @@ export function ProviderCalendarSlotView({
                     <SelectItem value="week" className="hidden sm:block">
                       Week
                     </SelectItem>
-                    <SelectItem value="month" className="hidden sm:block">
-                      Month
-                    </SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -501,10 +554,12 @@ export function ProviderCalendarSlotView({
                   value={serviceFilter}
                   onValueChange={(value: string) => {
                     setServiceFilter(value);
-                    updateSearchParams({ service: value });
+                    // Convert service ID to URL-friendly name for the URL
+                    const urlValue = value === 'ALL' ? 'all' : getServiceNameForUrl(value);
+                    updateSearchParams({ service: urlValue });
                   }}
                 >
-                  <SelectTrigger className="w-full sm:w-40">
+                  <SelectTrigger className="w-full sm:w-60">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -521,33 +576,66 @@ export function ProviderCalendarSlotView({
           </CardHeader>
 
           <CardContent>
-            {viewMode === 'day' && (
-              <SlotDayView
-                currentDate={currentDate}
-                events={displaySlots}
-                workingHours={workingHours}
-                onEventClick={handleSlotClick}
-                getEventStyle={getSlotStyle}
-              />
-            )}
-            {viewMode === '3-day' && (
-              <SlotThreeDayView
-                currentDate={currentDate}
-                events={displaySlots}
-                workingHours={workingHours}
-                onEventClick={handleSlotClick}
-                getEventStyle={getSlotStyle}
-              />
-            )}
-            {viewMode === 'week' && (
-              <SlotWeekView
-                currentDate={currentDate}
-                events={displaySlots}
-                workingHours={workingHours}
-                onEventClick={handleSlotClick}
-                onDateClick={handleDateClick}
-                getEventStyle={getSlotStyle}
-              />
+            {/* Show message when no service is selected and there are multiple services */}
+            {serviceFilter === 'ALL' && availableServices.length > 1 ? (
+              <div className="py-12 text-center">
+                <CalendarIcon className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                <h3 className="mb-2 text-lg font-semibold text-gray-900">
+                  Please Choose a Service
+                </h3>
+                <p className="mb-4 text-gray-600">
+                  Select which service you'd like to book from the dropdown above to view available
+                  time slots.
+                </p>
+                <div className="text-sm text-gray-500">
+                  Available services: {availableServices.map((s) => s.name).join(', ')}
+                </div>
+              </div>
+            ) : displaySlots.length === 0 ? (
+              <div className="py-12 text-center">
+                <CalendarIcon className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                <h3 className="mb-2 text-lg font-semibold text-gray-900">No Available Slots</h3>
+                <p className="text-gray-600">
+                  No time slots are available for{' '}
+                  {serviceFilter === 'ALL' ? 'any service' : 'this service'} in the selected time
+                  period.
+                </p>
+                <div className="mt-2 text-sm text-gray-500">
+                  Try selecting a different date range{serviceFilter !== 'ALL' ? ' or service' : ''}
+                  .
+                </div>
+              </div>
+            ) : (
+              <>
+                {viewMode === 'day' && (
+                  <SlotDayView
+                    currentDate={currentDate}
+                    events={displaySlots}
+                    workingHours={workingHours}
+                    onEventClick={handleSlotClick}
+                    getEventStyle={getSlotStyle}
+                  />
+                )}
+                {viewMode === '3-day' && (
+                  <SlotThreeDayView
+                    currentDate={currentDate}
+                    events={displaySlots}
+                    workingHours={workingHours}
+                    onEventClick={handleSlotClick}
+                    getEventStyle={getSlotStyle}
+                  />
+                )}
+                {viewMode === 'week' && (
+                  <SlotWeekViewButtons
+                    currentDate={currentDate}
+                    events={displaySlots}
+                    workingHours={workingHours}
+                    onEventClick={handleSlotClick}
+                    onDateClick={handleDateClick}
+                    getEventStyle={getSlotStyle}
+                  />
+                )}
+              </>
             )}
           </CardContent>
         </Card>

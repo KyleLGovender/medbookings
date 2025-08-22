@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 
 import { AvailabilityStatus } from '@prisma/client';
 import { Calendar, Check, Edit, Pause, Trash2, X } from 'lucide-react';
@@ -31,14 +31,18 @@ import {
   SeriesActionDialog,
   SeriesActionScope,
 } from '@/features/calendar/components/availability/series-action-dialog';
-import { OrganizationCalendarView } from '@/features/calendar/components/organization-calendar-view';
+import { ProviderCalendarView } from '@/features/calendar/components/provider-calendar-view';
 import {
   useAcceptAvailabilityProposal,
   useDeleteAvailability,
   useRejectAvailabilityProposal,
 } from '@/features/calendar/hooks/use-availability';
-import { CalendarEvent, OrganizationProvider } from '@/features/calendar/types/types';
+import { OrganizationProvider } from '@/features/calendar/types/types';
 import { useToast } from '@/hooks/use-toast';
+import type { RouterOutputs } from '@/utils/api';
+
+// Extract proper types from tRPC
+type AvailabilityData = RouterOutputs['calendar']['searchAvailability'][number];
 
 interface OrganizationAvailabilityPageProps {
   params: {
@@ -51,7 +55,7 @@ export default function OrganizationAvailabilityPage({
 }: OrganizationAvailabilityPageProps) {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<AvailabilityData | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<OrganizationProvider | null>(null);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -96,24 +100,20 @@ export default function OrganizationAvailabilityPage({
     },
   });
 
-
   const handleCreateAvailability = (providerId?: string) => {
     const returnUrl = encodeURIComponent(window.location.pathname);
     const searchParams = new URLSearchParams();
     searchParams.set('returnUrl', returnUrl);
     if (providerId) searchParams.set('providerId', providerId);
     searchParams.set('organizationId', params.id);
-    
+
     router.push(`/availability/create?${searchParams.toString()}`);
   };
 
-  const handleEventClick = (event: CalendarEvent, provider: OrganizationProvider) => {
-    // Only show modal for availability events (not bookings)
-    if (event.type === 'availability') {
-      setSelectedEvent(event);
-      setSelectedProvider(provider);
-      setShowEventDetailsModal(true);
-    }
+  const handleEventClick = (event: AvailabilityData, provider: OrganizationProvider) => {
+    setSelectedEvent(event);
+    setSelectedProvider(provider);
+    setShowEventDetailsModal(true);
   };
 
   const handleEditEvent = () => {
@@ -192,15 +192,13 @@ export default function OrganizationAvailabilityPage({
     setSelectedEvent(null);
   };
 
-
   return (
     <>
-      <OrganizationCalendarView
-        organizationId={params.id}
-        onCreateAvailability={handleCreateAvailability}
-        onEventClick={handleEventClick}
-      />
-
+      {/* TODO: Need to implement organization-specific calendar view or adapt provider view */}
+      <div className="p-4">
+        <p>Organization calendar view needs to be implemented</p>
+        <Button onClick={() => handleCreateAvailability()}>Create Availability</Button>
+      </div>
 
       {/* Series Action Dialog */}
       {selectedEvent && (
@@ -209,7 +207,7 @@ export default function OrganizationAvailabilityPage({
           onClose={handleSeriesActionCancel}
           onConfirm={handleSeriesAction}
           actionType={seriesActionType}
-          availabilityTitle={selectedEvent.title}
+          availabilityTitle={selectedEvent.provider?.user?.name || 'Availability'}
           availabilityDate={selectedEvent.startTime.toLocaleDateString()}
           isDestructive={seriesActionType === 'delete' || seriesActionType === 'cancel'}
         />
@@ -225,11 +223,9 @@ export default function OrganizationAvailabilityPage({
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium">Provider</Label>
-                <div className="text-sm text-muted-foreground">{selectedProvider.name}</div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Title</Label>
-                <div className="text-sm text-muted-foreground">{selectedEvent.title}</div>
+                <div className="text-sm text-muted-foreground">
+                  {selectedEvent.provider?.user?.name || selectedProvider?.name || 'Unknown'}
+                </div>
               </div>
               <div>
                 <Label className="text-sm font-medium">Time</Label>

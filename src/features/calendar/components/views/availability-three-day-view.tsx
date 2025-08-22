@@ -168,7 +168,11 @@ export function AvailabilityThreeDayView({
                     {getEventsForDate(day).map((availability) => {
                       const { gridRow } = calculateAvailabilityGridPosition(availability);
                       return (
-                        <li key={availability.id} className="relative mt-px flex" style={{ gridRow }}>
+                        <li
+                          key={availability.id}
+                          className="relative mt-px flex"
+                          style={{ gridRow }}
+                        >
                           <a
                             href="#"
                             className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(availability)} shadow-sm hover:opacity-80`}
@@ -207,14 +211,12 @@ export function AvailabilityThreeDayView({
                               {availability.status === AvailabilityStatus.REJECTED && '❌'}
                             </div>
                             {availability.location && (
-                              <div className="text-xs opacity-75 truncate">
+                              <div className="truncate text-xs opacity-75">
                                 📍 {availability.location.name}
                               </div>
                             )}
                             {availability.isOnlineAvailable && (
-                              <div className="text-xs opacity-75">
-                                💻 Online
-                              </div>
+                              <div className="text-xs opacity-75">💻 Online</div>
                             )}
                           </a>
                         </li>

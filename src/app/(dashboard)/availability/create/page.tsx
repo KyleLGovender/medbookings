@@ -3,15 +3,16 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { ArrowLeft, Calendar } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AvailabilityCreationForm } from '@/features/calendar/components/availability/availability-creation-form';
-import { ArrowLeft, Calendar } from 'lucide-react';
 
 function CreateAvailabilityPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   // Get parameters from URL search params
   const providerId = searchParams.get('providerId');
   const date = searchParams.get('date');
@@ -37,11 +38,7 @@ function CreateAvailabilityPageContent() {
           <p className="mt-1 text-sm text-muted-foreground">
             Unable to create availability without provider details.
           </p>
-          <Button
-            variant="outline"
-            onClick={() => router.push('/calendar')}
-            className="mt-4"
-          >
+          <Button variant="outline" onClick={() => router.push('/calendar')} className="mt-4">
             Return to Calendar
           </Button>
         </CardContent>
@@ -54,12 +51,7 @@ function CreateAvailabilityPageContent() {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleCancel}
-            className="gap-2"
-          >
+          <Button variant="ghost" size="sm" onClick={handleCancel} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
@@ -74,10 +66,7 @@ function CreateAvailabilityPageContent() {
       </div>
 
       {/* Form */}
-      <AvailabilityCreationForm
-        onSuccess={handleSuccess}
-        onCancel={handleCancel}
-      />
+      <AvailabilityCreationForm onSuccess={handleSuccess} onCancel={handleCancel} />
     </div>
   );
 }

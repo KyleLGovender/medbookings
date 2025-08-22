@@ -14,7 +14,10 @@
  */
 import { AvailabilityStatus } from '@prisma/client';
 
-import { CalendarEvent } from '@/features/calendar/types/types';
+import type { RouterOutputs } from '@/utils/api';
+
+// Extract proper types from tRPC
+type AvailabilityData = RouterOutputs['calendar']['searchAvailability'][number];
 
 // =============================================================================
 // EVENT STYLING UTILITIES
@@ -27,50 +30,31 @@ import { CalendarEvent } from '@/features/calendar/types/types';
  * @param event - The calendar event to style
  * @returns CSS class string for styling the event
  */
-export function getEventStyle(event: CalendarEvent): string {
+export function getEventStyle(event: AvailabilityData): string {
   // Base style for recurring events with left border indicator
   const recurringBorder = event.isRecurring ? 'border-l-4 border-l-blue-600' : '';
 
-  switch (event.type) {
-    case 'availability':
-      // Provider-created availabilities (green tones)
-      if (event.isProviderCreated) {
-        switch (event.status) {
-          case AvailabilityStatus.ACCEPTED:
-            return `bg-green-100 border-green-400 text-green-800 ${recurringBorder}`;
-          default:
-            return `bg-green-100 border-green-400 text-green-800 ${recurringBorder}`;
-        }
-      }
-      // Organization-created availabilities (blue/yellow tones)
-      else {
-        switch (event.status) {
-          case AvailabilityStatus.PENDING:
-            return `bg-yellow-100 border-yellow-400 text-yellow-800 ${recurringBorder}`;
-          case AvailabilityStatus.ACCEPTED:
-            return `bg-blue-100 border-blue-400 text-blue-800 ${recurringBorder}`;
-          case AvailabilityStatus.REJECTED:
-            return `bg-red-100 border-red-400 text-red-800 ${recurringBorder}`;
-          default:
-            return `bg-blue-100 border-blue-400 text-blue-800 ${recurringBorder}`;
-        }
-      }
-    case 'booking':
-      switch (event.status) {
-        case 'BOOKED':
-          return `bg-purple-100 border-purple-300 text-purple-800 ${recurringBorder}`;
-        case 'PENDING':
-          return `bg-orange-100 border-orange-300 text-orange-800 ${recurringBorder}`;
-        default:
-          return `bg-purple-100 border-purple-300 text-purple-800 ${recurringBorder}`;
-      }
-    case 'slot':
-      // Available slots (green for clickable availability)
-      return `bg-green-100 border-green-400 text-green-800 cursor-pointer hover:bg-green-200 ${recurringBorder}`;
-    case 'blocked':
-      return `bg-red-100 border-red-300 text-red-800 ${recurringBorder}`;
-    default:
-      return `bg-gray-100 border-gray-300 text-gray-800 ${recurringBorder}`;
+  // Provider-created availabilities (green tones)
+  if (event.isProviderCreated) {
+    switch (event.status) {
+      case AvailabilityStatus.ACCEPTED:
+        return `bg-green-100 border-green-400 text-green-800 ${recurringBorder}`;
+      default:
+        return `bg-green-100 border-green-400 text-green-800 ${recurringBorder}`;
+    }
+  }
+  // Organization-created availabilities (blue/yellow tones)
+  else {
+    switch (event.status) {
+      case AvailabilityStatus.PENDING:
+        return `bg-yellow-100 border-yellow-400 text-yellow-800 ${recurringBorder}`;
+      case AvailabilityStatus.ACCEPTED:
+        return `bg-blue-100 border-blue-400 text-blue-800 ${recurringBorder}`;
+      case AvailabilityStatus.REJECTED:
+        return `bg-red-100 border-red-400 text-red-800 ${recurringBorder}`;
+      default:
+        return `bg-blue-100 border-blue-400 text-blue-800 ${recurringBorder}`;
+    }
   }
 }
 
@@ -102,7 +86,10 @@ export interface TimeRange {
  * @param timeRange - The visible time range for the calendar
  * @returns Grid positioning information for CSS Grid
  */
-export function calculateEventPosition(event: CalendarEvent, timeRange: TimeRange): EventPosition {
+export function calculateEventPosition(
+  event: AvailabilityData,
+  timeRange: TimeRange
+): EventPosition {
   const startTime = new Date(event.startTime);
   const endTime = new Date(event.endTime);
 
@@ -127,7 +114,7 @@ export function calculateEventPosition(event: CalendarEvent, timeRange: TimeRang
  * @returns Grid positioning information for CSS Grid with column positioning
  */
 export function calculateEventGridPosition(
-  event: CalendarEvent,
+  event: AvailabilityData,
   timeRange: TimeRange,
   dayIndex: number
 ): EventPosition {
@@ -167,9 +154,9 @@ export function getWorkingTimeRange(workingHours: { start: string; end: string }
  * @returns Filtered array of events within the time range
  */
 export function getEventsInTimeRange(
-  events: CalendarEvent[],
+  events: AvailabilityData[],
   timeRange: TimeRange
-): CalendarEvent[] {
+): AvailabilityData[] {
   return events.filter((event) => {
     const startHour = new Date(event.startTime).getHours();
     const endHour = new Date(event.endTime).getHours();
@@ -188,7 +175,7 @@ export function getEventsInTimeRange(
  * @param hour - The hour to check (24-hour format)
  * @returns True if the event is active during the specified hour
  */
-export function isEventActiveAtHour(event: CalendarEvent, hour: number): boolean {
+export function isEventActiveAtHour(event: AvailabilityData, hour: number): boolean {
   const eventDate = new Date(event.startTime);
   const eventEndTime = new Date(event.endTime);
 
@@ -281,7 +268,7 @@ export function calculateDateRange(
  * @param date - The date to get events for
  * @returns Array of events occurring on the specified date
  */
-export function getEventsForDay(events: CalendarEvent[], date: Date): CalendarEvent[] {
+export function getEventsForDay(events: AvailabilityData[], date: Date): AvailabilityData[] {
   return events.filter((event) => new Date(event.startTime).toDateString() === date.toDateString());
 }
 

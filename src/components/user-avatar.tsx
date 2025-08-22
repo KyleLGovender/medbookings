@@ -45,7 +45,7 @@ export function UserAvatar({
   // Generate initials from name or email
   const getInitials = () => {
     if (showLoading) return '...';
-    
+
     if (name) {
       const parts = name.trim().split(' ');
       if (parts.length >= 2) {
@@ -53,22 +53,18 @@ export function UserAvatar({
       }
       return name[0]?.toUpperCase() || '?';
     }
-    
+
     if (email) {
       return email[0]?.toUpperCase() || '?';
     }
-    
+
     return '?';
   };
 
   return (
     <Avatar className={className}>
       {image && imageLoaded && !imageError && (
-        <AvatarImage
-          src={image}
-          alt={name || 'User avatar'}
-          referrerPolicy="no-referrer"
-        />
+        <AvatarImage src={image} alt={name || 'User avatar'} referrerPolicy="no-referrer" />
       )}
       <AvatarFallback className={cn('text-sm font-medium', fallbackClassName)}>
         {getInitials()}

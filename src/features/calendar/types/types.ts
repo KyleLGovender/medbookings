@@ -29,6 +29,10 @@ import {
 } from '@prisma/client';
 
 // Import tRPC types for server data
+import type { RouterOutputs } from '@/utils/api';
+
+// CalendarEvent type removed - use AvailabilityData from RouterOutputs directly
+type AvailabilityData = RouterOutputs['calendar']['searchAvailability'][number];
 
 // =============================================================================
 // MIGRATION NOTES - SERVER DATA IMPORTS REMOVED
@@ -108,7 +112,7 @@ export interface OrganizationProvider {
   utilizationRate: number;
   totalBookings: number;
   pendingBookings: number;
-  events: CalendarEvent[];
+  events: AvailabilityData[];
 }
 
 export interface OrganizationCalendarData {
@@ -172,7 +176,7 @@ export interface TimeRange {
 export interface OrganizationCalendarViewProps {
   organizationId: string;
   onProviderClick?: (provider: OrganizationProvider) => void;
-  onEventClick?: (event: CalendarEvent, provider: OrganizationProvider) => void;
+  onEventClick?: (event: AvailabilityData, provider: OrganizationProvider) => void;
   onTimeSlotClick?: (date: Date, hour: number, provider: OrganizationProvider) => void;
   onCreateAvailability?: (providerId?: string) => void;
   onManageProvider?: (provider: OrganizationProvider) => void;
@@ -186,17 +190,17 @@ export interface OrganizationCalendarViewProps {
 export interface OrganizationWeekViewProps {
   currentDate: Date;
   providers: OrganizationProvider[];
-  onEventClick?: (event: CalendarEvent, provider: OrganizationProvider) => void;
+  onEventClick?: (event: AvailabilityData, provider: OrganizationProvider) => void;
   onTimeSlotClick?: (date: Date, hour: number, provider: OrganizationProvider) => void;
-  getEventStyle: (event: CalendarEvent) => string;
+  getEventStyle: (event: AvailabilityData) => string;
   showUtilizationOnly: boolean;
 }
 
 export interface OrganizationMonthViewProps {
   currentDate: Date;
   providers: OrganizationProvider[];
-  onEventClick?: (event: CalendarEvent, provider: OrganizationProvider) => void;
-  getEventStyle: (event: CalendarEvent) => string;
+  onEventClick?: (event: AvailabilityData, provider: OrganizationProvider) => void;
+  getEventStyle: (event: AvailabilityData) => string;
 }
 
 export interface Location {
@@ -224,8 +228,6 @@ export interface Booking {
   startTime: Date;
   endTime: Date;
 }
-
-
 
 // =============================================================================
 // AVAILABILITY INTERFACES

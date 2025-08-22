@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 
 import { format } from 'date-fns';
-import { Calendar, Clock, MapPin, User, CreditCard, Phone, Mail } from 'lucide-react';
+import { Calendar, Clock, CreditCard, Mail, MapPin, Phone, User } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -55,7 +55,7 @@ export function BookingSlotModal({
   // Update slot ID when slot changes
   React.useEffect(() => {
     if (slot) {
-      setFormData(prev => ({ ...prev, slotId: slot.id }));
+      setFormData((prev) => ({ ...prev, slotId: slot.id }));
     }
   }, [slot]);
 
@@ -82,18 +82,18 @@ export function BookingSlotModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     onBookingConfirm(formData);
   };
 
   const handleInputChange = (field: keyof BookingFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: '' }));
     }
   };
 
@@ -114,7 +114,7 @@ export function BookingSlotModal({
   const formatDuration = (minutes: number): string => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    
+
     if (hours > 0 && mins > 0) {
       return `${hours}h ${mins}m`;
     } else if (hours > 0) {
@@ -126,7 +126,7 @@ export function BookingSlotModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-xl">
             <Calendar className="h-6 w-6 text-primary" />
@@ -146,21 +146,21 @@ export function BookingSlotModal({
                 image={slot.provider.image}
                 className="h-12 w-12"
               />
-              
+
               <div className="flex-1 space-y-3">
                 <div>
-                  <h3 className="font-semibold text-lg">{slot.provider.name}</h3>
+                  <h3 className="text-lg font-semibold">{slot.provider.name}</h3>
                   {slot.service && (
                     <p className="text-sm text-muted-foreground">{slot.service.name}</p>
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span>{format(slot.startTime, 'EEEE, MMMM d, yyyy')}</span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span>
@@ -174,9 +174,7 @@ export function BookingSlotModal({
                   {slot.location && (
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>
-                        {slot.location.isOnline ? 'Online' : slot.location.name}
-                      </span>
+                      <span>{slot.location.isOnline ? 'Online' : slot.location.name}</span>
                     </div>
                   )}
 
@@ -193,7 +191,7 @@ export function BookingSlotModal({
 
           {/* Booking Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="clientName" className="flex items-center gap-2">
                   <User className="h-4 w-4" />
@@ -260,7 +258,7 @@ export function BookingSlotModal({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
+            <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row">
               <Button
                 type="button"
                 variant="outline"
@@ -270,11 +268,7 @@ export function BookingSlotModal({
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="flex-1"
-              >
+              <Button type="submit" disabled={isLoading} className="flex-1">
                 {isLoading ? 'Booking...' : 'Confirm Booking'}
               </Button>
             </div>

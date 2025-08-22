@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 import { BarChart, Calendar, Download, Plus, Settings } from 'lucide-react';
 
@@ -57,8 +57,12 @@ export function ProviderCalendar() {
       {/* Header Actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button 
-            onClick={() => router.push(`/availability/create?returnUrl=${encodeURIComponent(window.location.pathname)}`)} 
+          <Button
+            onClick={() =>
+              router.push(
+                `/availability/create?returnUrl=${encodeURIComponent(window.location.pathname)}`
+              )
+            }
             className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
@@ -210,7 +214,6 @@ export function ProviderCalendar() {
           </Card>
         </TabsContent>
       </Tabs>
-
 
       {/* Export Dialog - Functionality disabled due to missing component */}
     </div>

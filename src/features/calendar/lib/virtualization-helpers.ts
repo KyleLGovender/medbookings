@@ -6,7 +6,10 @@
  *
  * @author MedBookings Development Team
  */
-import { CalendarEvent } from '@/features/calendar/types/types';
+import type { RouterOutputs } from '@/utils/api';
+
+// Extract proper types from tRPC
+type AvailabilityData = RouterOutputs['calendar']['searchAvailability'][number];
 
 // =============================================================================
 // VIRTUALIZATION TYPES
@@ -15,7 +18,7 @@ import { CalendarEvent } from '@/features/calendar/types/types';
 export interface VirtualizedWindow {
   startIndex: number;
   endIndex: number;
-  visibleItems: CalendarEvent[];
+  visibleItems: AvailabilityData[];
   totalHeight: number;
   offsetY: number;
 }
@@ -44,8 +47,8 @@ export interface TimeSlotVirtualization {
  * @param events - Array of calendar events
  * @returns Map of date strings to events
  */
-export function groupEventsByDate(events: CalendarEvent[]): Map<string, CalendarEvent[]> {
-  const grouped = new Map<string, CalendarEvent[]>();
+export function groupEventsByDate(events: AvailabilityData[]): Map<string, AvailabilityData[]> {
+  const grouped = new Map<string, AvailabilityData[]>();
 
   for (const event of events) {
     const dateKey = event.startTime.toDateString();
@@ -65,10 +68,10 @@ export function groupEventsByDate(events: CalendarEvent[]): Map<string, Calendar
  * @returns Map of time slot keys to events
  */
 export function groupEventsByTimeSlot(
-  events: CalendarEvent[],
+  events: AvailabilityData[],
   slotDuration: number = 30
-): Map<string, CalendarEvent[]> {
-  const grouped = new Map<string, CalendarEvent[]>();
+): Map<string, AvailabilityData[]> {
+  const grouped = new Map<string, AvailabilityData[]>();
 
   for (const event of events) {
     const startTime = new Date(event.startTime);
@@ -120,7 +123,7 @@ export function calculateVirtualWindow<T>(
   const endIndex = Math.min(items.length - 1, startIndex + visibleCount + overscan * 2);
 
   // Get visible items
-  const visibleItems = items.slice(startIndex, endIndex + 1) as CalendarEvent[];
+  const visibleItems = items.slice(startIndex, endIndex + 1) as AvailabilityData[];
 
   // Calculate layout
   const totalHeight = items.length * itemHeight;
@@ -183,10 +186,10 @@ export function calculateVisibleTimeSlots(
  * @returns Filtered events
  */
 export function filterEventsInTimeRange(
-  events: CalendarEvent[],
+  events: AvailabilityData[],
   startTime: Date,
   endTime: Date
-): CalendarEvent[] {
+): AvailabilityData[] {
   return events.filter((event) => {
     const eventStart = new Date(event.startTime);
     const eventEnd = new Date(event.endTime);
@@ -204,7 +207,7 @@ export function filterEventsInTimeRange(
  * @param events - Events to sort
  * @returns Sorted events
  */
-export function sortEventsForRendering(events: CalendarEvent[]): CalendarEvent[] {
+export function sortEventsForRendering(events: AvailabilityData[]): AvailabilityData[] {
   return [...events].sort((a, b) => {
     // Sort by start time first
     const timeCompare = new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
@@ -248,8 +251,8 @@ export function chunkArray<T>(items: T[], chunkSize: number): T[][] {
  * @returns Promise that resolves when all events are processed
  */
 export async function processEventsInBatches<T>(
-  events: CalendarEvent[],
-  processor: (event: CalendarEvent) => T,
+  events: AvailabilityData[],
+  processor: (event: AvailabilityData) => T,
   batchSize: number = 50
 ): Promise<T[]> {
   const results: T[] = [];
@@ -321,12 +324,12 @@ export function throttle<T extends (...args: any[]) => any>(
  * @returns Memoized function
  */
 export function memoizeEventProcessor<T>(
-  processor: (event: CalendarEvent) => T,
-  keyGenerator: (event: CalendarEvent) => string = (event) => event.id
-): (event: CalendarEvent) => T {
+  processor: (event: AvailabilityData) => T,
+  keyGenerator: (event: AvailabilityData) => string = (event) => event.id
+): (event: AvailabilityData) => T {
   const cache = new Map<string, T>();
 
-  return (event: CalendarEvent): T => {
+  return (event: AvailabilityData): T => {
     const key = keyGenerator(event);
 
     if (cache.has(key)) {
@@ -354,14 +357,14 @@ export function memoizeEventProcessor<T>(
  * @param event - Event to clean
  * @returns Cleaned event with only essential properties
  */
-export function createLightweightEvent(event: CalendarEvent): Partial<CalendarEvent> {
+export function createLightweightEvent(event: AvailabilityData): Partial<AvailabilityData> {
   return {
     id: event.id,
-    type: event.type,
-    title: event.title,
     startTime: event.startTime,
     endTime: event.endTime,
     status: event.status,
+    isProviderCreated: event.isProviderCreated,
+    isRecurring: event.isRecurring,
   };
 }
 

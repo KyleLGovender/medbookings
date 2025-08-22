@@ -88,7 +88,7 @@ export function SlotWeekView({
 
   const getSlotPrice = (slot: SlotData) => {
     if (slot.booking) return null;
-    
+
     if (slot.serviceConfig?.price) {
       return Number(slot.serviceConfig.price);
     } else if (slot.service?.defaultPrice) {
@@ -152,7 +152,7 @@ export function SlotWeekView({
             {/* Day columns */}
             {days.map((day, dayIndex) => {
               const daySlots = getEventsForDate(day);
-              
+
               return (
                 <div key={dayIndex} className="relative flex-1 border-l border-gray-100">
                   {/* Background grid for this day */}
@@ -177,7 +177,7 @@ export function SlotWeekView({
                     {daySlots.map((slot) => {
                       const { gridRow } = calculateSlotGridPosition(slot);
                       const price = getSlotPrice(slot);
-                      
+
                       return (
                         <li key={slot.id} className="relative mt-px flex" style={{ gridRow }}>
                           <a
@@ -190,16 +190,12 @@ export function SlotWeekView({
                             }}
                           >
                             <div className="flex items-center justify-between">
-                              <p className="order-1 font-semibold truncate">
-                                {getSlotTitle(slot)}
-                              </p>
+                              <p className="order-1 truncate font-semibold">{getSlotTitle(slot)}</p>
                               {price && (
-                                <span className="ml-1 text-xs font-semibold">
-                                  ${price}
-                                </span>
+                                <span className="ml-1 text-xs font-semibold">${price}</span>
                               )}
                             </div>
-                            
+
                             <p className="text-xs opacity-75">
                               <time dateTime={slot.startTime.toString()}>
                                 {new Date(slot.startTime).toLocaleTimeString([], {
@@ -217,14 +213,14 @@ export function SlotWeekView({
                                 </time>
                               </span>
                             </p>
-                            
+
                             {slot.availability?.location && (
                               <div className="flex items-center gap-1 text-xs opacity-75">
                                 <MapPin className="h-2 w-2 flex-shrink-0" />
                                 <span className="truncate">{slot.availability.location.name}</span>
                               </div>
                             )}
-                            
+
                             {slot.availability?.isOnlineAvailable && (
                               <div className="flex items-center gap-1 text-xs opacity-75">
                                 <Monitor className="h-2 w-2 flex-shrink-0" />
