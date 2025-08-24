@@ -60,17 +60,8 @@ export function getAvailabilityStyle(availability: AvailabilityData): string {
 }
 
 // =============================================================================
-// EVENT POSITIONING UTILITIES
+// TIME CALCULATION UTILITIES
 // =============================================================================
-
-/**
- * Interface for event position calculations
- */
-export interface EventPosition {
-  gridRow: string;
-  gridColumn?: string;
-  height?: string;
-}
 
 /**
  * Interface for time range configuration
@@ -79,57 +70,6 @@ export interface TimeRange {
   start: number; // Start hour (24-hour format)
   end: number; // End hour (24-hour format)
 }
-
-/**
- * Calculates the grid position for an event in a time-based calendar view
- *
- * @param event - The calendar event to position
- * @param timeRange - The visible time range for the calendar
- * @returns Grid positioning information for CSS Grid
- */
-export function calculateEventPosition(
-  event: AvailabilityData,
-  timeRange: TimeRange
-): EventPosition {
-  const startTime = new Date(event.startTime);
-  const endTime = new Date(event.endTime);
-
-  const startHour = startTime.getHours() - timeRange.start;
-  const endHour = endTime.getHours() - timeRange.start;
-
-  // Calculate grid row position (add 1 because CSS Grid is 1-indexed)
-  const gridRowStart = Math.max(1, startHour + 1);
-  const gridRowEnd = Math.min(timeRange.end - timeRange.start + 1, endHour + 1);
-
-  return {
-    gridRow: `${gridRowStart} / ${gridRowEnd}`,
-  };
-}
-
-/**
- * Calculates the grid position for an event in a multi-day calendar view
- *
- * @param event - The calendar event to position
- * @param timeRange - The visible time range for the calendar
- * @param dayIndex - The day index (0-based) for multi-day views
- * @returns Grid positioning information for CSS Grid with column positioning
- */
-export function calculateEventGridPosition(
-  event: AvailabilityData,
-  timeRange: TimeRange,
-  dayIndex: number
-): EventPosition {
-  const basePosition = calculateEventPosition(event, timeRange);
-
-  return {
-    ...basePosition,
-    gridColumn: `${dayIndex + 1}`,
-  };
-}
-
-// =============================================================================
-// TIME CALCULATION UTILITIES
-// =============================================================================
 
 /**
  * Gets the working time range for a calendar view
@@ -147,41 +87,6 @@ export function getWorkingTimeRange(workingHours: { start: string; end: string }
   };
 }
 
-/**
- * Filters events to only include those within the working hours range
- *
- * @param events - Array of calendar events to filter
- * @param timeRange - The time range to filter by
- * @returns Filtered array of events within the time range
- */
-export function getEventsInTimeRange(
-  events: AvailabilityData[],
-  timeRange: TimeRange
-): AvailabilityData[] {
-  return events.filter((event) => {
-    const startHour = new Date(event.startTime).getHours();
-    const endHour = new Date(event.endTime).getHours();
-
-    // Event overlaps with time range if:
-    // - Event starts before range ends AND
-    // - Event ends after range starts
-    return startHour < timeRange.end && endHour > timeRange.start;
-  });
-}
-
-/**
- * Checks if an event is happening during a specific hour
- *
- * @param event - The calendar event to check
- * @param hour - The hour to check (24-hour format)
- * @returns True if the event is active during the specified hour
- */
-export function isEventActiveAtHour(event: AvailabilityData, hour: number): boolean {
-  const eventDate = new Date(event.startTime);
-  const eventEndTime = new Date(event.endTime);
-
-  return eventDate.getHours() <= hour && eventEndTime.getHours() > hour;
-}
 
 // =============================================================================
 // DATE MANIPULATION UTILITIES

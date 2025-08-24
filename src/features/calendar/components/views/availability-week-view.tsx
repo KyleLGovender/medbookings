@@ -2,7 +2,6 @@ import { AvailabilityStatus } from '@prisma/client';
 import { Repeat } from 'lucide-react';
 
 import {
-  calculateEventPosition,
   getAvailabilityForDay,
   getWorkingTimeRange,
   calculateAvailabilityTimeRange,
