@@ -28,6 +28,12 @@ import {
   SlotStatus,
 } from '@prisma/client';
 
+// Import tRPC types for server data
+import type { RouterOutputs } from '@/utils/api';
+
+// CalendarEvent type removed - use AvailabilityData from RouterOutputs directly
+type AvailabilityData = RouterOutputs['calendar']['searchAvailability'][number];
+
 // =============================================================================
 // MIGRATION NOTES - SERVER DATA IMPORTS REMOVED
 // =============================================================================
@@ -106,7 +112,7 @@ export interface OrganizationProvider {
   utilizationRate: number;
   totalBookings: number;
   pendingBookings: number;
-  events: CalendarEvent[];
+  events: AvailabilityData[];
 }
 
 export interface OrganizationCalendarData {
@@ -170,7 +176,7 @@ export interface TimeRange {
 export interface OrganizationCalendarViewProps {
   organizationId: string;
   onProviderClick?: (provider: OrganizationProvider) => void;
-  onEventClick?: (event: CalendarEvent, provider: OrganizationProvider) => void;
+  onEventClick?: (event: AvailabilityData, provider: OrganizationProvider) => void;
   onTimeSlotClick?: (date: Date, hour: number, provider: OrganizationProvider) => void;
   onCreateAvailability?: (providerId?: string) => void;
   onManageProvider?: (provider: OrganizationProvider) => void;
@@ -184,17 +190,17 @@ export interface OrganizationCalendarViewProps {
 export interface OrganizationWeekViewProps {
   currentDate: Date;
   providers: OrganizationProvider[];
-  onEventClick?: (event: CalendarEvent, provider: OrganizationProvider) => void;
+  onEventClick?: (event: AvailabilityData, provider: OrganizationProvider) => void;
   onTimeSlotClick?: (date: Date, hour: number, provider: OrganizationProvider) => void;
-  getEventStyle: (event: CalendarEvent) => string;
+  getAvailabilityStyle: (availability: AvailabilityData) => string;
   showUtilizationOnly: boolean;
 }
 
 export interface OrganizationMonthViewProps {
   currentDate: Date;
   providers: OrganizationProvider[];
-  onEventClick?: (event: CalendarEvent, provider: OrganizationProvider) => void;
-  getEventStyle: (event: CalendarEvent) => string;
+  onEventClick?: (event: AvailabilityData, provider: OrganizationProvider) => void;
+  getAvailabilityStyle: (availability: AvailabilityData) => string;
 }
 
 export interface Location {
@@ -221,92 +227,6 @@ export interface Booking {
   status: BookingStatus;
   startTime: Date;
   endTime: Date;
-}
-
-/**
- * Represents a calendar event that can be displayed in calendar views.
- * Supports different event types including availability slots, bookings, and blocked time.
- *
- * @interface CalendarEvent
- *
- * @example
- * ```typescript
- * const availability: CalendarEvent = {
- *   id: "av-123",
- *   type: "availability",
- *   title: "Available for Consultation",
- *   startTime: new Date("2024-01-15T09:00:00Z"),
- *   endTime: new Date("2024-01-15T17:00:00Z"),
- *   status: "ACCEPTED",
- *   schedulingRule: SchedulingRule.ON_THE_HOUR,
- *   service: {
- *     id: "srv-456",
- *     name: "General Consultation",
- *     duration: 30,
- *     price: 150
- *   }
- * };
- * ```
- */
-export interface CalendarEvent {
-  /** Unique identifier for the calendar event */
-  id: string;
-  /** Type of calendar event - determines display style and behavior */
-  type: 'availability' | 'booking' | 'blocked';
-  /** Display title for the event */
-  title: string;
-  /** Event start time */
-  startTime: Date;
-  /** Event end time */
-  endTime: Date;
-  /** Current status of the event */
-  status: string;
-  /** Scheduling rule for slot generation (availability events only) */
-  schedulingRule?: SchedulingRule;
-  /** Whether this event is part of a recurring series */
-  isRecurring?: boolean;
-  /** Series identifier for recurring events */
-  seriesId?: string | null;
-  /** Location information where the event takes place */
-  location?: {
-    id: string;
-    name: string;
-    isOnline: boolean;
-  };
-  /** Service information for the event */
-  service?: {
-    id: string;
-    name: string;
-    duration: number;
-    price: number;
-  };
-  /** Customer information for booking events */
-  customer?: {
-    id: string;
-    name: string;
-    email?: string;
-  };
-  /** Additional notes or description */
-  notes?: string;
-  /** Information about who created the event */
-  createdBy?: {
-    id: string;
-    name: string;
-    type: 'provider' | 'organization';
-  };
-  /** Organization context for the event */
-  organization?: {
-    id: string;
-    name: string;
-  };
-  /** Whether the event was created by a provider (vs organization admin) */
-  isProviderCreated?: boolean;
-  /** Available services for availability events (from server data) */
-  availableServices?: any; // Will be typed properly with tRPC RouterOutputs
-  /** Recurrence pattern for recurring events (from server data) */
-  recurrencePattern?: any; // Will be typed properly with tRPC RouterOutputs
-  /** Whether bookings require confirmation */
-  requiresConfirmation?: boolean;
 }
 
 // =============================================================================

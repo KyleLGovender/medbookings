@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SchedulingRule } from '@prisma/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { Calendar, Clock, Loader2, Repeat } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
 
@@ -42,8 +43,7 @@ import { updateAvailabilityDataSchema } from '@/features/calendar/types/schemas'
 import { CustomRecurrenceData, DayOfWeek, RecurrenceOption } from '@/features/calendar/types/types';
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
-import { api, type RouterInputs, type RouterOutputs } from '@/utils/api';
-import { useQueryClient } from '@tanstack/react-query';
+import { type RouterInputs, type RouterOutputs, api } from '@/utils/api';
 
 // Extract input type from tRPC procedure for zero type drift
 type UpdateAvailabilityInput = RouterInputs['calendar']['update'];
@@ -61,10 +61,13 @@ type FormValues = Omit<UpdateAvailabilityInput, 'id'>;
 /**
  * Custom hook for updating availability with optimistic updates
  */
-function useUpdateAvailabilityOptimistic(availabilityId: string, options?: {
-  onSuccess?: (data: RouterOutputs['calendar']['update']) => void;
-  onError?: (error: Error) => void;
-}) {
+function useUpdateAvailabilityOptimistic(
+  availabilityId: string,
+  options?: {
+    onSuccess?: (data: RouterOutputs['calendar']['update']) => void;
+    onError?: (error: Error) => void;
+  }
+) {
   const queryClient = useQueryClient();
 
   return api.calendar.update.useMutation({
@@ -113,11 +116,12 @@ function useUpdateAvailabilityOptimistic(availabilityId: string, options?: {
           isOnlineAvailable: variables.isOnlineAvailable ?? old.isOnlineAvailable,
           requiresConfirmation: variables.requiresConfirmation ?? old.requiresConfirmation,
           // Update service configurations if provided
-          availableServices: variables.services?.map((service: any) => ({
-            serviceId: service.serviceId,
-            durationMinutes: service.duration,
-            price: service.price,
-          })) || old.availableServices,
+          availableServices:
+            variables.services?.map((service: any) => ({
+              serviceId: service.serviceId,
+              durationMinutes: service.duration,
+              price: service.price,
+            })) || old.availableServices,
         };
       });
 
@@ -142,7 +146,7 @@ function useUpdateAvailabilityOptimistic(availabilityId: string, options?: {
 
       // For series updates (future/all), the old ID no longer exists - skip getById invalidation
       const isSeriesUpdate = variables.scope && variables.scope !== 'single';
-      
+
       if (!isSeriesUpdate) {
         // Only invalidate getById for single updates where the ID is preserved
         await queryClient.invalidateQueries({
@@ -158,7 +162,9 @@ function useUpdateAvailabilityOptimistic(availabilityId: string, options?: {
         await queryClient.invalidateQueries({
           predicate: (query) => {
             const keyStr = JSON.stringify(query.queryKey);
-            return keyStr.includes('getByProviderId') && keyStr.includes(data.availability!.providerId);
+            return (
+              keyStr.includes('getByProviderId') && keyStr.includes(data.availability!.providerId)
+            );
           },
         });
       }
@@ -168,7 +174,9 @@ function useUpdateAvailabilityOptimistic(availabilityId: string, options?: {
         await queryClient.invalidateQueries({
           predicate: (query) => {
             const keyStr = JSON.stringify(query.queryKey);
-            return keyStr.includes('getBySeriesId') && keyStr.includes(data.availability!.seriesId!);
+            return (
+              keyStr.includes('getBySeriesId') && keyStr.includes(data.availability!.seriesId!)
+            );
           },
         });
       }
@@ -202,7 +210,9 @@ const updateDatePreservingTime = (currentTime: Date, newDate: Date): Date => {
 /**
  * Transform availability data from database format to form format
  */
-const transformAvailabilityToForm = (availability: NonNullable<AvailabilityWithRelations>): FormValues => {
+const transformAvailabilityToForm = (
+  availability: NonNullable<AvailabilityWithRelations>
+): FormValues => {
   return {
     providerId: availability.providerId,
     startTime: new Date(availability.startTime),
@@ -213,13 +223,14 @@ const transformAvailabilityToForm = (availability: NonNullable<AvailabilityWithR
     isOnlineAvailable: availability.isOnlineAvailable,
     locationId: availability.locationId || undefined,
     requiresConfirmation: availability.requiresConfirmation,
-    services: availability.availableServices?.length > 0 
-      ? availability.availableServices.map((service: any) => ({
-          serviceId: service.serviceId,
-          duration: service.durationMinutes || service.duration,
-          price: typeof service.price === 'string' ? parseFloat(service.price) : service.price,
-        }))
-      : [], // Empty array as fallback - this might cause validation to fail
+    services:
+      availability.availableServices?.length > 0
+        ? availability.availableServices.map((service: any) => ({
+            serviceId: service.serviceId,
+            duration: service.durationMinutes || service.duration,
+            price: typeof service.price === 'string' ? parseFloat(service.price) : service.price,
+          }))
+        : [], // Empty array as fallback - this might cause validation to fail
   };
 };
 
@@ -240,7 +251,12 @@ const transformAvailabilityToForm = (availability: NonNullable<AvailabilityWithR
  * @param onSuccess - Callback fired when availability is updated successfully
  * @param onCancel - Callback fired when the form is cancelled
  */
-export function AvailabilityEditForm({ availabilityId, scope = 'single', onSuccess, onCancel }: AvailabilityEditFormProps) {
+export function AvailabilityEditForm({
+  availabilityId,
+  scope = 'single',
+  onSuccess,
+  onCancel,
+}: AvailabilityEditFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customRecurrenceModalOpen, setCustomRecurrenceModalOpen] = useState(false);
   const [customRecurrenceData, setCustomRecurrenceData] = useState<
@@ -252,7 +268,11 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
   const router = useRouter();
 
   // Fetch existing availability data
-  const { data: availability, isLoading: isAvailabilityLoading, error: availabilityError } = useAvailabilityById(availabilityId);
+  const {
+    data: availability,
+    isLoading: isAvailabilityLoading,
+    error: availabilityError,
+  } = useAvailabilityById(availabilityId);
 
   // Fetch provider's services - must call hook unconditionally
   const {
@@ -281,19 +301,19 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
     if (availability) {
       const formData = transformAvailabilityToForm(availability);
       form.reset(formData);
-      
+
       // Trigger validation after reset to ensure form state is updated
       setTimeout(() => {
         form.trigger();
       }, 100);
-      
+
       // Check for existing bookings
       if (availability.calculatedSlots) {
         const bookedSlots = availability.calculatedSlots.filter((slot: any) => slot.booking);
         setHasExistingBookings(bookedSlots.length > 0);
         setBookingCount(bookedSlots.length);
       }
-      
+
       // If there's custom recurrence data, extract it
       if (availability.recurrencePattern && typeof availability.recurrencePattern === 'object') {
         const pattern = availability.recurrencePattern as any;
@@ -333,7 +353,8 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
 
   // Memoize expensive recurrence options computation
   const recurrenceOptions = useMemo(() => {
-    const startTime = watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime || new Date());
+    const startTime =
+      watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime || new Date());
     return getRecurrenceOptions(startTime);
   }, [watchStartTime]);
 
@@ -357,11 +378,7 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
           <p className="mt-1 text-sm text-muted-foreground">
             Please refresh the page or contact support if the problem persists.
           </p>
-          <Button
-            variant="outline"
-            onClick={onCancel || (() => router.back())}
-            className="mt-4"
-          >
+          <Button variant="outline" onClick={onCancel || (() => router.back())} className="mt-4">
             Go Back
           </Button>
         </CardContent>
@@ -379,13 +396,15 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
     setIsSubmitting(true);
     try {
       // Ensure all Date fields are properly converted and maintain provider constraints
-      const startTime = data.startTime instanceof Date ? data.startTime : new Date(data.startTime || new Date());
-      const endTime = data.endTime instanceof Date ? data.endTime : new Date(data.endTime || new Date());
-      
+      const startTime =
+        data.startTime instanceof Date ? data.startTime : new Date(data.startTime || new Date());
+      const endTime =
+        data.endTime instanceof Date ? data.endTime : new Date(data.endTime || new Date());
+
       // Round times to clean minutes (zero seconds and milliseconds)
       startTime.setSeconds(0, 0);
       endTime.setSeconds(0, 0);
-      
+
       const submitData: UpdateAvailabilityInput = {
         id: availabilityId,
         scope,
@@ -407,7 +426,7 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
 
       if (error instanceof Error) {
         errorMessage = error.message;
-        
+
         // Handle specific error cases
         if (error.message.includes('booking')) {
           errorTitle = 'Cannot modify availability';
@@ -450,7 +469,8 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
    * Converts the selected days and end date into a recurrence pattern
    */
   const handleCustomRecurrenceSave = (data: CustomRecurrenceData) => {
-    const startTime = watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime || new Date());
+    const startTime =
+      watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime || new Date());
     const pattern = createRecurrencePattern(
       RecurrenceOption.CUSTOM,
       startTime,
@@ -502,7 +522,7 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
 
             {/* Booking Constraint Warning */}
             {hasExistingBookings && (
-              <div 
+              <div
                 className="rounded-lg border border-amber-200 bg-amber-50 p-4"
                 role="alert"
                 aria-live="polite"
@@ -524,11 +544,13 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
                   </svg>
                   <div className="flex-1">
                     <h4 className="font-medium text-amber-900">
-                      This availability has {bookingCount} existing booking{bookingCount !== 1 ? 's' : ''}
+                      This availability has {bookingCount} existing booking
+                      {bookingCount !== 1 ? 's' : ''}
                     </h4>
                     <p className="mt-1 text-sm text-amber-700">
-                      Time and date changes are restricted to prevent disrupting scheduled appointments.
-                      You can still modify services, scheduling rules, and confirmation settings.
+                      Time and date changes are restricted to prevent disrupting scheduled
+                      appointments. You can still modify services, scheduling rules, and
+                      confirmation settings.
                     </p>
                   </div>
                 </div>
@@ -580,10 +602,9 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
                       />
                     </FormControl>
                     <FormDescription>
-                      {hasExistingBookings 
-                        ? "Date changes are restricted due to existing bookings"
-                        : "Select the date for your availability slot"
-                      }
+                      {hasExistingBookings
+                        ? 'Date changes are restricted due to existing bookings'
+                        : 'Select the date for your availability slot'}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -600,7 +621,11 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
                       <FormLabel>Start Time</FormLabel>
                       <FormControl>
                         <TimePicker
-                          date={field.value instanceof Date ? field.value : new Date(field.value || new Date())}
+                          date={
+                            field.value instanceof Date
+                              ? field.value
+                              : new Date(field.value || new Date())
+                          }
                           onChange={field.onChange}
                         />
                       </FormControl>
@@ -622,16 +647,23 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
                       <FormLabel>End Time</FormLabel>
                       <FormControl>
                         <TimePicker
-                          date={field.value instanceof Date ? field.value : new Date(field.value || new Date())}
+                          date={
+                            field.value instanceof Date
+                              ? field.value
+                              : new Date(field.value || new Date())
+                          }
                           onChange={(newTime) => {
                             // Get the current date from the start time (which is updated by DatePicker)
                             const currentStartTime = form.getValues('startTime');
-                            const baseDate = currentStartTime instanceof Date ? currentStartTime : new Date(currentStartTime || new Date());
-                            
+                            const baseDate =
+                              currentStartTime instanceof Date
+                                ? currentStartTime
+                                : new Date(currentStartTime || new Date());
+
                             // Create new end time using the base date but with the selected time
                             const updatedEndTime = new Date(baseDate);
                             updatedEndTime.setHours(newTime.getHours(), newTime.getMinutes(), 0, 0);
-                            
+
                             field.onChange(updatedEndTime);
                           }}
                         />
@@ -677,7 +709,10 @@ export function AvailabilityEditForm({ availabilityId, scope = 'single', onSucce
                                 : new Date(watchStartTime || new Date());
                             const pattern = createRecurrencePattern(option, startTime);
                             field.onChange(pattern);
-                            form.setValue('isRecurring', option !== RecurrenceOption.NONE, { shouldDirty: true, shouldValidate: true });
+                            form.setValue('isRecurring', option !== RecurrenceOption.NONE, {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            });
                           }
                         }}
                         defaultValue={field.value?.option || RecurrenceOption.NONE}

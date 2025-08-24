@@ -18,42 +18,25 @@ import {
 import { UserAvatar } from '@/components/user-avatar';
 import { CalendarErrorBoundary } from '@/features/calendar/components/error-boundary';
 import { CalendarSkeleton } from '@/features/calendar/components/loading';
-import { DayView } from '@/features/calendar/components/views/day-view';
-import { MonthView } from '@/features/calendar/components/views/month-view';
-import { ThreeDayView } from '@/features/calendar/components/views/three-day-view';
-import { WeekView } from '@/features/calendar/components/views/week-view';
+import { AvailabilityDayView } from '@/features/calendar/components/views/availability-day-view';
+import { AvailabilityMonthView } from '@/features/calendar/components/views/availability-month-view';
+import { AvailabilityThreeDayView } from '@/features/calendar/components/views/availability-three-day-view';
+import { AvailabilityWeekView } from '@/features/calendar/components/views/availability-week-view';
 import { useCalendarData } from '@/features/calendar/hooks/use-calendar-data';
-import {
-  calculateDateRange,
-  getEventStyle,
-  navigateCalendarDate,
-} from '@/features/calendar/lib/calendar-utils';
-import {
-  groupEventsByDate,
-  sortEventsForRendering,
-} from '@/features/calendar/lib/virtualization-helpers';
-import { CalendarEvent, CalendarViewMode } from '@/features/calendar/types/types';
+import { calculateDateRange, navigateCalendarDate } from '@/features/calendar/lib/calendar-utils';
+import { CalendarViewMode } from '@/features/calendar/types/types';
 import type { RouterOutputs } from '@/utils/api';
 
 // Extract proper types for strong typing
 type AvailabilitySearchResult = RouterOutputs['calendar']['searchAvailability'];
 type AvailabilityData = AvailabilitySearchResult[number];
 
-// Performance monitoring functions removed - using simplified approach
-const measureCalendarDataProcessing = (fn: () => any) => fn();
-const measureCalendarRendering = (fn: () => any) => fn();
-const recordCalendarCyclePerformance = (eventCount: number, viewMode: string, dateRange: any) => {};
-const usePerformanceMonitor = (name: string, deps: any[]) => ({
-  startMeasurement: () => {},
-  endMeasurement: () => {},
-});
-
 export interface ProviderCalendarViewProps {
   providerId: string;
-  onEventClick?: (event: CalendarEvent, clickEvent: React.MouseEvent) => void;
+  onAvailabilityClick?: (availability: AvailabilityData, clickEvent: React.MouseEvent) => void;
   onTimeSlotClick?: (date: Date, hour: number) => void;
   onCreateAvailability?: () => void;
-  onEditEvent?: (event: CalendarEvent) => void;
+  onEditAvailability?: (availability: AvailabilityData) => void;
   onDateClick?: (date: Date) => void;
   viewMode?: CalendarViewMode;
   initialDate?: Date;
@@ -61,10 +44,10 @@ export interface ProviderCalendarViewProps {
 
 export function ProviderCalendarView({
   providerId,
-  onEventClick,
+  onAvailabilityClick,
   onTimeSlotClick,
   onCreateAvailability,
-  onEditEvent,
+  onEditAvailability,
   onDateClick,
   viewMode: initialViewMode = 'week',
   initialDate = new Date(),
@@ -72,17 +55,11 @@ export function ProviderCalendarView({
   const [currentDate, setCurrentDate] = useState(initialDate);
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialViewMode);
   const [statusFilter, setStatusFilter] = useState<AvailabilityStatus | 'ALL'>('ALL');
-  const [isMobile, setIsMobile] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-
-  // Performance monitoring
-  usePerformanceMonitor('ProviderCalendarView', [currentDate, viewMode, statusFilter]);
 
   // Mobile detection and view mode handling
   useEffect(() => {
     const checkIsMobile = () => {
       const mobile = window.innerWidth < 640; // sm breakpoint
-      setIsMobile(mobile);
 
       // If switching to mobile and current view is not allowed, switch to day view
       if (mobile && (viewMode === 'week' || viewMode === 'month')) {
@@ -97,82 +74,6 @@ export function ProviderCalendarView({
     window.addEventListener('resize', checkIsMobile);
     return () => window.removeEventListener('resize', checkIsMobile);
   }, [viewMode]);
-
-  // Modal state (context menu removed - modal now handled by parent)
-
-  // Calculate total hours for a day with memoization
-  const calculateDayHours = useCallback((events: CalendarEvent[]) => {
-    const availabilityEvents = events.filter((event) => event.type === 'availability');
-    if (availabilityEvents.length === 0) return 0;
-
-    // Sort events by start time
-    const sortedEvents = availabilityEvents.sort(
-      (a, b) => a.startTime.getTime() - b.startTime.getTime()
-    );
-
-    // Merge overlapping events to avoid double counting
-    const mergedEvents = [];
-    let currentEvent = sortedEvents[0];
-
-    for (let i = 1; i < sortedEvents.length; i++) {
-      const nextEvent = sortedEvents[i];
-
-      // If events overlap, merge them
-      if (currentEvent.endTime >= nextEvent.startTime) {
-        currentEvent = {
-          ...currentEvent,
-          endTime: new Date(Math.max(currentEvent.endTime.getTime(), nextEvent.endTime.getTime())),
-        };
-      } else {
-        mergedEvents.push(currentEvent);
-        currentEvent = nextEvent;
-      }
-    }
-    mergedEvents.push(currentEvent);
-
-    // Calculate total hours
-    return mergedEvents.reduce((total, event) => {
-      const duration = (event.endTime.getTime() - event.startTime.getTime()) / (1000 * 60 * 60);
-      return total + duration;
-    }, 0);
-  }, []);
-
-  // Get status breakdown for a day with memoization
-  const getStatusBreakdown = useCallback((events: CalendarEvent[]) => {
-    const availabilityEvents = events.filter((event) => event.type === 'availability');
-    const breakdown = {
-      [AvailabilityStatus.PENDING]: 0,
-      [AvailabilityStatus.ACCEPTED]: 0,
-      [AvailabilityStatus.REJECTED]: 0,
-    };
-
-    availabilityEvents.forEach((event) => {
-      breakdown[event.status as AvailabilityStatus]++;
-    });
-
-    return breakdown;
-  }, []);
-
-  // Get styling based on status mix with memoization
-  const getHoursSummaryStyle = useCallback(
-    (events: CalendarEvent[]) => {
-      const breakdown = getStatusBreakdown(events);
-      const total = Object.values(breakdown).reduce((sum, count) => sum + count, 0);
-
-      if (total === 0) return 'text-gray-400';
-
-      const acceptedRatio = breakdown[AvailabilityStatus.ACCEPTED] / total;
-      const pendingRatio = breakdown[AvailabilityStatus.PENDING] / total;
-      const rejectedRatio = breakdown[AvailabilityStatus.REJECTED] / total;
-
-      if (acceptedRatio > 0.7) return 'text-green-600 bg-green-50';
-      if (pendingRatio > 0.5) return 'text-yellow-600 bg-yellow-50';
-      if (rejectedRatio > 0.3) return 'text-red-600 bg-red-50';
-
-      return 'text-blue-600 bg-blue-50';
-    },
-    [getStatusBreakdown]
-  );
 
   // Calculate date range using the helper function
   const dateRange = useMemo(() => {
@@ -191,116 +92,48 @@ export function ProviderCalendarView({
   const providerQuery = providerData?.provider;
   const availabilityQuery = providerData?.availability;
   const isLoading = calendarDataResult.isLoading;
-  const hasError = calendarDataResult.hasError;
 
-  // Extract provider data early for image loading
+  // Extract provider data
   const provider = providerQuery?.data;
 
-  // Preload the image when provider data is available - must be before early returns
-  useEffect(() => {
-    if (provider?.user?.image) {
-      const img = new window.Image();
-      img.onload = () => setImageLoaded(true);
-      img.onerror = () => setImageLoaded(false);
-      img.src = provider.user.image;
-    }
-  }, [provider?.user?.image]);
-
-  // Transform availability data to calendar events
-  const calendarEvents: CalendarEvent[] = useMemo(() => {
-    const availabilities: AvailabilitySearchResult = availabilityQuery?.data || [];
-    if (!Array.isArray(availabilities)) return [];
-
-    // Transform availabilities to CalendarEvent format
-    const events: CalendarEvent[] = [];
-
-    // Add availability events
-    availabilities.forEach((availability: AvailabilityData) => {
-      events.push({
-        id: availability.id,
-        type: 'availability' as const,
-        title: `Available - ${availability.provider?.user?.name || 'Provider'}`,
-        startTime: new Date(availability.startTime),
-        endTime: new Date(availability.endTime),
-        status: availability.status,
-        schedulingRule: availability.schedulingRule,
-        isRecurring: availability.isRecurring,
-        seriesId: availability.seriesId,
-        location: availability.location
-          ? {
-              id: availability.location.id,
-              name: availability.location.name || 'Location',
-              isOnline: availability.isOnlineAvailable,
-            }
-          : undefined,
-        organization: availability.organization
-          ? {
-              id: availability.organization.id,
-              name: availability.organization.name,
-            }
-          : undefined,
-        isProviderCreated: availability.isProviderCreated ?? (availability.createdById === availability.provider?.userId),
-        // Include additional data for modal display
-        ...(availability.availableServices && { availableServices: availability.availableServices }),
-        ...(availability.recurrencePattern && { recurrencePattern: availability.recurrencePattern }),
-        ...(availability.requiresConfirmation !== undefined && { requiresConfirmation: availability.requiresConfirmation }),
-      });
-
-      // Add booking events from calculated slots
-      if (availability.calculatedSlots) {
-        availability.calculatedSlots.forEach((slot: any) => {
-          if (slot.booking) {
-            events.push({
-              id: slot.booking.id,
-              type: 'booking' as const,
-              title: `Booking - ${slot.booking.customerName || 'Customer'}`,
-              startTime: new Date(slot.startTime),
-              endTime: new Date(slot.endTime),
-              status: slot.booking.status,
-              customer: {
-                id: slot.booking.customerId || slot.booking.id,
-                name: slot.booking.customerName || 'Customer',
-                email: slot.booking.customerEmail,
-              },
-            });
-          }
-        });
-      }
-    });
-
-    return events;
+  // Get availabilities data directly (no transformation needed)
+  const availabilities: AvailabilitySearchResult = useMemo(() => {
+    return availabilityQuery?.data || [];
   }, [availabilityQuery?.data]);
 
   // Calculate stats from availability data
   const stats = useMemo(() => {
-    const events = calendarEvents;
-
     // Calculate total available hours
-    const totalAvailableHours = events.reduce((total, event) => {
-      if (event.type === 'availability') {
-        const hours = (event.endTime.getTime() - event.startTime.getTime()) / (1000 * 60 * 60);
-        return total + hours;
-      }
-      return total;
+    const totalAvailableHours = availabilities.reduce((total, availability) => {
+      const hours =
+        (new Date(availability.endTime).getTime() - new Date(availability.startTime).getTime()) /
+        (1000 * 60 * 60);
+      return total + hours;
     }, 0);
 
-    // Calculate booked hours
-    const bookedHours = events.reduce((total, event) => {
-      if (event.type === 'booking' && event.status === 'CONFIRMED') {
-        const hours = (event.endTime.getTime() - event.startTime.getTime()) / (1000 * 60 * 60);
-        return total + hours;
+    // Calculate booked hours and bookings from slots
+    let bookedHours = 0;
+    let pendingBookings = 0;
+    let completedBookings = 0;
+
+    availabilities.forEach((availability) => {
+      if (availability.calculatedSlots) {
+        availability.calculatedSlots.forEach((slot: any) => {
+          if (slot.booking) {
+            const slotHours =
+              (new Date(slot.endTime).getTime() - new Date(slot.startTime).getTime()) /
+              (1000 * 60 * 60);
+            bookedHours += slotHours;
+
+            if (slot.booking.status === 'PENDING') {
+              pendingBookings++;
+            } else if (slot.booking.status === 'CONFIRMED' || slot.booking.status === 'COMPLETED') {
+              completedBookings++;
+            }
+          }
+        });
       }
-      return total;
-    }, 0);
-
-    // Count pending and completed bookings
-    const pendingBookings = events.filter(
-      (event) => event.type === 'booking' && event.status === 'PENDING'
-    ).length;
-
-    const completedBookings = events.filter(
-      (event) => event.type === 'booking' && event.status === 'COMPLETED'
-    ).length;
+    });
 
     // Calculate utilization rate
     const utilizationRate =
@@ -313,14 +146,11 @@ export function ProviderCalendarView({
       completedBookings,
       totalAvailableHours: Math.round(totalAvailableHours),
     };
-  }, [calendarEvents]);
+  }, [availabilities]);
 
   // Derive working hours from availability data or use defaults
   const workingHours = useMemo(() => {
-    const events = calendarEvents;
-    const availabilityEvents = events.filter((e) => e.type === 'availability');
-
-    if (availabilityEvents.length === 0) {
+    if (availabilities.length === 0) {
       // Default working hours
       return { start: '09:00', end: '17:00' };
     }
@@ -329,11 +159,14 @@ export function ProviderCalendarView({
     let earliestHour = 24;
     let latestHour = 0;
 
-    availabilityEvents.forEach((event) => {
-      const startHour = event.startTime.getHours();
-      const startMinutes = event.startTime.getMinutes();
-      const endHour = event.endTime.getHours();
-      const endMinutes = event.endTime.getMinutes();
+    availabilities.forEach((availability) => {
+      const startTime = new Date(availability.startTime);
+      const endTime = new Date(availability.endTime);
+
+      const startHour = startTime.getHours();
+      const startMinutes = startTime.getMinutes();
+      const endHour = endTime.getHours();
+      const endMinutes = endTime.getMinutes();
 
       const startDecimal = startHour + startMinutes / 60;
       const endDecimal = endHour + endMinutes / 60;
@@ -357,7 +190,7 @@ export function ProviderCalendarView({
       start: earliestHour < 24 ? formatTime(earliestHour) : '09:00',
       end: latestHour > 0 ? formatTime(latestHour) : '17:00',
     };
-  }, [calendarEvents]);
+  }, [availabilities]);
 
   const navigateDate = useCallback(
     (direction: 'prev' | 'next') => {
@@ -376,34 +209,47 @@ export function ProviderCalendarView({
     [onDateClick]
   );
 
-  // Use shared event styling utility with memoization
-  const getEventStyleLocal = useCallback((event: CalendarEvent): string => {
-    return getEventStyle(event);
+  // Get availability style based on status
+  const getAvailabilityStyle = useCallback((availability: AvailabilityData): string => {
+    switch (availability.status) {
+      case AvailabilityStatus.ACCEPTED:
+        return 'bg-green-100 border-green-300 text-green-900';
+      case AvailabilityStatus.PENDING:
+        return 'bg-yellow-100 border-yellow-300 text-yellow-900';
+      case AvailabilityStatus.REJECTED:
+        return 'bg-red-100 border-red-300 text-red-900';
+      default:
+        return 'bg-gray-100 border-gray-300 text-gray-900';
+    }
   }, []);
 
-  // Optimized event filtering and sorting for large datasets
-  const optimizedEvents = useMemo(() => {
-    const events = calendarEvents;
-    if (!events.length) return [];
+  // Filter and prepare availabilities for display
+  const displayAvailabilities = useMemo(() => {
+    // Filter by status if needed
+    const filtered =
+      statusFilter === 'ALL'
+        ? availabilities
+        : availabilities.filter((a) => a.status === statusFilter);
 
-    // Sort events for optimal rendering performance
-    const sorted = sortEventsForRendering(events);
+    // Sort by start time
+    return filtered.sort(
+      (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+    );
+  }, [availabilities, statusFilter]);
 
-    // For month view, group events by date for efficient rendering
-    if (viewMode === 'month') {
-      const grouped = groupEventsByDate(sorted);
-      return Array.from(grouped.values()).flat();
-    }
+  // Handle availability click - delegate to parent
+  const handleAvailabilityClick = useCallback(
+    (availability: AvailabilityData, clickEvent?: React.MouseEvent) => {
+      if (clickEvent) {
+        clickEvent.preventDefault();
+        clickEvent.stopPropagation();
+      }
 
-    return sorted;
-  }, [calendarEvents, viewMode]);
-
-  // Record performance metrics when data changes
-  useEffect(() => {
-    if (calendarEvents.length > 0) {
-      recordCalendarCyclePerformance(calendarEvents.length, viewMode, dateRange);
-    }
-  }, [calendarEvents, viewMode, dateRange]);
+      // Call parent callback to handle modal
+      onAvailabilityClick?.(availability, clickEvent!);
+    },
+    [onAvailabilityClick]
+  );
 
   // Early return for loading state
   if (isLoading) {
@@ -572,58 +418,48 @@ export function ProviderCalendarView({
 
           <CardContent>
             {viewMode === 'day' && (
-              <DayView
+              <AvailabilityDayView
                 currentDate={currentDate}
-                events={optimizedEvents}
+                events={displayAvailabilities}
                 workingHours={workingHours}
-                onEventClick={(event, clickEvent) =>
-                  onEventClick?.(event, clickEvent || ({} as React.MouseEvent))
-                }
+                onEventClick={handleAvailabilityClick}
                 onTimeSlotClick={onTimeSlotClick}
-                getEventStyle={getEventStyleLocal}
+                getAvailabilityStyle={getAvailabilityStyle}
               />
             )}
             {viewMode === '3-day' && (
-              <ThreeDayView
+              <AvailabilityThreeDayView
                 currentDate={currentDate}
-                events={optimizedEvents}
+                events={displayAvailabilities}
                 workingHours={workingHours}
-                onEventClick={(event, clickEvent) =>
-                  onEventClick?.(event, clickEvent || ({} as React.MouseEvent))
-                }
+                onEventClick={handleAvailabilityClick}
                 onTimeSlotClick={onTimeSlotClick}
-                getEventStyle={getEventStyleLocal}
+                getAvailabilityStyle={getAvailabilityStyle}
               />
             )}
             {viewMode === 'week' && (
-              <WeekView
+              <AvailabilityWeekView
                 currentDate={currentDate}
-                events={optimizedEvents}
+                events={displayAvailabilities}
                 workingHours={workingHours}
-                onEventClick={(event, clickEvent) =>
-                  onEventClick?.(event, clickEvent || ({} as React.MouseEvent))
-                }
+                onEventClick={handleAvailabilityClick}
                 onTimeSlotClick={onTimeSlotClick}
                 onDateClick={handleDateClick}
-                getEventStyle={getEventStyleLocal}
+                getAvailabilityStyle={getAvailabilityStyle}
               />
             )}
             {viewMode === 'month' && (
-              <MonthView
+              <AvailabilityMonthView
                 currentDate={currentDate}
-                events={optimizedEvents}
-                onEventClick={(event, clickEvent) =>
-                  onEventClick?.(event, clickEvent || ({} as React.MouseEvent))
-                }
+                events={displayAvailabilities}
+                onEventClick={handleAvailabilityClick}
                 onDateClick={handleDateClick}
-                onEditEvent={onEditEvent}
-                getEventStyle={getEventStyleLocal}
+                onEditEvent={onEditAvailability}
+                getAvailabilityStyle={getAvailabilityStyle}
               />
             )}
           </CardContent>
         </Card>
-
-        
       </div>
     </CalendarErrorBoundary>
   );

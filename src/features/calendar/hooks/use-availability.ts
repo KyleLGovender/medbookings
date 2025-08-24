@@ -188,7 +188,6 @@ export function useUpdateAvailability(options?: {
   });
 }
 
-
 export function useDeleteAvailability(options?: {
   onSuccess?: (variables: { ids: string[]; scope?: 'single' | 'future' | 'all' }) => void;
 }) {

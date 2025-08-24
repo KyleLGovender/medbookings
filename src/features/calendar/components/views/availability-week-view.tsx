@@ -2,24 +2,25 @@ import { AvailabilityStatus } from '@prisma/client';
 import { Repeat } from 'lucide-react';
 
 import {
-  calculateEventGridPosition,
-  getEventsForDay,
+  getAvailabilityForDay,
   getWorkingTimeRange,
+  calculateAvailabilityTimeRange,
+  getAvailabilityStyle,
 } from '@/features/calendar/lib/calendar-utils';
-import { CalendarEvent } from '@/features/calendar/types/types';
 
-import { WeekViewProps } from './types';
+import { AvailabilityData, AvailabilityWeekViewProps } from './types';
 
-export function WeekView({
+// Availability-specific Week View Component
+export function AvailabilityWeekView({
   currentDate,
   events,
   workingHours,
   onEventClick,
   onTimeSlotClick,
   onDateClick,
-  getEventStyle,
-}: WeekViewProps) {
-  // Start week on Monday
+  getAvailabilityStyle,
+}: AvailabilityWeekViewProps) {
+  // Start week on Monday (matching original pattern)
   const startOfWeek = new Date(currentDate);
   const dayOfWeek = currentDate.getDay();
   const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -31,41 +32,20 @@ export function WeekView({
     return day;
   });
 
-  // Calculate display time range based on events
-  const getDisplayTimeRange = () => {
-    const defaultStart = 6; // 6 AM
-    const defaultEnd = 18; // 6 PM
-
-    let earliestHour = defaultStart;
-    let latestHour = defaultEnd;
-
-    // Check all events to extend range if needed
-    events.forEach((event) => {
-      const startHour = new Date(event.startTime).getHours();
-      const endHour = new Date(event.endTime).getHours();
-
-      if (startHour < earliestHour) earliestHour = startHour;
-      if (endHour > latestHour) latestHour = endHour;
-    });
-
-    return { start: earliestHour, end: latestHour };
-  };
-
-  const timeRange = getDisplayTimeRange();
+  // Calculate display time range using common utility
+  const timeRange = calculateAvailabilityTimeRange(events);
   const hours = Array.from(
     { length: timeRange.end - timeRange.start },
     (_, i) => timeRange.start + i
   );
-  const workingStartHour = parseInt(workingHours.start.split(':')[0]);
-  const workingEndHour = parseInt(workingHours.end.split(':')[0]);
 
   const getEventsForDate = (date: Date) => {
-    return getEventsForDay(events, date);
+    return getAvailabilityForDay(events, date);
   };
 
-  const calculateEventGridPositionLocal = (event: CalendarEvent) => {
-    const startTime = new Date(event.startTime);
-    const endTime = new Date(event.endTime);
+  const calculateAvailabilityGridPosition = (availability: AvailabilityData) => {
+    const startTime = new Date(availability.startTime);
+    const endTime = new Date(availability.endTime);
 
     // Convert to hour-based grid slots, accounting for display range offset
     // The events grid has hours.length * 2 rows, so we need to multiply by 2
@@ -130,10 +110,12 @@ export function WeekView({
               </div>
             </div>
 
-            {/* Days columns */}
-            <div className="flex flex-auto divide-x divide-gray-100">
-              {days.map((day, dayIndex) => (
-                <div key={dayIndex} className="relative flex-1">
+            {/* Day columns */}
+            {days.map((day, dayIndex) => {
+              const dayAvailabilities = getEventsForDate(day);
+
+              return (
+                <div key={dayIndex} className="relative flex-1 border-l border-gray-100">
                   {/* Background grid for this day */}
                   <div
                     className="absolute inset-0 grid"
@@ -148,56 +130,63 @@ export function WeekView({
                     ))}
                   </div>
 
-                  {/* Events for this day */}
+                  {/* Availabilities for this day */}
                   <ol
                     className="absolute inset-0 grid grid-cols-1"
                     style={{ gridTemplateRows: `repeat(${hours.length * 2}, minmax(0, 1fr))` }}
                   >
-                    {getEventsForDate(day).map((event) => {
-                      const { gridRow } = calculateEventGridPositionLocal(event);
+                    {dayAvailabilities.map((availability) => {
+                      const { gridRow } = calculateAvailabilityGridPosition(availability);
                       return (
-                        <li key={event.id} className="relative mt-px flex" style={{ gridRow }}>
+                        <li
+                          key={availability.id}
+                          className="relative mt-px flex"
+                          style={{ gridRow }}
+                        >
                           <a
                             href="#"
-                            className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getEventStyle(event)} shadow-sm hover:opacity-80`}
+                            className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getAvailabilityStyle(availability)} shadow-sm hover:opacity-80`}
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              onEventClick?.(event, e);
+                              onEventClick?.(availability, e);
                             }}
                           >
-                            <p className="order-1 flex items-center gap-1 truncate font-semibold">
-                              {event.title}
-                              {event.isRecurring && (
-                                <Repeat className="h-3 w-3 flex-shrink-0 text-blue-500" />
+                            <p className="order-1 flex items-center gap-1 font-semibold">
+                              {availability.provider?.user?.name || 'Provider'}
+                              {availability.isRecurring && (
+                                <Repeat className="h-3 w-3 text-blue-500" />
                               )}
                             </p>
                             <p className="text-xs opacity-75">
-                              <time dateTime={event.startTime.toISOString()}>
-                                {event.startTime.toLocaleTimeString([], {
+                              <time dateTime={availability.startTime.toString()}>
+                                {new Date(availability.startTime).toLocaleTimeString([], {
                                   hour: '2-digit',
                                   minute: '2-digit',
                                 })}
                               </time>
-                              {event.type === 'availability' && (
-                                <span>
-                                  {' - '}
-                                  <time dateTime={event.endTime.toISOString()}>
-                                    {event.endTime.toLocaleTimeString([], {
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                    })}
-                                  </time>
-                                </span>
-                              )}
+                              <span>
+                                {' - '}
+                                <time dateTime={availability.endTime.toString()}>
+                                  {new Date(availability.endTime).toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </time>
+                              </span>
                             </p>
-                            {event.type === 'availability' && (
-                              <div className="text-xs">
-                                {event.status === AvailabilityStatus.PENDING && '🟡'}
-                                {event.status === AvailabilityStatus.ACCEPTED && '✅'}
-                                {event.status === AvailabilityStatus.CANCELLED && '⏸️'}
-                                {event.status === AvailabilityStatus.REJECTED && '❌'}
+                            <div className="text-xs">
+                              {availability.status === AvailabilityStatus.PENDING && '🟡'}
+                              {availability.status === AvailabilityStatus.ACCEPTED && '✅'}
+                              {availability.status === AvailabilityStatus.REJECTED && '❌'}
+                            </div>
+                            {availability.location && (
+                              <div className="truncate text-xs opacity-75">
+                                📍 {availability.location.name}
                               </div>
+                            )}
+                            {availability.isOnlineAvailable && (
+                              <div className="text-xs opacity-75">💻 Online</div>
                             )}
                           </a>
                         </li>
@@ -205,8 +194,8 @@ export function WeekView({
                     })}
                   </ol>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         </div>
       </div>

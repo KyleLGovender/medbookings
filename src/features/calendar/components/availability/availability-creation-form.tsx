@@ -187,11 +187,11 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
       // Ensure all Date fields are properly converted and enforce online-only for provider self-scheduling
       const startTime = data.startTime instanceof Date ? data.startTime : new Date(data.startTime);
       const endTime = data.endTime instanceof Date ? data.endTime : new Date(data.endTime);
-      
+
       // Round times to clean minutes (zero seconds and milliseconds)
       startTime.setSeconds(0, 0);
       endTime.setSeconds(0, 0);
-      
+
       const submitData: CreateAvailabilityInput = {
         ...data,
         startTime,
@@ -342,12 +342,15 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
                           onChange={(newTime) => {
                             // Get the current date from the start time (which is updated by DatePicker)
                             const currentStartTime = form.getValues('startTime');
-                            const baseDate = currentStartTime instanceof Date ? currentStartTime : new Date(currentStartTime);
-                            
+                            const baseDate =
+                              currentStartTime instanceof Date
+                                ? currentStartTime
+                                : new Date(currentStartTime);
+
                             // Create new end time using the base date but with the selected time
                             const updatedEndTime = new Date(baseDate);
                             updatedEndTime.setHours(newTime.getHours(), newTime.getMinutes(), 0, 0);
-                            
+
                             field.onChange(updatedEndTime);
                           }}
                         />

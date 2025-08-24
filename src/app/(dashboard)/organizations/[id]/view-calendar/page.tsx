@@ -1,6 +1,6 @@
 'use client';
 
-import { OrganizationCalendarView } from '@/features/calendar/components/organization-calendar-view';
+// import { OrganizationCalendarView } from '@/features/calendar/components/organization-calendar-view';
 
 interface OrganizationCalendarPageProps {
   params: {
@@ -11,11 +11,10 @@ interface OrganizationCalendarPageProps {
 export default function OrganizationCalendarPage({ params }: OrganizationCalendarPageProps) {
   return (
     <div className="container mx-auto py-6">
-      <OrganizationCalendarView
-        organizationId={params.id}
-        viewMode="week"
-        showCoverageGaps={false}
-      />
+      <div className="p-4">
+        <p>Organization calendar view needs to be implemented</p>
+        <p>Organization ID: {params.id}</p>
+      </div>
     </div>
   );
 }

@@ -18,7 +18,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserAvatar } from '@/components/user-avatar';
 import {
   Dialog,
   DialogContent,
@@ -35,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { UserAvatar } from '@/components/user-avatar';
 import { useManageOrganizationProviderConnection } from '@/features/organizations/hooks/use-provider-connections';
 import { useToast } from '@/hooks/use-toast';
 import { type RouterOutputs } from '@/utils/api';

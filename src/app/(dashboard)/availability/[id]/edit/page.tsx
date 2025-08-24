@@ -3,10 +3,11 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { ArrowLeft, Calendar } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AvailabilityEditForm } from '@/features/calendar/components/availability/availability-edit-form';
-import { ArrowLeft, Calendar } from 'lucide-react';
 
 interface EditAvailabilityPageProps {
   params: {
@@ -17,7 +18,7 @@ interface EditAvailabilityPageProps {
 function EditAvailabilityPageContent({ params }: EditAvailabilityPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   // Get scope from URL search params (single, future, all)
   const scope = searchParams.get('scope') as 'single' | 'future' | 'all' | null;
 
@@ -30,7 +31,7 @@ function EditAvailabilityPageContent({ params }: EditAvailabilityPageProps) {
   };
 
   const handleCancel = () => {
-    // Navigate back to where user came from  
+    // Navigate back to where user came from
     router.push(returnUrl);
   };
 
@@ -42,11 +43,7 @@ function EditAvailabilityPageContent({ params }: EditAvailabilityPageProps) {
           <p className="mt-1 text-sm text-muted-foreground">
             Unable to edit availability without a valid ID.
           </p>
-          <Button
-            variant="outline"
-            onClick={() => router.push('/calendar')}
-            className="mt-4"
-          >
+          <Button variant="outline" onClick={() => router.push('/calendar')} className="mt-4">
             Return to Calendar
           </Button>
         </CardContent>
@@ -59,12 +56,7 @@ function EditAvailabilityPageContent({ params }: EditAvailabilityPageProps) {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleCancel}
-            className="gap-2"
-          >
+          <Button variant="ghost" size="sm" onClick={handleCancel} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
@@ -77,7 +69,9 @@ function EditAvailabilityPageContent({ params }: EditAvailabilityPageProps) {
           Update your availability settings and configuration.
           {scope && scope !== 'single' && (
             <span className="ml-2 inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
-              {scope === 'future' ? 'Updating this and future occurrences' : 'Updating all occurrences'}
+              {scope === 'future'
+                ? 'Updating this and future occurrences'
+                : 'Updating all occurrences'}
             </span>
           )}
         </p>

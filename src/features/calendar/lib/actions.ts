@@ -217,26 +217,28 @@ export async function validateAvailabilityUpdate(data: UpdateAvailabilityData): 
     // Validate input data
     const validatedData = updateAvailabilityDataSchema.parse(data);
 
-    // Validate scope for recurring availability
+    // Validate scope parameter
     if (validatedData.scope) {
-      // Check if this is a recurring availability first
-      const targetAvailability = await prisma.availability.findUnique({
-        where: { id: validatedData.id },
-        select: { isRecurring: true, seriesId: true },
-      });
-
-      if (!targetAvailability?.isRecurring) {
-        return {
-          success: false,
-          error: 'Scope parameter can only be used with recurring availability',
-        };
-      }
-
       if (!['single', 'future', 'all'].includes(validatedData.scope)) {
         return {
           success: false,
           error: 'Invalid scope parameter. Must be "single", "future", or "all"',
         };
+      }
+
+      // Check if this is a recurring availability for non-single scopes
+      if (validatedData.scope !== 'single') {
+        const targetAvailability = await prisma.availability.findUnique({
+          where: { id: validatedData.id },
+          select: { isRecurring: true, seriesId: true },
+        });
+
+        if (!targetAvailability?.isRecurring) {
+          return {
+            success: false,
+            error: 'Scope "future" and "all" can only be used with recurring availability',
+          };
+        }
       }
     }
 
