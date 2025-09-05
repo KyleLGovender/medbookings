@@ -3,10 +3,8 @@
 This file provides guidance to Claude Code when working with the MedBookings repository.
 
 ## Analysis Mode
-- Do NOT assume conventional project patterns
-- Do analyse the entire codebase to confirm the project's pattern
-- Do NOT assume framework conventions for directory structure  
-- Do analyse the entire codebase to confirm the framework's implemented directory structure 
+- Do NOT assume conventional project patterns, you need to analyse the entire codebase to confirm the project's pattern
+- Do NOT assume framework conventions for directory structure and files that exist, you analyse the entire codebase to confirm 
 
 ## Command Execution Policy
 
