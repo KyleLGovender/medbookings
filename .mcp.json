@@ -2,7 +2,7 @@
   "mcpServers": {
     "filesystem-server": {
       "command": "npx",
-      "args": ["@modelcontextprotocol/server-filesystem", "/tmp"]
+      "args": ["@modelcontextprotocol/server-filesystem", "."]
     },
     "postgres-server": {
       "type": "stdio",

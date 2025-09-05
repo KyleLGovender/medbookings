@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code when working with the MedBookings repository.
 
+## Analysis Mode
+- Do NOT assume conventional project patterns
+- Do analyse the entire codebase to confirm the project's pattern
+- Do NOT assume framework conventions for directory structure  
+- Do analyse the entire codebase to confirm the framework's implemented directory structure 
+
 ## Command Execution Policy
 
 **NEVER execute directly:**
@@ -23,8 +29,8 @@ This file provides guidance to Claude Code when working with the MedBookings rep
 ## Core Development Principles
 
 - **95% Confidence Rule**: Only implement when 95% confident, ask questions if below threshold
+- **File Edit**: You are not allowed to write code into files before my explicit approval
 - **Task Completion**: Display modified files list with explanations
-- **Git Commits**: Commit after each subtask with descriptive messages
 - **Server Management**: Never start dev server - request user to do it
 
 ## Tech Stack
