@@ -5,11 +5,13 @@ This document provides an index of third-party technology documentation for the 
 ## Frameworks
 
 ### 🚀 [Next.js 14](./frameworks/next-js-14.md)
+
 - **Version**: 14.2.15
 - **Key Features**: App Router, Server Components, Server Actions, Route Handlers
 - **Usage**: Core framework for the MedBookings web application
 
 ### 📝 [React Hook Form v7](./frameworks/react-hook-form-v7.md)
+
 - **Version**: 7.57.0
 - **Key Features**: Form validation, type safety, performance optimization
 - **Usage**: Form handling throughout the application
@@ -17,16 +19,19 @@ This document provides an index of third-party technology documentation for the 
 ## APIs & Data Management
 
 ### 🔐 [NextAuth.js v4](./apis/nextauth-v4.md)
+
 - **Version**: 4.24.10
 - **Key Features**: OAuth providers, JWT/database sessions, middleware protection
 - **Usage**: Authentication and authorization system
 
 ### 🗄️ [Prisma 5](./apis/prisma-5.md)
+
 - **Version**: 5.22.0
 - **Key Features**: Type-safe database client, schema management, migrations
 - **Usage**: Primary ORM for PostgreSQL database operations
 
 ### 🔄 [TanStack Query v5](./apis/tanstack-query-v5.md)
+
 - **Version**: 5.60.6
 - **Key Features**: Server state management, caching, mutations, optimistic updates
 - **Usage**: API data fetching and state management
@@ -34,6 +39,7 @@ This document provides an index of third-party technology documentation for the 
 ## Libraries
 
 ### ✅ [Zod v3](./libraries/zod-v3.md)
+
 - **Version**: 3.25.48
 - **Key Features**: Schema validation, type inference, runtime validation
 - **Usage**: Data validation and type safety
@@ -41,17 +47,20 @@ This document provides an index of third-party technology documentation for the 
 ## UI & Styling
 
 ### 🎨 [Tailwind CSS](./ui/tailwind-css.md)
+
 - **Version**: 3.4.1
 - **Key Features**: Utility-first CSS, responsive design, dark mode
 - **Usage**: Primary styling solution
 
 ### 🎨 [shadcn/ui](./ui/shadcn-ui.md)
+
 - **Key Features**: Copy-paste components, Radix UI primitives, full customization
 - **Usage**: Primary component library built on Radix UI and Tailwind CSS
 
 ## Quick Reference
 
 ### Package Versions in Use
+
 ```json
 {
   "next": "14.2.15",
@@ -65,6 +74,7 @@ This document provides an index of third-party technology documentation for the 
 ```
 
 ### Development Commands
+
 - `npm run dev` - Start development server
 - `npm run build` - Production build (includes Prisma generate)
 - `npx prisma generate` - Generate Prisma client

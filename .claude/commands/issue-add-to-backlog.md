@@ -1,4 +1,3 @@
-
 Please help me add this issue to the project backlog: $ARGUMENTS
 
 ## Goal
@@ -19,21 +18,25 @@ To collect issue details through structured questions and automatically update t
 The AI should ask these questions to properly categorize and prioritize the issue:
 
 ### Issue Classification
+
 - **Issue Type:** "Is this a bug fix, new feature, enhancement to existing feature, or technical debt/chore?"
 - **Issue Title:** "What would you call this issue? (I'll suggest a clear, actionable title)"
 
 ### Priority Assessment
+
 - **User Impact:** "How does this affect users? Does it break functionality, cause confusion, or just minor inconvenience?"
 - **Urgency:** "How soon does this need to be addressed? Is it blocking other work or user workflows?"
 - **Scope:** "How many users/areas of the app does this affect?"
 
 ### Context & Details
+
 - **Current Behavior:** "What's happening now that shouldn't be?"
 - **Expected Behavior:** "What should happen instead?"
 - **Steps to Reproduce:** "How can someone reproduce this issue?"
 - **Files/Areas Affected:** "Do you know which files or parts of the app are involved?"
 
 ### Implementation Context
+
 - **Complexity:** "Does this seem like a quick fix or a complex change?"
 - **Dependencies:** "Does this relate to or depend on any other issues or features?"
 - **Additional Context:** "Anything else important to know about this issue?"
@@ -43,6 +46,7 @@ The AI should ask these questions to properly categorize and prioritize the issu
 Based on the answers, classify as:
 
 ### 🔥 High Priority
+
 - Blocks user workflows or core functionality
 - Affects many users
 - Security issues
@@ -50,6 +54,7 @@ Based on the answers, classify as:
 - Urgent business needs
 
 ### 📊 Medium Priority
+
 - Improves user experience but doesn't break functionality
 - Affects some users
 - Performance improvements
@@ -57,6 +62,7 @@ Based on the answers, classify as:
 - Minor bugs with workarounds
 
 ### 🧹 Low Priority / Technical Debt
+
 - Nice-to-have improvements
 - Code quality issues
 - Minor UI polish
@@ -125,7 +131,7 @@ How does this affect users? Do they think the save failed, or do they click it m
 
 AI: "✅ Added to Medium Priority Backlog in backlog.md:
 - [ ] Add loading state to profile save button - Users need visual feedback when saving
-  - **Type:** Enhancement  
+  - **Type:** Enhancement
   - **Impact:** Improves user confidence in save actions
   - **Files:** Profile page components
   - **Added:** 2025-01-17

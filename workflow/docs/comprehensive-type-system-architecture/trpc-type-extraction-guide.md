@@ -9,7 +9,7 @@
 **MedBookings has successfully implemented Option C architecture across all 200+ files:**
 
 - ✅ **ALL tRPC procedures perform database queries directly** - implemented across all 8 routers
-- ✅ **ALL server actions handle only business logic** - validated across all features  
+- ✅ **ALL server actions handle only business logic** - validated across all features
 - ✅ **ALL endpoints use single database query pattern** - eliminates duplicate operations
 - ✅ **ALL server actions return minimal metadata only** - no database results returned
 - ✅ **Zero type drift achieved** - automatic Prisma → tRPC → Client type inference throughout codebase
@@ -17,6 +17,7 @@
 **Result**: Maximum performance with zero type maintenance overhead across the entire application.
 
 ## Table of Contents
+
 1. [Quick Reference](#quick-reference)
 2. [Core Concepts](#core-concepts)
 3. [Basic Type Extraction](#basic-type-extraction)
@@ -51,6 +52,7 @@ type OptionalField = NonNullable<RouterOutputs['routerName']['get']>['optionalFi
 MedBookings uses two distinct type sources:
 
 1. **Manual Types** (`/features/*/types/`)
+
    - Domain enums
    - Form schemas
    - Business logic
@@ -65,13 +67,13 @@ MedBookings uses two distinct type sources:
 
 ### When to Use Each
 
-| Use Case | Type Source | Example |
-|----------|------------|---------|
-| Server data from API | RouterOutputs | `RouterOutputs['admin']['getProvider']` |
-| Domain enums | Manual types | `import { AdminApprovalStatus } from '@/features/admin/types/types'` |
-| Form validation | Manual types | `import { rejectionReasonSchema } from '@/features/admin/types/schemas'` |
-| Database query results | RouterOutputs | `RouterOutputs['providers']['getAll']` |
-| Business calculations | Manual types | `import { calculateOverage } from '@/features/billing/types/types'` |
+| Use Case               | Type Source   | Example                                                                  |
+| ---------------------- | ------------- | ------------------------------------------------------------------------ |
+| Server data from API   | RouterOutputs | `RouterOutputs['admin']['getProvider']`                                  |
+| Domain enums           | Manual types  | `import { AdminApprovalStatus } from '@/features/admin/types/types'`     |
+| Form validation        | Manual types  | `import { rejectionReasonSchema } from '@/features/admin/types/schemas'` |
+| Database query results | RouterOutputs | `RouterOutputs['providers']['getAll']`                                   |
+| Business calculations  | Manual types  | `import { calculateOverage } from '@/features/billing/types/types'`      |
 
 ## Basic Type Extraction
 
@@ -90,9 +92,9 @@ type Provider = RouterOutputs['providers']['getById'];
 function ProviderDetail({ providerId }: { providerId: string }) {
   const { data: provider } = useProvider(providerId);
   //    ↑ TypeScript knows this is Provider | undefined
-  
+
   if (!provider) return <Loading />;
-  
+
   return <div>{provider.name}</div>; // Full type safety!
 }
 ```
@@ -107,7 +109,7 @@ type SingleProvider = Providers[number];
 // Usage
 function ProviderList() {
   const { data: providers } = useProviders();
-  
+
   return (
     <div>
       {providers?.map((provider: SingleProvider) => (
@@ -170,6 +172,9 @@ type ProviderBasic = Pick<
 ### Scenario 1: Component Props
 
 ```typescript
+// ✅ NEW: tRPC type extraction
+import { type RouterOutputs } from '@/utils/api';
+
 // ❌ OLD: Manual interface
 interface ProviderCardProps {
   provider: {
@@ -179,9 +184,6 @@ interface ProviderCardProps {
     // ... manually maintained
   };
 }
-
-// ✅ NEW: tRPC type extraction
-import { type RouterOutputs } from '@/utils/api';
 
 type Provider = NonNullable<RouterOutputs['providers']['getAll']>[number];
 
@@ -195,9 +197,10 @@ interface ProviderCardProps {
 
 ```typescript
 // Combine server data with domain types
-import { type RouterOutputs } from '@/utils/api';
-import { updateProviderSchema } from '@/features/providers/types/schemas';
 import type { z } from 'zod';
+
+import { updateProviderSchema } from '@/features/providers/types/schemas';
+import { type RouterOutputs } from '@/utils/api';
 
 type Provider = RouterOutputs['providers']['getById'];
 type UpdateProviderInput = z.infer<typeof updateProviderSchema>;
@@ -218,16 +221,13 @@ function EditProviderForm({ provider }: { provider: Provider }) {
 
 ```typescript
 // Use domain enums with server data
-import { type RouterOutputs } from '@/utils/api';
 import { ProviderStatus } from '@/features/providers/types/types';
+import { type RouterOutputs } from '@/utils/api';
 
 type Providers = RouterOutputs['providers']['getAll'];
 
-function filterProviders(
-  providers: Providers,
-  status: ProviderStatus
-): Providers {
-  return providers.filter(p => p.status === status);
+function filterProviders(providers: Providers, status: ProviderStatus): Providers {
+  return providers.filter((p) => p.status === status);
 }
 ```
 
@@ -236,7 +236,11 @@ function filterProviders(
 ### Example 1: Admin Provider List
 
 **Before (Manual Types):**
+
 ```typescript
+// In component
+import { AdminProviderListItem } from '@/features/admin/types/types';
+
 // ❌ In types file
 export interface AdminProviderListItem {
   id: string;
@@ -253,15 +257,13 @@ export interface AdminProviderListItem {
   }>;
 }
 
-// In component
-import { AdminProviderListItem } from '@/features/admin/types/types';
-
 function ProviderList({ providers }: { providers: AdminProviderListItem[] }) {
   // ...
 }
 ```
 
 **After (tRPC Types):**
+
 ```typescript
 // ✅ In component
 import { type RouterOutputs } from '@/utils/api';
@@ -272,11 +274,11 @@ type AdminProvider = AdminProviders[number];
 
 function ProviderList() {
   const { data: providers } = api.admin.getProviders.useQuery();
-  
+
   const pendingProviders = providers?.filter(
     (p: AdminProvider) => p.status === AdminApprovalStatus.PENDING_APPROVAL
   );
-  
+
   return (
     <div>
       {pendingProviders?.map((provider: AdminProvider) => (
@@ -290,6 +292,7 @@ function ProviderList() {
 ### Example 2: Organization Details
 
 **Before:**
+
 ```typescript
 // ❌ Manual interface
 interface OrganizationWithRelations extends Organization {
@@ -300,6 +303,7 @@ interface OrganizationWithRelations extends Organization {
 ```
 
 **After:**
+
 ```typescript
 // ✅ tRPC extraction
 type OrganizationDetail = RouterOutputs['organizations']['getDetail'];
@@ -311,6 +315,7 @@ type Connections = NonNullable<OrganizationDetail>['providerConnections'];
 ### Example 3: Billing Subscription
 
 **Before:**
+
 ```typescript
 // ❌ Complex manual type
 interface SubscriptionWithPlan {
@@ -326,6 +331,7 @@ interface SubscriptionWithPlan {
 ```
 
 **After:**
+
 ```typescript
 // ✅ Direct extraction
 type Subscription = RouterOutputs['billing']['getSubscription'];
@@ -339,34 +345,38 @@ type SingleUsageRecord = UsageRecords[number];
 ### Issue 1: Type is `any`
 
 **Problem:** RouterOutputs shows as `any`
+
 ```typescript
 type Provider = RouterOutputs['providers']['getById']; // any
 ```
 
 **Solution:** Ensure tRPC router is properly typed
+
 ```typescript
 // In server/api/routers/providers.ts
 export const providersRouter = createTRPCRouter({
-  getById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      return await ctx.prisma.provider.findUnique({
-        where: { id: input.id },
-        include: { /* ... */ },
-      });
-    }),
+  getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    return await ctx.prisma.provider.findUnique({
+      where: { id: input.id },
+      include: {
+        /* ... */
+      },
+    });
+  }),
 });
 ```
 
 ### Issue 2: Deeply Nested Types
 
 **Problem:** Complex nested extraction
+
 ```typescript
 // Hard to read
 type X = NonNullable<NonNullable<RouterOutputs['a']['b']>['c']>[number]['d'];
 ```
 
 **Solution:** Break it down
+
 ```typescript
 type ApiResponse = RouterOutputs['a']['b'];
 type CField = NonNullable<ApiResponse>['c'];
@@ -377,12 +387,14 @@ type DField = CItem['d'];
 ### Issue 3: Optional Chaining in Types
 
 **Problem:** Need to handle nullable relations
+
 ```typescript
 // This won't work if organization can be null
 type OrgName = Provider['organization']['name']; // Error!
 ```
 
 **Solution:** Use NonNullable
+
 ```typescript
 type Organization = NonNullable<Provider>['organization'];
 type OrgName = NonNullable<Organization>['name'];

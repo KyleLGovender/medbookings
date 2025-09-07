@@ -26,12 +26,12 @@ type AdminProviders = RouterOutputs['admin']['getProviders'];
 
 export function ProviderComponent({ providerId }: { providerId: string }) {
   const { data: provider } = useAdminProvider(providerId);
-  
+
   // Mix server data with domain logic
   const handleStatusUpdate = (newStatus: AdminApprovalStatus) => {
     // Business logic using domain enum + server data
   };
-  
+
   return (
     <div>
       {/* Perfect IntelliSense from server type */}
@@ -49,11 +49,11 @@ export function ProviderComponent({ providerId }: { providerId: string }) {
 ```
 Client Component
     ↓ (tRPC hook)
-tRPC Procedure 
+tRPC Procedure
     ↓ (business logic needed?)
 Server Action (business logic only)
     ↓ (return metadata)
-tRPC Procedure 
+tRPC Procedure
     ↓ (single database query)
 Prisma Database
     ↓ (automatic type inference)
@@ -61,6 +61,7 @@ Perfect TypeScript Types
 ```
 
 **Key Benefits**:
+
 - 🚀 **Performance**: Single database query per endpoint
 - 🔒 **Type Safety**: Automatic type propagation with zero drift
 - 🎯 **Clarity**: Clean separation between business logic and data access
@@ -94,7 +95,7 @@ type SingleProvider = Providers[number]; // Array item type
 
 export function ProviderList() {
   const { data: providers } = useProviders();
-  
+
   return (
     <div>
       {providers?.map((provider: SingleProvider) => (
@@ -117,11 +118,11 @@ type Service = NonNullable<AdminProvider>['services'][number];
 
 export function ProviderDetail({ providerId }: { providerId: string }) {
   const { data: provider } = useAdminProvider(providerId);
-  
-  const services = provider?.services?.map((service: Service) => 
+
+  const services = provider?.services?.map((service: Service) =>
     service.name
   );
-  
+
   return <div>{services?.join(', ')}</div>;
 }
 ```
@@ -137,11 +138,11 @@ type UpdateAvailabilityInput = RouterInputs['calendar']['update'];
 
 export function ProviderForm() {
   const createMutation = api.providers.create.useMutation();
-  
+
   const onSubmit = async (data: CreateProviderInput) => {
     await createMutation.mutateAsync(data);
   };
-  
+
   return <form onSubmit={handleSubmit(onSubmit)}>...</form>;
 }
 ```
@@ -159,10 +160,7 @@ export function useProviders(status?: ProviderStatus) {
 }
 
 export function useProvider(id: string | undefined) {
-  return api.providers.getById.useQuery(
-    { id: id || '' },
-    { enabled: !!id }
-  );
+  return api.providers.getById.useQuery({ id: id || '' }, { enabled: !!id });
 }
 
 // ❌ DON'T export types from hooks
@@ -181,7 +179,7 @@ type Providers = RouterOutputs['providers']['getAll'];
 export function ProviderList() {
   const { data: providers } = useProviders();
   // providers is automatically typed from tRPC procedure
-  
+
   return <div>{providers?.length} providers found</div>;
 }
 ```
@@ -192,40 +190,39 @@ export function ProviderList() {
 
 ```typescript
 // /server/api/routers/providers.ts
-import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc';
 import { z } from 'zod';
 
+import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc';
+
 export const providersRouter = createTRPCRouter({
-  getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      // Single database query with full relations
-      return ctx.prisma.provider.findUnique({
-        where: { id: input.id },
-        include: {
-          user: { select: { id: true, name: true, email: true } },
-          services: true,
-          typeAssignments: { include: { providerType: true } },
-        },
-      }); // Automatic type inference ✨
-    }),
-  
-  create: protectedProcedure
-    .input(createProviderSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Call server action for business logic
-      const result = await createProvider(input);
-      
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-      
-      // Single database query with automatic type inference
-      return ctx.prisma.provider.findUnique({
-        where: { id: result.providerId },
-        include: { /* full relations */ },
-      });
-    }),
+  getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    // Single database query with full relations
+    return ctx.prisma.provider.findUnique({
+      where: { id: input.id },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        services: true,
+        typeAssignments: { include: { providerType: true } },
+      },
+    }); // Automatic type inference ✨
+  }),
+
+  create: protectedProcedure.input(createProviderSchema).mutation(async ({ ctx, input }) => {
+    // Call server action for business logic
+    const result = await createProvider(input);
+
+    if (!result.success) {
+      throw new Error(result.error);
+    }
+
+    // Single database query with automatic type inference
+    return ctx.prisma.provider.findUnique({
+      where: { id: result.providerId },
+      include: {
+        /* full relations */
+      },
+    });
+  }),
 });
 ```
 
@@ -236,7 +233,7 @@ export const providersRouter = createTRPCRouter({
 export async function createProvider(data: CreateProviderInput) {
   // 1. Validation
   const validatedData = validateProviderData(data);
-  
+
   if (!validatedData.isValid) {
     return { success: false, error: validatedData.error };
   }
@@ -244,12 +241,12 @@ export async function createProvider(data: CreateProviderInput) {
   // 2. Business logic - notifications, workflows
   await sendProviderRegistrationEmail(data.email);
   await triggerApprovalWorkflow(data.userId);
-  
+
   // 3. Return minimal metadata only (NO database results)
-  return { 
-    success: true, 
+  return {
+    success: true,
     providerId: data.userId,
-    requiresApproval: true 
+    requiresApproval: true,
   };
 }
 ```
@@ -287,8 +284,8 @@ export type AdminFilterOptions = {
 
 ```typescript
 // /features/providers/types/schemas.ts
-import { z } from 'zod';
 import { ProviderStatus } from '@prisma/client';
+import { z } from 'zod';
 
 export const createProviderSchema = z.object({
   userId: z.string().uuid(),
@@ -363,13 +360,14 @@ providers?.map((provider) => provider.user?.name); // Full IntelliSense
 ### Adding a New Component
 
 1. **Create the component file**:
+
    ```typescript
    // /features/calendar/components/availability-view.tsx
    import { type RouterOutputs } from '@/utils/api';
-   
+
    // Extract types you need
    type Availability = RouterOutputs['calendar']['getAvailability'];
-   
+
    export function AvailabilityView({ providerId }: { providerId: string }) {
      const { data: availability } = useAvailability(providerId);
      return <div>{availability?.startTime}</div>;
@@ -377,10 +375,11 @@ providers?.map((provider) => provider.user?.name); // Full IntelliSense
    ```
 
 2. **Create the hook if needed**:
+
    ```typescript
    // /features/calendar/hooks/use-availability.ts
    import { api } from '@/utils/api';
-   
+
    export function useAvailability(providerId: string | undefined) {
      return api.calendar.getAvailability.useQuery(
        { providerId: providerId || '' },
@@ -405,6 +404,7 @@ providers?.map((provider) => provider.user?.name); // Full IntelliSense
 ### Adding Business Logic
 
 1. **Create server action for business logic**:
+
    ```typescript
    // /features/calendar/lib/actions.ts
    export async function createAvailability(data: CreateAvailabilityData) {
@@ -413,10 +413,10 @@ providers?.map((provider) => provider.user?.name); // Full IntelliSense
      if (!validated.isValid) {
        return { success: false, error: validated.error };
      }
-     
+
      // Business logic
      await notifyClientsOfAvailability(data.providerId);
-     
+
      return { success: true, availabilityId: data.id };
    }
    ```
@@ -428,11 +428,11 @@ providers?.map((provider) => provider.user?.name); // Full IntelliSense
      .input(createAvailabilitySchema)
      .mutation(async ({ ctx, input }) => {
        const result = await createAvailability(input);
-       
+
        if (!result.success) {
          throw new Error(result.error);
        }
-       
+
        return ctx.prisma.availability.findUnique({
          where: { id: result.availabilityId },
          include: { provider: true, slots: true },
@@ -466,7 +466,7 @@ export function useApproveProvider(options?: {
       const allQueries = cache.getAll();
       let previousData;
       let actualKey;
-      
+
       for (const query of allQueries) {
         const keyStr = JSON.stringify(query.queryKey);
         if (keyStr.includes('getProviders')) {
@@ -481,9 +481,7 @@ export function useApproveProvider(options?: {
         queryClient.setQueryData(actualKey, (old: any) => {
           if (!old) return old;
           return old.map((provider: any) =>
-            provider.id === providerId
-              ? { ...provider, status: 'APPROVED' }
-              : provider
+            provider.id === providerId ? { ...provider, status: 'APPROVED' } : provider
           );
         });
       }
@@ -496,7 +494,7 @@ export function useApproveProvider(options?: {
       if (context?.previousData && context?.actualKey) {
         queryClient.setQueryData(context.actualKey, context.previousData);
       }
-      
+
       if (options?.onError) {
         options.onError(err as Error);
       }
@@ -533,11 +531,11 @@ type SlotProvider = NonNullable<BookingSlot>['availability']['provider'];
 
 export function BookingDetails({ bookingId }: { bookingId: string }) {
   const { data: booking } = useBookingWithDetails(bookingId);
-  
+
   const service = booking?.slot?.service;
   const provider = booking?.slot?.availability?.provider;
   const config = booking?.slot?.serviceConfig;
-  
+
   return (
     <div>
       <h1>{service?.name}</h1>
@@ -551,6 +549,7 @@ export function BookingDetails({ bookingId }: { bookingId: string }) {
 ## 🚀 Performance Tips
 
 1. **Use staleTime for cached data**:
+
    ```typescript
    const { data: providers } = api.providers.getAll.useQuery(
      {},
@@ -559,6 +558,7 @@ export function BookingDetails({ bookingId }: { bookingId: string }) {
    ```
 
 2. **Enable queries conditionally**:
+
    ```typescript
    const { data: provider } = api.providers.getById.useQuery(
      { id: providerId || '' },
@@ -567,10 +567,11 @@ export function BookingDetails({ bookingId }: { bookingId: string }) {
    ```
 
 3. **Use parallel queries**:
+
    ```typescript
    const providerQuery = api.providers.getById.useQuery({ id: providerId });
    const servicesQuery = api.providers.getServices.useQuery({ providerId });
-   
+
    // Both queries run in parallel
    ```
 
@@ -581,6 +582,7 @@ export function BookingDetails({ bookingId }: { bookingId: string }) {
 **Problem**: `Property 'user' does not exist on type 'Provider'`
 
 **Solution**: Check if the tRPC procedure includes the relation:
+
 ```typescript
 // In your tRPC procedure, make sure you include the relation:
 return ctx.prisma.provider.findUnique({
@@ -592,8 +594,11 @@ return ctx.prisma.provider.findUnique({
 ### "Cannot find module '@/utils/api'" Import Error
 
 **Solution**: Make sure you're importing from the correct path:
+
 ```typescript
-import { type RouterOutputs, api } from '@/utils/api'; // ✅ Correct
+import { type RouterOutputs, api } from '@/utils/api';
+
+// ✅ Correct
 ```
 
 ### Type is `any` Instead of Proper Type
@@ -601,6 +606,7 @@ import { type RouterOutputs, api } from '@/utils/api'; // ✅ Correct
 **Problem**: tRPC hook returns `any` type
 
 **Solution**: Check that:
+
 1. The tRPC procedure has a return statement
 2. The procedure includes the necessary relations
 3. You're using the correct procedure name in the hook
@@ -610,6 +616,7 @@ import { type RouterOutputs, api } from '@/utils/api'; // ✅ Correct
 **Problem**: Multiple hooks trying to use the same query key
 
 **Solution**: Make sure each hook has unique parameters:
+
 ```typescript
 const providers = api.providers.getAll.useQuery({ status: 'ACTIVE' });
 const pendingProviders = api.providers.getAll.useQuery({ status: 'PENDING' });

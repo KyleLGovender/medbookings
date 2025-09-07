@@ -16,14 +16,16 @@ module.exports = {
         recommended: true,
       },
       messages: {
-        noTypeBarrel: 'Barrel exports are not allowed in type directories. Use direct imports instead.',
-        noIndexExport: 'Index files are not allowed in type directories. Use specific file names like types.ts, schemas.ts, guards.ts.',
+        noTypeBarrel:
+          'Barrel exports are not allowed in type directories. Use direct imports instead.',
+        noIndexExport:
+          'Index files are not allowed in type directories. Use specific file names like types.ts, schemas.ts, guards.ts.',
       },
       schema: [],
     },
     create(context) {
       const filename = context.getFilename();
-      
+
       return {
         // Check for export * from declarations in type files
         ExportAllDeclaration(node) {
@@ -34,7 +36,7 @@ module.exports = {
             });
           }
         },
-        
+
         // Check for index.ts files in type directories
         Program(node) {
           if (filename.endsWith('/types/index.ts') || filename.endsWith('/types/index.tsx')) {
@@ -61,28 +63,32 @@ module.exports = {
       },
       messages: {
         missingFileHeader: 'Type files must start with a descriptive header comment block.',
-        improperSectionOrder: 'Type sections must be organized as: Enums → Base Interfaces → Complex Interfaces → Utility Types → Prisma-Derived Types.',
-        missingJSDocComplex: 'Complex types and interfaces should have comprehensive JSDoc documentation.',
+        improperSectionOrder:
+          'Type sections must be organized as: Enums → Base Interfaces → Complex Interfaces → Utility Types → Prisma-Derived Types.',
+        missingJSDocComplex:
+          'Complex types and interfaces should have comprehensive JSDoc documentation.',
       },
       schema: [],
     },
     create(context) {
       const filename = context.getFilename();
       const sourceCode = context.getSourceCode();
-      
+
       // Only apply to type files
       if (!filename.includes('/types/types.ts')) {
         return {};
       }
-      
+
       return {
         Program(node) {
           const comments = sourceCode.getAllComments();
-          const hasHeaderComment = comments.some(comment => 
-            comment.value.includes('=============================================================================') &&
-            comment.value.includes('TYPES')
+          const hasHeaderComment = comments.some(
+            (comment) =>
+              comment.value.includes(
+                '============================================================================='
+              ) && comment.value.includes('TYPES')
           );
-          
+
           if (!hasHeaderComment) {
             context.report({
               node,
@@ -90,16 +96,16 @@ module.exports = {
             });
           }
         },
-        
+
         // Check for JSDoc on complex interfaces
         TSInterfaceDeclaration(node) {
           // Consider interfaces with more than 5 properties as "complex"
           if (node.body.body.length > 5) {
             const comments = sourceCode.getCommentsBefore(node);
-            const hasJSDoc = comments.some(comment => 
-              comment.type === 'Block' && comment.value.includes('*')
+            const hasJSDoc = comments.some(
+              (comment) => comment.type === 'Block' && comment.value.includes('*')
             );
-            
+
             if (!hasJSDoc) {
               context.report({
                 node,
@@ -124,8 +130,10 @@ module.exports = {
         recommended: true,
       },
       messages: {
-        useDirectImport: 'Import types directly from {{correctPath}} instead of using barrel exports.',
-        invalidTypeImport: 'Type imports should come from /types/types.ts, /types/schemas.ts, or /types/guards.ts files.',
+        useDirectImport:
+          'Import types directly from {{correctPath}} instead of using barrel exports.',
+        invalidTypeImport:
+          'Type imports should come from /types/types.ts, /types/schemas.ts, or /types/guards.ts files.',
       },
       schema: [],
     },
@@ -133,7 +141,7 @@ module.exports = {
       return {
         ImportDeclaration(node) {
           const importPath = node.source.value;
-          
+
           // Check for imports from feature barrel exports
           if (importPath.match(/^@\/features\/\w+\/types$/)) {
             const featureName = importPath.split('/')[2];
@@ -145,7 +153,7 @@ module.exports = {
               },
             });
           }
-          
+
           // Check for imports from global types directory without specific file
           if (importPath === '@/types') {
             context.report({
@@ -180,13 +188,13 @@ module.exports = {
     },
     create(context) {
       const filename = context.getFilename();
-      
+
       return {
         Program(node) {
           if (filename.includes('/types/')) {
             const baseName = filename.split('/').pop();
             const validNames = ['types.ts', 'schemas.ts', 'guards.ts', 'enums.ts'];
-            
+
             if (baseName === 'interfaces.ts') {
               context.report({
                 node,
@@ -217,7 +225,8 @@ module.exports = {
       },
       messages: {
         usePrismaGetPayload: 'Use Prisma.ModelGetPayload<{...}> pattern for database query types.',
-        consistentNaming: 'Prisma-derived types should follow the pattern: ModelNameDetailSelect, ModelNameListSelect, ModelNameBasicSelect.',
+        consistentNaming:
+          'Prisma-derived types should follow the pattern: ModelNameDetailSelect, ModelNameListSelect, ModelNameBasicSelect.',
       },
       schema: [],
     },
@@ -225,22 +234,22 @@ module.exports = {
       return {
         TSTypeAliasDeclaration(node) {
           const typeName = node.id.name;
-          
+
           // Check for Prisma-derived type naming patterns
           if (typeName.includes('Select') || typeName.includes('Include')) {
             const hasGetPayload = context.getSourceCode().getText(node).includes('GetPayload');
-            
+
             if (!hasGetPayload) {
               context.report({
                 node,
                 messageId: 'usePrismaGetPayload',
               });
             }
-            
+
             // Check naming convention
             const validSuffixes = ['DetailSelect', 'ListSelect', 'BasicSelect'];
-            const hasValidSuffix = validSuffixes.some(suffix => typeName.endsWith(suffix));
-            
+            const hasValidSuffix = validSuffixes.some((suffix) => typeName.endsWith(suffix));
+
             if (!hasValidSuffix) {
               context.report({
                 node,

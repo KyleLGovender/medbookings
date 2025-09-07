@@ -29,7 +29,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "next.config.mjs",
-    "prisma/**/*.mts",
+    "prisma/**/*.mts"
   ],
   "exclude": ["node_modules"]
 }

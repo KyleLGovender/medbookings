@@ -1,21 +1,23 @@
-
 Please process the task list from: $ARGUMENTS
 
 **Initial Steps:**
+
 1. **Read Task List:** Use the Read tool to read the task list file from the path provided in $ARGUMENTS
 2. **Identify Task Type:** Determine if this is a PRD task list or Issue task list
 3. **Validation:** If the task list is neither a PRD nor an Issue task list, respond with: "This doesn't appear to be a PRD or Issue task list. Please specify a task list type that I can process (PRD or Issue)."
-4. **Set Branch Strategy:** 
+4. **Set Branch Strategy:**
    - For Issue tasks: Create branch with `issue/` prefix
    - For PRD/Feature tasks: Create branch with `feature/` prefix
 
 ## Execution Modes
 
 ### Default Mode (Interactive)
+
 - **One sub-task at a time:** Do **NOT** start the next sub‑task until you ask the user for permission and they say "yes" or "y"
 - Stop after each sub‑task and wait for the user's go‑ahead.
 
 ### YOLO Mode (Continuous)
+
 - Execute all tasks continuously without stopping for confirmation
 - Use this mode when user explicitly requests "yolo mode"
 - Mark off tasks as completed but proceed immediately to next task without waiting
@@ -58,34 +60,37 @@ The task files contain actionable implementation steps, but the source specifica
 When implementing tasks, follow this Git workflow:
 
 1. **Create Branch (based on task type):**
+
    ```bash
    # For issue/bug fixes (from /workflow/issues/ task lists)
    git checkout -b issue/task-name-or-description
-   
+
    # For feature development (from /workflow/prds/ task lists)
    git checkout -b feature/task-name-or-description
    ```
 
 2. **Regular Development:**
+
    - Make incremental commits as you complete sub-tasks
    - Use descriptive commit messages referencing task numbers
    - Example: `feat(task-1.2): add subscription creation API with polymorphic validation`
 
 3. **Before Creating PR - Critical Build and Test Verification:**
+
    ```bash
    # REQUIRED: Verify application compiles successfully
    npm run build
-   
+
    # REQUIRED: Fix any compilation errors before proceeding
    # Only continue after successful build
-   
+
    # REQUIRED: Run Playwright e2e tests to verify functionality
    # **MUST USE PLAYWRIGHT MCP SERVER** - Never use bash npx playwright test
    # Use Playwright MCP tools for ALL e2e testing and troubleshooting
    # First take a browser snapshot to understand current state
    # Then use MCP browser tools to manually test critical user flows
    # Verify the availability creation form works end-to-end
-   
+
    # REQUIRED: Fix any failing functionality before proceeding to PR creation
    # Use Playwright MCP browser tools to:
    # - Navigate to failing pages/components
@@ -96,49 +101,52 @@ When implementing tasks, follow this Git workflow:
    ```
 
 4. **After All Tasks Complete, Build Passes, and Tests Pass:**
+
    ```bash
    # Stage all changes
    git add .
-   
+
    # Create comprehensive commit with task summary
    git commit -m "implement [task group name] - [brief description]
-   
+
    Completed Tasks:
    - Task X.X: [description]
    - Task Y.Y: [description]
-   
+
    Technical improvements:
    - [key improvement 1]
    - [key improvement 2]
-   
+
    Files modified: X files changed, Y insertions, Z deletions
-   
+
    🤖 Generated with [Claude Code](https://claude.ai/code)
-   
+
    Co-Authored-By: Claude <noreply@anthropic.com>"
-   
+
    # Push to remote (use appropriate branch prefix based on task type)
    git push -u origin issue/task-name       # For issue fixes
    git push -u origin feature/task-name     # For features
-   
+
    # Create PR with comprehensive description (adjust title based on task type)
    gh pr create --title "fix: [Task Group] - [Description]" --body "[detailed PR description]"    # For issues
    gh pr create --title "feat: [Task Group] - [Description]" --body "[detailed PR description]"   # For features
    ```
 
 5. **User Review Process (Only to be done by Developer. Never to be done by AI):**
+
    - User reviews PR on GitHub
    - User merges PR when satisfied
    - User deletes feature branch on GitHub (click "Delete branch" button)
 
 6. **Local Cleanup (Only to be done by Developer. Never to be done by AI):**
+
    ```bash
    # Switch back to master
    git checkout master
-   
+
    # Update local master with merged changes
    git pull origin master
-   
+
    # Delete local branch (use appropriate branch prefix based on task type)
    git branch -d issue/task-name         # For issue fixes
    git branch -d feature/task-name       # For features
@@ -159,6 +167,7 @@ When implementing tasks, follow this Git workflow:
 When working with task lists, the AI must:
 
 1. **Follow Git Workflow:**
+
    - **FIRST STEP**: Create feature branch before starting ANY work
    - Confirm branch creation and announce current branch to user
    - Make incremental commits after completing each sub-task
@@ -167,6 +176,7 @@ When working with task lists, the AI must:
    - Create detailed PR with proper description and test plan
 
 2. **Task Management:**
+
    - Regularly update the task list file after finishing any significant work
    - Follow the completion protocol:
      - Mark each finished **sub‑task** `[x]`
@@ -175,12 +185,14 @@ When working with task lists, the AI must:
    - Keep "Relevant Files" accurate and up to date
 
 3. **Execution Modes:**
+
    - **Before starting work**: Verify correct branch and announce current working branch
    - Check which sub‑task is next
    - **Default Mode:** After implementing a sub‑task, commit changes, update the file, and then pause for user approval
    - **YOLO Mode:** After implementing a sub‑task, commit changes, update the file, and immediately proceed to the next task without waiting for approval. When ALL tasks are complete, run `npm run build` repeatedly until it passes, then use Playwright MCP browser tools to manually test critical functionality and troubleshoot any issues until functionality is verified, then ASK USER for permission to create PR.
 
 4. **MCP Tool Usage:**
+
    - **PostgreSQL Server** (`mcp__postgres-server__query`): Use for database queries, constraint verification, data integrity checks
    - **Filesystem Server** (`mcp__filesystem-server__*`): Use for file operations when available, preferred over traditional file tools
    - **IDE Integration** (`mcp__ide__*`): Use for getting diagnostics and executing code when available
@@ -190,9 +202,10 @@ When working with task lists, the AI must:
    - **Test Debugging**: Use Playwright MCP tools to interactively debug failing tests, take screenshots, and verify fixes
 
 5. **Interactive Commands Policy:**
+
    - **NEVER** execute commands that require interactive environments (e.g., `npx prisma migrate dev`, `npm init`, interactive prompts)
    - **STOP and ASK** the user to execute these commands manually
-   - **Commands to avoid**: 
+   - **Commands to avoid**:
      - `npx prisma migrate dev` (requires interaction)
      - `npm init` (requires interaction)
      - Any command with interactive prompts or confirmations
@@ -203,6 +216,7 @@ When working with task lists, the AI must:
      - Use MCP PostgreSQL server for database verification instead of interactive commands
 
 6. **Build and Test Verification:**
+
    - **CRITICAL**: Before creating any PR, ALWAYS run `npm run build` to verify the application compiles successfully
    - **CRITICAL**: After successful build, **MUST USE PLAYWRIGHT MCP SERVER** to verify end-to-end functionality
    - **NEVER use bash `npx playwright test`** - Always use Playwright MCP browser tools

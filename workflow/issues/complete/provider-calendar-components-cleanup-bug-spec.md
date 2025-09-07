@@ -26,6 +26,7 @@ Key provider calendar components contain development artifacts, orphaned code, i
 ### Specific Component Issues
 
 **File:** `src/features/calendar/availability/components/provider-calendar-view.tsx`
+
 - Unused `selectedEvent` state management
 - Multiple TODO comments indicating incomplete functionality
 - Console.log statements in production code
@@ -33,11 +34,13 @@ Key provider calendar components contain development artifacts, orphaned code, i
 - Mixed TypeScript typing with some 'any' types
 
 **File:** `src/features/calendar/availability/components/availability-creation-form.tsx`
+
 - Duplicated form validation logic
 - Inconsistent error boundary implementation
 - Missing proper TypeScript interfaces
 
 **File:** `src/app/(dashboard)/providers/[id]/manage-calendar/page.tsx`
+
 - Poor separation between page orchestration and business logic
 - Inconsistent TanStack Query patterns
 - Missing proper error states
@@ -45,18 +48,21 @@ Key provider calendar components contain development artifacts, orphaned code, i
 ### Impact Assessment
 
 **Development Impact:**
+
 - Components cannot serve as reliable patterns for other calendar implementations
 - New developers struggle to understand inconsistent code patterns
 - Technical debt slows down future calendar feature development
 - Code review overhead increases due to quality inconsistencies
 
 **User Experience Impact:**
+
 - Inconsistent error states confuse users during calendar operations
 - Poor accessibility support excludes users with disabilities
 - Performance issues during calendar operations with large datasets
 - Unreliable error recovery mechanisms
 
 **Maintenance Impact:**
+
 - Difficult to debug production issues due to inconsistent logging
 - Hard to extend components due to poor architectural separation
 - Increased risk of regressions when making changes
@@ -65,14 +71,17 @@ Key provider calendar components contain development artifacts, orphaned code, i
 ## Implementation Requirements
 
 ### Task 1: Remove Development Artifacts and Debug Code
+
 **Priority:** High  
 **Files:** All provider calendar components  
 **Estimated Time:** 1-1.5 hours
 
 #### Problem Description
+
 Production components contain console.log statements, TODO comments, and debug code that should not exist in a production codebase.
 
 #### Implementation Steps
+
 1. **Audit All Calendar Components**: Search for console.log, TODO, FIXME, and debug comments
 2. **Remove Debug Statements**: Remove all console.log statements except critical error logging
 3. **Clean TODO Comments**: Either implement missing functionality or remove TODO comments
@@ -80,18 +89,22 @@ Production components contain console.log statements, TODO comments, and debug c
 5. **Standardize Logging**: Implement proper error logging using consistent patterns
 
 #### Code Changes Required
+
 ```typescript
+// DELETE
+// Replace with proper error logging:
+import { logger } from '@/lib/logger';
+
 // Remove patterns like:
 console.log('Debug: calendar data', data); // DELETE
 // TODO: Implement event modal // IMPLEMENT OR DELETE
 const unusedVariable = 'something'; // DELETE
 
-// Replace with proper error logging:
-import { logger } from '@/lib/logger';
 logger.error('Calendar data fetch failed', { error, providerId });
 ```
 
 #### Acceptance Criteria
+
 - [ ] No console.log statements in production code except error logging
 - [ ] No TODO or FIXME comments in codebase
 - [ ] No unused variables or dead code
@@ -100,14 +113,17 @@ logger.error('Calendar data fetch failed', { error, providerId });
 ---
 
 ### Task 2: Fix State Management and Component Architecture
+
 **Priority:** High  
 **Files:** `provider-calendar-view.tsx`, extracted view components  
 **Estimated Time:** 2-2.5 hours
 
 #### Problem Description
+
 `selectedEvent` state is declared but inconsistently used. Component architecture lacks proper separation of concerns with monolithic components.
 
 #### Implementation Steps
+
 1. **Audit State Usage**: Review all state declarations and their usage patterns
 2. **Complete Event Selection**: Either implement full event modal functionality or remove unused state
 3. **Extract View Components**: Separate WeekView, DayView, MonthView, ThreeDayView into individual files
@@ -115,6 +131,7 @@ logger.error('Calendar data fetch failed', { error, providerId });
 5. **Implement Proper Props**: Define clear interfaces for all component props
 
 #### Code Changes Required
+
 ```typescript
 // Extract components:
 // src/features/calendar/components/views/week-view.tsx
@@ -137,6 +154,7 @@ const handleEventClick = (event: CalendarEvent) => {
 ```
 
 #### Acceptance Criteria
+
 - [ ] All state variables are properly used or removed
 - [ ] View components extracted into separate files
 - [ ] Clear component interfaces defined
@@ -146,14 +164,17 @@ const handleEventClick = (event: CalendarEvent) => {
 ---
 
 ### Task 3: Implement Consistent Error Handling and Type Safety
+
 **Priority:** High  
 **Files:** All calendar components  
 **Estimated Time:** 2-2.5 hours
 
 #### Problem Description
+
 Inconsistent error handling patterns and missing TypeScript strict typing prevent reliable error recovery and development confidence.
 
 #### Implementation Steps
+
 1. **Standardize Error Boundaries**: Implement consistent error boundary patterns
 2. **Add Loading States**: Ensure all async operations have proper loading indicators
 3. **Type Safety Audit**: Remove all 'any' types and add strict TypeScript typing
@@ -161,6 +182,7 @@ Inconsistent error handling patterns and missing TypeScript strict typing preven
 5. **Error Recovery**: Implement proper error recovery mechanisms
 
 #### Code Changes Required
+
 ```typescript
 // Standardized error boundary:
 interface CalendarErrorBoundaryProps {
@@ -185,6 +207,7 @@ if (error) return <CalendarError error={error} onRetry={refetch} />;
 ```
 
 #### Acceptance Criteria
+
 - [ ] No 'any' types in calendar components
 - [ ] All props have proper TypeScript interfaces
 - [ ] Consistent error boundary implementation
@@ -194,14 +217,17 @@ if (error) return <CalendarError error={error} onRetry={refetch} />;
 ---
 
 ### Task 4: Code Deduplication and Shared Utilities
+
 **Priority:** Medium  
 **Files:** New utility files, all calendar components  
 **Estimated Time:** 1.5-2 hours
 
 #### Problem Description
+
 Duplicate time calculation, event positioning, and styling logic across calendar components increases maintenance burden and inconsistency.
 
 #### Implementation Steps
+
 1. **Identify Duplicate Logic**: Audit all calendar components for repeated code
 2. **Create Utility Functions**: Extract common logic into shared utilities
 3. **Standardize Calculations**: Create consistent time and date calculation functions
@@ -209,6 +235,7 @@ Duplicate time calculation, event positioning, and styling logic across calendar
 5. **Update Components**: Refactor components to use shared utilities
 
 #### Code Changes Required
+
 ```typescript
 // src/features/calendar/lib/calendar-utils.ts
 export const calculateTimeSlots = (startTime: Date, endTime: Date, interval: number) => {
@@ -228,6 +255,7 @@ import { calculateTimeSlots, getEventPosition, getEventStyles } from '../lib/cal
 ```
 
 #### Acceptance Criteria
+
 - [ ] Duplicate code identified and extracted
 - [ ] Shared utility functions created
 - [ ] Components updated to use shared utilities
@@ -237,14 +265,17 @@ import { calculateTimeSlots, getEventPosition, getEventStyles } from '../lib/cal
 ---
 
 ### Task 5: API Patterns and Performance Optimization
+
 **Priority:** Medium  
 **Files:** All calendar components, hooks  
 **Estimated Time:** 1.5-2 hours
 
 #### Problem Description
+
 Inconsistent TanStack Query usage, missing cache invalidation strategies, and lack of proper memoization for expensive calculations.
 
 #### Implementation Steps
+
 1. **Standardize Query Patterns**: Ensure consistent TanStack Query usage
 2. **Cache Invalidation**: Implement proper cache invalidation strategies
 3. **Performance Optimization**: Add memoization for expensive calculations
@@ -252,6 +283,7 @@ Inconsistent TanStack Query usage, missing cache invalidation strategies, and la
 5. **Error Handling**: Consistent API error handling patterns
 
 #### Code Changes Required
+
 ```typescript
 // Standardized query hook:
 export const useCalendarData = (providerId: string, dateRange: DateRange) => {
@@ -264,8 +296,8 @@ export const useCalendarData = (providerId: string, dateRange: DateRange) => {
 };
 
 // Memoized calculations:
-const timeSlots = useMemo(() => 
-  calculateTimeSlots(dayStart, dayEnd, interval), 
+const timeSlots = useMemo(
+  () => calculateTimeSlots(dayStart, dayEnd, interval),
   [dayStart, dayEnd, interval]
 );
 
@@ -275,6 +307,7 @@ queryClient.invalidateQueries(['calendar', providerId]);
 ```
 
 #### Acceptance Criteria
+
 - [ ] Consistent TanStack Query patterns
 - [ ] Proper cache invalidation strategies
 - [ ] Memoization for expensive calculations
@@ -284,14 +317,17 @@ queryClient.invalidateQueries(['calendar', providerId]);
 ---
 
 ### Task 6: Accessibility and Documentation
+
 **Priority:** Medium  
 **Files:** All calendar components  
 **Estimated Time:** 1.5-2 hours
 
 #### Problem Description
+
 Missing ARIA labels, keyboard navigation, screen reader support, and comprehensive JSDoc documentation.
 
 #### Implementation Steps
+
 1. **ARIA Labels**: Add comprehensive ARIA labels for screen readers
 2. **Keyboard Navigation**: Implement proper keyboard navigation patterns
 3. **Focus Management**: Ensure logical focus flow through calendar components
@@ -299,15 +335,16 @@ Missing ARIA labels, keyboard navigation, screen reader support, and comprehensi
 5. **Accessibility Testing**: Verify screen reader compatibility
 
 #### Code Changes Required
+
 ```typescript
 /**
  * ProviderCalendarView - Main calendar component for provider availability management
- * 
+ *
  * @param providerId - The ID of the provider whose calendar to display
  * @param viewMode - The current calendar view mode (day, week, month, 3-day)
  * @param onEventClick - Callback fired when an event is clicked
  * @param onTimeSlotClick - Callback fired when a time slot is clicked
- * 
+ *
  * @example
  * <ProviderCalendarView
  *   providerId="provider-123"
@@ -318,8 +355,8 @@ Missing ARIA labels, keyboard navigation, screen reader support, and comprehensi
  */
 
 // ARIA labels:
-<div 
-  role="grid" 
+<div
+  role="grid"
   aria-label={`Calendar for ${providerName}`}
   tabIndex={0}
   onKeyDown={handleKeyboardNavigation}
@@ -331,6 +368,7 @@ Missing ARIA labels, keyboard navigation, screen reader support, and comprehensi
 ```
 
 #### Acceptance Criteria
+
 - [ ] Comprehensive ARIA labels for screen readers
 - [ ] Proper keyboard navigation implemented
 - [ ] Logical focus flow through components
@@ -350,12 +388,14 @@ The calendar component technical debt stems from:
 ## Dependencies
 
 ### Internal Dependencies
+
 - Existing calendar functionality must remain working during refactoring
 - TanStack Query patterns from other features should be followed
 - UI component library (shadcn/ui) patterns should be maintained
 - TypeScript configuration and linting rules
 
 ### External Dependencies
+
 - Calendar view functionality for providers
 - Availability creation and editing workflows
 - Integration with booking system
@@ -364,12 +404,14 @@ The calendar component technical debt stems from:
 ## Testing Strategy
 
 ### Automated Testing
+
 - **Unit Tests**: Test individual utility functions and component logic
 - **Integration Tests**: Test component interactions and data flow
 - **Type Checking**: Ensure TypeScript compilation without warnings
 - **Lint Testing**: Verify ESLint and Prettier rules compliance
 
 ### Manual Testing Checklist
+
 - [ ] Calendar navigation works smoothly across all view modes
 - [ ] Event creation and editing flows function correctly
 - [ ] Error states display appropriately and allow recovery
@@ -380,6 +422,7 @@ The calendar component technical debt stems from:
 - [ ] No console errors or warnings in browser developer tools
 
 ### Performance Testing
+
 - [ ] Calendar renders efficiently with 100+ events
 - [ ] View switching is responsive and smooth
 - [ ] Memory usage remains stable during extended use
@@ -390,6 +433,7 @@ The calendar component technical debt stems from:
 **Medium Risk** - While this is primarily refactoring work, the calendar is a core user-facing feature. Careful testing and incremental changes are recommended.
 
 **Mitigation Strategies:**
+
 - Implement changes incrementally with thorough testing at each step
 - Maintain feature flags for rollback capability if needed
 - Comprehensive regression testing after each major refactoring
@@ -398,6 +442,7 @@ The calendar component technical debt stems from:
 ## Success Criteria
 
 ### Code Quality
+
 - ✅ Zero console.log statements in production code (except error logging)
 - ✅ No TODO or FIXME comments in codebase
 - ✅ All TypeScript types are strict (no 'any' types)
@@ -405,6 +450,7 @@ The calendar component technical debt stems from:
 - ✅ Comprehensive JSDoc documentation
 
 ### Architecture
+
 - ✅ Clean separation of concerns between components
 - ✅ Reusable view components extracted and properly exported
 - ✅ Shared utilities eliminate code duplication
@@ -412,6 +458,7 @@ The calendar component technical debt stems from:
 - ✅ Proper component interface definitions
 
 ### Performance & Accessibility
+
 - ✅ Memoization implemented for expensive calculations
 - ✅ TanStack Query patterns are consistent and optimized
 - ✅ Full keyboard navigation support
@@ -419,6 +466,7 @@ The calendar component technical debt stems from:
 - ✅ Proper ARIA labels and accessibility attributes
 
 ### Maintainability
+
 - ✅ Components can serve as reference patterns for other implementations
 - ✅ New developers can easily understand component architecture
 - ✅ Easy to extend and modify without breaking existing functionality

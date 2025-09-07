@@ -16,9 +16,9 @@ Tailwind CSS is a utility-first CSS framework that provides low-level utility cl
 </div>
 
 <!-- Tailwind utility-first approach -->
-<div class="bg-white rounded-lg shadow-md p-6">
+<div class="rounded-lg bg-white p-6 shadow-md">
   <h2 class="text-xl font-bold text-gray-900">Welcome</h2>
-  <p class="text-gray-600 mt-2">This is a card component.</p>
+  <p class="mt-2 text-gray-600">This is a card component.</p>
 </div>
 ```
 
@@ -36,36 +36,36 @@ Tailwind CSS is a utility-first CSS framework that provides low-level utility cl
 ```javascript
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: ["class"],
+  darkMode: ['class'],
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
   ],
-  prefix: "",
+  prefix: '',
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: '2rem',
       screens: {
-        "2xl": "1400px",
+        '2xl': '1400px',
       },
     },
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
         },
         // Custom colors for MedBookings
         medical: {
@@ -79,29 +79,29 @@ module.exports = {
           pending: '#fbbf24',
           confirmed: '#10b981',
           cancelled: '#ef4444',
-        }
+        },
       },
       fontFamily: {
-        sans: ["var(--font-sans)", ...defaultTheme.fontFamily.sans],
+        sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
       },
       keyframes: {
-        "fade-in": {
-          "0%": { opacity: "0" },
-          "100%": { opacity: "1" },
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
         },
-        "slide-up": {
-          "0%": { transform: "translateY(10px)", opacity: "0" },
-          "100%": { transform: "translateY(0)", opacity: "1" },
-        }
+        'slide-up': {
+          '0%': { transform: 'translateY(10px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
       },
       animation: {
-        "fade-in": "fade-in 0.5s ease-out",
-        "slide-up": "slide-up 0.3s ease-out",
-      }
+        'fade-in': 'fade-in 0.5s ease-out',
+        'slide-up': 'slide-up 0.3s ease-out',
+      },
     },
   },
-  plugins: [require("tailwindcss-animate")],
-}
+  plugins: [require('tailwindcss-animate')],
+};
 ```
 
 ### CSS Variables Setup
@@ -120,7 +120,7 @@ module.exports = {
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222.2 84% 4.9%;
-    
+
     /* Medical-specific variables */
     --medical-primary: 199 89% 48%;
     --appointment-confirmed: 142 76% 36%;
@@ -144,12 +144,12 @@ module.exports = {
 ```typescript
 // Mobile-first breakpoints
 const breakpoints = {
-  sm: '640px',   // @media (min-width: 640px)
-  md: '768px',   // @media (min-width: 768px)
-  lg: '1024px',  // @media (min-width: 1024px)
-  xl: '1280px',  // @media (min-width: 1280px)
+  sm: '640px', // @media (min-width: 640px)
+  md: '768px', // @media (min-width: 768px)
+  lg: '1024px', // @media (min-width: 1024px)
+  xl: '1280px', // @media (min-width: 1280px)
   '2xl': '1536px', // @media (min-width: 1536px)
-}
+};
 ```
 
 ### Responsive Usage
@@ -162,27 +162,27 @@ function DashboardLayout() {
       {/* Mobile: stack vertically, Desktop: side-by-side */}
       <div className="flex flex-col lg:flex-row">
         {/* Sidebar */}
-        <aside className="w-full lg:w-64 bg-white shadow-sm">
-          <nav className="p-4 space-y-2">
-            <a className="block px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
+        <aside className="w-full bg-white shadow-sm lg:w-64">
+          <nav className="space-y-2 p-4">
+            <a className="block rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
               Dashboard
             </a>
           </nav>
         </aside>
-        
+
         {/* Main content */}
         <main className="flex-1 p-4 lg:p-8">
           {/* Grid: 1 column on mobile, 3 on desktop */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-lg shadow">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-lg bg-white p-6 shadow">
               <h3 className="text-lg font-semibold">Appointments Today</h3>
-              <p className="text-3xl font-bold text-blue-600 mt-2">12</p>
+              <p className="mt-2 text-3xl font-bold text-blue-600">12</p>
             </div>
           </div>
         </main>
       </div>
     </div>
-  )
+  );
 }
 ```
 
@@ -247,19 +247,21 @@ function AppointmentCard({ appointment }) {
     confirmed: 'bg-green-100 text-green-800 border-green-200',
     pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
     cancelled: 'bg-red-100 text-red-800 border-red-200',
-  }
+  };
 
   return (
-    <div className="bg-white border rounded-lg p-4 shadow-sm">
-      <div className="flex justify-between items-start mb-3">
+    <div className="rounded-lg border bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-start justify-between">
         <h3 className="font-semibold text-gray-900">{appointment.patientName}</h3>
-        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${statusColors[appointment.status]}`}>
+        <span
+          className={`rounded-full border px-2 py-1 text-xs font-medium ${statusColors[appointment.status]}`}
+        >
           {appointment.status}
         </span>
       </div>
-      <p className="text-gray-600 text-sm">{appointment.time}</p>
+      <p className="text-sm text-gray-600">{appointment.time}</p>
     </div>
-  )
+  );
 }
 ```
 
@@ -297,16 +299,10 @@ function AppointmentCard({ appointment }) {
 
 ```jsx
 // Dark mode support
-<div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+<div className="bg-white text-gray-900 dark:bg-gray-800 dark:text-white">
   <h1 className="text-xl font-bold">Dashboard</h1>
-  <p className="text-gray-600 dark:text-gray-300">
-    Welcome to your medical dashboard
-  </p>
-  <button className="
-    bg-blue-500 dark:bg-blue-600 
-    hover:bg-blue-600 dark:hover:bg-blue-700
-    text-white px-4 py-2 rounded
-  ">
+  <p className="text-gray-600 dark:text-gray-300">Welcome to your medical dashboard</p>
+  <button className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700">
     Primary Action
   </button>
 </div>
@@ -320,50 +316,33 @@ function AppointmentCard({ appointment }) {
 // Medical form with Tailwind styling
 function PatientForm() {
   return (
-    <form className="space-y-6 max-w-md mx-auto bg-white p-6 rounded-lg shadow">
+    <form className="mx-auto max-w-md space-y-6 rounded-lg bg-white p-6 shadow">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Full Name
-        </label>
+        <label className="mb-2 block text-sm font-medium text-gray-700">Full Name</label>
         <input
           type="text"
-          className="
-            w-full px-3 py-2 border border-gray-300 rounded-md
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-            placeholder-gray-400
-          "
+          className="w-full rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Enter patient name"
         />
       </div>
-      
+
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Medical History
-        </label>
+        <label className="mb-2 block text-sm font-medium text-gray-700">Medical History</label>
         <textarea
           rows="4"
-          className="
-            w-full px-3 py-2 border border-gray-300 rounded-md
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-            placeholder-gray-400 resize-none
-          "
+          className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Enter medical history"
         />
       </div>
-      
+
       <button
         type="submit"
-        className="
-          w-full bg-blue-600 hover:bg-blue-700 
-          text-white font-medium py-2 px-4 rounded-md
-          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-          transition-colors duration-200
-        "
+        className="w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white transition-colors duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
       >
         Save Patient
       </button>
     </form>
-  )
+  );
 }
 ```
 
@@ -376,28 +355,26 @@ function StatsCards() {
     { label: 'Total Patients', value: '1,249', change: '+12%', trend: 'up' },
     { label: 'Appointments Today', value: '23', change: '+3%', trend: 'up' },
     { label: 'Cancelled Today', value: '2', change: '-50%', trend: 'down' },
-  ]
+  ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
       {stats.map((stat) => (
-        <div key={stat.label} className="bg-white overflow-hidden shadow rounded-lg">
+        <div key={stat.label} className="overflow-hidden rounded-lg bg-white shadow">
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="text-2xl font-bold text-gray-900">
-                  {stat.value}
-                </div>
+                <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    {stat.label}
-                  </dt>
+                  <dt className="truncate text-sm font-medium text-gray-500">{stat.label}</dt>
                   <dd className="flex items-baseline">
-                    <div className={`text-sm font-medium ${
-                      stat.trend === 'up' ? 'text-green-600' : 'text-red-600'
-                    }`}>
+                    <div
+                      className={`text-sm font-medium ${
+                        stat.trend === 'up' ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
                       {stat.change}
                     </div>
                   </dd>
@@ -408,7 +385,7 @@ function StatsCards() {
         </div>
       ))}
     </div>
-  )
+  );
 }
 ```
 
@@ -421,42 +398,38 @@ function StatsCards() {
 @layer components {
   /* Medical card component */
   .medical-card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-4;
+    @apply rounded-lg border border-gray-200 bg-white p-4 shadow-sm;
   }
-  
+
   .medical-card:hover {
-    @apply shadow-md border-blue-200 transform -translate-y-0.5;
+    @apply -translate-y-0.5 transform border-blue-200 shadow-md;
   }
-  
+
   /* Status badges */
   .status-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
-  
+
   .status-badge-confirmed {
     @apply bg-green-100 text-green-800;
   }
-  
+
   .status-badge-pending {
     @apply bg-yellow-100 text-yellow-800;
   }
-  
+
   .status-badge-cancelled {
     @apply bg-red-100 text-red-800;
   }
-  
+
   /* Form inputs */
   .form-input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-md 
-           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-           placeholder-gray-400;
+    @apply w-full rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500;
   }
-  
+
   /* Primary button */
   .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md
-           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-           transition-colors duration-200;
+    @apply rounded-md bg-blue-600 px-4 py-2 font-medium text-white transition-colors duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
   }
 }
 ```
@@ -470,12 +443,9 @@ Tailwind automatically removes unused classes in production:
 ```javascript
 // tailwind.config.js
 module.exports = {
-  content: [
-    './app/**/*.{js,ts,jsx,tsx}',
-    './components/**/*.{js,ts,jsx,tsx}',
-  ],
+  content: ['./app/**/*.{js,ts,jsx,tsx}', './components/**/*.{js,ts,jsx,tsx}'],
   // ... other config
-}
+};
 ```
 
 ### JIT (Just-In-Time) Compilation

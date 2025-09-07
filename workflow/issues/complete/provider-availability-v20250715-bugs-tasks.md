@@ -1,7 +1,6 @@
 # Provider Availability V2 - Bug Fix Tasks
 
-> **Generated from:** `provider-availability-v20250715-bugs.md`
-> **Date:** July 16, 2025
+> **Generated from:** `provider-availability-v20250715-bugs.md` > **Date:** July 16, 2025
 > **Total Tasks:** 8 (1 Critical, 1 High, 5 Medium, 1 Low)
 
 ## Relevant Files
@@ -45,6 +44,7 @@
 ## Tasks
 
 - [x] 1.0 🔴 **CRITICAL**: Fix Availability Slot Generation System
+
   - [x] 1.1 Investigate current slot generation flow in `src/features/calendar/availability/lib/actions.ts:97`
   - [x] 1.2 Identify missing call to slot calculation/generation after availability creation
   - [x] 1.3 Verify slot generation service integration with availability creation action
@@ -55,6 +55,7 @@
   - [x] 1.8 Test with different availability configurations (duration, services, etc.)
 
 - [x] 2.0 🟡 **HIGH**: Fix Provider Status Logic for Self-Created Availabilities
+
   - [x] 2.1 Identify the incorrect User ID vs ServiceProvider ID comparison in `src/features/calendar/availability/lib/actions.ts:97`
   - [x] 2.2 Fetch ServiceProvider record for current user using `prisma.serviceProvider.findUnique`
   - [x] 2.3 Update `isProviderCreated` logic to compare correct ServiceProvider IDs
@@ -66,6 +67,7 @@
   - [x] 2.9 Verify existing acceptance workflow continues to function
 
 - [x] 3.0 🔵 **MEDIUM**: Implement Comprehensive Availability Validation
+
   - [x] 3.1 Create comprehensive overlap detection across ALL provider availabilities in `src/features/calendar/availability/lib/actions.ts:53`
   - [x] 3.2 Implement past date limits (max 30 days back from current date)
   - [x] 3.3 Add future scheduling limits (max 3 calendar months ahead)
@@ -78,6 +80,7 @@
   - [x] 3.10 Test edge cases: same start/end times, midnight boundaries, timezone handling
 
 - [x] 4.0 🔵 **MEDIUM**: Implement Series vs Individual Availability Management
+
   - [x] 4.1 Add series detection logic in `src/app/(dashboard)/providers/[id]/manage-calendar/page.tsx:178`
   - [x] 4.2 Create series-aware context menu options for recurring availabilities
   - [x] 4.3 Implement series action dialog component with scope options ("This occurrence only", "This and future", "All occurrences")
@@ -90,6 +93,7 @@
   - [x] 4.10 Test series deletion and booking conflict scenarios
 
 - [x] 5.0 🔵 **MEDIUM**: Clean Up Availability Creation Form as Reference Pattern
+
   - [x] 5.1 Conduct critical code review of `src/features/calendar/availability/components/availability-creation-form.tsx`
   - [x] 5.2 Remove unused variables, commented code, and development debugging artifacts
   - [x] 5.3 Resolve TODO comment at line 237 for organization provider selection
@@ -104,6 +108,7 @@
   - [x] 5.12 Verify no console errors and TypeScript compiles without warnings
 
 - [x] 6.0 🔵 **MEDIUM**: Standardize Edit Form to Match Creation Form Pattern
+
   - [x] 6.1 Analyze cleaned creation form structure and identify all sections and patterns
   - [x] 6.2 Add missing profile selection section adapted for edit mode
   - [x] 6.3 Implement recurrence settings section with custom recurrence modal support
@@ -118,6 +123,7 @@
   - [x] 6.12 Verify new sections display correctly and work with booking restrictions
 
 - [x] 7.0 🔵 **MEDIUM**: Comprehensive Calendar Component Cleanup
+
   - [x] 7.1 Remove all console.log statements, TODO comments, and debug code from `src/features/calendar/availability/components/provider-calendar-view.tsx`
   - [x] 7.2 Fix `selectedEvent` state management - either complete modal implementation or remove unused references
   - [x] 7.3 Implement consistent error boundaries and loading states following CLAUDE.md patterns
@@ -158,4 +164,4 @@
 7. **Task 4.0** (Medium) - Implement series management (depends on 7.0)
 8. **Task 8.0** (Low) - Implement view modal (UX enhancement)
 
-*Generated from provider-availability-v20250715-bugs.md using bug-task-generate.md guidelines*
+_Generated from provider-availability-v20250715-bugs.md using bug-task-generate.md guidelines_

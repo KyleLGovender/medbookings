@@ -3,6 +3,7 @@
 ## High Priority Tasks
 
 ### 🔴 Critical Issues (Fix Immediately)
+
 - [ ] **Bug Fix**: [Add critical calendar bug here] - `path/to/file.ts:123`
   - **Issue**: Brief description of the problem
   - **Impact**: How this affects users/system
@@ -11,15 +12,17 @@
   - **Estimated Time**: X hours/days
 
 ### 🟡 High Priority (Next Sprint)
+
 - [ ] **UX/UI**: Hide month/week view options on mobile devices - `src/features/calendar/availability/components/calendar-navigation.tsx`
+
   - **Issue**: Calendar mobile view doesn't look good - month and week view options should be hidden on mobile devices, only showing day and 3-day options
   - **Impact**: Poor mobile user experience due to cluttered navigation and inappropriate view options for small screens
-  - **Implementation**: 
+  - **Implementation**:
     1. Add mobile device detection logic (consider iPad size threshold)
     2. Conditionally render view options based on screen size
     3. Use CSS media queries or JavaScript viewport detection
     4. Hide month and week buttons on mobile, keep only day and 3-day options
-  - **Testing**: 
+  - **Testing**:
     - Test on various mobile devices and screen sizes
     - Verify iPad behavior (determine if it should be treated as mobile)
     - Test responsive breakpoints
@@ -47,7 +50,9 @@
 ## Medium Priority Tasks
 
 ### 🔵 Medium Priority (Upcoming)
+
 - [ ] **UX/UI**: Fix compressed breadcrumbs in dashboard layout on mobile - `src/components/layout/dashboard-layout.tsx`
+
   - **Issue**: Breadcrumbs in dashboard layout look too compressed on mobile devices, particularly with long provider names like "Dashboard > Providers > Dr Shei Goldberg > Manage Calendar"
   - **Impact**: Poor mobile navigation experience, breadcrumbs may be unreadable or truncated poorly
   - **Implementation**:
@@ -82,6 +87,7 @@
 ## Low Priority Tasks
 
 ### 🟢 Low Priority (Backlog)
+
 - [ ] **UX/UI**: [Add calendar UX/UI improvement here] - `path/to/file.tsx:101`
   - **Issue**: Description of UX/UI improvement
   - **Impact**: User experience enhancement
@@ -92,6 +98,7 @@
 ## Completed Tasks
 
 ### ✅ Recently Completed
+
 - [x] **Bug Fix**: [Completed Task Title] - `path/to/file.ts:123`
   - **Completed**: YYYY-MM-DD
   - **Notes**: Brief notes on implementation
@@ -99,6 +106,7 @@
 ## Task Management Guidelines
 
 ### Adding New Tasks
+
 1. Identify the issue type and priority level
 2. Include file path and line number where applicable
 3. Provide clear problem description and impact assessment
@@ -107,13 +115,16 @@
 6. Estimate time required
 
 ### Prioritization Criteria
+
 - **Critical**: System-breaking bugs, security vulnerabilities
 - **High**: Performance issues, user-facing bugs, blocking issues
 - **Medium**: Technical debt, code quality improvements
 - **Low**: Nice-to-have improvements, minor UX enhancements
 
 ### Implementation Context
+
 For each task, provide:
+
 - **Root Cause**: Why the issue exists
 - **Dependencies**: Other tasks or external factors
 - **Code Context**: Relevant functions, components, or modules
@@ -123,6 +134,7 @@ For each task, provide:
 ## Workflow Integration
 
 ### When to Add Tasks
+
 - During code reviews
 - When debugging issues
 - During feature development
@@ -130,6 +142,7 @@ For each task, provide:
 - During refactoring sessions
 
 ### Task Lifecycle
+
 1. **Identified**: Task added to appropriate priority section
 2. **In Progress**: Move to active work section (not shown in template)
 3. **Testing**: Undergoing verification

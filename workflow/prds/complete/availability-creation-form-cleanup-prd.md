@@ -35,15 +35,18 @@ The goal is to transform this component into a well-structured, maintainable pie
 ### 1. Code Cleanup Requirements
 
 1.1. **Remove Dead Code**
+
 - The system must remove all unused variables and imports
 - The system must remove all commented-out code blocks
 - The system must remove any development debugging artifacts
 
-1.2. **Resolve TODO Comments**
+  1.2. **Resolve TODO Comments**
+
 - The system must address the TODO at line 237 regarding organization provider selection
 - The system must either implement the functionality properly or remove it if not needed
 
-1.3. **Type Safety**
+  1.3. **Type Safety**
+
 - The system must replace all `any` types with proper TypeScript types (lines 99, 486, 487)
 - The system must ensure all function parameters and return types are properly typed
 - The system must use type guards where appropriate
@@ -51,22 +54,26 @@ The goal is to transform this component into a well-structured, maintainable pie
 ### 2. CLAUDE.md Pattern Implementation
 
 2.1. **Form Handling Patterns**
+
 - The system must use React Hook Form with Zod schemas for validation
 - The system must use `z.record()` for nested data structures (not arrays)
 - The system must use Controller pattern for complex form controls
 - The system must avoid useFieldArray for simple selection forms
 
-2.2. **State Management**
+  2.2. **State Management**
+
 - The system must manage local `isSubmitting` state in the component
 - The system must follow the pattern: FormData → mutateAsync with try/catch → UI feedback
 - The system must avoid unnecessary state duplication
 
-2.3. **Data Access Patterns**
+  2.3. **Data Access Patterns**
+
 - The system must follow: Hook → API Route → Server Action → Prisma
 - The system must never import Prisma directly in the component
 - The system must use TanStack Query for server state management
 
-2.4. **Error Handling**
+  2.4. **Error Handling**
+
 - The system must implement consistent error handling with proper HTTP status codes
 - The system must show appropriate loading states while fetching data
 - The system must display error states when data fetching fails
@@ -75,22 +82,26 @@ The goal is to transform this component into a well-structured, maintainable pie
 ### 3. Component Structure Requirements
 
 3.1. **Code Organization**
+
 - The system must group related logic together (form setup, submission handlers, etc.)
 - The system must extract reusable functions where appropriate
 - The system must follow consistent naming conventions
 
-3.2. **Import Organization**
+  3.2. **Import Organization**
+
 - The system must organize imports in the correct order: React/Next.js → third-party → internal → relative
 - The system must use direct imports (no barrel exports)
 - The system must maintain proper import grouping with blank lines
 
-3.3. **Performance Optimization**
+  3.3. **Performance Optimization**
+
 - The system must review and optimize form watchers to prevent unnecessary re-renders
 - The system must ensure efficient use of React Hook Form's watch functionality
 
 ### 4. Maintained Functionality
 
 4.1. **All existing features must continue to work:**
+
 - Provider availability creation
 - Organization availability proposals
 - Custom recurrence patterns
@@ -121,16 +132,19 @@ The goal is to transform this component into a well-structured, maintainable pie
 ### CLAUDE.md Patterns to Apply
 
 1. **Form Implementation**:
+
    - React Hook Form with Zod validation
    - Proper Controller usage for complex inputs
    - Consistent error handling
 
 2. **State Management**:
+
    - Local state for UI concerns
    - TanStack Query for server state
    - No prop drilling
 
 3. **Code Style**:
+
    - Arrow functions
    - Single quotes
    - Template literals
@@ -165,6 +179,7 @@ No design changes are included in this cleanup. The existing UI/UX remains uncha
 ---
 
 **Next Steps After Completion:**
+
 1. Refactor the availability edit form using this component as a template
 2. Update CLAUDE.md with any new patterns or clarifications discovered
 3. Consider applying similar cleanup to other complex forms in the system

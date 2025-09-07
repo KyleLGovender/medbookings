@@ -48,13 +48,13 @@
       "Bash(cp:*)",
       "mcp__filesystem-server__read_file",
       "Bash(cat:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "mcp__filesystem-server__read_text_file",
+      "mcp__filesystem-server__edit_file",
+      "Bash(npx prisma:*)"
     ],
     "deny": []
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
-    "filesystem-server",
-    "postgres-server"
-  ]
+  "enabledMcpjsonServers": ["filesystem-server", "postgres-server"]
 }

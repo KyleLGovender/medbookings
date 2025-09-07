@@ -1,9 +1,6 @@
 import { BookingStatus } from '@prisma/client';
 
-import {
-  getSlotsForDay,
-  calculateSlotTimeRange
-} from '@/features/calendar/lib/calendar-utils';
+import { calculateSlotTimeRange, getSlotsForDay } from '@/features/calendar/lib/calendar-utils';
 
 import { SlotData, SlotDayViewProps } from './types';
 
@@ -97,10 +94,10 @@ export function SlotDayView({
               className="flex flex-1 items-center justify-center py-3 text-sm/6 text-gray-500 transition-colors hover:bg-gray-50"
             >
               <span>
-                {currentDate.toLocaleDateString([], { 
-                  weekday: 'long', 
-                  month: 'long', 
-                  day: 'numeric' 
+                {currentDate.toLocaleDateString([], {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
                 })}
               </span>
             </button>
@@ -166,7 +163,9 @@ export function SlotDayView({
                       key={slot.id}
                       type="button"
                       className={`absolute left-1 right-1 rounded border px-2 text-left transition-all ${getSlotButtonStyle(slot)} ${
-                        !isBooked ? 'cursor-pointer hover:z-10 hover:shadow-md' : 'cursor-not-allowed opacity-75'
+                        !isBooked
+                          ? 'cursor-pointer hover:z-10 hover:shadow-md'
+                          : 'cursor-not-allowed opacity-75'
                       }`}
                       style={{
                         top: `${top}px`,

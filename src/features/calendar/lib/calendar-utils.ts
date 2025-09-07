@@ -87,7 +87,6 @@ export function getWorkingTimeRange(workingHours: { start: string; end: string }
   };
 }
 
-
 // =============================================================================
 // DATE MANIPULATION UTILITIES
 // =============================================================================
@@ -174,8 +173,13 @@ export function calculateDateRange(
  * @param date - The date to get availability for
  * @returns Array of availability occurring on the specified date
  */
-export function getAvailabilityForDay(availabilities: AvailabilityData[], date: Date): AvailabilityData[] {
-  return availabilities.filter((availability) => new Date(availability.startTime).toDateString() === date.toDateString());
+export function getAvailabilityForDay(
+  availabilities: AvailabilityData[],
+  date: Date
+): AvailabilityData[] {
+  return availabilities.filter(
+    (availability) => new Date(availability.startTime).toDateString() === date.toDateString()
+  );
 }
 
 /**
@@ -237,7 +241,10 @@ export function calculateSlotTimeRange(slots: SlotData[]): { start: number; end:
  * @param availabilities - Array of availability to calculate time range from
  * @returns Time range object with start and end hours
  */
-export function calculateAvailabilityTimeRange(availabilities: AvailabilityData[]): { start: number; end: number } {
+export function calculateAvailabilityTimeRange(availabilities: AvailabilityData[]): {
+  start: number;
+  end: number;
+} {
   const defaultStart = 6; // 6 AM
   const defaultEnd = 18; // 6 PM
 

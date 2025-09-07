@@ -14,14 +14,14 @@ Search and filter providers with support for multiple provider types.
 
 #### Query Parameters
 
-| Parameter | Type | Description | Example |
-|-----------|------|-------------|---------|
-| `search` | string | Text search across provider name, email, and bio | `?search=Dr` |
-| `typeIds` | string | Comma-separated list of provider type IDs | `?typeIds=gp-id,psych-id` |
-| `status` | string | Provider status filter | `?status=APPROVED` |
-| `limit` | number | Number of results per page (default: 50) | `?limit=20` |
-| `offset` | number | Number of results to skip (default: 0) | `?offset=100` |
-| `includeServices` | boolean | Include provider services (default: true) | `?includeServices=false` |
+| Parameter             | Type    | Description                                      | Example                     |
+| --------------------- | ------- | ------------------------------------------------ | --------------------------- |
+| `search`              | string  | Text search across provider name, email, and bio | `?search=Dr`                |
+| `typeIds`             | string  | Comma-separated list of provider type IDs        | `?typeIds=gp-id,psych-id`   |
+| `status`              | string  | Provider status filter                           | `?status=APPROVED`          |
+| `limit`               | number  | Number of results per page (default: 50)         | `?limit=20`                 |
+| `offset`              | number  | Number of results to skip (default: 0)           | `?offset=100`               |
+| `includeServices`     | boolean | Include provider services (default: true)        | `?includeServices=false`    |
 | `includeRequirements` | boolean | Include requirement submissions (default: false) | `?includeRequirements=true` |
 
 #### Response
@@ -46,7 +46,7 @@ Search and filter providers with support for multiple provider types.
           }
         },
         {
-          "id": "assignment-id-2", 
+          "id": "assignment-id-2",
           "providerTypeId": "psych-id",
           "providerType": {
             "id": "psych-id",
@@ -61,7 +61,7 @@ Search and filter providers with support for multiple provider types.
           "name": "General Practitioner"
         },
         {
-          "id": "psych-id", 
+          "id": "psych-id",
           "name": "Psychologist"
         }
       ],
@@ -69,7 +69,7 @@ Search and filter providers with support for multiple provider types.
         {
           "id": "service-id",
           "name": "General Consultation",
-          "defaultPrice": 650.00,
+          "defaultPrice": 650.0,
           "defaultDuration": 15
         }
       ]
@@ -87,21 +87,25 @@ Search and filter providers with support for multiple provider types.
 #### Examples
 
 **Search providers by text:**
+
 ```
 GET /api/providers?search=Dr&limit=10
 ```
 
 **Filter providers by single type:**
+
 ```
 GET /api/providers?typeIds=gp-id&limit=20
 ```
 
 **Filter providers by multiple types (OR logic):**
+
 ```
 GET /api/providers?typeIds=gp-id,psych-id&limit=20
 ```
 
 **Complex search with multiple filters:**
+
 ```
 GET /api/providers?search=specialist&typeIds=psych-id&status=APPROVED&limit=10&offset=20
 ```
@@ -123,10 +127,7 @@ Register a new provider with multiple provider types.
     "languages": ["English", "Afrikaans"],
     "image": "https://example.com/image.jpg"
   },
-  "providerTypeIds": [
-    "gp-id",
-    "psych-id"
-  ],
+  "providerTypeIds": ["gp-id", "psych-id"],
   "services": {
     "availableServices": ["service-1", "service-2"],
     "serviceConfigs": {
@@ -159,6 +160,7 @@ Register a new provider with multiple provider types.
 #### Error Responses
 
 **Missing provider types:**
+
 ```json
 {
   "error": "At least one provider type is required"
@@ -166,6 +168,7 @@ Register a new provider with multiple provider types.
 ```
 
 **Invalid provider type combination:**
+
 ```json
 {
   "error": "Invalid provider type combination"
@@ -201,7 +204,7 @@ Get detailed information about a specific provider.
     {
       "id": "service-id",
       "name": "General Consultation",
-      "defaultPrice": 650.00,
+      "defaultPrice": 650.0,
       "defaultDuration": 15
     }
   ],
@@ -224,17 +227,17 @@ Update provider basic information including provider types.
 
 #### Request Body (FormData)
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `providerTypeIds` | string[] | Array of provider type IDs |
-| `providerTypeId` | string | Legacy single type (for backward compatibility) |
-| `name` | string | Provider name |
-| `bio` | string | Provider biography |
-| `email` | string | Contact email |
-| `whatsapp` | string | WhatsApp number |
-| `website` | string | Website URL |
-| `languages` | string[] | Spoken languages |
-| `showPrice` | boolean | Whether to display prices |
+| Field             | Type     | Description                                     |
+| ----------------- | -------- | ----------------------------------------------- |
+| `providerTypeIds` | string[] | Array of provider type IDs                      |
+| `providerTypeId`  | string   | Legacy single type (for backward compatibility) |
+| `name`            | string   | Provider name                                   |
+| `bio`             | string   | Provider biography                              |
+| `email`           | string   | Contact email                                   |
+| `whatsapp`        | string   | WhatsApp number                                 |
+| `website`         | string   | Website URL                                     |
+| `languages`       | string[] | Spoken languages                                |
+| `showPrice`       | boolean  | Whether to display prices                       |
 
 #### Response
 
@@ -303,6 +306,7 @@ The approval workflow validates requirements from ALL assigned provider types:
 ### Example Scenario
 
 Provider assigned to both "General Practitioner" and "Psychologist":
+
 - GP requires: HPCSA Registration, Medical Degree, Insurance
 - Psychologist requires: HPCSA Registration, Psychology Degree
 - **Total unique requirements**: HPCSA Registration, Medical Degree, Insurance, Psychology Degree
@@ -315,7 +319,7 @@ Provider assigned to both "General Practitioner" and "Psychologist":
 The following indexes optimize query performance:
 
 - `ProviderTypeAssignment_providerId_idx`
-- `ProviderTypeAssignment_providerTypeId_idx` 
+- `ProviderTypeAssignment_providerTypeId_idx`
 - `ProviderTypeAssignment_providerId_providerTypeId_idx`
 
 ### Caching
@@ -335,6 +339,7 @@ The following indexes optimize query performance:
 ### From Single to Multiple Provider Types
 
 **Before:**
+
 ```json
 {
   "providerTypeId": "gp-id"
@@ -342,6 +347,7 @@ The following indexes optimize query performance:
 ```
 
 **After:**
+
 ```json
 {
   "providerTypeIds": ["gp-id"],
@@ -354,10 +360,12 @@ The following indexes optimize query performance:
 ### API Changes
 
 1. **New fields in responses:**
+
    - `typeAssignments[]` - Full assignment details
    - `providerTypes[]` - Array of all assigned types
 
 2. **New query parameters:**
+
    - `includeServices` - Control service inclusion
    - `includeRequirements` - Control requirement inclusion
 
@@ -368,6 +376,7 @@ The following indexes optimize query performance:
 ### Backward Compatibility
 
 All existing API integrations continue to work:
+
 - `providerTypeId` field maintained in responses
 - Single type registration still supported
 - Existing query parameters unchanged

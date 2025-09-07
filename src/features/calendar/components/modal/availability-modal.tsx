@@ -266,10 +266,10 @@ export function AvailabilityModal({
               : `${event.organization?.name || 'Organization'} Created`}
           </div>
           <div className="text-sm">
-            {event.createdBy && (
+            {event.createdById && (
               <>
                 <div className="mb-1 text-xs text-gray-600">Created by</div>
-                <div className="text-sm font-medium">{event.createdBy.name}</div>
+                <div className="text-sm font-medium">User ID: {event.createdById}</div>
               </>
             )}
           </div>
@@ -601,8 +601,8 @@ export function AvailabilityModal({
           <div className="rounded-lg bg-yellow-50 p-3">
             <p className="text-sm text-yellow-800">
               This will {pendingAction}{' '}
-              {selectedScope === 'series' ? 'all occurrences' : 'this and future occurrences'} of
-              this recurring availability.
+              {selectedScope === 'all' ? 'all occurrences' : 'this and future occurrences'} of this
+              recurring availability.
             </p>
           </div>
         )}

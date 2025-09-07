@@ -4,7 +4,6 @@
 
 ### 🔴 Critical Issues (Fix Immediately)
 
-
 - [ ] **Technical Debt**: Add Database Constraint for Subscription Polymorphic Relationship - `prisma/schema.prisma:491-500`
   - **Issue**: Subscription model has polymorphic relationship (organizationId, locationId, serviceProviderId) but no database constraint ensures only one is set
   - **Impact**: Data integrity risk - subscriptions could be assigned to multiple entities simultaneously, breaking billing logic
@@ -24,14 +23,14 @@
 - [ ] **Technical Debt**: Enable Multiple Service Provider Types per Provider - `prisma/schema.prisma:80-86`
   - **Issue**: ServiceProvider → ServiceProviderType relationship is currently 1:n (one type per provider), preventing providers from having multiple specialties (e.g., both Doctor and Therapist)
   - **Impact**: Business constraint that prevents real-world use cases where providers have multiple qualifications/specialties
-  - **Implementation**: 
+  - **Implementation**:
     1. Create join table `ServiceProviderTypeAssignment` to enable n:n relationship
     2. Remove `serviceProviderTypeId` field from ServiceProvider model
     3. Update all related queries and API endpoints to handle multiple types
     4. Create migration script to preserve existing single-type assignments
     5. Update approval workflow to validate requirements from ALL selected provider types (all-or-nothing approval)
     6. Update registration/edit forms to support multiple type selection
-  - **Testing**: 
+  - **Testing**:
     - Verify providers can be assigned multiple types
     - Test all provider-related queries work with new relationship
     - Ensure UI handles multiple types display
@@ -40,12 +39,12 @@
     - Verify services from all provider types are available to multi-type providers
   - **Estimated Time**: 8-10 hours
 
-
 ## Medium Priority Tasks
 
 ### 🔵 Medium Priority (Upcoming)
 
 - [ ] **Performance**: Optimize Service Provider Type Queries - `Multiple Files`
+
   - **Issue**: After implementing n:n relationship, queries for provider types will need optimization
   - **Impact**: Potential performance degradation on provider search and filtering
   - **Implementation**:
@@ -73,12 +72,12 @@
     - Test approval workflow with multiple types
   - **Estimated Time**: 4-5 hours
 
-
 ## Low Priority Tasks
 
 ### 🟢 Low Priority (Backlog)
 
 - [ ] **Documentation**: Update API Documentation - `docs/api/`
+
   - **Issue**: API documentation needs updating to reflect new n:n relationships
   - **Impact**: Developer experience and integration documentation becomes outdated
   - **Implementation**:
@@ -107,6 +106,7 @@
 ## Completed Tasks
 
 ### ✅ Recently Completed
+
 (This section will be populated as tasks are completed)
 
 ## Database Migration Planning
@@ -114,6 +114,7 @@
 ### Migration Script Requirements
 
 1. **ServiceProviderType Assignment Migration**:
+
    ```sql
    -- Create new join table
    CREATE TABLE "ServiceProviderTypeAssignment" (
@@ -126,37 +127,39 @@
 
    -- Migrate existing data
    INSERT INTO "ServiceProviderTypeAssignment" ("id", "serviceProviderId", "serviceProviderTypeId")
-   SELECT gen_random_uuid(), "id", "serviceProviderTypeId" 
-   FROM "ServiceProvider" 
+   SELECT gen_random_uuid(), "id", "serviceProviderTypeId"
+   FROM "ServiceProvider"
    WHERE "serviceProviderTypeId" IS NOT NULL;
 
    -- Add foreign key constraints
-   ALTER TABLE "ServiceProviderTypeAssignment" 
+   ALTER TABLE "ServiceProviderTypeAssignment"
    ADD CONSTRAINT "FK_ServiceProvider" FOREIGN KEY ("serviceProviderId") REFERENCES "ServiceProvider"("id");
-   
-   ALTER TABLE "ServiceProviderTypeAssignment" 
+
+   ALTER TABLE "ServiceProviderTypeAssignment"
    ADD CONSTRAINT "FK_ServiceProviderType" FOREIGN KEY ("serviceProviderTypeId") REFERENCES "ServiceProviderType"("id");
 
    -- Create unique constraint to prevent duplicates
-   ALTER TABLE "ServiceProviderTypeAssignment" 
+   ALTER TABLE "ServiceProviderTypeAssignment"
    ADD CONSTRAINT "UQ_ProviderType" UNIQUE ("serviceProviderId", "serviceProviderTypeId");
    ```
-
 
 ## Task Management Guidelines
 
 ### Implementation Order
+
 1. Complete ServiceProviderType relationship changes first (highest impact)
 2. Update UI and API endpoints second
 3. Add performance optimizations and tests last
 
 ### Rollback Strategy
+
 - Keep migration scripts reversible
 - Test rollback procedures in staging environment
 - Document all schema changes for easy reversal
 - Maintain data backup before migration execution
 
 ### Dependencies
+
 - ServiceProviderType changes must be completed before updating registration flow
 - All schema changes should be completed before performance optimization
 

@@ -17,6 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { formatPrice } from '@/lib/utils';
 
 interface PricingTier {
   name: string;
@@ -230,11 +231,7 @@ export function PricingCalculator() {
               <CardContent className="pt-6">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">
-                    R
-                    {pricingBreakdown.totalCost.toLocaleString('en-ZA', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                    {formatPrice(pricingBreakdown.totalCost)}
                   </div>
                   <div className="text-sm">Total Monthly Cost</div>
                 </div>
@@ -292,11 +289,7 @@ export function PricingCalculator() {
                             {tier.bookingsUsed.toLocaleString()}
                           </TableCell>
                           <TableCell className="text-right font-medium">
-                            R
-                            {tier.totalPrice.toLocaleString('en-ZA', {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
+                            {formatPrice(tier.totalPrice)}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -309,11 +302,7 @@ export function PricingCalculator() {
                           {pricingBreakdown.totalBookings.toLocaleString()}
                         </TableCell>
                         <TableCell className="text-right">
-                          R
-                          {pricingBreakdown.totalCost.toLocaleString('en-ZA', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                          {formatPrice(pricingBreakdown.totalCost)}
                         </TableCell>
                       </TableRow>
                     </TableBody>
@@ -349,13 +338,7 @@ export function PricingCalculator() {
                         </div>
 
                         <div className="text-muted-foreground">Total price:</div>
-                        <div className="text-right font-medium">
-                          R
-                          {tier.totalPrice.toLocaleString('en-ZA', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </div>
+                        <div className="text-right font-medium">{formatPrice(tier.totalPrice)}</div>
                       </div>
                     </CardContent>
                   </Card>
@@ -378,11 +361,7 @@ export function PricingCalculator() {
 
                       <div className="text-muted-foreground">Total cost:</div>
                       <div className="text-right font-medium">
-                        R
-                        {pricingBreakdown.totalCost.toLocaleString('en-ZA', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
+                        {formatPrice(pricingBreakdown.totalCost)}
                       </div>
                     </div>
                   </CardContent>

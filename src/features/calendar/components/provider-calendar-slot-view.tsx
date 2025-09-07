@@ -583,8 +583,8 @@ export function ProviderCalendarSlotView({
                   Please Choose a Service
                 </h3>
                 <p className="mb-4 text-gray-600">
-                  Select which service you'd like to book from the dropdown above to view available
-                  time slots.
+                  Select which service you&apos;d like to book from the dropdown above to view
+                  available time slots.
                 </p>
                 <div className="text-sm text-gray-500">
                   Available services: {availableServices.map((s) => s.name).join(', ')}

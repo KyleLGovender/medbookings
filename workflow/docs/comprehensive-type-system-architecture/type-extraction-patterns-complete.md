@@ -29,7 +29,7 @@ type Booking = RouterOutputs['calendar']['getBookingById'];
 export function ProviderProfile({ providerId }: { providerId: string }) {
   const { data: provider } = api.providers.getById.useQuery({ id: providerId });
   //    ↑ provider is automatically typed as Provider
-  
+
   return <div>{provider?.user?.name}</div>; // Full IntelliSense
 }
 ```
@@ -50,7 +50,7 @@ export function AdminDashboard() {
   const statsQuery = api.admin.getDashboardStats.useQuery();
   const providersQuery = api.admin.getPendingProviders.useQuery();
   const orgsQuery = api.admin.getPendingOrganizations.useQuery();
-  
+
   return (
     <div>
       <h1>Total Users: {statsQuery.data?.totalUsers}</h1>
@@ -78,7 +78,7 @@ type Organization = Organizations[number]; // Single organization
 
 export function ProviderList() {
   const { data: providers } = api.providers.getAll.useQuery();
-  
+
   return (
     <div>
       {providers?.map((provider: Provider) => (
@@ -108,12 +108,12 @@ export function AdminProviderCard({ provider }: { provider: AdminProvider }) {
     <div>
       <h3>{provider.user?.name}</h3>
       <div>
-        Types: {provider.typeAssignments.map((assignment: TypeAssignment) => 
+        Types: {provider.typeAssignments.map((assignment: TypeAssignment) =>
           assignment.providerType?.name
         ).join(', ')}
       </div>
       <div>
-        Services: {provider.services.map((service: ProviderService) => 
+        Services: {provider.services.map((service: ProviderService) =>
           service.name
         ).join(', ')}
       </div>
@@ -143,13 +143,13 @@ type ServiceConfig = NonNullable<BookingSlot>['serviceConfig'];
 
 export function BookingDetails({ bookingId }: { bookingId: string }) {
   const { data: booking } = api.calendar.getBookingWithDetails.useQuery({ id: bookingId });
-  
+
   // All nested access is type-safe
   const providerName = booking?.slot?.availability?.provider?.user?.name;
   const serviceName = booking?.slot?.service?.name;
   const duration = booking?.slot?.serviceConfig?.durationMinutes;
   const price = booking?.slot?.serviceConfig?.price;
-  
+
   return (
     <div>
       <h1>Booking with {providerName}</h1>
@@ -182,7 +182,7 @@ type ConnectedProvider = NonNullable<ProviderConnection>['provider'];
 
 export function OrganizationDetails({ orgId }: { orgId: string }) {
   const { data: org } = api.organizations.getWithDetails.useQuery({ id: orgId });
-  
+
   return (
     <div>
       <h1>{org?.name}</h1>
@@ -234,7 +234,7 @@ export function RequirementStatus({ requirement }: { requirement: ProviderRequir
   const hasSubmissions = requirement.submissions && requirement.submissions.length > 0;
   const latestSubmission = requirement.submissions?.[0];
   const isValidated = latestSubmission?.validation?.isApproved === true;
-  
+
   return (
     <div>
       <h3>{requirement.requirementType?.name}</h3>
@@ -269,11 +269,11 @@ type UpdateAvailabilityInput = RouterInputs['calendar']['update'];
 
 export function ProviderOnboardingForm() {
   const createMutation = api.providers.create.useMutation();
-  
+
   const onSubmit = async (data: CreateProviderInput) => {
     await createMutation.mutateAsync(data);
   };
-  
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       {/* Form fields with perfect type safety */}
@@ -301,13 +301,13 @@ export function AvailabilitySearch() {
     endDate: new Date(),
     serviceId: undefined,
   });
-  
+
   const { data: availability } = api.calendar.searchAvailability.useQuery(searchParams);
-  
+
   return (
     <div>
-      <input 
-        value={searchParams.providerId} 
+      <input
+        value={searchParams.providerId}
         onChange={(e) => setSearchParams(prev => ({ ...prev, providerId: e.target.value }))}
       />
       {/* Rest of search form */}
@@ -336,7 +336,7 @@ type BookingGuest = NonNullable<SlotBooking>['guestName'];
 
 export function AvailabilityCalendar({ providerId }: { providerId: string }) {
   const { data: availability } = api.calendar.getAvailabilityWithSlots.useQuery({ providerId });
-  
+
   return (
     <div>
       {availability?.map((avail) => (
@@ -348,7 +348,7 @@ export function AvailabilityCalendar({ providerId }: { providerId: string }) {
                 {slot.startTime} - {slot.endTime}
                 {slot.bookings?.length > 0 && (
                   <div>
-                    Booked by: {slot.bookings.map((booking: SlotBooking) => 
+                    Booked by: {slot.bookings.map((booking: SlotBooking) =>
                       booking.guestName || booking.user?.name
                     ).join(', ')}
                   </div>
@@ -386,7 +386,7 @@ export function AdminStatsDashboard() {
   const { data: stats } = api.admin.getDashboardStats.useQuery();
   const { data: pendingProviders } = api.admin.getPendingProviders.useQuery();
   const { data: pendingOrgs } = api.admin.getPendingOrganizations.useQuery();
-  
+
   return (
     <div>
       <div className="stats-grid">
@@ -395,7 +395,7 @@ export function AdminStatsDashboard() {
         <div>Pending Providers: {stats?.pendingProviders}</div>
         <div>Active Bookings: {stats?.activeBookings}</div>
       </div>
-      
+
       <section>
         <h2>Pending Approvals</h2>
         <div>
@@ -432,16 +432,16 @@ type ProviderWithStatus = AllProviders[number];
 // Extract providers by status (type-safe)
 export function ProvidersByStatus() {
   const { data: providers } = api.admin.getProviders.useQuery();
-  
+
   // Type-safe filtering by status
   const activeProviders = providers?.filter(
     (p): p is ProviderWithStatus => p.status === ProviderStatus.ACTIVE
   );
-  
+
   const pendingProviders = providers?.filter(
     (p): p is ProviderWithStatus => p.status === ProviderStatus.PENDING_APPROVAL
   );
-  
+
   return (
     <div>
       <section>
@@ -450,7 +450,7 @@ export function ProvidersByStatus() {
           <div key={provider.id}>{provider.user?.name}</div>
         ))}
       </section>
-      
+
       <section>
         <h2>Pending Providers ({pendingProviders?.length})</h2>
         {pendingProviders?.map(provider => (
@@ -483,17 +483,17 @@ type Services = OnboardingData['services'];
 export function ProviderOnboardingForm({ userId }: { userId: string }) {
   const { data: onboardingData } = api.providers.getOnboardingData.useQuery();
   const createMutation = api.providers.create.useMutation();
-  
+
   const onSubmit = async (formData: any) => {
     const submitData: CreateProviderInput = {
       ...formData,
       userId,
       status: ProviderStatus.PENDING_APPROVAL,
     };
-    
+
     await createMutation.mutateAsync(submitData);
   };
-  
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <section>
@@ -505,7 +505,7 @@ export function ProviderOnboardingForm({ userId }: { userId: string }) {
           </label>
         ))}
       </section>
-      
+
       <section>
         <h2>Requirements</h2>
         {Object.entries(onboardingData?.requirements || {}).map(([typeId, reqs]) => (
@@ -517,7 +517,7 @@ export function ProviderOnboardingForm({ userId }: { userId: string }) {
           </div>
         ))}
       </section>
-      
+
       <section>
         <h2>Services</h2>
         {Object.entries(onboardingData?.services || {}).map(([typeId, services]) => (
@@ -532,7 +532,7 @@ export function ProviderOnboardingForm({ userId }: { userId: string }) {
           </div>
         ))}
       </section>
-      
+
       <button type="submit">Create Provider Profile</button>
     </form>
   );
@@ -549,24 +549,24 @@ type CreateAvailabilityInput = RouterInputs['calendar']['create'];
 
 export function AvailabilityCreationForm({ providerId }: { providerId: string }) {
   const createMutation = api.calendar.create.useMutation();
-  
+
   const onSubmit = async (formData: any) => {
     // Handle Date type conversions for tRPC input
     const submitData: CreateAvailabilityInput = {
       ...formData,
       providerId,
-      startTime: formData.startTime instanceof Date 
-        ? formData.startTime 
+      startTime: formData.startTime instanceof Date
+        ? formData.startTime
         : new Date(formData.startTime),
-      endTime: formData.endTime instanceof Date 
-        ? formData.endTime 
+      endTime: formData.endTime instanceof Date
+        ? formData.endTime
         : new Date(formData.endTime),
       type: AvailabilityType.IN_PERSON,
     };
-    
+
     await createMutation.mutateAsync(submitData);
   };
-  
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <input type="datetime-local" {...register('startTime')} />
@@ -591,44 +591,44 @@ export function AdminProviderApproval({ provider }: { provider: AdminProvider })
     onSuccess: () => toast.success('Provider approved successfully'),
     onError: (error) => toast.error(`Failed to approve: ${error.message}`),
   });
-  
+
   const rejectMutation = useRejectProvider({
     onSuccess: () => toast.success('Provider rejected'),
     onError: (error) => toast.error(`Failed to reject: ${error.message}`),
   });
-  
+
   return (
     <div>
       <h3>{provider.user?.name}</h3>
       <p>Email: {provider.user?.email}</p>
       <p>Status: {provider.status}</p>
-      
+
       <div>
         <h4>Provider Types</h4>
         {provider.typeAssignments?.map(assignment => (
           <span key={assignment.id}>{assignment.providerType?.name}</span>
         ))}
       </div>
-      
+
       <div>
         <h4>Services</h4>
         {provider.services?.map(service => (
           <span key={service.id}>{service.name}</span>
         ))}
       </div>
-      
+
       {provider.status === AdminApprovalStatus.PENDING_APPROVAL && (
         <div>
-          <button 
+          <button
             onClick={() => approveMutation.mutate({ providerId: provider.id })}
             disabled={approveMutation.isLoading}
           >
             Approve
           </button>
-          <button 
-            onClick={() => rejectMutation.mutate({ 
-              providerId: provider.id, 
-              reason: 'Insufficient documentation' 
+          <button
+            onClick={() => rejectMutation.mutate({
+              providerId: provider.id,
+              reason: 'Insufficient documentation'
             })}
             disabled={rejectMutation.isLoading}
           >
