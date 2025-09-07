@@ -2,20 +2,28 @@
 
 This file provides guidance to Claude Code when working with the MedBookings repository.
 
-## Analysis Mode
-- Do NOT assume conventional project patterns, you need to analyse the entire codebase to confirm the project's pattern
-- Do NOT assume framework conventions for directory structure and files that exist, you analyse the entire codebase to confirm 
+## Code Analysis Guidelines
+
+Before making any changes or suggestions:
+
+1. **Scan the entire project structure** to understand the actual organization and patterns in use
+2. **Confirm framework and tooling** by examining package.json, config files, and existing code patterns
+3. **Identify actual conventions** used in this specific project rather than assuming standard practices
+4. **Validate assumptions** by checking the codebase evidence before proceeding with any recommendations
 
 ## Command Execution Policy
 
 **NEVER execute directly:**
+
 - `npm run build`, `npm run lint`, `npm run format`, `npm run dev`, `npm run test`
 - Any npm scripts or long-running/interactive processes
 
 **Safe to execute:**
+
 - Simple file operations, `grep`, `rg` (ripgrep)
 
 ### Database Commands (Reference)
+
 - `npx prisma generate` - Generate Prisma client
 - `npx prisma db push` - Push schema (development)
 - `npx prisma studio` - Open database GUI
@@ -46,15 +54,16 @@ This file provides guidance to Claude Code when working with the MedBookings rep
 
 ### Type Source Rules
 
-| Type Category | Source | Import Pattern |
-|--------------|--------|----------------|
+| Type Category  | Source | Import Pattern                            |
+| -------------- | ------ | ----------------------------------------- |
 | Database Enums | Prisma | `import { Status } from '@prisma/client'` |
-| Domain Logic | Manual | `/features/*/types/types.ts` |
-| API Responses | tRPC | `RouterOutputs['router']['procedure']` |
+| Domain Logic   | Manual | `/features/*/types/types.ts`              |
+| API Responses  | tRPC   | `RouterOutputs['router']['procedure']`    |
 
 ### Implementation Patterns
 
 #### Component Type Extraction
+
 ```typescript
 // ✅ CORRECT - Extract types in components
 import { type RouterOutputs } from '@/utils/api';
@@ -66,6 +75,7 @@ type NestedType = NonNullable<AdminProvider>['relationName'][number];
 ```
 
 #### Hook Pattern (Simple Wrappers)
+
 ```typescript
 // ✅ CORRECT - No type exports from hooks
 export function useAdminProvider(id: string) {
@@ -75,6 +85,7 @@ export function useAdminProvider(id: string) {
 ```
 
 #### tRPC Procedure Pattern
+
 ```typescript
 // Server procedures return Prisma results directly
 export const adminRouter = createTRPCRouter({
@@ -83,7 +94,9 @@ export const adminRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       return ctx.prisma.provider.findUnique({
         where: { id: input.id },
-        include: { /* relations */ }
+        include: {
+          /* relations */
+        },
       }); // Type automatically inferred
     }),
 });
@@ -92,6 +105,7 @@ export const adminRouter = createTRPCRouter({
 ### Available Prisma Enums
 
 Always import directly from `@prisma/client`:
+
 - **User**: `UserRole`
 - **Provider**: `ProviderStatus`, `Languages`, `RequirementsValidationStatus`
 - **Organization**: `OrganizationStatus`, `OrganizationRole`, `MembershipStatus`
@@ -106,14 +120,14 @@ Always import directly from `@prisma/client`:
 // 1. Client Hook - calls tRPC
 export const useProviders = () => {
   return api.providers.getAll.useQuery();
-}
+};
 
 // 2. tRPC Procedure - queries database
 getAll: publicProcedure.query(async ({ ctx }) => {
   return ctx.prisma.provider.findMany({
-    include: { user: true, services: true }
+    include: { user: true, services: true },
   });
-})
+});
 
 // 3. Server Action - business logic only
 export async function createProvider(data) {
@@ -124,12 +138,14 @@ export async function createProvider(data) {
 ```
 
 **Rules:**
+
 - Client hooks NEVER import Prisma
 - Database queries ONLY in tRPC procedures
 - Server actions return metadata only
 - Single database query per endpoint
 
 ### Legacy REST Exceptions
+
 Only in `/app/api/`: File uploads, Webhooks, Third-party integrations, NextAuth routes
 
 ## Project Structure
@@ -151,7 +167,9 @@ src/
 ```
 
 ### tRPC Router Files
+
 Located in `/server/api/routers/`:
+
 - `admin.ts` - Admin procedures
 - `providers.ts` - Provider management
 - `organizations.ts` - Organization management
@@ -162,9 +180,9 @@ Located in `/server/api/routers/`:
 
 ### Provider-Organization Relationships
 
-| Provider Type | Availability | Billing |
-|--------------|--------------|---------|
-| Independent | Online only | Self-billed |
+| Provider Type           | Availability       | Billing     |
+| ----------------------- | ------------------ | ----------- |
+| Independent             | Online only        | Self-billed |
 | Organization-Associated | Physical locations | Per creator |
 
 - Exclusive scheduling: ONE entity per time period
@@ -183,10 +201,10 @@ PENDING_APPROVAL → APPROVED → TRIAL → ACTIVE
 
 ### Availability System
 
-| Creator | Initial Status | Billing |
-|---------|---------------|---------|
-| Provider | ACCEPTED | Provider subscription |
-| Organization | PENDING | Organization (after acceptance) |
+| Creator      | Initial Status | Billing                         |
+| ------------ | -------------- | ------------------------------- |
+| Provider     | ACCEPTED       | Provider subscription           |
+| Organization | PENDING        | Organization (after acceptance) |
 
 - Slot-based billing (not booking-based)
 - Base slots + tiered overage pricing
@@ -200,12 +218,14 @@ PENDING_APPROVAL → APPROVED → TRIAL → ACTIVE
 ### Integrations
 
 **Google Calendar:**
+
 - Bidirectional sync
 - External events block slots
 - Auto Google Meet links
 - Webhook support
 
 **Communications:**
+
 - Email, SMS, WhatsApp
 - Automated triggers
 - Guest support
@@ -219,11 +239,13 @@ PENDING_APPROVAL → APPROVED → TRIAL → ACTIVE
 ## Development Standards
 
 ### Forms
+
 - React Hook Form + Zod
 - `z.nativeEnum(PrismaEnum)` for enums
 - `z.record()` for nested data
 
 ### Optimistic Updates
+
 Pattern: onMutate → onError (rollback) → onSuccess (invalidate)
 See admin hooks for implementation
 
@@ -234,16 +256,18 @@ onMutate: async (variables) => {
   const previous = queryClient.getQueryData(['key']);
   queryClient.setQueryData(['key'], optimisticData);
   return { previous };
-}
+};
 ```
 
 ### File Conventions
+
 - kebab-case naming
 - Direct imports (no barrels)
 - Single quotes, semicolons, arrow functions
 - 2 spaces, 100 char max lines
 
 ## Testing Strategy
+
 - **E2E Tests**: Use Playwright MCP tools, never bash commands
 - **Test Files**: Located in `/tests/e2e/`
 - **Run Tests**: Request user to run, never execute directly
@@ -252,6 +276,7 @@ onMutate: async (variables) => {
 ## Error Handling Patterns
 
 ### tRPC Error Handling
+
 ```typescript
 import { TRPCError } from '@trpc/server';
 
@@ -262,6 +287,7 @@ throw new TRPCError({
 ```
 
 ### API Response Pattern
+
 ```typescript
 // Success
 { success: true, data: result }
@@ -272,11 +298,13 @@ throw new TRPCError({
 ## Critical Policies
 
 ### NO MOCK DATA
+
 - NEVER use mock/test/placeholder data
 - Use loading states, empty states, error messages
 - Always real data from database/APIs
 
 ### CLIENT/SERVER SEPARATION
+
 - Zero Prisma imports in client code
 - Database access only through tRPC
 - Automatic type inference
@@ -308,6 +336,7 @@ return ctx.prisma.provider.findUnique({ id: result.id });
 ```
 
 ## Performance Guidelines
+
 - Use `React.memo` for expensive components
 - Implement pagination for large lists
 - Use optimistic updates for better UX
@@ -315,6 +344,7 @@ return ctx.prisma.provider.findUnique({ id: result.id });
 - Cache tRPC queries appropriately
 
 ## Debugging
+
 - Check browser console for client errors
 - Check terminal for server errors
 - Use `console.log` for debugging (remove before commit)
@@ -327,19 +357,21 @@ return ctx.prisma.provider.findUnique({ id: result.id });
 - Run `npm run build` before PRs
 - Use Playwright MCP for e2e testing
 
-
 ## Development Workflow System
 
 The project uses a structured workflow system with commands located in `.claude/commands/`. Follow these patterns:
 
 ### Workflow Commands Location
+
 Workflow commands in `.claude/commands/`:
+
 - See `prd-specification.md` for feature development
 - See `issue-specification.md` for bug fixes
 - See `tasks-list.md` for task generation
 - See `tasks-process.md` for task execution
 
 ### Folder Structure
+
 ```
 /workflow/
 ├── docs/                    # General documentation
@@ -363,8 +395,10 @@ Workflow commands in `.claude/commands/`:
 ### Workflow Triggers & File Management
 
 #### Creating New Features
+
 **Trigger**: "I need a feature for [description]"
 **Process**:
+
 1. Read `.claude/commands/prd-specification.md`
 2. Ask clarifying questions
 3. Generate PRD: `/workflow/prds/backlog/[kebab-name]-prd.md`
@@ -372,8 +406,10 @@ Workflow commands in `.claude/commands/`:
 5. When prompted "Generate tasks", create: `/workflow/prds/backlog/[kebab-name]-prd-tasks.md`
 
 #### Reporting Bugs/Issues
+
 **Trigger**: "There's a bug where [description]" or "Issue: [description]"
 **Process**:
+
 1. Read `.claude/commands/issue-specification.md`
 2. Ask clarifying questions
 3. Generate spec: `/workflow/issues/backlog/[kebab-name]-issue.md`
@@ -381,8 +417,10 @@ Workflow commands in `.claude/commands/`:
 5. Generate tasks: `/workflow/issues/backlog/[kebab-name]-issue-tasks.md`
 
 #### Generating Task Lists
+
 **Trigger**: "Generate task list from [specification file]"
 **Process**:
+
 1. Read `.claude/commands/tasks-list.md`
 2. Read the specification file (PRD or Issue)
 3. Generate high-level tasks, wait for "Go"
@@ -390,8 +428,10 @@ Workflow commands in `.claude/commands/`:
 5. Save as separate `-tasks.md` file in same folder
 
 #### Processing Tasks
+
 **Trigger**: "Process tasks from [task file]"
 **Process**:
+
 1. Read `.claude/commands/tasks-process.md`
 2. Read tasks from `-tasks.md` file
 3. Update checkboxes: `- [ ]` → `- [x]` as completed
@@ -399,18 +439,20 @@ Workflow commands in `.claude/commands/`:
 5. Commit after each sub-task
 
 #### Moving to Complete
+
 **Trigger**: "Mark [feature/issue] as complete"
 **Process**:
+
 - Move both files (PRD+tasks or issue+tasks) to `/complete/` subfolder
 - All task checkboxes should show `- [x]`
 
 ### Quick Reference
-| User Says | Creates/Updates | Location |
-|-----------|-----------------|----------|
-| "I need a feature..." | `[name]-prd.md` | `/workflow/prds/backlog/` |
-| "Generate tasks" (for PRD) | `[name]-prd-tasks.md` | `/workflow/prds/backlog/` |
-| "There's a bug..." | `[name]-issue.md` + `-tasks.md` | `/workflow/issues/backlog/` |
-| "Process tasks from..." | Updates checkboxes in `-tasks.md` | In place |
-| "Mark X complete" | Moves both files | To `/complete/` subfolder |
-| "Add to backlog..." | Updates `backlog.md` | `/workflow/docs/` |
 
+| User Says                  | Creates/Updates                   | Location                    |
+| -------------------------- | --------------------------------- | --------------------------- |
+| "I need a feature..."      | `[name]-prd.md`                   | `/workflow/prds/backlog/`   |
+| "Generate tasks" (for PRD) | `[name]-prd-tasks.md`             | `/workflow/prds/backlog/`   |
+| "There's a bug..."         | `[name]-issue.md` + `-tasks.md`   | `/workflow/issues/backlog/` |
+| "Process tasks from..."    | Updates checkboxes in `-tasks.md` | In place                    |
+| "Mark X complete"          | Moves both files                  | To `/complete/` subfolder   |
+| "Add to backlog..."        | Updates `backlog.md`              | `/workflow/docs/`           |
