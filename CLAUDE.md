@@ -532,108 +532,102 @@ return ctx.prisma.provider.findUnique({ id: result.id });
 
 ## Development Workflow System
 
-The project uses a structured workflow system with commands located in `.claude/commands/`. Follow these patterns:
+The project uses a streamlined workflow system with commands located in `.claude/commands/`. Follow these patterns:
 
 ### Workflow Commands Location
 
 Workflow commands in `.claude/commands/`:
 
-- See `prd-specification.md` for feature development
-- See `issue-specification.md` for bug fixes
-- See `tasks-list.md` for task generation
-- See `tasks-process.md` for task execution
+- `feature-workflow.md` - Complete feature development flow
+- `issue-workflow.md` - Complete issue resolution flow
+- `tasks-process-enhanced.md` - Task implementation with backlog updates
+- `quick-note-workflow.md` - Quick capture for ideas
 
 ### Folder Structure
 
-```
 /workflow/
-├── docs/                    # General documentation
-│   └── backlog.md          # Project backlog
-├── issues/
-│   ├── backlog/            # Active issue specs and tasks
-│   │   ├── [name]-issue.md
-│   │   └── [name]-issue-tasks.md
-│   └── complete/           # Completed issues archive
-│       ├── [name]-issue.md
-│       └── [name]-issue-tasks.md
-└── prds/
-    ├── backlog/            # Active PRDs and task files
-    │   ├── [name]-prd.md       # Product Requirements Document
-    │   └── [name]-prd-tasks.md # Implementation Tasks
-    └── complete/           # Completed PRDs archive
-        ├── [name]-prd.md
-        └── [name]-prd-tasks.md
-```
+├── backlog.md # Central task tracking
+├── complete.md # Completed work archive
+├── prds/ # Feature specifications
+│ ├── [name]-prd.md # Product Requirements Document
+│ └── [name]-prd-tasks.md # Implementation Tasks
+└── issues/ # Issue specifications
+├── [name]-issue.md # Issue Specification
+└── [name]-issue-tasks.md # Resolution Tasks
 
-### Workflow Triggers & File Management
+### Workflow Triggers
 
-#### Creating New Features
+#### Feature Development
 
-**Trigger**: "I need a feature for [description]"
+**Trigger**: `feature required: [description]`
 **Process**:
 
-1. Read `.claude/commands/prd-specification.md`
-2. Ask clarifying questions
-3. Generate PRD: `/workflow/prds/backlog/[kebab-name]-prd.md`
-4. Wait for "Complete PRD" confirmation
-5. When prompted "Generate tasks", create: `/workflow/prds/backlog/[kebab-name]-prd-tasks.md`
+1. Creates PRD in `/workflow/prds/[feature-name]-prd.md`
+2. Generates tasks in `/workflow/prds/[feature-name]-prd-tasks.md`
+3. Automatically adds entry to `/workflow/backlog.md`
+4. Asks priority questions for categorization
 
-#### Reporting Bugs/Issues
+#### Issue Resolution
 
-**Trigger**: "There's a bug where [description]" or "Issue: [description]"
+**Trigger**: `issue fix required: [description]`
 **Process**:
 
-1. Read `.claude/commands/issue-specification.md`
-2. Ask clarifying questions
-3. Generate spec: `/workflow/issues/backlog/[kebab-name]-issue.md`
-4. Wait for "Complete Issue Specification" confirmation
-5. Generate tasks: `/workflow/issues/backlog/[kebab-name]-issue-tasks.md`
+1. Creates issue spec in `/workflow/issues/[issue-name]-issue.md`
+2. Generates tasks in `/workflow/issues/[issue-name]-issue-tasks.md`
+3. Automatically adds entry to `/workflow/backlog.md`
+4. Asks severity questions for prioritization
 
-#### Generating Task Lists
+#### Task Implementation
 
-**Trigger**: "Generate task list from [specification file]"
+**Trigger**: `implement feature tasks from: [feature-name]-prd-tasks.md`
+**Trigger**: `implement issue tasks from: [issue-name]-issue-tasks.md`
 **Process**:
 
-1. Read `.claude/commands/tasks-list.md`
-2. Read the specification file (PRD or Issue)
-3. Generate high-level tasks, wait for "Go"
-4. Add sub-tasks
-5. Save as separate `-tasks.md` file in same folder
+1. Creates appropriate git branch (`feature/` or `issue/`)
+2. Implements each sub-task with user confirmation
+3. Updates task file with `[x]` marks
+4. Updates backlog.md when all tasks complete
+5. Moves to complete.md after final confirmation
 
-#### Processing Tasks
+#### Quick Capture
 
-**Trigger**: "Process tasks from [task file]"
+**Trigger**: `quick feature note: [brief idea]`
+**Trigger**: `quick issue note: [brief problem]`
 **Process**:
 
-1. Read `.claude/commands/tasks-process.md`
-2. Read tasks from `-tasks.md` file
-3. Update checkboxes: `- [ ]` → `- [x]` as completed
-4. Create git branch: `feature/[name]` or `issue/[name]`
-5. Commit after each sub-task
+- Adds lightweight entry to backlog.md
+- Can be expanded to full spec later
 
-#### Moving to Complete
+### Workflow Quick Reference
 
-**Trigger**: "Mark [feature/issue] as complete"
-**Process**:
+| User Says                       | Creates       | Location            | Automatic Actions          |
+| ------------------------------- | ------------- | ------------------- | -------------------------- |
+| `feature required: [desc]`      | PRD + Tasks   | `/workflow/prds/`   | Adds to backlog.md         |
+| `issue fix required: [desc]`    | Issue + Tasks | `/workflow/issues/` | Adds to backlog.md         |
+| `implement feature tasks from:` | Updates tasks | In place            | Updates backlog → complete |
+| `implement issue tasks from:`   | Updates tasks | In place            | Updates backlog → complete |
+| `quick feature note:`           | None          | N/A                 | Quick entry in backlog.md  |
+| `quick issue note:`             | None          | N/A                 | Quick entry in backlog.md  |
 
-- Move both files (PRD+tasks or issue+tasks) to `/complete/` subfolder
-- All task checkboxes should show `- [x]`
+### Key Workflow Features
 
-### Workflow Quick Reference 1
+- **Automatic Backlog Management**: All features/issues auto-added to backlog.md
+- **User Confirmation Required**: Tasks marked complete only after user confirms satisfaction
+- **Integrated Git Flow**: Automatic branch creation and PR generation
+- **Progress Tracking**: Visual `[x]` marks in task files and backlog
+- **Historical Archive**: Completed work moves to complete.md with details
 
-| Action        | Command File           | Output              |
-| ------------- | ---------------------- | ------------------- |
-| New Feature   | prd-specification.md   | PRD → Tasks         |
-| Bug Fix       | issue-specification.md | Issue → Tasks       |
-| Execute Tasks | tasks-process.md       | Implementation → PR |
+### Execution Modes
 
-### Workflow Quick Reference 2
+- **Default Mode**: Interactive with confirmation at each step
+- **YOLO Mode**: Add "yolo mode" to implementation commands for continuous execution
+  - Still requires confirmation before marking complete
+  - Runs `npm run build` until successful
+  - Uses Playwright MCP for e2e testing
 
-| User Says                  | Creates/Updates                   | Location                    |
-| -------------------------- | --------------------------------- | --------------------------- |
-| "I need a feature..."      | `[name]-prd.md`                   | `/workflow/prds/backlog/`   |
-| "Generate tasks" (for PRD) | `[name]-prd-tasks.md`             | `/workflow/prds/backlog/`   |
-| "There's a bug..."         | `[name]-issue.md` + `-tasks.md`   | `/workflow/issues/backlog/` |
-| "Process tasks from..."    | Updates checkboxes in `-tasks.md` | In place                    |
-| "Mark X complete"          | Moves both files                  | To `/complete/` subfolder   |
-| "Add to backlog..."        | Updates `backlog.md`              | `/workflow/docs/`           |
+### Important Notes
+
+- No manual backlog management needed - system handles automatically
+- User satisfaction confirmation required before any completion marks
+- All paths relative to project root
+- Files stay in `/workflow/prds/` and `/workflow/issues/` (no subdirectories)
