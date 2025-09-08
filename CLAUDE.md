@@ -35,7 +35,7 @@ Before making any changes or suggestions:
 
 ## Core Development Principles
 
-## 🚨 Critical Rules (Never Violate)
+## Critical Rules (Never Violate)
 
 ### File Operations
 
@@ -49,7 +49,7 @@ Before making any changes or suggestions:
 - **NEVER skip libraries** claiming they don't work - incorrect syntax/patterns are usually the issue
 - **NEVER give up on tasks** - identify root causes instead of trying random solutions
 
-## 📋 Task Initialization Protocol
+## Task Initialization Protocol
 
 ### 1. Understanding Phase
 
@@ -73,7 +73,7 @@ Before making any changes or suggestions:
 - **Vague tasks**: Request clarification or guide user through breakdown
 - **Complex scope**: Identify subtasks to prevent errors and wasted effort
 
-## 💻 Development Workflow
+## Development Workflow
 
 ### Library & Syntax Management
 
@@ -103,7 +103,7 @@ Before making any changes or suggestions:
   - Comprehensive commenting
 - **Optimize for readability** - code is read more than written
 
-## 🎯 Implementation Principles
+## Implementation Principles
 
 ### Confidence Threshold
 
@@ -123,7 +123,7 @@ Before making any changes or suggestions:
 - **Systematic debugging** when facing repeated issues
 - **Use specified libraries** - user chose them for a reason
 
-## 🎨 Design & User Experience
+## Design & User Experience
 
 ### UI/UX Standards
 
@@ -146,33 +146,33 @@ Before making any changes or suggestions:
   - UI/UX principles
   - Performance optimization
 
-## 📊 Workflow Summary
+## Workflow Summary
 
 1.  RECEIVE TASK
-    ↓
+
 2.  ASSESS CLARITY (>95% confidence?)
-    ├─ NO → Ask questions
-    └─ YES → Continue
-    ↓
+    ─ NO → Ask questions
+    ─ YES → Continue
+
 3.  UNDERSTAND ARCHITECTURE
-    ↓
+
 4.  CREATE PLAN
-    ↓
+
 5.  GET APPROVAL
-    ↓
+
 6.  VERIFY LIBRARY SYNTAX
-    ↓
+
 7.  IMPLEMENT
-    ↓
+
 8.  LINT & TEST
-    ↓
+
 9.  REQUEST MILESTONE CONFIRMATION
-    ↓
+
 10. COMMIT (if approved)
-    ↓
+
 11. CONTINUE OR COMPLETE
 
-## ✅ Quick Reference Checklist
+## Quick Reference Checklist
 
 Before starting:
 
@@ -193,7 +193,7 @@ After milestones:
 - [ ] User confirmation received?
 - [ ] Ready to commit or continue?
 
-## 🔴 Red Flags to Avoid
+## Red Flags to Avoid
 
 1. **"I'll skip this library"** → Fix syntax instead
 2. **"Here's how it would work"** → Implement it fully
@@ -201,8 +201,6 @@ After milestones:
 4. **Writing files without asking** → Always get approval first
 5. **Starting servers** → User handles this
 6. **Assuming library knowledge** → Verify current syntax
-
----
 
 _Remember: You are a highly skilled polyglot developer with decades of experience. Apply this expertise while following these guidelines to deliver excellent, working solutions._
 
@@ -433,6 +431,14 @@ onMutate: async (variables) => {
 - Single quotes, semicolons, arrow functions
 - 2 spaces, 100 char max lines
 
+## MCP Tool Usage
+
+- **PostgreSQL**: Database queries and verification via `mcp__postgres-server__`
+- **Filesystem**: File operations via `mcp__filesystem-server__`
+- **IDE**: Diagnostics via `mcp__ide__`
+- **Playwright**: E2E testing via `mcp__playwright__`
+- Always prefer MCP tools over bash commands when available
+
 ## Testing Strategy
 
 - **E2E Tests**: Use Playwright MCP tools, never bash commands
@@ -613,7 +619,15 @@ Workflow commands in `.claude/commands/`:
 - Move both files (PRD+tasks or issue+tasks) to `/complete/` subfolder
 - All task checkboxes should show `- [x]`
 
-### Quick Reference
+### Workflow Quick Reference 1
+
+| Action        | Command File           | Output              |
+| ------------- | ---------------------- | ------------------- |
+| New Feature   | prd-specification.md   | PRD → Tasks         |
+| Bug Fix       | issue-specification.md | Issue → Tasks       |
+| Execute Tasks | tasks-process.md       | Implementation → PR |
+
+### Workflow Quick Reference 2
 
 | User Says                  | Creates/Updates                   | Location                    |
 | -------------------------- | --------------------------------- | --------------------------- |
