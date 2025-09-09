@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code when working with the MedBookings repository.
 
+## Quick Reference
+
+- **Starting any task?** Read Auto-Context Rules section first
+- **Workflow trigger?** See Development Workflow System section
+- **Type confusion?** Check Type System Architecture
+- **Database changes?** Read Business Rules first
+- **API work?** Review Data Flow Architecture
+
 ## Code Analysis Guidelines
 
 Before making any changes or suggestions:
@@ -11,6 +19,215 @@ Before making any changes or suggestions:
 3. **Identify actual conventions** used in this specific project rather than assuming standard practices.
 4. **Validate assumptions** by checking the codebase evidence before proceeding with any recommendations.
 5. **Always read entire files** otherwise, you don’t know what you don’t know, and will end up making mistakes, duplicating code that already exists, or misunderstanding the architecture.
+
+## Auto-Context Rules
+
+### Initial Context Loading (Always Read)
+
+Before starting ANY task, read these core files to understand the system:
+
+1. **Architecture Foundation**
+
+   - `/src/app/layout.tsx` - App structure and providers
+   - `/prisma/schema.prisma` - Database schema (source of truth)
+   - `/src/server/api/root.ts` - API routes overview
+   - `/package.json` - Dependencies and scripts
+   - `/src/env.js` - Environment variables structure
+   - `/src/lib/auth.ts` - Authentication configuration
+
+2. **Type System Overview**
+   - `/src/utils/api.ts` - tRPC client setup and type exports
+   - `/src/server/api/trpc.ts` - tRPC context and middleware
+
+### Feature-Specific Context Loading
+
+When working on a specific feature, read ALL of:
+
+1. **Feature Module** (`/src/features/[feature]/`)
+
+   - `components/*` - All UI components
+   - `hooks/*` - Custom hooks and API calls
+   - `lib/*` - Server actions and utilities
+   - `types/*` - Type definitions, schemas, guards
+
+2. **Backend Implementation**
+
+   - `/src/server/api/routers/[feature].ts` - tRPC procedures
+   - Related routers that might interact with this feature
+
+3. **UI Dependencies**
+   - `/src/components/ui/*` - Used shadcn/ui components
+   - `/src/components/shared/*` - Shared components used by feature
+
+### Task-Type Specific Context
+
+| If task involves...  | Read these files FIRST                               | Then read...                                                        |
+| -------------------- | ---------------------------------------------------- | ------------------------------------------------------------------- |
+| **Database changes** | `/prisma/schema.prisma`                              | Previous migrations in `/prisma/migrations/`, affected tRPC routers |
+| **New API endpoint** | `/src/server/api/root.ts`, `/src/server/api/trpc.ts` | Similar existing routers for patterns                               |
+| **UI components**    | `/src/components/ui/` directory listing              | Parent components, related feature components                       |
+| **Authentication**   | `/src/lib/auth.ts`, `/src/middleware.ts`             | Auth-related procedures in routers                                  |
+| **Forms**            | Existing form patterns in feature                    | `/src/lib/validations/*`, related schemas                           |
+| **Error handling**   | `/src/lib/errors.ts`                                 | Error boundaries, tRPC error handling                               |
+| **Type errors**      | Type definitions in feature folder                   | `/src/utils/api.ts` for tRPC types                                  |
+| **Testing**          | `/tests/e2e/` for existing patterns                  | Related feature test files                                          |
+| **Styling**          | `/src/app/globals.css`, `tailwind.config.ts`         | Component-specific styles                                           |
+| **Performance**      | Current implementation files                         | `/src/lib/utils.ts` for optimization utilities                      |
+
+### Integration Points Context
+
+When the task touches external services:
+
+- **Google Calendar** → `/src/features/calendar/lib/google-calendar.ts`
+- **Email/SMS** → `/src/lib/notifications/*`
+- **File uploads** → `/src/app/api/upload/*`
+- **Webhooks** → `/src/app/api/webhooks/*`
+- **Payments** → `/src/features/billing/*`
+
+### Historical Context Loading
+
+For bug fixes or enhancements:
+
+1. **Recent changes**: Check git history for files being modified
+   ```bash
+   git log -3 --oneline -- [file-path]
+   ```
+2. **Related issues**: Read any linked issue specifications in /workflow/issues/
+
+3. **Previous PRDs**: Check /workflow/prds/ for original feature requirements
+
+### Cross-Feature Dependencies
+
+Always check for dependencies:
+
+1. **Import analysis**: What does this feature import from other features?
+2. **Export analysis**: What exports from this feature are used elsewhere?
+3. **Database relations**: What related entities need to be considered?
+4. **Shared hooks**: What shared hooks/utilities are used?
+
+### Context Validation Checklist
+
+Before starting implementation, confirm you've read:
+
+- [ ] Core architecture files (layout, schema, root API)
+- [ ] All files in the specific feature folder
+- [ ] Related tRPC router(s)
+- [ ] Type definitions for the feature
+- [ ] Any existing similar patterns in codebase
+- [ ] Related UI components from shadcn/ui
+- [ ] Relevant workflow documentation if exists
+
+### Smart Context Patterns
+
+1. **Pattern Matching**: If implementing similar functionality to existing features, read that feature's implementation first
+2. **Dependency Tree**: Follow imports to understand the full context:
+   Start with the main file
+   Read all imported local files
+   Note external library usage
+
+3. **Database Impact**: For any database-touching code:
+
+Read schema
+Check indexes and relations
+Review existing queries in similar procedures
+
+4. **Type Flow**: Follow types from source to usage:
+
+Prisma schema → tRPC procedure → API type export → Component usage
+
+### Context Efficiency Rules
+
+DO NOT read everything - be strategic:
+
+- Skip test files unless writing tests
+- Skip unrelated features unless there's a dependency
+- Skip migration files unless debugging migration issues
+- Skip built/generated files (.next/, node_modules/)
+
+ALWAYS read:
+
+- Files you're about to modify
+- Files that import what you're modifying
+- Files that export what you're using
+- Type definitions for any data you're handling
+
+### Component Creation Context
+
+When creating a NEW component:
+
+1. Read similar existing components in same feature
+2. Check `/src/components/ui/` for base components to extend
+3. Review parent component that will use it
+4. Check feature's types/schemas.ts for data structures
+
+### Bug Fix Context
+
+When fixing a bug:
+
+1. Read the complete file with the bug
+2. Check git blame to understand why code was written
+3. Read any tests covering this code
+4. Check for similar patterns that might have same bug
+
+### Performance-Sensitive Context
+
+For performance optimization tasks, additionally read:
+
+- Current React DevTools profiler results
+- Bundle analyzer output if available
+- Database query plans from affected procedures
+- Any existing React.memo or useMemo usage in feature
+
+## Common Gotchas
+
+- **Prisma types**: Always import from `@prisma/client`, never recreate
+- **tRPC types**: Use `RouterOutputs` for type extraction, not manual types
+- **File uploads**: Must use REST endpoint, not tRPC
+- **Migrations**: Never run `prisma migrate dev` - it's interactive
+- **Build verification**: Always check with user before running build
+
+### Workflow Task Context
+
+When executing workflow tasks:
+
+1. **Always read** the task file in `/workflow/[prds|issues]/`
+2. **Check** the original PRD/issue spec for full context
+3. **Review** any completed related tasks in same feature
+4. **Verify** branch name matches task type (feature/ or issue/)
+
+### NEVER Skip Context Reading
+
+Even if you think you know the codebase:
+
+- File structures change
+- New patterns get introduced
+- Dependencies get updated
+- Business rules evolve
+
+Always read the specified context files - assumptions from previous sessions may be outdated.
+
+### Quick Context Verification Commands
+
+```bash
+# Verify core files exist
+ls -la src/app/layout.tsx prisma/schema.prisma src/server/api/root.ts
+
+# Check feature structure
+ls -la src/features/[feature-name]/
+
+# Verify router exists
+ls -la src/server/api/routers/[feature-name].ts
+```
+
+### Discovering Incomplete Features
+
+When working on a feature that seems partially implemented:
+
+1. Check `/workflow/prds/` for original specifications
+2. Check `/workflow/issues/` for known problems
+3. Look for TODO comments: `rg "TODO|FIXME|HACK" src/features/[feature]/`
+4. Check git history for recent changes
+5. Ask user about implementation status before proceeding
 
 ## Command Execution Policy
 
@@ -93,6 +310,19 @@ Before making any changes or suggestions:
 - **Test each milestone** before proceeding
 - **Request confirmation** after completing logical checkpoints
 
+#### Build Error Resolution Protocol
+
+- **When build errors occur**:
+  1. Run `npm run build` to see full error output
+  2. Fix identified errors systematically (not trial-and-error)
+  3. Re-run build after each fix
+  4. Continue until build passes completely
+  5. Never proceed with failing build
+- **Build verification is mandatory** before:
+  - Creating PRs
+  - Marking tasks complete
+  - Moving to next implementation phase
+
 ### Code Organization
 
 - **Separate files** wherever appropriate
@@ -122,6 +352,20 @@ Before making any changes or suggestions:
 - **Root cause analysis** instead of trial-and-error
 - **Systematic debugging** when facing repeated issues
 - **Use specified libraries** - user chose them for a reason
+
+#### Code Modification Strategy
+
+- **ALWAYS prefer editing existing code over creating new code**
+- **Before creating any new file or function**:
+  1. Search for similar existing implementations
+  2. Check if existing code can be extended/modified
+  3. Evaluate if refactoring would achieve the goal
+  4. Only create new code when modification is genuinely insufficient
+- **Benefits of editing first**:
+  - Maintains consistency
+  - Reduces code duplication
+  - Preserves existing patterns
+  - Minimizes bundle size
 
 ## Design & User Experience
 
@@ -445,6 +689,21 @@ onMutate: async (variables) => {
 - **Test Files**: Located in `/tests/e2e/`
 - **Run Tests**: Request user to run, never execute directly
 - **Test Pattern**: Test critical user flows only
+
+### Compilation Error Protocol
+
+When code does not compile:
+
+1. **Run the code** to identify exact compilation errors
+2. **Write tests** for each compilation issue discovered:
+   - Create test case that captures the error scenario
+   - Ensure test fails with current code
+   - Document expected behavior in test
+3. **Fix implementation** until all tests pass:
+   - Address one compilation error at a time
+   - Run tests after each fix
+   - Ensure no regression in existing tests
+4. **Final verification**: Run full test suite and build
 
 ## Error Handling Patterns
 
