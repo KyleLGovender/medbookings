@@ -22,12 +22,16 @@ To create a comprehensive Issue Specification and associated task list for a bug
      - "Are there any workarounds?"
    - Generate comprehensive issue specification following existing structure
    - Save as `/workflow/issues/[issue-name]-issue.md`
+   - Ensure issue spec includes:
+     - Environment details (browser, device, user role)
+     - Console/network error logs if available
+     - Clear severity justification
 
 3. **Task List Generation**
 
    - Automatically read the generated issue specification
    - Create high-level parent tasks for investigation, fixing, and validation
-   - Present parent tasks and ask: "Ready to generate sub-tasks? Respond with 'Go' to proceed"
+   - Present parent tasks and ask: "Ready to generate sub-tasks? Respond with 'Yes' to proceed"
    - Generate detailed sub-tasks for each parent task
    - Save as `/workflow/issues/[issue-name]-issue-tasks.md`
 

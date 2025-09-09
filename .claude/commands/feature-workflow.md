@@ -21,12 +21,16 @@ To create a comprehensive Product Requirements Document (PRD) and associated tas
      - "Are there any specific constraints or non-goals?"
    - Generate comprehensive PRD following the existing PRD structure
    - Save as `/workflow/prds/[feature-name]-prd.md`
+   - Ensure PRD includes:
+     - Clear backlog summary section for easy extraction
+     - Specific user impact metrics
+     - Explicit blocking status
 
 3. **Task List Generation**
 
    - Automatically read the generated PRD
    - Create high-level parent tasks (3-7 tasks)
-   - Present parent tasks and ask: "Ready to generate sub-tasks? Respond with 'Go' to proceed"
+   - Present parent tasks and ask: "Ready to generate sub-tasks? Respond with 'Yes' to proceed"
    - Generate detailed sub-tasks for each parent task
    - Save as `/workflow/prds/[feature-name]-prd-tasks.md`
 

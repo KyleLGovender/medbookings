@@ -23,32 +23,39 @@ To process and implement tasks from a task list file, updating the individual ta
      - If yes: Mark sub-task as complete `[x]` in the task file
      - If no: Revise implementation and ask again
      - Commit changes with message referencing task number
-3. **Parent Task Completion**
+
+3 **Build Verification**
+
+- After implementing each parent task:
+  - Run `npm run build` to catch compilation errors
+  - Fix any build errors before proceeding
+  - Only mark task complete when build passes
+
+4. **Parent Task Completion**
 
    - When all sub-tasks under a parent are complete:
      - Mark parent task as complete `[x]` in the task file
      - **Ask user**: "Parent task [X.0] is now complete. Are you satisfied? (yes/no)"
      - Update task file immediately
 
-4. **Backlog Update**
+5. **Backlog Update**
 
    - When ALL tasks in the file are complete:
      - **Ask user**: "All tasks for [feature/issue-name] are complete. Are you satisfied with the overall implementation? (yes/no)"
      - If yes:
-       - Locate entry in `/workflow/backlog.md`
-       - Change `[ ]` to `[x]` for the main backlog entry
-       - Save updated backlog.md
+     - Locate entry in `/workflow/backlog.md`
+     - Change `[ ]` to `[x]` for the main backlog entry
+     - Save updated backlog.md
 
-5. **Complete.md Update**
+6. **Complete.md Update**
 
    - After backlog is marked complete:
 
      - Read `/workflow/complete.md`
      - Add entry to appropriate section:
 
-     For features:
+   - For features:
 
-     ```markdown
      ## Completed Features
 
      ### [Feature Name] - [Completion Date]
@@ -58,11 +65,9 @@ To process and implement tasks from a task list file, updating the individual ta
      - **PRD:** `/workflow/prds/[feature-name]-prd.md`
      - **Tasks:** `/workflow/prds/[feature-name]-prd-tasks.md`
      - **Completed By:** [User/AI pair]
-     ```
 
-     For issues:
+   - For issues:
 
-     ```markdown
      ## Resolved Issues
 
      ### [Issue Name] - [Completion Date]
@@ -72,9 +77,8 @@ To process and implement tasks from a task list file, updating the individual ta
      - **Spec:** `/workflow/issues/[issue-name]-issue.md`
      - **Tasks:** `/workflow/issues/[issue-name]-issue-tasks.md`
      - **Resolved By:** [User/AI pair]
-     ```
 
-6. **Final Steps**
+7. **Final Steps**
    - Run `npm run build` to verify compilation
    - Create comprehensive git commit
    - Ask: "Would you like me to create a PR for these changes? (yes/no)"
