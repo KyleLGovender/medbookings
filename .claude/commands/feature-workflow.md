@@ -16,7 +16,17 @@ To create a comprehensive Product Requirements Document (PRD) and associated tas
    - Read technical plan at `/workflow/technical-plans/[feature-name]-technical-plan.md`
    - If no technical plan exists: ERROR - "Technical planning required first. Run: plan technical approach for: feature: [description]"
 
-2. **PRD Generation**
+2. **Quick Note Tracking** (if applicable)
+   
+   - If this feature/issue originated from a quick note in backlog:
+     - Add entry to `/workflow/complete.md` under "## Quick Notes Promoted":
+       ```markdown
+       - **[Current Date]:** Quick note "[original quick note text]" became [feature/issue] "[confirmed-name]"
+       ```
+   - Remove the quick note from `/workflow/backlog.md`
+   - Update backlog statistics after removal
+
+3. **PRD Generation**
    
    - If `/workflow/prds/` doesn't exist: Create with `mkdir -p /workflow/prds/`
    - Check if `/workflow/prds/[feature-name]-prd.md` exists
@@ -52,15 +62,15 @@ To create a comprehensive Product Requirements Document (PRD) and associated tas
    - **Reference to technical plan**: "Technical Plan: `/workflow/technical-plans/[feature-name]-technical-plan.md`"
    - Save as `/workflow/prds/[feature-name]-prd.md`
 
-3. **Task List Generation**
-
+4. **Task List Generation**
    - Automatically read the generated PRD
-   - Create high-level parent tasks (3-7 tasks)
+   - Load task template from `/workflow/reference/prd/prd-tasks-template.md`
+   - Create high-level parent tasks (3-7 tasks) based on template structure
    - Present parent tasks and ask: "Ready to generate sub-tasks? Respond with 'Yes' to proceed"
    - Generate detailed sub-tasks for each parent task
    - Save as `/workflow/prds/[feature-name]-prd-tasks.md`
 
-4. **Backlog Integration**
+5. **Backlog Integration**
 
    - Ask priority questions:
      - "How urgent is this feature? (High/Medium/Low)"
@@ -77,13 +87,46 @@ To create a comprehensive Product Requirements Document (PRD) and associated tas
        - **Added:** [Date]
      ```
 
-5. **Confirmation**
-   - Inform user: "Feature PRD, tasks, and backlog entry created successfully"
-   - Show paths to all created files
+6. **Update Backlog Statistics**
 
+   - After adding entry to backlog, automatically update statistics:
+     - Count all `- [ ]` items in "## High Priority" sections (both Features and Issues)
+     - Count all `- [ ]` items in "## Medium Priority" sections (both Features and Issues)
+     - Count all `- [ ]` items in "## Low Priority" sections (both Features and Issues)
+     - Count all `- [ ]` items in "## Quick Feature Notes" and "## Quick Issue Notes"
+     - Count all `- [x]` items throughout entire document
+     - Calculate total: Sum of all checkbox items (both `[ ]` and `[x]`)
+   
+   **Counting Pattern Instructions:**
+   - Use pattern `^\s*- \[ \]` to match uncompleted items
+   - Use pattern `^\s*- \[x\]` to match completed items (case-insensitive)
+   - Section boundaries: Count stops at next `##` heading or `---` separator
+   - Include all indentation levels (sub-items under main checkbox items)
+   
+   - Replace placeholder values in backlog.md:
+     - `**Total Items:** [auto-count]` → Replace with total count
+     - `**High Priority:** [auto-count]` → Replace with high priority count
+     - `**Medium Priority:** [auto-count]` → Replace with medium priority count
+     - `**Low Priority:** [auto-count]` → Replace with low priority count
+     - `**Completed:** [auto-count]` → Replace with completed count
+     - `**Last Updated:** [Date]` → Replace with today's date (YYYY-MM-DD)
+
+7. **Confirmation**
+   - Inform user: "Feature PRD, tasks, and backlog entry created successfully"
+   - Show paths to all created files:
+     - PRD: `/workflow/prds/[feature-name]-prd.md`
+     - Tasks: `/workflow/prds/[feature-name]-prd-tasks.md`
+     - Backlog: `/workflow/backlog.md`
+   
+   **To implement this feature, copy and run this command:**
+   ```markdown
+   implement feature tasks from: [feature-name]-prd-tasks.md
+   ```
 ## Success Criteria
 
 - PRD is comprehensive and follows existing structure
 - Tasks are detailed and actionable
 - Backlog entry is properly categorized by priority
 - All files are correctly linked
+
+

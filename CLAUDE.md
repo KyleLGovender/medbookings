@@ -474,7 +474,7 @@ _Remember: You are a highly skilled polyglot developer with decades of experienc
 #### Component Type Extraction
 
 ```typescript
-// ✅ CORRECT - Extract types in components
+// CORRECT - Extract types in components
 import { type RouterOutputs } from '@/utils/api';
 
 type AdminProvider = RouterOutputs['admin']['getProviderById'];
@@ -486,11 +486,11 @@ type NestedType = NonNullable<AdminProvider>['relationName'][number];
 #### Hook Pattern (Simple Wrappers)
 
 ```typescript
-// ✅ CORRECT - No type exports from hooks
+// CORRECT - No type exports from hooks
 export function useAdminProvider(id: string) {
   return api.admin.getProviderById.useQuery({ id });
 }
-// ❌ NEVER export types from hooks
+// NEVER export types from hooks
 ```
 
 #### tRPC Procedure Pattern
@@ -826,10 +826,8 @@ mkdir -p /workflow/reference/issue/
 │   └── [name]-issue-tasks.md # Resolution Tasks
 └── reference/        # Templates and reference documents
     ├── prd/
-    │   ├── prd-template.md        # PRD template
     │   └── prd-tasks-template.md  # PRD tasks template
     └── issue/
-        ├── issue-template.md        # Issue template
         └── issue-tasks-template.md  # Issue tasks template
 
 
@@ -948,7 +946,7 @@ Technical planning is the ONLY entry point for new features/issues:
    - Creates technical feasibility analysis
    - Defines minimal implementation scope
 
-2. **Requirements Documentation** (AUTOMATIC NEXT STEP)
+2. **Requirements Documentation** (MANUAL TRIGGER)
 
    - Technical plan triggers: `feature required: [name]` or `issue fix required: [name]`
    - Uses the technically-validated name from step 1

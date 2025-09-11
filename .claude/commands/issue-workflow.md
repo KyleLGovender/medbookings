@@ -16,7 +16,17 @@ To create a comprehensive Issue Specification and associated task list for a bug
    - Read technical plan at `/workflow/technical-plans/[issue-name]-technical-plan.md`
    - If no technical plan exists: ERROR - "Technical planning required first. Run: plan technical approach for: issue: [description]"
 
-2. **Issue Specification Generation**
+2. **Quick Note Tracking** (if applicable)
+   
+   - If this feature/issue originated from a quick note in backlog:
+     - Add entry to `/workflow/complete.md` under "## Quick Notes Promoted":
+       ```markdown
+       - **[Current Date]:** Quick note "[original quick note text]" became [feature/issue] "[confirmed-name]"
+       ```
+   - Remove the quick note from `/workflow/backlog.md`
+   - Update backlog statistics after removal
+
+3. **Issue Specification Generation**
    
    - If `/workflow/issues/` doesn't exist: Create with `mkdir -p /workflow/issues/`
    - Check if `/workflow/issues/[issue-name]-issue.md` exists
@@ -54,15 +64,15 @@ To create a comprehensive Issue Specification and associated task list for a bug
    - **Reference to technical plan**: "Technical Plan: `/workflow/technical-plans/[issue-name]-technical-plan.md`"
    - Save as `/workflow/issues/[issue-name]-issue.md`
 
-3. **Task List Generation**
-
-   - Automatically read the generated issue specification
-   - Create high-level parent tasks for investigation, fixing, and validation
+4. **Task List Generation**
+   - Automatically read the generated issue specification  
+   - Load task template from `/workflow/reference/issue/issue-tasks-template.md`
+   - Create high-level parent tasks based on template structure
    - Present parent tasks and ask: "Ready to generate sub-tasks? Respond with 'Yes' to proceed"
    - Generate detailed sub-tasks for each parent task
    - Save as `/workflow/issues/[issue-name]-issue-tasks.md`
 
-4. **Backlog Integration**
+5. **Backlog Integration**
 
    - Ask priority questions:
      - "Does this block user workflows?"
@@ -79,10 +89,41 @@ To create a comprehensive Issue Specification and associated task list for a bug
        - **Added:** [Date]
      ```
 
-5. **Confirmation**
-   - Inform user: "Issue specification, tasks, and backlog entry created successfully"
-   - Show paths to all created files
+6. **Update Backlog Statistics**
 
+   - After adding entry to backlog, automatically update statistics:
+     - Count all `- [ ]` items in "## High Priority" sections (both Features and Issues)
+     - Count all `- [ ]` items in "## Medium Priority" sections (both Features and Issues)
+     - Count all `- [ ]` items in "## Low Priority" sections (both Features and Issues)
+     - Count all `- [ ]` items in "## Quick Feature Notes" and "## Quick Issue Notes"
+     - Count all `- [x]` items throughout entire document
+     - Calculate total: Sum of all checkbox items (both `[ ]` and `[x]`)
+   
+   **Counting Pattern Instructions:**
+   - Use pattern `^\s*- \[ \]` to match uncompleted items
+   - Use pattern `^\s*- \[x\]` to match completed items (case-insensitive)
+   - Section boundaries: Count stops at next `##` heading or `---` separator
+   - Include all indentation levels (sub-items under main checkbox items)
+   
+   - Replace placeholder values in backlog.md:
+     - `**Total Items:** [auto-count]` → Replace with total count
+     - `**High Priority:** [auto-count]` → Replace with high priority count
+     - `**Medium Priority:** [auto-count]` → Replace with medium priority count
+     - `**Low Priority:** [auto-count]` → Replace with low priority count
+     - `**Completed:** [auto-count]` → Replace with completed count
+     - `**Last Updated:** [Date]` → Replace with today's date (YYYY-MM-DD)
+
+7. **Confirmation**
+   - Inform user: "Issue specification, tasks, and backlog entry created successfully"
+   - Show paths to all created files:
+     - Issue Spec: `/workflow/issues/[issue-name]-issue.md`
+     - Tasks: `/workflow/issues/[issue-name]-issue-tasks.md`
+     - Backlog: `/workflow/backlog.md`
+   
+   **To fix this issue, copy and run this command:**
+   ```markdown
+   implement issue tasks from: [issue-name]-issue-tasks.md
+   ```
 ## Success Criteria
 
 - Issue specification is detailed with clear reproduction steps

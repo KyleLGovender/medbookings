@@ -64,8 +64,37 @@ To process and implement tasks from a task list file, updating the individual ta
       - Change `[ ]` to `[x]` for the main backlog entry
       - Save updated backlog.md
 
+6. **Update Backlog Statistics After Completion**
 
-6. **Complete.md Update**
+   - After marking entry complete with `[x]`, automatically update statistics:
+     - Count all `- [ ]` items in "## High Priority" sections (both Features and Issues)
+     - Count all `- [ ]` items in "## Medium Priority" sections (both Features and Issues)
+     - Count all `- [ ]` items in "## Low Priority" sections (both Features and Issues)
+     - Count all `- [ ]` items in "## Quick Feature Notes" and "## Quick Issue Notes"
+     - Count all `- [x]` items throughout entire document
+     - Calculate total: Sum of all checkbox items (both `[ ]` and `[x]`)
+   
+   **Counting Pattern Instructions:**
+   - Use pattern `^\s*- \[ \]` to match uncompleted items
+   - Use pattern `^\s*- \[x\]` to match completed items (case-insensitive)
+   - Section boundaries: Count stops at next `##` heading or `---` separator
+   - Include all indentation levels (sub-items under main checkbox items)
+   
+   - Replace placeholder values in backlog.md:
+     - `**Total Items:** [auto-count]` → Replace with total count
+     - `**High Priority:** [auto-count]` → Replace with high priority count
+     - `**Medium Priority:** [auto-count]` → Replace with medium priority count
+     - `**Low Priority:** [auto-count]` → Replace with low priority count
+     - `**Completed:** [auto-count]` → Replace with completed count
+     - `**Last Updated:** [Date]` → Replace with today's date (YYYY-MM-DD)
+
+7. **Recalculate Backlog Statistics**
+   - After marking item complete with [x]:
+     - Recount all sections
+     - Update all [auto-count] placeholders
+     - Update Last Updated date
+
+8. **Complete.md Update**
 
    - After backlog is marked complete:
 
@@ -74,10 +103,8 @@ To process and implement tasks from a task list file, updating the individual ta
 
      For features:
 ```markdown
-## Completed Features
-
 ### [Feature Name] - [Completion Date]
-
+     
 - **Description:** [Brief description from PRD]
 - **Key Deliverables:** [Main accomplishments]
 - **PRD:** `/workflow/prds/[feature-name]-prd.md`
@@ -87,10 +114,8 @@ To process and implement tasks from a task list file, updating the individual ta
 
      For issues:
 ```markdown
-## Resolved Issues
-
 ### [Issue Name] - [Completion Date]
-
+     
 - **Problem:** [Brief problem description]
 - **Resolution:** [How it was fixed]
 - **Spec:** `/workflow/issues/[issue-name]-issue.md`
@@ -98,8 +123,15 @@ To process and implement tasks from a task list file, updating the individual ta
 - **Resolved By:** [User/AI pair]
 ```
 
+9. **Final Backlog Statistics Update**
 
-7. **Final Steps**
+   - After moving item to complete.md, update backlog statistics one more time:
+     - Remove the completed item from "## Recently Completed (Last 7 Days)" if present
+     - Recount all sections as per Step 6
+     - Update all statistics placeholders with new counts
+     - Ensure backlog.md reflects accurate current state
+
+10. **Final Steps**
    - Run `npm run build` to verify compilation
    - Create comprehensive git commit
    - Ask: "Would you like me to create a PR for these changes? (yes/no)"

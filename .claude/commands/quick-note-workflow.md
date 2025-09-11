@@ -57,7 +57,23 @@ To quickly capture feature ideas or issues in the backlog without creating full 
    - **Added:** [Date]
    ```
 
-4. **Confirmation**
+4. **Update Backlog Statistics**
+
+   - After adding quick note, automatically update statistics:
+     - Count all `- [ ]` items in all sections
+     - Count all `- [x]` items throughout document
+     - Calculate totals as per standard counting logic
+   
+   **Counting Pattern Instructions:**
+   - Use pattern `^\s*- \[ \]` to match uncompleted items
+   - Use pattern `^\s*- \[x\]` to match completed items (case-insensitive)
+   - Section boundaries: Count stops at next `##` heading or `---` separator
+   - Include all indentation levels (sub-items under main checkbox items)
+   
+   - Replace all [auto-count] placeholders with actual numbers
+   - Update **Last Updated:** with current date (YYYY-MM-DD)
+
+5. **Confirmation**
 
    - Inform: "Quick note added to backlog. You can expand this into a full [feature/issue] later by saying 'feature required:' or 'issue fix required:' with more details"
 

@@ -180,13 +180,13 @@ To perform DEEP technical analysis with maximum cognitive effort ("Think hardest
    - [Final connections]
    - [Integration tests]
 
-   Risk Assessment
+   ## Risk Assessment
 
    - Technical Risk: [Any identified risks]
    - Performance Impact: [Expected impact]
    - Breaking Changes: [Any breaking changes]
 
-   Code Quality Requirements
+   ## Code Quality Requirements
    [ ] No legacy fallback code
    [ ] Minimal implementation only
    [ ] Each code block must pass linting
@@ -233,15 +233,52 @@ To perform DEEP technical analysis with maximum cognitive effort ("Think hardest
    - Ask: "Does this technical approach look correct? Any concerns? (approve/revise)"
    - If revise, ask for specific concerns and update
 
-8. **Automatic Transition to Requirements**
-   - Once approved, attempt to execute:
-     - For features: `feature required: [confirmed-name]`
-     - For issues: `issue fix required: [confirmed-name]`
-   - If execution fails:
-     - Inform user: "Failed to auto-generate requirements. Manual trigger needed."
-     - For features, provide command: "Run: feature required: [confirmed-name]"
-     - For issues, provide command: "Run: issue fix required: [confirmed-name]"
-   - Success: "Requirements documentation created automatically."
+8. **Next Step Instructions**
+   - Technical plan saved successfully!
+   - File location: `/workflow/technical-plans/[confirmed-name]-technical-plan.md`
+   
+   **To continue, copy and run this command:**
+   [Show ONLY the relevant command based on Type]
+   feature required: [actual-name]  OR  issue fix required: [actual-name]
+   - This command will generate the PRD/Issue spec and task list when you're ready
+
+### Debug Mode Example
+
+When user adds "debug" to command: `debug plan technical approach for: feature: user-authentication`
+
+**Expected debug output:**
+```
+[DEBUG] Starting technical planning workflow
+[DEBUG] Step 1: Initial Classification
+  - Type detected: FEATURE
+  - Extracted name: user-authentication
+[DEBUG] Step 2: Deep Thinking Technical Discovery Phase
+  - Analyzing existing code structure...
+  - Identifying minimal implementation...
+  - Files to modify: 3 identified
+[DEBUG] Step 3: Name Determination
+  - Suggested name based on scope: user-auth
+  - Awaiting user confirmation...
+[DEBUG] Step 4: Generate Technical Plan
+  - Directory check: /workflow/technical-plans/ exists
+  - File check: user-auth-technical-plan.md does not exist
+  - Creating new file...
+[DEBUG] Step 5: Implementation Directive
+  - Adding implementation instructions for FEATURE type
+[DEBUG] Step 6: Quality Control Checklist
+  - All checks passed
+[DEBUG] Step 7: Review and Refinement
+  - Presenting plan to user for approval
+[DEBUG] Step 8: Next Step Instructions
+  - Generating command: feature required: user-auth
+[DEBUG] Workflow completed successfully
+```
+Debug mode shows:
+- Each step as it executes
+- Key decisions and determinations
+- File operations before they happen
+- Validation checks performed
+- Clear indication of waiting for user input
 
 ## Success Criteria
 
@@ -250,3 +287,5 @@ To perform DEEP technical analysis with maximum cognitive effort ("Think hardest
   - No unnecessary legacy code planned
   - Clear implementation sequence
   - Test strategy defined upfront
+
+
