@@ -837,6 +837,14 @@ mkdir -p /workflow/reference/issue/
 - Archive after use: /workflow/technical-plans/archive/
 - PRD always reads from: [name]-technical-plan.md (no version suffix)
 
+### Workflow Pre-flight Check
+User can run: "workflow preflight check"
+- Verifies all directories exist
+- Checks template files present
+- Confirms git is initialized
+- Lists any missing components
+
+
 ### Example State Tracking
 - Current workflow: technical-planning
 - Current step: 3 (Name Determination)
@@ -984,10 +992,3 @@ User can add "debug" to any command:
 - "debug plan technical approach for: feature: X"
 - Shows each step before execution
 - Displays all file operations
-
-### Workflow Pre-flight Check
-User can run: "workflow preflight check"
-- Verifies all directories exist
-- Checks template files present
-- Confirms git is initialized
-- Lists any missing components
