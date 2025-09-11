@@ -66,6 +66,8 @@ To perform DEEP technical analysis with maximum cognitive effort ("Think hardest
    **Ensure directory exists:**
    - Check if `/workflow/technical-plans/` directory exists
    - If not, create it with: `mkdir -p /workflow/technical-plans/`
+   - Check if `/workflow/technical-plans/archive/` directory exists
+   - If not, create it with: `mkdir -p /workflow/technical-plans/archive/`
 
    **File Handling Rules:**
    - If file exists: Ask user "File exists. Overwrite? (yes/no/rename)"

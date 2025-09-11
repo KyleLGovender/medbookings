@@ -818,6 +818,7 @@ mkdir -p /workflow/reference/issue/
 ├── complete.md        # Completed work archive
 ├── technical-plans/   # Technical analysis documents
 │   └── [name]-technical-plan.md  # Technical implementation plan
+│   └── archive/      # Archived technical planning version files
 ├── prds/             # Feature specifications
 │   ├── [name]-prd.md # Product Requirements Document
 │   └── [name]-prd-tasks.md # Implementation Tasks
@@ -830,6 +831,11 @@ mkdir -p /workflow/reference/issue/
     └── issue/
         └── issue-tasks-template.md  # Issue tasks template
 
+### Technical Plan Versioning
+- Original saved as: [name]-technical-plan.md
+- Reviews create: [name]-technical-plan-v2.md, v3.md
+- Archive after use: /workflow/technical-plans/archive/
+- PRD always reads from: [name]-technical-plan.md (no version suffix)
 
 ### Example State Tracking
 - Current workflow: technical-planning
@@ -978,3 +984,10 @@ User can add "debug" to any command:
 - "debug plan technical approach for: feature: X"
 - Shows each step before execution
 - Displays all file operations
+
+### Workflow Pre-flight Check
+User can run: "workflow preflight check"
+- Verifies all directories exist
+- Checks template files present
+- Confirms git is initialized
+- Lists any missing components
