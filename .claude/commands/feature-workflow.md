@@ -1,30 +1,56 @@
 feature required: $ARGUMENTS
 
+**Trigger Format:**
+- Must start with exact phrase: "feature required:"
+- Everything after colon is $ARGUMENTS
+- Strip leading/trailing whitespace from $ARGUMENTS
+
 ## Goal
 
 To create a comprehensive Product Requirements Document (PRD) and associated task list for a new feature, then automatically add it to the project backlog.
 
 ## Process
 
-1. **Feature Name Determination**
-
-   - Analyze the feature description in $ARGUMENTS
-   - Suggest a concise feature name and ask: "Is '[suggested-name]' a good name for this feature? If not, please suggest a better name"
+1. **Read Technical Plan**
+   - Extract feature name from $ARGUMENTS (already determined by technical planning)
+   - Read technical plan at `/workflow/technical-plans/[feature-name]-technical-plan.md`
+   - If no technical plan exists: ERROR - "Technical planning required first. Run: plan technical approach for: feature: [description]"
 
 2. **PRD Generation**
-
+   
+   - If `/workflow/prds/` doesn't exist: Create with `mkdir -p /workflow/prds/`
+   - Check if `/workflow/prds/[feature-name]-prd.md` exists
+     - If exists: Ask "PRD file '/workflow/prds/[feature-name]-prd.md' already exists. Overwrite/Rename/Cancel? (o/r/c)"
+     - If rename:
+      - Check if "-v2" exists, then "-v3", etc.
+      - Use next available version number
+      - Inform user: "Saving as [feature-name]-prd-v[N].md"
+   - If user cancels: Clean up any partial files created
    - Ask clarifying questions:
-     - "What problem does this feature solve for the user?"
-     - "Who is the primary user of this feature?"
-     - "What are the key actions users should be able to perform?"
-     - "What are the success criteria?"
-     - "Are there any specific constraints or non-goals?"
-   - Generate comprehensive PRD following the existing PRD structure
+    - "What problem does this feature solve for the user?"
+    - "Who is the primary user of this feature?"
+    - "What are the key actions users should be able to perform?"
+    - "What are the success criteria?"
+    - "Are there any specific constraints or non-goals?"
+    - "How many users will this impact approximately?"
+    - "What's the expected business value/ROI?"
+   - Generate PRD using this structure mapping from the technical plan at `/workflow/technical-plans/[feature-name]-technical-plan.md`:
+    - Executive Summary → Problem Statement intro
+    - Scope Definition → Technical Constraints & Non-Goals
+    - Technical Architecture → Implementation Approach
+    - Test Coverage Strategy → Testing Requirements
+    - Risk Assessment → Risks and Mitigation
+    - Implementation Sequence → Timeline estimates
+   - Fill from clarifying questions:
+    - Problem being solved → Problem Statement section
+    - Primary user identification → Target Users (Primary User)
+    - Key user actions → User Stories section
+    - Success criteria → Goals and Success Criteria section  
+    - Additional constraints → Constraints (adds to technical constraints)
+    - User impact numbers → Impact Assessment (User Impact)
+    - Business value/ROI → Impact Assessment (Business Impact)
+   - **Reference to technical plan**: "Technical Plan: `/workflow/technical-plans/[feature-name]-technical-plan.md`"
    - Save as `/workflow/prds/[feature-name]-prd.md`
-   - Ensure PRD includes:
-     - Clear backlog summary section for easy extraction
-     - Specific user impact metrics
-     - Explicit blocking status
 
 3. **Task List Generation**
 
@@ -52,7 +78,7 @@ To create a comprehensive Product Requirements Document (PRD) and associated tas
      ```
 
 5. **Confirmation**
-   - Inform user: "✅ Feature PRD, tasks, and backlog entry created successfully"
+   - Inform user: "Feature PRD, tasks, and backlog entry created successfully"
    - Show paths to all created files
 
 ## Success Criteria

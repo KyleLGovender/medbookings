@@ -2,11 +2,25 @@ implement feature tasks from: $ARGUMENTS
 OR
 implement issue tasks from: $ARGUMENTS
 
+**Trigger Format:**
+- Must start with either: "implement feature tasks from:" OR "implement issue tasks from:"
+- Everything after colon is $ARGUMENTS (the task filename)
+- Strip leading/trailing whitespace from $ARGUMENTS
+- Example: "implement feature tasks from: user-auth-prd-tasks.md"
+
 ## Goal
 
 To process and implement tasks from a task list file, updating the individual task file, backlog, and complete.md as tasks are completed.
 
 ## Process
+
+0. **Pre-flight Checks:**
+- Parse $ARGUMENTS to extract task filename
+- Check both paths: `/workflow/prds/$ARGUMENTS` then `/workflow/issues/$ARGUMENTS`
+- If neither exists: "Task file not found in /workflow/prds/ or /workflow/issues/. Check filename."
+- Derive feature/issue name by stripping associated suffix `-prd-tasks.md` or `-issue-tasks.md` 
+- Check if git branch `[feature|issue]/[name]` exists
+  - If exists: "Branch exists. Use existing/Create new/Cancel? (u/n/c)"
 
 1. **Initial Setup**
 
@@ -24,7 +38,7 @@ To process and implement tasks from a task list file, updating the individual ta
      - If no: Revise implementation and ask again
      - Commit changes with message referencing task number
 
-3 **Build Verification**
+3. **Build Verification**
 
 - After implementing each parent task:
   - Run `npm run build` to catch compilation errors
@@ -43,9 +57,13 @@ To process and implement tasks from a task list file, updating the individual ta
    - When ALL tasks in the file are complete:
      - **Ask user**: "All tasks for [feature/issue-name] are complete. Are you satisfied with the overall implementation? (yes/no)"
      - If yes:
-     - Locate entry in `/workflow/backlog.md`
-     - Change `[ ]` to `[x]` for the main backlog entry
-     - Save updated backlog.md
+      - Locate entry in `/workflow/backlog.md`
+      - If not found:
+       - Warn: "No backlog entry found for [name]. May have been manually edited."
+       - Ask: "Create new backlog entry? (yes/no)"
+      - Change `[ ]` to `[x]` for the main backlog entry
+      - Save updated backlog.md
+
 
 6. **Complete.md Update**
 
@@ -54,29 +72,32 @@ To process and implement tasks from a task list file, updating the individual ta
      - Read `/workflow/complete.md`
      - Add entry to appropriate section:
 
-   - For features:
+     For features:
+```markdown
+## Completed Features
 
-     ## Completed Features
+### [Feature Name] - [Completion Date]
 
-     ### [Feature Name] - [Completion Date]
+- **Description:** [Brief description from PRD]
+- **Key Deliverables:** [Main accomplishments]
+- **PRD:** `/workflow/prds/[feature-name]-prd.md`
+- **Tasks:** `/workflow/prds/[feature-name]-prd-tasks.md`
+- **Completed By:** [User/AI pair]
+```
 
-     - **Description:** [Brief description from PRD]
-     - **Key Deliverables:** [Main accomplishments]
-     - **PRD:** `/workflow/prds/[feature-name]-prd.md`
-     - **Tasks:** `/workflow/prds/[feature-name]-prd-tasks.md`
-     - **Completed By:** [User/AI pair]
+     For issues:
+```markdown
+## Resolved Issues
 
-   - For issues:
+### [Issue Name] - [Completion Date]
 
-     ## Resolved Issues
+- **Problem:** [Brief problem description]
+- **Resolution:** [How it was fixed]
+- **Spec:** `/workflow/issues/[issue-name]-issue.md`
+- **Tasks:** `/workflow/issues/[issue-name]-issue-tasks.md`
+- **Resolved By:** [User/AI pair]
+```
 
-     ### [Issue Name] - [Completion Date]
-
-     - **Problem:** [Brief problem description]
-     - **Resolution:** [How it was fixed]
-     - **Spec:** `/workflow/issues/[issue-name]-issue.md`
-     - **Tasks:** `/workflow/issues/[issue-name]-issue-tasks.md`
-     - **Resolved By:** [User/AI pair]
 
 7. **Final Steps**
    - Run `npm run build` to verify compilation

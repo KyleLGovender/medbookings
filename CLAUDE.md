@@ -804,15 +804,40 @@ Workflow commands in `.claude/commands/`:
 
 ### Folder Structure
 
+Ensure these directories exist before starting workflows:
+```bash
+mkdir -p /workflow/prds/
+mkdir -p /workflow/issues/
+mkdir -p /workflow/technical-plans/
+mkdir -p /workflow/reference/prd/
+mkdir -p /workflow/reference/issue/
+```
+
 /workflow/
-├── backlog.md # Central task tracking
-├── complete.md # Completed work archive
-├── prds/ # Feature specifications
-│ ├── [name]-prd.md # Product Requirements Document
-│ └── [name]-prd-tasks.md # Implementation Tasks
-└── issues/ # Issue specifications
-├── [name]-issue.md # Issue Specification
-└── [name]-issue-tasks.md # Resolution Tasks
+├── backlog.md         # Central task tracking
+├── complete.md        # Completed work archive
+├── technical-plans/   # Technical analysis documents
+│   └── [name]-technical-plan.md  # Technical implementation plan
+├── prds/             # Feature specifications
+│   ├── [name]-prd.md # Product Requirements Document
+│   └── [name]-prd-tasks.md # Implementation Tasks
+├── issues/           # Issue specifications
+│   ├── [name]-issue.md # Issue Specification
+│   └── [name]-issue-tasks.md # Resolution Tasks
+└── reference/        # Templates and reference documents
+    ├── prd/
+    │   ├── prd-template.md        # PRD template
+    │   └── prd-tasks-template.md  # PRD tasks template
+    └── issue/
+        ├── issue-template.md        # Issue template
+        └── issue-tasks-template.md  # Issue tasks template
+
+
+### Example State Tracking
+- Current workflow: technical-planning
+- Current step: 3 (Name Determination)
+- Files created: []
+- Can resume: Yes
 
 ### Workflow Triggers
 
@@ -890,3 +915,68 @@ Workflow commands in `.claude/commands/`:
 - User satisfaction confirmation required before any completion marks
 - All paths relative to project root
 - Files stay in `/workflow/prds/` and `/workflow/issues/` (no subdirectories)
+
+### Workflow Error Recovery
+
+**File Conflicts:**
+- Always check if target file exists before writing
+- Offer options: Overwrite, Rename (append -v2), or Cancel
+- Never silently overwrite without user confirmation
+
+**Cancellation Handling:**
+- If user cancels mid-workflow, ask: "Clean up partial files? (yes/no)"
+- Log what was created before cancellation for manual cleanup if needed
+
+**Directory Missing:**
+- Auto-create with `mkdir -p` rather than failing
+- Inform user: "Created missing directory: [path]"
+
+**Rollback on Error:**
+- If critical error occurs, offer: "Rollback changes? This will restore previous state."
+- Keep list of modified files in memory for potential rollback
+
+### Mandatory Workflow Order
+
+Technical planning is the ONLY entry point for new features/issues:
+
+1. **Technical Planning** (MANDATORY ENTRY POINT)
+
+   - User provides description: `plan technical approach for: feature: [description]` or `plan technical approach for: issue: [description]`
+   - Technical analysis determines the appropriate name and scope
+   - Creates `/workflow/technical-plans/[name]-technical-plan.md`
+   - Name is based on technical feasibility, not initial description
+   - Creates technical feasibility analysis
+   - Defines minimal implementation scope
+
+2. **Requirements Documentation** (AUTOMATIC NEXT STEP)
+
+   - Technical plan triggers: `feature required: [name]` or `issue fix required: [name]`
+   - Uses the technically-validated name from step 1
+   - PRD/Issue spec pulls all context from technical plan
+   - PRD/Issue spec MUST reference technical plan
+   - Requirements validated against technical feasibility
+
+3. **Task Generation** (AUTOMATIC)
+   
+   - Automatically generates PRD/Issue spec tasks from requirements
+   - Tasks align with technical plan's implementation sequence
+
+4. **Implementation** (MANUAL TRIGGER)
+
+   - `implement feature tasks from: [task-filename]` or `implement issue tasks from: [task-filename]`
+   - Follows the validated technical approach
+   - No surprises or scope creep
+
+
+
+### Workflow State Tracking
+- Track current workflow step in memory
+- If interrupted, ask: "Resume [workflow] from step [X]?"
+- Allow graceful cancellation with cleanup
+
+
+### Debug Mode
+User can add "debug" to any command:
+- "debug plan technical approach for: feature: X"
+- Shows each step before execution
+- Displays all file operations

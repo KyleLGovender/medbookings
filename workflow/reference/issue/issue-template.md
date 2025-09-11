@@ -103,6 +103,10 @@
 
 [Other potential approaches]
 
+## Technical References
+
+**Technical Plan:** [If exists: `/workflow/technical-plans/[name]-technical-plan.md`]
+
 ## Testing Requirements
 
 ### Test Cases

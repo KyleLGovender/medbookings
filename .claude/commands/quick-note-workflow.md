@@ -2,6 +2,11 @@ quick feature note: $ARGUMENTS
 OR
 quick issue note: $ARGUMENTS
 
+**Trigger Format:**
+- Must start with either: "quick feature note:" OR "quick issue note:"
+- Everything after colon is $ARGUMENTS
+- Strip leading/trailing whitespace from $ARGUMENTS
+
 ## Goal
 
 To quickly capture feature ideas or issues in the backlog without creating full specifications.
@@ -29,7 +34,7 @@ To quickly capture feature ideas or issues in the backlog without creating full 
    For quick features:
 
    ```markdown
-   ## 💡 Quick Feature Notes
+   ## Quick Feature Notes
 
    - [ ] [Quick Note] - $ARGUMENTS
      - **Type:** Feature Idea
@@ -42,7 +47,7 @@ To quickly capture feature ideas or issues in the backlog without creating full 
    For quick issues:
 
    ```markdown
-   ## 📝 Quick Issue Notes
+   ## Quick Issue Notes
 
    - [ ] [Quick Note] - $ARGUMENTS
    - **Type:** Issue Report
@@ -54,7 +59,7 @@ To quickly capture feature ideas or issues in the backlog without creating full 
 
 4. **Confirmation**
 
-   - Inform: "✅ Quick note added to backlog. You can expand this into a full [feature/issue] later by saying 'feature required:' or 'issue fix required:' with more details"
+   - Inform: "Quick note added to backlog. You can expand this into a full [feature/issue] later by saying 'feature required:' or 'issue fix required:' with more details"
 
 ## Success Criteria
 

@@ -1,7 +1,6 @@
-```markdown
 # Project Backlog
 
-## 📊 Backlog Statistics
+## Backlog Statistics
 
 - **Total Items:** [auto-count]
 - **High Priority:** [auto-count]
@@ -12,7 +11,7 @@
 
 ---
 
-## 🔥 High Priority
+## High Priority
 
 ### Features
 
@@ -24,7 +23,7 @@
 
 ---
 
-## 📊 Medium Priority
+## Medium Priority
 
 ### Features
 
@@ -36,7 +35,7 @@
 
 ---
 
-## 🧹 Low Priority
+## Low Priority
 
 ### Features
 
@@ -48,19 +47,18 @@
 
 ---
 
-## 💡 Quick Feature Notes
+## Quick Feature Notes
 
 <!-- Feature ideas captured quickly for later specification -->
 
 ---
 
-## 📝 Quick Issue Notes
+## Quick Issue Notes
 
 <!-- Issues noted quickly for later investigation -->
 
 ---
 
-## ✅ Recently Completed (Last 7 Days)
+## Recently Completed (Last 7 Days)
 
 <!-- Items marked complete are moved here temporarily before going to complete.md -->
-```

@@ -93,6 +93,10 @@
 - **Backend:** [API endpoints and logic]
 - **Database:** [Schema changes]
 
+## Technical References
+
+**Technical Plan:** [If exists: `/workflow/technical-plans/[name]-technical-plan.md`]
+
 ## Testing Requirements
 
 ### Test Scenarios

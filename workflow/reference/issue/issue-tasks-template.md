@@ -8,11 +8,10 @@ Date: [YYYY-MM-DD]
 This task list breaks down the investigation and resolution of [issue name].
 
 ## Task Tracking
-
-- Total Tasks: [X]
-- Completed: [0]
-- In Progress: [0]
-- Remaining: [X]
+- Total Tasks: [Count all checkbox items below, including sub-tasks]
+- Completed: 0  
+- In Progress: 0
+- Remaining: [Same as Total Tasks initially]
 
 ## Resolution Tasks
 
