@@ -19,6 +19,11 @@ To process and implement tasks from a task list file, updating the individual ta
 - Check both paths: `/workflow/prds/$ARGUMENTS` then `/workflow/issues/$ARGUMENTS`
 - If neither exists: "Task file not found in /workflow/prds/ or /workflow/issues/. Check filename."
 - Derive feature/issue name by stripping associated suffix `-prd-tasks.md` or `-issue-tasks.md` 
+   **Git Verification (Run check-git.js):**
+- Before creating any branches, verify git configuration by checking output of `npm run git:check`
+- If git check fails, stop workflow and ask user to fix git configuration first
+- Only proceed if git check passes
+
 - Check if git branch `[feature|issue]/[name]` exists
   - If exists: "Branch exists. Use existing/Create new/Cancel? (u/n/c)"
 

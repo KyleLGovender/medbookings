@@ -13,7 +13,6 @@ build/
 # Dependencies  
 node_modules/
 node_modules/**
-package-lock.json
 
 # Docker volumes 
 docker_data/
@@ -23,20 +22,17 @@ docker_data/**
 .git/
 .git/**
 
-# Public assets 
+# Public uploads only (keep images accessible)
 public/uploads/
-public/images/
 
-# Testing 
-playwright-report/
-playwright-report/**
-coverage/
+# Specific Prisma generated files (keep migrations visible)
+prisma/generated/
 
-# Prisma generated files
-prisma/migrations/
-
-# Environment files
-.env*
+# Sensitive environment files only
+.env
+.env.local
+.env.production
+# Keep .env.example visible
 
 # Logs
 *.log
@@ -54,6 +50,50 @@ Thumbs.db
 *.backup
 *.old
 
-# IDE
+# IDE (but NOT .claude)
 .vscode/
-.claude/
+.idea/
+*.swp
+*.swo
+
+# Keep .claude/commands/ accessible for workflow
+
+# Testing - Keep test files visible, hide reports
+# Ignore test reports and coverage data
+playwright-report/
+playwright-report/**
+coverage/
+!coverage/coverage-summary.json
+test-results/
+.nyc_output/
+
+# Keep all test specification files accessible
+!**/*.test.ts
+!**/*.test.tsx
+!**/*.test.js
+!**/*.test.jsx
+!**/*.spec.ts
+!**/*.spec.tsx
+!**/*.spec.js
+!**/*.spec.jsx
+
+# Ensure test directories remain accessible
+!tests/
+!tests/**/*.ts
+!tests/**/*.tsx
+!__tests__/
+!__tests__/**/*.ts
+!__tests__/**/*.tsx
+
+# Keep test utilities and fixtures
+!tests/fixtures/
+!tests/utils/
+!tests/mocks/
+!tests/helpers/
+!tests/setup/
+
+# Keep test configuration files
+!jest.config.*
+!playwright.config.*
+!vitest.config.*
+!.testing/

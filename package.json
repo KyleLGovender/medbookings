@@ -9,7 +9,7 @@
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write .",
     "fix": "npm run format && npm run lint",
-    "postinstall": "npx prisma generate",
+    "postinstall": "npx prisma generate && npm run workflow:init",
     "verceldb:migrate": "dotenv -e .env.vercel.production.local -- npx prisma migrate deploy",
     "verceldb:push": "dotenv -e .env.vercel.production.local -- npx prisma db push",
     "verceldb:studio": "dotenv -e .env.vercel.production.local -- npx prisma studio",
@@ -20,7 +20,11 @@
     "test:debug": "playwright test --debug",
     "test:calendar": "playwright test e2e/tests/calendar/",
     "test:cleanup": "playwright test e2e/tests/data-cleanup.spec.ts",
-    "test:report": "playwright show-report"
+    "test:report": "playwright show-report",
+    "workflow:init": "sh scripts/workflow-init.sh",
+    "workflow:check": "node scripts/check-workflow.js",
+    "git:check": "node scripts/check-git.js",
+    "workflow:preflight": "npm run git:check && npm run workflow:check"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.2",
