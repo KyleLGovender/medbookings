@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { checkGit } = require('./check-git'); // Import your existing check-git
+const { checkGit } = require('./check-git');
 
 const requiredDirs = [
   'workflow/prds',
@@ -17,6 +17,11 @@ const requiredFiles = [
   'workflow/complete.md',
   'workflow/reference/prd/prd-tasks-template.md',
   'workflow/reference/issue/issue-tasks-template.md',
+  '.claude/commands/feature-workflow.md',
+  '.claude/commands/issue-workflow.md',
+  '.claude/commands/quick-note-workflow.md',
+  '.claude/commands/tasks-process-enhanced.md',
+  '.claude/commands/technical-planning.md',
 ];
 
 let allGood = true;
@@ -37,8 +42,8 @@ requiredFiles.forEach((file) => {
   }
 });
 
-// Use the existing check-git.js instead of duplicating code
-console.log('\n'); // Add spacing
+// Use the existing check-git.js
+console.log('\n');
 const gitReady = checkGit();
 if (!gitReady) {
   allGood = false;
