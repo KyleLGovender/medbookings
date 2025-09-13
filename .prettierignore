@@ -2,5 +2,5 @@ node_modules
 .next
 out
 docker_data
-.env*
+.env
 package-lock.json
