@@ -2,7 +2,6 @@ import * as React from 'react';
 
 import { Minus, Plus } from 'lucide-react';
 
-import { SearchForm } from '@/components/search-form';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { NavigationLink } from '@/components/ui/navigation-link';
 import {
@@ -53,12 +52,11 @@ export function AppSidebar({ data, ...props }: AppSidebarProps) {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <SearchForm />
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
-            {data.navMain.map((item, index) => (
+            {data.navMain.map((item) => (
               <Collapsible key={item.title} defaultOpen={true} className="group/collapsible">
                 <SidebarMenuItem>
                   <div className="flex w-full items-center">
