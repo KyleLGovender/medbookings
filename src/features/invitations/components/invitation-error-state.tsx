@@ -97,7 +97,7 @@ export function InvitationErrorState({
       buttons.push(
         <Button
           key="contact"
-          onClick={() => (window.location.href = '/search')}
+          onClick={() => (window.location.href = '/providers')}
           className="flex items-center gap-2"
         >
           <Building2 className="h-4 w-4" />

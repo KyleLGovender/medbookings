@@ -68,7 +68,8 @@ export const providerSearchParamsSchema = z.object({
   status: providerStatusSchema.optional(),
   providerTypeId: z.string().uuid().optional(),
   serviceId: z.string().uuid().optional(),
-  search: z.string().optional(),
+  search: z.string().optional(), // General search (name, email, bio)
+  nameSearch: z.string().optional(), // Name-only search (more precise)
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
 });

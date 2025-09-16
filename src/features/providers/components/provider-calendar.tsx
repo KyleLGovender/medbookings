@@ -15,6 +15,7 @@ import { AvailabilityProposalsList } from '@/features/calendar/components/availa
 // import { EnhancedCalendarView } from '@/features/calendar/availability/components/enhanced-calendar-view';
 // Import our comprehensive availability management components
 import { ProviderCalendarView } from '@/features/calendar/components/provider-calendar-view';
+import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 
 // import { VisualIndicatorsConfig } from '@/features/calendar/availability/components/visual-indicators-config';
 
@@ -29,6 +30,33 @@ export function ProviderCalendar() {
   // const [showExportDialog, setShowExportDialog] = useState(false);
   const currentDate = new Date();
   const viewMode = 'week';
+
+  // Get current user's provider ID
+  const { data: currentProvider, isLoading: isLoadingProvider } = useCurrentUserProvider();
+
+  // Show loading state if provider is being fetched
+  if (isLoadingProvider) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Show error state if no provider found
+  if (!currentProvider) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">No provider profile found. Please create a provider profile to access calendar features.</p>
+        <Button
+          onClick={() => router.push('/providers/new')}
+          className="mt-4"
+        >
+          Create Provider Profile
+        </Button>
+      </div>
+    );
+  }
 
   // Mock configurations - these would come from user preferences/settings
   // const [dragDropConfig, setDragDropConfig] = useState({
@@ -123,7 +151,7 @@ export function ProviderCalendar() {
             </CardHeader>
             <CardContent>
               <ProviderCalendarView
-                providerId="current-provider" // This would come from auth context
+                providerId={currentProvider.id}
                 viewMode={viewMode}
                 initialDate={currentDate}
               />
@@ -143,7 +171,7 @@ export function ProviderCalendar() {
             <CardContent>
               {/* <EnhancedCalendarView
                 mode="provider"
-                providerId="current-provider" // This would come from auth context
+                providerId={currentProvider.id}
                 currentDate={currentDate}
                 onDateChange={setCurrentDate}
                 viewMode={viewMode}
@@ -191,7 +219,7 @@ export function ProviderCalendar() {
             </CardHeader>
             <CardContent>
               <AvailabilityProposalsList
-                providerId="current-provider" // This would come from auth context
+                providerId={currentProvider.id}
               />
             </CardContent>
           </Card>

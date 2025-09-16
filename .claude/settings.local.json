@@ -51,10 +51,14 @@
       "Bash(npm run build:*)",
       "mcp__filesystem-server__read_text_file",
       "mcp__filesystem-server__edit_file",
-      "Bash(npx prisma:*)"
+      "Bash(npx prisma:*)",
+      "mcp__filesystem-server__write_file"
     ],
     "deny": []
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": ["filesystem-server", "postgres-server"]
+  "enabledMcpjsonServers": [
+    "filesystem-server",
+    "postgres-server"
+  ]
 }

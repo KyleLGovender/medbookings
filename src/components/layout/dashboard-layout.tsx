@@ -466,7 +466,7 @@ const createNavData = (
         },
         {
           title: 'Search Providers',
-          url: '/search',
+          url: '/providers',
         },
         {
           title: 'Join Platform',

@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { LocationAutocomplete } from '@/components/ui/location-autocomplete';
 import { api } from '@/utils/api';
 
-export default function SearchProvidersPage() {
+export default function ProvidersPage() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [debouncedFirstName, setDebouncedFirstName] = useState('');
@@ -46,7 +46,7 @@ export default function SearchProvidersPage() {
 
   // Memoize search parameters to prevent unnecessary re-renders
   const searchParams = useMemo(() => ({
-    search: debouncedFirstName || debouncedLastName ? `${debouncedFirstName} ${debouncedLastName}`.trim() : undefined,
+    nameSearch: debouncedFirstName || debouncedLastName ? `${debouncedFirstName} ${debouncedLastName}`.trim() : undefined,
     typeIds: selectedTypes.length > 0 ? selectedTypes : undefined,
     status: 'APPROVED' as const,
     page: 1,
@@ -60,7 +60,7 @@ export default function SearchProvidersPage() {
       enabled: true, // Always enabled to show initial results
       staleTime: 1000, // Prevent refetching for 1 second
       refetchOnWindowFocus: false, // Prevent unnecessary refetches
-      keepPreviousData: true, // Prevents loading state on refetch
+      placeholderData: (previousData) => previousData, // Prevents loading state on refetch
     }
   );
 

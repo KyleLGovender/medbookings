@@ -103,6 +103,11 @@ export default withAuth(
     const token = await getToken({ req });
     const { pathname } = req.nextUrl;
 
+    // Allow public access to provider search page
+    if (pathname === '/providers') {
+      return NextResponse.next();
+    }
+
     if (!token) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
@@ -132,6 +137,11 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
+        // Allow public access to provider search page
+        if (req.nextUrl.pathname === '/providers') {
+          return true;
+        }
+
         // Basic authentication check
         if (!token) return false;
 

@@ -242,6 +242,7 @@ export const providersRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const {
         search,
+        nameSearch,
         typeIds = [],
         status = 'APPROVED',
         page = 1,
@@ -258,8 +259,15 @@ export const providersRouter = createTRPCRouter({
         status: status as any,
       };
 
-      // Add search filter with optimized text search
-      if (search) {
+      // Add search filter - prioritize nameSearch for precise name matching
+      if (nameSearch) {
+        // Name-specific search: only search in provider name field
+        where.name = {
+          contains: nameSearch,
+          mode: 'insensitive',
+        };
+      } else if (search) {
+        // General search: search across name, email, and bio
         where.OR = [
           {
             name: {
@@ -328,6 +336,24 @@ export const providersRouter = createTRPCRouter({
           },
         };
       }
+
+      // Include availabilities for service type filtering (virtual/in-person)
+      include.availabilities = {
+        where: {
+          status: 'ACCEPTED',
+          endTime: { gte: new Date() }, // Only future/current availabilities
+        },
+        select: {
+          id: true,
+          isOnlineAvailable: true,
+          location: {
+            select: {
+              name: true,
+              formattedAddress: true,
+            },
+          },
+        },
+      };
 
       // Execute optimized query with pagination
       const [providers, total] = await Promise.all([
