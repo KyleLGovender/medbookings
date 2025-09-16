@@ -19,6 +19,16 @@
 ### Issues
 <!-- Critical bugs blocking user workflows -->
 
+#### calendar-docker-fix
+**Issue**: Calendar functionality completely broken in Docker environment
+**Priority**: P0 Critical
+**Type**: Bug Fix
+**Status**: [ ] Not Started
+**Specification**: `/workflow/issues/calendar-docker-fix-issue.md`
+**Tasks**: `/workflow/issues/calendar-docker-fix-issue-tasks.md`
+**Description**: Both provider availability management and guest calendar viewing are non-functional in Docker. Hard-coded provider IDs and missing seed data cause complete calendar failure.
+**Added**: 2025-09-15
+
 ---
 
 ## Medium Priority

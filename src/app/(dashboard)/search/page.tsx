@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { LocationAutocomplete } from '@/components/ui/location-autocomplete';
 import { api } from '@/utils/api';
 
-export default function ProvidersPage() {
+export default function SearchProvidersPage() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [debouncedFirstName, setDebouncedFirstName] = useState('');

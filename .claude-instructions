@@ -1,0 +1,14 @@
+# Claude Code Instructions
+
+ALWAYS:
+- Read and analyze ENTIRE files before making ANY edits
+- Run syntax validation after each modification
+- Use `grep -n` or `rg` to find all instances of modified functions/variables
+- Execute `npx tsc --noEmit` after TypeScript changes
+- Review adjacent files that import modified modules
+- Provide context of 5 lines above/below when showing code changes
+
+NEVER:
+- Make partial edits without checking FULL file and function scope
+- Assume variable names without verifying declarations
+- Modify interfaces without checking all implementations

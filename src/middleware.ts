@@ -163,8 +163,8 @@ export const config = {
     // Provider routes
     '/providers/:path*',
 
-    // Calendar routes
-    '/calendar/:path*',
+    // Protected calendar routes (availability management only)
+    '/availability/:path*',
 
     // Settings routes
     '/settings/:path*',
