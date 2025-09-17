@@ -1459,10 +1459,6 @@ export const calendarRouter = createTRPCRouter({
         },
       });
 
-      // TODO: Send confirmation emails to both client and provider
-      // TODO: Send calendar invites if applicable
-      // TODO: Trigger notification workflows
-
       return {
         success: true,
         booking,

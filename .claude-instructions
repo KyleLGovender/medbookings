@@ -59,6 +59,7 @@
 - Read core architecture files first (layout.tsx, schema.prisma, root.ts)
 - Read entire feature folders before modifications
 - Understand existing patterns before implementing
+- Double-check what you include in your response to the user against the actual raw command output to ensure completeness and accuracy of your responses
 
 **NEVER:**
 - Modify files without reading them completely first
