@@ -34,6 +34,10 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt', // Make sure this is set
   },
+  pages: {
+    signIn: '/login',
+    newUser: '/', // Redirect new users to home page
+  },
   providers: [
     GoogleProvider({
       clientId: env.GOOGLE_CLIENT_ID!,
@@ -48,6 +52,22 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      // If we're coming from a login page, redirect to home page
+      if (url.startsWith(baseUrl + '/login') || url === baseUrl) {
+        return baseUrl + '/';
+      }
+      // If it's a relative URL, prepend baseUrl
+      if (url.startsWith('/')) {
+        return baseUrl + url;
+      }
+      // If URL is on the same origin, allow it
+      if (new URL(url).origin === baseUrl) {
+        return url;
+      }
+      // Otherwise, redirect to home page
+      return baseUrl + '/';
+    },
     async jwt({ token, user, account }) {
       if (user) {
         token.accessToken = account?.access_token;

@@ -424,6 +424,7 @@ export function ProviderCalendarView({
                 workingHours={workingHours}
                 onEventClick={handleAvailabilityClick}
                 onTimeSlotClick={onTimeSlotClick}
+                onEditEvent={onEditAvailability}
                 getAvailabilityStyle={getAvailabilityStyle}
               />
             )}
@@ -434,6 +435,7 @@ export function ProviderCalendarView({
                 workingHours={workingHours}
                 onEventClick={handleAvailabilityClick}
                 onTimeSlotClick={onTimeSlotClick}
+                onEditEvent={onEditAvailability}
                 getAvailabilityStyle={getAvailabilityStyle}
               />
             )}
@@ -445,6 +447,7 @@ export function ProviderCalendarView({
                 onEventClick={handleAvailabilityClick}
                 onTimeSlotClick={onTimeSlotClick}
                 onDateClick={handleDateClick}
+                onEditEvent={onEditAvailability}
                 getAvailabilityStyle={getAvailabilityStyle}
               />
             )}

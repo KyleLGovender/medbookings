@@ -18,6 +18,7 @@ export function AvailabilityWeekView({
   onEventClick,
   onTimeSlotClick,
   onDateClick,
+  onEditEvent,
   getAvailabilityStyle,
 }: AvailabilityWeekViewProps) {
   // Start week on Monday (matching original pattern)
@@ -150,6 +151,11 @@ export function AvailabilityWeekView({
                               e.preventDefault();
                               e.stopPropagation();
                               onEventClick?.(availability, e);
+                            }}
+                            onDoubleClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onEditEvent?.(availability);
                             }}
                           >
                             <p className="order-1 flex items-center gap-1 font-semibold">

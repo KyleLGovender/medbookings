@@ -84,7 +84,6 @@ export default function Header() {
   const profileMenuItems = [
     ...(isAdmin ? [{ label: 'Admin', href: '/admin' }] : []),
     { label: 'Profile', href: '/profile' },
-    ...(provider?.id ? [{ label: 'Provider', href: `/providers/${provider.id}` }] : []),
     ...(organization && organization.length > 0
       ? [{ label: 'Organizations', href: '/organizations/' }]
       : []),

@@ -32,7 +32,11 @@ const ROUTE_PERMISSIONS = {
 
   // Calendar routes
   '/calendar': ['USER'], // Basic authenticated access
-  '/calendar/availability': 'PROVIDER', // Only providers can manage availability
+  '/calendar/availability': ['USER'], // Allow authenticated users, component handles provider check
+
+  // Availability routes
+  '/availability': ['USER'], // Allow authenticated users, component handles provider check
+  '/availability/create': ['USER'], // Allow authenticated users, component handles provider check
 
   // Profile routes
   '/profile': ['USER'], // Any authenticated user
@@ -77,8 +81,10 @@ async function checkRoutePermissions(pathname: string, token: any): Promise<bool
     return hasRole(token.role, ['ADMIN', 'SUPER_ADMIN']);
   }
 
-  if (pathname.startsWith('/calendar/availability')) {
-    return token.providerRole === 'PROVIDER';
+  if (pathname.startsWith('/calendar/availability') || pathname.startsWith('/availability')) {
+    // For availability management, allow all authenticated users through
+    // The page component will handle the provider-specific check
+    return true;
   }
 
   // For organization routes, allow authenticated users through

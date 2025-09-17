@@ -503,24 +503,6 @@ const createNavData = (
         },
       ],
     },
-    ...(providers.length > 0 && providers[0]
-      ? [
-          {
-            title: 'My Provider Profile',
-            url: `/providers/${providers[0].id}`,
-            items: [
-              {
-                title: 'Profile',
-                url: `/providers/${providers[0].id}`,
-              },
-              {
-                title: 'Manage Calendar',
-                url: `/providers/${providers[0].id}/manage-calendar`,
-              },
-            ],
-          },
-        ]
-      : []),
     ...(organizations.length > 0
       ? organizations
           .sort((a: Organization, b: Organization) => a.name.localeCompare(b.name))
@@ -543,20 +525,24 @@ const createNavData = (
             ],
           }))
       : []),
-    {
-      title: 'Calendar',
-      url: '/calendar',
-      items: [
-        {
-          title: 'Calendar Overview',
-          url: '/calendar',
-        },
-        {
-          title: 'Availability Management',
-          url: '/calendar/availability',
-        },
-      ],
-    },
+    ...(providers.length > 0 && providers[0]
+      ? [
+          {
+            title: 'Calendar',
+            url: '/calendar',
+            items: [
+              {
+                title: 'Calendar Overview',
+                url: '/calendar',
+              },
+              {
+                title: 'Availability Management',
+                url: '/calendar/availability',
+              },
+            ],
+          },
+        ]
+      : []),
     {
       title: 'Settings',
       url: '/settings',

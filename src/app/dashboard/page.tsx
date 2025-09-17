@@ -40,8 +40,8 @@ export default async function DashboardPage() {
 
   // Get comprehensive user data
   let provider = null;
-  let organizationMemberships = [];
-  let recentBookings = [];
+  let organizationMemberships: any[] = [];
+  let recentBookings: any[] = [];
 
   try {
     // Get provider profile if exists
@@ -89,8 +89,10 @@ export default async function DashboardPage() {
     if (provider) {
       recentBookings = await prisma.booking.findMany({
         where: {
-          availability: {
-            providerId: provider.id
+          slot: {
+            availability: {
+              providerId: provider.id
+            }
           }
         },
         orderBy: { createdAt: 'desc' },
@@ -105,10 +107,16 @@ export default async function DashboardPage() {
               email: true
             }
           },
-          availability: {
+          slot: {
             select: {
               startTime: true,
-              endTime: true
+              endTime: true,
+              availability: {
+                select: {
+                  startTime: true,
+                  endTime: true
+                }
+              }
             }
           }
         }
@@ -281,7 +289,7 @@ export default async function DashboardPage() {
                       <h4 className="font-medium text-sm">
                         {membership.organization.name}
                       </h4>
-                      <Badge className={getStatusColor(membership.status)} className="text-xs">
+                      <Badge className={`${getStatusColor(membership.status)} text-xs`}>
                         {membership.status}
                       </Badge>
                     </div>
@@ -338,7 +346,7 @@ export default async function DashboardPage() {
                       })}
                     </p>
                   </div>
-                  <Badge className={getStatusColor(booking.status)} className="text-xs">
+                  <Badge className={`${getStatusColor(booking.status)} text-xs`}>
                     {booking.status}
                   </Badge>
                 </div>

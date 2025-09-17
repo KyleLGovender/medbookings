@@ -1,24 +1,44 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import { CalendarDays, Clock, Users, TrendingUp } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Spinner } from '@/components/ui/spinner';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { api } from '@/utils/api';
 
 export default function CalendarOverviewPage() {
   const { data: currentProvider, isLoading: isProviderLoading } = useCurrentUserProvider();
 
-  // Get availability data for the current provider (using existing API)
+  // Memoize the date range to prevent constant re-calculation
+  const dateRange = useMemo(() => {
+    const now = new Date();
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - 7); // Last week
+    startDate.setHours(0, 0, 0, 0); // Start of day
+
+    const endDate = new Date(now);
+    endDate.setDate(endDate.getDate() + 30); // Next month
+    endDate.setHours(23, 59, 59, 999); // End of day
+
+    return { startDate, endDate };
+  }, []); // Empty dependency array - only calculate once per component mount
+
+  // Get availability data for the current provider
   const { data: availabilities } = api.calendar.searchAvailability.useQuery(
     {
       providerId: currentProvider?.id!,
-      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last week
-      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),  // Next month
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
     },
-    { enabled: !!currentProvider?.id }
+    {
+      enabled: !!currentProvider?.id,
+      staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+      refetchOnWindowFocus: false, // Don't refetch when window gains focus
+      refetchOnMount: false, // Don't refetch on component mount if data exists
+    }
   );
 
   if (isProviderLoading) {
@@ -28,19 +48,14 @@ export default function CalendarOverviewPage() {
           <h1 className="text-3xl font-bold text-gray-900">Calendar Overview</h1>
           <p className="mt-2 text-sm text-gray-600">Loading your calendar dashboard...</p>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Loading...</CardTitle>
-                <div className="h-4 w-4 animate-pulse bg-gray-200 rounded"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 w-16 animate-pulse bg-gray-200 rounded"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Card>
+          <CardContent className="py-8 text-center">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <Spinner className="h-8 w-8" />
+              <p className="text-sm text-muted-foreground">Loading your calendar overview...</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -194,16 +209,6 @@ export default function CalendarOverviewPage() {
                 </div>
                 <CalendarDays className="h-5 w-5 text-muted-foreground" />
               </a>
-              <a
-                href={`/providers/${currentProvider.id}/manage-calendar`}
-                className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50 transition-colors"
-              >
-                <div>
-                  <div className="font-medium">Calendar Management</div>
-                  <div className="text-sm text-muted-foreground">Full calendar interface</div>
-                </div>
-                <Users className="h-5 w-5 text-muted-foreground" />
-              </a>
             </div>
           </CardContent>
         </Card>
@@ -217,17 +222,24 @@ export default function CalendarOverviewPage() {
             <div className="space-y-3">
               {availabilities && availabilities.length > 0 ? (
                 availabilities.slice(0, 3).map((availability, index) => (
-                  <div key={availability.id || index} className="flex items-start space-x-3">
+                  <a
+                    key={availability.id || index}
+                    href={`/availability/${availability.id}/edit?returnUrl=/calendar`}
+                    className="flex items-start space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group"
+                  >
                     <div className="h-2 w-2 rounded-full bg-blue-500 mt-2"></div>
                     <div className="flex-1">
-                      <div className="text-sm font-medium">
+                      <div className="text-sm font-medium group-hover:text-blue-600 transition-colors">
                         {availability.status === 'ACCEPTED' ? 'Available slots' : 'Pending approval'}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {new Date(availability.startTime).toLocaleDateString()} - {availability.calculatedSlots?.length || 0} slots
                       </div>
                     </div>
-                  </div>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-blue-600 self-center">
+                      Edit
+                    </div>
+                  </a>
                 ))
               ) : (
                 <div className="text-sm text-muted-foreground">No recent availability</div>
@@ -239,26 +251,13 @@ export default function CalendarOverviewPage() {
         <Card>
           <CardHeader>
             <CardTitle>Calendar Insights</CardTitle>
-            <CardDescription>Performance metrics</CardDescription>
+            <CardDescription>Performance metrics will appear here once you have booking data</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm">Peak booking times</span>
-                <span className="text-sm font-medium">9-11 AM</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm">Average session length</span>
-                <span className="text-sm font-medium">30 min</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm">Booking lead time</span>
-                <span className="text-sm font-medium">3 days</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm">No-show rate</span>
-                <span className="text-sm font-medium">5%</span>
-              </div>
+            <div className="text-center py-8">
+              <p className="text-sm text-muted-foreground">
+                Insights will be available after you create availability slots and start receiving bookings.
+              </p>
             </div>
           </CardContent>
         </Card>

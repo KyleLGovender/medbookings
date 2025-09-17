@@ -18,6 +18,7 @@ export function AvailabilityDayView({
   onEventClick,
   onTimeSlotClick,
   onDateClick,
+  onEditEvent,
   getAvailabilityStyle,
 }: AvailabilityDayViewProps) {
   const dayEvents = getAvailabilityForDay(events, currentDate);
@@ -103,6 +104,11 @@ export function AvailabilityDayView({
                           e.preventDefault();
                           e.stopPropagation();
                           onEventClick?.(availability, e);
+                        }}
+                        onDoubleClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onEditEvent?.(availability);
                         }}
                       >
                         <p className="order-1 flex items-center gap-1 font-semibold">

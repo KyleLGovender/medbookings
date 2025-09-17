@@ -34,7 +34,7 @@ export default function AuthButton({ profileMenuItems = [], className }: AuthBut
   if (status === 'unauthenticated') {
     return (
       <Button
-        onClick={() => signIn('google', { callbackUrl: '/profile' })}
+        onClick={() => signIn('google')}
         variant="outline"
         className="ml-3"
         aria-label="Sign in with Google"

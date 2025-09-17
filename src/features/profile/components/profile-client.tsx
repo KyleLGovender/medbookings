@@ -114,17 +114,13 @@ export function ProfileClient({
                     'Not Registered'
                   )}
                 </div>
-                <div>
-                  {hasServiceProvider ? (
-                    <NavigationOutlineButton href={`/providers/${provider?.id}`}>
-                      Provider View
-                    </NavigationOutlineButton>
-                  ) : (
+                {!hasServiceProvider && (
+                  <div>
                     <NavigationOutlineButton href="/providers/new">
                       Register Provider
                     </NavigationOutlineButton>
-                  )}
-                </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

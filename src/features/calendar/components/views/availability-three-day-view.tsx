@@ -18,6 +18,7 @@ export function AvailabilityThreeDayView({
   onEventClick,
   onTimeSlotClick,
   onDateClick,
+  onEditEvent,
   getAvailabilityStyle,
 }: AvailabilityThreeDayViewProps) {
   // Calculate the three days: previous, current, next
@@ -162,6 +163,11 @@ export function AvailabilityThreeDayView({
                               e.preventDefault();
                               e.stopPropagation();
                               onEventClick?.(availability, e);
+                            }}
+                            onDoubleClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onEditEvent?.(availability);
                             }}
                           >
                             <p className="order-1 flex items-center gap-1 truncate font-semibold">

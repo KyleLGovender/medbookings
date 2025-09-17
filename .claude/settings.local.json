@@ -52,7 +52,8 @@
       "mcp__filesystem-server__read_text_file",
       "mcp__filesystem-server__edit_file",
       "Bash(npx prisma:*)",
-      "mcp__filesystem-server__write_file"
+      "mcp__filesystem-server__write_file",
+      "Bash(npm run workflow:preflight:*)"
     ],
     "deny": []
   },

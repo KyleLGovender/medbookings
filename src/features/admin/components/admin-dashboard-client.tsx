@@ -1,5 +1,7 @@
 'use client';
 
+import { Card, CardContent } from '@/components/ui/card';
+import { Spinner } from '@/components/ui/spinner';
 import { OversightDashboard } from '@/features/admin/components/oversight-dashboard';
 import { type RouterOutputs, api } from '@/utils/api';
 
@@ -43,11 +45,16 @@ export function AdminDashboardClient() {
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Platform oversight and management console</p>
+            <p className="text-muted-foreground">Loading platform oversight data...</p>
           </div>
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-pulse text-muted-foreground">Loading dashboard data...</div>
-          </div>
+          <Card>
+            <CardContent className="py-8 text-center">
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <Spinner className="h-8 w-8" />
+                <p className="text-sm text-muted-foreground">Loading admin dashboard data...</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

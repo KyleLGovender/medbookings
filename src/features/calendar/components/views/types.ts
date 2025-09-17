@@ -15,6 +15,7 @@ export interface BaseAvailabilityViewProps {
   onEventClick?: (availability: AvailabilityData, clickEvent?: React.MouseEvent) => void;
   onTimeSlotClick?: (date: Date, hour: number) => void;
   onDateClick?: (date: Date) => void;
+  onEditEvent?: (availability: AvailabilityData) => void;
   getAvailabilityStyle: (availability: AvailabilityData) => string;
 }
 
@@ -45,7 +46,6 @@ export interface AvailabilityThreeDayViewProps extends BaseAvailabilityViewProps
 export interface AvailabilityMonthViewProps
   extends Omit<BaseAvailabilityViewProps, 'workingHours' | 'onTimeSlotClick'> {
   // MonthView doesn't need workingHours (shows full day) or timeSlotClick (uses dateClick)
-  onEditEvent?: (availability: AvailabilityData) => void;
 }
 
 /**

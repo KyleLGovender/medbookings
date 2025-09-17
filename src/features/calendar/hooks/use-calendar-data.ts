@@ -60,8 +60,25 @@ interface CalendarDataResult {
 export function useCalendarData(params: CalendarDataParams): CalendarDataResult {
   const { providerIds, dateRange, statusFilter = 'ALL' } = params;
 
+  // Create stable string representations of dates to prevent constant re-queries
+  // CRITICAL FIX: Use .getTime() in dependency array instead of Date objects
+  // Date objects are reference types, so they fail === comparison on every render
+  // This was causing excessive API polling every ~60ms
+  const startDateString = useMemo(() => dateRange.start.toISOString(), [dateRange.start.getTime()]);
+  const endDateString = useMemo(() => dateRange.end.toISOString(), [dateRange.end.getTime()]);
+
+  // Create stable search parameters to prevent constant re-queries
+  const stableSearchParams = useMemo(() => {
+    return providerIds.map((providerId) => ({
+      providerId,
+      startDate: startDateString,
+      endDate: endDateString,
+      ...(statusFilter !== 'ALL' && { status: statusFilter }),
+    }));
+  }, [providerIds, startDateString, endDateString, statusFilter]);
+
   // Create queries for each provider
-  const providerQueries = providerIds.map((providerId) => {
+  const providerQueries = providerIds.map((providerId, index) => {
     // Fetch provider data using tRPC
     const providerQuery = api.providers.getById.useQuery(
       { id: providerId },
@@ -71,18 +88,18 @@ export function useCalendarData(params: CalendarDataParams): CalendarDataResult 
       }
     );
 
-    // Build search parameters for availability
-    const searchParams: AvailabilitySearchParams = {
-      providerId,
-      startDate: dateRange.start.toISOString(),
-      endDate: dateRange.end.toISOString(),
-      ...(statusFilter !== 'ALL' && { status: statusFilter }),
-    };
+    // Use stable search parameters
+    const searchParams = stableSearchParams[index] as AvailabilitySearchParams;
 
-    // Fetch availability data using tRPC
+    // Fetch availability data using tRPC with optimized caching
     const availabilityQuery = api.calendar.searchAvailability.useQuery(searchParams, {
       enabled: !!providerId,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh
+      gcTime: 30 * 60 * 1000, // 30 minutes - keep in cache longer
+      refetchOnWindowFocus: false, // Prevent unnecessary refetches on focus
+      refetchOnMount: false, // Don't refetch on component mount if data exists
+      refetchOnReconnect: false, // Don't refetch on network reconnect
+      retry: 2, // Limit retry attempts
     });
 
     return {

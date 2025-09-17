@@ -67,3 +67,123 @@
 - Assume variable names without verifying declarations
 - Modify interfaces without checking all implementations
 - Skip context loading even if familiar with codebase
+
+### Route & Navigation Validation
+
+**ALWAYS:**
+- Verify ALL href/navigation targets exist: `grep -r "path.*${route_path}" --include="*.ts" --include="*.tsx"`
+- Check route definitions in: app directory structure, API routes, middleware.ts
+- Trace navigation flow: source → middleware → destination
+- Identify duplicate route handlers (e.g., /calendar/availability vs /availability)
+- Run: `find app -type f -name "page.tsx" | sed 's/page.tsx//' | sort` to list all valid routes
+
+**NEVER:**
+- Assume a route exists based on href usage
+- Create navigation links without verifying destination exists
+- Ignore route middleware or guards
+
+### Data Source Verification
+
+**ALWAYS:**
+- Trace data origin: Is it from API, database, or hardcoded?
+- Flag ALL hardcoded/mock data with comment: `// TODO: Mock data - replace with API`
+- Verify API endpoint existence: `grep -r "router.*${endpoint_name}" server/`
+- Check for data inconsistencies between similar components
+- Identify static vs dynamic content explicitly
+
+**NEVER:**
+- Accept hardcoded values without questioning source
+- Assume data is real without tracing to database query
+- Mix mock and real data without clear separation
+
+### Performance & API Monitoring
+
+**ALWAYS:**
+- Check React Query settings: `refetchInterval`, `refetchOnWindowFocus`, `staleTime`
+- Search for polling patterns: `grep -r "useQuery.*{" -A 5 | grep -E "(refetch|poll|interval)"`
+- Identify duplicate API calls in console logs
+- Check for missing debounce/throttle on frequent operations
+- Verify proper cleanup: `useEffect` return statements, query cancellation
+
+**NEVER:**
+- Ignore repeated API calls in terminal output
+- Implement queries without considering cache strategy
+- Add polling without explicit requirement
+
+### Flash/Loading State Analysis
+
+**ALWAYS:**
+- Check for race conditions between similar pages
+- Verify loading states: `grep -r "isLoading\|isPending" ${file}`
+- Identify authentication/permission checks causing redirects
+- Test navigation between related pages (availability → calendar → manage)
+- Look for duplicate permission checks across route transitions
+
+**NEVER:**
+- Ignore brief UI flashes as "normal" behavior
+- Assume loading states are properly handled without verification
+
+### Critical Path Testing
+
+**BEFORE MARKING ANY FEATURE COMPLETE:**
+1. **Route Test**: Click all navigation links and verify destinations
+2. **Data Test**: Confirm all displayed data sources (API vs mock)
+3. **Performance Test**: Monitor network tab for excessive requests
+4. **State Test**: Navigate between related pages checking for flashes
+5. **Console Test**: Check for errors, warnings, and excessive logs
+
+### Issue Detection Checklist
+
+When analyzing existing code, ALWAYS check:
+```bash
+# 1. Find all routes and verify they exist
+grep -r "href=\|navigate\|push(" --include="*.tsx" | grep -v "^//" | sort -u
+
+# 2. Find mock/hardcoded data
+grep -r "Mock\|TODO\|hardcoded\|placeholder\|9-11 AM\|30 min" --include="*.tsx"
+
+# 3. Check for deleted routes still referenced
+git log --diff-filter=D --summary | grep "delete mode" | grep -E "(page|route)"
+
+# 4. Find potential infinite loops/excessive polling
+grep -r "useEffect\|useQuery" -A 10 --include="*.tsx" | grep -E "interval|timeout|refetch"
+
+# 5. Identify duplicate route handling
+find app -name "*.tsx" -exec grep -l "availability\|calendar" {} \; | sort
+
+# 6. Check for route guards/middleware
+cat middleware.ts 2>/dev/null || echo "No middleware found"
+```
+
+### Red Flags to Always Report
+
+**IMMEDIATELY flag when you see:**
+- Hardcoded values that look like sample data e.g. "9-11 AM", "30 min", "5%"
+- Navigation to paths containing /providers/[id]/ without route verification
+- Multiple similar pages with slight variations (availability vs calendar/availability)
+- API calls firing continuously in terminal
+- Flash content before redirects
+- Missing error boundaries on data-dependent components
+
+### MedBookings Specific Rules
+
+**ALWAYS:**
+- Verify provider authentication flow completeness
+- Check for PHI data exposure in console logs
+- Validate appointment booking state machines
+- Ensure calendar/availability sync across all views
+
+**NEVER:**
+- Display mock healthcare data in production builds
+- Create provider routes without role verification
+- Implement calendar features without timezone handling
+
+### Debugging Protocol for Issues
+
+**When user reports an issue:**
+- **Reproduce:** Try exact click path user described
+- **Trace:** Follow data and navigation flow completely
+- **Verify:** Check if routes/APIs actually exist
+- **Identify:** Distinguish between mock and real data
+- **Monitor:** Watch terminal for unusual patterns
+- **Report:** List all findings with specific line numbers

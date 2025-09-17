@@ -111,9 +111,7 @@ export default function LoginPage() {
         </div>
       )}
 
-      <Button onClick={() => signIn('google', { callbackUrl: '/profile' })}>
-        {' '}
-        {/* Ensure callbackUrl is desired */}
+      <Button onClick={() => signIn('google')}>
         <GoogleIcon />
         Sign In with Google
       </Button>

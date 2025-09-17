@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 import { Calendar, Clock, Plus, Settings, Upload, Download } from 'lucide-react';
 
+import { ProviderRequiredMessage } from '@/components/provider-required-message';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProviderCalendarView } from '@/features/calendar/components/provider-calendar-view';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
@@ -15,14 +17,33 @@ export default function AvailabilityManagementPage() {
   const { data: currentProvider, isLoading: isProviderLoading } = useCurrentUserProvider();
   const [activeTab, setActiveTab] = useState('calendar');
 
+  // Memoize the date range to prevent constant re-calculation
+  const dateRange = useMemo(() => {
+    const now = new Date();
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - 7); // Last week
+    startDate.setHours(0, 0, 0, 0); // Start of day
+
+    const endDate = new Date(now);
+    endDate.setDate(endDate.getDate() + 30); // Next month
+    endDate.setHours(23, 59, 59, 999); // End of day
+
+    return { startDate, endDate };
+  }, []); // Empty dependency array - only calculate once per component mount
+
   // Get availability data for the current provider
-  const { data: availabilities, isLoading: isAvailabilityLoading } = api.calendar.searchAvailability.useQuery(
+  const { data: availabilities } = api.calendar.searchAvailability.useQuery(
     {
       providerId: currentProvider?.id!,
-      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last week
-      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),  // Next month
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
     },
-    { enabled: !!currentProvider?.id }
+    {
+      enabled: !!currentProvider?.id,
+      staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+      refetchOnWindowFocus: false, // Don't refetch when window gains focus
+      refetchOnMount: false, // Don't refetch on component mount if data exists
+    }
   );
 
   if (isProviderLoading) {
@@ -32,40 +53,23 @@ export default function AvailabilityManagementPage() {
           <h1 className="text-3xl font-bold text-gray-900">Availability Management</h1>
           <p className="mt-2 text-sm text-gray-600">Loading your availability management dashboard...</p>
         </div>
-        <div className="animate-pulse">
-          <div className="h-64 bg-gray-200 rounded-lg"></div>
-        </div>
+        <Card>
+          <CardContent className="py-8 text-center">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <Spinner className="h-8 w-8" />
+              <p className="text-sm text-muted-foreground">Loading your availability dashboard...</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (!currentProvider) {
     return (
-      <div className="container mx-auto py-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Availability Management</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Provider profile required to manage availability
-          </p>
-        </div>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold text-orange-600">
-              Provider Profile Required
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              To manage your availability, you need to complete your provider profile setup.
-            </p>
-            <div className="mt-4">
-              <Button onClick={() => window.location.href = '/profile'}>
-                Complete Provider Setup
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <ProviderRequiredMessage
+        description="To manage your availability, you need to complete your provider profile setup."
+      />
     );
   }
 
@@ -80,17 +84,27 @@ export default function AvailabilityManagementPage() {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                // TODO: Implement import functionality
+                alert('Import functionality coming soon');
+              }}
+            >
               <Upload className="h-4 w-4 mr-2" />
               Import
             </Button>
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                // TODO: Implement export functionality
+                alert('Export functionality coming soon');
+              }}
+            >
               <Download className="h-4 w-4 mr-2" />
               Export
-            </Button>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Availability
             </Button>
           </div>
         </div>
@@ -118,7 +132,7 @@ export default function AvailabilityManagementPage() {
             <CardContent>
               <ProviderCalendarView
                 providerId={currentProvider.id}
-                onCreateAvailability={() => window.location.href = '/availability/create'}
+                onCreateAvailability={() => window.location.href = `/availability/create?providerId=${currentProvider.id}&returnUrl=/calendar/availability`}
                 onEditAvailability={(availability) => window.location.href = `/availability/${availability.id}/edit`}
               />
             </CardContent>
@@ -135,19 +149,35 @@ export default function AvailabilityManagementPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button variant="outline" className="w-full justify-start">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => alert('Bulk operations feature coming soon')}
+                >
                   <Clock className="h-4 w-4 mr-2" />
                   Copy Week to Future Dates
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => alert('Recurring schedule feature coming soon')}
+                >
                   <Calendar className="h-4 w-4 mr-2" />
                   Create Recurring Schedule
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => alert('Bulk update feature coming soon')}
+                >
                   <Settings className="h-4 w-4 mr-2" />
                   Update Multiple Slots
                 </Button>
-                <Button variant="destructive" className="w-full justify-start">
+                <Button
+                  variant="destructive"
+                  className="w-full justify-start"
+                  onClick={() => alert('Bulk delete feature coming soon')}
+                >
                   Delete Selected Slots
                 </Button>
               </CardContent>
@@ -205,7 +235,11 @@ export default function AvailabilityManagementPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => alert('Template feature coming soon')}
+                >
                   Apply Template
                 </Button>
               </CardContent>
@@ -219,7 +253,11 @@ export default function AvailabilityManagementPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => alert('Template feature coming soon')}
+                >
                   Apply Template
                 </Button>
               </CardContent>
@@ -233,7 +271,11 @@ export default function AvailabilityManagementPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => alert('Template feature coming soon')}
+                >
                   Apply Template
                 </Button>
               </CardContent>
@@ -248,7 +290,7 @@ export default function AvailabilityManagementPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button>
+              <Button onClick={() => alert('Custom templates feature coming soon')}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Custom Template
               </Button>

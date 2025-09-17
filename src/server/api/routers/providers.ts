@@ -568,7 +568,7 @@ export const providersRouter = createTRPCRouter({
         }
       );
 
-      return { success: true, data: provider, redirect: '/profile' };
+      return { success: true, data: provider, redirect: '/' };
     }),
 
   /**
