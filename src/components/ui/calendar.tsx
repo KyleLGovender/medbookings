@@ -23,7 +23,8 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         caption_dropdowns: 'flex justify-center gap-3 mb-4',
         dropdown_month: 'min-w-[120px]',
         dropdown_year: 'min-w-[80px]',
-        dropdown: 'inline-flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+        dropdown:
+          'inline-flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
         nav: 'space-x-1 flex items-center',
         nav_button: cn(
           buttonVariants({ variant: 'outline' }),
