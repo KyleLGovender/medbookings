@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+
 import { MapPin } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
@@ -8,10 +9,7 @@ import { cn } from '@/lib/utils';
 
 interface LocationAutocompleteProps {
   value: string;
-  onLocationSelect: (location: {
-    description: string;
-    place_id?: string;
-  }) => void;
+  onLocationSelect: (location: { description: string; place_id?: string }) => void;
   placeholder?: string;
   className?: string;
 }
@@ -26,7 +24,7 @@ declare global {
 export function LocationAutocomplete({
   value,
   onLocationSelect,
-  placeholder = "Search location...",
+  placeholder = 'Search location...',
   className,
 }: LocationAutocompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -59,7 +57,7 @@ export function LocationAutocomplete({
       }
 
       // Create callback function
-      const callbackName = 'initGoogleMapsAutocomplete' + Date.now();
+      const callbackName = `initGoogleMapsAutocomplete${Date.now()}`;
       window[callbackName] = initializeAutocomplete;
 
       // Load the script
@@ -82,14 +80,16 @@ export function LocationAutocomplete({
 
       try {
         // Initialize autocomplete with restrictions to cities and regions
-        autocompleteRef.current = new window.google.maps.places.Autocomplete(
-          inputRef.current,
-          {
-            types: ['locality', 'administrative_area_level_1', 'administrative_area_level_2', 'sublocality'],
-            fields: ['place_id', 'formatted_address', 'name', 'address_components', 'geometry'],
-            strictBounds: false,
-          }
-        );
+        autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+          types: [
+            'locality',
+            'administrative_area_level_1',
+            'administrative_area_level_2',
+            'sublocality',
+          ],
+          fields: ['place_id', 'formatted_address', 'name', 'address_components', 'geometry'],
+          strictBounds: false,
+        });
 
         // Add listener for place selection
         autocompleteRef.current.addListener('place_changed', () => {
@@ -172,10 +172,10 @@ export function LocationAutocomplete({
           value={inputValue}
           onChange={handleInputChange}
           placeholder={placeholder}
-          className={cn("pl-9", className)}
+          className={cn('pl-9', className)}
         />
         <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <div className="text-xs text-red-500 mt-1">{error}</div>
+        <div className="mt-1 text-xs text-red-500">{error}</div>
       </div>
     );
   }
@@ -186,8 +186,8 @@ export function LocationAutocomplete({
         ref={inputRef}
         value={inputValue}
         onChange={handleInputChange}
-        placeholder={isLoaded ? placeholder : "Loading location search..."}
-        className={cn("pl-9", className)}
+        placeholder={isLoaded ? placeholder : 'Loading location search...'}
+        className={cn('pl-9', className)}
         disabled={!isLoaded}
       />
       <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

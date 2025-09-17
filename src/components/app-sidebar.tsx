@@ -1,12 +1,13 @@
 import * as React from 'react';
 
-import { Minus, Plus } from 'lucide-react';
+import { Minus, Plus, Settings } from 'lucide-react';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { NavigationLink } from '@/components/ui/navigation-link';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarHeader,
   SidebarMenu,
@@ -56,30 +57,41 @@ export function AppSidebar({ data, ...props }: AppSidebarProps) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
-            {data.navMain.map((item) => (
-              <Collapsible key={item.title} defaultOpen={true} className="group/collapsible">
-                <SidebarMenuItem>
-                  <div className="flex w-full items-center">
-                    {/* Clickable main item */}
-                    <SidebarMenuButton asChild className="flex-1">
+            {data.navMain.map((item) => {
+              // Settings should be a direct clickable button without collapsible behavior
+              if (!item.items?.length) {
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
                       <NavigationLink href={item.url} className="flex items-center gap-2">
                         {item.icon}
                         {item.title}
                       </NavigationLink>
                     </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              }
 
-                    {/* Separate expand/collapse trigger */}
-                    {item.items?.length ? (
+              // Other items should be collapsible/expandable but main heading should not be clickable
+              return (
+                <Collapsible key={item.title} defaultOpen={true} className="group/collapsible">
+                  <SidebarMenuItem>
+                    <div className="flex w-full items-center">
+                      {/* Non-clickable main item label */}
+                      <div className="flex flex-1 items-center gap-2 px-2 py-1.5 text-sm font-medium">
+                        {item.icon}
+                        {item.title}
+                      </div>
+
+                      {/* Expand/collapse trigger */}
                       <CollapsibleTrigger asChild>
                         <button className="flex h-8 w-8 items-center justify-center rounded-sm hover:bg-accent hover:text-accent-foreground">
                           <Plus className="h-4 w-4 group-data-[state=open]/collapsible:hidden" />
                           <Minus className="h-4 w-4 group-data-[state=closed]/collapsible:hidden" />
                         </button>
                       </CollapsibleTrigger>
-                    ) : null}
-                  </div>
+                    </div>
 
-                  {item.items?.length ? (
                     <CollapsibleContent>
                       <SidebarMenuSub>
                         {item.items.map((subItem) => (
@@ -91,13 +103,25 @@ export function AppSidebar({ data, ...props }: AppSidebarProps) {
                         ))}
                       </SidebarMenuSub>
                     </CollapsibleContent>
-                  ) : null}
-                </SidebarMenuItem>
-              </Collapsible>
-            ))}
+                  </SidebarMenuItem>
+                </Collapsible>
+              );
+            })}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <NavigationLink href="/settings" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Settings
+              </NavigationLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

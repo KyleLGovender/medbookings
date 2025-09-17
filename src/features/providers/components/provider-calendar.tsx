@@ -37,8 +37,8 @@ export function ProviderCalendar() {
   // Show loading state if provider is being fetched
   if (isLoadingProvider) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -46,12 +46,11 @@ export function ProviderCalendar() {
   // Show error state if no provider found
   if (!currentProvider) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">No provider profile found. Please create a provider profile to access calendar features.</p>
-        <Button
-          onClick={() => router.push('/providers/new')}
-          className="mt-4"
-        >
+      <div className="py-8 text-center">
+        <p className="text-gray-500">
+          No provider profile found. Please create a provider profile to access calendar features.
+        </p>
+        <Button onClick={() => router.push('/providers/new')} className="mt-4">
           Create Provider Profile
         </Button>
       </div>
@@ -218,9 +217,7 @@ export function ProviderCalendar() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <AvailabilityProposalsList
-                providerId={currentProvider.id}
-              />
+              <AvailabilityProposalsList providerId={currentProvider.id} />
             </CardContent>
           </Card>
         </TabsContent>

@@ -20,7 +20,9 @@ export function useCurrentUserOrganizations() {
   );
 
   // If session is still loading, we should show loading
-  const isLoading = sessionStatus === 'loading' || (sessionStatus === 'authenticated' && organizationsQuery.isLoading);
+  const isLoading =
+    sessionStatus === 'loading' ||
+    (sessionStatus === 'authenticated' && organizationsQuery.isLoading);
 
   return {
     ...organizationsQuery,

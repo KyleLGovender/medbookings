@@ -8,9 +8,9 @@ interface ProviderRequiredMessageProps {
 }
 
 export function ProviderRequiredMessage({
-  title = "Provider Profile Required",
-  description = "To access this feature, you need to complete your provider profile setup.",
-  className = "container mx-auto py-6"
+  title = 'Provider Profile Required',
+  description = 'To access this feature, you need to complete your provider profile setup.',
+  className = 'container mx-auto py-6',
 }: ProviderRequiredMessageProps) {
   return (
     <div className={className}>
@@ -22,19 +22,15 @@ export function ProviderRequiredMessage({
       </div>
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl font-semibold text-orange-600">
-            {title}
-          </CardTitle>
+          <CardTitle className="text-xl font-semibold text-orange-600">{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground mb-4">
-            {description}
-          </p>
+          <p className="mb-4 text-muted-foreground">{description}</p>
           <div className="flex gap-3">
-            <Button onClick={() => window.location.href = '/profile'}>
+            <Button onClick={() => (window.location.href = '/profile')}>
               Complete Provider Setup
             </Button>
-            <Button variant="outline" onClick={() => window.location.href = '/dashboard'}>
+            <Button variant="outline" onClick={() => (window.location.href = '/dashboard')}>
               Back to Dashboard
             </Button>
           </div>

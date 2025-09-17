@@ -1,16 +1,23 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Search, MapPin, Clock, Star, Users, Filter, Globe, Building2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { Building2, Clock, Filter, Globe, MapPin, Search, Star, Users } from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { LocationAutocomplete } from '@/components/ui/location-autocomplete';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { api } from '@/utils/api';
 
 export default function ProvidersPage() {
@@ -39,30 +46,40 @@ export default function ProvidersPage() {
   }, [lastName]);
 
   // Get provider types for filtering
-  const { data: providerTypes, isLoading: typesLoading } = api.providers.getProviderTypes.useQuery(undefined, {
-    staleTime: Infinity, // Provider types rarely change
-    refetchOnWindowFocus: false,
-  });
-
-  // Memoize search parameters to prevent unnecessary re-renders
-  const searchParams = useMemo(() => ({
-    nameSearch: debouncedFirstName || debouncedLastName ? `${debouncedFirstName} ${debouncedLastName}`.trim() : undefined,
-    typeIds: selectedTypes.length > 0 ? selectedTypes : undefined,
-    status: 'APPROVED' as const,
-    page: 1,
-    limit: 50,
-  }), [debouncedFirstName, debouncedLastName, selectedTypes]);
-
-  // Search providers with current filters
-  const { data: searchResults, isLoading: providersLoading, isFetching } = api.providers.search.useQuery(
-    searchParams,
+  const { data: providerTypes, isLoading: typesLoading } = api.providers.getProviderTypes.useQuery(
+    undefined,
     {
-      enabled: true, // Always enabled to show initial results
-      staleTime: 1000, // Prevent refetching for 1 second
-      refetchOnWindowFocus: false, // Prevent unnecessary refetches
-      placeholderData: (previousData) => previousData, // Prevents loading state on refetch
+      staleTime: Infinity, // Provider types rarely change
+      refetchOnWindowFocus: false,
     }
   );
+
+  // Memoize search parameters to prevent unnecessary re-renders
+  const searchParams = useMemo(
+    () => ({
+      nameSearch:
+        debouncedFirstName || debouncedLastName
+          ? `${debouncedFirstName} ${debouncedLastName}`.trim()
+          : undefined,
+      typeIds: selectedTypes.length > 0 ? selectedTypes : undefined,
+      status: 'APPROVED' as const,
+      page: 1,
+      limit: 50,
+    }),
+    [debouncedFirstName, debouncedLastName, selectedTypes]
+  );
+
+  // Search providers with current filters
+  const {
+    data: searchResults,
+    isLoading: providersLoading,
+    isFetching,
+  } = api.providers.search.useQuery(searchParams, {
+    enabled: true, // Always enabled to show initial results
+    staleTime: 1000, // Prevent refetching for 1 second
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
+    placeholderData: (previousData) => previousData, // Prevents loading state on refetch
+  });
 
   // Apply additional client-side filters that the API doesn't support yet
   const filteredProviders = useMemo(() => {
@@ -70,11 +87,14 @@ export default function ProvidersPage() {
       // Location filter (if provider has availability with location or matches search)
       if (selectedLocation && selectedLocation.trim()) {
         const locationQuery = selectedLocation.toLowerCase().trim();
-        const hasMatchingLocation = provider.availabilities?.some((avail: any) =>
-          avail.location?.name?.toLowerCase().includes(locationQuery) ||
-          avail.location?.formattedAddress?.toLowerCase().includes(locationQuery)
-        ) || provider.name?.toLowerCase().includes(locationQuery) ||
-           provider.bio?.toLowerCase().includes(locationQuery);
+        const hasMatchingLocation =
+          provider.availabilities?.some(
+            (avail: any) =>
+              avail.location?.name?.toLowerCase().includes(locationQuery) ||
+              avail.location?.formattedAddress?.toLowerCase().includes(locationQuery)
+          ) ||
+          provider.name?.toLowerCase().includes(locationQuery) ||
+          provider.bio?.toLowerCase().includes(locationQuery);
 
         if (!hasMatchingLocation) return false;
       }
@@ -115,7 +135,7 @@ export default function ProvidersPage() {
   return (
     <div className="container mx-auto py-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Healthcare Providers</h1>
+        <h1 className="mb-2 text-3xl font-bold text-gray-900">Healthcare Providers</h1>
         <p className="text-gray-600">Browse our network of approved healthcare professionals</p>
       </div>
 
@@ -133,7 +153,7 @@ export default function ProvidersPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Primary Search Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
               <Input
@@ -203,12 +223,12 @@ export default function ProvidersPage() {
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
               >
                 {showAdvancedFilters ? 'Hide' : 'Show'} Specialties
-                <Filter className="h-4 w-4 ml-2" />
+                <Filter className="ml-2 h-4 w-4" />
               </Button>
             </div>
 
             {showAdvancedFilters && providerTypes && providerTypes.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
                 {providerTypes.map((type) => (
                   <Button
                     key={type.id}
@@ -216,7 +236,7 @@ export default function ProvidersPage() {
                     variant={selectedTypes.includes(type.id) ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => handleTypeToggle(type.id)}
-                    className="justify-start h-auto py-2 px-3"
+                    className="h-auto justify-start px-3 py-2"
                   >
                     <div className="text-left">
                       <div className="font-medium">{type.name}</div>
@@ -233,12 +253,18 @@ export default function ProvidersPage() {
               type="button"
               variant="outline"
               onClick={handleClearFilters}
-              disabled={!firstName && !lastName && !selectedLocation.trim() && (!serviceType || serviceType === 'all') && selectedTypes.length === 0}
+              disabled={
+                !firstName &&
+                !lastName &&
+                !selectedLocation.trim() &&
+                (!serviceType || serviceType === 'all') &&
+                selectedTypes.length === 0
+              }
             >
               Clear All Filters
             </Button>
-            <div className="text-sm text-muted-foreground flex items-center">
-              <Search className="h-4 w-4 mr-1" />
+            <div className="flex items-center text-sm text-muted-foreground">
+              <Search className="mr-1 h-4 w-4" />
               Search updates automatically as you type
             </div>
           </div>
@@ -249,14 +275,22 @@ export default function ProvidersPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">
-            {firstName || lastName || selectedLocation.trim() || (serviceType && serviceType !== 'all') || selectedTypes.length > 0
+            {firstName ||
+            lastName ||
+            selectedLocation.trim() ||
+            (serviceType && serviceType !== 'all') ||
+            selectedTypes.length > 0
               ? 'Search Results'
               : 'All Providers'}
-            <span className="text-gray-500 ml-2">
+            <span className="ml-2 text-gray-500">
               ({filteredProviders?.length || 0} providers found)
             </span>
           </h2>
-          {(firstName || lastName || selectedLocation.trim() || (serviceType && serviceType !== 'all') || selectedTypes.length > 0) && (
+          {(firstName ||
+            lastName ||
+            selectedLocation.trim() ||
+            (serviceType && serviceType !== 'all') ||
+            selectedTypes.length > 0) && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Filter className="h-4 w-4" />
               <span>Filters active</span>
@@ -267,28 +301,27 @@ export default function ProvidersPage() {
         {/* Show initial loading only on very first page load */}
         {isInitialLoading ? (
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-8 w-1/4 rounded bg-gray-200"></div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-64 bg-gray-200 rounded"></div>
+                <div key={i} className="h-64 rounded bg-gray-200"></div>
               ))}
             </div>
           </div>
-        ) : (
-          filteredProviders && filteredProviders.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredProviders.map((provider: any) => (
-                <Card key={provider.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <CardTitle className="text-lg">{provider.name}</CardTitle>
-                        <CardDescription className="flex items-center gap-1">
-                          <Users className="h-4 w-4" />
-                          {provider.user?.email}
+        ) : filteredProviders && filteredProviders.length > 0 ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredProviders.map((provider: any) => (
+              <Card key={provider.id} className="transition-shadow hover:shadow-lg">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="text-lg">{provider.name}</CardTitle>
+                      <CardDescription className="flex items-center gap-1">
+                        <Users className="h-4 w-4" />
+                        {provider.user?.email}
                       </CardDescription>
                     </div>
-                    <Badge variant="secondary" className="text-green-700 bg-green-100">
+                    <Badge variant="secondary" className="bg-green-100 text-green-700">
                       {provider.status}
                     </Badge>
                   </div>
@@ -296,7 +329,7 @@ export default function ProvidersPage() {
                 <CardContent className="space-y-4">
                   {/* Bio */}
                   {provider.bio && (
-                    <p className="text-sm text-gray-600 line-clamp-3">{provider.bio}</p>
+                    <p className="line-clamp-3 text-sm text-gray-600">{provider.bio}</p>
                   )}
 
                   {/* Provider Types */}
@@ -305,7 +338,11 @@ export default function ProvidersPage() {
                       <div className="text-sm font-medium text-gray-900">Specialties:</div>
                       <div className="flex flex-wrap gap-1">
                         {provider.typeAssignments.map((assignment: any) => (
-                          <Badge key={assignment.providerType.id} variant="outline" className="text-xs">
+                          <Badge
+                            key={assignment.providerType.id}
+                            variant="outline"
+                            className="text-xs"
+                          >
                             {assignment.providerType.name}
                           </Badge>
                         ))}
@@ -325,7 +362,10 @@ export default function ProvidersPage() {
                           </span>
                         ))}
                         {provider.services.length > 3 && (
-                          <span className="text-gray-500"> +{provider.services.length - 3} more</span>
+                          <span className="text-gray-500">
+                            {' '}
+                            +{provider.services.length - 3} more
+                          </span>
                         )}
                       </div>
                     </div>
@@ -369,22 +409,29 @@ export default function ProvidersPage() {
                   </div>
 
                   {/* Requirements Status */}
-                  {provider.requirementSubmissions && provider.requirementSubmissions.length > 0 && (
-                    <div className="pt-2 border-t">
-                      <div className="text-xs text-gray-500">
-                        Verified Requirements: {provider.requirementSubmissions.filter((req: any) => req.status === 'APPROVED').length}/{provider.requirementSubmissions.length}
+                  {provider.requirementSubmissions &&
+                    provider.requirementSubmissions.length > 0 && (
+                      <div className="border-t pt-2">
+                        <div className="text-xs text-gray-500">
+                          Verified Requirements:{' '}
+                          {
+                            provider.requirementSubmissions.filter(
+                              (req: any) => req.status === 'APPROVED'
+                            ).length
+                          }
+                          /{provider.requirementSubmissions.length}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Action Buttons */}
                   <div className="flex gap-2 pt-2">
                     <Button className="flex-1" size="sm">
-                      <Clock className="h-4 w-4 mr-2" />
+                      <Clock className="mr-2 h-4 w-4" />
                       Book Appointment
                     </Button>
                     <Button variant="outline" size="sm">
-                      <MapPin className="h-4 w-4 mr-2" />
+                      <MapPin className="mr-2 h-4 w-4" />
                       View Profile
                     </Button>
                   </div>
@@ -395,24 +442,28 @@ export default function ProvidersPage() {
         ) : (
           <Card>
             <CardContent className="p-8 text-center">
-              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No providers found</h3>
-              <p className="text-gray-600 mb-4">
-                {firstName || lastName || selectedLocation.trim() || (serviceType && serviceType !== 'all') || selectedTypes.length > 0
+              <Users className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+              <h3 className="mb-2 text-lg font-medium text-gray-900">No providers found</h3>
+              <p className="mb-4 text-gray-600">
+                {firstName ||
+                lastName ||
+                selectedLocation.trim() ||
+                (serviceType && serviceType !== 'all') ||
+                selectedTypes.length > 0
                   ? 'No providers match your search criteria. Try adjusting your filters.'
                   : 'No approved providers are currently available.'}
               </p>
-              {(firstName || lastName || selectedLocation.trim() || (serviceType && serviceType !== 'all') || selectedTypes.length > 0) && (
-                <Button
-                  variant="outline"
-                  onClick={handleClearFilters}
-                >
+              {(firstName ||
+                lastName ||
+                selectedLocation.trim() ||
+                (serviceType && serviceType !== 'all') ||
+                selectedTypes.length > 0) && (
+                <Button variant="outline" onClick={handleClearFilters}>
                   Clear All Filters
                 </Button>
               )}
             </CardContent>
           </Card>
-          )
         )}
       </div>
 
@@ -422,22 +473,37 @@ export default function ProvidersPage() {
           <CardContent className="p-4">
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-blue-600">{searchResults.providers.length}</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {searchResults.providers.length}
+                </div>
                 <div className="text-sm text-gray-600">
-                  {firstName || lastName || selectedLocation.trim() || (serviceType && serviceType !== 'all') || selectedTypes.length > 0
+                  {firstName ||
+                  lastName ||
+                  selectedLocation.trim() ||
+                  (serviceType && serviceType !== 'all') ||
+                  selectedTypes.length > 0
                     ? 'Matching Providers'
                     : 'Total Providers'}
                 </div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-green-600">
-                  {searchResults.providers.reduce((acc: number, p: any) => acc + (p.services?.length || 0), 0)}
+                  {searchResults.providers.reduce(
+                    (acc: number, p: any) => acc + (p.services?.length || 0),
+                    0
+                  )}
                 </div>
                 <div className="text-sm text-gray-600">Services Available</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-purple-600">
-                  {new Set(searchResults.providers.flatMap((p: any) => p.typeAssignments?.map((ta: any) => ta.providerType.name) || [])).size}
+                  {
+                    new Set(
+                      searchResults.providers.flatMap(
+                        (p: any) => p.typeAssignments?.map((ta: any) => ta.providerType.name) || []
+                      )
+                    ).size
+                  }
                 </div>
                 <div className="text-sm text-gray-600">Specialties</div>
               </div>

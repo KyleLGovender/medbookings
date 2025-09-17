@@ -1,25 +1,27 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
+
 import {
-  User,
-  Mail,
-  Shield,
-  Calendar,
-  Building2,
-  Users,
-  Clock,
-  CheckCircle,
-  XCircle,
+  Activity,
   AlertCircle,
+  Building2,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Mail,
   Settings,
-  Activity
+  Shield,
+  User,
+  Users,
+  XCircle,
 } from 'lucide-react';
 
-import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 /**
  * User Dashboard Page
@@ -51,23 +53,23 @@ export default async function DashboardPage() {
         typeAssignments: {
           include: {
             providerType: {
-              select: { name: true }
-            }
-          }
+              select: { name: true },
+            },
+          },
         },
         services: {
           select: {
             id: true,
-            name: true
-          }
+            name: true,
+          },
         },
         requirementSubmissions: {
           include: {
             requirementType: {
-              select: { name: true }
-            }
-          }
-        }
+              select: { name: true },
+            },
+          },
+        },
       },
     });
 
@@ -80,8 +82,8 @@ export default async function DashboardPage() {
             id: true,
             name: true,
             status: true,
-          }
-        }
+          },
+        },
       },
     });
 
@@ -91,9 +93,9 @@ export default async function DashboardPage() {
         where: {
           slot: {
             availability: {
-              providerId: provider.id
-            }
-          }
+              providerId: provider.id,
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
         take: 5,
@@ -104,8 +106,8 @@ export default async function DashboardPage() {
           client: {
             select: {
               name: true,
-              email: true
-            }
+              email: true,
+            },
           },
           slot: {
             select: {
@@ -114,12 +116,12 @@ export default async function DashboardPage() {
               availability: {
                 select: {
                   startTime: true,
-                  endTime: true
-                }
-              }
-            }
-          }
-        }
+                  endTime: true,
+                },
+              },
+            },
+          },
+        },
       });
     }
   } catch (error) {
@@ -129,11 +131,16 @@ export default async function DashboardPage() {
   // Helper function to get status color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'APPROVED': return 'bg-green-100 text-green-800';
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'REJECTED': return 'bg-red-100 text-red-800';
-      case 'ACTIVE': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'APPROVED':
+        return 'bg-green-100 text-green-800';
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'REJECTED':
+        return 'bg-red-100 text-red-800';
+      case 'ACTIVE':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -141,7 +148,7 @@ export default async function DashboardPage() {
   const getInitials = (name: string) => {
     return name
       .split(' ')
-      .map(n => n[0])
+      .map((n) => n[0])
       .join('')
       .toUpperCase()
       .slice(0, 2);
@@ -151,28 +158,24 @@ export default async function DashboardPage() {
   const userInitials = getInitials(userName);
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto space-y-6 py-6">
       {/* Header Section */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Avatar className="h-16 w-16">
             <AvatarImage src={user.image || ''} alt={userName} />
-            <AvatarFallback className="text-lg font-semibold">
-              {userInitials}
-            </AvatarFallback>
+            <AvatarFallback className="text-lg font-semibold">{userInitials}</AvatarFallback>
           </Avatar>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Welcome back, {userName}!
-            </h1>
-            <p className="text-gray-600">
-              Here's your MedBookings dashboard overview
-            </p>
+            <h1 className="text-3xl font-bold text-gray-900">Welcome back, {userName}!</h1>
+            <p className="text-gray-600">Here's your MedBookings dashboard overview</p>
           </div>
         </div>
-        <Button variant="outline" className="flex items-center gap-2">
-          <Settings className="h-4 w-4" />
-          Settings
+        <Button variant="outline" className="flex items-center gap-2" asChild>
+          <Link href="/profile">
+            <Settings className="h-4 w-4" />
+            Settings
+          </Link>
         </Button>
       </div>
 
@@ -200,9 +203,7 @@ export default async function DashboardPage() {
                 <Shield className="h-4 w-4 text-gray-500" />
                 <span className="text-sm text-gray-600">Role:</span>
               </div>
-              <Badge className={getStatusColor(user.role)}>
-                {user.role}
-              </Badge>
+              <Badge className={getStatusColor(user.role)}>{user.role}</Badge>
             </div>
 
             <div className="space-y-2">
@@ -228,9 +229,7 @@ export default async function DashboardPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Status:</span>
-                  <Badge className={getStatusColor(provider.status)}>
-                    {provider.status}
-                  </Badge>
+                  <Badge className={getStatusColor(provider.status)}>{provider.status}</Badge>
                 </div>
 
                 <div>
@@ -241,7 +240,7 @@ export default async function DashboardPage() {
                 {provider.typeAssignments && provider.typeAssignments.length > 0 && (
                   <div>
                     <span className="text-sm text-gray-600">Specialties:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
+                    <div className="mt-1 flex flex-wrap gap-1">
                       {provider.typeAssignments.map((assignment: any) => (
                         <Badge key={assignment.id} variant="outline" className="text-xs">
                           {assignment.providerType.name}
@@ -252,20 +251,22 @@ export default async function DashboardPage() {
                 )}
 
                 <div className="pt-2">
-                  <Button size="sm" className="w-full">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    View Calendar
+                  <Button size="sm" className="w-full" asChild>
+                    <Link href="/calendar">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      View Calendar
+                    </Link>
                   </Button>
                 </div>
               </div>
             ) : (
-              <div className="text-center space-y-3">
+              <div className="space-y-3 text-center">
                 <div className="text-gray-500">
-                  <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                  <AlertCircle className="mx-auto mb-2 h-8 w-8" />
                   <p className="text-sm">No provider profile found</p>
                 </div>
-                <Button size="sm" variant="outline">
-                  Create Provider Profile
+                <Button size="sm" variant="outline" asChild>
+                  <Link href="/providers/new">Create Provider Profile</Link>
                 </Button>
               </div>
             )}
@@ -284,33 +285,31 @@ export default async function DashboardPage() {
             {organizationMemberships.length > 0 ? (
               <div className="space-y-3">
                 {organizationMemberships.map((membership: any) => (
-                  <div key={membership.id} className="border rounded p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-sm">
-                        {membership.organization.name}
-                      </h4>
+                  <div key={membership.id} className="rounded border p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <h4 className="text-sm font-medium">{membership.organization.name}</h4>
                       <Badge className={`${getStatusColor(membership.status)} text-xs`}>
                         {membership.status}
                       </Badge>
                     </div>
-                    <p className="text-xs text-gray-600">
-                      Role: {membership.role}
-                    </p>
+                    <p className="text-xs text-gray-600">Role: {membership.role}</p>
                   </div>
                 ))}
-                <Button size="sm" variant="outline" className="w-full">
-                  <Users className="h-4 w-4 mr-2" />
-                  Manage Organizations
+                <Button size="sm" variant="outline" className="w-full" asChild>
+                  <Link href="/organizations">
+                    <Users className="mr-2 h-4 w-4" />
+                    Manage Organizations
+                  </Link>
                 </Button>
               </div>
             ) : (
-              <div className="text-center space-y-3">
+              <div className="space-y-3 text-center">
                 <div className="text-gray-500">
-                  <Building2 className="h-8 w-8 mx-auto mb-2" />
+                  <Building2 className="mx-auto mb-2 h-8 w-8" />
                   <p className="text-sm">No organization memberships</p>
                 </div>
-                <Button size="sm" variant="outline">
-                  Join Organization
+                <Button size="sm" variant="outline" asChild>
+                  <Link href="/organizations/new">Join Organization</Link>
                 </Button>
               </div>
             )}
@@ -326,23 +325,19 @@ export default async function DashboardPage() {
               <Clock className="h-5 w-5" />
               Recent Booking Activity
             </CardTitle>
-            <CardDescription>
-              Your latest booking activity as a provider
-            </CardDescription>
+            <CardDescription>Your latest booking activity as a provider</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {recentBookings.map((booking: any) => (
                 <div key={booking.id} className="flex items-center justify-between border-b pb-2">
                   <div>
-                    <p className="font-medium text-sm">
-                      {booking.client?.name || 'Client'}
-                    </p>
+                    <p className="text-sm font-medium">{booking.client?.name || 'Client'}</p>
                     <p className="text-xs text-gray-600">
                       {new Date(booking.availability.startTime).toLocaleDateString()} at{' '}
                       {new Date(booking.availability.startTime).toLocaleTimeString([], {
                         hour: '2-digit',
-                        minute: '2-digit'
+                        minute: '2-digit',
                       })}
                     </p>
                   </div>
@@ -360,27 +355,33 @@ export default async function DashboardPage() {
       <Card>
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>
-            Common tasks and shortcuts
-          </CardDescription>
+          <CardDescription>Common tasks and shortcuts</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            <Button variant="outline" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              View Calendar
+            <Button variant="outline" className="flex items-center gap-2" asChild>
+              <Link href="/calendar">
+                <Calendar className="h-4 w-4" />
+                View Calendar
+              </Link>
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Edit Profile
+            <Button variant="outline" className="flex items-center gap-2" asChild>
+              <Link href="/profile/edit">
+                <User className="h-4 w-4" />
+                Edit Profile
+              </Link>
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              Organizations
+            <Button variant="outline" className="flex items-center gap-2" asChild>
+              <Link href="/organizations">
+                <Building2 className="h-4 w-4" />
+                Organizations
+              </Link>
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Settings
+            <Button variant="outline" className="flex items-center gap-2" asChild>
+              <Link href="/profile">
+                <Settings className="h-4 w-4" />
+                Settings
+              </Link>
             </Button>
           </div>
         </CardContent>

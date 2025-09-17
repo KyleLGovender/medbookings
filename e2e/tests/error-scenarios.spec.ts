@@ -7,7 +7,7 @@ test.describe('Error Scenarios and Edge Cases', () => {
       await page.goto('/providers');
 
       // Simulate network failure by failing all requests
-      await page.route('**/api/**', route => {
+      await page.route('**/api/**', (route) => {
         route.abort('failed');
       });
 
@@ -19,7 +19,9 @@ test.describe('Error Scenarios and Edge Cases', () => {
       await expect(page.locator('body')).toBeVisible();
 
       // Should show some indication of error or loading state
-      const hasError = await page.locator('text=Error, text=Failed, text=Something went wrong').isVisible();
+      const hasError = await page
+        .locator('text=Error, text=Failed, text=Something went wrong')
+        .isVisible();
       const hasLoading = await page.locator('[class*="animate-spin"]').isVisible();
 
       expect(hasError || hasLoading || true).toBeTruthy(); // Application should remain responsive
@@ -30,8 +32,8 @@ test.describe('Error Scenarios and Edge Cases', () => {
       await page.goto('/providers');
 
       // Simulate slow API responses
-      await page.route('**/api/trpc/providers.search**', async route => {
-        await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay
+      await page.route('**/api/trpc/providers.search**', async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 3000)); // 3 second delay
         await route.continue();
       });
 
@@ -54,10 +56,10 @@ test.describe('Error Scenarios and Edge Cases', () => {
       await page.goto('/providers');
 
       // Simulate API error responses
-      await page.route('**/api/trpc/providers.search**', route => {
+      await page.route('**/api/trpc/providers.search**', (route) => {
         route.fulfill({
           status: 500,
-          body: JSON.stringify({ error: 'Internal Server Error' })
+          body: JSON.stringify({ error: 'Internal Server Error' }),
         });
       });
 
@@ -76,10 +78,10 @@ test.describe('Error Scenarios and Edge Cases', () => {
       await page.goto('/providers');
 
       // Mock an expired session scenario
-      await page.route('**/api/auth/**', route => {
+      await page.route('**/api/auth/**', (route) => {
         route.fulfill({
           status: 401,
-          body: JSON.stringify({ error: 'Unauthorized' })
+          body: JSON.stringify({ error: 'Unauthorized' }),
         });
       });
 
@@ -101,7 +103,8 @@ test.describe('Error Scenarios and Edge Cases', () => {
       await expect(page.locator('body')).toBeVisible();
 
       // Should either show login page or redirect to public area
-      const isLoginPage = await page.url().includes('signin') || await page.url().includes('login');
+      const isLoginPage =
+        (await page.url().includes('signin')) || (await page.url().includes('login'));
       const isHomePage = page.url().includes('/') && !page.url().includes('calendar');
 
       expect(isLoginPage || isHomePage).toBeTruthy();
@@ -138,7 +141,8 @@ test.describe('Error Scenarios and Edge Cases', () => {
     test('should handle extremely long location searches', async ({ page }) => {
       await page.goto('/providers');
 
-      const longLocation = 'Very Very Very Long Location Name That Should Not Break The System '.repeat(10);
+      const longLocation =
+        'Very Very Very Long Location Name That Should Not Break The System '.repeat(10);
 
       await page.fill('input[placeholder*="Search cities"]', longLocation);
       await page.waitForTimeout(500);
@@ -265,7 +269,9 @@ test.describe('Error Scenarios and Edge Cases', () => {
           await expect(card).toBeVisible();
 
           // Should have action buttons
-          await expect(card.locator('button:has-text("Book Appointment"), button:has-text("View Profile")')).toHaveCount(2);
+          await expect(
+            card.locator('button:has-text("Book Appointment"), button:has-text("View Profile")')
+          ).toHaveCount(2);
         }
       }
     });

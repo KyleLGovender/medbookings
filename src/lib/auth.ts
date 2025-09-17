@@ -54,8 +54,8 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async redirect({ url, baseUrl }) {
       // If we're coming from a login page, redirect to home page
-      if (url.startsWith(baseUrl + '/login') || url === baseUrl) {
-        return baseUrl + '/';
+      if (url.startsWith(`${baseUrl}/login`) || url === baseUrl) {
+        return `${baseUrl}/`;
       }
       // If it's a relative URL, prepend baseUrl
       if (url.startsWith('/')) {
@@ -66,7 +66,7 @@ export const authOptions: NextAuthOptions = {
         return url;
       }
       // Otherwise, redirect to home page
-      return baseUrl + '/';
+      return `${baseUrl}/`;
     },
     async jwt({ token, user, account }) {
       if (user) {

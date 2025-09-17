@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SchedulingRule } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Calendar, Clock, Loader2, Repeat } from 'lucide-react';
+import { Calendar, Clock, Loader2, Repeat, Trash2 } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
 
 import CalendarLoader from '@/components/calendar-loader';
@@ -33,8 +33,15 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { TimePicker } from '@/components/ui/time-picker';
 import { CustomRecurrenceModal } from '@/features/calendar/components/availability/custom-recurrence-modal';
+import {
+  SeriesActionDialog,
+  type SeriesActionScope,
+} from '@/features/calendar/components/availability/series-action-dialog';
 import { ServiceSelectionSection } from '@/features/calendar/components/availability/service-selection-section';
-import { useAvailabilityById } from '@/features/calendar/hooks/use-availability';
+import {
+  useAvailabilityById,
+  useDeleteAvailability,
+} from '@/features/calendar/hooks/use-availability';
 import {
   createRecurrencePattern,
   getRecurrenceOptions,
@@ -264,6 +271,8 @@ export function AvailabilityEditForm({
   >();
   const [hasExistingBookings, setHasExistingBookings] = useState(false);
   const [bookingCount, setBookingCount] = useState(0);
+  const [seriesActionModalOpen, setSeriesActionModalOpen] = useState(false);
+  const [pendingDeleteScope, setPendingDeleteScope] = useState<SeriesActionScope | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -345,6 +354,21 @@ export function AvailabilityEditForm({
     onError: (error) => {
       // Error handling is already in the form submission, but this provides additional coverage
       console.error('Optimistic update error:', error);
+    },
+  });
+
+  const deleteMutation = useDeleteAvailability({
+    onSuccess: (variables) => {
+      toast({
+        title: 'Success',
+        description: 'Availability deleted successfully',
+      });
+      if (onCancel) {
+        onCancel();
+      } else {
+        // Navigate back if no callback provided
+        router.back();
+      }
     },
   });
 
@@ -487,6 +511,62 @@ export function AvailabilityEditForm({
 
   const handleCustomRecurrenceCancel = () => {
     setCustomRecurrenceModalOpen(false);
+  };
+
+  /**
+   * Handles delete button click - checks for bookings and recurring series
+   */
+  const handleDeleteClick = () => {
+    if (hasExistingBookings) {
+      toast({
+        title: 'Cannot Delete',
+        description:
+          'Cannot delete availability with existing bookings. Cancel the bookings first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // If it's a recurring series, show the series action dialog
+    if (availability?.isRecurring || availability?.seriesId) {
+      setSeriesActionModalOpen(true);
+    } else {
+      // Single availability - delete directly
+      handleConfirmDelete('single');
+    }
+  };
+
+  /**
+   * Handles confirmed deletion with scope
+   */
+  const handleConfirmDelete = async (scope: SeriesActionScope) => {
+    if (deleteMutation.isPending) return;
+
+    try {
+      await deleteMutation.mutateAsync({
+        ids: [availabilityId],
+        scope,
+      });
+    } catch (error) {
+      console.error('Failed to delete availability:', error);
+      toast({
+        title: 'Failed to delete',
+        description: 'An error occurred while deleting the availability. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  /**
+   * Handles series action dialog confirmation
+   */
+  const handleSeriesActionConfirm = (scope: SeriesActionScope) => {
+    setSeriesActionModalOpen(false);
+    handleConfirmDelete(scope);
+  };
+
+  const handleSeriesActionCancel = () => {
+    setSeriesActionModalOpen(false);
   };
 
   return (
@@ -932,18 +1012,44 @@ export function AvailabilityEditForm({
             </div>
 
             {/* Form Actions */}
-            <div className="flex justify-end gap-3 pt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onCancel || (() => router.back())}
-                disabled={isSubmitting || updateMutation.isPending}
-              >
-                Cancel
-              </Button>
+            <div className="flex justify-between pt-6">
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onCancel || (() => router.back())}
+                  disabled={isSubmitting || updateMutation.isPending || deleteMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleDeleteClick}
+                  disabled={isSubmitting || updateMutation.isPending || deleteMutation.isPending}
+                  className="gap-2"
+                >
+                  {deleteMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </>
+                  )}
+                </Button>
+              </div>
               <Button
                 type="submit"
-                disabled={isSubmitting || updateMutation.isPending || !form.formState.isValid}
+                disabled={
+                  isSubmitting ||
+                  updateMutation.isPending ||
+                  deleteMutation.isPending ||
+                  !form.formState.isValid
+                }
                 className="min-w-[140px]"
               >
                 {isSubmitting || updateMutation.isPending ? (
@@ -966,6 +1072,19 @@ export function AvailabilityEditForm({
         onClose={handleCustomRecurrenceCancel}
         onSave={handleCustomRecurrenceSave}
         initialData={customRecurrenceData}
+      />
+
+      {/* Series Action Dialog for Delete */}
+      <SeriesActionDialog
+        isOpen={seriesActionModalOpen}
+        onClose={handleSeriesActionCancel}
+        onConfirm={handleSeriesActionConfirm}
+        actionType="delete"
+        availabilityTitle={availability?.provider?.user?.name || 'Provider Availability'}
+        availabilityDate={
+          availability?.startTime ? new Date(availability.startTime).toLocaleDateString() : ''
+        }
+        isDestructive={true}
       />
     </Card>
   );

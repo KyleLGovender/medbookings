@@ -19,6 +19,7 @@ export function AvailabilityWeekView({
   onTimeSlotClick,
   onDateClick,
   onEditEvent,
+  onDeleteEvent,
   getAvailabilityStyle,
 }: AvailabilityWeekViewProps) {
   // Start week on Monday (matching original pattern)

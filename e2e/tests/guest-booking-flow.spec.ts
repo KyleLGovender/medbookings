@@ -36,7 +36,7 @@ test.describe('Guest Booking Flow - End to End', () => {
 
     // Step 3: Check if providers are available
     const providerCards = page.locator('.grid').locator('.hover\\:shadow-lg');
-    const hasProviders = await providerCards.count() > 0;
+    const hasProviders = (await providerCards.count()) > 0;
 
     if (hasProviders) {
       // Click on first provider's "Book Appointment" button
@@ -66,7 +66,7 @@ test.describe('Guest Booking Flow - End to End', () => {
 
     // Look for providers
     const providerCards = page.locator('.grid').locator('.hover\\:shadow-lg');
-    const hasProviders = await providerCards.count() > 0;
+    const hasProviders = (await providerCards.count()) > 0;
 
     if (hasProviders) {
       // Click "View Profile" instead of direct booking
@@ -110,7 +110,7 @@ test.describe('Guest Booking Flow - End to End', () => {
 
     // Try to access booking-related functionality
     const providerCards = page.locator('.grid').locator('.hover\\:shadow-lg');
-    const hasProviders = await providerCards.count() > 0;
+    const hasProviders = (await providerCards.count()) > 0;
 
     if (hasProviders) {
       await providerCards.first().locator('button:has-text("Book Appointment")').click();
@@ -134,7 +134,7 @@ test.describe('Guest Booking Flow - End to End', () => {
 
     // Check provider cards display appropriate information for guests
     const providerCards = page.locator('.grid').locator('.hover\\:shadow-lg');
-    const hasProviders = await providerCards.count() > 0;
+    const hasProviders = (await providerCards.count()) > 0;
 
     if (hasProviders) {
       const firstCard = providerCards.first();
@@ -166,7 +166,7 @@ test.describe('Guest Booking Flow - End to End', () => {
     await page.waitForTimeout(1000);
 
     // Should show results or appropriate message
-    const hasResults = await page.locator('.grid').locator('.hover\\:shadow-lg').count() > 0;
+    const hasResults = (await page.locator('.grid').locator('.hover\\:shadow-lg').count()) > 0;
     const noResults = await page.locator('text=No providers found').isVisible();
 
     expect(hasResults || noResults).toBeTruthy();

@@ -245,6 +245,12 @@ function DynamicBreadcrumb() {
     currentPath += `/${segment}`;
     const isLast = index === pathSegments.length - 1;
 
+    // Skip adding "dashboard" segment when it's the root dashboard page
+    // This prevents "Dashboard > Dashboard" breadcrumb
+    if (segment === 'dashboard' && pathSegments.length === 1) {
+      return;
+    }
+
     let label;
     let isTruncated = false;
     let originalLabel = '';
@@ -457,13 +463,13 @@ const createNavData = (
   url: '/',
   navMain: [
     {
-      title: 'Public Site',
+      title: 'Dashboard',
+      url: '/dashboard',
+    },
+    {
+      title: 'Home',
       url: '/',
       items: [
-        {
-          title: 'Home',
-          url: '/',
-        },
         {
           title: 'Search Providers',
           url: '/providers',
@@ -498,7 +504,7 @@ const createNavData = (
       url: '/profile',
       items: [
         {
-          title: 'Profile',
+          title: 'Profile Overview',
           url: '/profile',
         },
       ],
@@ -535,24 +541,10 @@ const createNavData = (
                 title: 'Calendar Overview',
                 url: '/calendar',
               },
-              {
-                title: 'Availability Management',
-                url: '/calendar/availability',
-              },
             ],
           },
         ]
       : []),
-    {
-      title: 'Settings',
-      url: '/settings',
-      items: [
-        {
-          title: 'Settings',
-          url: '/settings',
-        },
-      ],
-    },
   ],
 });
 

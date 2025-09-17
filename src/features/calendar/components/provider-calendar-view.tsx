@@ -37,6 +37,7 @@ export interface ProviderCalendarViewProps {
   onTimeSlotClick?: (date: Date, hour: number) => void;
   onCreateAvailability?: () => void;
   onEditAvailability?: (availability: AvailabilityData) => void;
+  onDeleteAvailability?: (availability: AvailabilityData) => void;
   onDateClick?: (date: Date) => void;
   viewMode?: CalendarViewMode;
   initialDate?: Date;
@@ -48,6 +49,7 @@ export function ProviderCalendarView({
   onTimeSlotClick,
   onCreateAvailability,
   onEditAvailability,
+  onDeleteAvailability,
   onDateClick,
   viewMode: initialViewMode = 'week',
   initialDate = new Date(),
@@ -425,6 +427,7 @@ export function ProviderCalendarView({
                 onEventClick={handleAvailabilityClick}
                 onTimeSlotClick={onTimeSlotClick}
                 onEditEvent={onEditAvailability}
+                onDeleteEvent={onDeleteAvailability}
                 getAvailabilityStyle={getAvailabilityStyle}
               />
             )}
@@ -436,6 +439,7 @@ export function ProviderCalendarView({
                 onEventClick={handleAvailabilityClick}
                 onTimeSlotClick={onTimeSlotClick}
                 onEditEvent={onEditAvailability}
+                onDeleteEvent={onDeleteAvailability}
                 getAvailabilityStyle={getAvailabilityStyle}
               />
             )}
@@ -448,6 +452,7 @@ export function ProviderCalendarView({
                 onTimeSlotClick={onTimeSlotClick}
                 onDateClick={handleDateClick}
                 onEditEvent={onEditAvailability}
+                onDeleteEvent={onDeleteAvailability}
                 getAvailabilityStyle={getAvailabilityStyle}
               />
             )}
@@ -458,6 +463,7 @@ export function ProviderCalendarView({
                 onEventClick={handleAvailabilityClick}
                 onDateClick={handleDateClick}
                 onEditEvent={onEditAvailability}
+                onDeleteEvent={onDeleteAvailability}
                 getAvailabilityStyle={getAvailabilityStyle}
               />
             )}

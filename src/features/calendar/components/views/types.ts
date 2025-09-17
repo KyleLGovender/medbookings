@@ -16,6 +16,7 @@ export interface BaseAvailabilityViewProps {
   onTimeSlotClick?: (date: Date, hour: number) => void;
   onDateClick?: (date: Date) => void;
   onEditEvent?: (availability: AvailabilityData) => void;
+  onDeleteEvent?: (availability: AvailabilityData) => void;
   getAvailabilityStyle: (availability: AvailabilityData) => string;
 }
 

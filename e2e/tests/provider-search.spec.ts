@@ -9,13 +9,17 @@ test.describe('Provider Search - Guest Access', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('should display provider search page for guests without authentication', async ({ page }) => {
+  test('should display provider search page for guests without authentication', async ({
+    page,
+  }) => {
     // Verify we're on the providers page
     await expect(page).toHaveURL('/providers');
 
     // Check page title and main elements
     await expect(page.locator('h1')).toContainText('Healthcare Providers');
-    await expect(page.locator('p')).toContainText('Browse our network of approved healthcare professionals');
+    await expect(page.locator('p')).toContainText(
+      'Browse our network of approved healthcare professionals'
+    );
 
     // Verify search interface is visible
     await expect(page.locator('text=Find Healthcare Providers')).toBeVisible();
@@ -45,7 +49,7 @@ test.describe('Provider Search - Guest Access', () => {
     await expect(page.locator('text=Search Results')).toBeVisible();
 
     // Check if results contain the searched name or show "no providers found"
-    const hasResults = await page.locator('[data-testid="provider-card"]').count() > 0;
+    const hasResults = (await page.locator('[data-testid="provider-card"]').count()) > 0;
     const noResults = await page.locator('text=No providers found').isVisible();
 
     expect(hasResults || noResults).toBeTruthy();
@@ -99,7 +103,9 @@ test.describe('Provider Search - Guest Access', () => {
     await page.waitForTimeout(500);
 
     // Check if specialty buttons are visible
-    const specialtyButtons = page.locator('button:has-text("General Practitioner"), button:has-text("Psychologist"), button:has-text("Dentist")');
+    const specialtyButtons = page.locator(
+      'button:has-text("General Practitioner"), button:has-text("Psychologist"), button:has-text("Dentist")'
+    );
     const count = await specialtyButtons.count();
 
     if (count > 0) {
@@ -169,7 +175,9 @@ test.describe('Provider Search - Guest Access', () => {
 
     if (await statsSection.isVisible()) {
       // Verify stat categories
-      await expect(statsSection.locator('text=Total Providers, text=Matching Providers')).toBeVisible();
+      await expect(
+        statsSection.locator('text=Total Providers, text=Matching Providers')
+      ).toBeVisible();
       await expect(statsSection.locator('text=Services Available')).toBeVisible();
       await expect(statsSection.locator('text=Specialties')).toBeVisible();
     }

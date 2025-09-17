@@ -16,6 +16,7 @@ export function AvailabilityMonthView({
   onEventClick,
   onDateClick,
   onEditEvent,
+  onDeleteEvent,
   getAvailabilityStyle,
 }: AvailabilityMonthViewProps) {
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -48,6 +49,12 @@ export function AvailabilityMonthView({
   const handleEditEvent = (availability: AvailabilityData) => {
     if (onEditEvent) {
       onEditEvent(availability);
+    }
+  };
+
+  const handleDeleteEvent = (availability: AvailabilityData) => {
+    if (onDeleteEvent) {
+      onDeleteEvent(availability);
     }
   };
 
@@ -138,9 +145,28 @@ export function AvailabilityMonthView({
                     return (
                       <div
                         key={availability.id}
-                        className={`truncate rounded px-2 py-1 text-xs ${getAvailabilityStyle(availability)}`}
+                        className={`cursor-pointer truncate rounded px-2 py-1 text-xs ${getAvailabilityStyle(availability)} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
+                        tabIndex={0}
                         onClick={(e) => handleEventClick(availability, e)}
                         onDoubleClick={() => handleEditEvent(availability)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Delete' || e.key === 'Backspace') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDeleteEvent(availability);
+                          } else if (e.key === 'Enter') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleEditEvent(availability);
+                          }
+                        }}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          // For now, open edit on right-click. Could add context menu later.
+                          handleEditEvent(availability);
+                        }}
+                        title="Double-click to edit, Delete key to delete, Right-click for options"
                       >
                         <div className="flex items-center space-x-1">
                           {availability.isRecurring && <Repeat className="h-3 w-3 flex-shrink-0" />}

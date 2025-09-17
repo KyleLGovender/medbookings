@@ -81,13 +81,23 @@ export function DatePickerWithInput({
             <CalendarIcon className="h-4 w-4" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="end">
+        <PopoverContent className="w-fit p-0" align="end">
           <Calendar
             mode="single"
             selected={date}
             defaultMonth={defaultMonth}
             onSelect={handleSelect}
             initialFocus
+            captionLayout="dropdown-buttons"
+            fromYear={1900}
+            toYear={new Date().getFullYear() + 10}
+            classNames={{
+              caption_label: 'hidden',
+              nav: 'hidden',
+              nav_button: 'hidden',
+              nav_button_previous: 'hidden',
+              nav_button_next: 'hidden',
+            }}
           />
         </PopoverContent>
       </Popover>

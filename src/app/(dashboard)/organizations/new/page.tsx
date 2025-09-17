@@ -26,7 +26,9 @@ export default function NewOrganizationPage() {
             fallback={
               <div className="flex flex-col items-center justify-center space-y-4 py-8">
                 <Spinner className="h-8 w-8" />
-                <p className="text-sm text-muted-foreground">Loading organization registration form...</p>
+                <p className="text-sm text-muted-foreground">
+                  Loading organization registration form...
+                </p>
               </div>
             }
           >

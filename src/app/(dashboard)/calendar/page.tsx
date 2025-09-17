@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 
-import { CalendarDays, Clock, Users, TrendingUp } from 'lucide-react';
+import { CalendarDays, Clock, TrendingUp, Users } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
@@ -86,31 +86,43 @@ export default function CalendarOverviewPage() {
   }
 
   // Calculate stats from availability data
-  const todayBookings = availabilities?.reduce((count, availability) => {
-    const today = new Date();
-    return count + (availability.calculatedSlots?.filter((slot: any) => {
-      const slotDate = new Date(slot.startTime);
-      return slotDate.toDateString() === today.toDateString() && slot.booking;
-    }).length || 0);
-  }, 0) || 0;
+  const todayBookings =
+    availabilities?.reduce((count, availability) => {
+      const today = new Date();
+      return (
+        count +
+        (availability.calculatedSlots?.filter((slot: any) => {
+          const slotDate = new Date(slot.startTime);
+          return slotDate.toDateString() === today.toDateString() && slot.booking;
+        }).length || 0)
+      );
+    }, 0) || 0;
 
-  const weeklyBookings = availabilities?.reduce((count, availability) => {
-    const now = new Date();
-    const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    return count + (availability.calculatedSlots?.filter((slot: any) => {
-      const slotDate = new Date(slot.startTime);
-      return slotDate >= now && slotDate <= weekFromNow && slot.booking;
-    }).length || 0);
-  }, 0) || 0;
+  const weeklyBookings =
+    availabilities?.reduce((count, availability) => {
+      const now = new Date();
+      const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      return (
+        count +
+        (availability.calculatedSlots?.filter((slot: any) => {
+          const slotDate = new Date(slot.startTime);
+          return slotDate >= now && slotDate <= weekFromNow && slot.booking;
+        }).length || 0)
+      );
+    }, 0) || 0;
 
-  const availableSlots = availabilities?.reduce((count, availability) => {
-    const now = new Date();
-    const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    return count + (availability.calculatedSlots?.filter((slot: any) => {
-      const slotDate = new Date(slot.startTime);
-      return slotDate >= now && slotDate <= weekFromNow && !slot.booking;
-    }).length || 0);
-  }, 0) || 0;
+  const availableSlots =
+    availabilities?.reduce((count, availability) => {
+      const now = new Date();
+      const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      return (
+        count +
+        (availability.calculatedSlots?.filter((slot: any) => {
+          const slotDate = new Date(slot.startTime);
+          return slotDate >= now && slotDate <= weekFromNow && !slot.booking;
+        }).length || 0)
+      );
+    }, 0) || 0;
 
   const totalSlots = availableSlots + weeklyBookings;
   const utilizationRate = totalSlots > 0 ? Math.round((weeklyBookings / totalSlots) * 100) : 0;
@@ -132,7 +144,7 @@ export default function CalendarOverviewPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+      <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today's Appointments</CardTitle>
@@ -191,7 +203,7 @@ export default function CalendarOverviewPage() {
             <div className="grid gap-3">
               <a
                 href="/availability"
-                className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-gray-50"
               >
                 <div>
                   <div className="font-medium">Manage Availability</div>
@@ -201,7 +213,7 @@ export default function CalendarOverviewPage() {
               </a>
               <a
                 href="/calendar/availability"
-                className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-gray-50"
               >
                 <div>
                   <div className="font-medium">Advanced Availability</div>
@@ -225,18 +237,21 @@ export default function CalendarOverviewPage() {
                   <a
                     key={availability.id || index}
                     href={`/availability/${availability.id}/edit?returnUrl=/calendar`}
-                    className="flex items-start space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group"
+                    className="group flex cursor-pointer items-start space-x-3 rounded-lg p-2 transition-colors hover:bg-gray-50"
                   >
-                    <div className="h-2 w-2 rounded-full bg-blue-500 mt-2"></div>
+                    <div className="mt-2 h-2 w-2 rounded-full bg-blue-500"></div>
                     <div className="flex-1">
-                      <div className="text-sm font-medium group-hover:text-blue-600 transition-colors">
-                        {availability.status === 'ACCEPTED' ? 'Available slots' : 'Pending approval'}
+                      <div className="text-sm font-medium transition-colors group-hover:text-blue-600">
+                        {availability.status === 'ACCEPTED'
+                          ? 'Available slots'
+                          : 'Pending approval'}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {new Date(availability.startTime).toLocaleDateString()} - {availability.calculatedSlots?.length || 0} slots
+                        {new Date(availability.startTime).toLocaleDateString()} -{' '}
+                        {availability.calculatedSlots?.length || 0} slots
                       </div>
                     </div>
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-blue-600 self-center">
+                    <div className="self-center text-xs text-blue-600 opacity-0 transition-opacity group-hover:opacity-100">
                       Edit
                     </div>
                   </a>
@@ -251,12 +266,15 @@ export default function CalendarOverviewPage() {
         <Card>
           <CardHeader>
             <CardTitle>Calendar Insights</CardTitle>
-            <CardDescription>Performance metrics will appear here once you have booking data</CardDescription>
+            <CardDescription>
+              Performance metrics will appear here once you have booking data
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8">
+            <div className="py-8 text-center">
               <p className="text-sm text-muted-foreground">
-                Insights will be available after you create availability slots and start receiving bookings.
+                Insights will be available after you create availability slots and start receiving
+                bookings.
               </p>
             </div>
           </CardContent>

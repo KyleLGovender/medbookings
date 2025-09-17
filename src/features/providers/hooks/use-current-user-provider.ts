@@ -15,7 +15,8 @@ export function useCurrentUserProvider() {
   const providerQuery = useProviderByUserId(userId || '');
 
   // If session is still loading, we should show loading
-  const isLoading = sessionStatus === 'loading' || (sessionStatus === 'authenticated' && providerQuery.isLoading);
+  const isLoading =
+    sessionStatus === 'loading' || (sessionStatus === 'authenticated' && providerQuery.isLoading);
 
   return {
     ...providerQuery,

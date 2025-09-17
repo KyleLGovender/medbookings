@@ -19,6 +19,7 @@ export function AvailabilityDayView({
   onTimeSlotClick,
   onDateClick,
   onEditEvent,
+  onDeleteEvent,
   getAvailabilityStyle,
 }: AvailabilityDayViewProps) {
   const dayEvents = getAvailabilityForDay(events, currentDate);
@@ -99,7 +100,8 @@ export function AvailabilityDayView({
                     <li key={availability.id} className="relative mt-px flex" style={{ gridRow }}>
                       <a
                         href="#"
-                        className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getAvailabilityStyle(availability)} shadow-sm hover:opacity-80`}
+                        className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getAvailabilityStyle(availability)} shadow-sm hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
+                        tabIndex={0}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -110,6 +112,23 @@ export function AvailabilityDayView({
                           e.stopPropagation();
                           onEditEvent?.(availability);
                         }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Delete' || e.key === 'Backspace') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onDeleteEvent?.(availability);
+                          } else if (e.key === 'Enter') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onEditEvent?.(availability);
+                          }
+                        }}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onEditEvent?.(availability);
+                        }}
+                        title="Double-click to edit, Delete key to delete, Right-click for options"
                       >
                         <p className="order-1 flex items-center gap-1 font-semibold">
                           {availability.provider?.user?.name || 'Provider'}
