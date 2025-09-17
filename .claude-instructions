@@ -36,6 +36,7 @@
 - Execute `npx tsc --noEmit` after TypeScript changes
 - Review adjacent files that import modified modules
 - Ensure each code block compiles before proceeding
+- Fix all Linting, Build, TypeScript, JSX and Compilation errors observed even if they are in other files and not necessarily in the files you just edited and/or created
 
 **NEVER:**
 - Mark tasks complete with failing builds

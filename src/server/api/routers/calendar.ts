@@ -23,6 +23,18 @@ import {
   availabilitySearchParamsSchema,
   updateAvailabilityDataSchema,
 } from '@/features/calendar/types/schemas';
+import {
+  getGuestBookingConfirmationTemplate,
+  getProviderBookingNotificationTemplate,
+} from '@/features/communications/lib/email-templates';
+import {
+  sendGuestBookingWhatsApp,
+  sendProviderBookingWhatsApp,
+} from '@/features/communications/lib/whatsapp-templates';
+import {
+  sendBookingConfirmationEmail,
+  sendProviderNotificationEmail,
+} from '@/lib/communications/email';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
 export const calendarRouter = createTRPCRouter({
@@ -1233,6 +1245,188 @@ export const calendarRouter = createTRPCRouter({
     }),
 
   /**
+   * Search providers by location and service type for landing page
+   * Optimized for guest booking flow with available slots count
+   */
+  searchProvidersByLocation: publicProcedure
+    .input(
+      z.object({
+        serviceType: z.string().optional(), // Provider type name (e.g., "Dentist", "Doctor")
+        location: z.string().optional(), // Search term for location matching
+        consultationType: z.enum(['online', 'in-person', 'both']).default('both'),
+        startDate: z.string().optional(), // ISO date string for availability check
+        endDate: z.string().optional(), // ISO date string for availability check
+        limit: z.number().optional().default(20),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { serviceType, location, consultationType, startDate, endDate, limit } = input;
+
+      // Parse dates if provided
+      const dateStart = startDate ? new Date(startDate) : new Date();
+      const dateEnd = endDate ? new Date(endDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days ahead
+
+      // Build where clause for provider search
+      const whereClause: any = {
+        status: 'APPROVED', // Only show approved providers
+        availabilities: {
+          some: {
+            status: AvailabilityStatus.ACCEPTED,
+            startTime: { gte: dateStart },
+            endTime: { lte: dateEnd },
+            ...(consultationType === 'online' && { isOnlineAvailable: true }),
+            ...(consultationType === 'in-person' && { isOnlineAvailable: false }),
+          },
+        },
+      };
+
+      // Add service type filtering if specified
+      if (serviceType) {
+        whereClause.typeAssignments = {
+          some: {
+            providerType: {
+              name: {
+                contains: serviceType,
+                mode: 'insensitive',
+              },
+            },
+          },
+        };
+      }
+
+      // Add location filtering if specified
+      if (location) {
+        whereClause.OR = [
+          // Search in organization locations
+          {
+            organizationConnections: {
+              some: {
+                organization: {
+                  locations: {
+                    some: {
+                      OR: [
+                        { name: { contains: location, mode: 'insensitive' } },
+                        { formattedAddress: { contains: location, mode: 'insensitive' } },
+                        { searchTerms: { has: location.toLowerCase() } },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+          // Search in availability locations
+          {
+            availabilities: {
+              some: {
+                location: {
+                  OR: [
+                    { name: { contains: location, mode: 'insensitive' } },
+                    { formattedAddress: { contains: location, mode: 'insensitive' } },
+                    { searchTerms: { has: location.toLowerCase() } },
+                  ],
+                },
+              },
+            },
+          },
+        ];
+      }
+
+      const providers = await ctx.prisma.provider.findMany({
+        where: whereClause,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+          typeAssignments: {
+            include: {
+              providerType: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                },
+              },
+            },
+          },
+          availabilities: {
+            where: {
+              status: AvailabilityStatus.ACCEPTED,
+              startTime: { gte: dateStart },
+              endTime: { lte: dateEnd },
+              ...(consultationType === 'online' && { isOnlineAvailable: true }),
+              ...(consultationType === 'in-person' && { isOnlineAvailable: false }),
+            },
+            include: {
+              location: {
+                select: {
+                  id: true,
+                  name: true,
+                  formattedAddress: true,
+                },
+              },
+              calculatedSlots: {
+                where: {
+                  status: 'AVAILABLE',
+                  startTime: { gte: dateStart },
+                  endTime: { lte: dateEnd },
+                },
+                select: {
+                  id: true,
+                  startTime: true,
+                  endTime: true,
+                },
+                take: 5, // Limit slots for performance
+              },
+            },
+            take: 3, // Limit availabilities for performance
+          },
+        },
+        take: limit,
+        orderBy: [
+          { status: 'asc' }, // Approved first
+          { createdAt: 'desc' }, // Newer providers first
+        ],
+      });
+
+      // Transform results for frontend consumption
+      return providers.map((provider) => ({
+        id: provider.id,
+        name: provider.user?.name || provider.name,
+        image: provider.user?.image || provider.image,
+        bio: provider.bio,
+        specialties: provider.typeAssignments.map((ta) => ta.providerType.name),
+        languages: provider.languages,
+        averageRating: provider.averageRating,
+        totalReviews: provider.totalReviews,
+        showPrice: provider.showPrice,
+        availableSlots: provider.availabilities.reduce(
+          (total, availability) => total + availability.calculatedSlots.length,
+          0
+        ),
+        locations: provider.availabilities
+          .map((a) => a.location)
+          .filter((location) => location !== null)
+          .reduce((unique: any[], location) => {
+            if (location && !unique.find((l) => l.id === location.id)) {
+              unique.push(location);
+            }
+            return unique;
+          }, []),
+        supportsOnline: provider.availabilities.some((a) => a.isOnlineAvailable),
+        supportsInPerson: provider.availabilities.some((a) => !a.isOnlineAvailable),
+        nextAvailableSlot:
+          provider.availabilities
+            .flatMap((a) => a.calculatedSlots)
+            .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())[0] || null,
+      }));
+    }),
+
+  /**
    * Find available slots with filters
    * Migrated from: findAvailableSlots() lib function
    */
@@ -1380,84 +1574,165 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify slot exists and is available
-      const slot = await ctx.prisma.calculatedAvailabilitySlot.findUnique({
-        where: { id: input.slotId },
-        include: {
-          booking: true,
-          availability: {
-            include: {
-              provider: {
-                include: {
-                  user: {
-                    select: {
-                      id: true,
-                      name: true,
-                      email: true,
-                    },
-                  },
-                },
-              },
-              organization: true,
-              location: true,
-            },
-          },
-          service: true,
-          serviceConfig: true, // Include serviceConfig for price information
-        },
-      });
-
-      if (!slot) {
-        throw new Error('Slot not found');
-      }
-
-      if (slot.booking) {
-        throw new Error('Slot is already booked');
-      }
-
-      if (slot.startTime <= new Date()) {
-        throw new Error('Cannot book past slots');
-      }
-
-      // Create booking
-      const booking = await ctx.prisma.booking.create({
-        data: {
-          slotId: input.slotId,
-          guestName: input.clientName,
-          guestEmail: input.clientEmail,
-          guestPhone: input.clientPhone,
-          isGuestBooking: true,
-          isGuestSelfBooking: true,
-          notes: input.notes || '',
-          status: 'PENDING', // Default status, may require provider confirmation
-          price: slot.serviceConfig?.price || slot.service?.defaultPrice || 0,
-          isOnline: slot.availability?.isOnlineAvailable || false,
-          isInPerson: !slot.availability?.isOnlineAvailable || false,
-        },
-        include: {
-          slot: {
-            include: {
-              service: true,
-              availability: {
-                include: {
-                  provider: {
-                    include: {
-                      user: {
-                        select: {
-                          id: true,
-                          name: true,
-                          email: true,
-                        },
+      // Use a transaction to ensure atomic booking creation and prevent concurrent bookings
+      const booking = await ctx.prisma.$transaction(async (tx) => {
+        // First, verify slot exists and lock it for update to prevent concurrent access
+        const slot = await tx.calculatedAvailabilitySlot.findUnique({
+          where: { id: input.slotId },
+          include: {
+            booking: true,
+            availability: {
+              include: {
+                provider: {
+                  include: {
+                    user: {
+                      select: {
+                        id: true,
+                        name: true,
+                        email: true,
                       },
                     },
                   },
-                  location: true,
+                },
+                organization: true,
+                location: true,
+              },
+            },
+            service: true,
+            serviceConfig: true,
+          },
+        });
+
+        if (!slot) {
+          throw new Error('Slot not found');
+        }
+
+        // Check if slot is already booked (double-check within transaction)
+        if (slot.booking) {
+          throw new Error('Slot is already booked');
+        }
+
+        if (slot.startTime <= new Date()) {
+          throw new Error('Cannot book past slots');
+        }
+
+        // Verify slot status is still available
+        if (slot.status !== 'AVAILABLE') {
+          throw new Error('Slot is no longer available');
+        }
+
+        // Create booking atomically
+        const newBooking = await tx.booking.create({
+          data: {
+            slotId: input.slotId,
+            guestName: input.clientName,
+            guestEmail: input.clientEmail,
+            guestPhone: input.clientPhone,
+            isGuestBooking: true,
+            isGuestSelfBooking: true,
+            notes: input.notes || '',
+            status: 'PENDING', // Default status, may require provider confirmation
+            price: slot.serviceConfig?.price || slot.service?.defaultPrice || 0,
+            isOnline: slot.availability?.isOnlineAvailable || false,
+            isInPerson: !slot.availability?.isOnlineAvailable || false,
+          },
+          include: {
+            slot: {
+              include: {
+                service: true,
+                serviceConfig: true,
+                availability: {
+                  include: {
+                    provider: {
+                      include: {
+                        user: {
+                          select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                          },
+                        },
+                      },
+                    },
+                    location: true,
+                  },
                 },
               },
             },
           },
-        },
+        });
+
+        // Update slot status to BOOKED atomically
+        await tx.calculatedAvailabilitySlot.update({
+          where: { id: input.slotId },
+          data: { status: 'BOOKED' },
+        });
+
+        return newBooking;
       });
+
+      // Send notifications (email and WhatsApp)
+      try {
+        const bookingDetails = {
+          bookingId: booking.id,
+          providerName: booking.slot?.availability?.provider?.user?.name || 'Healthcare Provider',
+          startTime: booking.slot?.startTime?.toISOString() || new Date().toISOString(),
+          endTime: booking.slot?.endTime?.toISOString() || new Date().toISOString(),
+          serviceType: booking.slot?.service?.name || 'Healthcare Service',
+          location: booking.slot?.availability?.location?.name || undefined,
+          guestName: booking.guestName || '',
+          guestEmail: booking.guestEmail || '',
+          guestPhone: booking.guestPhone || undefined,
+          notes: booking.notes || undefined,
+          duration: booking.slot?.serviceConfig?.duration || 30,
+          price: booking.price ? `R${booking.price}` : undefined,
+        };
+
+        // Send email notifications
+        const guestEmailTemplate = getGuestBookingConfirmationTemplate(bookingDetails);
+        const providerEmailTemplate = getProviderBookingNotificationTemplate(bookingDetails);
+
+        const emailPromises = [];
+
+        if (booking.guestEmail) {
+          emailPromises.push(
+            sendBookingConfirmationEmail(booking.guestEmail, guestEmailTemplate)
+          );
+        }
+
+        if (booking.slot?.availability?.provider?.user?.email) {
+          emailPromises.push(
+            sendProviderNotificationEmail(
+              booking.slot.availability.provider.user.email,
+              providerEmailTemplate
+            )
+          );
+        }
+
+        // Send WhatsApp notifications
+        const whatsappPromises = [];
+
+        if (booking.guestPhone) {
+          whatsappPromises.push(sendGuestBookingWhatsApp(booking.guestPhone, bookingDetails));
+        }
+
+        if (booking.slot?.availability?.provider?.whatsapp) {
+          whatsappPromises.push(
+            sendProviderBookingWhatsApp(
+              booking.slot.availability.provider.whatsapp,
+              bookingDetails
+            )
+          );
+        }
+
+        // Send all notifications in parallel
+        await Promise.allSettled([...emailPromises, ...whatsappPromises]);
+
+        console.log('Booking notifications sent successfully for booking:', booking.id);
+      } catch (error) {
+        console.error('Error sending booking notifications:', error);
+        // Don't fail the booking if notifications fail
+      }
 
       return {
         success: true,

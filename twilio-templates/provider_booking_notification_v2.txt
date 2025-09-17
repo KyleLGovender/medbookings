@@ -1,0 +1,29 @@
+Template Name: provider_booking_notification_v2
+Variables: 9
+Language: English
+
+📅 *New Booking Alert*
+
+Hello {{1}},
+
+You have a new appointment booking:
+
+📅 *Date:* {{3}}
+🕐 *Time:* {{4}}
+👤 *Guest:* {{2}}
+🏥 *Service:* {{5}}
+📍 *Location:* {{6}}
+⏱️ *Duration:* {{9}}
+📧 *Reference:* {{7}}
+📱 *Guest Phone:* {{8}}
+
+✅ *Next Steps:*
+• Review your calendar
+• Prepare for the appointment
+• Guest has been sent confirmation
+• Login to MedBookings for details
+
+The guest is expecting this appointment.
+
+---
+*MedBookings Provider Portal*

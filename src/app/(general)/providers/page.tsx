@@ -1,5 +1,6 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Building2, Clock, Filter, Globe, MapPin, Search, Star, Users } from 'lucide-react';
@@ -18,9 +19,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { ProviderSearchResults } from '@/features/calendar/components/provider-search-results';
 import { api } from '@/utils/api';
 
 export default function ProvidersPage() {
+  const urlSearchParams = useSearchParams();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [debouncedFirstName, setDebouncedFirstName] = useState('');
@@ -29,6 +32,10 @@ export default function ProvidersPage() {
   const [serviceType, setServiceType] = useState('all'); // 'virtual', 'in-person', or 'all'
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Check if we're in landing page search mode
+  const isLandingPageSearch =
+    urlSearchParams.get('serviceType') || urlSearchParams.get('consultationType');
 
   // Debounce the name inputs to prevent excessive API calls
   useEffect(() => {
@@ -131,6 +138,22 @@ export default function ProvidersPage() {
 
   // Show initial loading only on very first load when no data exists at all
   const isInitialLoading = providersLoading && !searchResults && typesLoading;
+
+  // If coming from landing page, use the new search results component
+  if (isLandingPageSearch) {
+    const filters = {
+      serviceType: urlSearchParams.get('serviceType') || undefined,
+      location: urlSearchParams.get('location') || undefined,
+      consultationType:
+        (urlSearchParams.get('consultationType') as 'online' | 'in-person' | 'both') || 'both',
+    };
+
+    return (
+      <div className="container mx-auto py-6">
+        <ProviderSearchResults filters={filters} />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6">

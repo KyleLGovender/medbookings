@@ -16,6 +16,16 @@
 ### Features
 <!-- Features that block other work or affect many users -->
 
+#### guest-booking-flow-completion
+**Feature**: Complete guest booking system with landing page integration and confirmations
+**Priority**: P1 High
+**Type**: Feature Enhancement
+**Status**: [ ] Not Started
+**Specification**: `/workflow/prds/guest-booking-flow-completion-prd.md`
+**Tasks**: `/workflow/prds/guest-booking-flow-completion-prd-tasks.md`
+**Description**: Complete the guest booking flow by connecting landing page search to calendar system and implementing SendGrid/Twilio booking confirmations. Enables seamless booking journey from home page to confirmation.
+**Added**: 2025-09-17
+
 ### Issues
 <!-- Critical bugs blocking user workflows -->
 

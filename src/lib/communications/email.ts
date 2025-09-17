@@ -1,41 +1,94 @@
 /**
- * Email communication utilities
- *
- * Simplified email sending functionality for the permission system.
- * In production, integrate with services like SendGrid, AWS SES, etc.
+ * Email communication utilities using SendGrid
  */
+
+import sgMail from '@sendgrid/mail';
 
 interface EmailData {
   to: string;
   subject: string;
-  template: string;
-  data: Record<string, any>;
+  html: string;
+  text?: string;
+  from?: string;
+}
+
+// Initialize SendGrid if API key is available
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
 /**
- * Send email (placeholder implementation)
+ * Send email using SendGrid
  */
 export async function sendEmail(emailData: EmailData): Promise<void> {
   try {
-    // In production, implement actual email sending
-    console.log('EMAIL_SEND', {
+    // Check if SendGrid is configured
+    if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
+      console.warn('SendGrid not configured, logging email instead:', {
+        to: emailData.to,
+        subject: emailData.subject,
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
+
+    const msg = {
+      to: emailData.to,
+      from: emailData.from || process.env.SENDGRID_FROM_EMAIL!,
+      subject: emailData.subject,
+      html: emailData.html,
+      text: emailData.text || '', // SendGrid will auto-generate if not provided
+    };
+
+    await sgMail.send(msg);
+
+    console.log('Email sent successfully via SendGrid:', {
       to: emailData.to,
       subject: emailData.subject,
-      template: emailData.template,
-      data: emailData.data,
       timestamp: new Date().toISOString(),
     });
-
-    // Simulate async operation
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // In production, integrate with email service provider:
-    // - SendGrid
-    // - AWS SES
-    // - Nodemailer
-    // - etc.
   } catch (error) {
-    console.error('Error sending email:', error);
-    throw error;
+    console.error('Error sending email via SendGrid:', error);
+
+    // Log details but don't expose SendGrid internals
+    if (error && typeof error === 'object' && 'response' in error) {
+      const sgError = error as any;
+      console.error('SendGrid error details:', {
+        statusCode: sgError.code,
+        message: sgError.message,
+      });
+    }
+
+    throw new Error('Failed to send email');
   }
+}
+
+/**
+ * Send booking confirmation email to guest
+ */
+export async function sendBookingConfirmationEmail(
+  guestEmail: string,
+  emailTemplate: { subject: string; html: string; text: string }
+): Promise<void> {
+  await sendEmail({
+    to: guestEmail,
+    subject: emailTemplate.subject,
+    html: emailTemplate.html,
+    text: emailTemplate.text,
+  });
+}
+
+/**
+ * Send booking notification email to provider
+ */
+export async function sendProviderNotificationEmail(
+  providerEmail: string,
+  emailTemplate: { subject: string; html: string; text: string }
+): Promise<void> {
+  await sendEmail({
+    to: providerEmail,
+    subject: emailTemplate.subject,
+    html: emailTemplate.html,
+    text: emailTemplate.text,
+  });
 }
