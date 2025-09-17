@@ -17,16 +17,19 @@ async function testBookingEmailFlow() {
   console.log('🔄 Testing Complete Booking Email Flow...\n');
 
   try {
-    // Import the email functions directly
-    const {
-      sendBookingConfirmationEmail,
-      sendProviderNotificationEmail,
-    } = require('../src/lib/communications/email.ts');
+    // Import SendGrid and templates
+    const sgMail = require('@sendgrid/mail');
+
+    // Initialize SendGrid
+    if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
+      throw new Error('SendGrid not configured');
+    }
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
     const {
       getGuestBookingConfirmationTemplate,
       getProviderBookingNotificationTemplate,
-    } = require('../src/features/communications/lib/email-templates.ts');
+    } = require('./email-templates-for-testing.js');
 
     // Create test booking data (same as what would be created in a real booking)
     const testBookingDetails = {
@@ -52,7 +55,16 @@ async function testBookingEmailFlow() {
     // Test guest confirmation email
     console.log('\n📧 Sending Guest Booking Confirmation...');
     const guestEmailTemplate = getGuestBookingConfirmationTemplate(testBookingDetails);
-    await sendBookingConfirmationEmail(testEmail, guestEmailTemplate);
+
+    const guestMsg = {
+      to: testEmail,
+      from: process.env.SENDGRID_FROM_EMAIL,
+      subject: guestEmailTemplate.subject,
+      text: guestEmailTemplate.text,
+      html: guestEmailTemplate.html,
+    };
+
+    await sgMail.send(guestMsg);
     console.log('✅ Guest confirmation email sent successfully!');
 
     // Wait a moment between emails
@@ -61,7 +73,16 @@ async function testBookingEmailFlow() {
     // Test provider notification email
     console.log('\n📧 Sending Provider Booking Notification...');
     const providerEmailTemplate = getProviderBookingNotificationTemplate(testBookingDetails);
-    await sendProviderNotificationEmail(testEmail, providerEmailTemplate); // Sending to your email for testing
+
+    const providerMsg = {
+      to: testEmail, // Sending to your email for testing
+      from: process.env.SENDGRID_FROM_EMAIL,
+      subject: providerEmailTemplate.subject,
+      text: providerEmailTemplate.text,
+      html: providerEmailTemplate.html,
+    };
+
+    await sgMail.send(providerMsg);
     console.log('✅ Provider notification email sent successfully!');
 
     console.log('\n🎉 Complete booking email flow test completed!');

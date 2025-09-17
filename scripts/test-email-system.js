@@ -54,8 +54,8 @@ async function testEmailSystem() {
   // Test 2: Guest booking confirmation template
   console.log('\n📤 Test 2: Guest Booking Confirmation Template');
   try {
-    // Import the template function
-    const { getGuestBookingConfirmationTemplate } = require('../src/features/communications/lib/email-templates.ts');
+    // Import the template function (JavaScript version for testing)
+    const { getGuestBookingConfirmationTemplate } = require('./email-templates-for-testing.js');
 
     const testBooking = {
       bookingId: 'test-booking-12345',
@@ -91,7 +91,7 @@ async function testEmailSystem() {
   // Test 3: Provider notification template
   console.log('\n📤 Test 3: Provider Notification Template');
   try {
-    const { getProviderBookingNotificationTemplate } = require('../src/features/communications/lib/email-templates.ts');
+    const { getProviderBookingNotificationTemplate } = require('./email-templates-for-testing.js');
 
     const testBooking = {
       bookingId: 'test-booking-12345',
