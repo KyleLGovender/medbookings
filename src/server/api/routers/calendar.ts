@@ -1251,7 +1251,7 @@ export const calendarRouter = createTRPCRouter({
   searchProvidersByLocation: publicProcedure
     .input(
       z.object({
-        serviceType: z.string().optional(), // Provider type name (e.g., "Dentist", "Doctor")
+        serviceType: z.string().optional(), // Provider type name (e.g., "Dentist", "General Practitioner")
         location: z.string().optional(), // Search term for location matching
         consultationType: z.enum(['online', 'in-person', 'both']).default('both'),
         startDate: z.string().optional(), // ISO date string for availability check

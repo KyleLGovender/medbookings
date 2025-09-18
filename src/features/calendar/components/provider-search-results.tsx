@@ -176,7 +176,7 @@ export function ProviderSearchResults({ filters }: ProviderSearchResultsProps) {
                   id="serviceType"
                   value={localFilters.serviceType || ''}
                   onChange={(e) => handleFilterChange('serviceType', e.target.value)}
-                  placeholder="e.g. Dentist, Doctor, Psychologist"
+                  placeholder="e.g. Dentist, General Practitioner, Psychologist"
                 />
               </div>
 

@@ -121,7 +121,7 @@ export default function LandingBookingQuery() {
             <div className={`grid gap-3 ${getGridCols()}`}>
               {[
                 {
-                  name: 'Doctor',
+                  name: 'General Practitioner',
                   icon: (
                     <Stethoscope
                       strokeWidth={1}

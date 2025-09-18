@@ -52,7 +52,7 @@ The guest booking system implementation was started but not finished. Currently,
 
 ### FR1: Landing Page Integration
 - Landing page search form must connect to provider search functionality
-- Users can search by service type (dentist, doctor, etc.) and location
+- Users can search by service type (dentist, general practitioner, etc.) and location
 - Search supports both "online" and "in-person" consultation preferences
 - Results page displays available providers with booking call-to-action
 
