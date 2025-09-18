@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import {
   Calendar,
@@ -45,19 +45,44 @@ export function ProviderSearchResults({ filters }: ProviderSearchResultsProps) {
   const [localFilters, setLocalFilters] = useState(filters);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Search providers using the new API
+  // Stabilize date calculations to prevent infinite re-renders
+  const searchDates = useMemo(() => {
+    const now = new Date();
+    const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days ahead
+    return {
+      startDate: now.toISOString(),
+      endDate: endDate.toISOString(),
+    };
+  }, []); // Empty dependency array - calculate once when component mounts
+
+  // Search providers using the new API with proper React Query configuration
   const {
     data: providers,
     isLoading,
     error,
-  } = api.calendar.searchProvidersByLocation.useQuery({
-    serviceType: localFilters.serviceType,
-    location: localFilters.location,
-    consultationType: localFilters.consultationType,
-    startDate: new Date().toISOString(),
-    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ahead
-    limit: 20,
-  });
+  } = api.calendar.searchProvidersByLocation.useQuery(
+    {
+      serviceType: localFilters.serviceType,
+      location: localFilters.location,
+      consultationType: localFilters.consultationType,
+      startDate: searchDates.startDate,
+      endDate: searchDates.endDate,
+      limit: 20,
+    },
+    {
+      // Prevent excessive refetching
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchInterval: false,
+      refetchOnReconnect: false,
+      staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+      gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+      // Only retry on mount, not on every re-render
+      retry: 1,
+      // Only refetch when filters actually change
+      enabled: true,
+    }
+  );
 
   const handleBackToSearch = () => {
     router.push('/');
