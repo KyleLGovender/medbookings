@@ -102,3 +102,50 @@ export interface CalendarHeaderProps {
   onViewModeChange: (mode: CalendarViewMode) => void;
   onNavigate: (direction: 'prev' | 'next') => void;
 }
+
+// User booking types for user booking management
+export interface UserBooking {
+  id: string;
+  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+  guestName: string;
+  guestEmail: string;
+  guestPhone?: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  slot: {
+    id: string;
+    startTime: Date;
+    endTime: Date;
+    status: string;
+    service?: {
+      id: string;
+      name: string;
+      description?: string;
+    };
+    serviceConfig?: {
+      id: string;
+      duration: number;
+      price: number;
+    };
+    availability: {
+      id: string;
+      provider: {
+        id: string;
+        user: {
+          id: string;
+          name?: string;
+          email?: string;
+          image?: string;
+        };
+      };
+    };
+  };
+}
+
+export interface BookingUpdateData {
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
+  notes: string;
+}
