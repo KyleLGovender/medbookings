@@ -11,7 +11,6 @@ const CRITICAL_FILES = [
   'src/utils/api.ts',
   'src/env.js',
   'src/config/env/server.ts',
-  'prisma/seed.mts',
   'src/types/next-auth.d.ts',
 ];
 
@@ -28,6 +27,7 @@ const HIGH_RISK_FILES = [
   'src/lib/crypto/',
   'src/hooks/use-permissions.ts',
   'next.config.',
+  'package.json',
 ];
 
 const MODERATE_FILES = [
