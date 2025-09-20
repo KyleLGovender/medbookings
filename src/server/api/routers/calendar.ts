@@ -1776,6 +1776,234 @@ export const calendarRouter = createTRPCRouter({
 
       return booking;
     }),
+
+  /*
+   * ====================================
+   * USER BOOKING MANAGEMENT
+   * ====================================
+   * Endpoints for users to manage their own bookings
+   */
+
+  getUserBookings: protectedProcedure
+    .input(
+      z.object({
+        status: z.enum(['upcoming', 'past', 'cancelled', 'all']).default('all'),
+        limit: z.number().min(1).max(100).default(50),
+        offset: z.number().min(0).default(0),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { status, limit, offset } = input;
+      const userId = ctx.session.user.id;
+
+      // Build status filter
+      let statusFilter: any = {};
+      const now = new Date();
+
+      if (status === 'upcoming') {
+        statusFilter = {
+          slot: {
+            startTime: { gte: now },
+          },
+          status: { notIn: ['CANCELLED'] },
+        };
+      } else if (status === 'past') {
+        statusFilter = {
+          slot: {
+            startTime: { lt: now },
+          },
+          status: { notIn: ['CANCELLED'] },
+        };
+      } else if (status === 'cancelled') {
+        statusFilter = {
+          status: 'CANCELLED',
+        };
+      }
+
+      const bookings = await ctx.prisma.booking.findMany({
+        where: {
+          createdById: userId,
+          ...statusFilter,
+        },
+        include: {
+          slot: {
+            include: {
+              service: true,
+              serviceConfig: true,
+              availability: {
+                include: {
+                  provider: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          slot: {
+            startTime: 'desc',
+          },
+        },
+        take: limit,
+        skip: offset,
+      });
+
+      return bookings;
+    }),
+
+  updateUserBooking: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        guestName: z.string().optional(),
+        guestEmail: z.string().email().optional(),
+        guestPhone: z.string().optional(),
+        notes: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...updateData } = input;
+      const userId = ctx.session.user.id;
+
+      // Verify the booking belongs to the current user
+      const existingBooking = await ctx.prisma.booking.findFirst({
+        where: {
+          id,
+          createdById: userId,
+        },
+      });
+
+      if (!existingBooking) {
+        throw new Error('Booking not found or you do not have permission to update it');
+      }
+
+      const updatedBooking = await ctx.prisma.booking.update({
+        where: { id },
+        data: updateData,
+        include: {
+          slot: {
+            include: {
+              service: true,
+              serviceConfig: true,
+              availability: {
+                include: {
+                  provider: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return updatedBooking;
+    }),
+
+  cancelUserBooking: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      // Verify the booking belongs to the current user
+      const existingBooking = await ctx.prisma.booking.findFirst({
+        where: {
+          id: input.id,
+          createdById: userId,
+        },
+      });
+
+      if (!existingBooking) {
+        throw new Error('Booking not found or you do not have permission to cancel it');
+      }
+
+      // Cancel the booking
+      const cancelledBooking = await ctx.prisma.booking.update({
+        where: { id: input.id },
+        data: { status: 'CANCELLED' },
+        include: {
+          slot: {
+            include: {
+              service: true,
+              serviceConfig: true,
+              availability: {
+                include: {
+                  provider: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return cancelledBooking;
+    }),
+
+  rescheduleUserBooking: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        newSlotId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      // Verify the booking belongs to the current user
+      const existingBooking = await ctx.prisma.booking.findFirst({
+        where: {
+          id: input.id,
+          createdById: userId,
+        },
+      });
+
+      if (!existingBooking) {
+        throw new Error('Booking not found or you do not have permission to reschedule it');
+      }
+
+      // Verify the new slot exists and is available
+      const newSlot = await ctx.prisma.calculatedAvailabilitySlot.findUnique({
+        where: { id: input.newSlotId },
+      });
+
+      if (!newSlot || newSlot.status !== 'AVAILABLE') {
+        throw new Error('Selected slot is not available');
+      }
+
+      // Update the booking with the new slot
+      const rescheduledBooking = await ctx.prisma.booking.update({
+        where: { id: input.id },
+        data: { slotId: input.newSlotId },
+        include: {
+          slot: {
+            include: {
+              service: true,
+              serviceConfig: true,
+              availability: {
+                include: {
+                  provider: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return rescheduledBooking;
+    }),
 });
 
 /**

@@ -16,7 +16,10 @@ import {
   useUpdateBooking,
   useUserBookings,
 } from '@/features/calendar/hooks/use-user-bookings';
-import { BookingUpdateData, UserBooking } from '@/features/calendar/types/booking-types';
+import { BookingUpdateData } from '@/features/calendar/types/booking-types';
+import { type RouterOutputs } from '@/utils/api';
+
+type UserBooking = RouterOutputs['calendar']['getUserBookings'][number];
 
 export function UserBookingsPage() {
   const router = useRouter();
@@ -75,7 +78,7 @@ export function UserBookingsPage() {
       setSelectedBooking(null);
       // Redirect to provider calendar with booking context
       if (selectedBooking && selectedBooking.slot) {
-        router.push(`/calendar/${selectedBooking.slot.availability.providerId}?reschedule=${selectedBooking.id}`);
+        router.push(`/calendar/${selectedBooking.slot.availability.provider.id}?reschedule=${selectedBooking.id}`);
       }
     },
     onError: (error) => {
@@ -111,15 +114,14 @@ export function UserBookingsPage() {
       case 'edit':
         if (data) {
           updateBookingMutation.mutate({
-            bookingId: selectedBooking.id,
+            id: selectedBooking.id,
             ...data,
           });
         }
         break;
       case 'cancel':
         cancelBookingMutation.mutate({
-          bookingId: selectedBooking.id,
-          reason: 'Cancelled by user',
+          id: selectedBooking.id,
         });
         break;
       case 'reschedule':
@@ -128,7 +130,7 @@ export function UserBookingsPage() {
         setModalAction(null);
         setSelectedBooking(null);
         if (selectedBooking && selectedBooking.slot) {
-          router.push(`/calendar/${selectedBooking.slot.availability.providerId}?reschedule=${selectedBooking.id}`);
+          router.push(`/calendar/${selectedBooking.slot.availability.provider.id}?reschedule=${selectedBooking.id}`);
         }
         break;
     }

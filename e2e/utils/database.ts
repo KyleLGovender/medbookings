@@ -168,11 +168,11 @@ export async function setupTestData() {
 
   // 6. Get existing service
   const service = await prisma.service.findFirst({
-    where: { name: 'General Consultation' },
+    where: { name: 'General GP Consult' },
   });
 
   if (!service) {
-    throw new Error('Service "General Consultation" not found. Please seed basic data first.');
+    throw new Error('Service "General GP Consult" not found. Please seed basic data first.');
   }
 
   // 7. Create service availability config for the provider

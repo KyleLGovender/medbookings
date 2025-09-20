@@ -22,7 +22,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserAvatar } from '@/components/user-avatar';
-import { UserBooking } from '@/features/calendar/types/booking-types';
+import { type RouterOutputs } from '@/utils/api';
+
+type UserBooking = RouterOutputs['calendar']['getUserBookings'][number];
 
 interface UserBookingListProps {
   bookings: UserBooking[];
@@ -250,17 +252,11 @@ export function UserBookingList({
                     </span>
                   </div>
 
-                  {booking.slot.availability.location && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{booking.slot.availability.location.formattedAddress}</span>
-                    </div>
-                  )}
 
-                  {booking.slot.price && (
+                  {booking.slot.serviceConfig?.price && (
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">${booking.slot.price.toFixed(2)}</span>
+                      <span className="font-medium">${booking.slot.serviceConfig.price.toFixed(2)}</span>
                     </div>
                   )}
                 </div>

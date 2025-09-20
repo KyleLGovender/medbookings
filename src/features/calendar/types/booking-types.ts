@@ -107,10 +107,10 @@ export interface CalendarHeaderProps {
 export interface UserBooking {
   id: string;
   status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
-  guestName: string;
-  guestEmail: string;
-  guestPhone?: string;
-  notes?: string;
+  guestName: string | null;
+  guestEmail: string | null;
+  guestPhone: string | null;
+  notes: string | null;
   createdAt: Date;
   updatedAt: Date;
   slot: {
