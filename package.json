@@ -28,8 +28,9 @@
     "workflow:init": "sh scripts/workflow/workflow-init.sh",
     "workflow:check": "node scripts/workflow/check-workflow.js",
     "git:check": "node scripts/workflow/check-git.js",
-    "workflow:preflight": "git fetch origin && npm run git:check && npm run workflow:check && npm run architecture:check && npm run build && npm run test",
-    "architecture:check": "node scripts/architecture/check-core-files.js",
+    "workflow:preflight": "npm run git:check && npm run workflow:check && npm run build",
+    "workflow:preflight:full": "npm run git:check && npm run workflow:check && npm run build && npm run test",
+    "architecture:check": "git fetch origin && node scripts/architecture/check-core-files.js",
     "architecture:report": "node scripts/architecture/check-core-files.js > architecture-report.txt",
     "precommit:architecture": "npm run architecture:check || true",
     "pr:prepare": "npm run architecture:check && npm run build && npm run test && npm run architecture:report"
