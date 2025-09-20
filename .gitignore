@@ -47,3 +47,9 @@ logs/
 
 
 
+.claude/settings.local.json
+e2e/.auth/user.json
+playwright-report/index.html
+.claude/settings.local.json
+e2e/.auth/user.json
+playwright-report/index.html
