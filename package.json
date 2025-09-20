@@ -32,7 +32,7 @@
     "architecture:check": "node scripts/architecture/check-core-files.js",
     "architecture:report": "node scripts/architecture/check-core-files.js > architecture-report.txt",
     "precommit:architecture": "npm run architecture:check || true",
-    "pr:prepare": "npm run test && npm run architecture:report && npm run build"
+    "pr:prepare": "npm run architecture:check && npm run build && npm run test && npm run architecture:report"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.2",
@@ -45,7 +45,7 @@
     "@nextui-org/progress": "^2.0.34",
     "@nextui-org/system": "^2.2.6",
     "@nextui-org/theme": "^2.2.11",
-    "@prisma/client": "^6.16.2",
+    "@prisma/client": "5.22.0",
     "@radix-ui/react-alert-dialog": "^1.1.6",
     "@radix-ui/react-aspect-ratio": "^1.1.0",
     "@radix-ui/react-avatar": "^1.1.10",
@@ -140,7 +140,7 @@
     "postcss": "^8",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.6.8",
-    "prisma": "^6.16.2",
+    "prisma": "5.22.0",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",

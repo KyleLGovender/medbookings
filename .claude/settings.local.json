@@ -54,7 +54,8 @@
       "Bash(npx prisma:*)",
       "mcp__filesystem-server__write_file",
       "Bash(npm run workflow:preflight:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Read(//private/tmp/**)"
     ],
     "deny": []
   },
