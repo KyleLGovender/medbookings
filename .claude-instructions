@@ -211,7 +211,7 @@ cat middleware.ts 2>/dev/null || echo "No middleware found"
 
 ### Architectural Decision Record
 
-**WHEN ADDING FEATURES:**
+**WHEN ADDING FEATURES & MAKING CODE EDITS:**
 1. **Enforce Feature-Based Architecture**: 
    - Create isolated feature folder: /app/[feature-name]/
    - Include mandatory subdirectories: components/, hooks/, utils/, actions/
@@ -233,7 +233,6 @@ Catch architectural drift while maintaining the flexibility needed for feature d
 - 'src/utils/api.ts'
 - 'src/env.js'
 - 'src/config/env/server.ts'
-- 'prisma/seed.mts'
 - 'src/types/next-auth.d.ts'
 
 Why These Are **Critical**:
@@ -255,6 +254,7 @@ Why These Are **Critical**:
 - 'src/lib/crypto/'
 - 'src/hooks/use-permissions.ts'
 - 'next.config.'
+- 'package.json'
 
 Why These Are **High-Risk**:
 - API Structure: Changes affect client-server contracts
