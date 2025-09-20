@@ -1,6 +1,6 @@
 /**
  * Test script for SendGrid email system
- * Run with: node scripts/test-email-system.js your-email@example.com
+ * Run with: node scripts/testing/test-email-system.js your-email@example.com
  */
 
 require('dotenv').config();
@@ -10,7 +10,7 @@ async function testEmailSystem() {
   const testEmail = process.argv[2];
 
   if (!testEmail) {
-    console.log('Usage: node scripts/test-email-system.js your-email@example.com');
+    console.log('Usage: node scripts/testing/test-email-system.js your-email@example.com');
     process.exit(1);
   }
 

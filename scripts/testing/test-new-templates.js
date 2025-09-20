@@ -1,6 +1,6 @@
 /**
  * Simple test script for new WhatsApp templates
- * Run with: node scripts/test-new-templates.js +27XXXXXXXXX
+ * Run with: node scripts/testing/test-new-templates.js +27XXXXXXXXX
  */
 
 require('dotenv').config();
@@ -12,8 +12,8 @@ async function testNewTemplates() {
   const testPhone = process.argv[2];
 
   if (!testPhone) {
-    console.log('Usage: node scripts/test-new-templates.js +27XXXXXXXXX');
-    console.log('Example: node scripts/test-new-templates.js +27821234567');
+    console.log('Usage: node scripts/testing/test-new-templates.js +27XXXXXXXXX');
+    console.log('Example: node scripts/testing/test-new-templates.js +27821234567');
     process.exit(1);
   }
 

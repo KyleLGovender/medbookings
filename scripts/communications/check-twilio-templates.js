@@ -1,6 +1,6 @@
 /**
  * Script to check current Twilio WhatsApp templates
- * Run with: node scripts/check-twilio-templates.js
+ * Run with: node scripts/communications/check-twilio-templates.js
  */
 
 require('dotenv').config();

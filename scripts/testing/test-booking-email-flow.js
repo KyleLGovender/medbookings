@@ -1,7 +1,7 @@
 /**
  * Test the complete booking email flow
  * This simulates what happens during a real booking
- * Run with: node scripts/test-booking-email-flow.js your-email@example.com
+ * Run with: node scripts/testing/test-booking-email-flow.js your-email@example.com
  */
 
 require('dotenv').config();
@@ -10,7 +10,7 @@ async function testBookingEmailFlow() {
   const testEmail = process.argv[2];
 
   if (!testEmail) {
-    console.log('Usage: node scripts/test-booking-email-flow.js your-email@example.com');
+    console.log('Usage: node scripts/testing/test-booking-email-flow.js your-email@example.com');
     process.exit(1);
   }
 

@@ -11,7 +11,7 @@ mkdir -p workflow/reference/issue
 
 echo ""
 echo "Checking Git configuration..."
-if node scripts/check-git.js; then
+if node scripts/workflow/check-git.js; then
   echo "  Git configuration verified"
 else
   echo "  Git configuration issues detected. Please fix the issues above before continuing."

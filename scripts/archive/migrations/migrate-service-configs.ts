@@ -6,9 +6,9 @@
  * provider service default values were not persisted during registration.
  *
  * Usage:
- *   npm run ts-node scripts/migrate-service-configs.ts
+ *   npm run ts-node scripts/archive/migrations/migrate-service-configs.ts
  *   or
- *   npx ts-node scripts/migrate-service-configs.ts
+ *   npx ts-node scripts/archive/migrations/migrate-service-configs.ts
  */
 import { PrismaClient } from '@prisma/client';
 

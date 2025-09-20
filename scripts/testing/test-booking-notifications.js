@@ -1,18 +1,21 @@
 /**
  * Test script for booking notifications
- * Run with: node scripts/test-booking-notifications.js +27XXXXXXXXX
+ * Run with: node scripts/testing/test-booking-notifications.js +27XXXXXXXXX
  */
 
 require('dotenv').config();
 
 // Import your WhatsApp functions
-const { sendGuestBookingWhatsApp, sendProviderBookingWhatsApp } = require('../src/features/communications/lib/whatsapp-templates.ts');
+const {
+  sendGuestBookingWhatsApp,
+  sendProviderBookingWhatsApp,
+} = require('../src/features/communications/lib/whatsapp-templates.ts');
 
 async function testNotifications() {
   const testPhone = process.argv[2];
 
   if (!testPhone) {
-    console.log('Usage: node scripts/test-booking-notifications.js +27XXXXXXXXX');
+    console.log('Usage: node scripts/testing/test-booking-notifications.js +27XXXXXXXXX');
     process.exit(1);
   }
 
@@ -27,7 +30,7 @@ async function testNotifications() {
     location: 'Cape Town Medical Center',
     guestName: 'Test Patient',
     guestPhone: testPhone,
-    duration: 30
+    duration: 30,
   };
 
   try {
@@ -40,7 +43,6 @@ async function testNotifications() {
     console.log('✅ Provider notification sent successfully');
 
     console.log('\n🎉 All tests completed! Check your WhatsApp for the messages.');
-
   } catch (error) {
     console.error('❌ Test failed:', error.message);
   }

@@ -1,6 +1,6 @@
 /**
  * Check SendGrid configuration and account status
- * Run with: node scripts/check-sendgrid-config.js
+ * Run with: node scripts/communications/check-sendgrid-config.js
  */
 
 require('dotenv').config();
@@ -72,7 +72,7 @@ async function checkSendGridConfig() {
 
   console.log('\n🎯 Quick Test:');
   console.log('Run this command to test email sending:');
-  console.log(`node scripts/test-email-system.js ${process.env.SENDGRID_FROM_EMAIL}`);
+  console.log(`node scripts/testing/test-email-system.js ${process.env.SENDGRID_FROM_EMAIL}`);
 
   console.log('\n📊 SendGrid Account Status:');
   console.log('Check your SendGrid dashboard for:');

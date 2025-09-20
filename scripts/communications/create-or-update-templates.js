@@ -1,6 +1,6 @@
 /**
  * Script to create or update Twilio WhatsApp templates for guest booking flow
- * Run with: node scripts/create-or-update-templates.js
+ * Run with: node scripts/communications/create-or-update-templates.js
  */
 
 require('dotenv').config();

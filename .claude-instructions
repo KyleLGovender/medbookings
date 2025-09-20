@@ -189,3 +189,185 @@ cat middleware.ts 2>/dev/null || echo "No middleware found"
 - **Identify:** Distinguish between mock and real data
 - **Monitor:** Watch terminal for unusual patterns
 - **Report:** List all findings with specific line numbers
+
+
+### MedBookings Core Architecture Preservation
+
+**FOUNDATIONAL PATTERNS (Master Branch Standards)**
+
+**ALWAYS MAINTAIN:**
+- **Prisma Schema Integrity**: All database modifications MUST extend, never restructure, the core schema
+- **Next.js 14 + tRPC Pattern**: Every API endpoint follows server/api/routers pattern with strict type safety
+- **Feature-Based Structure**: New features create folders under /app with dedicated components/, hooks/, and utils/
+- **Authentication Flow**: All provider routes use existing withAuth() middleware - no custom auth implementations
+- **Type System**: Extend existing Zod schemas and tRPC types - never bypass type validation
+
+**NEVER VIOLATE:**
+- Core authentication/authorization patterns established in server/auth/
+- tRPC router structure in server/api/root.ts and server/api/trpc.ts
+- Prisma client singleton pattern in server/db.ts
+- Feature folder structure: each feature is self-contained with its own routing
+- Existing type definitions in server/api/schemas/
+
+### Architectural Decision Record
+
+**WHEN ADDING FEATURES:**
+1. **Enforce Feature-Based Architecture**: 
+   - Create isolated feature folder: /app/[feature-name]/
+   - Include mandatory subdirectories: components/, hooks/, utils/, actions/
+   - Colocate all feature logic - no cross-feature imports except shared libs
+   - Each feature owns its complete vertical slice
+2. **Extend Existing Patterns**: Reference similar features for consistency
+3. **Maintain Type Chain**: Database → Prisma → Zod → tRPC → Component props
+4. **Preserve API Structure**: /api/trpc/[procedure] naming convention
+
+### CORE FILE PROTECTION
+
+Catch architectural drift while maintaining the flexibility needed for feature development.
+
+**1. CRITICAL FILES:**
+- 'prisma/schema.prisma'
+- 'src/server/trpc.ts'
+- 'src/lib/auth.ts'
+- 'src/lib/prisma.ts'
+- 'src/utils/api.ts'
+- 'src/env.js'
+- 'src/config/env/server.ts'
+- 'prisma/seed.mts'
+- 'src/types/next-auth.d.ts'
+
+Why These Are **Critical**:
+- Authentication/Authorization: Core security patterns that affect entire application
+- Database: Schema and client patterns that impact all data operations
+- Type System: tRPC and API type safety foundation
+- Environment: Configuration that affects runtime behavior
+
+**2. HIGH-RISK FILES:**
+- 'src/middleware.ts'
+- 'src/server/api/root.ts'
+- 'src/server/api/routers/'
+- 'src/app/layout.tsx'
+- 'src/app/api/auth/'
+- 'src/app/api/trpc/'
+- 'src/app/providers.tsx'
+- 'src/lib/permissions/'
+- 'src/lib/communications/'
+- 'src/lib/crypto/'
+- 'src/hooks/use-permissions.ts'
+- 'next.config.'
+
+Why These Are **High-Risk**:
+- API Structure: Changes affect client-server contracts
+- Security: Permission systems and encryption
+- Core Business Logic: Feature-specific server actions and validation
+
+**3. MODERATE FILES:**
+- 'tsconfig.json'
+- 'package-lock.json'
+- 'playwright.config.ts'
+- '.github/workflows/'
+- 'scripts/'
+- 'src/features/*/types/schemas.ts'
+- 'src/features/*/types/types.ts'
+- 'src/features/*/lib/actions.ts'
+
+Why These Are **Moderate**:
+- Configuration: Build, test, and development environment setup
+- Dependencies: Package management and tooling
+- Feature Types: Domain-specific type definitions
+
+### Database Evolution Rules
+**PRISMA SCHEMA MODIFICATIONS:**
+
+**Additive Only:** New models/fields are added, existing ones never removed. If necessary, require explicit approval by the user.
+**Relation Integrity:** New relations must follow existing naming patterns (e.g., userId, providerId)
+**Enum Extensions:** Add values to existing enums, never remove or rename
+
+### API Development Standards
+**tRPC PROCEDURE PATTERNS:**
+```typescript
+// ALWAYS follow this structure from master:
+export const featureRouter = createTRPCRouter({
+  procedureName: protectedProcedure // or publicProcedure
+    .input(z.object({...})) // Zod validation required
+    .query(async ({ ctx, input }) => {
+      // Business logic here
+    }),
+});
+```
+
+**NEVER:**
+- Create REST endpoints when tRPC procedure would suffice
+- Bypass Zod validation for "simple" endpoints
+- Mix authentication strategies (stick to existing NextAuth setup)
+
+### Component Architecture Consistency
+**MAINTAIN MASTER'S PATTERNS:**
+
+- Server Components by default, Client Components only when needed
+- Data fetching via tRPC hooks (api.feature.procedure.useQuery)
+- Form handling with react-hook-form + zodResolver
+- Error boundaries around data-dependent sections
+
+### Workflow Enhancement Constraints
+**WHILE kyle-dev-branch ADDS WORKFLOWS:**
+
+- Workflow scripts enhance but don't replace core development patterns
+- CI/CD additions must respect existing build/test/deploy pipeline
+- Template management (Twilio) extends existing notification system
+- New scripts in package.json preserve existing script functionality
+
+### Testing Architecture Alignment
+**TEST STRUCTURE FROM MASTER:**
+__tests__/
+├── unit/          # Pure function tests
+├── integration/   # API endpoint tests  
+└── e2e/          # User journey tests
+
+**NEW TESTS MUST:**
+
+- Follow existing test file naming: [feature].test.ts
+- Use established test utilities from test/utils/
+- Maintain test database isolation pattern
+
+
+### Core Performance Principles (Never Violate)
+
+**ALWAYS MAINTAIN:**
+1. **No N+1 Queries**: Every feature must use eager loading
+2. **Pagination Required**: Lists > 20 items must paginate
+3. **Image Optimization**: All images through Next.js Image
+4. **Code Splitting**: Route-based splitting mandatory
+5. **Caching Strategy**: All GET requests cached minimum 5 seconds
+
+**NEVER ALLOW:**
+- Unindexed database queries in production paths
+- Synchronous external API calls in request path
+- Bundle size regression > 10% without justification
+- Memory leaks (monitor heap growth)
+
+### Dependency Management Protocol
+**WHEN UPDATING DEPENDENCIES:**
+```bash
+# Check master's version first
+git show master:package.json | grep "[dependency-name]"
+# Major version changes require architecture review
+# Prisma updates need full regression test
+```
+
+### Breaking Change Prevention
+**BEFORE MERGING TO MASTER:**
+
+- Run full compatibility check: npm run test:integration
+- Verify database migration reversibility
+- Confirm API backward compatibility
+- Test provider workflow end-to-end
+- Validate no core pattern violations
+
+### RED FLAGS FOR ARCHITECTURE REVIEW:
+
+- Changes to: server/auth/, server/api/trpc.ts, server/db.ts
+- Prisma schema structural changes (vs additive)
+- New authentication/authorization patterns
+- Alternative state management (outside tRPC)
+- Custom routing logic bypassing Next.js

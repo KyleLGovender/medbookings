@@ -1,7 +1,7 @@
 /**
  * Create a test booking that triggers real email notifications
  * This tests the actual booking creation flow with emails
- * Run with: node scripts/create-test-booking.js
+ * Run with: node scripts/testing/create-test-booking.js
  */
 
 require('dotenv').config();
@@ -24,7 +24,7 @@ async function createTestBooking() {
   console.log('5. Check email inbox for confirmations');
 
   console.log('\n🎯 Option 2: Direct Email Function Test');
-  console.log('Run: node scripts/test-booking-email-flow.js your-email@example.com');
+  console.log('Run: node scripts/testing/test-booking-email-flow.js your-email@example.com');
 
   console.log('\n🎯 Option 3: API Testing');
   console.log('Use Postman or curl to test the tRPC endpoint:');
@@ -49,8 +49,8 @@ async function createTestBooking() {
   console.log('⚠️  "SendGrid not configured, logging email instead"');
 
   console.log('\n🚀 To test right now:');
-  console.log('1. Run: node scripts/check-sendgrid-config.js');
-  console.log('2. Then: node scripts/test-email-system.js your-email@example.com');
+  console.log('1. Run: node scripts/communications/check-sendgrid-config.js');
+  console.log('2. Then: node scripts/testing/test-email-system.js your-email@example.com');
 }
 
 createTestBooking();

@@ -25,10 +25,14 @@
     "test:errors": "playwright test e2e/tests/error-scenarios.spec.ts",
     "test:cleanup": "playwright test e2e/tests/data-cleanup.spec.ts",
     "test:report": "playwright show-report",
-    "workflow:init": "sh scripts/workflow-init.sh",
-    "workflow:check": "node scripts/check-workflow.js",
-    "git:check": "node scripts/check-git.js",
-    "workflow:preflight": "npm run git:check && npm run workflow:check"
+    "workflow:init": "sh scripts/workflow/workflow-init.sh",
+    "workflow:check": "node scripts/workflow/check-workflow.js",
+    "git:check": "node scripts/workflow/check-git.js",
+    "workflow:preflight": "git fetch origin && npm run git:check && npm run workflow:check && npm run architecture:check && npm run build && npm run test",
+    "architecture:check": "node scripts/architecture/check-core-files.js",
+    "architecture:report": "node scripts/architecture/check-core-files.js > architecture-report.txt",
+    "precommit:architecture": "npm run architecture:check || true",
+    "pr:prepare": "npm run test && npm run architecture:report && npm run build"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.2",

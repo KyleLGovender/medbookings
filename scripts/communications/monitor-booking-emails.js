@@ -1,7 +1,7 @@
 /**
  * Monitor your application logs for email sending activity
  * Run this while making test bookings to see email status in real-time
- * Run with: node scripts/monitor-booking-emails.js
+ * Run with: node scripts/communications/monitor-booking-emails.js
  */
 
 const { exec } = require('child_process');
@@ -55,8 +55,8 @@ process.on('SIGINT', () => {
   console.log('\n\n📊 Monitoring Summary:');
   console.log(`Monitoring duration: ${Math.floor((new Date() - startTime) / 1000)}s`);
   console.log('\n💡 To test email sending:');
-  console.log('1. Run: node scripts/check-sendgrid-config.js');
-  console.log('2. Run: node scripts/test-email-system.js your-email@example.com');
+  console.log('1. Run: node scripts/communications/check-sendgrid-config.js');
+  console.log('2. Run: node scripts/testing/test-email-system.js your-email@example.com');
   console.log('3. Make a real booking and check this console + your email');
   console.log('\n👋 Email monitoring stopped.');
   process.exit(0);
