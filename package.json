@@ -32,7 +32,6 @@
     "workflow:preflight:full": "npm run git:check && npm run workflow:check && npm run build && npm run test",
     "architecture:check": "git fetch origin && node scripts/architecture/check-core-files.js",
     "architecture:report": "node scripts/architecture/check-core-files.js > architecture-report.txt",
-    "precommit:architecture": "npm run architecture:check || true",
     "pr:prepare": "npm run architecture:check && npm run build && npm run test && npm run architecture:report"
   },
   "dependencies": {

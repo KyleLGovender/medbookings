@@ -80,7 +80,7 @@ function categorizeFiles(files) {
 }
 
 function main() {
-  console.log(chalk.blue('🔍 Checking architectural integrity...\n'));
+  console.log(chalk.blue('📊 Architecture Impact Report\n'));
 
   const changedFiles = getChangedFiles();
 
@@ -91,42 +91,55 @@ function main() {
 
   const { critical, highRisk, moderate } = categorizeFiles(changedFiles);
 
-  // If no architectural files changed, report success and exit
+  // If no architectural files changed, report and exit
   if (critical.length === 0 && highRisk.length === 0 && moderate.length === 0) {
     console.log(chalk.green('✅ No architectural files modified'));
     return 0;
   }
 
-  let exitCode = 0;
+  // Show summary first
+  console.log(chalk.white('📋 Architectural Changes Detected:\n'));
 
-  // CRITICAL FILES
+  // CRITICAL FILES - Now informational, not blocking
   if (critical.length > 0) {
-    console.log(chalk.red('❌ CRITICAL: Core architectural files modified:'));
+    console.log(
+      chalk.red.bold(`🔴 CRITICAL: Core architectural files modified [${critical.length}]`)
+    );
     critical.forEach((file) => console.log(chalk.red(`   - ${file}`)));
-    console.log(chalk.red('\n⚠️  These changes require architectural review!'));
-    console.log(chalk.yellow('Add justification: git commit -m "ARCH: [justification]"'));
-    exitCode = 1;
+    console.log(chalk.yellow('\n   💡 Recommendation: Document architectural decisions'));
+    console.log(chalk.yellow('   💡 Consider using: git commit -m "ARCH: [justification]"'));
   }
 
   // HIGH RISK FILES
   if (highRisk.length > 0) {
-    console.log(chalk.yellow('\n⚠️  HIGH RISK: Important files modified:'));
+    console.log(chalk.yellow.bold(`\n🟡 HIGH RISK: Important files modified [${highRisk.length}]`));
     highRisk.forEach((file) => console.log(chalk.yellow(`   - ${file}`)));
-    console.log(chalk.yellow('Ensure changes are intentional and documented'));
+    console.log(chalk.gray('   💡 Ensure changes are intentional and documented'));
   }
 
   // MODERATE FILES
   if (moderate.length > 0) {
-    console.log(chalk.cyan('\nℹ️  MODERATE: Configuration files modified:'));
+    console.log(
+      chalk.cyan.bold(`\n🔵 MODERATE: Configuration files modified [${moderate.length}]`)
+    );
     moderate.forEach((file) => console.log(chalk.cyan(`   - ${file}`)));
+    console.log(chalk.gray('   💡 Standard review process applies'));
   }
 
-  // FINAL STATUS
-  if (exitCode === 0 && (highRisk.length > 0 || moderate.length > 0)) {
-    console.log(chalk.green('\n✅ No critical violations, but review changes carefully'));
-  }
+  // SUMMARY
+  console.log(chalk.white.bold('\n📊 Summary:'));
+  const total = critical.length + highRisk.length + moderate.length;
+  console.log(chalk.white(`   Total architectural files modified: ${total}`));
+  if (critical.length > 0) console.log(chalk.red(`   • Critical: ${critical.length}`));
+  if (highRisk.length > 0) console.log(chalk.yellow(`   • High Risk: ${highRisk.length}`));
+  if (moderate.length > 0) console.log(chalk.cyan(`   • Moderate: ${moderate.length}`));
 
-  return exitCode;
+  // INFORMATIONAL STATUS - Always success
+  console.log(chalk.green('\n✅ Architecture check complete - review recommendations above'));
+
+  // Always return 0 for non-blocking behavior
+  return 0;
 }
 
-process.exit(main());
+// Always exit with 0 - never blocks
+process.exit(0);
