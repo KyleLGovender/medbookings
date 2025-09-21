@@ -42,7 +42,8 @@ export async function createTestProvider(providerData = TEST_PROVIDERS.approved,
       userId: user.id,
       name: providerData.name,
       bio: providerData.bio,
-      languages: providerData.languages,
+      image: 'https://placeholder.com/150x150', // Default placeholder image
+      languages: providerData.languages as any,
       website: providerData.website,
       showPrice: providerData.showPrice,
       status: providerData.status as any,
@@ -54,21 +55,56 @@ export async function createTestProvider(providerData = TEST_PROVIDERS.approved,
 }
 
 export async function createTestService(serviceData = TEST_SERVICES.consultation) {
+  // Create a test provider type first if it doesn't exist
+  let providerType = await prisma.providerType.findFirst({
+    where: { name: 'General Practice' }
+  });
+
+  if (!providerType) {
+    providerType = await prisma.providerType.create({
+      data: {
+        name: 'General Practice',
+        description: 'General medical practitioners'
+      }
+    });
+  }
+
   return await prisma.service.create({
     data: {
       name: serviceData.name,
       description: serviceData.description,
       defaultDuration: serviceData.duration,
       defaultPrice: serviceData.defaultPrice,
+      providerTypeId: providerType.id,
     },
   });
 }
 
 export async function createTestLocation(locationData = TEST_LOCATIONS.capeTown) {
+  // Create a test organization first if it doesn't exist
+  let organization = await prisma.organization.findFirst({
+    where: { name: 'Test Medical Organization' }
+  });
+
+  if (!organization) {
+    organization = await prisma.organization.create({
+      data: {
+        name: 'Test Medical Organization',
+        description: 'Test organization for E2E tests',
+        status: 'ACTIVE',
+        email: 'test@organization.com',
+        phone: '+27123456789',
+      }
+    });
+  }
+
   return await prisma.location.create({
     data: {
       name: locationData.name,
+      organizationId: organization.id,
+      googlePlaceId: 'test-place-id-' + Date.now(),
       formattedAddress: locationData.address,
+      coordinates: { lat: -33.9249, lng: 18.4241 }, // Cape Town coordinates
       searchTerms: [locationData.city.toLowerCase(), locationData.province.toLowerCase()],
     },
   });
@@ -107,18 +143,11 @@ export async function createTestAvailability(
       duration: 30,
       price: 500,
       isOnlineAvailable: availabilityData.isOnline ?? true,
-      isInPerson: !availabilityData.isOnline ?? false,
+      isInPerson: !(availabilityData.isOnline ?? true),
     },
   });
 
-  // Link service to availability
-  await prisma.availableService.create({
-    data: {
-      availabilityId: availability.id,
-      serviceId,
-      serviceConfigId: serviceConfig.id,
-    },
-  });
+  // Service config already links service to availability
 
   return { availability, serviceConfig };
 }
@@ -152,6 +181,7 @@ export async function createTestBooking(
 export async function createCalculatedSlot(
   availabilityId: string,
   serviceConfigId: string,
+  serviceId: string,
   slotData: {
     startTime: string;
     endTime: string;
@@ -161,10 +191,12 @@ export async function createCalculatedSlot(
   return await prisma.calculatedAvailabilitySlot.create({
     data: {
       availabilityId,
+      serviceId,
       serviceConfigId,
       startTime: new Date(`${slotData.date}T${slotData.startTime}:00.000Z`),
       endTime: new Date(`${slotData.date}T${slotData.endTime}:00.000Z`),
       status: 'AVAILABLE',
+      lastCalculated: new Date(),
     },
   });
 }
@@ -195,15 +227,7 @@ export async function cleanupTestDataByEmail(emailPattern: string) {
     },
   });
 
-  await prisma.availableService.deleteMany({
-    where: {
-      availability: {
-        provider: {
-          user: { email: { contains: emailPattern } },
-        },
-      },
-    },
-  });
+  // availableService table doesn't exist - serviceConfig handles service-availability linking
 
   await prisma.availability.deleteMany({
     where: {
@@ -275,7 +299,7 @@ export async function setupCompleteTestScenario() {
     const startTime = `${hour.toString().padStart(2, '0')}:00`;
     const endTime = `${hour.toString().padStart(2, '0')}:30`;
 
-    const slot = await createCalculatedSlot(availability.id, serviceConfig.id, {
+    const slot = await createCalculatedSlot(availability.id, serviceConfig.id, service.id, {
       date: '2024-12-31',
       startTime,
       endTime,
