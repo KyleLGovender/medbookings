@@ -44,10 +44,20 @@ const MODERATE_FILES = [
 
 function getChangedFiles() {
   try {
+    console.log(chalk.gray('🔍 Comparing with master branch...'));
     const output = execSync('git diff master --name-only', { encoding: 'utf8' });
-    return output.split('\n').filter(Boolean);
+    const files = output.split('\n').filter(Boolean);
+
+    if (files.length === 0) {
+      console.log(chalk.gray('📍 No differences found from master'));
+    } else {
+      console.log(chalk.gray(`📍 Found ${files.length} changed file(s)`));
+    }
+
+    return files;
   } catch (error) {
     console.error(chalk.yellow('⚠️  Could not compare with master branch'));
+    console.error(chalk.gray(`   Reason: ${error.message}`));
     return [];
   }
 }
@@ -106,15 +116,12 @@ function main() {
       chalk.red.bold(`🔴 CRITICAL: Core architectural files modified [${critical.length}]`)
     );
     critical.forEach((file) => console.log(chalk.red(`   - ${file}`)));
-    console.log(chalk.yellow('\n   💡 Recommendation: Document architectural decisions'));
-    console.log(chalk.yellow('   💡 Consider using: git commit -m "ARCH: [justification]"'));
   }
 
   // HIGH RISK FILES
   if (highRisk.length > 0) {
     console.log(chalk.yellow.bold(`\n🟡 HIGH RISK: Important files modified [${highRisk.length}]`));
     highRisk.forEach((file) => console.log(chalk.yellow(`   - ${file}`)));
-    console.log(chalk.gray('   💡 Ensure changes are intentional and documented'));
   }
 
   // MODERATE FILES
@@ -123,7 +130,6 @@ function main() {
       chalk.cyan.bold(`\n🔵 MODERATE: Configuration files modified [${moderate.length}]`)
     );
     moderate.forEach((file) => console.log(chalk.cyan(`   - ${file}`)));
-    console.log(chalk.gray('   💡 Standard review process applies'));
   }
 
   // SUMMARY
@@ -142,4 +148,4 @@ function main() {
 }
 
 // Always exit with 0 - never blocks
-process.exit(0);
+process.exit(main());
