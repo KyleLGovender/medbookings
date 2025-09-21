@@ -137,13 +137,23 @@ else
   echo "  complete.md already exists - preserving existing content"
 fi
 
+echo "Creating workflow enabled flag..."
+echo "# This file indicates that the workflow system is enabled for this developer" > .workflow-enabled
+echo "# Created on: $(date)" >> .workflow-enabled
+echo "# This file is gitignored and personal to each developer" >> .workflow-enabled
+
 echo ""
-echo "Workflow system check complete!"
+echo "✅ Workflow system initialization complete!"
 echo ""
 echo "Summary:"
 echo "  Directories: Ready"
 echo "  Templates: $([ -f "workflow/reference/prd/prd-tasks-template.md" ] && [ -f "workflow/reference/issue/issue-tasks-template.md" ] && echo "Both present" || echo "Missing - check above")"
 echo "  Backlog: $([ -f "workflow/backlog.md" ] && echo "Exists" || echo "Created")"
 echo "  Complete: $([ -f "workflow/complete.md" ] && echo "Exists" || echo "Created")"
+echo "  Workflow Enabled: Yes"
 echo ""
+echo "✨ Your workflow system is now active!"
+echo "You can now run commands like 'npm run workflow:preflight' successfully."
+echo ""
+echo "Note: Other developers won't see these workflow files (they're gitignored)."
 echo "Your existing work has been preserved."

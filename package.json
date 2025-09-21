@@ -9,7 +9,7 @@
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write .",
     "fix": "npm run format && npm run lint",
-    "postinstall": "npx prisma generate && npm run workflow:init",
+    "postinstall": "npx prisma generate",
     "verceldb:migrate": "dotenv -e .env.vercel.production.local -- npx prisma migrate deploy",
     "verceldb:push": "dotenv -e .env.vercel.production.local -- npx prisma db push",
     "verceldb:studio": "dotenv -e .env.vercel.production.local -- npx prisma studio",

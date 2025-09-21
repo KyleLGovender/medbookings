@@ -29,9 +29,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "next.config.mjs",
-    "prisma/**/*.mts",
-    "workflow/**/*.md",
-    ".claude/**/*.md"
+    "prisma/**/*.mts"
   ],
   "exclude": ["node_modules"]
 }

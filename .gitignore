@@ -45,7 +45,11 @@ docker_data
 /logs/
 logs/
 
-
-
+# Personal workflow system
+workflow/
+.claude/
+.workflow-enabled
+architecture-report.txt
+setup-architecture-monitoring.sh
 
 e2e/.auth/user.json

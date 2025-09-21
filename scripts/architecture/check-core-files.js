@@ -2,6 +2,7 @@
 
 const { execSync } = require('child_process');
 const chalk = require('chalk');
+const path = require('path');
 
 const CRITICAL_FILES = [
   'prisma/schema.prisma',
@@ -51,17 +52,26 @@ function getChangedFiles() {
   }
 }
 
+function matchesPattern(file, pattern) {
+  if (pattern.includes('*')) {
+    const regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+    return new RegExp(regexPattern).test(file);
+  }
+  return file.includes(pattern);
+}
+
 function categorizeFiles(files) {
   const critical = [];
   const highRisk = [];
   const moderate = [];
 
   files.forEach((file) => {
-    if (CRITICAL_FILES.some((pattern) => file.includes(pattern))) {
+    // Check critical files
+    if (CRITICAL_FILES.some((pattern) => matchesPattern(file, pattern))) {
       critical.push(file);
-    } else if (HIGH_RISK_FILES.some((pattern) => file.includes(pattern))) {
+    } else if (HIGH_RISK_FILES.some((pattern) => matchesPattern(file, pattern))) {
       highRisk.push(file);
-    } else if (MODERATE_FILES.some((pattern) => file.includes(pattern))) {
+    } else if (MODERATE_FILES.some((pattern) => matchesPattern(file, pattern))) {
       moderate.push(file);
     }
   });
@@ -81,8 +91,15 @@ function main() {
 
   const { critical, highRisk, moderate } = categorizeFiles(changedFiles);
 
+  // If no architectural files changed, report success and exit
+  if (critical.length === 0 && highRisk.length === 0 && moderate.length === 0) {
+    console.log(chalk.green('✅ No architectural files modified'));
+    return 0;
+  }
+
   let exitCode = 0;
 
+  // CRITICAL FILES
   if (critical.length > 0) {
     console.log(chalk.red('❌ CRITICAL: Core architectural files modified:'));
     critical.forEach((file) => console.log(chalk.red(`   - ${file}`)));
@@ -91,17 +108,20 @@ function main() {
     exitCode = 1;
   }
 
+  // HIGH RISK FILES
   if (highRisk.length > 0) {
     console.log(chalk.yellow('\n⚠️  HIGH RISK: Important files modified:'));
     highRisk.forEach((file) => console.log(chalk.yellow(`   - ${file}`)));
     console.log(chalk.yellow('Ensure changes are intentional and documented'));
   }
 
+  // MODERATE FILES
   if (moderate.length > 0) {
     console.log(chalk.cyan('\nℹ️  MODERATE: Configuration files modified:'));
     moderate.forEach((file) => console.log(chalk.cyan(`   - ${file}`)));
   }
 
+  // FINAL STATUS
   if (exitCode === 0 && (highRisk.length > 0 || moderate.length > 0)) {
     console.log(chalk.green('\n✅ No critical violations, but review changes carefully'));
   }
