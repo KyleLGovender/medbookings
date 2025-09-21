@@ -1,0 +1,299 @@
+import { PrismaClient } from '@prisma/client';
+import { TEST_PROVIDERS, TEST_USERS, TEST_SERVICES, TEST_LOCATIONS } from '../fixtures/test-data-new';
+
+const prisma = new PrismaClient();
+
+/**
+ * Generate mock test data for different scenarios
+ */
+
+export async function createTestUser(userData = TEST_USERS.user) {
+  return await prisma.user.create({
+    data: {
+      id: userData.id,
+      email: userData.email,
+      name: userData.name,
+      role: userData.role,
+      emailVerified: new Date(),
+    },
+  });
+}
+
+export async function createTestProvider(providerData = TEST_PROVIDERS.approved, userId?: string) {
+  // Create user first if not provided
+  let user;
+  if (userId) {
+    user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new Error(`User with id ${userId} not found`);
+    }
+  } else {
+    user = await createTestUser({
+      id: providerData.id + '-user',
+      email: providerData.email,
+      name: providerData.name,
+      role: 'USER',
+    });
+  }
+
+  // Create provider profile
+  const provider = await prisma.provider.create({
+    data: {
+      userId: user.id,
+      name: providerData.name,
+      bio: providerData.bio,
+      languages: providerData.languages,
+      website: providerData.website,
+      showPrice: providerData.showPrice,
+      status: providerData.status as any,
+      approvedAt: providerData.status === 'APPROVED' ? new Date() : null,
+    },
+  });
+
+  return { user, provider };
+}
+
+export async function createTestService(serviceData = TEST_SERVICES.consultation) {
+  return await prisma.service.create({
+    data: {
+      name: serviceData.name,
+      description: serviceData.description,
+      defaultDuration: serviceData.duration,
+      defaultPrice: serviceData.defaultPrice,
+    },
+  });
+}
+
+export async function createTestLocation(locationData = TEST_LOCATIONS.capeTown) {
+  return await prisma.location.create({
+    data: {
+      name: locationData.name,
+      formattedAddress: locationData.address,
+      searchTerms: [locationData.city.toLowerCase(), locationData.province.toLowerCase()],
+    },
+  });
+}
+
+export async function createTestAvailability(
+  providerId: string,
+  serviceId: string,
+  availabilityData: {
+    date: string;
+    startTime: string;
+    endTime: string;
+    isOnline?: boolean;
+    locationId?: string;
+  }
+) {
+  // Create availability
+  const availability = await prisma.availability.create({
+    data: {
+      providerId,
+      startTime: new Date(`${availabilityData.date}T${availabilityData.startTime}:00.000Z`),
+      endTime: new Date(`${availabilityData.date}T${availabilityData.endTime}:00.000Z`),
+      status: 'ACCEPTED',
+      isOnlineAvailable: availabilityData.isOnline ?? true,
+      locationId: availabilityData.locationId,
+      isProviderCreated: true,
+      createdById: providerId,
+    },
+  });
+
+  // Create service config
+  const serviceConfig = await prisma.serviceAvailabilityConfig.create({
+    data: {
+      providerId,
+      serviceId,
+      duration: 30,
+      price: 500,
+      isOnlineAvailable: availabilityData.isOnline ?? true,
+      isInPerson: !availabilityData.isOnline ?? false,
+    },
+  });
+
+  // Link service to availability
+  await prisma.availableService.create({
+    data: {
+      availabilityId: availability.id,
+      serviceId,
+      serviceConfigId: serviceConfig.id,
+    },
+  });
+
+  return { availability, serviceConfig };
+}
+
+export async function createTestBooking(
+  slotId: string,
+  bookingData: {
+    guestName: string;
+    guestEmail: string;
+    guestPhone: string;
+    notes?: string;
+  }
+) {
+  return await prisma.booking.create({
+    data: {
+      slotId,
+      guestName: bookingData.guestName,
+      guestEmail: bookingData.guestEmail,
+      guestPhone: bookingData.guestPhone,
+      notes: bookingData.notes || '',
+      status: 'PENDING',
+      isGuestBooking: true,
+      isGuestSelfBooking: true,
+      price: 500,
+      isOnline: true,
+      isInPerson: false,
+    },
+  });
+}
+
+export async function createCalculatedSlot(
+  availabilityId: string,
+  serviceConfigId: string,
+  slotData: {
+    startTime: string;
+    endTime: string;
+    date: string;
+  }
+) {
+  return await prisma.calculatedAvailabilitySlot.create({
+    data: {
+      availabilityId,
+      serviceConfigId,
+      startTime: new Date(`${slotData.date}T${slotData.startTime}:00.000Z`),
+      endTime: new Date(`${slotData.date}T${slotData.endTime}:00.000Z`),
+      status: 'AVAILABLE',
+    },
+  });
+}
+
+/**
+ * Clean up test data by specific patterns
+ */
+export async function cleanupTestDataByEmail(emailPattern: string) {
+  console.log(`🧹 Cleaning test data for pattern: ${emailPattern}`);
+
+  // Delete in correct order to respect foreign key constraints
+  await prisma.booking.deleteMany({
+    where: {
+      OR: [
+        { guestEmail: { contains: emailPattern } },
+        { client: { email: { contains: emailPattern } } },
+      ],
+    },
+  });
+
+  await prisma.calculatedAvailabilitySlot.deleteMany({
+    where: {
+      availability: {
+        provider: {
+          user: { email: { contains: emailPattern } },
+        },
+      },
+    },
+  });
+
+  await prisma.availableService.deleteMany({
+    where: {
+      availability: {
+        provider: {
+          user: { email: { contains: emailPattern } },
+        },
+      },
+    },
+  });
+
+  await prisma.availability.deleteMany({
+    where: {
+      provider: {
+        user: { email: { contains: emailPattern } },
+      },
+    },
+  });
+
+  await prisma.serviceAvailabilityConfig.deleteMany({
+    where: {
+      provider: {
+        user: { email: { contains: emailPattern } },
+      },
+    },
+  });
+
+  await prisma.provider.deleteMany({
+    where: {
+      user: { email: { contains: emailPattern } },
+    },
+  });
+
+  await prisma.account.deleteMany({
+    where: {
+      user: { email: { contains: emailPattern } },
+    },
+  });
+
+  await prisma.user.deleteMany({
+    where: {
+      email: { contains: emailPattern },
+    },
+  });
+
+  console.log(`✅ Cleanup completed for pattern: ${emailPattern}`);
+}
+
+/**
+ * Setup complete test scenario with provider, services, and availability
+ */
+export async function setupCompleteTestScenario() {
+  console.log('🔧 Setting up complete test scenario...');
+
+  // Create test provider
+  const { user, provider } = await createTestProvider();
+
+  // Create test service
+  const service = await createTestService();
+
+  // Create test location
+  const location = await createTestLocation();
+
+  // Create availability with slots
+  const { availability, serviceConfig } = await createTestAvailability(
+    provider.id,
+    service.id,
+    {
+      date: '2024-12-31',
+      startTime: '09:00',
+      endTime: '17:00',
+      isOnline: true,
+    }
+  );
+
+  // Create some calculated slots
+  const slots = [];
+  for (let hour = 9; hour < 17; hour++) {
+    const startTime = `${hour.toString().padStart(2, '0')}:00`;
+    const endTime = `${hour.toString().padStart(2, '0')}:30`;
+
+    const slot = await createCalculatedSlot(availability.id, serviceConfig.id, {
+      date: '2024-12-31',
+      startTime,
+      endTime,
+    });
+    slots.push(slot);
+  }
+
+  console.log('✅ Complete test scenario setup completed');
+
+  return {
+    user,
+    provider,
+    service,
+    location,
+    availability,
+    serviceConfig,
+    slots,
+  };
+}
+
+export { prisma };
