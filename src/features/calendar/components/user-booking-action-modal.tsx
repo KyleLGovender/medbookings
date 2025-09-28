@@ -274,12 +274,14 @@ export function UserBookingActionModal({
             <div className="space-y-4">
               <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+                  <AlertTriangle className="mt-0.5 h-5 w-5 text-destructive" />
                   <div className="space-y-1">
                     <h4 className="font-medium text-destructive">Cancellation Policy</h4>
                     <p className="text-sm text-muted-foreground">
-                      Cancelling this booking may be subject to cancellation fees depending on the
-                      provider's policy and timing. You may be eligible for a partial or full refund.
+                      {
+                        // eslint-disable-next-line quotes
+                        "Cancelling this booking may be subject to cancellation fees depending on the provider's policy and timing. You may be eligible for a partial or full refund."
+                      }
                     </p>
                   </div>
                 </div>

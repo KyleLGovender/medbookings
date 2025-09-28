@@ -181,7 +181,7 @@ export function BookingSlotModal({
                   {slot.price && (
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">${slot.price.toFixed(2)}</span>
+                      <span className="font-medium">R{slot.price.toFixed(2)}</span>
                     </div>
                   )}
                 </div>

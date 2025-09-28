@@ -1,5 +1,11 @@
 import { PrismaClient } from '@prisma/client';
-import { TEST_PROVIDERS, TEST_USERS, TEST_SERVICES, TEST_LOCATIONS } from '../fixtures/test-data-new';
+
+import {
+  TEST_LOCATIONS,
+  TEST_PROVIDERS,
+  TEST_SERVICES,
+  TEST_USERS,
+} from '../fixtures/test-data-new';
 
 const prisma = new PrismaClient();
 
@@ -29,7 +35,7 @@ export async function createTestProvider(providerData = TEST_PROVIDERS.approved,
     }
   } else {
     user = await createTestUser({
-      id: providerData.id + '-user',
+      id: `${providerData.id}-user`,
       email: providerData.email,
       name: providerData.name,
       role: 'USER',
@@ -57,15 +63,15 @@ export async function createTestProvider(providerData = TEST_PROVIDERS.approved,
 export async function createTestService(serviceData = TEST_SERVICES.consultation) {
   // Create a test provider type first if it doesn't exist
   let providerType = await prisma.providerType.findFirst({
-    where: { name: 'General Practice' }
+    where: { name: 'General Practice' },
   });
 
   if (!providerType) {
     providerType = await prisma.providerType.create({
       data: {
         name: 'General Practice',
-        description: 'General medical practitioners'
-      }
+        description: 'General medical practitioners',
+      },
     });
   }
 
@@ -83,7 +89,7 @@ export async function createTestService(serviceData = TEST_SERVICES.consultation
 export async function createTestLocation(locationData = TEST_LOCATIONS.capeTown) {
   // Create a test organization first if it doesn't exist
   let organization = await prisma.organization.findFirst({
-    where: { name: 'Test Medical Organization' }
+    where: { name: 'Test Medical Organization' },
   });
 
   if (!organization) {
@@ -94,7 +100,7 @@ export async function createTestLocation(locationData = TEST_LOCATIONS.capeTown)
         status: 'ACTIVE',
         email: 'test@organization.com',
         phone: '+27123456789',
-      }
+      },
     });
   }
 
@@ -102,7 +108,7 @@ export async function createTestLocation(locationData = TEST_LOCATIONS.capeTown)
     data: {
       name: locationData.name,
       organizationId: organization.id,
-      googlePlaceId: 'test-place-id-' + Date.now(),
+      googlePlaceId: `test-place-id-${Date.now()}`,
       formattedAddress: locationData.address,
       coordinates: { lat: -33.9249, lng: 18.4241 }, // Cape Town coordinates
       searchTerms: [locationData.city.toLowerCase(), locationData.province.toLowerCase()],
@@ -282,16 +288,12 @@ export async function setupCompleteTestScenario() {
   const location = await createTestLocation();
 
   // Create availability with slots
-  const { availability, serviceConfig } = await createTestAvailability(
-    provider.id,
-    service.id,
-    {
-      date: '2024-12-31',
-      startTime: '09:00',
-      endTime: '17:00',
-      isOnline: true,
-    }
-  );
+  const { availability, serviceConfig } = await createTestAvailability(provider.id, service.id, {
+    date: '2024-12-31',
+    startTime: '09:00',
+    endTime: '17:00',
+    isOnline: true,
+  });
 
   // Create some calculated slots
   const slots = [];

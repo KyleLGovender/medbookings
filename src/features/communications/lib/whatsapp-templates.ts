@@ -2,8 +2,8 @@
  * WhatsApp templates for booking confirmations and notifications
  * Uses Twilio content templates (contentSid) for pre-approved templates
  */
-
 import twilio from 'twilio';
+
 import env from '@/config/env/server';
 
 interface BookingDetails {

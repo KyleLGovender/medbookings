@@ -202,4 +202,10 @@ export const generateTestBooking = (overrides: Partial<typeof TEST_BOOKINGS.stan
 
 // Backwards compatibility with existing test data
 export { TEST_USERS as LEGACY_TEST_USERS } from './test-data';
-export { AVAILABILITY_DATA, BOOKING_DATA, TIME_SLOTS, TEST_SCENARIOS, VALIDATION_RULES } from './test-data';
+export {
+  AVAILABILITY_DATA,
+  BOOKING_DATA,
+  TIME_SLOTS,
+  TEST_SCENARIOS,
+  VALIDATION_RULES,
+} from './test-data';

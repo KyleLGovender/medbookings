@@ -6,14 +6,12 @@ import {
   AlertCircle,
   Building2,
   Calendar,
-  CheckCircle,
   Clock,
   Mail,
   Settings,
   Shield,
   User,
   Users,
-  XCircle,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -168,7 +166,8 @@ export default async function DashboardPage() {
           </Avatar>
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Welcome back, {userName}!</h1>
-            <p className="text-gray-600">Here's your MedBookings dashboard overview</p>
+            {/* eslint-disable-next-line quotes */}
+            <p className="text-gray-600">{"Here's your MedBookings dashboard overview"}</p>
           </div>
         </div>
         <Button variant="outline" className="flex items-center gap-2" asChild>

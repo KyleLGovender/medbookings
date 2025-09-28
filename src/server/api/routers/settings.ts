@@ -1,5 +1,6 @@
 import { Languages } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
+import crypto from 'crypto';
 import { z } from 'zod';
 
 import {
@@ -7,6 +8,7 @@ import {
   communicationPreferencesSchema,
   providerBusinessSettingsSchema,
 } from '@/features/settings/types/schemas';
+import { sendEmailVerification } from '@/lib/communications/email';
 import { createTRPCRouter, protectedProcedure } from '@/server/trpc';
 
 export const settingsRouter = createTRPCRouter({
@@ -251,6 +253,72 @@ export const settingsRouter = createTRPCRouter({
     return {
       success: true,
       message: 'Account deletion request submitted. You will receive an email confirmation.',
+    };
+  }),
+
+  /*
+   * ====================================
+   * EMAIL VERIFICATION
+   * ====================================
+   */
+
+  /**
+   * Send email verification
+   */
+  sendEmailVerification: protectedProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    // Get user data
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        emailVerified: true,
+      },
+    });
+
+    if (!user) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'User not found',
+      });
+    }
+
+    if (!user.email) {
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message: 'No email address found for this account',
+      });
+    }
+
+    if (user.emailVerified) {
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message: 'Email address is already verified',
+      });
+    }
+
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    // Store verification token in database
+    await ctx.prisma.emailVerificationToken.create({
+      data: {
+        identifier: user.email,
+        token: verificationToken,
+        expires: expiresAt,
+      },
+    });
+
+    // Send verification email
+    await sendEmailVerification(user.email, verificationToken, user.name || undefined);
+
+    return {
+      success: true,
+      message: 'Verification email sent. Please check your inbox.',
     };
   }),
 });

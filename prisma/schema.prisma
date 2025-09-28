@@ -146,6 +146,11 @@ model Provider {
   trialReminderSent      Boolean                          @default(false) // Whether trial expiration reminder was sent
   trialConversionDate    DateTime?                        // When converted from trial to paid
   selfPaidBookingsEnabled  Boolean                        @default(false) // Whether provider can pay for their own bookings
+
+  // Reminder settings for bookings
+  reminderEnabled        Boolean                          @default(true)  // Whether to send reminders
+  reminderHours          Int                              @default(24)    // Hours before appointment to send reminder
+  reminderChannels       String[]                         @default(["email", "sms"]) // Channels to use for reminders
 }
 
 enum ProviderStatus {
@@ -1210,3 +1215,16 @@ enum ReviewStatus {
   FLAGGED // Flagged for review
   SYNCED // Synced with Google
 }
+
+// Email verification tokens
+model EmailVerificationToken {
+  id         String   @id @default(cuid())
+  identifier String   // Email address
+  token      String   @unique
+  expires    DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([token])
+  @@index([identifier])
+}
+

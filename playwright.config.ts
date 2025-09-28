@@ -41,10 +41,7 @@ export default defineConfig({
         storageState: 'e2e/.auth/user.json',
       },
       dependencies: ['setup'],
-      testIgnore: [
-        '**/auth.setup.ts',
-        '**/global-teardown.ts',
-      ],
+      testIgnore: ['**/auth.setup.ts', '**/global-teardown.ts'],
     },
 
     // Cleanup

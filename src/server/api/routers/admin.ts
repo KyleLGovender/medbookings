@@ -301,7 +301,73 @@ export const adminRouter = createTRPCRouter({
           rejectedAt: null,
           rejectionReason: null,
         },
+        include: {
+          user: true,
+        },
       });
+
+      // Send approval notification email
+      if (updatedProvider.user?.email || updatedProvider.email) {
+        try {
+          const { sendEmail } = await import('@/lib/communications/email');
+          const recipientEmail = updatedProvider.user?.email || updatedProvider.email || '';
+
+          await sendEmail({
+            to: recipientEmail,
+            subject: 'Your MedBookings Provider Profile Has Been Approved!',
+            html: `
+              <!DOCTYPE html>
+              <html>
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <title>Provider Profile Approved</title>
+                </head>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                    <h1 style="color: white; margin: 0;">Congratulations!</h1>
+                  </div>
+
+                  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
+                    <h2 style="color: #333; margin-bottom: 20px;">Your Provider Profile is Approved</h2>
+
+                    <p>Dear ${updatedProvider.name},</p>
+
+                    <p>Great news! Your provider profile on MedBookings has been reviewed and approved by our admin team.</p>
+
+                    <p><strong>What's next?</strong></p>
+                    <ul>
+                      <li>Subscribe to one of our plans to activate your profile and start accepting bookings</li>
+                      <li>Set up your availability calendar</li>
+                      <li>Configure your services and pricing</li>
+                      <li>Complete your profile with professional information</li>
+                    </ul>
+
+                    <p>Your approved profile status confirms that all your regulatory requirements have been verified. To start receiving patient bookings, you'll need to activate your profile by subscribing to one of our service plans.</p>
+
+                    <div style="text-align: center; margin-top: 30px;">
+                      <a href="${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}/provider-profile" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Go to Your Provider Profile</a>
+                    </div>
+
+                    <p style="margin-top: 20px;">If you have any questions, please don't hesitate to contact our support team.</p>
+                  </div>
+
+                  <div style="margin-top: 20px; padding: 20px; text-align: center; color: #666; font-size: 14px;">
+                    <p>© 2024 MedBookings. All rights reserved.</p>
+                    <p>Cape Town, South Africa</p>
+                  </div>
+                </body>
+              </html>
+            `,
+            text: `Congratulations! Your Provider Profile is Approved\n\nDear ${updatedProvider.name},\n\nGreat news! Your provider profile on MedBookings has been reviewed and approved by our admin team.\n\nWhat's next?\n- Subscribe to one of our plans to activate your profile\n- Set up your availability calendar\n- Configure your services and pricing\n- Complete your profile information\n\nVisit your provider profile: ${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}/provider-profile\n\nBest regards,\nThe MedBookings Team`,
+          });
+
+          console.log(`Provider approval email sent to: ${recipientEmail}`);
+        } catch (error) {
+          console.error('Failed to send provider approval email:', error);
+          // Don't fail the approval if email fails
+        }
+      }
 
       // Log admin action
       console.log('ADMIN_ACTION: Provider approved', {

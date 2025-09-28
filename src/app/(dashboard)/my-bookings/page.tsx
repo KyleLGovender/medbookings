@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
-import { getCurrentUser } from '@/lib/auth';
 import { UserBookingsPage } from '@/features/calendar/components/user-bookings-page';
+import { getCurrentUser } from '@/lib/auth';
 
 export const metadata = {
   title: 'My Bookings - MedBookings',

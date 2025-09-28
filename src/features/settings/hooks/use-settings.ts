@@ -8,8 +8,21 @@ export function useUpdateAccountSettings() {
   const utils = api.useUtils();
 
   return api.settings.updateAccount.useMutation({
-    onSuccess: () => {
-      // Invalidate and refetch settings data
+    onSuccess: (updatedUser, variables) => {
+      // Optimistically update the cache with the new user data
+      utils.settings.getAll.setData(undefined, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          user: updatedUser,
+        };
+      });
+
+      // Also invalidate profile data as it might be used elsewhere
+      utils.profile.invalidate();
+    },
+    onError: () => {
+      // Invalidate to refetch fresh data on error
       utils.settings.getAll.invalidate();
     },
   });
@@ -19,8 +32,18 @@ export function useUpdateCommunicationPreferences() {
   const utils = api.useUtils();
 
   return api.settings.updateCommunicationPreferences.useMutation({
-    onSuccess: () => {
-      // Invalidate and refetch settings data
+    onSuccess: (updatedPreferences) => {
+      // Optimistically update the cache with the new communication preferences
+      utils.settings.getAll.setData(undefined, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          communicationPreferences: updatedPreferences,
+        };
+      });
+    },
+    onError: () => {
+      // Invalidate to refetch fresh data on error
       utils.settings.getAll.invalidate();
     },
   });
@@ -41,4 +64,15 @@ export function useUpdateProviderBusinessSettings() {
 
 export function useRequestAccountDeletion() {
   return api.settings.requestAccountDeletion.useMutation();
+}
+
+export function useSendEmailVerification() {
+  const utils = api.useUtils();
+
+  return api.settings.sendEmailVerification.useMutation({
+    onSuccess: () => {
+      // Invalidate and refetch settings data
+      utils.settings.getAll.invalidate();
+    },
+  });
 }

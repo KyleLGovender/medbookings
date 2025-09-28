@@ -119,7 +119,8 @@ test.describe('Error Scenarios and Edge Cases', () => {
       const specialInputs = [
         '!@#$%^&*()',
         '<script>alert("test")</script>',
-        'Robert\'); DROP TABLE providers;--',
+        // eslint-disable-next-line quotes
+        "Robert'); DROP TABLE providers;--",
         '漢字', // Unicode characters
         '   ', // Only spaces
         'a'.repeat(1000), // Very long input

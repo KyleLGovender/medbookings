@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+
 import { LoginPage } from '../../fixtures/pages/login-page';
 
 test.describe('Authentication', () => {
@@ -32,7 +33,7 @@ test.describe('Authentication', () => {
     const testUser = {
       id: 'test-user-123',
       email: 'test@example.com',
-      name: 'Test User'
+      name: 'Test User',
     };
 
     await loginPage.performTestLogin(testUser);
@@ -57,7 +58,7 @@ test.describe('Authentication', () => {
     const testUser = {
       id: 'test-provider-123',
       email: 'provider@example.com',
-      name: 'Test Provider'
+      name: 'Test Provider',
     };
 
     // Login first
@@ -74,7 +75,7 @@ test.describe('Authentication', () => {
     const testUser = {
       id: 'test-user-logout',
       email: 'logout@example.com',
-      name: 'Logout Test User'
+      name: 'Logout Test User',
     };
 
     // Login first

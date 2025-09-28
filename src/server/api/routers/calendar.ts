@@ -115,6 +115,13 @@ export const calendarRouter = createTRPCRouter({
    * OPTION C: Complete database operations in tRPC procedure for automatic type inference
    */
   create: protectedProcedure.input(availabilityCreateSchema).mutation(async ({ ctx, input }) => {
+    // Check if user's email is verified
+    if (!ctx.session.user.emailVerified) {
+      throw new Error(
+        'Email verification required. Please verify your email address before managing calendar availability.'
+      );
+    }
+
     // 1. Call business logic validation
     const validation = await validateAvailabilityCreation(input);
 
@@ -272,6 +279,13 @@ export const calendarRouter = createTRPCRouter({
   update: protectedProcedure
     .input(updateAvailabilityDataSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user's email is verified
+      if (!ctx.session.user.emailVerified) {
+        throw new Error(
+          'Email verification required. Please verify your email address before managing calendar availability.'
+        );
+      }
+
       // 1. Call business logic validation
       const validation = await validateAvailabilityUpdate(input);
 
@@ -666,6 +680,13 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Check if user's email is verified
+      if (!ctx.session.user.emailVerified) {
+        throw new Error(
+          'Email verification required. Please verify your email address before managing calendar availability.'
+        );
+      }
+
       // Handle single availability deletion with scope
       if (input.ids.length === 1 && input.scope) {
         return deleteSingleAvailability(ctx, input.ids[0], input.scope);
@@ -1695,9 +1716,7 @@ export const calendarRouter = createTRPCRouter({
         const emailPromises = [];
 
         if (booking.guestEmail) {
-          emailPromises.push(
-            sendBookingConfirmationEmail(booking.guestEmail, guestEmailTemplate)
-          );
+          emailPromises.push(sendBookingConfirmationEmail(booking.guestEmail, guestEmailTemplate));
         }
 
         if (booking.slot?.availability?.provider?.user?.email) {
@@ -1718,10 +1737,7 @@ export const calendarRouter = createTRPCRouter({
 
         if (booking.slot?.availability?.provider?.whatsapp) {
           whatsappPromises.push(
-            sendProviderBookingWhatsApp(
-              booking.slot.availability.provider.whatsapp,
-              bookingDetails
-            )
+            sendProviderBookingWhatsApp(booking.slot.availability.provider.whatsapp, bookingDetails)
           );
         }
 
@@ -2003,6 +2019,46 @@ export const calendarRouter = createTRPCRouter({
       });
 
       return rescheduledBooking;
+    }),
+
+  /**
+   * Get provider's availabilities for the provider profile page
+   * Shows upcoming availability slots for a specific provider
+   */
+  getProviderAvailabilities: publicProcedure
+    .input(
+      z.object({
+        providerId: z.string(),
+        limit: z.number().min(1).max(50).optional().default(10),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const availabilities = await ctx.prisma.availability.findMany({
+        where: {
+          providerId: input.providerId,
+          startTime: {
+            gte: new Date(),
+          },
+        },
+        orderBy: {
+          startTime: 'asc',
+        },
+        take: input.limit,
+        include: {
+          availableServices: {
+            include: {
+              service: true,
+            },
+          },
+          organization: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+
+      return availabilities;
     }),
 });
 

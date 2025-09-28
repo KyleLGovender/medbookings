@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
-
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
 import { Calendar } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 import { UserBookingActionModal } from '@/features/calendar/components/user-booking-action-modal';
 import { UserBookingList } from '@/features/calendar/components/user-booking-list';
 import {
@@ -17,6 +16,7 @@ import {
   useUserBookings,
 } from '@/features/calendar/hooks/use-user-bookings';
 import { BookingUpdateData } from '@/features/calendar/types/booking-types';
+import { useToast } from '@/hooks/use-toast';
 import { type RouterOutputs } from '@/utils/api';
 
 type UserBooking = RouterOutputs['calendar']['getUserBookings'][number];
@@ -78,7 +78,9 @@ export function UserBookingsPage() {
       setSelectedBooking(null);
       // Redirect to provider calendar with booking context
       if (selectedBooking && selectedBooking.slot) {
-        router.push(`/calendar/${selectedBooking.slot.availability.provider.id}?reschedule=${selectedBooking.id}`);
+        router.push(
+          `/calendar/${selectedBooking.slot.availability.provider.id}?reschedule=${selectedBooking.id}`
+        );
       }
     },
     onError: (error) => {
@@ -130,7 +132,9 @@ export function UserBookingsPage() {
         setModalAction(null);
         setSelectedBooking(null);
         if (selectedBooking && selectedBooking.slot) {
-          router.push(`/calendar/${selectedBooking.slot.availability.provider.id}?reschedule=${selectedBooking.id}`);
+          router.push(
+            `/calendar/${selectedBooking.slot.availability.provider.id}?reschedule=${selectedBooking.id}`
+          );
         }
         break;
     }
@@ -175,8 +179,10 @@ export function UserBookingsPage() {
               </div>
               <CardTitle>No Bookings Yet</CardTitle>
               <CardDescription>
-                You haven't made any bookings yet. Start by browsing available providers and
-                booking your first appointment.
+                {
+                  // eslint-disable-next-line quotes
+                  "You haven't made any bookings yet. Start by browsing available providers and booking your first appointment."
+                }
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">

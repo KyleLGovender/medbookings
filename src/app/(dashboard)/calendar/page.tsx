@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 
-import { CalendarDays, Clock, TrendingUp, Users } from 'lucide-react';
+import { CalendarDays, Clock, FileText, TrendingUp, Users } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
@@ -147,7 +147,8 @@ export default function CalendarOverviewPage() {
       <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today's Appointments</CardTitle>
+            {/* eslint-disable-next-line quotes */}
+            <CardTitle className="text-sm font-medium">{"Today's Appointments"}</CardTitle>
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -202,21 +203,43 @@ export default function CalendarOverviewPage() {
           <CardContent className="space-y-4">
             <div className="grid gap-3">
               <a
+                href="/calendar"
+                className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-gray-50"
+              >
+                <div>
+                  <div className="font-medium">Manage Calendar</div>
+                  <div className="text-sm text-muted-foreground">View and manage your schedule</div>
+                </div>
+                <CalendarDays className="h-5 w-5 text-muted-foreground" />
+              </a>
+              <a
                 href="/availability"
                 className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-gray-50"
               >
                 <div>
-                  <div className="font-medium">Manage Availability</div>
-                  <div className="text-sm text-muted-foreground">Set your available time slots</div>
+                  <div className="font-medium">Set Availability</div>
+                  <div className="text-sm text-muted-foreground">
+                    Define your available time slots
+                  </div>
                 </div>
                 <Clock className="h-5 w-5 text-muted-foreground" />
+              </a>
+              <a
+                href="/my-bookings"
+                className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-gray-50"
+              >
+                <div>
+                  <div className="font-medium">View Bookings</div>
+                  <div className="text-sm text-muted-foreground">Manage patient appointments</div>
+                </div>
+                <FileText className="h-5 w-5 text-muted-foreground" />
               </a>
               <a
                 href="/calendar/availability"
                 className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-gray-50"
               >
                 <div>
-                  <div className="font-medium">Advanced Availability</div>
+                  <div className="font-medium">Advanced Settings</div>
                   <div className="text-sm text-muted-foreground">Bulk operations and rules</div>
                 </div>
                 <CalendarDays className="h-5 w-5 text-muted-foreground" />

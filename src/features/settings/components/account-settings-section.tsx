@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, Loader2, Mail } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -18,7 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 
-import { useUpdateAccountSettings } from '../hooks/use-settings';
+import { useSendEmailVerification, useUpdateAccountSettings } from '../hooks/use-settings';
 import { type AccountSettingsInput, accountSettingsSchema } from '../types/schemas';
 import { type UserSettings } from '../types/types';
 
@@ -29,6 +29,7 @@ interface AccountSettingsSectionProps {
 export default function AccountSettingsSection({ user }: AccountSettingsSectionProps) {
   const { toast } = useToast();
   const updateAccountSettings = useUpdateAccountSettings();
+  const sendEmailVerification = useSendEmailVerification();
 
   const form = useForm<AccountSettingsInput>({
     resolver: zodResolver(accountSettingsSchema),
@@ -56,16 +57,55 @@ export default function AccountSettingsSection({ user }: AccountSettingsSectionP
     }
   };
 
+  const handleSendVerification = async () => {
+    try {
+      await sendEmailVerification.mutateAsync();
+      toast({
+        title: 'Verification email sent',
+        description: 'Please check your inbox for the verification email.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Failed to send verification email',
+        description: 'Please try again later.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Email verification status */}
       {user.email && (
-        <Alert>
+        <Alert variant={user.emailVerified ? 'default' : 'destructive'}>
           <CheckCircle className="h-4 w-4" />
-          <AlertDescription>
-            {user.emailVerified
-              ? 'Your email address is verified.'
-              : 'Your email address is not verified. Check your inbox for a verification email.'}
+          <AlertDescription className="flex items-center justify-between">
+            <span>
+              {user.emailVerified
+                ? 'Your email address is verified.'
+                : 'Your email address is not verified. Check your inbox for a verification email.'}
+            </span>
+            {!user.emailVerified && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSendVerification}
+                disabled={sendEmailVerification.isPending}
+                className="ml-4"
+              >
+                {sendEmailVerification.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="mr-2 h-4 w-4" />
+                    Resend Verification
+                  </>
+                )}
+              </Button>
+            )}
           </AlertDescription>
         </Alert>
       )}

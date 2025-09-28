@@ -1,4 +1,5 @@
 import { Page, expect } from '@playwright/test';
+
 import { BasePage } from './base-page';
 
 export class LoginPage extends BasePage {
@@ -8,7 +9,8 @@ export class LoginPage extends BasePage {
 
   // Selectors
   private selectors = {
-    googleLoginButton: '[data-testid="google-login"], button:has-text("Google"), .google-signin-button',
+    googleLoginButton:
+      '[data-testid="google-login"], button:has-text("Google"), .google-signin-button',
     emailInput: '[data-testid="email"], input[name="email"], input[type="email"]',
     passwordInput: '[data-testid="password"], input[name="password"], input[type="password"]',
     loginButton: '[data-testid="login-button"], button[type="submit"], button:has-text("Sign")',
@@ -42,7 +44,7 @@ export class LoginPage extends BasePage {
       await route.fulfill({
         status: 302,
         headers: {
-          'Location': '/dashboard',
+          Location: '/dashboard',
           'Set-Cookie': `next-auth.session-token=mock-session-${userInfo.id}; Path=/; HttpOnly; SameSite=lax`,
         },
       });

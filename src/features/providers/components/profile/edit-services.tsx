@@ -222,18 +222,72 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
                                           R
                                         </span>
                                         <Input
-                                          type="number"
+                                          type="text"
                                           className="h-8 pl-6"
-                                          {...priceField}
+                                          inputMode="numeric"
+                                          pattern="[0-9]*"
+                                          value={
+                                            priceField.value === 0
+                                              ? ''
+                                              : priceField.value?.toString() || ''
+                                          }
                                           onChange={(e) => {
-                                            const value =
-                                              e.target.value === '' ? 0 : Number(e.target.value);
-                                            priceField.onChange(value);
-                                            // Also update the parent field to keep everything in sync
+                                            const rawValue = e.target.value;
+
+                                            // Allow empty string for better UX
+                                            if (rawValue === '') {
+                                              const newValue = 0;
+                                              priceField.onChange(newValue);
+                                              field.onChange({
+                                                ...serviceData,
+                                                price: newValue,
+                                              });
+                                              return;
+                                            }
+
+                                            // Only allow digits
+                                            if (!/^\d+$/.test(rawValue)) {
+                                              return; // Don't update if contains non-digits
+                                            }
+
+                                            const numValue = parseInt(rawValue, 10);
+                                            if (!isNaN(numValue) && numValue >= 0) {
+                                              priceField.onChange(numValue);
+                                              field.onChange({
+                                                ...serviceData,
+                                                price: numValue,
+                                              });
+                                            }
+                                          }}
+                                          onKeyPress={(e) => {
+                                            // Only allow digits
+                                            if (
+                                              !/[0-9]/.test(e.key) &&
+                                              ![
+                                                'Backspace',
+                                                'Delete',
+                                                'Tab',
+                                                'Enter',
+                                                'ArrowLeft',
+                                                'ArrowRight',
+                                              ].includes(e.key)
+                                            ) {
+                                              e.preventDefault();
+                                            }
+                                          }}
+                                          onBlur={(e) => {
+                                            // Ensure we have a valid number on blur
+                                            const value = e.target.value;
+                                            const finalValue =
+                                              value === '' || isNaN(parseInt(value, 10))
+                                                ? 0
+                                                : parseInt(value, 10);
+                                            priceField.onChange(finalValue);
                                             field.onChange({
                                               ...serviceData,
-                                              price: value,
+                                              price: finalValue,
                                             });
+                                            priceField.onBlur();
                                           }}
                                         />
                                       </div>

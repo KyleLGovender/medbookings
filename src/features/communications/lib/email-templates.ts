@@ -98,31 +98,43 @@ export function getGuestBookingConfirmationTemplate(booking: BookingDetails): Te
             <span class="value">${booking.serviceType}</span>
           </div>
 
-          ${booking.location ? `
+          ${
+            booking.location
+              ? `
           <div class="detail-row">
             <span class="label">Location:</span>
             <span class="value">${booking.location}</span>
           </div>
-          ` : ''}
+          `
+              : ''
+          }
 
-          ${booking.meetingLink ? `
+          ${
+            booking.meetingLink
+              ? `
           <div class="detail-row">
             <span class="label">Meeting Link:</span>
             <span class="value"><a href="${booking.meetingLink}" target="_blank">${booking.meetingLink}</a></span>
           </div>
-          ` : ''}
+          `
+              : ''
+          }
 
           <div class="detail-row">
             <span class="label">Booking Reference:</span>
             <span class="value">#${booking.bookingId.substring(0, 8).toUpperCase()}</span>
           </div>
 
-          ${booking.notes ? `
+          ${
+            booking.notes
+              ? `
           <div class="detail-row">
             <span class="label">Notes:</span>
             <span class="value">${booking.notes}</span>
           </div>
-          ` : ''}
+          `
+              : ''
+          }
         </div>
 
         <h3>📝 What's Next?</h3>
@@ -249,12 +261,16 @@ export function getProviderBookingNotificationTemplate(booking: BookingDetails):
             <span class="value">${booking.serviceType}</span>
           </div>
 
-          ${booking.location ? `
+          ${
+            booking.location
+              ? `
           <div class="detail-row">
             <span class="label">Location:</span>
             <span class="value">${booking.location}</span>
           </div>
-          ` : ''}
+          `
+              : ''
+          }
 
           <div class="detail-row">
             <span class="label">Booking Reference:</span>
@@ -275,19 +291,27 @@ export function getProviderBookingNotificationTemplate(booking: BookingDetails):
             <span class="value">${booking.guestEmail}</span>
           </div>
 
-          ${booking.guestPhone ? `
+          ${
+            booking.guestPhone
+              ? `
           <div class="detail-row">
             <span class="label">Phone:</span>
             <span class="value">${booking.guestPhone}</span>
           </div>
-          ` : ''}
+          `
+              : ''
+          }
 
-          ${booking.notes ? `
+          ${
+            booking.notes
+              ? `
           <div class="detail-row">
             <span class="label">Notes:</span>
             <span class="value">${booking.notes}</span>
           </div>
-          ` : ''}
+          `
+              : ''
+          }
         </div>
 
         <h3>📝 Next Steps</h3>
@@ -336,6 +360,156 @@ Next Steps:
 
 Best regards,
 MedBookings Team
+  `;
+
+  return { subject, html, text };
+}
+
+/**
+ * Admin notification for regulatory requirement updates
+ */
+export function getRequirementUpdateNotificationTemplate(data: {
+  providerName: string;
+  providerEmail: string;
+  providerId: string;
+  requirementType: string;
+  documentUrl: string;
+  notes?: string;
+  action: 'created' | 'updated';
+}): TemplateData {
+  const actionText = data.action === 'created' ? 'submitted' : 'updated';
+  const subject = `[Action Required] Provider ${data.providerName} ${actionText} regulatory document`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Regulatory Document Update</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #dc2626; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background-color: #f8fafc; padding: 20px; border-radius: 0 0 8px 8px; }
+        .details-box { background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc2626; }
+        .detail-row { margin: 10px 0; }
+        .label { font-weight: bold; color: #991b1b; }
+        .value { margin-left: 10px; }
+        .cta-button { background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 20px 0; }
+        .warning-box { background-color: #fef2f2; border: 1px solid #fca5a5; padding: 15px; border-radius: 6px; margin: 20px 0; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #64748b; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>⚠️ Regulatory Document Update</h1>
+        <p>Provider has ${actionText} a document requiring review</p>
+      </div>
+
+      <div class="content">
+        <p>Dear Admin Team,</p>
+
+        <p>A provider has ${actionText} a regulatory document that requires your review and approval.</p>
+
+        <div class="details-box">
+          <h3>📋 Submission Details</h3>
+
+          <div class="detail-row">
+            <span class="label">Provider Name:</span>
+            <span class="value">${data.providerName}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="label">Provider Email:</span>
+            <span class="value">${data.providerEmail}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="label">Provider ID:</span>
+            <span class="value">${data.providerId}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="label">Document Type:</span>
+            <span class="value">${data.requirementType}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="label">Document URL:</span>
+            <span class="value"><a href="${data.documentUrl}" target="_blank">View Document</a></span>
+          </div>
+
+          ${
+            data.notes
+              ? `
+          <div class="detail-row">
+            <span class="label">Provider Notes:</span>
+            <span class="value">${data.notes}</span>
+          </div>
+          `
+              : ''
+          }
+
+          <div class="detail-row">
+            <span class="label">Submission Time:</span>
+            <span class="value">${new Date().toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div class="warning-box">
+          <strong>⚡ Action Required:</strong>
+          <ul style="margin: 10px 0 0 20px;">
+            <li>Review the submitted document for compliance</li>
+            <li>Verify the document authenticity and validity</li>
+            <li>Update the requirement status in the admin portal</li>
+            <li>Add notes if rejection or additional information is needed</li>
+          </ul>
+        </div>
+
+        <center>
+          <a href="${process.env.NEXTAUTH_URL}/admin/providers/${data.providerId}" class="cta-button">
+            Review in Admin Portal
+          </a>
+        </center>
+
+        <div class="footer">
+          <p><strong>MedBookings Admin Portal</strong><br>
+          This is an automated notification from the regulatory compliance system.</p>
+
+          <p>Please review and process this submission within 24-48 hours to maintain provider satisfaction.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+Regulatory Document Update Notification
+
+A provider has ${actionText} a regulatory document requiring review.
+
+Provider Details:
+- Name: ${data.providerName}
+- Email: ${data.providerEmail}
+- Provider ID: ${data.providerId}
+
+Document Details:
+- Type: ${data.requirementType}
+- Document URL: ${data.documentUrl}
+${data.notes ? `- Notes: ${data.notes}` : ''}
+- Submission Time: ${new Date().toLocaleString()}
+
+Action Required:
+1. Review the submitted document for compliance
+2. Verify document authenticity and validity
+3. Update the requirement status in the admin portal
+4. Add notes if rejection or additional information is needed
+
+Review in Admin Portal: ${process.env.NEXTAUTH_URL}/admin/providers/${data.providerId}
+
+Please process this submission within 24-48 hours.
+
+MedBookings Admin Portal
   `;
 
   return { subject, html, text };

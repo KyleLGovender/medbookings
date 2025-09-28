@@ -145,11 +145,11 @@ echo "# This file is gitignored and personal to each developer" >> .workflow-ena
 echo ""
 echo "✅ Workflow system initialization complete!"
 echo ""
-echo "Summary:"
-echo "  Directories: Ready"
-echo "  Templates: $([ -f "workflow/reference/prd/prd-tasks-template.md" ] && [ -f "workflow/reference/issue/issue-tasks-template.md" ] && echo "Both present" || echo "Missing - check above")"
-echo "  Backlog: $([ -f "workflow/backlog.md" ] && echo "Exists" || echo "Created")"
-echo "  Complete: $([ -f "workflow/complete.md" ] && echo "Exists" || echo "Created")"
+echo "Summary:" >> .workflow-enabled
+echo "  Directories: Ready" >> .workflow-enabled
+echo "  Templates: $([ -f "workflow/reference/prd/prd-tasks-template.md" ] && [ -f "workflow/reference/issue/issue-tasks-template.md" ] && echo "Both present" || echo "Missing - check above")" >> .workflow-enabled
+echo "  Backlog: $([ -f "workflow/backlog.md" ] && echo "Exists" || echo "Created")" >> .workflow-enabled
+echo "  Complete: $([ -f "workflow/complete.md" ] && echo "Exists" || echo "Created")" >> .workflow-enabled
 echo "  Workflow Enabled: Yes"
 echo ""
 echo "✨ Your workflow system is now active!"

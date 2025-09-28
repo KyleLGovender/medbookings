@@ -10,6 +10,7 @@
 /coverage
 /test-results
 /playwright-report
+e2e/.auth/user.json
 
 # next.js
 /.next/
@@ -46,10 +47,6 @@ docker_data
 logs/
 
 # Personal workflow system
-workflow/
+/workflow/
 .claude/
 .workflow-enabled
-architecture-report.txt
-setup-architecture-monitoring.sh
-
-e2e/.auth/user.json

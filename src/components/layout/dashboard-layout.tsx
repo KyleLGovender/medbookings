@@ -2,10 +2,13 @@
 
 import { usePathname } from 'next/navigation';
 import React from 'react';
+import { useState } from 'react';
 
+import { Home, Mail, X } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 
 import { AppSidebar } from '@/components/app-sidebar';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Breadcrumb,
   BreadcrumbEllipsis,
@@ -15,6 +18,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -488,6 +492,10 @@ const createNavData = (
             url: '/admin',
             items: [
               {
+                title: 'Admin Dashboard',
+                url: '/admin',
+              },
+              {
                 title: 'Providers',
                 url: '/admin/providers',
               },
@@ -504,9 +512,18 @@ const createNavData = (
       url: '/profile',
       items: [
         {
-          title: 'Profile Overview',
+          title: 'Account Profile',
           url: '/profile',
         },
+        // Add Provider Profile link if user is a provider (regardless of status)
+        ...(providers.length > 0
+          ? [
+              {
+                title: 'Provider Profile',
+                url: '/provider-profile',
+              },
+            ]
+          : []),
       ],
     },
     ...(organizations.length > 0
@@ -531,7 +548,10 @@ const createNavData = (
             ],
           }))
       : []),
-    ...(providers.length > 0 && providers[0]
+    // Show Calendar only for approved/active providers
+    ...(providers.length > 0 &&
+    providers[0] &&
+    (providers[0].status === 'APPROVED' || providers[0].status === 'ACTIVE')
       ? [
           {
             title: 'Calendar',
@@ -547,6 +567,50 @@ const createNavData = (
       : []),
   ],
 });
+
+// Email Verification Banner Component
+function EmailVerificationBanner() {
+  const { data: session } = useSession();
+  const [isDismissed, setIsDismissed] = useState(false);
+
+  // Don't show banner if user is verified or banner is dismissed
+  if (!session?.user || session.user.emailVerified || isDismissed) {
+    return null;
+  }
+
+  return (
+    <Alert className="mx-4 mt-4 border-orange-200 bg-orange-50">
+      <Mail className="h-4 w-4 text-orange-600" />
+      <AlertDescription className="flex items-center justify-between">
+        <div className="flex-1 pr-4">
+          <span className="font-medium text-orange-800">Email verification required.</span>{' '}
+          <span className="text-orange-700">
+            Please check your email and verify your account to access all features like Provider
+            Registration, Calendar Management, and Bookings.
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => (window.location.href = '/verify-email')}
+            className="border-orange-200 text-orange-700 hover:bg-orange-100"
+          >
+            Verify Now
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsDismissed(true)}
+            className="h-8 w-8 p-0 text-orange-600 hover:bg-orange-100"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </AlertDescription>
+    </Alert>
+  );
+}
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -578,18 +642,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               href="/"
               className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
-              Back to Site
+              <Home className="h-4 w-4" />
+              Back to Home
             </a>
           </div>
         </header>
+        <EmailVerificationBanner />
         <div className="flex-1 overflow-y-auto">
           <div className="flex flex-col gap-4 p-4 pb-8">{children}</div>
         </div>

@@ -19,6 +19,13 @@ export function useDeleteProvider(options?: {
       utils.providers.getById.invalidate({ id: variables.id });
       utils.providers.search.invalidate();
 
+      // Invalidate getByUserId queries - this ensures Settings page updates reactively
+      utils.providers.getByUserId.invalidate();
+
+      // Also invalidate profile and settings queries as they may depend on provider status
+      utils.profile.invalidate();
+      utils.settings.invalidate();
+
       // Call the user-provided onSuccess callback if it exists
       options?.onSuccess?.(data);
     },

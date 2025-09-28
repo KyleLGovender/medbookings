@@ -167,20 +167,56 @@ export function ServicesSection({
                                             R
                                           </span>
                                           <Input
-                                            type="number"
+                                            type="text"
                                             className="h-8 pl-6"
-                                            step="5"
-                                            value={field.value}
+                                            inputMode="numeric"
+                                            pattern="[0-9]*"
+                                            value={
+                                              field.value === 0 ? '' : field.value?.toString() || ''
+                                            }
                                             onChange={(e) => {
-                                              // Convert to number first
-                                              const rawValue =
-                                                e.target.value === '' ? 0 : Number(e.target.value);
-                                              // Then round to nearest 5
-                                              const roundedValue = Math.round(rawValue / 5) * 5;
-                                              // Ensure we're passing a number, not a string
-                                              field.onChange(roundedValue);
+                                              const rawValue = e.target.value;
+
+                                              // Allow empty string for better UX
+                                              if (rawValue === '') {
+                                                field.onChange(0);
+                                                return;
+                                              }
+
+                                              // Only allow digits
+                                              if (!/^\d+$/.test(rawValue)) {
+                                                return; // Don't update if contains non-digits
+                                              }
+
+                                              const numValue = parseInt(rawValue, 10);
+                                              if (!isNaN(numValue) && numValue >= 0) {
+                                                field.onChange(numValue);
+                                              }
                                             }}
-                                            onBlur={field.onBlur}
+                                            onKeyPress={(e) => {
+                                              // Only allow digits
+                                              if (
+                                                !/[0-9]/.test(e.key) &&
+                                                ![
+                                                  'Backspace',
+                                                  'Delete',
+                                                  'Tab',
+                                                  'Enter',
+                                                  'ArrowLeft',
+                                                  'ArrowRight',
+                                                ].includes(e.key)
+                                              ) {
+                                                e.preventDefault();
+                                              }
+                                            }}
+                                            onBlur={(e) => {
+                                              // Ensure we have a valid number on blur
+                                              const value = e.target.value;
+                                              if (value === '' || isNaN(parseInt(value, 10))) {
+                                                field.onChange(0);
+                                              }
+                                              field.onBlur();
+                                            }}
                                           />
                                         </div>
                                       </FormControl>

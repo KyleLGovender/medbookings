@@ -5,7 +5,8 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Starting PRODUCTION database seed...');
   console.log('🎯 Creating essential platform data structures');
-  console.log('⚠️  NO sample users/providers will be created');
+  console.log('👤 Creating MedBookings Administrator account');
+  console.log('⚠️  NO sample providers will be created (only admin user)');
 
   // Clear all existing data in correct order (children first, then parents)
   console.log('Clearing existing data...');
@@ -27,6 +28,12 @@ async function main() {
 
   await prisma.providerType.deleteMany();
   console.log('Cleared ProviderType table');
+
+  // Admin user note
+  console.log('ℹ️  MedBookings Administrator:');
+  console.log('   Configure ADMIN_EMAILS in .env file');
+  console.log('   Users with configured emails will be auto-promoted to ADMIN role on sign-in');
+  console.log('   Example: ADMIN_EMAILS=admin@example.com,manager@example.com');
 
   // Create provider types
   try {
@@ -773,13 +780,14 @@ async function main() {
 
   console.log('🎉 PRODUCTION seed completed successfully!');
   console.log('📊 Summary:');
+  console.log('  - Admin user configured (info@medbookings.co.za)');
   console.log('  - 7 Provider Types created');
   console.log('  - 18 Services created');
   console.log('  - 22 Requirement Types created');
-  console.log('  - 0 Sample users/providers (production-safe)');
+  console.log('  - 0 Sample providers (production-safe)');
   console.log('');
   console.log('✅ Platform is ready for real healthcare providers to register!');
-  console.log('🔐 All essential data structures in place');
+  console.log('🔐 Admin account ready for provider approvals');
   console.log('🚀 Ready for production deployment');
 }
 

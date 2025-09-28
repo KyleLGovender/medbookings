@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+
 import { BookingPage, type GuestInfo } from '../../fixtures/pages/booking-page';
 
 test.describe('Guest Booking Flow', () => {
@@ -16,8 +17,10 @@ test.describe('Guest Booking Flow', () => {
     await page.waitForTimeout(2000); // Wait for search to complete
 
     // Either providers are shown or "no results" message
-    const hasProviders = await page.locator('.provider-card, [data-testid*="provider"]').count() > 0;
-    const hasNoResults = await page.locator('text=No providers found, text=No results').count() > 0;
+    const hasProviders =
+      (await page.locator('.provider-card, [data-testid*="provider"]').count()) > 0;
+    const hasNoResults =
+      (await page.locator('text=No providers found, text=No results').count()) > 0;
 
     expect(hasProviders || hasNoResults).toBeTruthy();
   });
@@ -57,7 +60,8 @@ test.describe('Guest Booking Flow', () => {
       await bookingPage.clickElement(bookingPage['selectors'].confirmButton);
 
       // Should show validation errors
-      const hasValidationError = await page.locator('.error, [role="alert"], .invalid').count() > 0;
+      const hasValidationError =
+        (await page.locator('.error, [role="alert"], .invalid').count()) > 0;
       expect(hasValidationError).toBeTruthy();
     }
   });
@@ -67,7 +71,7 @@ test.describe('Guest Booking Flow', () => {
       name: 'John Doe',
       email: 'john.doe@example.com',
       phone: '+27123456789',
-      notes: 'Test booking notes'
+      notes: 'Test booking notes',
     };
 
     // Try to navigate to booking form
@@ -105,11 +109,11 @@ test.describe('Guest Booking Flow', () => {
                 id: 'test-booking-123',
                 guestName: 'John Doe',
                 guestEmail: 'john.doe@example.com',
-                status: 'PENDING'
-              }
-            }
-          }
-        })
+                status: 'PENDING',
+              },
+            },
+          },
+        }),
       });
     });
 
@@ -120,8 +124,10 @@ test.describe('Guest Booking Flow', () => {
     });
 
     // Look for confirmation elements
-    const hasConfirmation = await page.locator('.confirmation, .success, [data-testid*="success"]').count() > 0;
-    const hasBookingDetails = await page.locator('.booking-details, [data-testid*="booking"]').count() > 0;
+    const hasConfirmation =
+      (await page.locator('.confirmation, .success, [data-testid*="success"]').count()) > 0;
+    const hasBookingDetails =
+      (await page.locator('.booking-details, [data-testid*="booking"]').count()) > 0;
 
     // At least one confirmation element should exist
     expect(hasConfirmation || hasBookingDetails || true).toBeTruthy();
@@ -148,7 +154,7 @@ test.describe('Guest Booking Flow', () => {
     const guestInfo: GuestInfo = {
       name: 'Test User',
       email: 'test@example.com',
-      phone: '+27123456789'
+      phone: '+27123456789',
     };
 
     // If booking form exists and can be accessed

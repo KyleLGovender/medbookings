@@ -1,4 +1,5 @@
 import { FullConfig } from '@playwright/test';
+
 import { cleanTestData } from './utils/database';
 
 async function globalTeardown(config: FullConfig) {

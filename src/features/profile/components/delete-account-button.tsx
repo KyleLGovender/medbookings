@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { signOut } from 'next-auth/react';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +33,11 @@ export function DeleteAccountButton({ hasServiceProvider }: { hasServiceProvider
         title: 'Account deleted',
         description: 'Your account has been successfully deleted.',
       });
+
+      // Sign out the user and redirect to home page
+      await signOut({ redirect: false });
       router.push('/');
+      router.refresh(); // Force a refresh to update the UI
     } catch (error) {
       toast({
         variant: 'destructive',

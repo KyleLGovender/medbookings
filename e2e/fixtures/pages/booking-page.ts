@@ -1,4 +1,5 @@
 import { Page, expect } from '@playwright/test';
+
 import { BasePage } from './base-page';
 
 export interface GuestInfo {
@@ -15,17 +16,23 @@ export class BookingPage extends BasePage {
 
   // Selectors
   private selectors = {
-    locationInput: '[data-testid="location-input"], input[name="location"], input[placeholder*="location" i]',
-    serviceInput: '[data-testid="service-input"], input[name="service"], input[placeholder*="service" i]',
+    locationInput:
+      '[data-testid="location-input"], input[name="location"], input[placeholder*="location" i]',
+    serviceInput:
+      '[data-testid="service-input"], input[name="service"], input[placeholder*="service" i]',
     searchButton: '[data-testid="search-button"], button[type="submit"], button:has-text("Search")',
-    providerCard: (name: string) => `[data-testid="provider-${name}"], .provider-card:has-text("${name}")`,
+    providerCard: (name: string) =>
+      `[data-testid="provider-${name}"], .provider-card:has-text("${name}")`,
     dateSlot: (date: string) => `[data-testid="date-${date}"], .date-slot[data-date="${date}"]`,
     timeSlot: (time: string) => `[data-testid="time-${time}"], .time-slot[data-time="${time}"]`,
     guestNameInput: '[data-testid="guest-name"], input[name="guestName"], input[name="clientName"]',
-    guestEmailInput: '[data-testid="guest-email"], input[name="guestEmail"], input[name="clientEmail"]',
-    guestPhoneInput: '[data-testid="guest-phone"], input[name="guestPhone"], input[name="clientPhone"]',
+    guestEmailInput:
+      '[data-testid="guest-email"], input[name="guestEmail"], input[name="clientEmail"]',
+    guestPhoneInput:
+      '[data-testid="guest-phone"], input[name="guestPhone"], input[name="clientPhone"]',
     notesInput: '[data-testid="notes"], textarea[name="notes"]',
-    confirmButton: '[data-testid="confirm-booking"], button:has-text("Confirm"), button:has-text("Book")',
+    confirmButton:
+      '[data-testid="confirm-booking"], button:has-text("Confirm"), button:has-text("Book")',
     successMessage: '[data-testid="booking-success"], .success-message, .booking-confirmation',
     errorMessage: '[data-testid="booking-error"], .error-message',
   };

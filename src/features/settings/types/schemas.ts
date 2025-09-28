@@ -34,6 +34,7 @@ export const passwordChangeSchema = z
     confirmPassword: z.string().min(1, 'Please confirm your password'),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
+    // eslint-disable-next-line quotes
     message: "Passwords don't match",
     path: ['confirmPassword'],
   });

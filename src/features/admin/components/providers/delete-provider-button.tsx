@@ -58,7 +58,7 @@ export function DeleteProviderButton({ providerId }: DeleteProviderButtonProps) 
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>OK</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={deleteProviderMutation.isPending}

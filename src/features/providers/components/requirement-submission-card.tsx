@@ -76,13 +76,29 @@ export function RequirementSubmissionCard({
 
     if (validationType === 'BOOLEAN') {
       const isTrue = value === 'true' || value === true;
+      const isApproved = submission.status === RequirementsValidationStatus.APPROVED;
+      const isRejected =
+        submission.status === RequirementsValidationStatus.REJECTED ||
+        submission.status?.includes('REJECT');
+
+      // Use status-based icons for consistency with the status badge
+      let icon;
+      if (isApproved) {
+        icon = <Check className="h-5 w-5 text-green-500" />;
+      } else if (isRejected) {
+        icon = <X className="h-5 w-5 text-red-500" />;
+      } else {
+        // For pending status, show a neutral icon based on the boolean value
+        icon = isTrue ? (
+          <Check className="h-5 w-5 text-gray-500" />
+        ) : (
+          <X className="h-5 w-5 text-gray-500" />
+        );
+      }
+
       return (
         <>
-          {isTrue ? (
-            <Check className="h-5 w-5 text-green-500" />
-          ) : (
-            <X className="h-5 w-5 text-red-500" />
-          )}
+          {icon}
           <div>
             <p className="font-medium">{isTrue ? 'Yes' : 'No'}</p>
             <p className="text-xs text-muted-foreground">
@@ -157,7 +173,10 @@ export function RequirementSubmissionCard({
           </h3>
         </div>
         <div className="scale-110">
-          <StatusBadge status={submission.status as any} />
+          <StatusBadge
+            status={submission.status as any}
+            validationType={submission.requirementType?.validationType}
+          />
         </div>
       </div>
 

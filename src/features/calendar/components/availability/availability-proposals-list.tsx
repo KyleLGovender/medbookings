@@ -286,7 +286,7 @@ function ProposalCard({
                       </span>
                     </div>
                     {proposal.provider.showPrice && (
-                      <span className="font-medium">${serviceConfig.price.toString()}</span>
+                      <span className="font-medium">R{serviceConfig.price.toString()}</span>
                     )}
                   </div>
                 )

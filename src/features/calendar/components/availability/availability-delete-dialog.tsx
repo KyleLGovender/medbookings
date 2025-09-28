@@ -186,7 +186,7 @@ export function AvailabilityDeleteDialog({
                         {' - '}
                         {serviceConfig.duration} min
                         {serviceConfig.provider?.showPrice && serviceConfig.price && (
-                          <span> - ${serviceConfig.price.toString()}</span>
+                          <span> - R{serviceConfig.price.toString()}</span>
                         )}
                       </div>
                     ))}

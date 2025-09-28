@@ -34,7 +34,7 @@
     "workflow:init": "sh scripts/workflow/workflow-init.sh",
     "workflow:check": "node scripts/workflow/check-workflow.js",
     "git:check": "node scripts/workflow/check-git.js",
-    "workflow:preflight": "npm run git:check && npm run workflow:check && npm run build",
+    "workflow:preflight": "npm run git:check && npm run workflow:check && npm run build && npm run lint",
     "architecture:check": "git fetch origin && node scripts/architecture/check-core-files.js",
     "architecture:report": "node scripts/architecture/check-core-files.js > architecture-report.txt"
   },

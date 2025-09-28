@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DatePickerWithInput } from '@/components/ui/date-picker-with-input';
 import {
   Form,
   FormControl,
@@ -295,7 +295,7 @@ export function AvailabilityProposalForm({
                   <FormItem>
                     <FormLabel>Date</FormLabel>
                     <FormControl>
-                      <DatePicker
+                      <DatePickerWithInput
                         date={ensureDate(field.value)}
                         onChange={(date) => {
                           if (date) {
@@ -576,7 +576,7 @@ export function AvailabilityProposalForm({
               <ServiceSelectionSection
                 providerId={providerId}
                 organizationId={organizationId}
-                availableServices={(availableServices || []).map((s) => ({
+                availableServices={(availableServices || []).map((s: any) => ({
                   ...s,
                   description: s.description ?? undefined,
                 }))}

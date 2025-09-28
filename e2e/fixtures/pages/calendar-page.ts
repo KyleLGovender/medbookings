@@ -1,4 +1,5 @@
 import { Page, expect } from '@playwright/test';
+
 import { BasePage } from './base-page';
 
 export interface AvailabilitySlot {
@@ -17,13 +18,17 @@ export class CalendarPage extends BasePage {
 
   // Selectors
   private selectors = {
-    createAvailabilityButton: '[data-testid="create-availability"], button:has-text("Create"), .create-btn',
+    createAvailabilityButton:
+      '[data-testid="create-availability"], button:has-text("Create"), .create-btn',
     dateInput: '[data-testid="date"], input[name="date"], input[type="date"]',
-    startTimeInput: '[data-testid="start-time"], input[name="startTime"], input[type="time"]:first-of-type',
-    endTimeInput: '[data-testid="end-time"], input[name="endTime"], input[type="time"]:last-of-type',
+    startTimeInput:
+      '[data-testid="start-time"], input[name="startTime"], input[type="time"]:first-of-type',
+    endTimeInput:
+      '[data-testid="end-time"], input[name="endTime"], input[type="time"]:last-of-type',
     locationSelect: '[data-testid="location"], select[name="location"], .location-select',
     onlineToggle: '[data-testid="online-toggle"], input[name="isOnline"], .online-checkbox',
-    serviceCheckbox: (service: string) => `[data-testid="service-${service}"], input[value="${service}"]`,
+    serviceCheckbox: (service: string) =>
+      `[data-testid="service-${service}"], input[value="${service}"]`,
     saveButton: '[data-testid="save"], button:has-text("Save"), button[type="submit"]',
     cancelButton: '[data-testid="cancel"], button:has-text("Cancel"), .cancel-btn',
     successMessage: '[data-testid="success"], .success-message, .alert-success',
@@ -136,7 +141,10 @@ export class CalendarPage extends BasePage {
    */
   async getAvailabilityCards() {
     const cards = this.page.locator(this.selectors.availabilityCard);
-    await cards.first().waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+    await cards
+      .first()
+      .waitFor({ state: 'visible', timeout: 5000 })
+      .catch(() => {});
 
     const count = await cards.count();
     const availabilities = [];
@@ -201,7 +209,7 @@ export class CalendarPage extends BasePage {
    */
   async verifyAvailabilityInCalendar(expectedText: string) {
     const availabilities = await this.getAvailabilityCards();
-    const found = availabilities.some(av => av.text.includes(expectedText));
+    const found = availabilities.some((av) => av.text.includes(expectedText));
     expect(found).toBeTruthy();
   }
 

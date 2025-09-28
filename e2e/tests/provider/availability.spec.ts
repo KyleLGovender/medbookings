@@ -1,5 +1,6 @@
-import { test, expect } from '@playwright/test';
-import { CalendarPage, type AvailabilitySlot } from '../../fixtures/pages/calendar-page';
+import { expect, test } from '@playwright/test';
+
+import { type AvailabilitySlot, CalendarPage } from '../../fixtures/pages/calendar-page';
 import { LoginPage } from '../../fixtures/pages/login-page';
 
 test.describe('Provider Availability Management', () => {
@@ -14,7 +15,7 @@ test.describe('Provider Availability Management', () => {
     const providerUser = {
       id: 'test-provider-456',
       email: 'provider@test.com',
-      name: 'Test Provider'
+      name: 'Test Provider',
     };
 
     await loginPage.performTestLogin(providerUser);
@@ -61,7 +62,7 @@ test.describe('Provider Availability Management', () => {
       startTime: '09:00',
       endTime: '17:00',
       isOnline: true,
-      services: []
+      services: [],
     };
 
     await calendarPage.fillAvailabilityForm(testSlot);
@@ -90,7 +91,7 @@ test.describe('Provider Availability Management', () => {
       await page.waitForTimeout(1000);
 
       // Either validation errors appear or form remains visible
-      const hasErrors = await page.locator('.error, [role="alert"], .invalid').count() > 0;
+      const hasErrors = (await page.locator('.error, [role="alert"], .invalid').count()) > 0;
       const formStillVisible = await saveButton.isVisible();
 
       expect(hasErrors || formStillVisible).toBeTruthy();
@@ -104,8 +105,12 @@ test.describe('Provider Availability Management', () => {
     await page.waitForTimeout(2000);
 
     // Should show either availability cards or empty state
-    const availabilityCards = await page.locator(calendarPage['selectors'].availabilityCard).count();
-    const emptyState = await page.locator('text=No availability, text=No slots, text=Create your first').count() > 0;
+    const availabilityCards = await page
+      .locator(calendarPage['selectors'].availabilityCard)
+      .count();
+    const emptyState =
+      (await page.locator('text=No availability, text=No slots, text=Create your first').count()) >
+      0;
 
     expect(availabilityCards > 0 || emptyState).toBeTruthy();
   });
@@ -134,14 +139,14 @@ test.describe('Provider Availability Management', () => {
         date: '2024-12-25',
         startTime: '08:00',
         endTime: '12:00',
-        isOnline: false
+        isOnline: false,
       },
       {
         date: '2024-12-26',
         startTime: '14:30',
         endTime: '18:30',
-        isOnline: true
-      }
+        isOnline: true,
+      },
     ];
 
     for (const slot of testSlots) {
@@ -182,9 +187,9 @@ test.describe('Provider Availability Management', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           error: {
-            message: 'Internal server error'
-          }
-        })
+            message: 'Internal server error',
+          },
+        }),
       });
     });
 
@@ -193,7 +198,7 @@ test.describe('Provider Availability Management', () => {
     const testSlot: AvailabilitySlot = {
       date: '2024-12-31',
       startTime: '10:00',
-      endTime: '11:00'
+      endTime: '11:00',
     };
 
     await calendarPage.fillAvailabilityForm(testSlot);

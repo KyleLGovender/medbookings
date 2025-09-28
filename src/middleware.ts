@@ -17,32 +17,38 @@ const ROUTE_PERMISSIONS = {
   // Admin routes
   '/admin': ['ADMIN', 'SUPER_ADMIN'],
 
-  // Organization routes
-  '/organizations/new': ['USER'], // Any authenticated user can create
-  '/organizations/[id]': 'ORGANIZATION_MEMBER', // Must be member of specific org
-  '/organizations/[id]/edit': 'ORGANIZATION_ADMIN', // Must be org admin/owner
-  '/organizations/[id]/members': 'ORGANIZATION_ADMIN',
-  '/organizations/[id]/manage-calendar': 'ORGANIZATION_MANAGER',
+  // Organization routes (VERIFIED + ADMIN/SUPER_ADMIN only)
+  '/organizations/new': ['ADMIN', 'SUPER_ADMIN'], // Only admins can manage organizations
+  '/organizations/[id]': ['ADMIN', 'SUPER_ADMIN'], // Only admins can view org details
+  '/organizations/[id]/edit': ['ADMIN', 'SUPER_ADMIN'], // Only admins can edit orgs
+  '/organizations/[id]/members': ['ADMIN', 'SUPER_ADMIN'],
+  '/organizations/[id]/manage-calendar': ['ADMIN', 'SUPER_ADMIN'],
 
-  // Provider routes
-  '/providers/new': ['USER'], // Any authenticated user can become provider
-  '/providers/[id]': 'PROVIDER_OR_ADMIN', // Provider themselves or admin
-  '/providers/[id]/edit': 'PROVIDER_OWNER_OR_ADMIN',
-  '/providers/[id]/manage-calendar': 'PROVIDER_OWNER',
+  // Provider routes (VERIFIED only)
+  '/providers/new': 'VERIFIED_USER', // Only verified users can become providers
+  '/providers/[id]/edit': 'VERIFIED_USER', // Only verified users can edit provider profiles
+  '/providers/[id]/manage-calendar': 'VERIFIED_USER', // Only verified users can manage calendars
 
-  // Calendar routes
-  '/calendar': ['USER'], // Basic authenticated access
-  '/calendar/availability': ['USER'], // Allow authenticated users, component handles provider check
+  // Calendar routes (VERIFIED only)
+  '/calendar': 'VERIFIED_USER', // Only verified users can access calendar
+  '/calendar/availability': 'VERIFIED_USER', // Only verified users can manage availability
 
-  // Availability routes
-  '/availability': ['USER'], // Allow authenticated users, component handles provider check
-  '/availability/create': ['USER'], // Allow authenticated users, component handles provider check
+  // Availability routes (VERIFIED only)
+  '/availability': 'VERIFIED_USER', // Only verified users can access availability
+  '/availability/create': 'VERIFIED_USER', // Only verified users can create availability
 
-  // Profile routes
-  '/profile': ['USER'], // Any authenticated user
+  // Booking routes (VERIFIED only)
+  '/bookings': 'VERIFIED_USER', // Only verified users can access bookings
+  '/my-bookings': 'VERIFIED_USER', // Only verified users can view their bookings
 
-  // General dashboard
-  '/dashboard': ['USER'], // Any authenticated user
+  // Profile routes (any authenticated user)
+  '/profile': ['USER'], // Any authenticated user can view profile
+
+  // General dashboard (any authenticated user)
+  '/dashboard': ['USER'], // Any authenticated user can access dashboard
+
+  // Settings (any authenticated user)
+  '/settings': ['USER'], // Any authenticated user can access settings
 };
 
 /**
@@ -50,6 +56,30 @@ const ROUTE_PERMISSIONS = {
  */
 function hasRole(userRole: string, requiredRoles: string[]): boolean {
   return requiredRoles.includes(userRole);
+}
+
+/**
+ * Check if user email is verified
+ */
+function isEmailVerified(emailVerified: Date | null): boolean {
+  return emailVerified !== null;
+}
+
+/**
+ * Check if user meets verification requirements
+ */
+function checkVerificationRequirement(requirement: string | string[], token: any): boolean {
+  if (Array.isArray(requirement)) {
+    // Standard role check
+    return hasRole(token.role, requirement);
+  }
+
+  if (requirement === 'VERIFIED_USER') {
+    // Must be verified user
+    return isEmailVerified(token.emailVerified);
+  }
+
+  return false;
 }
 
 /**
@@ -74,29 +104,41 @@ function extractRouteParams(pathname: string): Record<string, string> {
  * Check route-specific permissions
  */
 async function checkRoutePermissions(pathname: string, token: any): Promise<boolean> {
-  // Simple role-based checks for now
-  // In a full implementation, this would integrate with the permission system
-
+  // Check admin routes
   if (pathname.startsWith('/admin')) {
     return hasRole(token.role, ['ADMIN', 'SUPER_ADMIN']);
   }
 
-  if (pathname.startsWith('/calendar/availability') || pathname.startsWith('/availability')) {
-    // For availability management, allow all authenticated users through
-    // The page component will handle the provider-specific check
-    return true;
+  // Check organization routes (admin only)
+  if (pathname.startsWith('/organizations')) {
+    return hasRole(token.role, ['ADMIN', 'SUPER_ADMIN']);
   }
 
-  // For organization routes, allow authenticated users through
-  // The page component and tRPC procedures will handle the specific membership/permission checks
-  if (pathname.startsWith('/organizations/') && pathname.includes('/edit')) {
-    // Allow authenticated users through - proper authorization happens at the API level
-    return true;
+  // Check provider routes (verified users only)
+  if (
+    pathname.startsWith('/providers/new') ||
+    (pathname.startsWith('/providers/') &&
+      (pathname.includes('/edit') || pathname.includes('/manage-calendar')))
+  ) {
+    return checkVerificationRequirement('VERIFIED_USER', token);
   }
 
-  if (pathname.startsWith('/providers/') && pathname.includes('/edit')) {
-    // For provider edit routes, allow authenticated users through
-    // The page component will handle the specific ownership check
+  // Check calendar routes (verified users only)
+  if (pathname.startsWith('/calendar') || pathname.startsWith('/availability')) {
+    return checkVerificationRequirement('VERIFIED_USER', token);
+  }
+
+  // Check booking routes (verified users only)
+  if (pathname.startsWith('/bookings') || pathname.startsWith('/my-bookings')) {
+    return checkVerificationRequirement('VERIFIED_USER', token);
+  }
+
+  // Allow access to profile, dashboard, and settings for any authenticated user
+  if (
+    pathname.startsWith('/profile') ||
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/settings')
+  ) {
     return true;
   }
 
@@ -122,6 +164,22 @@ export default withAuth(
     const hasAccess = await checkRoutePermissions(pathname, token);
 
     if (!hasAccess) {
+      // Check if this is an email verification issue
+      if (
+        !isEmailVerified(token.emailVerified ?? null) &&
+        (pathname.startsWith('/providers') ||
+          pathname.startsWith('/calendar') ||
+          pathname.startsWith('/availability') ||
+          pathname.startsWith('/bookings') ||
+          pathname.startsWith('/my-bookings'))
+      ) {
+        // Redirect to email verification page
+        const verifyUrl = new URL('/verify-email', req.url);
+        verifyUrl.searchParams.set('reason', 'email_verification_required');
+        verifyUrl.searchParams.set('attempted_route', pathname);
+        return NextResponse.redirect(verifyUrl);
+      }
+
       // Redirect to unauthorized page with context
       const unauthorizedUrl = new URL('/unauthorized', req.url);
       unauthorizedUrl.searchParams.set('reason', 'insufficient_permissions');
@@ -133,6 +191,7 @@ export default withAuth(
     const response = NextResponse.next();
     response.headers.set('x-user-role', String(token.role) || 'USER');
     response.headers.set('x-user-id', token.sub || '');
+    response.headers.set('x-email-verified', String(isEmailVerified(token.emailVerified ?? null)));
 
     if (token.providerRole) {
       response.headers.set('x-provider-role', String(token.providerRole));
@@ -179,7 +238,8 @@ export const config = {
     // Provider routes
     '/providers/:path*',
 
-    // Protected calendar routes (availability management only)
+    // Protected calendar routes
+    '/calendar/:path*',
     '/availability/:path*',
 
     // Settings routes
@@ -187,5 +247,6 @@ export const config = {
 
     // Booking routes
     '/bookings/:path*',
+    '/my-bookings/:path*',
   ],
 };

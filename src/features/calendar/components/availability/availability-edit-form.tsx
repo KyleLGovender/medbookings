@@ -13,7 +13,7 @@ import CalendarLoader from '@/components/calendar-loader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DatePickerWithInput } from '@/components/ui/date-picker-with-input';
 import {
   Form,
   FormControl,
@@ -649,7 +649,7 @@ export function AvailabilityEditForm({
                   <FormItem>
                     <FormLabel>Date</FormLabel>
                     <FormControl>
-                      <DatePicker
+                      <DatePickerWithInput
                         date={
                           field.value instanceof Date
                             ? field.value
@@ -979,7 +979,7 @@ export function AvailabilityEditForm({
             ) : (
               <ServiceSelectionSection
                 providerId={availability.providerId}
-                availableServices={(availableServices || []).map((s) => ({
+                availableServices={(availableServices || []).map((s: any) => ({
                   ...s,
                   description: s.description ?? undefined,
                 }))}
@@ -1003,7 +1003,9 @@ export function AvailabilityEditForm({
                     <div className="space-y-1 leading-none">
                       <FormLabel>Requires Confirmation</FormLabel>
                       <FormDescription>
-                        Manually approve bookings for this availability
+                        When enabled, bookings for this availability will require manual approval
+                        from the provider before confirmation. When disabled, bookings are
+                        automatically confirmed.
                       </FormDescription>
                     </div>
                   </FormItem>

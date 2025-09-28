@@ -1,15 +1,12 @@
 import { FullConfig } from '@playwright/test';
+
 import { setupTestEnvironment } from './utils/database';
 
 async function globalSetup(config: FullConfig) {
   console.log('🔧 Starting global test setup...');
 
   // Validate environment variables
-  const requiredEnvVars = [
-    'DATABASE_URL',
-    'NEXTAUTH_SECRET',
-    'NEXTAUTH_URL'
-  ];
+  const requiredEnvVars = ['DATABASE_URL', 'NEXTAUTH_SECRET', 'NEXTAUTH_URL'];
 
   for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {

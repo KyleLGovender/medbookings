@@ -1,20 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 import { format } from 'date-fns';
-import {
-  Calendar,
-  Clock,
-  CreditCard,
-  Edit3,
-  Mail,
-  MapPin,
-  Phone,
-  RefreshCcw,
-  User,
-  X
-} from 'lucide-react';
+import { Calendar, Clock, CreditCard, Edit3, Mail, Phone, RefreshCcw, User, X } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -126,8 +115,7 @@ export function UserBookingList({
     const hoursUntilBooking = timeDiff / (1000 * 60 * 60);
 
     return (
-      booking.status === 'CONFIRMED' &&
-      hoursUntilBooking > 24 // Can only edit if more than 24 hours away
+      booking.status === 'CONFIRMED' && hoursUntilBooking > 24 // Can only edit if more than 24 hours away
     );
   };
 
@@ -139,8 +127,7 @@ export function UserBookingList({
     const hoursUntilBooking = timeDiff / (1000 * 60 * 60);
 
     return (
-      (booking.status === 'CONFIRMED' || booking.status === 'PENDING') &&
-      hoursUntilBooking > 2 // Can cancel if more than 2 hours away
+      (booking.status === 'CONFIRMED' || booking.status === 'PENDING') && hoursUntilBooking > 2 // Can cancel if more than 2 hours away
     );
   };
 
@@ -173,10 +160,11 @@ export function UserBookingList({
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No bookings found</h3>
-          <p className="text-muted-foreground text-center">
-            You haven't made any bookings yet. Start by browsing available providers.
+          <Calendar className="mb-4 h-12 w-12 text-muted-foreground" />
+          <h3 className="mb-2 text-lg font-semibold">No bookings found</h3>
+          <p className="text-center text-muted-foreground">
+            {/* eslint-disable-next-line quotes */}
+            {"You haven't made any bookings yet. Start by browsing available providers."}
           </p>
         </CardContent>
       </Card>
@@ -187,21 +175,15 @@ export function UserBookingList({
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="upcoming">
-            Upcoming ({filterBookings('upcoming').length})
-          </TabsTrigger>
-          <TabsTrigger value="past">
-            Past ({filterBookings('past').length})
-          </TabsTrigger>
+          <TabsTrigger value="upcoming">Upcoming ({filterBookings('upcoming').length})</TabsTrigger>
+          <TabsTrigger value="past">Past ({filterBookings('past').length})</TabsTrigger>
           <TabsTrigger value="cancelled">
             Cancelled ({filterBookings('cancelled').length})
           </TabsTrigger>
-          <TabsTrigger value="all">
-            All ({bookings.length})
-          </TabsTrigger>
+          <TabsTrigger value="all">All ({bookings.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="space-y-4 mt-6">
+        <TabsContent value={activeTab} className="mt-6 space-y-4">
           {filterBookings(activeTab).map((booking) => {
             // Early return if booking has no slot (should not happen after filtering)
             if (!booking.slot) return null;
@@ -233,111 +215,114 @@ export function UserBookingList({
                   </div>
                 </CardHeader>
 
-              <CardContent className="space-y-4">
-                {/* Booking Details */}
-                <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>{format(booking.slot.startTime, 'EEEE, MMMM d, yyyy')}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {format(booking.slot.startTime, 'h:mm a')} -{' '}
-                      {format(booking.slot.endTime, 'h:mm a')}
-                      <span className="ml-1 text-muted-foreground">
-                        ({formatDuration(booking.slot.startTime, booking.slot.endTime)})
-                      </span>
-                    </span>
-                  </div>
-
-
-                  {booking.slot.serviceConfig?.price && (
+                <CardContent className="space-y-4">
+                  {/* Booking Details */}
+                  <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                     <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">${booking.slot.serviceConfig.price.toFixed(2)}</span>
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span>{format(booking.slot.startTime, 'EEEE, MMMM d, yyyy')}</span>
                     </div>
-                  )}
-                </div>
 
-                <Separator />
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        {format(booking.slot.startTime, 'h:mm a')} -{' '}
+                        {format(booking.slot.endTime, 'h:mm a')}
+                        <span className="ml-1 text-muted-foreground">
+                          ({formatDuration(booking.slot.startTime, booking.slot.endTime)})
+                        </span>
+                      </span>
+                    </div>
 
-                {/* Client Information */}
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Booking Information</h4>
-                  <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-                    {booking.guestName && (
+                    {booking.slot.serviceConfig?.price && (
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span>{booking.guestName}</span>
-                      </div>
-                    )}
-                    {booking.guestEmail && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span>{booking.guestEmail}</span>
-                      </div>
-                    )}
-                    {booking.guestPhone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span>{booking.guestPhone}</span>
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">
+                          R{booking.slot.serviceConfig.price.toFixed(2)}
+                        </span>
                       </div>
                     )}
                   </div>
-                  {booking.notes && (
-                    <div className="mt-2">
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Notes:</strong> {booking.notes}
-                      </p>
-                    </div>
-                  )}
-                </div>
 
-                {/* Action Buttons */}
-                {(canEditBooking(booking) || canCancelBooking(booking) || canRescheduleBooking(booking)) && (
-                  <>
-                    <Separator />
-                    <div className="flex flex-wrap gap-2">
-                      {canEditBooking(booking) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onEditBooking(booking)}
-                          className="flex items-center gap-2"
-                        >
-                          <Edit3 className="h-4 w-4" />
-                          Edit Details
-                        </Button>
+                  <Separator />
+
+                  {/* Client Information */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Booking Information</h4>
+                    <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+                      {booking.guestName && (
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span>{booking.guestName}</span>
+                        </div>
                       )}
-                      {canRescheduleBooking(booking) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onRescheduleBooking(booking)}
-                          className="flex items-center gap-2"
-                        >
-                          <RefreshCcw className="h-4 w-4" />
-                          Reschedule
-                        </Button>
+                      {booking.guestEmail && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <span>{booking.guestEmail}</span>
+                        </div>
                       )}
-                      {canCancelBooking(booking) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onCancelBooking(booking)}
-                          className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <X className="h-4 w-4" />
-                          Cancel
-                        </Button>
+                      {booking.guestPhone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span>{booking.guestPhone}</span>
+                        </div>
                       )}
                     </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+                    {booking.notes && (
+                      <div className="mt-2">
+                        <p className="text-sm text-muted-foreground">
+                          <strong>Notes:</strong> {booking.notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  {(canEditBooking(booking) ||
+                    canCancelBooking(booking) ||
+                    canRescheduleBooking(booking)) && (
+                    <>
+                      <Separator />
+                      <div className="flex flex-wrap gap-2">
+                        {canEditBooking(booking) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onEditBooking(booking)}
+                            className="flex items-center gap-2"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                            Edit Details
+                          </Button>
+                        )}
+                        {canRescheduleBooking(booking) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onRescheduleBooking(booking)}
+                            className="flex items-center gap-2"
+                          >
+                            <RefreshCcw className="h-4 w-4" />
+                            Reschedule
+                          </Button>
+                        )}
+                        {canCancelBooking(booking) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onCancelBooking(booking)}
+                            className="flex items-center gap-2 text-red-600 hover:bg-red-50 hover:text-red-700"
+                          >
+                            <X className="h-4 w-4" />
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
             );
           })}
         </TabsContent>

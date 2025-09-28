@@ -36,7 +36,7 @@ export function useUpdateProviderServices(options?: {
     onSuccess: (data, variables) => {
       // Invalidate provider and services queries
       utils.providers.getById.invalidate({ id: variables.id });
-      utils.providers.getProviderServices.invalidate({ id: variables.id });
+      utils.providers.getProviderAllServices.invalidate({ providerId: variables.id });
       options?.onSuccess?.(data);
     },
     onError: options?.onError as any,

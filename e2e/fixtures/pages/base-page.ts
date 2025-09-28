@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Locator, Page, expect } from '@playwright/test';
 
 export class BasePage {
   constructor(public page: Page) {}
@@ -52,7 +52,7 @@ export class BasePage {
   async waitForElement(selector: string, timeout = 10000) {
     await this.page.locator(selector).waitFor({
       state: 'visible',
-      timeout
+      timeout,
     });
   }
 

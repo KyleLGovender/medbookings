@@ -32,7 +32,7 @@ setup('authenticate', async ({ page }) => {
     await route.fulfill({
       status: 302,
       headers: {
-        'Location': '/dashboard',
+        Location: '/dashboard',
         'Set-Cookie': `next-auth.session-token=mock-session-${testData.provider.id}; Path=/; HttpOnly; SameSite=lax`,
       },
     });
@@ -52,7 +52,7 @@ setup('authenticate', async ({ page }) => {
 
   // Save authenticated state
   await page.context().storageState({
-    path: path.join(authDir, 'user.json')
+    path: path.join(authDir, 'user.json'),
   });
 
   console.log('🔐 Authentication state saved');

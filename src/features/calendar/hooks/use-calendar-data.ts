@@ -61,11 +61,10 @@ export function useCalendarData(params: CalendarDataParams): CalendarDataResult 
   const { providerIds, dateRange, statusFilter = 'ALL' } = params;
 
   // Create stable string representations of dates to prevent constant re-queries
-  // CRITICAL FIX: Use .getTime() in dependency array instead of Date objects
-  // Date objects are reference types, so they fail === comparison on every render
-  // This was causing excessive API polling every ~60ms
-  const startDateString = useMemo(() => dateRange.start.toISOString(), [dateRange.start.getTime()]);
-  const endDateString = useMemo(() => dateRange.end.toISOString(), [dateRange.end.getTime()]);
+  // CRITICAL FIX: Memoize the date strings based on the date objects themselves
+  // Since Date objects are stable within a render, we can use them directly
+  const startDateString = useMemo(() => dateRange.start.toISOString(), [dateRange.start]);
+  const endDateString = useMemo(() => dateRange.end.toISOString(), [dateRange.end]);
 
   // Create stable search parameters to prevent constant re-queries
   const stableSearchParams = useMemo(() => {

@@ -26,9 +26,15 @@ async function main() {
   await prisma.providerType.deleteMany();
   console.log('Cleared ProviderType table');
 
+  // Admin user note
+  console.log('ℹ️  MedBookings Administrator:');
+  console.log('   Configure ADMIN_EMAILS in .env file');
+  console.log('   Users with configured emails will be auto-promoted to ADMIN role on sign-in');
+  console.log('   Example: ADMIN_EMAILS=admin@example.com,manager@example.com');
+
   // Create provider types
   try {
-    const providerTypes = await Promise.all([
+    await Promise.all([
       prisma.providerType.create({
         data: {
           name: 'General Practitioner',
@@ -86,7 +92,7 @@ async function main() {
 
   // Create services
   try {
-    const services = await Promise.all([
+    await Promise.all([
       prisma.service.create({
         data: {
           name: 'General GP Consult',
@@ -1100,6 +1106,7 @@ async function main() {
     console.log('Calculated availability slots created:', calculatedSlots.length);
 
     console.log('Development seed data created successfully:');
+    console.log('- Admin user configured (info@medbookings.co.za)');
     console.log(`- ${sampleUsers.length} sample users`);
     console.log(`- ${sampleProviders.length} sample providers`);
     console.log(`- ${sampleAvailabilities.length} sample availabilities`);

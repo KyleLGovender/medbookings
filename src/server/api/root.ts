@@ -1,6 +1,7 @@
 import { createTRPCRouter } from '@/server/trpc';
 
 import { adminRouter } from './routers/admin';
+import { authRouter } from './routers/auth';
 import { calendarRouter } from './routers/calendar';
 import { communicationsRouter } from './routers/communications';
 import { debugRouter } from './routers/debug';
@@ -16,6 +17,7 @@ import { settingsRouter } from './routers/settings';
  */
 export const appRouter = createTRPCRouter({
   admin: adminRouter,
+  auth: authRouter,
   // billing: billingRouter,
   calendar: calendarRouter,
   communications: communicationsRouter,
