@@ -257,7 +257,11 @@ export const authOptions: NextAuthOptions = {
       // On subsequent requests, refresh data from database if:
       // 1. Missing role or emailVerified data, OR
       // 2. Session update is triggered (e.g., after email verification)
-      if (token && ((!token.role || token.emailVerified === undefined) || trigger === 'update') && token.id) {
+      if (
+        token &&
+        (!token.role || token.emailVerified === undefined || trigger === 'update') &&
+        token.id
+      ) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
           select: { role: true, emailVerified: true },

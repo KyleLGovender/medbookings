@@ -52,7 +52,7 @@ function VerifyEmailCompleteContent() {
             try {
               // Check if this is a timestamp (simple verification entries store 'true')
               const timestamp = parseInt(item);
-              if (!isNaN(timestamp) && (now - timestamp) > oneDay) {
+              if (!isNaN(timestamp) && now - timestamp > oneDay) {
                 localStorage.removeItem(key);
                 localStorage.removeItem(`${key}_result`);
                 console.log(`Cleaned up expired localStorage entry: ${key}`);
@@ -60,7 +60,7 @@ function VerifyEmailCompleteContent() {
             } catch {
               // If it's not a timestamp, assume it's old format and clean up if older than 24h
               const storedTime = localStorage.getItem(`${key}_timestamp`);
-              if (!storedTime || (now - parseInt(storedTime)) > oneDay) {
+              if (!storedTime || now - parseInt(storedTime) > oneDay) {
                 localStorage.removeItem(key);
                 localStorage.removeItem(`${key}_result`);
                 localStorage.removeItem(`${key}_timestamp`);
@@ -82,14 +82,20 @@ function VerifyEmailCompleteContent() {
   // Cleanup on page unload/navigation
   useEffect(() => {
     const handleBeforeUnload = () => {
-      if (verificationToken && (verificationStatus === 'success' || verificationStatus === 'already-verified')) {
+      if (
+        verificationToken &&
+        (verificationStatus === 'success' || verificationStatus === 'already-verified')
+      ) {
         cleanupLocalStorage(verificationToken);
       }
     };
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden' && verificationToken &&
-          (verificationStatus === 'success' || verificationStatus === 'already-verified')) {
+      if (
+        document.visibilityState === 'hidden' &&
+        verificationToken &&
+        (verificationStatus === 'success' || verificationStatus === 'already-verified')
+      ) {
         cleanupLocalStorage(verificationToken);
       }
     };
@@ -104,7 +110,10 @@ function VerifyEmailCompleteContent() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
 
       // Final cleanup when component unmounts
-      if (verificationToken && (verificationStatus === 'success' || verificationStatus === 'already-verified')) {
+      if (
+        verificationToken &&
+        (verificationStatus === 'success' || verificationStatus === 'already-verified')
+      ) {
         cleanupLocalStorage(verificationToken);
       }
     };
@@ -243,17 +252,24 @@ function VerifyEmailCompleteContent() {
           <CardHeader>
             <CardTitle>
               {verificationStatus === 'pending' && 'Verifying your email...'}
-              {verificationStatus === 'success' && (isUpdatingSession ? 'Updating your account...' : 'Email Verified!')}
+              {verificationStatus === 'success' &&
+                (isUpdatingSession ? 'Updating your account...' : 'Email Verified!')}
               {verificationStatus === 'error' && 'Verification Failed'}
-              {verificationStatus === 'already-verified' && (isUpdatingSession ? 'Updating your account...' : 'Already Verified')}
+              {verificationStatus === 'already-verified' &&
+                (isUpdatingSession ? 'Updating your account...' : 'Already Verified')}
             </CardTitle>
             <CardDescription>
               {verificationStatus === 'pending' &&
                 'Please wait while we verify your email address.'}
-              {verificationStatus === 'success' && (isUpdatingSession ? 'Please wait while we update your account settings.' : 'Your email has been successfully verified.')}
+              {verificationStatus === 'success' &&
+                (isUpdatingSession
+                  ? 'Please wait while we update your account settings.'
+                  : 'Your email has been successfully verified.')}
               {verificationStatus === 'error' && 'There was an error verifying your email.'}
               {verificationStatus === 'already-verified' &&
-                (isUpdatingSession ? 'Please wait while we update your account settings.' : 'Your email address has already been verified.')}
+                (isUpdatingSession
+                  ? 'Please wait while we update your account settings.'
+                  : 'Your email address has already been verified.')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -272,22 +288,23 @@ function VerifyEmailCompleteContent() {
               </Alert>
             )}
 
-            {(verificationStatus === 'success' || verificationStatus === 'already-verified') && !isUpdatingSession && (
-              <>
-                {status === 'authenticated' ? (
-                  <Button onClick={() => router.push('/')} className="w-full">
-                    Continue to Application
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => router.push('/login?message=email-verified-please-login')}
-                    className="w-full"
-                  >
-                    Sign In to Continue
-                  </Button>
-                )}
-              </>
-            )}
+            {(verificationStatus === 'success' || verificationStatus === 'already-verified') &&
+              !isUpdatingSession && (
+                <>
+                  {status === 'authenticated' ? (
+                    <Button onClick={() => router.push('/')} className="w-full">
+                      Continue to Application
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => router.push('/login?message=email-verified-please-login')}
+                      className="w-full"
+                    >
+                      Sign In to Continue
+                    </Button>
+                  )}
+                </>
+              )}
 
             {verificationStatus === 'error' && (
               <div className="flex flex-col gap-2">

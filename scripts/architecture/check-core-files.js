@@ -4,42 +4,128 @@ const { execSync } = require('child_process');
 const chalk = require('chalk');
 const path = require('path');
 
+// File categorization with CLAUDE.md section references and validation requirements
 const CRITICAL_FILES = [
-  'prisma/schema.prisma',
-  'src/server/trpc.ts',
-  'src/lib/auth.ts',
-  'src/lib/prisma.ts',
-  'src/utils/api.ts',
-  'src/env.js',
-  'src/config/env/server.ts',
-  'src/types/next-auth.d.ts',
+  {
+    pattern: 'prisma/schema.prisma',
+    claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
+    rule: 'ADDITIVE ONLY - Ask approval before removing/renaming',
+    validations: ['npm run db:integrity', 'Verify migrations', 'Check Prisma client generation']
+  },
+  {
+    pattern: 'src/server/trpc.ts',
+    claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
+    rule: 'tRPC configuration - affects ALL API endpoints',
+    validations: ['npm run build', 'npx tsc --noEmit', 'Check API functionality']
+  },
+  {
+    pattern: 'src/lib/auth.ts',
+    claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
+    rule: 'Authentication core - security critical',
+    validations: ['Test login flows', 'Verify session handling', 'Check role permissions']
+  },
+  {
+    pattern: 'src/lib/prisma.ts',
+    claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
+    rule: 'Database client - affects all DB operations',
+    validations: ['npm run db:integrity', 'Test connection pooling', 'Verify transactions']
+  },
+  {
+    pattern: 'src/middleware.ts',
+    claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
+    rule: 'Route protection - security critical',
+    validations: ['Test protected routes', 'Verify redirects', 'Check auth flows']
+  },
+  {
+    pattern: 'src/utils/api.ts',
+    claudeSection: 'SECTION 3: ARCHITECTURE & TECH STACK',
+    rule: 'tRPC client setup - affects type exports',
+    validations: ['npx tsc --noEmit', 'Check type inference', 'Verify API hooks']
+  },
 ];
 
 const HIGH_RISK_FILES = [
-  'src/middleware.ts',
-  'src/server/api/root.ts',
-  'src/server/api/routers/',
-  'src/app/layout.tsx',
-  'src/app/api/auth/',
-  'src/app/api/trpc/',
-  'src/app/providers.tsx',
-  'src/lib/permissions/',
-  'src/lib/communications/',
-  'src/lib/crypto/',
-  'src/hooks/use-permissions.ts',
-  'next.config.',
-  'package.json',
+  {
+    pattern: 'src/server/api/root.ts',
+    claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
+    rule: 'API root - all router registrations',
+    validations: ['npm run build', 'Check router exports', 'Verify endpoint access']
+  },
+  {
+    pattern: 'src/server/api/routers/',
+    claudeSection: 'SECTION 3: ARCHITECTURE & TECH STACK',
+    rule: 'Database access ONLY here - tRPC procedures',
+    validations: ['Check authorization', 'Verify input validation', 'Test error handling']
+  },
+  {
+    pattern: 'src/app/layout.tsx',
+    claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
+    rule: 'App shell - affects all pages',
+    validations: ['Test page rendering', 'Check provider hierarchy', 'Verify metadata']
+  },
+  {
+    pattern: 'src/app/api/auth/',
+    claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
+    rule: 'Auth routes - security critical',
+    validations: ['Test OAuth flows', 'Verify callbacks', 'Check error handling']
+  },
+  {
+    pattern: 'src/components/ui/*',
+    claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
+    rule: 'UI library - affects all components',
+    validations: ['Test component rendering', 'Check accessibility', 'Verify variants']
+  },
+  {
+    pattern: 'package.json',
+    claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
+    rule: 'Dependencies - affects entire project',
+    validations: ['npm install', 'npm run build', 'Check for breaking changes']
+  },
+  {
+    pattern: 'src/lib/permissions/',
+    claudeSection: 'SECTION 8: SECURITY CHECKLIST',
+    rule: 'Authorization logic - security critical',
+    validations: ['Test role checks', 'Verify permissions', 'Check edge cases']
+  },
+  {
+    pattern: 'src/lib/communications/',
+    claudeSection: 'SECTION 4: BUSINESS RULES',
+    rule: 'Email/SMS/WhatsApp - affects notifications',
+    validations: ['Test message sending', 'Verify templates', 'Check error handling']
+  },
+  {
+    pattern: 'next.config.',
+    claudeSection: 'SECTION 3: ARCHITECTURE & TECH STACK',
+    rule: 'Next.js configuration - affects build and runtime',
+    validations: ['npm run build', 'Check environment variables', 'Verify redirects']
+  },
 ];
 
 const MODERATE_FILES = [
-  'tsconfig.json',
-  'package-lock.json',
-  'playwright.config.ts',
-  '.github/workflows/',
-  'scripts/',
-  'src/features/*/types/schemas.ts',
-  'src/features/*/types/types.ts',
-  'src/features/*/lib/actions.ts',
+  {
+    pattern: 'tsconfig.json',
+    claudeSection: 'SECTION 3: ARCHITECTURE & TECH STACK',
+    rule: 'TypeScript configuration',
+    validations: ['npx tsc --noEmit', 'Check strict mode', 'Verify path mappings']
+  },
+  {
+    pattern: '.github/workflows/',
+    claudeSection: 'SECTION 5: BUILD & QUALITY GATES',
+    rule: 'CI/CD pipelines',
+    validations: ['Test workflow locally', 'Verify secrets', 'Check triggers']
+  },
+  {
+    pattern: 'src/features/*/types/schemas.ts',
+    claudeSection: 'SECTION 3: ARCHITECTURE & TECH STACK',
+    rule: 'Zod validation schemas',
+    validations: ['Test schema validation', 'Check error messages', 'Verify edge cases']
+  },
+  {
+    pattern: 'src/features/*/lib/actions.ts',
+    claudeSection: 'SECTION 3: ARCHITECTURE & TECH STACK',
+    rule: 'Server actions - business logic only, NO database',
+    validations: ['Verify no DB queries', 'Test business logic', 'Check error handling']
+  },
 ];
 
 function getChangedFiles() {
@@ -77,16 +163,40 @@ function categorizeFiles(files) {
 
   files.forEach((file) => {
     // Check critical files
-    if (CRITICAL_FILES.some((pattern) => matchesPattern(file, pattern))) {
-      critical.push(file);
-    } else if (HIGH_RISK_FILES.some((pattern) => matchesPattern(file, pattern))) {
-      highRisk.push(file);
-    } else if (MODERATE_FILES.some((pattern) => matchesPattern(file, pattern))) {
-      moderate.push(file);
+    const criticalMatch = CRITICAL_FILES.find((item) => matchesPattern(file, item.pattern));
+    if (criticalMatch) {
+      critical.push({ file, ...criticalMatch });
+      return;
+    }
+
+    const highRiskMatch = HIGH_RISK_FILES.find((item) => matchesPattern(file, item.pattern));
+    if (highRiskMatch) {
+      highRisk.push({ file, ...highRiskMatch });
+      return;
+    }
+
+    const moderateMatch = MODERATE_FILES.find((item) => matchesPattern(file, item.pattern));
+    if (moderateMatch) {
+      moderate.push({ file, ...moderateMatch });
     }
   });
 
   return { critical, highRisk, moderate };
+}
+
+function generateValidationChecklist(categorizedFiles) {
+  const checklist = new Set();
+  const allFiles = [
+    ...categorizedFiles.critical,
+    ...categorizedFiles.highRisk,
+    ...categorizedFiles.moderate
+  ];
+
+  allFiles.forEach(item => {
+    item.validations.forEach(validation => checklist.add(validation));
+  });
+
+  return Array.from(checklist);
 }
 
 function main() {
@@ -110,27 +220,53 @@ function main() {
   // Show summary first
   console.log(chalk.white('📋 Architectural Changes Detected:\n'));
 
-  // CRITICAL FILES - Now informational, not blocking
+  // CRITICAL FILES - Enhanced with CLAUDE.md references
   if (critical.length > 0) {
     console.log(
       chalk.red.bold(`🔴 CRITICAL: Core architectural files modified [${critical.length}]`)
     );
-    critical.forEach((file) => console.log(chalk.red(`   - ${file}`)));
+    critical.forEach((item) => {
+      console.log(chalk.red(`\n   📄 ${item.file}`));
+      console.log(chalk.gray(`      Reference: CLAUDE.md ${item.claudeSection}`));
+      console.log(chalk.yellow(`      Rule: ${item.rule}`));
+      console.log(chalk.white(`      Required validations:`));
+      item.validations.forEach(v => console.log(chalk.cyan(`         • ${v}`)));
+    });
   }
 
-  // HIGH RISK FILES
+  // HIGH RISK FILES - Enhanced with CLAUDE.md references
   if (highRisk.length > 0) {
     console.log(chalk.yellow.bold(`\n🟡 HIGH RISK: Important files modified [${highRisk.length}]`));
-    highRisk.forEach((file) => console.log(chalk.yellow(`   - ${file}`)));
+    highRisk.forEach((item) => {
+      console.log(chalk.yellow(`\n   📄 ${item.file}`));
+      console.log(chalk.gray(`      Reference: CLAUDE.md ${item.claudeSection}`));
+      console.log(chalk.yellow(`      Rule: ${item.rule}`));
+      console.log(chalk.white(`      Required validations:`));
+      item.validations.forEach(v => console.log(chalk.cyan(`         • ${v}`)));
+    });
   }
 
-  // MODERATE FILES
+  // MODERATE FILES - Enhanced with CLAUDE.md references
   if (moderate.length > 0) {
     console.log(
       chalk.cyan.bold(`\n🔵 MODERATE: Configuration files modified [${moderate.length}]`)
     );
-    moderate.forEach((file) => console.log(chalk.cyan(`   - ${file}`)));
+    moderate.forEach((item) => {
+      console.log(chalk.cyan(`\n   📄 ${item.file}`));
+      console.log(chalk.gray(`      Reference: CLAUDE.md ${item.claudeSection}`));
+      console.log(chalk.yellow(`      Rule: ${item.rule}`));
+      console.log(chalk.white(`      Required validations:`));
+      item.validations.forEach(v => console.log(chalk.cyan(`         • ${v}`)));
+    });
   }
+
+  // VALIDATION CHECKLIST
+  const checklist = generateValidationChecklist({ critical, highRisk, moderate });
+  console.log(chalk.white.bold('\n✅ Validation Checklist:'));
+  console.log(chalk.gray('   Run these validations before PR/commit:\n'));
+  checklist.forEach((validation, index) => {
+    console.log(chalk.green(`   ${index + 1}. ${validation}`));
+  });
 
   // SUMMARY
   console.log(chalk.white.bold('\n📊 Summary:'));
@@ -139,9 +275,18 @@ function main() {
   if (critical.length > 0) console.log(chalk.red(`   • Critical: ${critical.length}`));
   if (highRisk.length > 0) console.log(chalk.yellow(`   • High Risk: ${highRisk.length}`));
   if (moderate.length > 0) console.log(chalk.cyan(`   • Moderate: ${moderate.length}`));
+  console.log(chalk.white(`   • Validations required: ${checklist.length}`));
+
+  // CLAUDE.md REMINDER
+  console.log(chalk.blue.bold('\n📖 CLAUDE.md Sections to Review:'));
+  const sections = new Set();
+  [...critical, ...highRisk, ...moderate].forEach(item => sections.add(item.claudeSection));
+  Array.from(sections).forEach(section => {
+    console.log(chalk.blue(`   • ${section}`));
+  });
 
   // INFORMATIONAL STATUS - Always success
-  console.log(chalk.green('\n✅ Architecture check complete - review recommendations above'));
+  console.log(chalk.green('\n✅ Architecture check complete - follow validation checklist above'));
 
   // Always return 0 for non-blocking behavior
   return 0;
