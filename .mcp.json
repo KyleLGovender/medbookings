@@ -12,14 +12,6 @@
         "postgres://default:4eVbPXHul5SL@ep-little-salad-a2w15sf9-pooler.eu-central-1.aws.neon.tech/verceldb?sslmode=require"
       ]
     },
-    "firecrawl": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "firecrawl-mcp"],
-      "env": {
-        "FIRECRAWL_API_KEY": "${FIRECRAWL_API_KEY}"
-      }
-    },
     "playwright": {
       "type": "stdio",
       "command": "npx",

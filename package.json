@@ -49,8 +49,6 @@
     "db:migrate": "prisma migrate deploy && npm run db:integrity",
     "db:migrate:dev": "prisma migrate dev && npm run db:integrity",
     "verceldb:migrateintegrity": "dotenv -e .env.vercel.production.local -- npx prisma migrate deploy && npm run db:integrity:production",
-    "antipatterns:capture": "node ./workflow/scripts/patterns/capture-anti-patterns.js auto",
-    "prebuild": "npm run antipatterns:capture || true",
     "patterns:auto": "node ./workflow/scripts/patterns/update-patterns.js auto-detect",
     "patterns:extract": "node ./workflow/scripts/patterns/update-patterns.js extract",
     "patterns:review": "node ./workflow/scripts/patterns/update-patterns.js review",

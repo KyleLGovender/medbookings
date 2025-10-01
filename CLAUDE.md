@@ -349,12 +349,13 @@
 
   1. Run npm run build to see full error output
   2. Fix identified errors systematically (not trial-and-error)
-  3. Re-run build after each fix
+  3. Re-run build after each fix and code edit
   4. Continue until build passes completely
-  5. Never proceed with failing build
+  5. Never proceed with failing or timed-out build
+  6. Never proceed with errors still present
 
   Build verification is mandatory before:
-  - Creating PRs
+  - User creates PRs
   - Marking tasks complete
   - Moving to next implementation phase
 
