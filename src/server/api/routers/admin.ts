@@ -11,6 +11,7 @@ import {
   rejectRequirementRequestSchema,
 } from '@/features/admin/types/schemas';
 import { validateProviderRequirementsBusinessLogic } from '@/features/providers/lib/actions';
+import { nowUTC } from '@/lib/timezone';
 import { adminProcedure, createTRPCRouter } from '@/server/trpc';
 
 export const adminRouter = createTRPCRouter({
@@ -297,7 +298,7 @@ export const adminRouter = createTRPCRouter({
         data: {
           status: 'APPROVED',
           approvedById: ctx.session.user.id,
-          approvedAt: new Date(),
+          approvedAt: nowUTC(),
           rejectedAt: null,
           rejectionReason: null,
         },
@@ -376,7 +377,7 @@ export const adminRouter = createTRPCRouter({
         providerEmail: updatedProvider.email,
         adminId: ctx.session.user.id,
         adminEmail: ctx.session.user.email,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         action: 'PROVIDER_APPROVED',
         requirementsValidation: {
           totalRequired: validationResult.totalRequired,
@@ -407,7 +408,7 @@ export const adminRouter = createTRPCRouter({
         where: { id: input.id },
         data: {
           status: 'REJECTED',
-          rejectedAt: new Date(),
+          rejectedAt: nowUTC(),
           rejectionReason: input.reason,
           approvedAt: null,
           approvedById: null,
@@ -422,7 +423,7 @@ export const adminRouter = createTRPCRouter({
         adminId: ctx.session.user.id,
         adminEmail: ctx.session.user.email,
         reason: input.reason,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         action: 'PROVIDER_REJECTED',
       });
 
@@ -473,7 +474,7 @@ export const adminRouter = createTRPCRouter({
         newStatus: 'PENDING_APPROVAL',
         adminId: ctx.session.user.id,
         adminEmail: ctx.session.user.email,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         action: 'PROVIDER_STATUS_RESET',
       });
 
@@ -521,7 +522,7 @@ export const adminRouter = createTRPCRouter({
         where: { id: input.requirementId },
         data: {
           status: 'APPROVED',
-          validatedAt: new Date(),
+          validatedAt: nowUTC(),
           validatedById: ctx.session.user.id,
         },
       });
@@ -534,7 +535,7 @@ export const adminRouter = createTRPCRouter({
         providerName: submission.provider.name,
         adminId: ctx.session.user.id,
         adminEmail: ctx.session.user.email,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         action: 'REQUIREMENT_APPROVED',
       });
 
@@ -588,7 +589,7 @@ export const adminRouter = createTRPCRouter({
         adminId: ctx.session.user.id,
         adminEmail: ctx.session.user.email,
         reason: input.reason,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         action: 'REQUIREMENT_REJECTED',
       });
 
@@ -699,7 +700,7 @@ export const adminRouter = createTRPCRouter({
         data: {
           status: 'APPROVED',
           approvedById: ctx.session.user.id,
-          approvedAt: new Date(),
+          approvedAt: nowUTC(),
           rejectedAt: null,
           rejectionReason: null,
         },
@@ -711,7 +712,7 @@ export const adminRouter = createTRPCRouter({
         organizationName: organization.name,
         adminId: ctx.session.user.id,
         adminEmail: ctx.session.user.email,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         action: 'ORGANIZATION_APPROVED',
       });
 
@@ -738,7 +739,7 @@ export const adminRouter = createTRPCRouter({
         where: { id: input.id },
         data: {
           status: 'REJECTED',
-          rejectedAt: new Date(),
+          rejectedAt: nowUTC(),
           rejectionReason: input.reason,
           approvedAt: null,
           approvedById: null,
@@ -752,7 +753,7 @@ export const adminRouter = createTRPCRouter({
         adminId: ctx.session.user.id,
         adminEmail: ctx.session.user.email,
         reason: input.reason,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         action: 'ORGANIZATION_REJECTED',
       });
 
@@ -803,7 +804,7 @@ export const adminRouter = createTRPCRouter({
         newStatus: 'PENDING_APPROVAL',
         adminId: ctx.session.user.id,
         adminEmail: ctx.session.user.email,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         action: 'ORGANIZATION_STATUS_RESET',
       });
 
@@ -838,7 +839,7 @@ export const adminRouter = createTRPCRouter({
         adminEmail: ctx.session.user.email,
         targetUserId: targetUser.id,
         targetUserEmail: targetUser.email,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         action: 'ADMIN_OVERRIDE_LOGIN',
       });
 
