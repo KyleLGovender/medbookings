@@ -13,7 +13,9 @@
  * @author MedBookings Development Team
  */
 import { AvailabilityStatus } from '@prisma/client';
+import { setHours, setMinutes, setSeconds, setMilliseconds, setDate as setDateFns, setMonth } from 'date-fns';
 
+import { parseUTC } from '@/lib/timezone';
 import type { RouterOutputs } from '@/utils/api';
 
 // Extract proper types from tRPC
@@ -98,9 +100,11 @@ export function getWorkingTimeRange(workingHours: { start: string; end: string }
  * @returns New date set to start of day
  */
 export function setToStartOfDay(date: Date): Date {
-  const newDate = new Date(date);
-  newDate.setHours(0, 0, 0, 0);
-  return newDate;
+  let result = setHours(date, 0);
+  result = setMinutes(result, 0);
+  result = setSeconds(result, 0);
+  result = setMilliseconds(result, 0);
+  return result;
 }
 
 /**
@@ -110,9 +114,11 @@ export function setToStartOfDay(date: Date): Date {
  * @returns New date set to end of day
  */
 export function setToEndOfDay(date: Date): Date {
-  const newDate = new Date(date);
-  newDate.setHours(23, 59, 59, 999);
-  return newDate;
+  let result = setHours(date, 23);
+  result = setMinutes(result, 59);
+  result = setSeconds(result, 59);
+  result = setMilliseconds(result, 999);
+  return result;
 }
 
 /**
@@ -126,44 +132,67 @@ export function calculateDateRange(
   currentDate: Date,
   viewMode: 'day' | '3-day' | 'week' | 'month'
 ): { start: Date; end: Date } {
-  const start = new Date(currentDate);
-  const end = new Date(currentDate);
-
   switch (viewMode) {
     case 'day':
       return {
-        start: setToStartOfDay(start),
-        end: setToEndOfDay(end),
+        start: setToStartOfDay(currentDate),
+        end: setToEndOfDay(currentDate),
       };
 
-    case '3-day':
+    case '3-day': {
       // 3-day view shows: previous day, current day, next day
-      start.setDate(start.getDate() - 1);
-      start.setHours(0, 0, 0, 0);
-      end.setDate(start.getDate() + 2); // start - 1 + 2 = current + 1
-      end.setHours(23, 59, 59, 999);
-      break;
+      let start = setDateFns(currentDate, currentDate.getDate() - 1);
+      start = setHours(start, 0);
+      start = setMinutes(start, 0);
+      start = setSeconds(start, 0);
+      start = setMilliseconds(start, 0);
 
-    case 'week':
+      let end = setDateFns(start, start.getDate() + 2); // start - 1 + 2 = current + 1
+      end = setHours(end, 23);
+      end = setMinutes(end, 59);
+      end = setSeconds(end, 59);
+      end = setMilliseconds(end, 999);
+
+      return { start, end };
+    }
+
+    case 'week': {
       // Monday as first day (1 = Monday, 0 = Sunday)
       const dayOfWeek = currentDate.getDay();
       const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      start.setDate(currentDate.getDate() - daysFromMonday);
-      start.setHours(0, 0, 0, 0);
-      end.setDate(start.getDate() + 6);
-      end.setHours(23, 59, 59, 999);
-      break;
 
-    case 'month':
-      start.setDate(1);
-      start.setHours(0, 0, 0, 0);
-      end.setMonth(start.getMonth() + 1);
-      end.setDate(0);
-      end.setHours(23, 59, 59, 999);
-      break;
+      let start = setDateFns(currentDate, currentDate.getDate() - daysFromMonday);
+      start = setHours(start, 0);
+      start = setMinutes(start, 0);
+      start = setSeconds(start, 0);
+      start = setMilliseconds(start, 0);
+
+      let end = setDateFns(start, start.getDate() + 6);
+      end = setHours(end, 23);
+      end = setMinutes(end, 59);
+      end = setSeconds(end, 59);
+      end = setMilliseconds(end, 999);
+
+      return { start, end };
+    }
+
+    case 'month': {
+      let start = setDateFns(currentDate, 1);
+      start = setHours(start, 0);
+      start = setMinutes(start, 0);
+      start = setSeconds(start, 0);
+      start = setMilliseconds(start, 0);
+
+      let end = setMonth(start, start.getMonth() + 1);
+      end = setDateFns(end, 0);
+      end = setHours(end, 23);
+      end = setMinutes(end, 59);
+      end = setSeconds(end, 59);
+      end = setMilliseconds(end, 999);
+
+      return { start, end };
+    }
   }
-
-  return { start, end };
 }
 
 /**
@@ -178,7 +207,7 @@ export function getAvailabilityForDay(
   date: Date
 ): AvailabilityData[] {
   return availabilities.filter(
-    (availability) => new Date(availability.startTime).toDateString() === date.toDateString()
+    (availability) => parseUTC(availability.startTime).toDateString() === date.toDateString()
   );
 }
 
@@ -190,7 +219,7 @@ export function getAvailabilityForDay(
  * @returns Array of slots occurring on the specified date
  */
 export function getSlotsForDay(slots: SlotData[], date: Date): SlotData[] {
-  return slots.filter((slot) => new Date(slot.startTime).toDateString() === date.toDateString());
+  return slots.filter((slot) => parseUTC(slot.startTime).toDateString() === date.toDateString());
 }
 
 /**
@@ -210,8 +239,8 @@ export function calculateSlotTimeRange(slots: SlotData[]): { start: number; end:
 
   // Find the actual earliest and latest times from slots
   slots.forEach((slot) => {
-    const startTime = new Date(slot.startTime);
-    const endTime = new Date(slot.endTime);
+    const startTime = parseUTC(slot.startTime);
+    const endTime = parseUTC(slot.endTime);
 
     const startHour = startTime.getHours();
     const endHour = endTime.getHours();
@@ -253,8 +282,8 @@ export function calculateAvailabilityTimeRange(availabilities: AvailabilityData[
 
   // Check all availability to extend range if needed
   availabilities.forEach((availability) => {
-    const startHour = new Date(availability.startTime).getHours();
-    const endHour = new Date(availability.endTime).getHours();
+    const startHour = parseUTC(availability.startTime).getHours();
+    const endHour = parseUTC(availability.endTime).getHours();
 
     if (startHour < earliestHour) earliestHour = startHour;
     if (endHour > latestHour) latestHour = endHour;
@@ -280,25 +309,19 @@ export function navigateCalendarDate(
   direction: 'prev' | 'next',
   viewMode: 'day' | '3-day' | 'week' | 'month'
 ): Date {
-  const newDate = new Date(currentDate);
+  let newDate = currentDate;
   const increment = direction === 'next' ? 1 : -1;
 
   switch (viewMode) {
     case 'day':
-      newDate.setDate(newDate.getDate() + increment);
-      break;
+      return setDateFns(newDate, newDate.getDate() + increment);
     case '3-day':
-      newDate.setDate(newDate.getDate() + increment);
-      break;
+      return setDateFns(newDate, newDate.getDate() + increment);
     case 'week':
-      newDate.setDate(newDate.getDate() + increment * 7);
-      break;
+      return setDateFns(newDate, newDate.getDate() + increment * 7);
     case 'month':
-      newDate.setMonth(newDate.getMonth() + increment);
-      break;
+      return setMonth(newDate, newDate.getMonth() + increment);
   }
-
-  return newDate;
 }
 
 /**
@@ -322,14 +345,13 @@ export function getCalendarViewTitle(
         day: 'numeric',
       });
 
-    case 'week':
-      const startOfWeek = new Date(currentDate);
+    case 'week': {
       const dayOfWeek = currentDate.getDay();
       const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      startOfWeek.setDate(currentDate.getDate() - daysFromMonday);
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      const startOfWeek = setDateFns(currentDate, currentDate.getDate() - daysFromMonday);
+      const endOfWeek = setDateFns(startOfWeek, startOfWeek.getDate() + 6);
       return `${startOfWeek.toLocaleDateString([], { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    }
 
     case 'month':
       return currentDate.toLocaleDateString([], { year: 'numeric', month: 'long' });
