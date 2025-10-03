@@ -162,6 +162,7 @@ module.exports = {
       rules: {
         'no-console': 'off',
         'import/no-extraneous-dependencies': 'off', // Allow test files to import from src/
+        'rulesdir/no-new-date': 'off', // Allow Date usage in test/infrastructure files
       },
     },
   ],
