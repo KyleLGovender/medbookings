@@ -8,6 +8,7 @@ import {
 import { z } from 'zod';
 
 import { AvailabilityContext, DayOfWeek, RecurrenceOption } from '@/features/calendar/types/types';
+import { parseUTC, isSameDaySAST } from '@/lib/timezone';
 
 // Base Zod schemas for enums
 export const availabilityStatusSchema = z.nativeEnum(AvailabilityStatus);
@@ -49,7 +50,7 @@ export const customRecurrenceDataSchema = z.object({
   selectedDays: z.array(dayOfWeekSchema).min(1, 'At least one day must be selected'),
   endDate: z.union([z.date(), z.string()]).transform((val) => {
     if (typeof val === 'string') {
-      return new Date(val);
+      return parseUTC(val);
     }
     return val;
   }), // Required - no longer optional
@@ -59,13 +60,13 @@ export const customRecurrenceDataSchema = z.object({
 export const timeSlotSchema = z.object({
   startTime: z.union([z.date(), z.string()]).transform((val) => {
     if (typeof val === 'string') {
-      return new Date(val);
+      return parseUTC(val);
     }
     return val;
   }),
   endTime: z.union([z.date(), z.string()]).transform((val) => {
     if (typeof val === 'string') {
-      return new Date(val);
+      return parseUTC(val);
     }
     return val;
   }),
@@ -92,13 +93,13 @@ const baseAvailabilitySchema = z.object({
   connectionId: z.string().cuid().optional(),
   startTime: z.union([z.date(), z.string()]).transform((val) => {
     if (typeof val === 'string') {
-      return new Date(val);
+      return parseUTC(val);
     }
     return val;
   }),
   endTime: z.union([z.date(), z.string()]).transform((val) => {
     if (typeof val === 'string') {
-      return new Date(val);
+      return parseUTC(val);
     }
     return val;
   }),
@@ -124,19 +125,8 @@ export const createAvailabilityDataSchema = baseAvailabilitySchema
   })
   .refine(
     (data: BaseAvailabilityData) => {
-      // Ensure start and end times are on the same day
-      const startDate = new Date(data.startTime);
-      const endDate = new Date(data.endTime);
-
-      // Compare dates using UTC to avoid timezone issues
-      const startDateUTC = new Date(
-        Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())
-      );
-      const endDateUTC = new Date(
-        Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
-      );
-
-      return startDateUTC.getTime() === endDateUTC.getTime();
+      // Ensure start and end times are on the same day in SAST
+      return isSameDaySAST(data.startTime, data.endTime);
     },
     {
       message: 'Start and end times must be on the same day',
@@ -170,7 +160,7 @@ export const availabilitySearchParamsSchema = z
       .union([z.date(), z.string()])
       .transform((val) => {
         if (typeof val === 'string') {
-          return new Date(val);
+          return parseUTC(val);
         }
         return val;
       })
@@ -179,7 +169,7 @@ export const availabilitySearchParamsSchema = z
       .union([z.date(), z.string()])
       .transform((val) => {
         if (typeof val === 'string') {
-          return new Date(val);
+          return parseUTC(val);
         }
         return val;
       })
@@ -205,7 +195,7 @@ export const slotSearchParamsSchema = z
       .union([z.date(), z.string()])
       .transform((val) => {
         if (typeof val === 'string') {
-          return new Date(val);
+          return parseUTC(val);
         }
         return val;
       })
@@ -214,7 +204,7 @@ export const slotSearchParamsSchema = z
       .union([z.date(), z.string()])
       .transform((val) => {
         if (typeof val === 'string') {
-          return new Date(val);
+          return parseUTC(val);
         }
         return val;
       })
@@ -264,13 +254,13 @@ export const availabilityConflictSchema = z.object({
   message: z.string(),
   startTime: z.union([z.date(), z.string()]).transform((val) => {
     if (typeof val === 'string') {
-      return new Date(val);
+      return parseUTC(val);
     }
     return val;
   }),
   endTime: z.union([z.date(), z.string()]).transform((val) => {
     if (typeof val === 'string') {
-      return new Date(val);
+      return parseUTC(val);
     }
     return val;
   }),
@@ -316,13 +306,13 @@ export const availabilitySeriesSchema = z.object({
   activeInstances: z.number().int().nonnegative(),
   createdAt: z.union([z.date(), z.string()]).transform((val) => {
     if (typeof val === 'string') {
-      return new Date(val);
+      return parseUTC(val);
     }
     return val;
   }),
   lastModified: z.union([z.date(), z.string()]).transform((val) => {
     if (typeof val === 'string') {
-      return new Date(val);
+      return parseUTC(val);
     }
     return val;
   }),
