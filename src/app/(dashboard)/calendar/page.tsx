@@ -3,10 +3,12 @@
 import { useMemo } from 'react';
 
 import { CalendarDays, Clock, FileText, TrendingUp, Users } from 'lucide-react';
+import { subDays, addDays, setHours, setMinutes, setSeconds, setMilliseconds } from 'date-fns';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 import { api } from '@/utils/api';
 
 export default function CalendarOverviewPage() {
@@ -14,14 +16,21 @@ export default function CalendarOverviewPage() {
 
   // Memoize the date range to prevent constant re-calculation
   const dateRange = useMemo(() => {
-    const now = new Date();
-    const startDate = new Date(now);
-    startDate.setDate(startDate.getDate() - 7); // Last week
-    startDate.setHours(0, 0, 0, 0); // Start of day
+    const now = nowUTC();
 
-    const endDate = new Date(now);
-    endDate.setDate(endDate.getDate() + 30); // Next month
-    endDate.setHours(23, 59, 59, 999); // End of day
+    // Start date: 7 days ago at start of day
+    let startDate = subDays(now, 7);
+    startDate = setHours(startDate, 0);
+    startDate = setMinutes(startDate, 0);
+    startDate = setSeconds(startDate, 0);
+    startDate = setMilliseconds(startDate, 0);
+
+    // End date: 30 days from now at end of day
+    let endDate = addDays(now, 30);
+    endDate = setHours(endDate, 23);
+    endDate = setMinutes(endDate, 59);
+    endDate = setSeconds(endDate, 59);
+    endDate = setMilliseconds(endDate, 999);
 
     return { startDate, endDate };
   }, []); // Empty dependency array - only calculate once per component mount
@@ -88,11 +97,11 @@ export default function CalendarOverviewPage() {
   // Calculate stats from availability data
   const todayBookings =
     availabilities?.reduce((count, availability) => {
-      const today = new Date();
+      const today = nowUTC();
       return (
         count +
         (availability.calculatedSlots?.filter((slot: any) => {
-          const slotDate = new Date(slot.startTime);
+          const slotDate = parseUTC(slot.startTime);
           return slotDate.toDateString() === today.toDateString() && slot.booking;
         }).length || 0)
       );
@@ -100,12 +109,12 @@ export default function CalendarOverviewPage() {
 
   const weeklyBookings =
     availabilities?.reduce((count, availability) => {
-      const now = new Date();
-      const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const now = nowUTC();
+      const weekFromNow = addDays(now, 7);
       return (
         count +
         (availability.calculatedSlots?.filter((slot: any) => {
-          const slotDate = new Date(slot.startTime);
+          const slotDate = parseUTC(slot.startTime);
           return slotDate >= now && slotDate <= weekFromNow && slot.booking;
         }).length || 0)
       );
@@ -113,12 +122,12 @@ export default function CalendarOverviewPage() {
 
   const availableSlots =
     availabilities?.reduce((count, availability) => {
-      const now = new Date();
-      const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const now = nowUTC();
+      const weekFromNow = addDays(now, 7);
       return (
         count +
         (availability.calculatedSlots?.filter((slot: any) => {
-          const slotDate = new Date(slot.startTime);
+          const slotDate = parseUTC(slot.startTime);
           return slotDate >= now && slotDate <= weekFromNow && !slot.booking;
         }).length || 0)
       );
@@ -270,7 +279,7 @@ export default function CalendarOverviewPage() {
                           : 'Pending approval'}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {new Date(availability.startTime).toLocaleDateString()} -{' '}
+                        {parseUTC(availability.startTime).toLocaleDateString()} -{' '}
                         {availability.calculatedSlots?.length || 0} slots
                       </div>
                     </div>
