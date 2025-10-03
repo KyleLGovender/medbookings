@@ -13,9 +13,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RequirementValidationType } from '@/features/providers/types/types';
+import {
+  DocumentValidationConfig,
+  NumberValidationConfig,
+  RequirementValidationType,
+  ValidationConfig,
+} from '@/features/providers/types/types';
 import { extractFilenameFromUrl } from '@/lib/utils/document-utils';
 import { type RouterOutputs } from '@/utils/api';
+
+// Type guards for validation config
+function isDocumentValidationConfig(config: ValidationConfig | undefined): config is DocumentValidationConfig {
+  return config !== undefined && 'acceptedFileTypes' in config;
+}
+
+function isNumberValidationConfig(config: ValidationConfig | undefined): config is NumberValidationConfig {
+  return config !== undefined && ('min' in config || 'max' in config || 'step' in config);
+}
 
 // Extract the actual requirement type from the onboarding data tRPC response
 type OnboardingData = RouterOutputs['providers']['getOnboardingData'];
@@ -120,14 +134,9 @@ export const renderRequirementInput = (
       );
     case RequirementValidationType.DOCUMENT:
       // Extract accepted file types from validation config
-      const acceptedFileTypes = (requirement.validationConfig as any)?.acceptedFileTypes || [
-        '.pdf',
-        '.doc',
-        '.docx',
-        '.jpg',
-        '.jpeg',
-        '.png',
-      ];
+      const acceptedFileTypes = isDocumentValidationConfig(requirement.validationConfig)
+        ? requirement.validationConfig.acceptedFileTypes || ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+        : ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
 
       return (
         <div className="space-y-2">
@@ -348,20 +357,25 @@ export const renderRequirementInput = (
           {renderError()}
         </div>
       );
-    case RequirementValidationType.NUMBER:
+    case RequirementValidationType.NUMBER: {
+      const numberConfig = isNumberValidationConfig(requirement.validationConfig)
+        ? requirement.validationConfig
+        : undefined;
+
       return (
         <Input
           id={inputId}
           required={requirement.isRequired}
           type="number"
-          min={(requirement.validationConfig as any)?.min}
-          max={(requirement.validationConfig as any)?.max}
-          step={(requirement.validationConfig as any)?.step || 1}
+          min={numberConfig?.min}
+          max={numberConfig?.max}
+          step={numberConfig?.step || 1}
           {...form.register(`regulatoryRequirements.requirements.${requirement.index}.value`)}
           className={error ? 'border-destructive' : ''}
           defaultValue={requirement.existingSubmission?.documentMetadata?.value || ''}
         />
       );
+    }
     default:
       return (
         <Input
