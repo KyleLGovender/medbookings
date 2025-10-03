@@ -23,6 +23,21 @@ import {
   UserPermissions,
 } from '@/types/permissions';
 
+// Type guard for extended session user with permissions
+interface ExtendedSessionUser {
+  role?: SystemRole;
+  organizationRoles?: Array<{
+    organizationId: string;
+    role: OrganizationRole;
+  }>;
+  providerRole?: ProviderRole;
+  providerId?: string;
+}
+
+function hasExtendedUserProperties(user: unknown): user is ExtendedSessionUser {
+  return typeof user === 'object' && user !== null;
+}
+
 /**
  * Check if a user has a specific permission in the given context
  */
@@ -201,11 +216,14 @@ export function getUserPermissionsFromSession(session: Session | null): UserPerm
   // For now, we'll return a basic structure that needs to be populated
   // from the database in the actual implementation
 
+  const user = session.user;
+  const extendedUser = hasExtendedUserProperties(user) ? user : null;
+
   return {
-    systemRole: (session.user as any).role || SystemRole.USER,
-    organizationRoles: (session.user as any).organizationRoles || [],
-    providerRole: (session.user as any).providerRole,
-    providerId: (session.user as any).providerId,
+    systemRole: extendedUser?.role || SystemRole.USER,
+    organizationRoles: extendedUser?.organizationRoles || [],
+    providerRole: extendedUser?.providerRole,
+    providerId: extendedUser?.providerId,
   };
 }
 
