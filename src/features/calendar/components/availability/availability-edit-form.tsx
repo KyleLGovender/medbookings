@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { addHours, setDate, setMonth, setYear, setHours, setMinutes, setSeconds, setMilliseconds } from 'date-fns';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SchedulingRule } from '@prisma/client';
@@ -50,6 +51,7 @@ import { updateAvailabilityDataSchema } from '@/features/calendar/types/schemas'
 import { CustomRecurrenceData, DayOfWeek, RecurrenceOption } from '@/features/calendar/types/types';
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 import { type RouterInputs, type RouterOutputs, api } from '@/utils/api';
 
 // Extract input type from tRPC procedure for zero type drift
@@ -207,10 +209,9 @@ function useUpdateAvailabilityOptimistic(
  * Helper function to update date while preserving time
  */
 const updateDatePreservingTime = (currentTime: Date, newDate: Date): Date => {
-  const updatedTime = new Date(currentTime);
-  updatedTime.setFullYear(newDate.getFullYear());
-  updatedTime.setMonth(newDate.getMonth());
-  updatedTime.setDate(newDate.getDate());
+  let updatedTime = setYear(currentTime, newDate.getFullYear());
+  updatedTime = setMonth(updatedTime, newDate.getMonth());
+  updatedTime = setDate(updatedTime, newDate.getDate());
   return updatedTime;
 };
 
@@ -222,8 +223,8 @@ const transformAvailabilityToForm = (
 ): FormValues => {
   return {
     providerId: availability.providerId,
-    startTime: new Date(availability.startTime),
-    endTime: new Date(availability.endTime),
+    startTime: parseUTC(availability.startTime.toISOString()),
+    endTime: parseUTC(availability.endTime.toISOString()),
     isRecurring: availability.isRecurring,
     recurrencePattern: availability.recurrencePattern,
     schedulingRule: availability.schedulingRule,
@@ -294,8 +295,8 @@ export function AvailabilityEditForm({
     resolver: zodResolver(updateAvailabilityDataSchema.omit({ id: true })),
     defaultValues: {
       providerId: '',
-      startTime: new Date(),
-      endTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
+      startTime: nowUTC(),
+      endTime: addHours(nowUTC(), 2), // 2 hours from now
       isRecurring: false,
       schedulingRule: SchedulingRule.CONTINUOUS,
       isOnlineAvailable: true,
@@ -329,7 +330,7 @@ export function AvailabilityEditForm({
         if (pattern.option === RecurrenceOption.CUSTOM && pattern.customDays && pattern.endDate) {
           setCustomRecurrenceData({
             selectedDays: pattern.customDays,
-            endDate: new Date(pattern.endDate),
+            endDate: parseUTC(pattern.endDate),
           });
         }
       }
@@ -378,7 +379,11 @@ export function AvailabilityEditForm({
   // Memoize expensive recurrence options computation
   const recurrenceOptions = useMemo(() => {
     const startTime =
-      watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime || new Date());
+      watchStartTime instanceof Date
+        ? watchStartTime
+        : watchStartTime
+          ? parseUTC(watchStartTime)
+          : nowUTC();
     return getRecurrenceOptions(startTime);
   }, [watchStartTime]);
 
@@ -421,9 +426,17 @@ export function AvailabilityEditForm({
     try {
       // Ensure all Date fields are properly converted and maintain provider constraints
       const startTime =
-        data.startTime instanceof Date ? data.startTime : new Date(data.startTime || new Date());
+        data.startTime instanceof Date
+          ? data.startTime
+          : data.startTime
+            ? parseUTC(data.startTime)
+            : nowUTC();
       const endTime =
-        data.endTime instanceof Date ? data.endTime : new Date(data.endTime || new Date());
+        data.endTime instanceof Date
+          ? data.endTime
+          : data.endTime
+            ? parseUTC(data.endTime)
+            : nowUTC();
 
       // Round times to clean minutes (zero seconds and milliseconds)
       startTime.setSeconds(0, 0);
@@ -494,7 +507,11 @@ export function AvailabilityEditForm({
    */
   const handleCustomRecurrenceSave = (data: CustomRecurrenceData) => {
     const startTime =
-      watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime || new Date());
+      watchStartTime instanceof Date
+        ? watchStartTime
+        : watchStartTime
+          ? parseUTC(watchStartTime)
+          : nowUTC();
     const pattern = createRecurrencePattern(
       RecurrenceOption.CUSTOM,
       startTime,
@@ -654,7 +671,7 @@ export function AvailabilityEditForm({
                           field.value instanceof Date
                             ? field.value
                             : field.value
-                              ? new Date(field.value)
+                              ? parseUTC(field.value)
                               : undefined
                         }
                         onChange={(date) => {
@@ -666,11 +683,15 @@ export function AvailabilityEditForm({
                             const startTimeDate =
                               currentStartTime instanceof Date
                                 ? currentStartTime
-                                : new Date(currentStartTime || new Date());
+                                : currentStartTime
+                                  ? parseUTC(currentStartTime)
+                                  : nowUTC();
                             const endTimeDate =
                               currentEndTime instanceof Date
                                 ? currentEndTime
-                                : new Date(currentEndTime || new Date());
+                                : currentEndTime
+                                  ? parseUTC(currentEndTime)
+                                  : nowUTC();
 
                             form.setValue(
                               'startTime',
@@ -704,7 +725,9 @@ export function AvailabilityEditForm({
                           date={
                             field.value instanceof Date
                               ? field.value
-                              : new Date(field.value || new Date())
+                              : field.value
+                                ? parseUTC(field.value)
+                                : nowUTC()
                           }
                           onChange={field.onChange}
                         />
@@ -730,7 +753,9 @@ export function AvailabilityEditForm({
                           date={
                             field.value instanceof Date
                               ? field.value
-                              : new Date(field.value || new Date())
+                              : field.value
+                                ? parseUTC(field.value)
+                                : nowUTC()
                           }
                           onChange={(newTime) => {
                             // Get the current date from the start time (which is updated by DatePicker)
@@ -738,11 +763,15 @@ export function AvailabilityEditForm({
                             const baseDate =
                               currentStartTime instanceof Date
                                 ? currentStartTime
-                                : new Date(currentStartTime || new Date());
+                                : currentStartTime
+                                  ? parseUTC(currentStartTime)
+                                  : nowUTC();
 
                             // Create new end time using the base date but with the selected time
-                            const updatedEndTime = new Date(baseDate);
-                            updatedEndTime.setHours(newTime.getHours(), newTime.getMinutes(), 0, 0);
+                            let updatedEndTime = setHours(baseDate, newTime.getHours());
+                            updatedEndTime = setMinutes(updatedEndTime, newTime.getMinutes());
+                            updatedEndTime = setSeconds(updatedEndTime, 0);
+                            updatedEndTime = setMilliseconds(updatedEndTime, 0);
 
                             field.onChange(updatedEndTime);
                           }}
@@ -786,7 +815,9 @@ export function AvailabilityEditForm({
                             const startTime =
                               watchStartTime instanceof Date
                                 ? watchStartTime
-                                : new Date(watchStartTime || new Date());
+                                : watchStartTime
+                                  ? parseUTC(watchStartTime)
+                                  : nowUTC();
                             const pattern = createRecurrencePattern(option, startTime);
                             field.onChange(pattern);
                             form.setValue('isRecurring', option !== RecurrenceOption.NONE, {
@@ -1084,7 +1115,9 @@ export function AvailabilityEditForm({
         actionType="delete"
         availabilityTitle={availability?.provider?.user?.name || 'Provider Availability'}
         availabilityDate={
-          availability?.startTime ? new Date(availability.startTime).toLocaleDateString() : ''
+          availability?.startTime
+            ? parseUTC(availability.startTime.toISOString()).toLocaleDateString()
+            : ''
         }
         isDestructive={true}
       />
