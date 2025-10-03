@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { isDevelopment } from '@/lib/constants';
+import { logger } from '@/lib/logger';
 
 interface GoogleMapsLocationPickerProps {
   onLocationSelect: (locationData: {
@@ -55,10 +56,10 @@ export function GoogleMapsLocationPicker({
   const processLocationResult = useCallback(
     async (result: any) => {
       try {
-        console.log('Processing location result:', result);
+        logger.debug('Processing location result', { hasResult: !!result, hasPlaceId: !!result?.place_id });
 
         if (!result || !result.place_id) {
-          console.error('Invalid location result:', result);
+          logger.error('Invalid location result', { hasResult: !!result });
           return;
         }
 
@@ -75,7 +76,7 @@ export function GoogleMapsLocationPicker({
             lng: result.geometry.location.lng,
           };
         } else {
-          console.error('Invalid coordinates in result');
+          logger.error('Invalid coordinates in result');
           return;
         }
 
@@ -85,12 +86,18 @@ export function GoogleMapsLocationPicker({
           coordinates,
         };
 
-        console.log('Final location data:', locationData);
+        logger.debug('Final location data', {
+          placeId: locationData.googlePlaceId,
+          hasAddress: !!locationData.formattedAddress,
+          coordinates: locationData.coordinates,
+        });
 
         setSelectedLocation(locationData);
         onLocationSelect(locationData);
       } catch (error) {
-        console.error('Error processing location result:', error);
+        logger.error('Error processing location result', {
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     },
     [onLocationSelect]
@@ -118,7 +125,9 @@ export function GoogleMapsLocationPicker({
           processLocationResult(results[0]);
         }
       } catch (error) {
-        console.error('Reverse geocoding error:', error);
+        logger.error('Reverse geocoding error', {
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     },
     [processLocationResult]
@@ -155,13 +164,17 @@ export function GoogleMapsLocationPicker({
               }
             }
           } catch (error) {
-            console.error('Error handling advanced marker drag:', error);
+            logger.error('Error handling advanced marker drag', {
+              error: error instanceof Error ? error.message : String(error),
+            });
           }
         });
 
         setMarker(newMarker);
       } catch (error) {
-        console.error('Error placing marker:', error);
+        logger.error('Error placing marker', {
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     },
     [marker, reverseGeocode]
@@ -171,7 +184,7 @@ export function GoogleMapsLocationPicker({
     (event: any) => {
       try {
         if (!event || !event.latLng) {
-          console.error('Invalid map click event');
+          logger.error('Invalid map click event');
           return;
         }
 
@@ -179,14 +192,20 @@ export function GoogleMapsLocationPicker({
         const lng = event.latLng.lng();
 
         if (typeof lat !== 'number' || typeof lng !== 'number') {
-          console.error('Invalid coordinates from map click');
+          logger.error('Invalid coordinates from map click');
           return;
         }
 
-        placeMarker(map, { lat, lng }).catch(console.error);
+        placeMarker(map, { lat, lng }).catch((error) =>
+          logger.error('Error placing marker from map click', {
+            error: error instanceof Error ? error.message : String(error),
+          })
+        );
         reverseGeocode(lat, lng);
       } catch (error) {
-        console.error('Error handling map click:', error);
+        logger.error('Error handling map click', {
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     },
     [map, placeMarker, reverseGeocode]
@@ -199,27 +218,27 @@ export function GoogleMapsLocationPicker({
       return;
     }
 
-    console.log('Attempting to initialize map...');
+    logger.debug('Attempting to initialize map');
 
     // Wait for ref to be available with retry
     let retries = 0;
     const maxRetries = 10;
 
     while (!mapRef.current && retries < maxRetries) {
-      console.log(`Waiting for map ref... attempt ${retries + 1}`);
+      logger.debug('Waiting for map ref', { attempt: retries + 1 });
       await new Promise((resolve) => setTimeout(resolve, 100));
       retries++;
     }
 
     if (!mapRef.current) {
-      console.error('Map ref still not available after retries');
+      logger.error('Map ref still not available after retries');
       setError('Map container not ready');
       setIsLoading(false);
       return;
     }
 
     if (!window.google || !window.google.maps) {
-      console.error('Google Maps not available');
+      logger.error('Google Maps not available');
       setError('Google Maps API not loaded');
       setIsLoading(false);
       return;
@@ -230,7 +249,7 @@ export function GoogleMapsLocationPicker({
     try {
       const defaultCenter = initialLocation?.coordinates || { lat: -26.2041, lng: 28.0473 }; // Johannesburg
 
-      console.log('Creating map instance with center:', defaultCenter);
+      logger.debug('Creating map instance', { center: defaultCenter });
 
       const mapInstance = new window.google.maps.Map(mapRef.current, {
         center: defaultCenter,
@@ -241,7 +260,7 @@ export function GoogleMapsLocationPicker({
         fullscreenControl: false,
       });
 
-      console.log('Map instance created successfully');
+      logger.debug('Map instance created successfully');
 
       setMap(mapInstance);
       setIsLoading(false);
@@ -256,12 +275,18 @@ export function GoogleMapsLocationPicker({
 
       // If there's an initial location, place a marker
       if (initialLocation && initialLocation.coordinates) {
-        placeMarker(mapInstance, initialLocation.coordinates).catch(console.error);
+        placeMarker(mapInstance, initialLocation.coordinates).catch((error) =>
+          logger.error('Error placing initial marker', {
+            error: error instanceof Error ? error.message : String(error),
+          })
+        );
       }
 
-      console.log('Map initialized successfully');
+      logger.debug('Map initialized successfully');
     } catch (error) {
-      console.error('Error initializing map:', error);
+      logger.error('Error initializing map', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       setError(`Failed to initialize map: ${error}`);
       setIsLoading(false);
       initializationAttempted.current = false; // Allow retry
@@ -279,7 +304,7 @@ export function GoogleMapsLocationPicker({
 
     // Check if Google Maps is already loaded
     if (window.google && window.google.maps) {
-      console.log('Google Maps already loaded');
+      logger.debug('Google Maps already loaded');
       initializeMap();
       return;
     }
@@ -287,12 +312,12 @@ export function GoogleMapsLocationPicker({
     // Check if script is already being loaded
     const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
     if (existingScript) {
-      console.log('Google Maps script already exists, waiting for load...');
+      logger.debug('Google Maps script already exists, waiting for load');
       // Wait for it to load
       const checkLoaded = setInterval(() => {
         if (window.google && window.google.maps) {
           clearInterval(checkLoaded);
-          console.log('Google Maps loaded from existing script');
+          logger.debug('Google Maps loaded from existing script');
           initializeMap();
         }
       }, 100);
@@ -308,14 +333,14 @@ export function GoogleMapsLocationPicker({
       return;
     }
 
-    console.log('Loading Google Maps API...');
+    logger.debug('Loading Google Maps API');
 
     // Create a unique callback name
     const callbackName = `initGoogleMaps_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
     // Set up the callback
     window[callbackName] = () => {
-      console.log('Google Maps API loaded successfully via callback');
+      logger.debug('Google Maps API loaded successfully via callback');
       initializeMap();
       // Clean up the callback
       delete window[callbackName];
@@ -327,7 +352,9 @@ export function GoogleMapsLocationPicker({
     script.async = true;
     script.defer = true;
     script.onerror = (error) => {
-      console.error('Failed to load Google Maps API:', error);
+      logger.error('Failed to load Google Maps API', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       setError('Failed to load Google Maps API');
       setIsLoading(false);
       // Clean up the callback
@@ -390,7 +417,9 @@ export function GoogleMapsLocationPicker({
         setSearchResults([]);
       }
     } catch (error) {
-      console.error('Places search error:', error);
+      logger.error('Places search error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       setSearchResults([]);
     } finally {
       setIsSearching(false);
@@ -400,7 +429,7 @@ export function GoogleMapsLocationPicker({
   const selectSearchResult = (result: any) => {
     try {
       if (!result || !result.geometry || !result.geometry.location) {
-        console.error('Invalid search result:', result);
+        logger.error('Invalid search result');
         return;
       }
 
@@ -420,13 +449,19 @@ export function GoogleMapsLocationPicker({
       // Center map on selected location and add marker
       map.setCenter(location);
       map.setZoom(16);
-      placeMarker(map, location).catch(console.error);
+      placeMarker(map, location).catch((error) =>
+        logger.error('Error placing marker', {
+          error: error instanceof Error ? error.message : String(error),
+        })
+      );
 
       processLocationResult(result);
       setSearchResults([]);
       setSearchQuery('');
     } catch (error) {
-      console.error('Error selecting search result:', error);
+      logger.error('Error selecting search result', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   };
 
@@ -445,14 +480,22 @@ export function GoogleMapsLocationPicker({
 
           map.setCenter(location);
           map.setZoom(16);
-          placeMarker(map, location).catch(console.error);
+          placeMarker(map, location).catch((error) =>
+        logger.error('Error placing marker', {
+          error: error instanceof Error ? error.message : String(error),
+        })
+      );
           reverseGeocode(lat, lng);
         } catch (error) {
-          console.error('Error processing current location:', error);
+          logger.error('Error processing current location', {
+            error: error instanceof Error ? error.message : String(error),
+          });
         }
       },
       (error) => {
-        console.error('Error getting current location:', error);
+        logger.error('Error getting current location', {
+          error: error instanceof Error ? error.message : String(error),
+        });
         alert('Unable to get your current location. Please search for your location instead.');
       },
       {
