@@ -4,6 +4,7 @@ import { ProviderStatus, RequirementsValidationStatus } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { TRPCClientError } from '@trpc/client';
 
+import { logger } from '@/lib/logger';
 import { api } from '@/utils/api';
 
 /**
@@ -48,13 +49,13 @@ export function useApproveRequirement(options?: {
 
   return api.admin.approveRequirement.useMutation({
     onMutate: async ({ providerId, requirementId }) => {
-      console.log('Optimistic update - approving requirement:', { providerId, requirementId });
+      logger.debug('Optimistic update - approving requirement', { providerId, requirementId });
 
       // Cancel any outgoing refetches for requirements - try different query key patterns
       await queryClient.cancelQueries({
         predicate: (query) => {
           const keyStr = JSON.stringify(query.queryKey);
-          console.log('Checking query for cancellation:', keyStr);
+          logger.debug('Checking query for cancellation', { keyStr });
           return keyStr.includes('getProviderRequirements');
         },
       });
@@ -62,11 +63,14 @@ export function useApproveRequirement(options?: {
       // First, let's inspect the cache to find the correct key structure
       const cache = queryClient.getQueryCache();
       const allQueries = cache.getAll();
-      console.log('All cached queries:');
+      logger.debug('All cached queries');
       allQueries.forEach((query) => {
         const keyStr = JSON.stringify(query.queryKey);
         if (keyStr.includes('getProviderRequirements')) {
-          console.log('Found requirements query:', query.queryKey, 'Data:', query.state.data);
+          logger.debug('Found requirements query', {
+            queryKey: query.queryKey,
+            hasData: !!query.state.data,
+          });
         }
       });
 
@@ -80,13 +84,13 @@ export function useApproveRequirement(options?: {
         if (keyStr.includes('getProviderRequirements') && keyStr.includes(providerId)) {
           actualKey = query.queryKey;
           previousRequirements = query.state.data;
-          console.log('Found requirements data with actual key:', actualKey);
+          logger.debug('Found requirements data with actual key', { actualKey });
           break;
         }
       }
 
       if (!previousRequirements || !actualKey) {
-        console.warn('Could not find requirements data to snapshot');
+        logger.warn('Could not find requirements data to snapshot');
         return { previousRequirements: null, providerId, actualKey: null };
       }
 
@@ -104,14 +108,16 @@ export function useApproveRequirement(options?: {
               }
             : sub
         );
-        console.log('Optimistically updated cache with key:', actualKey, 'Updated data:', updated);
+        logger.debug('Optimistically updated cache', { actualKey, dataCount: updated?.length });
         return updated;
       });
 
       return { previousRequirements, providerId, actualKey };
     },
     onError: (err, _variables, context) => {
-      console.error('Approve requirement failed, rolling back:', err);
+      logger.error('Approve requirement failed, rolling back', {
+        error: err instanceof Error ? err.message : String(err),
+      });
 
       if (context?.previousRequirements && context?.actualKey) {
         queryClient.setQueryData(context.actualKey, context.previousRequirements);
@@ -122,7 +128,9 @@ export function useApproveRequirement(options?: {
       }
     },
     onSuccess: async (data, variables) => {
-      console.log('Approve requirement success - invalidating queries for:', variables.providerId);
+      logger.debug('Approve requirement success - invalidating queries', {
+        providerId: variables.providerId,
+      });
 
       // Invalidate queries containing getProviderRequirements and the provider ID
       await queryClient.invalidateQueries({
@@ -131,7 +139,7 @@ export function useApproveRequirement(options?: {
           const shouldInvalidate =
             keyStr.includes('getProviderRequirements') && keyStr.includes(variables.providerId);
           if (shouldInvalidate) {
-            console.log('Invalidating requirements query:', query.queryKey);
+            logger.debug('Invalidating requirements query', { queryKey: query.queryKey });
           }
           return shouldInvalidate;
         },
@@ -244,7 +252,7 @@ export function useApproveProvider(options?: {
 
   return api.admin.approveProvider.useMutation({
     onMutate: async ({ id }) => {
-      console.log('Optimistic update - approving provider:', { providerId: id });
+      logger.debug('Optimistic update - approving provider', { providerId: id });
 
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
@@ -266,13 +274,13 @@ export function useApproveProvider(options?: {
         if (keyStr.includes('getProviderById') && keyStr.includes(id)) {
           actualKey = query.queryKey;
           previousProvider = query.state.data;
-          console.log('Found provider data with actual key:', actualKey);
+          logger.debug('Found provider data with actual key', { actualKey });
           break;
         }
       }
 
       if (!previousProvider || !actualKey) {
-        console.warn('Could not find provider data to snapshot');
+        logger.warn('Could not find provider data to snapshot');
         return { previousProvider: null, providerId: id, actualKey: null };
       }
 
@@ -288,19 +296,16 @@ export function useApproveProvider(options?: {
           rejectedAt: null,
           rejectionReason: null,
         };
-        console.log(
-          'Optimistically updated provider with key:',
-          actualKey,
-          'Updated data:',
-          updated
-        );
+        logger.debug('Optimistically updated provider', { actualKey, status: updated?.status });
         return updated;
       });
 
       return { previousProvider, providerId: id, actualKey };
     },
     onError: (err, _variables, context) => {
-      console.error('Approve provider failed, rolling back:', err);
+      logger.error('Approve provider failed, rolling back', {
+        error: err instanceof Error ? err.message : String(err),
+      });
 
       if (context?.previousProvider && context?.actualKey) {
         queryClient.setQueryData(context.actualKey, context.previousProvider);
@@ -311,7 +316,7 @@ export function useApproveProvider(options?: {
       }
     },
     onSuccess: async (data, variables) => {
-      console.log('Approve provider success - invalidating queries for:', variables.id);
+      logger.debug('Approve provider success - invalidating queries', { providerId: variables.id });
 
       // Invalidate relevant queries
       await queryClient.invalidateQueries({
@@ -349,7 +354,7 @@ export function useRejectProvider(options?: {
 
   return api.admin.rejectProvider.useMutation({
     onMutate: async ({ id, reason }) => {
-      console.log('Optimistic update - rejecting provider:', { providerId: id, reason });
+      logger.debug('Optimistic update - rejecting provider', { providerId: id, hasReason: !!reason });
 
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
@@ -371,13 +376,13 @@ export function useRejectProvider(options?: {
         if (keyStr.includes('getProviderById') && keyStr.includes(id)) {
           actualKey = query.queryKey;
           previousProvider = query.state.data;
-          console.log('Found provider data with actual key:', actualKey);
+          logger.debug('Found provider data with actual key', { actualKey });
           break;
         }
       }
 
       if (!previousProvider || !actualKey) {
-        console.warn('Could not find provider data to snapshot');
+        logger.warn('Could not find provider data to snapshot');
         return { previousProvider: null, providerId: id, actualKey: null };
       }
 
@@ -393,19 +398,16 @@ export function useRejectProvider(options?: {
           approvedAt: null,
           approvedById: null,
         };
-        console.log(
-          'Optimistically updated provider with key:',
-          actualKey,
-          'Updated data:',
-          updated
-        );
+        logger.debug('Optimistically updated provider', { actualKey, status: updated?.status });
         return updated;
       });
 
       return { previousProvider, providerId: id, actualKey };
     },
     onError: (err, _variables, context) => {
-      console.error('Reject provider failed, rolling back:', err);
+      logger.error('Reject provider failed, rolling back', {
+        error: err instanceof Error ? err.message : String(err),
+      });
 
       if (context?.previousProvider && context?.actualKey) {
         queryClient.setQueryData(context.actualKey, context.previousProvider);
@@ -416,7 +418,7 @@ export function useRejectProvider(options?: {
       }
     },
     onSuccess: async (data, variables) => {
-      console.log('Reject provider success - invalidating queries for:', variables.id);
+      logger.debug('Reject provider success - invalidating queries', { providerId: variables.id });
 
       // Invalidate relevant queries
       await queryClient.invalidateQueries({
@@ -454,7 +456,7 @@ export function useResetProviderStatus(options?: {
 
   return api.admin.resetProviderStatus.useMutation({
     onMutate: async ({ id }) => {
-      console.log('Optimistic update - resetting provider status:', { providerId: id });
+      logger.debug('Optimistic update - resetting provider status', { providerId: id });
 
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
@@ -476,13 +478,13 @@ export function useResetProviderStatus(options?: {
         if (keyStr.includes('getProviderById') && keyStr.includes(id)) {
           actualKey = query.queryKey;
           previousProvider = query.state.data;
-          console.log('Found provider data with actual key:', actualKey);
+          logger.debug('Found provider data with actual key', { actualKey });
           break;
         }
       }
 
       if (!previousProvider || !actualKey) {
-        console.warn('Could not find provider data to snapshot');
+        logger.warn('Could not find provider data to snapshot');
         return { previousProvider: null, providerId: id, actualKey: null };
       }
 
@@ -498,19 +500,16 @@ export function useResetProviderStatus(options?: {
           approvedAt: null,
           approvedById: null,
         };
-        console.log(
-          'Optimistically updated provider with key:',
-          actualKey,
-          'Updated data:',
-          updated
-        );
+        logger.debug('Optimistically updated provider', { actualKey, status: updated?.status });
         return updated;
       });
 
       return { previousProvider, providerId: id, actualKey };
     },
     onError: (err, _variables, context) => {
-      console.error('Reset provider status failed, rolling back:', err);
+      logger.error('Reset provider status failed, rolling back', {
+        error: err instanceof Error ? err.message : String(err),
+      });
 
       if (context?.previousProvider && context?.actualKey) {
         queryClient.setQueryData(context.actualKey, context.previousProvider);
@@ -521,7 +520,9 @@ export function useResetProviderStatus(options?: {
       }
     },
     onSuccess: async (data, variables) => {
-      console.log('Reset provider status success - invalidating queries for:', variables.id);
+      logger.debug('Reset provider status success - invalidating queries', {
+        providerId: variables.id,
+      });
 
       // Invalidate relevant queries
       await queryClient.invalidateQueries({
