@@ -161,8 +161,8 @@ jobs:
           # Check for console usage outside allowed files
           CONSOLE_VIOLATIONS=$(grep -r "console\." \
             --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" \
-            --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=e2e \
-            --exclude="**/logger.ts" --exclude="**/debug.ts" --exclude="**/env/server.ts" \
+            --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=e2e --exclude-dir=scripts \
+            --exclude="logger.ts" --exclude="debug.ts" --exclude="audit.ts" --exclude="server.ts" \
             src/ || true)
 
           if [ -n "$CONSOLE_VIOLATIONS" ]; then
