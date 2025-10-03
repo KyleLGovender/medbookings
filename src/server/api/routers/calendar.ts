@@ -9,7 +9,9 @@ import {
   SchedulingRule,
   ServiceAvailabilityConfig,
 } from '@prisma/client';
+import { addDays } from 'date-fns';
 import { z } from 'zod';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 
 import {
   validateAvailabilityCreation,
@@ -742,13 +744,13 @@ export const calendarRouter = createTRPCRouter({
 
         if (input.startDate) {
           where.AND.push({
-            endTime: { gte: new Date(input.startDate) },
+            endTime: { gte: input.startDate instanceof Date ? input.startDate : parseUTC(input.startDate.toISOString()) },
           });
         }
 
         if (input.endDate) {
           where.AND.push({
-            startTime: { lte: new Date(input.endDate) },
+            startTime: { lte: input.endDate instanceof Date ? input.endDate : parseUTC(input.endDate.toISOString()) },
           });
         }
       }
@@ -1070,7 +1072,7 @@ export const calendarRouter = createTRPCRouter({
         data: {
           status: AvailabilityStatus.ACCEPTED,
           acceptedById: ctx.session.user.id,
-          acceptedAt: new Date(),
+          acceptedAt: nowUTC(),
         },
         include: {
           availableServices: true,
@@ -1195,8 +1197,8 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const startDate = new Date(input.startDate);
-      const endDate = new Date(input.endDate);
+      const startDate = input.startDate instanceof Date ? input.startDate : parseUTC(input.startDate);
+      const endDate = input.endDate instanceof Date ? input.endDate : parseUTC(input.endDate);
 
       const providers = await ctx.prisma.provider.findMany({
         where: {
@@ -1256,8 +1258,8 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const startDate = new Date(input.startDate);
-      const endDate = new Date(input.endDate);
+      const startDate = input.startDate instanceof Date ? input.startDate : parseUTC(input.startDate);
+      const endDate = input.endDate instanceof Date ? input.endDate : parseUTC(input.endDate);
 
       // Find all services
       const services = await ctx.prisma.service.findMany({});
@@ -1284,8 +1286,8 @@ export const calendarRouter = createTRPCRouter({
       const { serviceType, location, consultationType, startDate, endDate, limit } = input;
 
       // Parse dates if provided
-      const dateStart = startDate ? new Date(startDate) : new Date();
-      const dateEnd = endDate ? new Date(endDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days ahead
+      const dateStart = startDate ? (startDate instanceof Date ? startDate : parseUTC(startDate)) : nowUTC();
+      const dateEnd = endDate ? (endDate instanceof Date ? endDate : parseUTC(endDate)) : addDays(nowUTC(), 30); // 30 days ahead
 
       // Build where clause for provider search
       const whereClause: any = {
@@ -1633,7 +1635,7 @@ export const calendarRouter = createTRPCRouter({
           throw new Error('Slot is already booked');
         }
 
-        if (slot.startTime <= new Date()) {
+        if (slot.startTime <= nowUTC()) {
           throw new Error('Cannot book past slots');
         }
 
@@ -1697,8 +1699,8 @@ export const calendarRouter = createTRPCRouter({
         const bookingDetails = {
           bookingId: booking.id,
           providerName: booking.slot?.availability?.provider?.user?.name || 'Healthcare Provider',
-          startTime: booking.slot?.startTime?.toISOString() || new Date().toISOString(),
-          endTime: booking.slot?.endTime?.toISOString() || new Date().toISOString(),
+          startTime: booking.slot?.startTime?.toISOString() || nowUTC().toISOString(),
+          endTime: booking.slot?.endTime?.toISOString() || nowUTC().toISOString(),
           serviceType: booking.slot?.service?.name || 'Healthcare Service',
           location: booking.slot?.availability?.location?.name || undefined,
           guestName: booking.guestName || '',
@@ -1814,7 +1816,7 @@ export const calendarRouter = createTRPCRouter({
 
       // Build status filter
       let statusFilter: any = {};
-      const now = new Date();
+      const now = nowUTC();
 
       if (status === 'upcoming') {
         statusFilter = {
@@ -2037,7 +2039,7 @@ export const calendarRouter = createTRPCRouter({
         where: {
           providerId: input.providerId,
           startTime: {
-            gte: new Date(),
+            gte: nowUTC(),
           },
         },
         orderBy: {
@@ -2073,7 +2075,7 @@ function generateInstancesForStrategy(
   newRecurrencePattern: any
 ): Array<{ startTime: Date; endTime: Date }> {
   if (strategy === 'future') {
-    const currentDate = new Date(existingAvailability.startTime);
+    const currentDate = parseUTC(existingAvailability.startTime.toISOString());
 
     if (newRecurrencePattern && existingAvailability.isRecurring) {
       return generateRecurringInstances(newRecurrencePattern, newStartTime, newEndTime, 365).filter(
