@@ -2,6 +2,7 @@
 
 import { ProviderStatus, RequirementsValidationStatus } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { TRPCClientError } from '@trpc/client';
 
 import { api } from '@/utils/api';
 
@@ -117,7 +118,7 @@ export function useApproveRequirement(options?: {
       }
 
       if (options?.onError) {
-        options.onError(err as any);
+        options.onError(err instanceof Error ? err : new Error(String(err)));
       }
     },
     onSuccess: async (data, variables) => {
@@ -210,7 +211,7 @@ export function useRejectRequirement(options?: {
 
       // Call the user-provided onError callback if it exists
       if (options?.onError) {
-        options.onError(err as any);
+        options.onError(err instanceof Error ? err : new Error(String(err)));
       }
     },
     onSuccess: (data, variables) => {
@@ -306,7 +307,7 @@ export function useApproveProvider(options?: {
       }
 
       if (options?.onError) {
-        options.onError(err as any);
+        options.onError(err instanceof Error ? err : new Error(String(err)));
       }
     },
     onSuccess: async (data, variables) => {
@@ -411,7 +412,7 @@ export function useRejectProvider(options?: {
       }
 
       if (options?.onError) {
-        options.onError(err as any);
+        options.onError(err instanceof Error ? err : new Error(String(err)));
       }
     },
     onSuccess: async (data, variables) => {
@@ -516,7 +517,7 @@ export function useResetProviderStatus(options?: {
       }
 
       if (options?.onError) {
-        options.onError(err as any);
+        options.onError(err instanceof Error ? err : new Error(String(err)));
       }
     },
     onSuccess: async (data, variables) => {
