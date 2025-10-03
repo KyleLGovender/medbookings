@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { AlertCircle, Building, Info, MapPin, Plus, Trash2 } from 'lucide-react';
-import { useFieldArray, useFormContext } from 'react-hook-form';
+import { FieldError, useFieldArray, useFormContext } from 'react-hook-form';
 
 import { InputTags } from '@/components/input-tags';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -24,6 +24,13 @@ import { isDevelopment } from '@/lib/constants';
 
 import { GoogleMapsLocationPicker } from '../google-maps-location-picker';
 
+// Type guard for field array errors
+type FieldArrayError = Record<string, FieldError | undefined>;
+
+function isFieldArrayError(error: unknown): error is FieldArrayError[] {
+  return Array.isArray(error) && error.every((item) => typeof item === 'object' || item === undefined);
+}
+
 export function LocationSetupStep() {
   const form = useFormContext<OrganizationRegistrationData>();
   const { fields, append, remove } = useFieldArray({
@@ -36,19 +43,20 @@ export function LocationSetupStep() {
   // Function to update form errors
   const updateFormErrors = useCallback(() => {
     // Collect location errors
-    const locationErrors = form.formState.errors.locations
-      ? (form.formState.errors.locations as unknown as any[]).flatMap((locationError, index) => {
-          if (!locationError) return [];
+    const locationErrors =
+      form.formState.errors.locations && isFieldArrayError(form.formState.errors.locations)
+        ? form.formState.errors.locations.flatMap((locationError, index) => {
+            if (!locationError) return [];
 
-          return Object.entries(locationError).map(([field, error]) => {
-            const errorMessage =
-              typeof error === 'object' && error && 'message' in error
-                ? error.message
-                : String(error);
-            return `Location ${index + 1} - ${field}: ${errorMessage}`;
-          });
-        })
-      : [];
+            return Object.entries(locationError).map(([field, error]) => {
+              const errorMessage =
+                typeof error === 'object' && error && 'message' in error
+                  ? String(error.message)
+                  : String(error);
+              return `Location ${index + 1} - ${field}: ${errorMessage}`;
+            });
+          })
+        : [];
 
     setFormErrors(locationErrors);
   }, [form.formState.errors]);
@@ -97,7 +105,9 @@ export function LocationSetupStep() {
       );
       console.log(
         'Form errors after location select:',
-        (form.formState.errors.locations as any)?.[locationIndex]
+        isFieldArrayError(form.formState.errors.locations)
+          ? form.formState.errors.locations[locationIndex]
+          : undefined
       );
     },
     [form]
@@ -263,26 +273,27 @@ export function LocationSetupStep() {
                   />
 
                   {/* Show validation errors for this location */}
-                  {(form.formState.errors.locations as any)?.[index] && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Location {index + 1} Errors</AlertTitle>
-                      <AlertDescription>
-                        <ul className="list-disc space-y-1 pl-5">
-                          {Object.entries(
-                            (form.formState.errors.locations as any)?.[index] || {}
-                          ).map(([field, error]) => (
-                            <li key={field} className="text-sm">
-                              <strong>{field}:</strong>{' '}
-                              {typeof error === 'object' && error && 'message' in error
-                                ? String(error.message)
-                                : String(error)}
-                            </li>
-                          ))}
-                        </ul>
-                      </AlertDescription>
-                    </Alert>
-                  )}
+                  {isFieldArrayError(form.formState.errors.locations) &&
+                    form.formState.errors.locations[index] && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Location {index + 1} Errors</AlertTitle>
+                        <AlertDescription>
+                          <ul className="list-disc space-y-1 pl-5">
+                            {Object.entries(form.formState.errors.locations[index] || {}).map(
+                              ([field, error]) => (
+                                <li key={field} className="text-sm">
+                                  <strong>{field}:</strong>{' '}
+                                  {typeof error === 'object' && error && 'message' in error
+                                    ? String(error.message)
+                                    : String(error)}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </AlertDescription>
+                      </Alert>
+                    )}
 
                   <Separator />
 
@@ -342,7 +353,9 @@ export function LocationSetupStep() {
                       <div>
                         Errors:{' '}
                         {JSON.stringify(
-                          (form.formState.errors.locations as any)?.[index] || {},
+                          isFieldArrayError(form.formState.errors.locations)
+                            ? form.formState.errors.locations[index] || {}
+                            : {},
                           null,
                           2
                         )}
