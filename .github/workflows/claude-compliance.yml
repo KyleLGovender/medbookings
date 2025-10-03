@@ -93,6 +93,18 @@ jobs:
               continue
             fi
 
+            # Skip config files, test files, and special files from CLAUDE.md validation
+            # (they can use console.log, Date, etc. since they run at build/test time or are logging utilities)
+            if [[ "$FILE" =~ (\.eslintrc\.|next\.config\.|tailwind\.config\.|postcss\.config\.) ]] || \
+               [[ "$FILE" =~ ^e2e/ ]] || \
+               [[ "$FILE" =~ ^scripts/ ]] || \
+               [[ "$FILE" =~ ^eslint-rules/ ]] || \
+               [[ "$FILE" == "src/lib/logger.ts" ]] || \
+               [[ "$FILE" == "src/lib/debug.ts" ]]; then
+              echo "Skipping (infrastructure file): $FILE"
+              continue
+            fi
+
             echo "Validating: $FILE"
 
             # Get old version of file
