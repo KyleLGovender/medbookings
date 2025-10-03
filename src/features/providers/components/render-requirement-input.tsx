@@ -19,15 +19,20 @@ import {
   RequirementValidationType,
   ValidationConfig,
 } from '@/features/providers/types/types';
+import { parseUTC } from '@/lib/timezone';
 import { extractFilenameFromUrl } from '@/lib/utils/document-utils';
 import { type RouterOutputs } from '@/utils/api';
 
 // Type guards for validation config
-function isDocumentValidationConfig(config: ValidationConfig | undefined): config is DocumentValidationConfig {
+function isDocumentValidationConfig(
+  config: ValidationConfig | undefined
+): config is DocumentValidationConfig {
   return config !== undefined && 'acceptedFileTypes' in config;
 }
 
-function isNumberValidationConfig(config: ValidationConfig | undefined): config is NumberValidationConfig {
+function isNumberValidationConfig(
+  config: ValidationConfig | undefined
+): config is NumberValidationConfig {
   return config !== undefined && ('min' in config || 'max' in config || 'step' in config);
 }
 
@@ -135,7 +140,14 @@ export const renderRequirementInput = (
     case RequirementValidationType.DOCUMENT:
       // Extract accepted file types from validation config
       const acceptedFileTypes = isDocumentValidationConfig(requirement.validationConfig)
-        ? requirement.validationConfig.acceptedFileTypes || ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+        ? requirement.validationConfig.acceptedFileTypes || [
+            '.pdf',
+            '.doc',
+            '.docx',
+            '.jpg',
+            '.jpeg',
+            '.png',
+          ]
         : ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
 
       return (
@@ -239,7 +251,7 @@ export const renderRequirementInput = (
       return (
         <div className="max-w-64">
           <DatePickerWithInput
-            date={currentDateValue ? new Date(currentDateValue) : undefined}
+            date={currentDateValue ? parseUTC(currentDateValue) : undefined}
             onChange={(date?: Date) => {
               if (date) {
                 const dateString = date.toISOString().split('T')[0];
@@ -271,7 +283,7 @@ export const renderRequirementInput = (
       return (
         <div className="max-w-64">
           <DatePickerWithInput
-            date={currentPastDateValue ? new Date(currentPastDateValue) : undefined}
+            date={currentPastDateValue ? parseUTC(currentPastDateValue) : undefined}
             onChange={(date?: Date) => {
               if (date) {
                 const dateString = date.toISOString().split('T')[0];

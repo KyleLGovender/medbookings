@@ -1,6 +1,7 @@
 import { Subscription, SubscriptionStatus, SubscriptionType } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
+import { addMilliseconds, nowUTC } from '@/lib/timezone';
 
 /**
  * Subscription utility functions that handle the polymorphic constraint properly
@@ -130,7 +131,7 @@ export async function createSubscriptionForEntity(
     stripeCustomerId: data.stripeCustomerId,
     stripeSubscriptionId: data.stripeSubscriptionId,
     billingCycleStart: data.startDate,
-    billingCycleEnd: new Date(data.startDate.getTime() + 30 * 24 * 60 * 60 * 1000), // 30 days
+    billingCycleEnd: addMilliseconds(data.startDate, 30 * 24 * 60 * 60 * 1000), // 30 days
     currentMonthSlots: 0,
     // Initialize all polymorphic fields to null
     organizationId: null,
@@ -284,7 +285,7 @@ export async function cancelSubscription(
     where: { id: subscriptionId },
     data: {
       status: 'CANCELLED',
-      cancelledAt: new Date(),
+      cancelledAt: nowUTC(),
       cancelReason: reason || 'Cancelled via API',
     },
     include: {

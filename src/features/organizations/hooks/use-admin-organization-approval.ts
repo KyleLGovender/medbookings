@@ -5,6 +5,7 @@ import React from 'react';
 import { OrganizationStatus } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { logger } from '@/lib/logger';
 import { api } from '@/utils/api';
 
 interface ApproveOrganizationParams {
@@ -18,7 +19,7 @@ interface RejectOrganizationParams {
 
 interface MutationCallbacks {
   onSuccess?: () => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }
 
 /**
@@ -90,13 +91,15 @@ export function useRejectOrganization(callbacks?: MutationCallbacks) {
  */
 export function useResetOrganizationStatus(options?: {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
 
   return api.admin.resetOrganizationStatus.useMutation({
     onMutate: async ({ id }) => {
-      console.log('Optimistic update - resetting organization status:', { organizationId: id });
+      logger.debug('admin', 'Optimistic update - resetting organization status', {
+        organizationId: id,
+      });
 
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
@@ -118,13 +121,15 @@ export function useResetOrganizationStatus(options?: {
         if (keyStr.includes('getOrganizationById') && keyStr.includes(id)) {
           actualKey = query.queryKey;
           previousOrganization = query.state.data;
-          console.log('Found organization data with actual key:', actualKey);
+          logger.debug('admin', 'Found organization data with actual key', { actualKey });
           break;
         }
       }
 
       if (!previousOrganization || !actualKey) {
-        console.warn('Could not find organization data to snapshot');
+        logger.warn('Could not find organization data to snapshot', {
+          organizationId: id,
+        });
         return { previousOrganization: null, organizationId: id, actualKey: null };
       }
 
@@ -140,30 +145,32 @@ export function useResetOrganizationStatus(options?: {
           approvedAt: null,
           approvedById: null,
         };
-        console.log(
-          'Optimistically updated organization with key:',
+        logger.debug('admin', 'Optimistically updated organization', {
           actualKey,
-          'Updated data:',
-          updated
-        );
+          newStatus: updated.status,
+        });
         return updated;
       });
 
       return { previousOrganization, organizationId: id, actualKey };
     },
     onError: (err, _variables, context) => {
-      console.error('Reset organization status failed, rolling back:', err);
+      logger.error('Reset organization status failed, rolling back', {
+        error: err instanceof Error ? err.message : String(err),
+      });
 
       if (context?.previousOrganization && context?.actualKey) {
         queryClient.setQueryData(context.actualKey, context.previousOrganization);
       }
 
       if (options?.onError) {
-        options.onError(err as any);
+        options.onError(err);
       }
     },
     onSuccess: async (data, variables) => {
-      console.log('Reset organization status success - invalidating queries for:', variables.id);
+      logger.debug('admin', 'Reset organization status success - invalidating queries', {
+        organizationId: variables.id,
+      });
 
       // Invalidate relevant queries
       await queryClient.invalidateQueries({

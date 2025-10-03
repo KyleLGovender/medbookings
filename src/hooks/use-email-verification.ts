@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 
 import { useToast } from '@/hooks/use-toast';
 import { completeEmailVerification } from '@/lib/actions/email-verification';
+import { logger } from '@/lib/logger';
 
 export function useEmailVerification() {
   const { toast } = useToast();
@@ -34,7 +35,9 @@ export function useEmailVerification() {
           return 'success';
         }
       } catch (error) {
-        console.error('Verification completion error:', error);
+        logger.error('Verification completion error', {
+          error: error instanceof Error ? error.message : String(error),
+        });
         toast({
           title: 'Verification failed',
           description: 'An unexpected error occurred during verification',

@@ -16,13 +16,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { OrganizationRegistrationData } from '@/features/organizations/types/types';
+import { logger } from '@/lib/logger';
 
 export function OrganizationDetailsStep() {
   const form = useFormContext<OrganizationRegistrationData>();
 
   const handleLogoUpload = () => {
     // TODO: Implement logo upload to Vercel Blob
-    console.log('Logo upload functionality to be implemented');
+    logger.debug('forms', 'Logo upload functionality to be implemented');
   };
 
   return (

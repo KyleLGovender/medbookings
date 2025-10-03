@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { nowUTC } from '@/lib/timezone';
 import { extractFilenameFromUrl } from '@/lib/utils/document-utils';
 
 interface DocumentUploaderProps {
@@ -53,7 +54,7 @@ export function DocumentUploader({
         size: 0,
         type: '',
         url: currentFileUrl,
-        uploadedAt: new Date().toISOString(),
+        uploadedAt: nowUTC().toISOString(),
       });
       firstRenderRef.current = false;
     }
@@ -143,7 +144,7 @@ export function DocumentUploader({
         size: file.size,
         type: file.type,
         url: result.url, // Use the actual Blob URL from the server response
-        uploadedAt: new Date().toISOString(),
+        uploadedAt: nowUTC().toISOString(),
       };
 
       // Update local state

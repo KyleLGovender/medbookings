@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { nowUTC } from '@/lib/timezone';
 
 interface RequirementFieldProps {
   requirement: {
@@ -82,12 +83,12 @@ export function RequirementField({ requirement, onChange }: RequirementFieldProp
           onChange={(e) => handleChange(e.target.value)}
           min={
             requirement.validationType === 'FUTURE_DATE'
-              ? new Date().toISOString().split('T')[0]
+              ? nowUTC().toISOString().split('T')[0]
               : undefined
           }
           max={
             requirement.validationType === 'PAST_DATE'
-              ? new Date().toISOString().split('T')[0]
+              ? nowUTC().toISOString().split('T')[0]
               : undefined
           }
         />

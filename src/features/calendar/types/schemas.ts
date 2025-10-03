@@ -8,7 +8,7 @@ import {
 import { z } from 'zod';
 
 import { AvailabilityContext, DayOfWeek, RecurrenceOption } from '@/features/calendar/types/types';
-import { parseUTC, isSameDaySAST } from '@/lib/timezone';
+import { isSameDaySAST, parseUTC } from '@/lib/timezone';
 
 // Base Zod schemas for enums
 export const availabilityStatusSchema = z.nativeEnum(AvailabilityStatus);

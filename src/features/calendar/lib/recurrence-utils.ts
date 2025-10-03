@@ -1,3 +1,5 @@
+import { cloneDate, parseUTC } from '@/lib/timezone';
+
 import { DayOfWeek, DayOfWeekOption, RecurrenceOption, RecurrencePattern } from '../types/types';
 
 /**
@@ -70,7 +72,7 @@ export function createRecurrencePattern(
   if (option !== RecurrenceOption.NONE) {
     if (!endDate) {
       // Default to 4 weeks from start date if no end date provided
-      const defaultEndDate = new Date(startDate);
+      const defaultEndDate = cloneDate(startDate);
       defaultEndDate.setDate(defaultEndDate.getDate() + 28);
       pattern.endDate = formatDateForInput(defaultEndDate);
     } else {
@@ -147,7 +149,7 @@ export function formatDateForInput(date: Date): string {
  * Parse date from input string (YYYY-MM-DD)
  */
 export function parseDateFromInput(dateString: string): Date {
-  return new Date(`${dateString}T00:00:00`);
+  return parseUTC(`${dateString}T00:00:00`);
 }
 
 /**
@@ -197,7 +199,7 @@ export function generateRecurringInstances(
     endDate.setHours(23, 59, 59, 999);
   }
 
-  let currentDate = new Date(startTime);
+  let currentDate = cloneDate(startTime);
   let instanceCount = 1; // Start with 1 since we already have the original
 
   while (instanceCount < maxInstances) {
@@ -205,12 +207,12 @@ export function generateRecurringInstances(
 
     switch (pattern.option) {
       case RecurrenceOption.DAILY:
-        nextDate = new Date(currentDate);
+        nextDate = cloneDate(currentDate);
         nextDate.setDate(nextDate.getDate() + 1);
         break;
 
       case RecurrenceOption.WEEKLY:
-        nextDate = new Date(currentDate);
+        nextDate = cloneDate(currentDate);
         nextDate.setDate(nextDate.getDate() + 7);
         break;
 
@@ -229,7 +231,7 @@ export function generateRecurringInstances(
     }
 
     // Create the new instance with the same time but different date
-    const nextStartTime = new Date(nextDate);
+    const nextStartTime = cloneDate(nextDate);
     nextStartTime.setHours(
       startTime.getHours(),
       startTime.getMinutes(),
@@ -237,7 +239,8 @@ export function generateRecurringInstances(
       startTime.getMilliseconds()
     );
 
-    const nextEndTime = new Date(nextStartTime.getTime() + duration);
+    const nextEndTime = cloneDate(nextStartTime);
+    nextEndTime.setTime(nextEndTime.getTime() + duration);
 
     instances.push({ startTime: nextStartTime, endTime: nextEndTime });
 
@@ -260,13 +263,13 @@ function getNextCustomDay(currentDate: Date, customDays: DayOfWeek[]): Date | nu
 
   if (nextDayThisWeek !== undefined) {
     // Next occurrence is later this week
-    const nextDate = new Date(currentDate);
+    const nextDate = cloneDate(currentDate);
     const daysToAdd = nextDayThisWeek - currentDayOfWeek;
     nextDate.setDate(nextDate.getDate() + daysToAdd);
     return nextDate;
   } else {
     // Next occurrence is in the following week (first day of customDays)
-    const nextDate = new Date(currentDate);
+    const nextDate = cloneDate(currentDate);
     const daysToAdd = 7 - currentDayOfWeek + sortedDays[0];
     nextDate.setDate(nextDate.getDate() + daysToAdd);
     return nextDate;

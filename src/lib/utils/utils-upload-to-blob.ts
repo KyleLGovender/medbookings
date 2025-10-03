@@ -2,6 +2,9 @@
 
 import { put } from '@vercel/blob';
 
+import { logger } from '@/lib/logger';
+import { nowUTC } from '@/lib/timezone';
+
 /**
  * Uploads a file to Vercel Blob storage
  * @param file The file to upload
@@ -21,7 +24,7 @@ export async function uploadToBlob(
     const uuid = crypto.randomUUID();
 
     // Format datetime as YYYYMMDD-HHMMSS
-    const now = new Date();
+    const now = nowUTC();
     const datetime = now.toISOString().replace(/[-:]/g, '').replace(/\..+/, '').replace('T', '-');
 
     // Sanitize purpose string (only remove problematic characters for URLs)
@@ -39,7 +42,11 @@ export async function uploadToBlob(
     });
     return { url: blob.url, success: true };
   } catch (error) {
-    console.error('Failed to upload file:', error);
+    logger.error('Failed to upload file', {
+      error: error instanceof Error ? error.message : String(error),
+      purpose,
+      directory,
+    });
     return { success: false, error: 'Failed to upload file' };
   }
 }

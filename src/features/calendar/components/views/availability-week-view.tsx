@@ -7,6 +7,7 @@ import {
   getAvailabilityStyle,
   getWorkingTimeRange,
 } from '@/features/calendar/lib/calendar-utils';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 
 import { AvailabilityData, AvailabilityWeekViewProps } from './types';
 
@@ -23,13 +24,15 @@ export function AvailabilityWeekView({
   getAvailabilityStyle,
 }: AvailabilityWeekViewProps) {
   // Start week on Monday (matching original pattern)
-  const startOfWeek = new Date(currentDate);
+  const startOfWeek = nowUTC();
+  startOfWeek.setTime(currentDate.getTime());
   const dayOfWeek = currentDate.getDay();
   const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   startOfWeek.setDate(currentDate.getDate() - daysFromMonday);
 
   const days = Array.from({ length: 7 }, (_, i) => {
-    const day = new Date(startOfWeek);
+    const day = nowUTC();
+    day.setTime(startOfWeek.getTime());
     day.setDate(startOfWeek.getDate() + i);
     return day;
   });
@@ -46,8 +49,8 @@ export function AvailabilityWeekView({
   };
 
   const calculateAvailabilityGridPosition = (availability: AvailabilityData) => {
-    const startTime = new Date(availability.startTime);
-    const endTime = new Date(availability.endTime);
+    const startTime = availability.startTime;
+    const endTime = availability.endTime;
 
     // Convert to hour-based grid slots, accounting for display range offset
     // The events grid has hours.length * 2 rows, so we need to multiply by 2
@@ -167,7 +170,7 @@ export function AvailabilityWeekView({
                             </p>
                             <p className="text-xs opacity-75">
                               <time dateTime={availability.startTime.toString()}>
-                                {new Date(availability.startTime).toLocaleTimeString([], {
+                                {availability.startTime.toLocaleTimeString([], {
                                   hour: '2-digit',
                                   minute: '2-digit',
                                 })}
@@ -175,7 +178,7 @@ export function AvailabilityWeekView({
                               <span>
                                 {' - '}
                                 <time dateTime={availability.endTime.toString()}>
-                                  {new Date(availability.endTime).toLocaleTimeString([], {
+                                  {availability.endTime.toLocaleTimeString([], {
                                     hour: '2-digit',
                                     minute: '2-digit',
                                   })}

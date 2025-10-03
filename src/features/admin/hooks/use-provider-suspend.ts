@@ -9,7 +9,7 @@ import { api } from '@/utils/api';
  */
 export function useSuspendProvider(options?: {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -26,7 +26,7 @@ export function useSuspendProvider(options?: {
       // Call the user-provided onSuccess callback if it exists
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }
 
@@ -37,7 +37,7 @@ export function useSuspendProvider(options?: {
  */
 export function useUnsuspendProvider(options?: {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -54,6 +54,6 @@ export function useUnsuspendProvider(options?: {
       // Call the user-provided onSuccess callback if it exists
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }

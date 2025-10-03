@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { UserAvatar } from '@/components/user-avatar';
+import { nowUTC } from '@/lib/timezone';
 import { api } from '@/utils/api';
 
 interface ProviderSearchFilters {
@@ -47,8 +48,9 @@ export function ProviderSearchResults({ filters }: ProviderSearchResultsProps) {
 
   // Stabilize date calculations to prevent infinite re-renders
   const searchDates = useMemo(() => {
-    const now = new Date();
-    const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days ahead
+    const now = nowUTC();
+    const endDate = nowUTC();
+    endDate.setDate(endDate.getDate() + 30); // 30 days ahead
     return {
       startDate: now.toISOString(),
       endDate: endDate.toISOString(),
@@ -363,8 +365,8 @@ export function ProviderSearchResults({ filters }: ProviderSearchResultsProps) {
 
                   {provider.nextAvailableSlot && (
                     <div className="text-sm text-gray-600">
-                      Next: {new Date(provider.nextAvailableSlot.startTime).toLocaleDateString()} at{' '}
-                      {new Date(provider.nextAvailableSlot.startTime).toLocaleTimeString([], {
+                      Next: {provider.nextAvailableSlot.startTime.toLocaleDateString()} at{' '}
+                      {provider.nextAvailableSlot.startTime.toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}

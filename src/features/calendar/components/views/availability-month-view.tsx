@@ -6,6 +6,7 @@ import {
   getAvailabilityStyle,
   getWorkingTimeRange,
 } from '@/features/calendar/lib/calendar-utils';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 
 import { AvailabilityData, AvailabilityMonthViewProps } from './types';
 
@@ -19,8 +20,10 @@ export function AvailabilityMonthView({
   onDeleteEvent,
   getAvailabilityStyle,
 }: AvailabilityMonthViewProps) {
-  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const firstDayOfCalendar = new Date(firstDayOfMonth);
+  const firstDayOfMonth = nowUTC();
+  firstDayOfMonth.setFullYear(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const firstDayOfCalendar = nowUTC();
+  firstDayOfCalendar.setTime(firstDayOfMonth.getTime());
 
   // Adjust to start on Monday (matching original pattern)
   const dayOfWeek = firstDayOfMonth.getDay();
@@ -28,7 +31,8 @@ export function AvailabilityMonthView({
   firstDayOfCalendar.setDate(firstDayOfMonth.getDate() - daysFromMonday);
 
   const days = Array.from({ length: 42 }, (_, i) => {
-    const day = new Date(firstDayOfCalendar);
+    const day = nowUTC();
+    day.setTime(firstDayOfCalendar.getTime());
     day.setDate(firstDayOfCalendar.getDate() + i);
     return day;
   });
@@ -59,7 +63,7 @@ export function AvailabilityMonthView({
   };
 
   const isToday = (date: Date) => {
-    const today = new Date();
+    const today = nowUTC();
     return date.toDateString() === today.toDateString();
   };
 
@@ -139,8 +143,8 @@ export function AvailabilityMonthView({
                 {/* Availability Events */}
                 <div className="space-y-1">
                   {dayEvents.slice(0, 3).map((availability) => {
-                    const startTime = new Date(availability.startTime);
-                    const endTime = new Date(availability.endTime);
+                    const startTime = availability.startTime;
+                    const endTime = availability.endTime;
 
                     return (
                       <div

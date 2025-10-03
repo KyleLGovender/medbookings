@@ -9,6 +9,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useEmailVerification } from '@/hooks/use-email-verification';
+import { logger } from '@/lib/logger';
+import { nowUTC } from '@/lib/timezone';
 
 function VerifyEmailCompleteContent() {
   const router = useRouter();
@@ -32,9 +34,13 @@ function VerifyEmailCompleteContent() {
     try {
       localStorage.removeItem(tokenKey);
       localStorage.removeItem(resultKey);
-      console.log(`Cleaned up localStorage for token: ${token.substring(0, 10)}...`);
+      logger.info('Cleaned up localStorage for verification token', {
+        tokenPrefix: token.substring(0, 10),
+      });
     } catch (error) {
-      console.warn('Failed to cleanup localStorage:', error);
+      logger.warn('Failed to cleanup localStorage', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }, []);
 
@@ -42,7 +48,7 @@ function VerifyEmailCompleteContent() {
   const cleanupExpiredEntries = useCallback(() => {
     try {
       const oneDay = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-      const now = Date.now();
+      const now = nowUTC().getTime();
 
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -55,7 +61,7 @@ function VerifyEmailCompleteContent() {
               if (!isNaN(timestamp) && now - timestamp > oneDay) {
                 localStorage.removeItem(key);
                 localStorage.removeItem(`${key}_result`);
-                console.log(`Cleaned up expired localStorage entry: ${key}`);
+                logger.info('Cleaned up expired localStorage entry', { key });
               }
             } catch {
               // If it's not a timestamp, assume it's old format and clean up if older than 24h
@@ -70,7 +76,9 @@ function VerifyEmailCompleteContent() {
         }
       }
     } catch (error) {
-      console.warn('Failed to cleanup expired localStorage entries:', error);
+      logger.warn('Failed to cleanup expired localStorage entries', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }, []);
 
@@ -148,7 +156,7 @@ function VerifyEmailCompleteContent() {
 
     // Mark as attempted immediately with timestamp
     hasAttemptedVerification.current = true;
-    localStorage.setItem(tokenKey, Date.now().toString());
+    localStorage.setItem(tokenKey, nowUTC().getTime().toString());
     setIsProcessing(true);
 
     // Get stable references to avoid re-creating the async function
@@ -166,9 +174,11 @@ function VerifyEmailCompleteContent() {
           setIsUpdatingSession(true);
           try {
             await updateRef(); // Refresh NextAuth session to pick up emailVerified status
-            console.log('Session updated successfully after email verification');
+            logger.info('Session updated successfully after email verification');
           } catch (error) {
-            console.error('Failed to update session:', error);
+            logger.error('Failed to update session', {
+              error: error instanceof Error ? error.message : String(error),
+            });
           } finally {
             setIsUpdatingSession(false);
           }
@@ -182,7 +192,9 @@ function VerifyEmailCompleteContent() {
           }, 1000); // Short delay to ensure session update is complete
         }
       } catch (error) {
-        console.error('Verification error:', error);
+        logger.error('Verification error', {
+          error: error instanceof Error ? error.message : String(error),
+        });
         setVerificationStatus('error');
         localStorage.setItem(`${tokenKey}_result`, 'error');
 

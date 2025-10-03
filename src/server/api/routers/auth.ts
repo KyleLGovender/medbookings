@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { logger, sanitizeEmail } from '@/lib/logger';
+import { nowUTC } from '@/lib/timezone';
 import { createTRPCRouter, publicProcedure } from '@/server/trpc';
 
 export const authRouter = createTRPCRouter({
@@ -20,7 +22,7 @@ export const authRouter = createTRPCRouter({
           where: {
             token: input.token,
             expires: {
-              gte: new Date(), // Token is not expired
+              gte: nowUTC(), // Token is not expired
             },
           },
         });
@@ -83,7 +85,7 @@ export const authRouter = createTRPCRouter({
               id: userToVerify.id,
             },
             data: {
-              emailVerified: new Date(),
+              emailVerified: nowUTC(),
             },
           }),
           // Delete the verification token (deleteMany won't fail if already deleted)
@@ -94,7 +96,9 @@ export const authRouter = createTRPCRouter({
           }),
         ]);
 
-        console.log(`Email verification completed for user: ${userToVerify.email}`);
+        logger.info('Email verification completed for user', {
+          email: sanitizeEmail(userToVerify.email),
+        });
 
         return {
           success: true,
@@ -102,7 +106,9 @@ export const authRouter = createTRPCRouter({
           verified: true,
         };
       } catch (error) {
-        console.error('Complete verification error:', error);
+        logger.error('Complete verification error', {
+          error: error instanceof Error ? error.message : String(error),
+        });
         return {
           success: false,
           error: 'Internal server error',

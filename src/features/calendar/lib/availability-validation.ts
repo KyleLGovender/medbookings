@@ -2,6 +2,7 @@ import { addDays, addMonths, differenceInMinutes, endOfMonth, startOfMonth } fro
 
 import { AvailabilityValidationOptions, ValidationResult } from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
+import { nowUTC } from '@/lib/timezone';
 
 /**
  * Comprehensive availability validation
@@ -23,7 +24,7 @@ export async function validateAvailability(
   }
 
   // Past date validation (max 30 days back)
-  const now = new Date();
+  const now = nowUTC();
   const thirtyDaysAgo = addDays(now, -30);
   if (options.startTime < thirtyDaysAgo) {
     errors.push('Cannot create availability more than 30 days in the past');

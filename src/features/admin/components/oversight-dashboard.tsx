@@ -54,6 +54,7 @@ import {
   useRejectProvider,
 } from '@/features/providers/hooks/use-admin-provider-approval';
 import { usePermissions } from '@/hooks/use-permissions';
+import { logger } from '@/lib/logger';
 import { Permission } from '@/types/permissions';
 
 /**
@@ -144,7 +145,9 @@ export function OversightDashboard({
       setIsSubmitting(false);
     },
     onError: (error) => {
-      console.error('Error approving provider:', error);
+      logger.error('Error approving provider', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       setIsSubmitting(false);
     },
   });
@@ -159,7 +162,9 @@ export function OversightDashboard({
       setIsSubmitting(false);
     },
     onError: (error) => {
-      console.error('Error rejecting provider:', error);
+      logger.error('Error rejecting provider', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       setIsSubmitting(false);
     },
   });
@@ -174,7 +179,9 @@ export function OversightDashboard({
       setIsSubmitting(false);
     },
     onError: (error) => {
-      console.error('Error approving organization:', error);
+      logger.error('Error approving organization', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       setIsSubmitting(false);
     },
   });
@@ -189,7 +196,9 @@ export function OversightDashboard({
       setIsSubmitting(false);
     },
     onError: (error) => {
-      console.error('Error rejecting organization:', error);
+      logger.error('Error rejecting organization', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       setIsSubmitting(false);
     },
   });
@@ -238,7 +247,9 @@ export function OversightDashboard({
         }
       }
     } catch (error) {
-      console.error('Error initiating override:', error);
+      logger.error('Error initiating override', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   };
 
@@ -387,7 +398,7 @@ export function OversightDashboard({
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{new Date(provider.submittedAt).toLocaleDateString()}</TableCell>
+                      <TableCell>{provider.submittedAt.toLocaleDateString()}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Button
@@ -560,7 +571,7 @@ export function OversightDashboard({
                         <div className="text-sm text-muted-foreground">{org.ownerEmail}</div>
                       </TableCell>
                       <TableCell>{org.locationsCount}</TableCell>
-                      <TableCell>{new Date(org.submittedAt).toLocaleDateString()}</TableCell>
+                      <TableCell>{org.submittedAt.toLocaleDateString()}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Button

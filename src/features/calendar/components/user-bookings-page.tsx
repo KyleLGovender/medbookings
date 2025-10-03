@@ -42,9 +42,11 @@ export function UserBookingsPage() {
       setSelectedBooking(null);
     },
     onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update booking. Please try again.';
       toast({
         title: 'Update Failed',
-        description: error.message || 'Failed to update booking. Please try again.',
+        description: message,
         variant: 'destructive',
       });
     },
@@ -60,9 +62,11 @@ export function UserBookingsPage() {
       setSelectedBooking(null);
     },
     onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : 'Failed to cancel booking. Please try again.';
       toast({
         title: 'Cancellation Failed',
-        description: error.message || 'Failed to cancel booking. Please try again.',
+        description: message,
         variant: 'destructive',
       });
     },
@@ -84,9 +88,11 @@ export function UserBookingsPage() {
       }
     },
     onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : 'Failed to initiate reschedule. Please try again.';
       toast({
         title: 'Reschedule Failed',
-        description: error.message || 'Failed to initiate reschedule. Please try again.',
+        description: message,
         variant: 'destructive',
       });
     },

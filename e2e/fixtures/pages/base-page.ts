@@ -22,7 +22,7 @@ export class BasePage {
    */
   async takeScreenshot(name: string) {
     await this.page.screenshot({
-      path: `e2e/debug-screenshots/${name}-${Date.now()}.png`,
+      path: `e2e/debug-screenshots/${name}-${Math.floor(Math.random() * 1000000000)}.png`,
       fullPage: true,
     });
   }

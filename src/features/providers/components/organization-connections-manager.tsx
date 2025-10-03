@@ -20,6 +20,7 @@ import {
   useOrganizationConnections,
   useProviderInvitations,
 } from '@/features/providers/hooks/use-organization-connections';
+import { nowUTC } from '@/lib/timezone';
 
 import { ConnectionCard } from './connection-card';
 import { InvitationCard } from './invitation-card';
@@ -74,7 +75,7 @@ export function OrganizationConnectionsManager() {
 
   // Count pending invitations for tab badge
   const pendingInvitationsCount = invitations.filter(
-    (inv) => inv.status === ProviderInvitationStatus.PENDING && new Date(inv.expiresAt) > new Date()
+    (inv) => inv.status === ProviderInvitationStatus.PENDING && inv.expiresAt > nowUTC()
   ).length;
 
   const LoadingCards = () => (
@@ -258,7 +259,7 @@ export function OrganizationConnectionsManager() {
                   invitation={invitation}
                   showActions={
                     invitation.status === ProviderInvitationStatus.PENDING &&
-                    new Date(invitation.expiresAt) > new Date()
+                    invitation.expiresAt > nowUTC()
                   }
                 />
               ))}

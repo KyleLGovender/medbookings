@@ -1,6 +1,7 @@
 import { test as setup } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { nowUTC } from '../../src/lib/timezone';
 
 import { setupTestEnvironment } from '../utils/database';
 
@@ -22,7 +23,11 @@ setup('authenticate', async ({ page }) => {
         role: testData.provider.role,
         image: 'https://via.placeholder.com/40',
       },
-      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      expires: (() => {
+        const expiry = nowUTC();
+        expiry.setTime(expiry.getTime() + 24 * 60 * 60 * 1000);
+        return expiry.toISOString();
+      })(),
     };
     await route.fulfill({ json });
   });

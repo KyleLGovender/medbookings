@@ -11,6 +11,7 @@ import {
   rejectRequirementRequestSchema,
 } from '@/features/admin/types/schemas';
 import { validateProviderRequirementsBusinessLogic } from '@/features/providers/lib/actions';
+import { logger, sanitizeEmail } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';
 import { adminProcedure, createTRPCRouter } from '@/server/trpc';
 
@@ -363,20 +364,29 @@ export const adminRouter = createTRPCRouter({
             text: `Congratulations! Your Provider Profile is Approved\n\nDear ${updatedProvider.name},\n\nGreat news! Your provider profile on MedBookings has been reviewed and approved by our admin team.\n\nWhat's next?\n- Subscribe to one of our plans to activate your profile\n- Set up your availability calendar\n- Configure your services and pricing\n- Complete your profile information\n\nVisit your provider profile: ${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}/provider-profile\n\nBest regards,\nThe MedBookings Team`,
           });
 
-          console.log(`Provider approval email sent to: ${recipientEmail}`);
+          logger.info('Provider approval email sent', {
+            recipientEmail: sanitizeEmail(
+              updatedProvider.user?.email || updatedProvider.email || ''
+            ),
+          });
         } catch (error) {
-          console.error('Failed to send provider approval email:', error);
+          logger.error('Failed to send provider approval email', {
+            recipientEmail: sanitizeEmail(
+              updatedProvider.user?.email || updatedProvider.email || ''
+            ),
+            error: error instanceof Error ? error.message : String(error),
+          });
           // Don't fail the approval if email fails
         }
       }
 
       // Log admin action
-      console.log('ADMIN_ACTION: Provider approved', {
+      logger.audit('ADMIN_ACTION: Provider approved', {
         providerId: updatedProvider.id,
         providerName: updatedProvider.name,
-        providerEmail: updatedProvider.email,
+        providerEmail: sanitizeEmail(updatedProvider.email || ''),
         adminId: ctx.session.user.id,
-        adminEmail: ctx.session.user.email,
+        adminEmail: sanitizeEmail(ctx.session.user.email || ''),
         timestamp: nowUTC().toISOString(),
         action: 'PROVIDER_APPROVED',
         requirementsValidation: {
@@ -416,12 +426,12 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Log admin action
-      console.log('ADMIN_ACTION: Provider rejected', {
+      logger.audit('ADMIN_ACTION: Provider rejected', {
         providerId: provider.id,
         providerName: provider.name,
-        providerEmail: provider.email,
+        providerEmail: sanitizeEmail(provider.email || ''),
         adminId: ctx.session.user.id,
-        adminEmail: ctx.session.user.email,
+        adminEmail: sanitizeEmail(ctx.session.user.email || ''),
         reason: input.reason,
         timestamp: nowUTC().toISOString(),
         action: 'PROVIDER_REJECTED',
@@ -466,14 +476,14 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Log admin action
-      console.log('ADMIN_ACTION: Provider status reset to pending', {
+      logger.audit('ADMIN_ACTION: Provider status reset to pending', {
         providerId: provider.id,
         providerName: provider.name,
-        providerEmail: provider.email,
+        providerEmail: sanitizeEmail(provider.email || ''),
         previousStatus: provider.status,
         newStatus: 'PENDING_APPROVAL',
         adminId: ctx.session.user.id,
-        adminEmail: ctx.session.user.email,
+        adminEmail: sanitizeEmail(ctx.session.user.email || ''),
         timestamp: nowUTC().toISOString(),
         action: 'PROVIDER_STATUS_RESET',
       });
@@ -528,7 +538,7 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Log admin action
-      console.log('ADMIN_ACTION: Requirement approved', {
+      logger.audit('ADMIN_ACTION: Requirement approved', {
         requirementId: submission.id,
         requirementName: submission.requirementType.name,
         providerId: submission.provider.id,
@@ -581,7 +591,7 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Log admin action
-      console.log('ADMIN_ACTION: Requirement rejected', {
+      logger.audit('ADMIN_ACTION: Requirement rejected', {
         requirementId: submission.id,
         requirementName: submission.requirementType.name,
         providerId: submission.provider.id,
@@ -707,7 +717,7 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Log admin action
-      console.log('ADMIN_ACTION: Organization approved', {
+      logger.audit('ADMIN_ACTION: Organization approved', {
         organizationId: organization.id,
         organizationName: organization.name,
         adminId: ctx.session.user.id,
@@ -747,7 +757,7 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Log admin action
-      console.log('ADMIN_ACTION: Organization rejected', {
+      logger.audit('ADMIN_ACTION: Organization rejected', {
         organizationId: organization.id,
         organizationName: organization.name,
         adminId: ctx.session.user.id,
@@ -796,10 +806,10 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Log admin action
-      console.log('ADMIN_ACTION: Organization status reset to pending', {
+      logger.audit('ADMIN_ACTION: Organization status reset to pending', {
         organizationId: organization.id,
         organizationName: organization.name,
-        organizationEmail: organization.email,
+        organizationEmail: sanitizeEmail(organization.email || ''),
         previousStatus: organization.status,
         newStatus: 'PENDING_APPROVAL',
         adminId: ctx.session.user.id,
@@ -834,9 +844,9 @@ export const adminRouter = createTRPCRouter({
       }
 
       // Log admin override action
-      console.log('ADMIN_ACTION: Admin override login', {
+      logger.audit('ADMIN_ACTION: Admin override login', {
         adminId: ctx.session.user.id,
-        adminEmail: ctx.session.user.email,
+        adminEmail: sanitizeEmail(ctx.session.user.email || ''),
         targetUserId: targetUser.id,
         targetUserEmail: targetUser.email,
         timestamp: nowUTC().toISOString(),

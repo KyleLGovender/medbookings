@@ -47,13 +47,14 @@ import { useOrganizationLocations } from '@/features/organizations/hooks/use-org
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
+import { addMilliseconds, cloneDate, nowUTC, parseUTC } from '@/lib/timezone';
 import { type RouterInputs } from '@/utils/api';
 import { type RouterOutputs } from '@/utils/api';
 
 // Helper function to ensure we have a Date object
 const ensureDate = (value: string | Date | undefined): Date | undefined => {
   if (!value) return undefined;
-  return typeof value === 'string' ? new Date(value) : value;
+  return typeof value === 'string' ? parseUTC(value) : value;
 };
 
 // Extract input type from tRPC procedure for zero type drift
@@ -153,8 +154,8 @@ export function AvailabilityProposalForm({
       organizationId,
       locationId: locationId || undefined,
       connectionId,
-      startTime: new Date(),
-      endTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
+      startTime: nowUTC(),
+      endTime: addMilliseconds(nowUTC(), 2 * 60 * 60 * 1000), // 2 hours from now
       isRecurring: false,
       schedulingRule: SchedulingRule.CONTINUOUS,
       isOnlineAvailable: true,
@@ -209,7 +210,7 @@ export function AvailabilityProposalForm({
 
   const handleCustomRecurrenceSave = (data: CustomRecurrenceData) => {
     const startTime = form.watch('startTime');
-    const startTimeDate = typeof startTime === 'string' ? new Date(startTime) : startTime;
+    const startTimeDate = typeof startTime === 'string' ? parseUTC(startTime) : startTime;
     const pattern = createRecurrencePattern(
       RecurrenceOption.CUSTOM,
       startTimeDate,
@@ -303,18 +304,23 @@ export function AvailabilityProposalForm({
                             const currentStartTime = form.getValues('startTime');
                             const currentEndTime = form.getValues('endTime');
 
-                            const newStartTime = new Date(currentStartTime);
-                            newStartTime.setFullYear(date.getFullYear());
-                            newStartTime.setMonth(date.getMonth());
-                            newStartTime.setDate(date.getDate());
+                            const currentStartTimeDate = ensureDate(currentStartTime);
+                            const currentEndTimeDate = ensureDate(currentEndTime);
 
-                            const newEndTime = new Date(currentEndTime);
-                            newEndTime.setFullYear(date.getFullYear());
-                            newEndTime.setMonth(date.getMonth());
-                            newEndTime.setDate(date.getDate());
+                            if (currentStartTimeDate && currentEndTimeDate) {
+                              const newStartTime = cloneDate(currentStartTimeDate);
+                              newStartTime.setFullYear(date.getFullYear());
+                              newStartTime.setMonth(date.getMonth());
+                              newStartTime.setDate(date.getDate());
 
-                            form.setValue('startTime', newStartTime);
-                            form.setValue('endTime', newEndTime);
+                              const newEndTime = cloneDate(currentEndTimeDate);
+                              newEndTime.setFullYear(date.getFullYear());
+                              newEndTime.setMonth(date.getMonth());
+                              newEndTime.setDate(date.getDate());
+
+                              form.setValue('startTime', newStartTime);
+                              form.setValue('endTime', newEndTime);
+                            }
                           }
                         }}
                       />

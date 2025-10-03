@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { parseUTC } from '@/lib/timezone';
 import { api } from '@/utils/api';
 
 import { renderRequirementInput } from '../render-requirement-input';
@@ -189,7 +190,7 @@ export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEdi
                                 : req.requirementType.validationType === 'BOOLEAN'
                                   ? `Response: ${req.documentMetadata.value === 'true' || req.documentMetadata.value === true ? 'Yes' : 'No'}`
                                   : req.requirementType.validationType?.includes('DATE')
-                                    ? `Date provided: ${new Date(req.documentMetadata.value).toLocaleDateString()}`
+                                    ? `Date provided: ${parseUTC(req.documentMetadata.value).toLocaleDateString()}`
                                     : req.requirementType.validationType === 'TEXT'
                                       ? 'Information provided'
                                       : req.requirementType.validationType === 'PREDEFINED_LIST'
@@ -198,7 +199,7 @@ export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEdi
                             </span>
                             {req.updatedAt && (
                               <span className="text-xs">
-                                (Last updated: {new Date(req.updatedAt).toLocaleDateString()})
+                                (Last updated: {req.updatedAt.toLocaleDateString()})
                               </span>
                             )}
                           </div>

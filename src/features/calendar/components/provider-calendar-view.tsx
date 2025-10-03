@@ -25,6 +25,7 @@ import { AvailabilityWeekView } from '@/features/calendar/components/views/avail
 import { useCalendarData } from '@/features/calendar/hooks/use-calendar-data';
 import { calculateDateRange, navigateCalendarDate } from '@/features/calendar/lib/calendar-utils';
 import { CalendarViewMode } from '@/features/calendar/types/types';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 import type { RouterOutputs } from '@/utils/api';
 
 // Extract proper types for strong typing
@@ -52,7 +53,7 @@ export function ProviderCalendarView({
   onDeleteAvailability,
   onDateClick,
   viewMode: initialViewMode = 'week',
-  initialDate = new Date(),
+  initialDate = nowUTC(),
 }: ProviderCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(initialDate);
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialViewMode);
@@ -108,8 +109,7 @@ export function ProviderCalendarView({
     // Calculate total available hours
     const totalAvailableHours = availabilities.reduce((total, availability) => {
       const hours =
-        (new Date(availability.endTime).getTime() - new Date(availability.startTime).getTime()) /
-        (1000 * 60 * 60);
+        (availability.endTime.getTime() - availability.startTime.getTime()) / (1000 * 60 * 60);
       return total + hours;
     }, 0);
 
@@ -123,8 +123,7 @@ export function ProviderCalendarView({
         availability.calculatedSlots.forEach((slot: any) => {
           if (slot.booking) {
             const slotHours =
-              (new Date(slot.endTime).getTime() - new Date(slot.startTime).getTime()) /
-              (1000 * 60 * 60);
+              (slot.endTime.getTime() - slot.startTime.getTime()) / (1000 * 60 * 60);
             bookedHours += slotHours;
 
             if (slot.booking.status === 'PENDING') {
@@ -162,8 +161,8 @@ export function ProviderCalendarView({
     let latestHour = 0;
 
     availabilities.forEach((availability) => {
-      const startTime = new Date(availability.startTime);
-      const endTime = new Date(availability.endTime);
+      const startTime = availability.startTime;
+      const endTime = availability.endTime;
 
       const startHour = startTime.getHours();
       const startMinutes = startTime.getMinutes();
@@ -234,9 +233,7 @@ export function ProviderCalendarView({
         : availabilities.filter((a) => a.status === statusFilter);
 
     // Sort by start time
-    return filtered.sort(
-      (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-    );
+    return filtered.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
   }, [availabilities, statusFilter]);
 
   // Handle availability click - delegate to parent
@@ -366,7 +363,7 @@ export function ProviderCalendarView({
                 </div>
 
                 <div className="flex items-center justify-center space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
+                  <Button variant="outline" size="sm" onClick={() => setCurrentDate(nowUTC())}>
                     Today
                   </Button>
                 </div>

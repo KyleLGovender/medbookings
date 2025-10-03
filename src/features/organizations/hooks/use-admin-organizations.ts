@@ -2,6 +2,7 @@
 
 import { OrganizationStatus } from '@prisma/client';
 
+import { nowUTC } from '@/lib/timezone';
 import { api } from '@/utils/api';
 
 /**
@@ -121,12 +122,12 @@ export function useAdminRecentlyApprovedOrganizations(days: number = 30) {
     {
       select: (organizations) => {
         // Filter organizations approved within the specified days
-        const cutoffDate = new Date();
+        const cutoffDate = nowUTC();
         cutoffDate.setDate(cutoffDate.getDate() - days);
 
         return organizations.filter((organization: any) => {
           if (!organization.approvedAt) return false;
-          const approvedDate = new Date(organization.approvedAt);
+          const approvedDate = organization.approvedAt;
           return approvedDate >= cutoffDate;
         });
       },

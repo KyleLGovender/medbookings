@@ -182,21 +182,21 @@ export const TEST_SERVICES = {
 // Helper functions for generating test data
 export const generateTestUser = (overrides: Partial<typeof TEST_USERS.user> = {}) => ({
   ...TEST_USERS.user,
-  id: `test-user-${Date.now()}`,
-  email: `user-${Date.now()}@test.com`,
+  id: `test-user-${Math.floor(Math.random() * 1000000000)}`,
+  email: `user-${Math.floor(Math.random() * 1000000000)}@test.com`,
   ...overrides,
 });
 
 export const generateTestProvider = (overrides: Partial<typeof TEST_PROVIDERS.approved> = {}) => ({
   ...TEST_PROVIDERS.approved,
-  id: `test-provider-${Date.now()}`,
-  email: `provider-${Date.now()}@test.com`,
+  id: `test-provider-${Math.floor(Math.random() * 1000000000)}`,
+  email: `provider-${Math.floor(Math.random() * 1000000000)}@test.com`,
   ...overrides,
 });
 
 export const generateTestBooking = (overrides: Partial<typeof TEST_BOOKINGS.standard> = {}) => ({
   ...TEST_BOOKINGS.standard,
-  guestEmail: `booking-${Date.now()}@test.com`,
+  guestEmail: `booking-${Math.floor(Math.random() * 1000000000)}@test.com`,
   ...overrides,
 });
 

@@ -11,7 +11,6 @@ import {
 } from '@prisma/client';
 import { addDays } from 'date-fns';
 import { z } from 'zod';
-import { nowUTC, parseUTC } from '@/lib/timezone';
 
 import {
   validateAvailabilityCreation,
@@ -37,6 +36,8 @@ import {
   sendBookingConfirmationEmail,
   sendProviderNotificationEmail,
 } from '@/lib/communications/email';
+import { logger } from '@/lib/logger';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
 export const calendarRouter = createTRPCRouter({
@@ -153,7 +154,7 @@ export const calendarRouter = createTRPCRouter({
                 endTime: instance.endTime,
                 isRecurring: validatedData.isRecurring,
                 recurrencePattern: validatedData.recurrencePattern
-                  ? (validatedData.recurrencePattern as any)
+                  ? (validatedData.recurrencePattern as unknown as Prisma.InputJsonValue)
                   : Prisma.JsonNull,
                 seriesId: validatedData.seriesId || null,
                 schedulingRule: validatedData.schedulingRule,
@@ -223,10 +224,10 @@ export const calendarRouter = createTRPCRouter({
               });
 
               if (slotData.errors.length > 0) {
-                console.warn(
-                  `Slot generation failed for availability ${availability.id}:`,
-                  slotData.errors.join(', ')
-                );
+                logger.warn('Slot generation failed for availability', {
+                  availabilityId: availability.id,
+                  errors: slotData.errors,
+                });
               } else if (slotData.slotRecords.length > 0) {
                 // Create slots in database (Option C: database operations in tRPC)
                 await tx.calculatedAvailabilitySlot.createMany({
@@ -235,7 +236,10 @@ export const calendarRouter = createTRPCRouter({
                 totalSlotsGenerated += slotData.totalSlots;
               }
             } catch (slotError) {
-              console.error('Slot generation error during availability creation:', slotError);
+              logger.error('Slot generation error during availability creation', {
+                availabilityId: availability.id,
+                error: slotError instanceof Error ? slotError.message : String(slotError),
+              });
             }
           }
         }
@@ -250,9 +254,9 @@ export const calendarRouter = createTRPCRouter({
 
     // 3. Handle notifications and cache revalidation
     if (validation.notificationNeeded) {
-      console.log(
-        `📧 Availability proposal notification would be sent for availability ${result.availabilities[0]?.id}`
-      );
+      logger.info('Availability proposal notification would be sent', {
+        availabilityId: result.availabilities[0]?.id,
+      });
     }
 
     // Revalidate relevant paths
@@ -314,7 +318,7 @@ export const calendarRouter = createTRPCRouter({
               updateData.isRecurring = validatedData.isRecurring;
             if (validatedData.recurrencePattern !== undefined) {
               updateData.recurrencePattern = validatedData.recurrencePattern
-                ? (validatedData.recurrencePattern as any)
+                ? (validatedData.recurrencePattern as unknown as Prisma.InputJsonValue)
                 : Prisma.JsonNull;
             }
             if (validatedData.schedulingRule !== undefined)
@@ -450,7 +454,7 @@ export const calendarRouter = createTRPCRouter({
                           ? validatedData.isRecurring
                           : existingAvailability.isRecurring,
                       recurrencePattern: newRecurrencePattern
-                        ? (newRecurrencePattern as any)
+                        ? (newRecurrencePattern as Prisma.InputJsonValue)
                         : Prisma.JsonNull,
                       seriesId: existingAvailability.seriesId,
                       schedulingRule:
@@ -582,16 +586,17 @@ export const calendarRouter = createTRPCRouter({
                     });
 
                     if (slotData.errors.length > 0) {
-                      console.warn(
-                        `Slot regeneration failed for availability ${availability.id}:`,
-                        slotData.errors.join(', ')
-                      );
+                      logger.warn('Slot regeneration failed for availability', {
+                        availabilityId: availability.id,
+                        errors: slotData.errors,
+                      });
                     } else if (slotData.slotRecords.length > 0) {
                       // Create new slots in database with chunking to prevent timeout
                       const CHUNK_SIZE = 100; // Process slots in chunks of 100
-                      console.log(
-                        `Creating ${slotData.slotRecords.length} slots for availability ${availability.id}`
-                      );
+                      logger.info('Creating slots for availability', {
+                        availabilityId: availability.id,
+                        totalSlots: slotData.slotRecords.length,
+                      });
 
                       for (let i = 0; i < slotData.slotRecords.length; i += CHUNK_SIZE) {
                         const chunk = slotData.slotRecords.slice(i, i + CHUNK_SIZE);
@@ -602,10 +607,11 @@ export const calendarRouter = createTRPCRouter({
                       totalSlotsRegenerated += slotData.totalSlots;
                     }
                   } catch (slotGenError) {
-                    console.error(
-                      'Slot regeneration error during availability update:',
-                      slotGenError
-                    );
+                    logger.error('Slot regeneration error during availability update', {
+                      availabilityId: availability.id,
+                      error:
+                        slotGenError instanceof Error ? slotGenError.message : String(slotGenError),
+                    });
                   }
                 }
               }
@@ -619,7 +625,11 @@ export const calendarRouter = createTRPCRouter({
           }
         );
       } catch (transactionError: any) {
-        console.error('Transaction failed during availability update:', transactionError);
+        logger.error('Transaction failed during availability update', {
+          error:
+            transactionError instanceof Error ? transactionError.message : String(transactionError),
+          code: transactionError.code,
+        });
 
         // Provide specific error messages for different transaction failures
         if (transactionError.code === 'P2028') {
@@ -744,13 +754,18 @@ export const calendarRouter = createTRPCRouter({
 
         if (input.startDate) {
           where.AND.push({
-            endTime: { gte: input.startDate instanceof Date ? input.startDate : parseUTC(input.startDate.toISOString()) },
+            endTime: {
+              gte:
+                typeof input.startDate === 'string' ? parseUTC(input.startDate) : input.startDate,
+            },
           });
         }
 
         if (input.endDate) {
           where.AND.push({
-            startTime: { lte: input.endDate instanceof Date ? input.endDate : parseUTC(input.endDate.toISOString()) },
+            startTime: {
+              lte: typeof input.endDate === 'string' ? parseUTC(input.endDate) : input.endDate,
+            },
           });
         }
       }
@@ -1097,10 +1112,10 @@ export const calendarRouter = createTRPCRouter({
 
         let slotsGenerated = 0;
         if (slotData.errors.length > 0) {
-          console.warn(
-            `Slot generation failed for accepted availability ${updatedAvailability.id}:`,
-            slotData.errors.join(', ')
-          );
+          logger.warn('Slot generation failed for accepted availability', {
+            availabilityId: updatedAvailability.id,
+            errors: slotData.errors,
+          });
         } else if (slotData.slotRecords.length > 0) {
           // Create slots in database (Option C: database operations in tRPC)
           await ctx.prisma.calculatedAvailabilitySlot.createMany({
@@ -1109,9 +1124,9 @@ export const calendarRouter = createTRPCRouter({
           slotsGenerated = slotData.totalSlots;
         }
 
-        console.log(
-          `📧 Availability accepted notification would be sent for availability ${input.id}`
-        );
+        logger.info('Availability accepted notification would be sent', {
+          availabilityId: input.id,
+        });
 
         return {
           success: true,
@@ -1119,7 +1134,10 @@ export const calendarRouter = createTRPCRouter({
           slotsGenerated,
         };
       } catch (slotGenError) {
-        console.warn(`Slot generation error for accepted availability ${input.id}:`, slotGenError);
+        logger.warn('Slot generation error for accepted availability', {
+          availabilityId: input.id,
+          error: slotGenError instanceof Error ? slotGenError.message : String(slotGenError),
+        });
         return {
           success: true,
           id: input.id,
@@ -1162,11 +1180,15 @@ export const calendarRouter = createTRPCRouter({
         },
       });
 
-      console.log(
-        `📧 Availability rejected notification would be sent for availability ${input.id}`
-      );
+      logger.info('Availability rejected notification would be sent', {
+        availabilityId: input.id,
+        hasReason: !!input.reason,
+      });
       if (input.reason) {
-        console.log(`📝 Rejection reason: ${input.reason}`);
+        logger.debug('calendar', 'Rejection reason provided', {
+          availabilityId: input.id,
+          reason: input.reason,
+        });
       }
 
       return {
@@ -1197,8 +1219,8 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const startDate = input.startDate instanceof Date ? input.startDate : parseUTC(input.startDate);
-      const endDate = input.endDate instanceof Date ? input.endDate : parseUTC(input.endDate);
+      const startDate = parseUTC(input.startDate);
+      const endDate = parseUTC(input.endDate);
 
       const providers = await ctx.prisma.provider.findMany({
         where: {
@@ -1258,8 +1280,8 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const startDate = input.startDate instanceof Date ? input.startDate : parseUTC(input.startDate);
-      const endDate = input.endDate instanceof Date ? input.endDate : parseUTC(input.endDate);
+      const startDate = parseUTC(input.startDate);
+      const endDate = parseUTC(input.endDate);
 
       // Find all services
       const services = await ctx.prisma.service.findMany({});
@@ -1286,8 +1308,8 @@ export const calendarRouter = createTRPCRouter({
       const { serviceType, location, consultationType, startDate, endDate, limit } = input;
 
       // Parse dates if provided
-      const dateStart = startDate ? (startDate instanceof Date ? startDate : parseUTC(startDate)) : nowUTC();
-      const dateEnd = endDate ? (endDate instanceof Date ? endDate : parseUTC(endDate)) : addDays(nowUTC(), 30); // 30 days ahead
+      const dateStart = startDate ? parseUTC(startDate) : nowUTC();
+      const dateEnd = endDate ? parseUTC(endDate) : addDays(nowUTC(), 30); // 30 days ahead
 
       // Build where clause for provider search
       const whereClause: any = {
@@ -1746,9 +1768,12 @@ export const calendarRouter = createTRPCRouter({
         // Send all notifications in parallel
         await Promise.allSettled([...emailPromises, ...whatsappPromises]);
 
-        console.log('Booking notifications sent successfully for booking:', booking.id);
+        logger.info('Booking notifications sent successfully', { bookingId: booking.id });
       } catch (error) {
-        console.error('Error sending booking notifications:', error);
+        logger.error('Error sending booking notifications', {
+          bookingId: booking.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
         // Don't fail the booking if notifications fail
       }
 

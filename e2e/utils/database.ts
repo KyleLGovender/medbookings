@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
+import { nowUTC } from '../../src/lib/timezone';
 
 // Load environment variables (prioritize dev environment)
 dotenv.config({ path: '.env.local' });
@@ -109,7 +110,7 @@ export async function setupTestData() {
       email: 'e2e-calendar-provider@example.com',
       name: 'E2E_CALENDAR_Provider',
       role: 'USER',
-      emailVerified: new Date(),
+      emailVerified: nowUTC(),
     },
   });
 
@@ -121,7 +122,7 @@ export async function setupTestData() {
       email: 'e2e-calendar-client@example.com',
       name: 'E2E_CALENDAR_Client',
       role: 'USER',
-      emailVerified: new Date(),
+      emailVerified: nowUTC(),
     },
   });
 
@@ -147,7 +148,7 @@ export async function setupTestData() {
       image: 'https://via.placeholder.com/150',
       languages: ['English'],
       status: 'APPROVED', // Skip approval process for calendar testing
-      approvedAt: new Date(),
+      approvedAt: nowUTC(),
     },
   });
 

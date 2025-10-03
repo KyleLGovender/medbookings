@@ -6,6 +6,7 @@
  *
  * @author MedBookings Development Team
  */
+import { cloneDate, nowUTC } from '@/lib/timezone';
 import type { RouterOutputs } from '@/utils/api';
 
 // Extract proper types from tRPC
@@ -74,7 +75,7 @@ export function groupEventsByTimeSlot(
   const grouped = new Map<string, AvailabilityData[]>();
 
   for (const event of events) {
-    const startTime = new Date(event.startTime);
+    const startTime = cloneDate(event.startTime);
     const slotKey = getTimeSlotKey(startTime, slotDuration);
 
     const existingEvents = grouped.get(slotKey) || [];
@@ -191,8 +192,8 @@ export function filterEventsInTimeRange(
   endTime: Date
 ): AvailabilityData[] {
   return events.filter((event) => {
-    const eventStart = new Date(event.startTime);
-    const eventEnd = new Date(event.endTime);
+    const eventStart = cloneDate(event.startTime);
+    const eventEnd = cloneDate(event.endTime);
 
     // Event overlaps with visible range if:
     // - Event starts before range ends AND
@@ -210,12 +211,12 @@ export function filterEventsInTimeRange(
 export function sortEventsForRendering(events: AvailabilityData[]): AvailabilityData[] {
   return [...events].sort((a, b) => {
     // Sort by start time first
-    const timeCompare = new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+    const timeCompare = a.startTime.getTime() - b.startTime.getTime();
     if (timeCompare !== 0) return timeCompare;
 
     // Then by duration (longer events first for better visual layering)
-    const aDuration = new Date(a.endTime).getTime() - new Date(a.startTime).getTime();
-    const bDuration = new Date(b.endTime).getTime() - new Date(b.startTime).getTime();
+    const aDuration = a.endTime.getTime() - a.startTime.getTime();
+    const bDuration = b.endTime.getTime() - b.startTime.getTime();
 
     return bDuration - aDuration;
   });
@@ -303,7 +304,7 @@ export function throttle<T extends (...args: any[]) => any>(
   let lastCall = 0;
 
   return (...args: Parameters<T>) => {
-    const now = Date.now();
+    const now = nowUTC().getTime();
 
     if (now - lastCall >= delay) {
       lastCall = now;

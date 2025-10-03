@@ -65,19 +65,19 @@ export function ProviderAvailabilitySection({ providerId }: ProviderAvailability
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">
-                      {new Date(availability.startTime).toLocaleDateString('en-US', {
+                      {availability.startTime.toLocaleDateString('en-US', {
                         weekday: 'long',
                         month: 'short',
                         day: 'numeric',
                       })}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(availability.startTime).toLocaleTimeString('en-US', {
+                      {availability.startTime.toLocaleTimeString('en-US', {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
                       {' - '}
-                      {new Date(availability.endTime).toLocaleTimeString('en-US', {
+                      {availability.endTime.toLocaleTimeString('en-US', {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}

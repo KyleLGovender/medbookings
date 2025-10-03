@@ -8,7 +8,9 @@ import { getServerSession } from 'next-auth';
 import { Session } from 'next-auth';
 
 import { authOptions } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
+import { addMilliseconds, nowUTC } from '@/lib/timezone';
 import {
   OrganizationRole,
   PermissionContext,
@@ -111,10 +113,12 @@ async function loadUserPermissions(email: string): Promise<SessionPermissions | 
         email: user.email || '',
       },
       permissions: userPermissions,
-      lastUpdated: new Date(),
+      lastUpdated: nowUTC(),
     };
   } catch (error) {
-    console.error('Error loading user permissions:', error);
+    logger.error('Error loading user permissions', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return null;
   }
 }
@@ -137,7 +141,7 @@ async function getCachedPermissions(email: string): Promise<SessionPermissions |
   const cached = permissionCache.get(email);
   if (!cached) return null;
 
-  if (cached.expires < new Date()) {
+  if (cached.expires < nowUTC()) {
     permissionCache.delete(email);
     return null;
   }
@@ -149,7 +153,7 @@ async function getCachedPermissions(email: string): Promise<SessionPermissions |
  * Cache permissions with expiration
  */
 async function cachePermissions(email: string, permissions: SessionPermissions): Promise<void> {
-  const expires = new Date(Date.now() + PERMISSION_CACHE_DURATION);
+  const expires = addMilliseconds(nowUTC(), PERMISSION_CACHE_DURATION);
   permissionCache.set(email, {
     permissions,
     expires,
@@ -179,7 +183,9 @@ export async function invalidateOrganizationPermissions(organizationId: string):
       }
     });
   } catch (error) {
-    console.error('Error invalidating organization permissions:', error);
+    logger.error('Error invalidating organization permissions', {
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
@@ -235,7 +241,7 @@ export async function getCurrentUser(): Promise<{
 export function sessionNeedsRefresh(session: EnhancedSession): boolean {
   if (!session.permissions) return true;
 
-  const age = Date.now() - session.permissions.lastUpdated.getTime();
+  const age = nowUTC().getTime() - session.permissions.lastUpdated.getTime();
   return age > PERMISSION_CACHE_DURATION;
 }
 

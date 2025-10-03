@@ -230,7 +230,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm text-muted-foreground">
-                            {new Date(provider.createdAt).toLocaleDateString()}
+                            {provider.createdAt.toLocaleDateString()}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">

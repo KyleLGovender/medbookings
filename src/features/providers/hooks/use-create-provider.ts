@@ -9,7 +9,7 @@ import { api } from '@/utils/api';
  */
 export function useCreateProvider(options?: {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -19,6 +19,6 @@ export function useCreateProvider(options?: {
       utils.providers.search.invalidate();
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }

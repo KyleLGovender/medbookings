@@ -19,6 +19,7 @@ import { useProvider } from '@/features/providers/hooks/use-provider';
 import { useProviderTypeServices } from '@/features/providers/hooks/use-provider-type-services';
 import { useUpdateProviderServices } from '@/features/providers/hooks/use-provider-updates';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 // Define the form schema - simpler approach with a map of service selections
 const editServicesSchema = z.object({
@@ -66,9 +67,10 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
       router.push(`/providers/${providerId}`);
     },
     onError: (error) => {
+      const message = error instanceof Error ? error.message : 'Failed to update services';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to update services',
+        description: message,
         variant: 'destructive',
       });
     },
@@ -128,10 +130,10 @@ export function EditServices({ providerId, userId }: EditServicesProps) {
         };
       });
 
-    console.log('Submitting to tRPC:', {
-      id: providerId,
-      availableServices: selectedServices,
-      serviceConfigs,
+    logger.debug('providers', 'Submitting to tRPC', {
+      providerId,
+      serviceCount: selectedServices.length,
+      configCount: serviceConfigs.length,
     });
 
     updateServicesMutation.mutate({

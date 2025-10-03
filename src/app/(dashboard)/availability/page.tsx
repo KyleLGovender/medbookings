@@ -13,6 +13,8 @@ import { ProviderCalendarView } from '@/features/calendar/components/provider-ca
 import { useDeleteAvailability } from '@/features/calendar/hooks/use-availability';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
+import { parseUTC } from '@/lib/timezone';
 import { type RouterOutputs } from '@/utils/api';
 
 type AvailabilityData = RouterOutputs['calendar']['searchAvailability'][number];
@@ -67,7 +69,9 @@ export default function GlobalAvailabilityPage() {
         scope,
       });
     } catch (error) {
-      console.error('Failed to delete availability:', error);
+      logger.error('Failed to delete availability', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       toast({
         title: 'Failed to delete',
         description: 'An error occurred while deleting the availability. Please try again.',
@@ -152,7 +156,7 @@ export default function GlobalAvailabilityPage() {
           }
           availabilityDate={
             pendingDeleteAvailability?.startTime
-              ? new Date(pendingDeleteAvailability.startTime).toLocaleDateString()
+              ? pendingDeleteAvailability.startTime.toLocaleDateString()
               : ''
           }
           isDestructive={true}

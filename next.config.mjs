@@ -51,9 +51,9 @@ const nextConfig = {
     return config;
   },
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
+    // ESLint is now enforced during builds to ensure CLAUDE.md compliance
+    // All violations must be fixed before deployment
+    ignoreDuringBuilds: false,
   },
 };
 

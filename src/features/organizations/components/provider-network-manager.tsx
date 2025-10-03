@@ -26,6 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useOrganizationProviderConnections } from '@/features/organizations/hooks/use-provider-connections';
 import { useProviderInvitations } from '@/features/organizations/hooks/use-provider-invitations';
+import { nowUTC } from '@/lib/timezone';
 
 import { ProviderConnectionCard } from './provider-connection-card';
 import { ProviderInvitationForm } from './provider-invitation-form';
@@ -75,7 +76,7 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
 
   // Count pending invitations for tab badge
   const pendingInvitationsCount = invitations.filter(
-    (inv) => inv.status === 'PENDING' && new Date(inv.expiresAt) > new Date()
+    (inv) => inv.status === 'PENDING' && inv.expiresAt > nowUTC()
   ).length;
 
   const handleInvitationSuccess = () => {
@@ -267,7 +268,7 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
           ) : (
             <ProviderInvitationList
               organizationId={organizationId}
-              invitations={filteredInvitations as any}
+              invitations={filteredInvitations}
             />
           )}
         </TabsContent>

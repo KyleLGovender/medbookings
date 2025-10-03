@@ -1,5 +1,12 @@
 import { SchedulingRule } from '@prisma/client';
-import { addMinutes, setMinutes, setSeconds, setMilliseconds, startOfDay, startOfHour } from 'date-fns';
+import {
+  addMinutes,
+  setMilliseconds,
+  setMinutes,
+  setSeconds,
+  startOfDay,
+  startOfHour,
+} from 'date-fns';
 
 import {
   SchedulingOptions,

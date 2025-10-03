@@ -10,7 +10,7 @@ import { useProviderByUserId } from './use-provider-by-user-id';
  */
 export function useCurrentUserProvider() {
   const { data: session, status: sessionStatus } = useSession();
-  const userId = (session?.user as any)?.id;
+  const userId = session?.user?.id;
 
   const providerQuery = useProviderByUserId(userId || '');
 

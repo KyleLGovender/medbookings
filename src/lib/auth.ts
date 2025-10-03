@@ -8,7 +8,9 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 
 import env from '@/config/env/server';
+import { logger, sanitizeEmail } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
+import { addMilliseconds, nowUTC } from '@/lib/timezone';
 
 // Simple password hashing utility (will add bcryptjs as dependency)
 async function hashPassword(password: string): Promise<string> {
@@ -29,6 +31,10 @@ declare module 'next-auth' {
       role: UserRole;
       emailVerified: Date | null;
     } & DefaultSession['user'];
+  }
+
+  interface User {
+    role: UserRole;
   }
 }
 
@@ -96,21 +102,25 @@ export const authOptions: NextAuthOptions = {
 
           // User doesn't exist at all
           if (!user) {
-            console.log(`Credentials sign-in blocked - user not found: ${credentials.email}`);
+            logger.warn('Credentials sign-in blocked - user not found', {
+              email: sanitizeEmail(credentials.email),
+            });
             throw new Error('UserNotFound');
           }
 
           // User exists but has no password (OAuth user trying to sign in with credentials)
           if (!user.password) {
-            console.log(
-              `Credentials sign-in blocked - OAuth user attempting credentials login: ${credentials.email}`
-            );
+            logger.warn('Credentials sign-in blocked - OAuth user attempting credentials login', {
+              email: sanitizeEmail(credentials.email),
+            });
             throw new Error('OAuthUserAttemptingCredentials');
           }
 
           const isPasswordValid = await verifyPassword(credentials.password, user.password);
           if (!isPasswordValid) {
-            console.log(`Credentials sign-in blocked - invalid password: ${credentials.email}`);
+            logger.warn('Credentials sign-in blocked - invalid password', {
+              email: sanitizeEmail(credentials.email),
+            });
             throw new Error('InvalidPassword');
           }
 
@@ -121,7 +131,9 @@ export const authOptions: NextAuthOptions = {
             role: user.role,
           };
         } catch (error) {
-          console.error('Auth error:', error);
+          logger.error('Auth error', {
+            error: error instanceof Error ? error.message : String(error),
+          });
           // Re-throw our custom errors, or wrap unknown errors
           if (
             error instanceof Error &&
@@ -160,12 +172,12 @@ export const authOptions: NextAuthOptions = {
                 where: { email: user.email },
                 data: { role: 'ADMIN' },
               });
-              (user as any).role = 'ADMIN';
+              user.role = 'ADMIN';
             } else if (existingUser && existingUser.role === 'ADMIN') {
-              (user as any).role = 'ADMIN';
+              user.role = 'ADMIN';
             } else if (!existingUser) {
               // For new users, set the role property so it gets saved correctly
-              (user as any).role = 'ADMIN';
+              user.role = 'ADMIN';
             }
           }
 
@@ -173,16 +185,19 @@ export const authOptions: NextAuthOptions = {
           if (existingUser && !existingUser.emailVerified) {
             await prisma.user.update({
               where: { id: existingUser.id },
-              data: { emailVerified: new Date() },
+              data: { emailVerified: nowUTC() },
             });
           }
 
-          console.log(
-            `Google OAuth ${existingUser ? 'sign-in' : 'registration'} allowed for: ${user.email}`
-          );
+          logger.info('Google OAuth sign-in allowed', {
+            email: sanitizeEmail(user.email || ''),
+            isExistingUser: !!existingUser,
+          });
           return true; // Always allow Google OAuth
         } catch (error) {
-          console.error('Error during Google OAuth sign-in check:', error);
+          logger.error('Error during Google OAuth sign-in check', {
+            error: error instanceof Error ? error.message : String(error),
+          });
           return '/login?error=OAuthCallback';
         }
       }
@@ -205,12 +220,12 @@ export const authOptions: NextAuthOptions = {
             });
 
             // Update the user object to reflect the new role
-            (user as any).role = 'ADMIN';
+            user.role = 'ADMIN';
           } else if (existingUser && existingUser.role === 'ADMIN') {
-            (user as any).role = 'ADMIN';
+            user.role = 'ADMIN';
           } else if (!existingUser) {
             // For new users, set the role property so it gets saved correctly
-            (user as any).role = 'ADMIN';
+            user.role = 'ADMIN';
           }
         } catch (error) {
           // Silent fail - user will still be able to sign in with default role
@@ -249,7 +264,7 @@ export const authOptions: NextAuthOptions = {
         return {
           ...token,
           id: user.id,
-          role: dbUser?.role || (user as any).role || 'USER', // Use database role, fallback to user object role, then default to USER
+          role: dbUser?.role || user.role || 'USER', // Use database role, fallback to user object role, then default to USER
           emailVerified: dbUser?.emailVerified || null,
         };
       }
@@ -290,28 +305,34 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     async createUser({ user }) {
-      console.log('NextAuth createUser event triggered for:', user.email);
+      logger.info('NextAuth createUser event triggered', {
+        email: sanitizeEmail(user.email || ''),
+      });
 
       // For Google OAuth users, set emailVerified to true immediately
       // Google has already verified the email address
       const isGoogleUser = user.image?.includes('googleusercontent.com') || false;
 
-      console.log('User creation details:', {
-        email: user.email,
+      logger.info('User creation details', {
+        email: sanitizeEmail(user.email || ''),
         isGoogleUser,
         hasImage: !!user.image,
-        imageUrl: user.image,
       });
 
       if (isGoogleUser) {
         try {
           await prisma.user.update({
             where: { id: user.id },
-            data: { emailVerified: new Date() },
+            data: { emailVerified: nowUTC() },
           });
-          console.log(`Set emailVerified=true for Google user: ${user.email}`);
+          logger.info('Set emailVerified=true for Google user', {
+            email: sanitizeEmail(user.email || ''),
+          });
         } catch (error) {
-          console.error('Failed to set emailVerified for Google user:', error);
+          logger.error('Failed to set emailVerified for Google user', {
+            email: sanitizeEmail(user.email || ''),
+            error: error instanceof Error ? error.message : String(error),
+          });
         }
       }
 
@@ -340,9 +361,9 @@ export const authOptions: NextAuthOptions = {
             select: { emailVerified: true },
           });
 
-          console.log('Final user email verification status:', {
-            email: user.email,
-            emailVerified: dbUser?.emailVerified,
+          logger.info('Final user email verification status', {
+            email: sanitizeEmail(user.email),
+            emailVerified: !!dbUser?.emailVerified,
             willSendVerification: !dbUser?.emailVerified,
           });
 
@@ -350,7 +371,7 @@ export const authOptions: NextAuthOptions = {
             // Generate and send verification email for unverified users
             const crypto = await import('crypto');
             const token = crypto.randomBytes(32).toString('hex');
-            const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+            const expires = addMilliseconds(nowUTC(), 24 * 60 * 60 * 1000); // 24 hours from now
 
             // Store verification token in database
             await prisma.emailVerificationToken.create({
@@ -363,7 +384,9 @@ export const authOptions: NextAuthOptions = {
 
             // Send verification email
             await sendEmailVerification(user.email, token, user.name || undefined);
-            console.log(`Verification email sent to new user: ${user.email}`);
+            logger.info('Verification email sent to new user', {
+              email: sanitizeEmail(user.email),
+            });
           } else {
             // Send regular welcome email for verified users
             await sendEmail({
@@ -414,10 +437,15 @@ export const authOptions: NextAuthOptions = {
               text: `Welcome to MedBookings!\n\nHi ${user.name || 'there'},\n\nYour account has been successfully created. You can now browse and book appointments with healthcare providers.\n\nVisit: ${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}`,
             });
 
-            console.log(`Welcome email sent to verified user: ${user.email}`);
+            logger.info('Welcome email sent to verified user', {
+              email: sanitizeEmail(user.email),
+            });
           }
         } catch (error) {
-          console.error('Failed to send email:', error);
+          logger.error('Failed to send email', {
+            email: sanitizeEmail(user.email || ''),
+            error: error instanceof Error ? error.message : String(error),
+          });
           // Don't fail the sign-up process if email fails
         }
       }
@@ -454,7 +482,7 @@ export async function GET(req: NextRequest) {
         update: {
           accessToken: token.accessToken as string,
           refreshToken: token.refreshToken as string,
-          expiresAt: new Date(Date.now() + 3600 * 1000), // 1 hour from now
+          expiresAt: addMilliseconds(nowUTC(), 3600 * 1000), // 1 hour from now
           calendarProvider: 'GOOGLE',
           googleEmail: token.email as string,
         },
@@ -462,7 +490,7 @@ export async function GET(req: NextRequest) {
           providerId: provider.id,
           accessToken: token.accessToken as string,
           refreshToken: token.refreshToken as string,
-          expiresAt: new Date(Date.now() + 3600 * 1000),
+          expiresAt: addMilliseconds(nowUTC(), 3600 * 1000),
           calendarProvider: 'GOOGLE',
           googleEmail: token.email as string,
         },

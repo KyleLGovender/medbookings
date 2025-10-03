@@ -1,6 +1,7 @@
 import {
   ConnectionStatus,
   Languages,
+  Prisma,
   ProviderInvitationStatus,
   ProviderStatus,
 } from '@prisma/client';
@@ -15,6 +16,8 @@ import {
   regulatoryRequirementsSchema,
   servicesSchema,
 } from '@/features/providers/types/schemas';
+import { logger, sanitizeEmail } from '@/lib/logger';
+import { nowUTC } from '@/lib/timezone';
 import {
   adminProcedure,
   createTRPCRouter,
@@ -261,8 +264,8 @@ export const providersRouter = createTRPCRouter({
       const offset = (page - 1) * limit;
 
       // Build optimized where clause
-      const where: any = {
-        status: status as any,
+      const where: Prisma.ProviderWhereInput = {
+        status,
       };
 
       // Add search filter - prioritize nameSearch for precise name matching
@@ -347,7 +350,7 @@ export const providersRouter = createTRPCRouter({
       include.availabilities = {
         where: {
           status: 'ACCEPTED',
-          endTime: { gte: new Date() }, // Only future/current availabilities
+          endTime: { gte: nowUTC() }, // Only future/current availabilities
         },
         select: {
           id: true,
@@ -493,7 +496,9 @@ export const providersRouter = createTRPCRouter({
       //     input.basicInfo.whatsapp || ''
       //   );
       // } catch (error) {
-      //   console.error('Failed to send WhatsApp confirmation:', error);
+      //   logger.error('Failed to send WhatsApp confirmation', {
+      //     error: error instanceof Error ? error.message : String(error),
+      //   });
       //   // Don't fail registration if WhatsApp fails
       // }
 
@@ -568,7 +573,9 @@ export const providersRouter = createTRPCRouter({
                 data: serviceAvailabilityConfigs,
               });
             } catch (configError) {
-              console.error('Failed to create ServiceAvailabilityConfig records:', configError);
+              logger.error('Failed to create ServiceAvailabilityConfig records', {
+                error: configError instanceof Error ? configError.message : String(configError),
+              });
               // Don't fail the entire registration if ServiceAvailabilityConfig creation fails
             }
           }
@@ -669,7 +676,9 @@ export const providersRouter = createTRPCRouter({
             input.whatsapp
           );
         } catch (error) {
-          console.error('Failed to send WhatsApp confirmation:', error);
+          logger.error('Failed to send WhatsApp confirmation', {
+            error: error instanceof Error ? error.message : String(error),
+          });
           // Don't fail update if WhatsApp fails
         }
       }
@@ -1571,7 +1580,7 @@ export const providersRouter = createTRPCRouter({
         where: { id: input.connectionId },
         data: {
           status: input.status,
-          ...(input.status === 'ACCEPTED' && { acceptedAt: new Date() }),
+          ...(input.status === 'ACCEPTED' && { acceptedAt: nowUTC() }),
         },
         include: {
           organization: {
@@ -1640,7 +1649,7 @@ export const providersRouter = createTRPCRouter({
       const activeAvailabilities = await ctx.prisma.availability.count({
         where: {
           connectionId: input.connectionId,
-          endTime: { gte: new Date() }, // Future availabilities
+          endTime: { gte: nowUTC() }, // Future availabilities
         },
       });
 
@@ -1712,7 +1721,7 @@ export const providersRouter = createTRPCRouter({
 
       // Check for expired invitations and update them
       const expiredInvitations = invitations.filter(
-        (invitation) => invitation.status === 'PENDING' && new Date() > invitation.expiresAt
+        (invitation) => invitation.status === 'PENDING' && nowUTC() > invitation.expiresAt
       );
 
       if (expiredInvitations.length > 0) {
@@ -1810,7 +1819,7 @@ export const providersRouter = createTRPCRouter({
       }
 
       // Check if invitation has expired
-      if (new Date() > invitation.expiresAt) {
+      if (nowUTC() > invitation.expiresAt) {
         await ctx.prisma.providerInvitation.update({
           where: { id: invitation.id },
           data: { status: 'EXPIRED' },
@@ -1846,7 +1855,7 @@ export const providersRouter = createTRPCRouter({
           where: { id: invitation.id },
           data: {
             status: 'REJECTED',
-            rejectedAt: new Date(),
+            rejectedAt: nowUTC(),
             rejectionReason: input.rejectionReason || null,
           },
         });
@@ -1884,7 +1893,7 @@ export const providersRouter = createTRPCRouter({
               organizationId: invitation.organizationId,
               providerId: provider.id,
               status: 'ACCEPTED',
-              acceptedAt: new Date(),
+              acceptedAt: nowUTC(),
             },
             include: {
               organization: {
@@ -1898,7 +1907,7 @@ export const providersRouter = createTRPCRouter({
             where: { id: invitation.id },
             data: {
               status: 'ACCEPTED',
-              acceptedAt: new Date(),
+              acceptedAt: nowUTC(),
               connectionId: connection.id,
             },
           });
@@ -2328,11 +2337,11 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (isAdmin && input.id) {
-        console.log('ADMIN_ACTION: Provider suspended', {
+        logger.audit('ADMIN_ACTION: Provider suspended', {
           providerId: updated.id,
           providerName: updated.name,
           adminId: ctx.session.user.id,
-          adminEmail: ctx.session.user.email,
+          adminEmail: sanitizeEmail(ctx.session.user.email || ''),
         });
       }
 
@@ -2400,11 +2409,11 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (isAdmin && input.id) {
-        console.log('ADMIN_ACTION: Provider unsuspended', {
+        logger.audit('ADMIN_ACTION: Provider unsuspended', {
           providerId: updated.id,
           providerName: updated.name,
           adminId: ctx.session.user.id,
-          adminEmail: ctx.session.user.email,
+          adminEmail: sanitizeEmail(ctx.session.user.email || ''),
         });
       }
 
@@ -2465,7 +2474,7 @@ export const providersRouter = createTRPCRouter({
             documentMetadata: metadata,
             notes: input.notes,
             status: 'PENDING', // Reset to pending for review
-            updatedAt: new Date(),
+            updatedAt: nowUTC(),
           },
           include: { requirementType: true },
         });
@@ -2541,14 +2550,16 @@ export const providersRouter = createTRPCRouter({
 
         await sendAdminNotificationEmail(emailTemplate);
 
-        console.log('Admin notification sent successfully for requirement update:', {
+        logger.info('Admin notification sent successfully for requirement update', {
           providerName: provider.name,
           requirementType: requirementTypeName,
           action,
         });
       } catch (error) {
         // Log error but don't fail the mutation
-        console.error('Failed to send admin notification:', error);
+        logger.error('Failed to send admin notification', {
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
 
       return submission;
@@ -2754,7 +2765,7 @@ export const providersRouter = createTRPCRouter({
               providerId: input.providerId,
             },
             startTime: {
-              gt: new Date(),
+              gt: nowUTC(),
             },
           },
           status: 'CONFIRMED',

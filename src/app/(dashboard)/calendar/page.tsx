@@ -2,8 +2,8 @@
 
 import { useMemo } from 'react';
 
+import { addDays, setHours, setMilliseconds, setMinutes, setSeconds, subDays } from 'date-fns';
 import { CalendarDays, Clock, FileText, TrendingUp, Users } from 'lucide-react';
-import { subDays, addDays, setHours, setMinutes, setSeconds, setMilliseconds } from 'date-fns';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
@@ -279,7 +279,7 @@ export default function CalendarOverviewPage() {
                           : 'Pending approval'}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {parseUTC(availability.startTime).toLocaleDateString()} -{' '}
+                        {availability.startTime.toLocaleDateString()} -{' '}
                         {availability.calculatedSlots?.length || 0} slots
                       </div>
                     </div>

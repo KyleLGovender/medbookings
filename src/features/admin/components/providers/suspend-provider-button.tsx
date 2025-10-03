@@ -7,6 +7,7 @@ import {
   useSuspendProvider,
   useUnsuspendProvider,
 } from '@/features/admin/hooks/use-provider-suspend';
+import { logger } from '@/lib/logger';
 
 interface SuspendProviderButtonProps {
   providerId: string;
@@ -33,7 +34,11 @@ export function SuspendProviderButton({ providerId, providerStatus }: SuspendPro
         }
         router.refresh();
       } catch (error) {
-        console.error(`Failed to ${action} provider:`, error);
+        logger.error(`Failed to ${action} provider`, {
+          action,
+          providerId,
+          error: error instanceof Error ? error.message : String(error),
+        });
         alert(`Failed to ${action} provider. Please try again.`);
       }
     }

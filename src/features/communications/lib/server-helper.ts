@@ -4,6 +4,7 @@ import twilio from 'twilio';
 import vCardsJS from 'vcards-js';
 
 import env from '@/config/env/server';
+import { logger, sanitizeName, sanitizePhone } from '@/lib/logger';
 import { type RouterOutputs } from '@/utils/api';
 
 // OPTION C: Use tRPC-inferred type for booking data from calendar router
@@ -28,7 +29,7 @@ export async function sendBookingNotifications(booking: BookingWithDetails) {
     const notificationPromises = [];
 
     if (!booking.slot) {
-      console.error('Booking has no slot associated');
+      logger.error('Booking has no slot associated', { bookingId: booking.id });
       return;
     }
 
@@ -79,11 +80,19 @@ export async function sendBookingNotifications(booking: BookingWithDetails) {
 
     // Send all notifications in parallel and log results
     const results = await Promise.allSettled(notificationPromises);
-    console.log('Notification results:', results);
+    logger.info('Notification results', {
+      bookingId: booking.id,
+      totalSent: results.length,
+      successful: results.filter((r) => r.status === 'fulfilled').length,
+      failed: results.filter((r) => r.status === 'rejected').length,
+    });
 
     // Note: Notification logging would go here if NotificationLog model existed
   } catch (error) {
-    console.error('Error sending notifications:', error);
+    logger.error('Error sending notifications', {
+      bookingId: booking.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
     // Don't throw the error - we don't want to fail the booking if notifications fail
   }
 }
@@ -93,7 +102,7 @@ export async function sendBookingConfirmation(booking: BookingWithDetails) {
     const notificationPromises = [];
 
     if (!booking.slot) {
-      console.error('Booking has no slot associated');
+      logger.error('Booking has no slot associated', { bookingId: booking.id });
       return;
     }
 
@@ -147,18 +156,26 @@ export async function sendBookingConfirmation(booking: BookingWithDetails) {
 
     // Send all notifications in parallel and log results
     const results = await Promise.allSettled(notificationPromises);
-    console.log('Notification results:', results);
+    logger.info('Booking confirmation results', {
+      bookingId: booking.id,
+      totalSent: results.length,
+      successful: results.filter((r) => r.status === 'fulfilled').length,
+      failed: results.filter((r) => r.status === 'rejected').length,
+    });
 
     // Note: Notification logging would go here if NotificationLog model existed
   } catch (error) {
-    console.error('Error sending booking confirmation:', error);
+    logger.error('Error sending booking confirmation', {
+      bookingId: booking.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
 export async function sendGuestVCardToProvider(booking: BookingWithDetails) {
   try {
     if (!booking.slot) {
-      console.error('Booking has no slot associated');
+      logger.error('Booking has no slot associated', { bookingId: booking.id });
       return;
     }
 
@@ -185,19 +202,25 @@ export async function sendGuestVCardToProvider(booking: BookingWithDetails) {
       });
 
       // Log the successful result (or specific properties)
-      console.log('Twilio message creation successful:');
-      console.log('Message SID:', message.sid);
-      console.log('Status:', message.status);
-      // You can log the whole message object too, but it can be large
-      // console.log('  Full Twilio Response:', message);
+      logger.info('Twilio vCard message sent', {
+        bookingId: booking.id,
+        messageSid: message.sid,
+        status: message.status,
+      });
     } catch (error) {
       // Log if the promise itself rejects (e.g., API error)
-      console.error('Error sending Twilio message:', error);
+      logger.error('Error sending Twilio message', {
+        bookingId: booking.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
       // Re-throw the error or handle it as appropriate for your flow
       throw error;
     }
   } catch (error) {
-    console.error('Error sending vCard:', error);
+    logger.error('Error sending vCard', {
+      bookingId: booking.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
@@ -209,7 +232,9 @@ export async function sendGuestVCardToProvider(booking: BookingWithDetails) {
 export async function sendProviderWhatsappConfirmation(name: string, whatsappNumber: string) {
   try {
     if (!whatsappNumber) {
-      console.log('No WhatsApp number provided');
+      logger.warn('No WhatsApp number provided for provider confirmation', {
+        hasName: !!name,
+      });
       return;
     }
 
@@ -226,10 +251,18 @@ export async function sendProviderWhatsappConfirmation(name: string, whatsappNum
       to: `whatsapp:${whatsappNumber}`,
     });
 
-    console.log('Provider WhatsApp confirmation sent successfully:', message.sid);
+    logger.info('Provider WhatsApp confirmation sent', {
+      messageSid: message.sid,
+      providerName: sanitizeName(name),
+      whatsapp: sanitizePhone(whatsappNumber),
+    });
     return message;
   } catch (error) {
-    console.error('Error sending provider WhatsApp confirmation:', error);
+    logger.error('Error sending provider WhatsApp confirmation', {
+      providerName: sanitizeName(name),
+      whatsapp: sanitizePhone(whatsappNumber),
+      error: error instanceof Error ? error.message : String(error),
+    });
     throw error;
   }
 }

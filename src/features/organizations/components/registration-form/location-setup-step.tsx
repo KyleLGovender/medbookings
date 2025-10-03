@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { OrganizationRegistrationData } from '@/features/organizations/types/types';
 import { isDevelopment } from '@/lib/constants';
+import { logger } from '@/lib/logger';
 
 import { GoogleMapsLocationPicker } from '../google-maps-location-picker';
 
@@ -28,7 +29,9 @@ import { GoogleMapsLocationPicker } from '../google-maps-location-picker';
 type FieldArrayError = Record<string, FieldError | undefined>;
 
 function isFieldArrayError(error: unknown): error is FieldArrayError[] {
-  return Array.isArray(error) && error.every((item) => typeof item === 'object' || item === undefined);
+  return (
+    Array.isArray(error) && error.every((item) => typeof item === 'object' || item === undefined)
+  );
 }
 
 export function LocationSetupStep() {
@@ -82,7 +85,11 @@ export function LocationSetupStep() {
 
   const handleLocationSelect = useCallback(
     async (locationIndex: number, locationData: any) => {
-      console.log('Setting location data for index:', locationIndex, locationData);
+      logger.debug('forms', 'Setting location data for index', {
+        locationIndex,
+        hasGooglePlaceId: !!locationData.googlePlaceId,
+        hasFormattedAddress: !!locationData.formattedAddress,
+      });
 
       form.setValue(`locations.${locationIndex}.googlePlaceId`, locationData.googlePlaceId);
       form.setValue(`locations.${locationIndex}.formattedAddress`, locationData.formattedAddress);
@@ -99,16 +106,16 @@ export function LocationSetupStep() {
         `locations.${locationIndex}.formattedAddress`,
       ]);
 
-      console.log(
-        'Form values after location select:',
-        form.getValues(`locations.${locationIndex}`)
-      );
-      console.log(
-        'Form errors after location select:',
-        isFieldArrayError(form.formState.errors.locations)
+      logger.debug('forms', 'Form values after location select', {
+        locationIndex,
+        hasValues: !!form.getValues(`locations.${locationIndex}`),
+      });
+      logger.debug('forms', 'Form errors after location select', {
+        locationIndex,
+        hasErrors: !!(isFieldArrayError(form.formState.errors.locations)
           ? form.formState.errors.locations[locationIndex]
-          : undefined
-      );
+          : undefined),
+      });
     },
     [form]
   );

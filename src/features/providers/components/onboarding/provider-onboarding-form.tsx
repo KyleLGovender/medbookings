@@ -120,28 +120,41 @@ export function ProviderOnboardingForm() {
           return sectionErrors;
         }
         if (key === 'services') {
-          // Handle service errors
-          const servicesError = value as any; // Type assertion to avoid TypeScript errors
+          // Handle service errors - value is a FieldError from react-hook-form
+          const servicesError = value as Record<string, unknown>;
 
-          if (servicesError.availableServices?.message) {
-            return [`services: ${servicesError.availableServices.message}`];
+          if (
+            typeof servicesError === 'object' &&
+            servicesError !== null &&
+            'availableServices' in servicesError
+          ) {
+            const availableServices = servicesError.availableServices as { message?: string };
+            if (availableServices?.message) {
+              return [`services: ${availableServices.message}`];
+            }
           }
 
           // Handle service configs errors (price, duration)
-          if (servicesError.serviceConfigs) {
+          if (
+            typeof servicesError === 'object' &&
+            servicesError !== null &&
+            'serviceConfigs' in servicesError
+          ) {
             const serviceConfigErrors: string[] = [];
+            const serviceConfigs = servicesError.serviceConfigs as Record<string, unknown>;
 
             // Extract service config errors
-            Object.entries(servicesError.serviceConfigs).forEach(
-              ([serviceId, serviceConfig]: [string, any]) => {
-                if (serviceConfig.price?.message) {
-                  serviceConfigErrors.push(`Service price: ${serviceConfig.price.message}`);
+            Object.entries(serviceConfigs).forEach(([serviceId, serviceConfig]) => {
+              if (typeof serviceConfig === 'object' && serviceConfig !== null) {
+                const config = serviceConfig as Record<string, { message?: string }>;
+                if (config.price?.message) {
+                  serviceConfigErrors.push(`Service price: ${config.price.message}`);
                 }
-                if (serviceConfig.duration?.message) {
-                  serviceConfigErrors.push(`Service duration: ${serviceConfig.duration.message}`);
+                if (config.duration?.message) {
+                  serviceConfigErrors.push(`Service duration: ${config.duration.message}`);
                 }
               }
-            );
+            });
 
             return serviceConfigErrors;
           }
@@ -155,8 +168,13 @@ export function ProviderOnboardingForm() {
           return ['You must accept the terms and conditions'];
         }
         // Handle any other top-level errors
-        if ((value as any)?.message) {
-          return [`${key}: ${(value as any).message}`];
+        if (
+          typeof value === 'object' &&
+          value !== null &&
+          'message' in value &&
+          typeof (value as { message: unknown }).message === 'string'
+        ) {
+          return [`${key}: ${(value as { message: string }).message}`];
         }
         return [];
       })
@@ -227,11 +245,14 @@ export function ProviderOnboardingForm() {
         window.location.href = data.redirect;
       }
     },
-    onError: (error: Error) => {
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'There was an error submitting your application. Please try again.';
       toast({
         title: 'Submission failed',
-        description:
-          error.message || 'There was an error submitting your application. Please try again.',
+        description: message,
         variant: 'destructive',
       });
     },

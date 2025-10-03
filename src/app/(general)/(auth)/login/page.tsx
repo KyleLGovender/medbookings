@@ -367,9 +367,11 @@ function LoginPageContent() {
                 }}
                 disabled={isLoading}
               >
-                {isRegistering
-                  ? 'Already have an account? Sign in'
-                  : 'Don\'t have an account? Sign up'} {/* eslint-disable-line prettier/prettier */}
+                {
+                  isRegistering
+                    ? 'Already have an account? Sign in'
+                    : "Don't have an account? Sign up" /* eslint-disable-line quotes */
+                }{' '}
               </button>
             </div>
           </CardContent>

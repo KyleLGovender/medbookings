@@ -46,6 +46,7 @@ import {
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { useOrganizationPermissions } from '@/hooks/use-permissions';
+import { logger, sanitizeEmail } from '@/lib/logger';
 import { OrganizationRole, Permission } from '@/types/permissions';
 
 // Temporary placeholder functions until proper hooks are implemented
@@ -136,10 +137,16 @@ export function MemberInvitationForm({
         onInvitationSent?.();
       } else {
         // Handle error - in a real app, use toast or error state
-        console.error('Invitation failed:', result.message);
+        logger.error('Invitation failed', {
+          message: result.message,
+          email: sanitizeEmail(data.email),
+        });
       }
     } catch (error) {
-      console.error('Error sending invitation:', error);
+      logger.error('Error sending invitation', {
+        error: error instanceof Error ? error.message : String(error),
+        email: sanitizeEmail(data.email),
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -152,7 +159,10 @@ export function MemberInvitationForm({
         onInvitationSent?.(); // Refresh the list
       }
     } catch (error) {
-      console.error('Error cancelling invitation:', error);
+      logger.error('Error cancelling invitation', {
+        error: error instanceof Error ? error.message : String(error),
+        invitationId,
+      });
     }
   };
 
@@ -330,7 +340,7 @@ export function MemberInvitationForm({
                   <TableCell>
                     <Badge variant={getRoleBadgeVariant(member.role)}>{member.role}</Badge>
                   </TableCell>
-                  <TableCell>{new Date(member.joinedAt).toLocaleDateString()}</TableCell>
+                  <TableCell>{member.joinedAt.toLocaleDateString()}</TableCell>
                   <TableCell>
                     {canManageMembers && member.role !== OrganizationRole.OWNER && (
                       <div className="flex items-center gap-2">
@@ -381,11 +391,11 @@ export function MemberInvitationForm({
                         {invitation.role}
                       </Badge>
                     </TableCell>
-                    <TableCell>{new Date(invitation.sentAt).toLocaleDateString()}</TableCell>
+                    <TableCell>{invitation.sentAt.toLocaleDateString()}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-orange-500" />
-                        {new Date(invitation.expiresAt).toLocaleDateString()}
+                        {invitation.expiresAt.toLocaleDateString()}
                       </div>
                     </TableCell>
                     <TableCell>

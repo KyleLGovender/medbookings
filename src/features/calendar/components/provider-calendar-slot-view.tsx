@@ -30,6 +30,8 @@ import { useCreateBooking } from '@/features/calendar/hooks/use-create-booking';
 import { useProviderSlots } from '@/features/calendar/hooks/use-provider-slots';
 import { calculateDateRange, navigateCalendarDate } from '@/features/calendar/lib/calendar-utils';
 import { CalendarViewMode } from '@/features/calendar/types/types';
+import { logger } from '@/lib/logger';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 import type { RouterOutputs } from '@/utils/api';
 
 // Extract proper types for strong typing
@@ -55,7 +57,7 @@ export interface ProviderCalendarSlotViewProps {
 export function ProviderCalendarSlotView({
   providerId,
   viewMode: initialViewMode = 'week',
-  initialDate = new Date(),
+  initialDate = nowUTC(),
   searchParams,
 }: ProviderCalendarSlotViewProps) {
   const router = useRouter();
@@ -65,7 +67,7 @@ export function ProviderCalendarSlotView({
   const [currentDate, setCurrentDate] = useState(() => {
     const dateParam = searchParams?.date;
     if (typeof dateParam === 'string') {
-      const parsedDate = new Date(dateParam);
+      const parsedDate = parseUTC(dateParam);
       return isNaN(parsedDate.getTime()) ? initialDate : parsedDate;
     }
     return initialDate;
@@ -170,7 +172,9 @@ export function ProviderCalendarSlotView({
       }
     },
     onError: (error) => {
-      console.error('Booking failed:', error);
+      logger.error('Booking failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       // Keep modal open to show error
     },
   });
@@ -312,8 +316,8 @@ export function ProviderCalendarSlotView({
     let latestHour = 0;
 
     slots.forEach((slot) => {
-      const startTime = new Date(slot.startTime);
-      const endTime = new Date(slot.endTime);
+      const startTime = slot.startTime;
+      const endTime = slot.endTime;
 
       const startHour = startTime.getHours();
       const startMinutes = startTime.getMinutes();
@@ -402,9 +406,7 @@ export function ProviderCalendarSlotView({
     if (!slots.length) return [];
 
     // Sort slots by start time for consistent display
-    const sorted = [...slots].sort(
-      (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-    );
+    const sorted = [...slots].sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
     return sorted;
   }, [filteredSlots]);
@@ -518,7 +520,7 @@ export function ProviderCalendarSlotView({
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      const today = new Date();
+                      const today = nowUTC();
                       setCurrentDate(today);
                       updateSearchParams({ date: today });
                     }}

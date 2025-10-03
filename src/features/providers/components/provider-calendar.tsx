@@ -16,6 +16,8 @@ import { AvailabilityProposalsList } from '@/features/calendar/components/availa
 // Import our comprehensive availability management components
 import { ProviderCalendarView } from '@/features/calendar/components/provider-calendar-view';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
+import { logger } from '@/lib/logger';
+import { nowUTC } from '@/lib/timezone';
 
 // import { VisualIndicatorsConfig } from '@/features/calendar/availability/components/visual-indicators-config';
 
@@ -28,7 +30,7 @@ export function ProviderCalendar() {
   const [activeTab, setActiveTab] = useState('calendar');
   const router = useRouter();
   // const [showExportDialog, setShowExportDialog] = useState(false);
-  const currentDate = new Date();
+  const currentDate = nowUTC();
   const viewMode = 'week';
 
   // Get current user's provider ID
@@ -97,7 +99,7 @@ export function ProviderCalendar() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => console.log('Export calendar functionality disabled')}
+            onClick={() => logger.debug('calendar', 'Export calendar functionality disabled')}
             className="flex items-center gap-2"
           >
             <Download className="h-4 w-4" />
@@ -193,10 +195,10 @@ export function ProviderCalendar() {
               {/* <DragDropCalendar
                 events={[]} // This would be loaded from API
                 onEventUpdate={(eventId, updates) => {
-                  console.log('Update event:', eventId, updates);
+                  logger.debug('Update event', { eventId, updates });
                 }}
                 onSeriesUpdate={(seriesId, updates, options) => {
-                  console.log('Update series:', seriesId, updates, options);
+                  logger.debug('Update series', { seriesId, updates, options });
                 }}
                 config={dragDropConfig}
                 visualConfig={visualConfig}

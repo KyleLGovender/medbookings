@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserAvatar } from '@/components/user-avatar';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 import { type RouterOutputs } from '@/utils/api';
 
 type UserBooking = RouterOutputs['calendar']['getUserBookings'][number];
@@ -67,7 +68,7 @@ export function UserBookingList({
   };
 
   const filterBookings = (status: string) => {
-    const now = new Date();
+    const now = nowUTC();
     // Filter out bookings without slots as they are incomplete
     const validBookings = bookings.filter((booking) => booking.slot);
 
@@ -109,8 +110,8 @@ export function UserBookingList({
 
   const canEditBooking = (booking: UserBooking): boolean => {
     if (!booking.slot) return false;
-    const now = new Date();
-    const bookingTime = new Date(booking.slot.startTime);
+    const now = nowUTC();
+    const bookingTime = booking.slot.startTime;
     const timeDiff = bookingTime.getTime() - now.getTime();
     const hoursUntilBooking = timeDiff / (1000 * 60 * 60);
 
@@ -121,8 +122,8 @@ export function UserBookingList({
 
   const canCancelBooking = (booking: UserBooking): boolean => {
     if (!booking.slot) return false;
-    const now = new Date();
-    const bookingTime = new Date(booking.slot.startTime);
+    const now = nowUTC();
+    const bookingTime = booking.slot.startTime;
     const timeDiff = bookingTime.getTime() - now.getTime();
     const hoursUntilBooking = timeDiff / (1000 * 60 * 60);
 

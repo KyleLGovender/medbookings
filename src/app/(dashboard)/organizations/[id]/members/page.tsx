@@ -11,7 +11,7 @@ import { getCurrentUser } from '@/features/auth/lib/session-helper';
 import { MemberInvitationForm } from '@/features/organizations/components/member-invitation-form';
 import { hasPermission } from '@/lib/auth/permissions';
 import { prisma } from '@/lib/prisma';
-import { Permission } from '@/types/permissions';
+import { OrganizationRole, Permission } from '@/types/permissions';
 
 interface MemberManagementPageProps {
   params: {
@@ -81,14 +81,14 @@ async function getOrganizationMemberData(organizationId: string) {
     id: member.id,
     email: member.user.email || 'No email',
     name: member.user.name || 'No name',
-    role: member.role as any,
+    role: member.role as OrganizationRole,
     joinedAt: member.createdAt,
   }));
 
   const transformedInvitations = pendingInvitations.map((invitation) => ({
     id: invitation.id,
     email: invitation.email,
-    role: invitation.role as any,
+    role: invitation.role as OrganizationRole,
     sentAt: invitation.createdAt,
     expiresAt: invitation.expiresAt,
     invitedBy: invitation.invitedBy.name || 'Unknown',

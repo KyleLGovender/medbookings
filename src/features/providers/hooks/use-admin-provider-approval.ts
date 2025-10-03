@@ -2,9 +2,9 @@
 
 import { ProviderStatus, RequirementsValidationStatus } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { TRPCClientError } from '@trpc/client';
 
 import { logger } from '@/lib/logger';
+import { nowUTC } from '@/lib/timezone';
 import { api } from '@/utils/api';
 
 /**
@@ -43,19 +43,22 @@ export function useRequiredRequirementsStatus(providerId: string | undefined) {
  */
 export function useApproveRequirement(options?: {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
 
   return api.admin.approveRequirement.useMutation({
     onMutate: async ({ providerId, requirementId }) => {
-      logger.debug('Optimistic update - approving requirement', { providerId, requirementId });
+      logger.debug('admin', 'Optimistic update - approving requirement', {
+        providerId,
+        requirementId,
+      });
 
       // Cancel any outgoing refetches for requirements - try different query key patterns
       await queryClient.cancelQueries({
         predicate: (query) => {
           const keyStr = JSON.stringify(query.queryKey);
-          logger.debug('Checking query for cancellation', { keyStr });
+          logger.debug('admin', 'Checking query for cancellation', { keyStr });
           return keyStr.includes('getProviderRequirements');
         },
       });
@@ -63,11 +66,11 @@ export function useApproveRequirement(options?: {
       // First, let's inspect the cache to find the correct key structure
       const cache = queryClient.getQueryCache();
       const allQueries = cache.getAll();
-      logger.debug('All cached queries');
+      logger.debug('admin', 'All cached queries');
       allQueries.forEach((query) => {
         const keyStr = JSON.stringify(query.queryKey);
         if (keyStr.includes('getProviderRequirements')) {
-          logger.debug('Found requirements query', {
+          logger.debug('admin', 'Found requirements query', {
             queryKey: query.queryKey,
             hasData: !!query.state.data,
           });
@@ -84,7 +87,7 @@ export function useApproveRequirement(options?: {
         if (keyStr.includes('getProviderRequirements') && keyStr.includes(providerId)) {
           actualKey = query.queryKey;
           previousRequirements = query.state.data;
-          logger.debug('Found requirements data with actual key', { actualKey });
+          logger.debug('admin', 'Found requirements data with actual key', { actualKey });
           break;
         }
       }
@@ -103,12 +106,15 @@ export function useApproveRequirement(options?: {
             ? {
                 ...sub,
                 status: RequirementsValidationStatus.APPROVED,
-                validatedAt: new Date().toISOString(),
+                validatedAt: nowUTC().toISOString(),
                 validatedById: 'optimistic',
               }
             : sub
         );
-        logger.debug('Optimistically updated cache', { actualKey, dataCount: updated?.length });
+        logger.debug('admin', 'Optimistically updated cache', {
+          actualKey,
+          dataCount: updated?.length,
+        });
         return updated;
       });
 
@@ -128,7 +134,7 @@ export function useApproveRequirement(options?: {
       }
     },
     onSuccess: async (data, variables) => {
-      logger.debug('Approve requirement success - invalidating queries', {
+      logger.debug('admin', 'Approve requirement success - invalidating queries', {
         providerId: variables.providerId,
       });
 
@@ -139,7 +145,7 @@ export function useApproveRequirement(options?: {
           const shouldInvalidate =
             keyStr.includes('getProviderRequirements') && keyStr.includes(variables.providerId);
           if (shouldInvalidate) {
-            logger.debug('Invalidating requirements query', { queryKey: query.queryKey });
+            logger.debug('admin', 'Invalidating requirements query', { queryKey: query.queryKey });
           }
           return shouldInvalidate;
         },
@@ -167,7 +173,7 @@ export function useApproveRequirement(options?: {
  */
 export function useRejectRequirement(options?: {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -196,7 +202,7 @@ export function useRejectRequirement(options?: {
               ? {
                   ...sub,
                   status: RequirementsValidationStatus.REJECTED,
-                  validatedAt: new Date().toISOString(),
+                  validatedAt: nowUTC().toISOString(),
                   validatedById: 'optimistic', // This will be replaced by the real value
                   notes: reason,
                 }
@@ -246,13 +252,13 @@ export function useRejectRequirement(options?: {
  */
 export function useApproveProvider(options?: {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
 
   return api.admin.approveProvider.useMutation({
     onMutate: async ({ id }) => {
-      logger.debug('Optimistic update - approving provider', { providerId: id });
+      logger.debug('admin', 'Optimistic update - approving provider', { providerId: id });
 
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
@@ -274,7 +280,7 @@ export function useApproveProvider(options?: {
         if (keyStr.includes('getProviderById') && keyStr.includes(id)) {
           actualKey = query.queryKey;
           previousProvider = query.state.data;
-          logger.debug('Found provider data with actual key', { actualKey });
+          logger.debug('admin', 'Found provider data with actual key', { actualKey });
           break;
         }
       }
@@ -291,12 +297,15 @@ export function useApproveProvider(options?: {
         const updated = {
           ...old,
           status: ProviderStatus.APPROVED,
-          approvedAt: new Date().toISOString(),
+          approvedAt: nowUTC().toISOString(),
           approvedById: 'optimistic',
           rejectedAt: null,
           rejectionReason: null,
         };
-        logger.debug('Optimistically updated provider', { actualKey, status: updated?.status });
+        logger.debug('admin', 'Optimistically updated provider', {
+          actualKey,
+          status: updated?.status,
+        });
         return updated;
       });
 
@@ -316,7 +325,9 @@ export function useApproveProvider(options?: {
       }
     },
     onSuccess: async (data, variables) => {
-      logger.debug('Approve provider success - invalidating queries', { providerId: variables.id });
+      logger.debug('admin', 'Approve provider success - invalidating queries', {
+        providerId: variables.id,
+      });
 
       // Invalidate relevant queries
       await queryClient.invalidateQueries({
@@ -348,13 +359,16 @@ export function useApproveProvider(options?: {
  */
 export function useRejectProvider(options?: {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
 
   return api.admin.rejectProvider.useMutation({
     onMutate: async ({ id, reason }) => {
-      logger.debug('Optimistic update - rejecting provider', { providerId: id, hasReason: !!reason });
+      logger.debug('admin', 'Optimistic update - rejecting provider', {
+        providerId: id,
+        hasReason: !!reason,
+      });
 
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
@@ -376,7 +390,7 @@ export function useRejectProvider(options?: {
         if (keyStr.includes('getProviderById') && keyStr.includes(id)) {
           actualKey = query.queryKey;
           previousProvider = query.state.data;
-          logger.debug('Found provider data with actual key', { actualKey });
+          logger.debug('admin', 'Found provider data with actual key', { actualKey });
           break;
         }
       }
@@ -393,12 +407,15 @@ export function useRejectProvider(options?: {
         const updated = {
           ...old,
           status: ProviderStatus.REJECTED,
-          rejectedAt: new Date().toISOString(),
+          rejectedAt: nowUTC().toISOString(),
           rejectionReason: reason,
           approvedAt: null,
           approvedById: null,
         };
-        logger.debug('Optimistically updated provider', { actualKey, status: updated?.status });
+        logger.debug('admin', 'Optimistically updated provider', {
+          actualKey,
+          status: updated?.status,
+        });
         return updated;
       });
 
@@ -418,7 +435,9 @@ export function useRejectProvider(options?: {
       }
     },
     onSuccess: async (data, variables) => {
-      logger.debug('Reject provider success - invalidating queries', { providerId: variables.id });
+      logger.debug('admin', 'Reject provider success - invalidating queries', {
+        providerId: variables.id,
+      });
 
       // Invalidate relevant queries
       await queryClient.invalidateQueries({
@@ -450,13 +469,13 @@ export function useRejectProvider(options?: {
  */
 export function useResetProviderStatus(options?: {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
 
   return api.admin.resetProviderStatus.useMutation({
     onMutate: async ({ id }) => {
-      logger.debug('Optimistic update - resetting provider status', { providerId: id });
+      logger.debug('admin', 'Optimistic update - resetting provider status', { providerId: id });
 
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
@@ -478,7 +497,7 @@ export function useResetProviderStatus(options?: {
         if (keyStr.includes('getProviderById') && keyStr.includes(id)) {
           actualKey = query.queryKey;
           previousProvider = query.state.data;
-          logger.debug('Found provider data with actual key', { actualKey });
+          logger.debug('admin', 'Found provider data with actual key', { actualKey });
           break;
         }
       }
@@ -500,7 +519,10 @@ export function useResetProviderStatus(options?: {
           approvedAt: null,
           approvedById: null,
         };
-        logger.debug('Optimistically updated provider', { actualKey, status: updated?.status });
+        logger.debug('admin', 'Optimistically updated provider', {
+          actualKey,
+          status: updated?.status,
+        });
         return updated;
       });
 
@@ -520,7 +542,7 @@ export function useResetProviderStatus(options?: {
       }
     },
     onSuccess: async (data, variables) => {
-      logger.debug('Reset provider status success - invalidating queries', {
+      logger.debug('admin', 'Reset provider status success - invalidating queries', {
         providerId: variables.id,
       });
 

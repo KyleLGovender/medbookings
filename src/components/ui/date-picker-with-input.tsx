@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { nowUTC } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
 
 interface DatePickerWithInputProps {
@@ -52,7 +53,7 @@ export function DatePickerWithInput({
 
     // Parse the input value to a date
     if (value) {
-      const parsedDate = parse(value, 'yyyy-MM-dd', new Date());
+      const parsedDate = parse(value, 'yyyy-MM-dd', nowUTC());
       if (isValid(parsedDate)) {
         onChange?.(parsedDate);
       }
@@ -90,7 +91,7 @@ export function DatePickerWithInput({
             initialFocus
             captionLayout="dropdown-buttons"
             fromYear={1900}
-            toYear={new Date().getFullYear() + 10}
+            toYear={nowUTC().getFullYear() + 10}
             classNames={{
               caption_label: 'hidden',
               nav: 'hidden',

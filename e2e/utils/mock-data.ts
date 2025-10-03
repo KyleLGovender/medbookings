@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { nowUTC } from '../../src/lib/timezone';
 
 import {
   TEST_LOCATIONS,
@@ -20,7 +21,7 @@ export async function createTestUser(userData = TEST_USERS.user) {
       email: userData.email,
       name: userData.name,
       role: userData.role,
-      emailVerified: new Date(),
+      emailVerified: nowUTC(),
     },
   });
 }
@@ -53,7 +54,7 @@ export async function createTestProvider(providerData = TEST_PROVIDERS.approved,
       website: providerData.website,
       showPrice: providerData.showPrice,
       status: providerData.status as any,
-      approvedAt: providerData.status === 'APPROVED' ? new Date() : null,
+      approvedAt: providerData.status === 'APPROVED' ? nowUTC() : null,
     },
   });
 
@@ -108,7 +109,7 @@ export async function createTestLocation(locationData = TEST_LOCATIONS.capeTown)
     data: {
       name: locationData.name,
       organizationId: organization.id,
-      googlePlaceId: `test-place-id-${Date.now()}`,
+      googlePlaceId: `test-place-id-${Math.floor(Math.random() * 1000000)}`,
       formattedAddress: locationData.address,
       coordinates: { lat: -33.9249, lng: 18.4241 }, // Cape Town coordinates
       searchTerms: [locationData.city.toLowerCase(), locationData.province.toLowerCase()],
@@ -131,8 +132,8 @@ export async function createTestAvailability(
   const availability = await prisma.availability.create({
     data: {
       providerId,
-      startTime: new Date(`${availabilityData.date}T${availabilityData.startTime}:00.000Z`),
-      endTime: new Date(`${availabilityData.date}T${availabilityData.endTime}:00.000Z`),
+      startTime: `${availabilityData.date}T${availabilityData.startTime}:00.000Z`,
+      endTime: `${availabilityData.date}T${availabilityData.endTime}:00.000Z`,
       status: 'ACCEPTED',
       isOnlineAvailable: availabilityData.isOnline ?? true,
       locationId: availabilityData.locationId,
@@ -199,10 +200,10 @@ export async function createCalculatedSlot(
       availabilityId,
       serviceId,
       serviceConfigId,
-      startTime: new Date(`${slotData.date}T${slotData.startTime}:00.000Z`),
-      endTime: new Date(`${slotData.date}T${slotData.endTime}:00.000Z`),
+      startTime: `${slotData.date}T${slotData.startTime}:00.000Z`,
+      endTime: `${slotData.date}T${slotData.endTime}:00.000Z`,
       status: 'AVAILABLE',
-      lastCalculated: new Date(),
+      lastCalculated: nowUTC(),
     },
   });
 }

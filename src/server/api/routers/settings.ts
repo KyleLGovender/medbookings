@@ -9,6 +9,7 @@ import {
   providerBusinessSettingsSchema,
 } from '@/features/settings/types/schemas';
 import { sendEmailVerification } from '@/lib/communications/email';
+import { addMilliseconds, nowUTC } from '@/lib/timezone';
 import { createTRPCRouter, protectedProcedure } from '@/server/trpc';
 
 export const settingsRouter = createTRPCRouter({
@@ -302,7 +303,7 @@ export const settingsRouter = createTRPCRouter({
 
     // Generate verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const expiresAt = addMilliseconds(nowUTC(), 24 * 60 * 60 * 1000); // 24 hours
 
     // Store verification token in database
     await ctx.prisma.emailVerificationToken.create({

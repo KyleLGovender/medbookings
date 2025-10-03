@@ -1,4 +1,5 @@
 import { Page, expect } from '@playwright/test';
+import { nowUTC } from '../../../src/lib/timezone';
 
 import { BasePage } from './base-page';
 
@@ -59,7 +60,11 @@ export class LoginPage extends BasePage {
           name: userInfo.name,
           image: 'https://via.placeholder.com/40',
         },
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        expires: (() => {
+          const expiry = nowUTC();
+          expiry.setTime(expiry.getTime() + 24 * 60 * 60 * 1000);
+          return expiry.toISOString();
+        })(),
       };
       await route.fulfill({ json });
     });

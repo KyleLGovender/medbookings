@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { nowUTC } from '@/lib/timezone';
 
 export default function HelpPage() {
   return (
@@ -436,7 +437,7 @@ export default function HelpPage() {
       <div className="border-t pt-8 text-center text-sm text-muted-foreground">
         <p>© 2024 MedBookings. Provider Help Center v1.0</p>
         <p className="mt-2">
-          Last updated: {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          Last updated: {nowUTC().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
         </p>
       </div>
     </div>

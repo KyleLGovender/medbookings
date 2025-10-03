@@ -107,9 +107,11 @@ export function ProviderConnectionCard({
       setPendingAction(null);
     },
     onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update connection. Please try again.';
       toast({
         title: 'Failed to update connection',
-        description: error.message,
+        description: message,
         variant: 'destructive',
       });
     },
@@ -304,7 +306,7 @@ export function ProviderConnectionCard({
                 <User className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">Connected:</span>
                 <span className="text-muted-foreground">
-                  {format(new Date(connection.acceptedAt), 'MMM d, yyyy')}
+                  {format(connection.acceptedAt, 'MMM d, yyyy')}
                 </span>
               </div>
             )}

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
+import { nowUTC } from '@/lib/timezone';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -16,7 +18,7 @@ export async function GET(request: NextRequest) {
       where: {
         token,
         expires: {
-          gte: new Date(), // Token is not expired
+          gte: nowUTC(), // Token is not expired
         },
       },
     });
@@ -43,7 +45,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.redirect(verifyUrl);
   } catch (error) {
-    console.error('Email verification error:', error);
+    logger.error('Email verification error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.redirect(new URL('/login?error=verification-failed', request.url));
   }
 }

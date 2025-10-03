@@ -9,7 +9,7 @@ import { api } from '@/utils/api';
  */
 export function useProviderSelfSuspend(options?: {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -23,7 +23,7 @@ export function useProviderSelfSuspend(options?: {
       // Call the user-provided onSuccess callback if it exists
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }
 
@@ -34,7 +34,7 @@ export function useProviderSelfSuspend(options?: {
  */
 export function useProviderSelfUnsuspend(options?: {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -48,6 +48,6 @@ export function useProviderSelfUnsuspend(options?: {
       // Call the user-provided onSuccess callback if it exists
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }

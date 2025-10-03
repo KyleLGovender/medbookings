@@ -7,6 +7,7 @@ import {
   getAvailabilityStyle,
   getWorkingTimeRange,
 } from '@/features/calendar/lib/calendar-utils';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 
 import { AvailabilityData, AvailabilityThreeDayViewProps } from './types';
 
@@ -23,10 +24,12 @@ export function AvailabilityThreeDayView({
 }: AvailabilityThreeDayViewProps) {
   // Calculate the three days: previous, current, next
   const getDaysArray = () => {
-    const prevDay = new Date(currentDate);
+    const prevDay = nowUTC();
+    prevDay.setTime(currentDate.getTime());
     prevDay.setDate(currentDate.getDate() - 1);
 
-    const nextDay = new Date(currentDate);
+    const nextDay = nowUTC();
+    nextDay.setTime(currentDate.getTime());
     nextDay.setDate(currentDate.getDate() + 1);
 
     return [prevDay, currentDate, nextDay];
@@ -48,8 +51,8 @@ export function AvailabilityThreeDayView({
 
   // Calculate event position in grid
   const calculateAvailabilityGridPosition = (availability: AvailabilityData) => {
-    const startTime = new Date(availability.startTime);
-    const endTime = new Date(availability.endTime);
+    const startTime = availability.startTime;
+    const endTime = availability.endTime;
 
     // Convert to hour-based grid slots, accounting for display range offset
     // The events grid has hours.length * 2 rows, so we need to multiply by 2
@@ -72,7 +75,7 @@ export function AvailabilityThreeDayView({
           </div>
           <div className="flex flex-auto">
             {days.map((day, index) => {
-              const isToday = day.toDateString() === new Date().toDateString();
+              const isToday = day.toDateString() === nowUTC().toDateString();
               const isSelected = day.toDateString() === currentDate.toDateString();
 
               return (
@@ -178,7 +181,7 @@ export function AvailabilityThreeDayView({
                             </p>
                             <p className="text-xs opacity-75">
                               <time dateTime={availability.startTime.toString()}>
-                                {new Date(availability.startTime).toLocaleTimeString([], {
+                                {availability.startTime.toLocaleTimeString([], {
                                   hour: '2-digit',
                                   minute: '2-digit',
                                 })}
@@ -186,7 +189,7 @@ export function AvailabilityThreeDayView({
                               <span>
                                 {' - '}
                                 <time dateTime={availability.endTime.toString()}>
-                                  {new Date(availability.endTime).toLocaleTimeString([], {
+                                  {availability.endTime.toLocaleTimeString([], {
                                     hour: '2-digit',
                                     minute: '2-digit',
                                   })}

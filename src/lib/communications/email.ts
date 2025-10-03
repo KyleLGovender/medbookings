@@ -3,6 +3,9 @@
  */
 import sgMail from '@sendgrid/mail';
 
+import { logger, sanitizeEmail } from '@/lib/logger';
+import { nowUTC } from '@/lib/timezone';
+
 interface EmailData {
   to: string;
   subject: string;
@@ -23,19 +26,19 @@ export async function sendEmail(emailData: EmailData): Promise<void> {
   try {
     // Check if SendGrid is configured
     if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
-      console.warn('SendGrid not configured, logging email instead:', {
-        to: emailData.to,
+      logger.warn('SendGrid not configured, logging email instead', {
+        to: sanitizeEmail(emailData.to),
         subject: emailData.subject,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
       });
       return;
     }
 
-    console.log('Attempting to send email via SendGrid:', {
-      to: emailData.to,
-      from: emailData.from || process.env.SENDGRID_FROM_EMAIL,
+    logger.info('Attempting to send email via SendGrid', {
+      to: sanitizeEmail(emailData.to),
+      from: sanitizeEmail(emailData.from || process.env.SENDGRID_FROM_EMAIL || ''),
       subject: emailData.subject,
-      timestamp: new Date().toISOString(),
+      timestamp: nowUTC().toISOString(),
     });
 
     const msg = {
@@ -48,34 +51,46 @@ export async function sendEmail(emailData: EmailData): Promise<void> {
 
     await sgMail.send(msg);
 
-    console.log('Email sent successfully via SendGrid:', {
-      to: emailData.to,
+    logger.info('Email sent successfully via SendGrid', {
+      to: sanitizeEmail(emailData.to),
       subject: emailData.subject,
-      timestamp: new Date().toISOString(),
+      timestamp: nowUTC().toISOString(),
     });
   } catch (error) {
-    console.error('Error sending email via SendGrid:', error);
+    logger.error('Error sending email via SendGrid', {
+      error: error instanceof Error ? error.message : String(error),
+    });
 
     // Enhanced SendGrid error logging
-    if (error && typeof error === 'object' && 'response' in error) {
-      const sgError = error as any;
-      console.error('SendGrid error details:', {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'response' in error &&
+      'code' in error &&
+      'message' in error
+    ) {
+      const sgError = error as {
+        code: number;
+        message: string;
+        response?: { body?: unknown; headers?: unknown };
+      };
+      logger.error('SendGrid error details', {
         statusCode: sgError.code,
         message: sgError.message,
-        body: sgError.response?.body,
-        headers: sgError.response?.headers,
+        hasBody: !!sgError.response?.body,
+        hasHeaders: !!sgError.response?.headers,
       });
 
       // Log specific SendGrid issues
       if (sgError.code === 401) {
-        console.error('SendGrid authentication failed - check SENDGRID_API_KEY');
+        logger.error('SendGrid authentication failed - check SENDGRID_API_KEY');
       } else if (sgError.code === 403) {
-        console.error('SendGrid permission denied - verify sender email and domain verification');
+        logger.error('SendGrid permission denied - verify sender email and domain verification');
       } else if (sgError.code === 400) {
-        console.error('SendGrid bad request - check email format and content');
+        logger.error('SendGrid bad request - check email format and content');
       }
     } else if (error instanceof Error) {
-      console.error('General email error:', error.message);
+      logger.error('General email error', { message: error.message });
     }
 
     throw new Error('Failed to send email');

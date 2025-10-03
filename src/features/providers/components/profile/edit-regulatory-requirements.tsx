@@ -65,7 +65,7 @@ export function EditRegulatoryRequirements({
     data: requirementTypes,
     isLoading: isRequirementsLoading,
     error: requirementsError,
-  } = useProviderRequirementTypes(providerId) as any;
+  } = useProviderRequirementTypes(providerId);
 
   // Set up form with default values
   const methods = useForm<RegulatoryRequirementsFormValues>({
@@ -296,7 +296,12 @@ export function EditRegulatoryRequirements({
                             setValue: methods.setValue,
                             errors: methods.formState.errors,
                             fieldName,
-                            existingValue: (existingSubmission?.documentMetadata as any)?.value,
+                            existingValue:
+                              existingSubmission?.documentMetadata &&
+                              typeof existingSubmission.documentMetadata === 'object' &&
+                              'value' in existingSubmission.documentMetadata
+                                ? (existingSubmission.documentMetadata as { value: unknown }).value
+                                : undefined,
                           })}
                           {fieldError && (
                             <p className="mt-1 text-xs text-red-500">

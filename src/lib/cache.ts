@@ -1,6 +1,7 @@
 /**
  * Caching implementation for frequently accessed provider type combinations
  */
+import { nowUTC } from '@/lib/timezone';
 
 // Simple in-memory cache with TTL
 interface CacheEntry<T> {
@@ -18,7 +19,7 @@ class MemoryCache<T> {
 
   set(key: string, data: T, ttlMinutes?: number): void {
     const ttl = ttlMinutes ? ttlMinutes * 60 * 1000 : this.defaultTTL;
-    const expires = Date.now() + ttl;
+    const expires = nowUTC().getTime() + ttl;
     this.cache.set(key, { data, expires });
   }
 
@@ -26,7 +27,7 @@ class MemoryCache<T> {
     const entry = this.cache.get(key);
     if (!entry) return null;
 
-    if (Date.now() > entry.expires) {
+    if (nowUTC().getTime() > entry.expires) {
       this.cache.delete(key);
       return null;
     }
@@ -44,7 +45,7 @@ class MemoryCache<T> {
 
   // Clean up expired entries
   cleanup(): void {
-    const now = Date.now();
+    const now = nowUTC().getTime();
     this.cache.forEach((entry, key) => {
       if (now > entry.expires) {
         this.cache.delete(key);

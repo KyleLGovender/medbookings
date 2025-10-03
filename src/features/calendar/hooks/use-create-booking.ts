@@ -1,9 +1,10 @@
 import { BookingFormData } from '@/features/calendar/components/booking-slot-modal';
+import { logger } from '@/lib/logger';
 import { api } from '@/utils/api';
 
 interface UseCreateBookingOptions {
   onSuccess?: (data: any, variables: BookingFormData) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
   providerId?: string;
 }
 
@@ -29,7 +30,7 @@ export function useCreateBooking(options?: UseCreateBookingOptions) {
         // Invalidate general availability queries
         await utils.calendar.getById.invalidate();
 
-        console.log('Booking created successfully:', {
+        logger.info('Booking created successfully', {
           bookingId: data.booking?.id,
           bookingReference: data.booking?.id?.substring(0, 8).toUpperCase(),
           guestName: data.booking?.guestName,
@@ -40,13 +41,15 @@ export function useCreateBooking(options?: UseCreateBookingOptions) {
         // Call user-provided success handler
         options?.onSuccess?.(data, variables);
       } catch (error) {
-        console.error('Error invalidating queries after successful booking:', error);
+        logger.error('Error invalidating queries after successful booking', {
+          error: error instanceof Error ? error.message : String(error),
+        });
         // Still call success handler even if query invalidation fails
         options?.onSuccess?.(data, variables);
       }
     },
     onError: (error, variables) => {
-      console.error('Booking creation failed:', {
+      logger.error('Booking creation failed', {
         error: error.message,
         slotId: variables.slotId,
         guestName: variables.clientName,

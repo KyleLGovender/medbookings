@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cloneDate } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
 
 interface DateTimePickerProps {
@@ -42,7 +43,7 @@ export function DateTimePicker({ date, setDate }: DateTimePickerProps) {
             value={date ? format(date, 'HH:mm') : ''}
             onChange={(e) => {
               const [hours, minutes] = e.target.value.split(':');
-              const newDate = new Date(date);
+              const newDate = cloneDate(date);
               newDate.setHours(parseInt(hours));
               newDate.setMinutes(parseInt(minutes));
               setDate(newDate);

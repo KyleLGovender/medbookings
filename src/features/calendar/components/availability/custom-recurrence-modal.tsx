@@ -20,6 +20,7 @@ import { Label } from '@/components/ui/label';
 import { dayOfWeekOptions } from '@/features/calendar/lib/recurrence-utils';
 import { customRecurrenceDataSchema } from '@/features/calendar/types/schemas';
 import { CustomRecurrenceData, DayOfWeek } from '@/features/calendar/types/types';
+import { nowUTC } from '@/lib/timezone';
 
 interface CustomRecurrenceModalProps {
   isOpen: boolean;
@@ -40,7 +41,7 @@ export function CustomRecurrenceModal({
 
   // Calculate 4 weeks from today as default end date - memoized to prevent infinite loops
   const fourWeeksFromNow = useMemo(() => {
-    const date = new Date();
+    const date = nowUTC();
     date.setDate(date.getDate() + 28);
     return date;
   }, []);

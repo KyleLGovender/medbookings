@@ -9,7 +9,7 @@ import { api } from '@/utils/api';
  */
 export function useDeleteProvider(options?: {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -29,6 +29,6 @@ export function useDeleteProvider(options?: {
       // Call the user-provided onSuccess callback if it exists
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }

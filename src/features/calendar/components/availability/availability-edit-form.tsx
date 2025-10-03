@@ -2,11 +2,20 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { addHours, setDate, setMonth, setYear, setHours, setMinutes, setSeconds, setMilliseconds } from 'date-fns';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SchedulingRule } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
+import {
+  addHours,
+  setDate,
+  setHours,
+  setMilliseconds,
+  setMinutes,
+  setMonth,
+  setSeconds,
+  setYear,
+} from 'date-fns';
 import { Calendar, Clock, Loader2, Repeat, Trash2 } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
 
@@ -51,6 +60,7 @@ import { updateAvailabilityDataSchema } from '@/features/calendar/types/schemas'
 import { CustomRecurrenceData, DayOfWeek, RecurrenceOption } from '@/features/calendar/types/types';
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 import { nowUTC, parseUTC } from '@/lib/timezone';
 import { type RouterInputs, type RouterOutputs, api } from '@/utils/api';
 
@@ -74,14 +84,16 @@ function useUpdateAvailabilityOptimistic(
   availabilityId: string,
   options?: {
     onSuccess?: (data: RouterOutputs['calendar']['update']) => void;
-    onError?: (error: Error) => void;
+    onError?: (error: unknown) => void;
   }
 ) {
   const queryClient = useQueryClient();
 
   return api.calendar.update.useMutation({
     onMutate: async (variables) => {
-      console.log('Optimistic update - updating availability:', variables.id);
+      logger.debug('calendar', 'Optimistic update - updating availability', {
+        availabilityId: variables.id,
+      });
 
       // Cancel outgoing refetches for this availability
       await queryClient.cancelQueries({
@@ -107,7 +119,9 @@ function useUpdateAvailabilityOptimistic(
       }
 
       if (!previousData || !actualKey) {
-        console.warn('Could not find availability data to snapshot');
+        logger.warn('Could not find availability data to snapshot', {
+          availabilityId,
+        });
         return { previousData: null, actualKey: null };
       }
 
@@ -138,7 +152,9 @@ function useUpdateAvailabilityOptimistic(
     },
 
     onError: (err, _variables, context) => {
-      console.error('Update availability failed, rolling back:', err);
+      logger.error('Update availability failed, rolling back', {
+        error: err instanceof Error ? err.message : String(err),
+      });
 
       // Roll back to previous state
       if (context?.previousData && context?.actualKey) {
@@ -146,12 +162,15 @@ function useUpdateAvailabilityOptimistic(
       }
 
       if (options?.onError) {
-        options.onError(err as any);
+        options.onError(err);
       }
     },
 
     onSuccess: async (data, variables) => {
-      console.log('Update availability success - invalidating queries');
+      logger.debug('calendar', 'Update availability success - invalidating queries', {
+        availabilityId: variables.id,
+        scope: variables.scope,
+      });
 
       // For series updates (future/all), the old ID no longer exists - skip getById invalidation
       const isSeriesUpdate = variables.scope && variables.scope !== 'single';
@@ -325,11 +344,19 @@ export function AvailabilityEditForm({
       }
 
       // If there's custom recurrence data, extract it
-      if (availability.recurrencePattern && typeof availability.recurrencePattern === 'object') {
-        const pattern = availability.recurrencePattern as any;
+      if (
+        availability.recurrencePattern &&
+        typeof availability.recurrencePattern === 'object' &&
+        'option' in availability.recurrencePattern
+      ) {
+        const pattern = availability.recurrencePattern as {
+          option: string;
+          customDays?: string[];
+          endDate?: string;
+        };
         if (pattern.option === RecurrenceOption.CUSTOM && pattern.customDays && pattern.endDate) {
           setCustomRecurrenceData({
-            selectedDays: pattern.customDays,
+            selectedDays: pattern.customDays as unknown as DayOfWeek[],
             endDate: parseUTC(pattern.endDate),
           });
         }
@@ -354,7 +381,9 @@ export function AvailabilityEditForm({
     },
     onError: (error) => {
       // Error handling is already in the form submission, but this provides additional coverage
-      console.error('Optimistic update error:', error);
+      logger.error('Optimistic update error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     },
   });
 
@@ -455,7 +484,9 @@ export function AvailabilityEditForm({
 
       await updateMutation.mutateAsync(submitData);
     } catch (error) {
-      console.error('Failed to update availability:', error);
+      logger.error('Failed to update availability', {
+        error: error instanceof Error ? error.message : String(error),
+      });
 
       // Enhanced error handling with specific error types
       let errorTitle = 'Failed to update availability';
@@ -565,7 +596,11 @@ export function AvailabilityEditForm({
         scope,
       });
     } catch (error) {
-      console.error('Failed to delete availability:', error);
+      logger.error('Failed to delete availability', {
+        error: error instanceof Error ? error.message : String(error),
+        availabilityId,
+        scope,
+      });
       toast({
         title: 'Failed to delete',
         description: 'An error occurred while deleting the availability. Please try again.',

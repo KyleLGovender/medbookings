@@ -26,6 +26,7 @@ import { useUpdateOrganizationBasicInfo } from '@/features/organizations/hooks/u
 import { organizationBasicInfoSchema } from '@/features/organizations/types/schemas';
 import { OrganizationBasicInfoData } from '@/features/organizations/types/types';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 interface EditOrganizationBasicInfoProps {
   organizationId: string;
@@ -152,7 +153,7 @@ export function EditOrganizationBasicInfo({
 
   const handleLogoUpload = () => {
     // TODO: Implement logo upload to Vercel Blob
-    console.log('Logo upload functionality to be implemented');
+    logger.debug('organizations', 'Logo upload functionality to be implemented');
   };
 
   return (

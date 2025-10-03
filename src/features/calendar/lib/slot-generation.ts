@@ -1,6 +1,7 @@
 import { SchedulingRule } from '@prisma/client';
 
 import { SlotCreateData, SlotGenerationOptions } from '@/features/calendar/types/types';
+import { nowUTC } from '@/lib/timezone';
 
 import { generateTimeSlots } from './scheduling-rules';
 
@@ -40,7 +41,7 @@ export function generateSlotDataForAvailability(options: SlotGenerationOptions):
         startTime: slot.startTime,
         endTime: slot.endTime,
         status: 'AVAILABLE' as const,
-        lastCalculated: new Date(),
+        lastCalculated: nowUTC(),
         version: 1,
       }));
 

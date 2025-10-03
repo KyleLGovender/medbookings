@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { isDevelopment } from '@/lib/constants';
 import { logger } from '@/lib/logger';
+import { nowUTC } from '@/lib/timezone';
 
 interface GoogleMapsLocationPickerProps {
   onLocationSelect: (locationData: {
@@ -56,7 +57,10 @@ export function GoogleMapsLocationPicker({
   const processLocationResult = useCallback(
     async (result: any) => {
       try {
-        logger.debug('Processing location result', { hasResult: !!result, hasPlaceId: !!result?.place_id });
+        logger.debug('maps', 'Processing location result', {
+          hasResult: !!result,
+          hasPlaceId: !!result?.place_id,
+        });
 
         if (!result || !result.place_id) {
           logger.error('Invalid location result', { hasResult: !!result });
@@ -86,7 +90,7 @@ export function GoogleMapsLocationPicker({
           coordinates,
         };
 
-        logger.debug('Final location data', {
+        logger.debug('maps', 'Final location data', {
           placeId: locationData.googlePlaceId,
           hasAddress: !!locationData.formattedAddress,
           coordinates: locationData.coordinates,
@@ -120,8 +124,8 @@ export function GoogleMapsLocationPicker({
           });
         });
 
-        const results = response as any[];
-        if (results && results[0]) {
+        const results = response as unknown[];
+        if (Array.isArray(results) && results[0]) {
           processLocationResult(results[0]);
         }
       } catch (error) {
@@ -144,7 +148,10 @@ export function GoogleMapsLocationPicker({
         }
 
         // Import the marker library
-        const { AdvancedMarkerElement } = (await window.google.maps.importLibrary('marker')) as any;
+        const markerLibrary = (await window.google.maps.importLibrary('marker')) as {
+          AdvancedMarkerElement: any;
+        };
+        const { AdvancedMarkerElement } = markerLibrary;
 
         // Create new advanced marker
         const newMarker = new AdvancedMarkerElement({
@@ -218,14 +225,14 @@ export function GoogleMapsLocationPicker({
       return;
     }
 
-    logger.debug('Attempting to initialize map');
+    logger.debug('maps', 'Attempting to initialize map');
 
     // Wait for ref to be available with retry
     let retries = 0;
     const maxRetries = 10;
 
     while (!mapRef.current && retries < maxRetries) {
-      logger.debug('Waiting for map ref', { attempt: retries + 1 });
+      logger.debug('maps', 'Waiting for map ref', { attempt: retries + 1 });
       await new Promise((resolve) => setTimeout(resolve, 100));
       retries++;
     }
@@ -249,7 +256,7 @@ export function GoogleMapsLocationPicker({
     try {
       const defaultCenter = initialLocation?.coordinates || { lat: -26.2041, lng: 28.0473 }; // Johannesburg
 
-      logger.debug('Creating map instance', { center: defaultCenter });
+      logger.debug('maps', 'Creating map instance', { center: defaultCenter });
 
       const mapInstance = new window.google.maps.Map(mapRef.current, {
         center: defaultCenter,
@@ -260,7 +267,7 @@ export function GoogleMapsLocationPicker({
         fullscreenControl: false,
       });
 
-      logger.debug('Map instance created successfully');
+      logger.debug('maps', 'Map instance created successfully');
 
       setMap(mapInstance);
       setIsLoading(false);
@@ -282,7 +289,7 @@ export function GoogleMapsLocationPicker({
         );
       }
 
-      logger.debug('Map initialized successfully');
+      logger.debug('maps', 'Map initialized successfully');
     } catch (error) {
       logger.error('Error initializing map', {
         error: error instanceof Error ? error.message : String(error),
@@ -304,7 +311,7 @@ export function GoogleMapsLocationPicker({
 
     // Check if Google Maps is already loaded
     if (window.google && window.google.maps) {
-      logger.debug('Google Maps already loaded');
+      logger.debug('maps', 'Google Maps already loaded');
       initializeMap();
       return;
     }
@@ -312,12 +319,12 @@ export function GoogleMapsLocationPicker({
     // Check if script is already being loaded
     const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
     if (existingScript) {
-      logger.debug('Google Maps script already exists, waiting for load');
+      logger.debug('maps', 'Google Maps script already exists, waiting for load');
       // Wait for it to load
       const checkLoaded = setInterval(() => {
         if (window.google && window.google.maps) {
           clearInterval(checkLoaded);
-          logger.debug('Google Maps loaded from existing script');
+          logger.debug('maps', 'Google Maps loaded from existing script');
           initializeMap();
         }
       }, 100);
@@ -333,14 +340,14 @@ export function GoogleMapsLocationPicker({
       return;
     }
 
-    logger.debug('Loading Google Maps API');
+    logger.debug('maps', 'Loading Google Maps API');
 
     // Create a unique callback name
-    const callbackName = `initGoogleMaps_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    const callbackName = `initGoogleMaps_${nowUTC().getTime()}_${Math.random().toString(36).substring(2, 11)}`;
 
     // Set up the callback
     window[callbackName] = () => {
-      logger.debug('Google Maps API loaded successfully via callback');
+      logger.debug('maps', 'Google Maps API loaded successfully via callback');
       initializeMap();
       // Clean up the callback
       delete window[callbackName];
@@ -381,9 +388,11 @@ export function GoogleMapsLocationPicker({
 
     try {
       // Use the new Places API SearchNearby
-      const { Place, SearchNearbyRankPreference } = (await window.google.maps.importLibrary(
-        'places'
-      )) as any;
+      const placesLibrary = (await window.google.maps.importLibrary('places')) as {
+        Place: any;
+        SearchNearbyRankPreference: any;
+      };
+      const { Place, SearchNearbyRankPreference } = placesLibrary;
 
       // Create the request
       const request = {
@@ -481,10 +490,10 @@ export function GoogleMapsLocationPicker({
           map.setCenter(location);
           map.setZoom(16);
           placeMarker(map, location).catch((error) =>
-        logger.error('Error placing marker', {
-          error: error instanceof Error ? error.message : String(error),
-        })
-      );
+            logger.error('Error placing marker', {
+              error: error instanceof Error ? error.message : String(error),
+            })
+          );
           reverseGeocode(lat, lng);
         } catch (error) {
           logger.error('Error processing current location', {

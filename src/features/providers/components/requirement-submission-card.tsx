@@ -7,6 +7,7 @@ import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { NavigationLink } from '@/components/ui/navigation-link';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { parseUTC } from '@/lib/timezone';
 import { extractFilenameFromUrl } from '@/lib/utils/document-utils';
 
 interface RequirementSubmission {
@@ -63,7 +64,7 @@ export function RequirementSubmissionCard({
               <>
                 <p className="font-medium">{extractFilenameFromUrl(value)}</p>
                 <p className="text-xs text-muted-foreground">
-                  Submitted: {new Date(submission.createdAt).toLocaleDateString()}
+                  Submitted: {parseUTC(submission.createdAt).toLocaleDateString()}
                 </p>
               </>
             ) : (
@@ -102,7 +103,7 @@ export function RequirementSubmissionCard({
           <div>
             <p className="font-medium">{isTrue ? 'Yes' : 'No'}</p>
             <p className="text-xs text-muted-foreground">
-              Submitted: {new Date(submission.createdAt).toLocaleDateString()}
+              Submitted: {parseUTC(submission.createdAt).toLocaleDateString()}
             </p>
           </div>
         </>
@@ -115,10 +116,10 @@ export function RequirementSubmissionCard({
           <Calendar className="h-5 w-5 text-primary" />
           <div>
             <p className="font-medium">
-              {value ? new Date(value.toString()).toLocaleDateString() : 'No date provided'}
+              {value ? parseUTC(value.toString()).toLocaleDateString() : 'No date provided'}
             </p>
             <p className="text-xs text-muted-foreground">
-              Submitted: {new Date(submission.createdAt).toLocaleDateString()}
+              Submitted: {parseUTC(submission.createdAt).toLocaleDateString()}
             </p>
           </div>
         </>
@@ -132,7 +133,7 @@ export function RequirementSubmissionCard({
         <div>
           <p className="font-medium">{value?.toString() || 'No value provided'}</p>
           <p className="text-xs text-muted-foreground">
-            Submitted: {new Date(submission.createdAt).toLocaleDateString()}
+            Submitted: {parseUTC(submission.createdAt).toLocaleDateString()}
           </p>
         </div>
       </>
@@ -174,7 +175,7 @@ export function RequirementSubmissionCard({
         </div>
         <div className="scale-110">
           <StatusBadge
-            status={submission.status as any}
+            status={submission.status as 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'}
             validationType={submission.requirementType?.validationType}
           />
         </div>

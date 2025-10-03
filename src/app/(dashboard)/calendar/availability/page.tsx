@@ -17,6 +17,8 @@ import { ProviderCalendarView } from '@/features/calendar/components/provider-ca
 import { useDeleteAvailability } from '@/features/calendar/hooks/use-availability';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 import { type RouterOutputs, api } from '@/utils/api';
 
 type AvailabilityData = RouterOutputs['calendar']['searchAvailability'][number];
@@ -72,7 +74,9 @@ export default function AvailabilityManagementPage() {
         scope,
       });
     } catch (error) {
-      console.error('Failed to delete availability:', error);
+      logger.error('Failed to delete availability', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       toast({
         title: 'Failed to delete',
         description: 'An error occurred while deleting the availability. Please try again.',
@@ -93,12 +97,12 @@ export default function AvailabilityManagementPage() {
 
   // Memoize the date range to prevent constant re-calculation
   const dateRange = useMemo(() => {
-    const now = new Date();
-    const startDate = new Date(now);
+    const now = nowUTC();
+    const startDate = nowUTC();
     startDate.setDate(startDate.getDate() - 7); // Last week
     startDate.setHours(0, 0, 0, 0); // Start of day
 
-    const endDate = new Date(now);
+    const endDate = nowUTC();
     endDate.setDate(endDate.getDate() + 30); // Next month
     endDate.setHours(23, 59, 59, 999); // End of day
 
@@ -276,9 +280,10 @@ export default function AvailabilityManagementPage() {
                   <span className="text-sm">Active This Week</span>
                   <span className="text-sm font-medium">
                     {availabilities?.filter((a) => {
-                      const now = new Date();
-                      const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-                      const startDate = new Date(a.startTime);
+                      const now = nowUTC();
+                      const weekFromNow = nowUTC();
+                      weekFromNow.setDate(weekFromNow.getDate() + 7);
+                      const startDate = a.startTime;
                       return startDate >= now && startDate <= weekFromNow;
                     }).length || 0}
                   </span>
@@ -441,7 +446,7 @@ export default function AvailabilityManagementPage() {
         }
         availabilityDate={
           pendingDeleteAvailability?.startTime
-            ? new Date(pendingDeleteAvailability.startTime).toLocaleDateString()
+            ? pendingDeleteAvailability.startTime.toLocaleDateString()
             : ''
         }
         isDestructive={true}

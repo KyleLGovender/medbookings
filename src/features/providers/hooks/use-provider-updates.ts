@@ -7,7 +7,7 @@ import { api } from '@/utils/api';
  */
 export function useUpdateProviderBasicInfo(options?: {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -17,7 +17,7 @@ export function useUpdateProviderBasicInfo(options?: {
       utils.providers.getById.invalidate({ id: variables.id });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }
 
@@ -28,7 +28,7 @@ export function useUpdateProviderBasicInfo(options?: {
  */
 export function useUpdateProviderServices(options?: {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -39,7 +39,7 @@ export function useUpdateProviderServices(options?: {
       utils.providers.getProviderAllServices.invalidate({ providerId: variables.id });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }
 
@@ -50,7 +50,7 @@ export function useUpdateProviderServices(options?: {
  */
 export function useUpdateProviderRequirements(options?: {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -60,6 +60,6 @@ export function useUpdateProviderRequirements(options?: {
       utils.providers.getById.invalidate({ id: variables.id });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }

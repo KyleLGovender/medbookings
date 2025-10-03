@@ -1228,3 +1228,39 @@ model EmailVerificationToken {
   @@index([identifier])
 }
 
+// Audit logging for POPIA compliance
+enum AuditCategory {
+  GENERAL           // General system events
+  ADMIN_ACTION      // Admin operations
+  PHI_ACCESS        // Protected Health Information access
+  AUTH_EVENT        // Authentication events
+  DATA_MODIFICATION // Data changes
+}
+
+model AuditLog {
+  id         String        @id @default(cuid())
+  action     String        // Description of what happened
+  category   AuditCategory @default(GENERAL)
+
+  // Actor (who performed the action)
+  userId     String?
+  userEmail  String?       // Pre-sanitized email
+
+  // Target (what was affected)
+  resource   String?       // e.g., "Provider", "Booking", "Organization"
+  resourceId String?       // ID of the affected resource
+
+  // Context
+  ipAddress  String?
+  userAgent  String?       @db.Text
+  metadata   Json?         // Additional sanitized data
+
+  createdAt  DateTime      @default(now())
+
+  // Indexes for efficient querying
+  @@index([userId, createdAt])
+  @@index([category, createdAt])
+  @@index([resource, resourceId])
+  @@index([createdAt])
+}
+

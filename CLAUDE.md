@@ -9,11 +9,13 @@
   - 95% CONFIDENCE RULE: Ask questions when confidence < 95%
   - VERIFY EVERYTHING: Never skip because it "looks fine" - check EVERYTHING
   - NO ASSUMPTIONS: Don't trust comments saying "this works" - test EVERYTHING
+  - FOCUSED AGENT: Complete tasks and code changes systematically one-by-one, not using a 'Batch process' or a 'Task agent'
   - PREFER EDITING: Always edit existing code over creating new
   - NEXT.JS PRINCIPLES: Always strictly follow Next.js 14 App Router best practices
   - EXPLICIT CONFIRMATION: Require user satisfaction before marking tasks complete
 
   NEVER:
+  - Use a 'Batch process' or a 'Task agent' to complete a task or code change
   - Add legacy fallback code (unless explicitly requested)
   - Implement when uncertain - clarify first
   - Create new code when existing code can be modified
@@ -29,6 +31,8 @@
   - Give up on tasks - identify root causes instead
 
   📂 SECTION 2: CODE ANALYSIS & CONTEXT PROTOCOL
+
+  📄 **Full Context Protocol**: See `/docs/CONTEXT-LOADING.md` for comprehensive context management rules, task-specific loading patterns, and context efficiency guidelines.
 
   Code Analysis Guidelines
 
@@ -130,6 +134,12 @@
   - Testing: Playwright (e2e only)
 
   Type System Architecture
+
+  📄 **Type Safety Patterns**: See `/docs/TYPE-SAFETY.md` for:
+  - Prisma JSON field handling with Zod schemas and conversion helpers
+  - Type guard implementation patterns (acceptable `as any` usage)
+  - tRPC type extraction detailed examples
+  - Common type errors and debugging solutions
 
   Type Source Rules:
 
@@ -348,11 +358,12 @@
   Build Error Resolution Protocol
 
   1. Run npm run build to see full error output
-  2. Fix identified errors systematically (not trial-and-error)
-  3. Re-run build after each fix and code edit
-  4. Continue until build passes completely
-  5. Never proceed with failing or timed-out build
-  6. Never proceed with errors still present
+  2. Provide a detailed analysis of what the error output is and generate a plan to address it
+  3. Fix identified errors systematically (not trial-and-error)
+  4. Re-run build after each fix and code edit
+  5. Continue until build passes completely
+  6. Never proceed with failing or timed-out build
+  7. Never proceed with errors still present
 
   Build verification is mandatory before:
   - User creates PRs
@@ -360,6 +371,8 @@
   - Moving to next implementation phase
 
   🔍 SECTION 6: VERIFICATION PROTOCOLS
+
+  📄 **Complete Verification Checklist**: See `/docs/VERIFICATION-PROTOCOLS.md` for full route validation, data source verification, and build error resolution protocol.
 
   Route & Navigation Validation
 
@@ -395,6 +408,18 @@
   grep -r "useQuery.*{" -A 5 | grep -E "(refetch|poll|interval)"
 
   🏥 SECTION 7: HEALTHCARE COMPLIANCE
+
+  📄 **Timezone Implementation Guide**: See `/docs/TIMEZONE-GUIDELINES.md` for:
+  - Complete utility reference (`nowUTC()`, `startOfDaySAST()`, `endOfDaySAST()`, `formatSAST()`)
+  - Pattern examples with before/after code (current time, date ranges, token expiry)
+  - Testing strategies for timezone code
+  - Debugging timezone issues and common violations
+
+  📄 **Logging & PHI Protection**: See `/docs/LOGGING.md` for:
+  - Logger API reference (`logger.debug()`, `logger.info()`, `logger.warn()`, `logger.error()`, `logger.audit()`)
+  - PHI sanitization functions (`sanitizeEmail()`, `sanitizeName()`, `sanitizePhone()`)
+  - Feature-based debug flag system
+  - POPIA compliance requirements and Sprint 4 fixes
 
   POPIA Requirements
 
@@ -477,6 +502,8 @@
 
   🐛 SECTION 10: BUG DETECTION PATTERNS
 
+  📄 **Bug Detection Reference**: See `/docs/BUG-DETECTION.md` for complete debugging protocol and red flag priorities.
+
   React Issues
 
   // Memory Leak Pattern - DETECT & FIX
@@ -531,6 +558,8 @@
 
   🔄 SECTION 12: DEVELOPMENT WORKFLOW
 
+  📄 **Complete Workflow Guide**: See `/docs/DEVELOPMENT-WORKFLOW.md` for detailed task execution flow, development standards, and command execution policy.
+
   Task Execution Flow
 
   1. UNDERSTAND (95% confidence required)
@@ -576,6 +605,14 @@
   - 2 spaces, 100 char max lines
 
   🛠️ SECTION 13: TOOLS & UTILITIES
+
+  📄 **CLAUDE.md Enforcement System**: See `/docs/ENFORCEMENT.md` for:
+  - Three-layer enforcement architecture (IDE ESLint, Pre-commit hooks, CI/CD gates)
+  - All validation rules with examples (timezone, type safety, architecture, PHI)
+  - Setup instructions and troubleshooting guide
+  - Extending the enforcement system with new rules
+
+  📄 **Auto-Sync System**: See `/docs/CLAUDE-MD-AUTO-SYNC.md` for how CLAUDE.md changes automatically sync with enforcement rules using SHA-256 hash detection.
 
   MCP Tool Usage
 
@@ -639,7 +676,25 @@
 
   🟡 MEDIUM: Missing validation, no error handling, hardcoded data
 
-  ✅ SECTION 15: FINAL VERIFICATION
+  🚀 SECTION 15: DEPLOYMENT
+
+  📄 **Production Deployment Guide**: See `/docs/DEPLOYMENT.md` for:
+  - Complete environment variable reference (Database, Auth, Redis, Email, SMS)
+  - Upstash Redis setup for rate limiting (CRITICAL for production)
+  - Security verification checklist (POPIA compliance)
+  - Post-deployment verification steps
+  - Troubleshooting common deployment issues
+  - Rollback procedures and incident response
+
+  Critical Production Requirements
+
+  - Upstash Redis configured for rate limiting (REQUIRED)
+  - Strong AUTH_SECRET (minimum 32 characters, random)
+  - All environment variables configured in deployment platform
+  - Database migrations applied (npx prisma migrate deploy)
+  - Security headers verified (HSTS, CSP, X-Frame-Options)
+
+  ✅ SECTION 16: FINAL VERIFICATION
 
   Task Completion Criteria
 

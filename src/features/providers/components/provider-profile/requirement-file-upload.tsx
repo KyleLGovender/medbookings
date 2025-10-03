@@ -7,6 +7,8 @@ import { UploadIcon, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
+import { nowUTC } from '@/lib/timezone';
 
 interface RequirementFileUploadProps {
   onFileUploaded: (url: string, metadata: any) => void;
@@ -85,7 +87,7 @@ export function RequirementFileUpload({
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,
-        uploadedAt: new Date().toISOString(),
+        uploadedAt: nowUTC().toISOString(),
       });
 
       toast({
@@ -93,7 +95,9 @@ export function RequirementFileUpload({
         description: 'Your document has been uploaded successfully.',
       });
     } catch (error) {
-      console.error('Upload error:', error);
+      logger.error('Upload error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       toast({
         title: 'Upload failed',
         description: 'Failed to upload the document. Please try again.',

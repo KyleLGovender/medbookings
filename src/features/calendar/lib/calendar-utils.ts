@@ -13,7 +13,14 @@
  * @author MedBookings Development Team
  */
 import { AvailabilityStatus } from '@prisma/client';
-import { setHours, setMinutes, setSeconds, setMilliseconds, setDate as setDateFns, setMonth } from 'date-fns';
+import {
+  setDate as setDateFns,
+  setHours,
+  setMilliseconds,
+  setMinutes,
+  setMonth,
+  setSeconds,
+} from 'date-fns';
 
 import { parseUTC } from '@/lib/timezone';
 import type { RouterOutputs } from '@/utils/api';
@@ -207,7 +214,7 @@ export function getAvailabilityForDay(
   date: Date
 ): AvailabilityData[] {
   return availabilities.filter(
-    (availability) => parseUTC(availability.startTime).toDateString() === date.toDateString()
+    (availability) => availability.startTime.toDateString() === date.toDateString()
   );
 }
 
@@ -219,7 +226,7 @@ export function getAvailabilityForDay(
  * @returns Array of slots occurring on the specified date
  */
 export function getSlotsForDay(slots: SlotData[], date: Date): SlotData[] {
-  return slots.filter((slot) => parseUTC(slot.startTime).toDateString() === date.toDateString());
+  return slots.filter((slot) => slot.startTime.toDateString() === date.toDateString());
 }
 
 /**
@@ -239,8 +246,8 @@ export function calculateSlotTimeRange(slots: SlotData[]): { start: number; end:
 
   // Find the actual earliest and latest times from slots
   slots.forEach((slot) => {
-    const startTime = parseUTC(slot.startTime);
-    const endTime = parseUTC(slot.endTime);
+    const startTime = slot.startTime;
+    const endTime = slot.endTime;
 
     const startHour = startTime.getHours();
     const endHour = endTime.getHours();
@@ -282,8 +289,8 @@ export function calculateAvailabilityTimeRange(availabilities: AvailabilityData[
 
   // Check all availability to extend range if needed
   availabilities.forEach((availability) => {
-    const startHour = parseUTC(availability.startTime).getHours();
-    const endHour = parseUTC(availability.endTime).getHours();
+    const startHour = availability.startTime.getHours();
+    const endHour = availability.endTime.getHours();
 
     if (startHour < earliestHour) earliestHour = startHour;
     if (endHour > latestHour) latestHour = endHour;

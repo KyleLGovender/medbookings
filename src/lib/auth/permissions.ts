@@ -216,14 +216,13 @@ export function getUserPermissionsFromSession(session: Session | null): UserPerm
   // For now, we'll return a basic structure that needs to be populated
   // from the database in the actual implementation
 
-  const user = session.user;
-  const extendedUser = hasExtendedUserProperties(user) ? user : null;
+  const user = session.user as any; // TODO: Fetch extended user properties from database
 
   return {
-    systemRole: extendedUser?.role || SystemRole.USER,
-    organizationRoles: extendedUser?.organizationRoles || [],
-    providerRole: extendedUser?.providerRole,
-    providerId: extendedUser?.providerId,
+    systemRole: user?.role || SystemRole.USER,
+    organizationRoles: user?.organizationRoles || [],
+    providerRole: user?.providerRole,
+    providerId: user?.providerId,
   };
 }
 

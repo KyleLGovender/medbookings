@@ -3,6 +3,8 @@ import { OrganizationRole } from '@prisma/client';
 
 import { OrganizationRegistrationData } from '@/features/organizations/types/types';
 import { getCurrentUser } from '@/lib/auth';
+import { logger, sanitizeEmail } from '@/lib/logger';
+import { addMilliseconds, nowUTC } from '@/lib/timezone';
 
 /**
  * Validates organization registration data and handles business logic
@@ -31,9 +33,9 @@ export async function registerOrganization(
     }
 
     // TODO: Send organization registration notification email
-    console.log(
-      `📧 Organization registration notification would be sent for: ${data.organization.name}`
-    );
+    logger.info('Organization registration notification would be sent', {
+      orgName: data.organization.name,
+    });
 
     // Return minimal metadata for tRPC procedure to create organization
     return {
@@ -42,7 +44,9 @@ export async function registerOrganization(
       validatedData: data,
     };
   } catch (error) {
-    console.error('Organization registration validation error:', error);
+    logger.error('Organization registration validation error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return {
       success: false,
       error: 'Failed to validate organization data. Please try again.',
@@ -93,10 +97,12 @@ export async function validateMemberInvitation(invitationData: {
 
     // Generate invitation token and expiry
     const invitationToken = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const expiresAt = addMilliseconds(nowUTC(), 7 * 24 * 60 * 60 * 1000); // 7 days
 
     // TODO: Send invitation email
-    console.log(`📧 Member invitation email would be sent to: ${email}`);
+    logger.info('Member invitation email would be sent', {
+      email: sanitizeEmail(email),
+    });
 
     return {
       success: true,
@@ -106,7 +112,9 @@ export async function validateMemberInvitation(invitationData: {
       expiresAt,
     };
   } catch (error) {
-    console.error('Member invitation validation error:', error);
+    logger.error('Member invitation validation error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return {
       success: false,
       message: 'Failed to validate invitation data',
@@ -132,7 +140,9 @@ export async function validateInvitationAcceptance(token: string): Promise<Membe
     }
 
     // TODO: Send welcome email after membership creation
-    console.log(`📧 Welcome email would be sent to: ${currentUser.email}`);
+    logger.info('Welcome email would be sent', {
+      email: sanitizeEmail(currentUser.email || ''),
+    });
 
     return {
       success: true,
@@ -140,7 +150,9 @@ export async function validateInvitationAcceptance(token: string): Promise<Membe
       data: { currentUserId: currentUser.id, currentUserEmail: currentUser.email },
     };
   } catch (error) {
-    console.error('Invitation acceptance validation error:', error);
+    logger.error('Invitation acceptance validation error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return {
       success: false,
       message: 'Failed to validate invitation acceptance',
@@ -161,14 +173,16 @@ export async function validateInvitationRejection(token: string): Promise<Member
     }
 
     // TODO: Send rejection notification email to inviter
-    console.log('📧 Invitation rejection notification would be sent');
+    logger.info('Invitation rejection notification would be sent');
 
     return {
       success: true,
       message: 'Invitation rejection validated',
     };
   } catch (error) {
-    console.error('Invitation rejection validation error:', error);
+    logger.error('Invitation rejection validation error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return {
       success: false,
       message: 'Failed to validate invitation rejection',
@@ -206,7 +220,7 @@ export async function validateMemberRoleChange(
     }
 
     // TODO: Send role change notification email
-    console.log(`📧 Role change notification would be sent for member: ${memberId}`);
+    logger.info('Role change notification would be sent', { memberId });
 
     return {
       success: true,
@@ -214,7 +228,9 @@ export async function validateMemberRoleChange(
       data: { currentUserId: currentUser.id },
     };
   } catch (error) {
-    console.error('Member role change validation error:', error);
+    logger.error('Member role change validation error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return {
       success: false,
       message: 'Failed to validate role change',
@@ -245,7 +261,7 @@ export async function validateMemberRemoval(
     }
 
     // TODO: Send member removal notification email
-    console.log(`📧 Member removal notification would be sent for member: ${memberId}`);
+    logger.info('Member removal notification would be sent', { memberId });
 
     return {
       success: true,
@@ -253,7 +269,9 @@ export async function validateMemberRemoval(
       data: { currentUserId: currentUser.id },
     };
   } catch (error) {
-    console.error('Member removal validation error:', error);
+    logger.error('Member removal validation error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return {
       success: false,
       message: 'Failed to validate member removal',
@@ -284,9 +302,9 @@ export async function validateInvitationCancellation(
     }
 
     // TODO: Send invitation cancellation email
-    console.log(
-      `📧 Invitation cancellation notification would be sent for invitation: ${invitationId}`
-    );
+    logger.info('Invitation cancellation notification would be sent', {
+      invitationId,
+    });
 
     return {
       success: true,
@@ -294,7 +312,9 @@ export async function validateInvitationCancellation(
       data: { currentUserId: currentUser.id },
     };
   } catch (error) {
-    console.error('Invitation cancellation validation error:', error);
+    logger.error('Invitation cancellation validation error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return {
       success: false,
       message: 'Failed to validate invitation cancellation',

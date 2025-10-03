@@ -5,6 +5,8 @@
 import twilio from 'twilio';
 
 import env from '@/config/env/server';
+import { logger, sanitizePhone } from '@/lib/logger';
+import { parseUTC } from '@/lib/timezone';
 
 interface BookingDetails {
   bookingId: string;
@@ -32,18 +34,21 @@ export async function sendGuestBookingWhatsApp(
 ): Promise<void> {
   try {
     if (!guestPhone || !guestPhone.startsWith('+')) {
-      console.warn('Invalid guest phone number for WhatsApp:', guestPhone);
+      logger.warn('Invalid guest phone number for WhatsApp', {
+        phone: sanitizePhone(guestPhone),
+      });
       return;
     }
 
-    const formattedDate = new Date(booking.startTime).toLocaleDateString('en-US', {
+    const startDateTime = parseUTC(booking.startTime);
+    const formattedDate = startDateTime.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
 
-    const formattedTime = new Date(booking.startTime).toLocaleTimeString('en-US', {
+    const formattedTime = startDateTime.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
     });
@@ -68,14 +73,17 @@ export async function sendGuestBookingWhatsApp(
       contentVariables: templateVariables,
     });
 
-    console.log('Guest booking WhatsApp confirmation sent:', {
+    logger.info('Guest booking WhatsApp confirmation sent', {
       messageSid: message.sid,
       status: message.status,
-      to: guestPhone,
+      to: sanitizePhone(guestPhone),
       bookingId: booking.bookingId,
     });
   } catch (error) {
-    console.error('Error sending guest booking WhatsApp:', error);
+    logger.error('Error sending guest booking WhatsApp', {
+      bookingId: booking.bookingId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     // Don't throw error - we don't want to fail booking if WhatsApp fails
   }
 }
@@ -89,18 +97,21 @@ export async function sendProviderBookingWhatsApp(
 ): Promise<void> {
   try {
     if (!providerPhone || !providerPhone.startsWith('+')) {
-      console.warn('Invalid provider phone number for WhatsApp:', providerPhone);
+      logger.warn('Invalid provider phone number for WhatsApp', {
+        phone: sanitizePhone(providerPhone),
+      });
       return;
     }
 
-    const formattedDate = new Date(booking.startTime).toLocaleDateString('en-US', {
+    const startDateTime = parseUTC(booking.startTime);
+    const formattedDate = startDateTime.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
 
-    const formattedTime = new Date(booking.startTime).toLocaleTimeString('en-US', {
+    const formattedTime = startDateTime.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
     });
@@ -126,14 +137,17 @@ export async function sendProviderBookingWhatsApp(
       contentVariables: templateVariables,
     });
 
-    console.log('Provider booking WhatsApp notification sent:', {
+    logger.info('Provider booking WhatsApp notification sent', {
       messageSid: message.sid,
       status: message.status,
-      to: providerPhone,
+      to: sanitizePhone(providerPhone),
       bookingId: booking.bookingId,
     });
   } catch (error) {
-    console.error('Error sending provider booking WhatsApp:', error);
+    logger.error('Error sending provider booking WhatsApp', {
+      bookingId: booking.bookingId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     // Don't throw error - we don't want to fail booking if WhatsApp fails
   }
 }
@@ -147,7 +161,9 @@ export async function sendSimpleWhatsAppMessage(
 ): Promise<void> {
   try {
     if (!phoneNumber || !phoneNumber.startsWith('+')) {
-      console.warn('Invalid phone number for WhatsApp:', phoneNumber);
+      logger.warn('Invalid phone number for WhatsApp', {
+        phone: sanitizePhone(phoneNumber),
+      });
       return;
     }
 
@@ -157,13 +173,15 @@ export async function sendSimpleWhatsAppMessage(
       body: message,
     });
 
-    console.log('Simple WhatsApp message sent:', {
+    logger.info('Simple WhatsApp message sent', {
       messageSid: twilioMessage.sid,
       status: twilioMessage.status,
-      to: phoneNumber,
+      to: sanitizePhone(phoneNumber),
     });
   } catch (error) {
-    console.error('Error sending simple WhatsApp message:', error);
+    logger.error('Error sending simple WhatsApp message', {
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
@@ -172,14 +190,15 @@ export async function sendSimpleWhatsAppMessage(
  * Used when template HXaa942313733fddc9c10d28597e2894f4 (guest_booking_confirmation_v2) fails
  */
 export function generateGuestBookingWhatsAppMessage(booking: BookingDetails): string {
-  const formattedDate = new Date(booking.startTime).toLocaleDateString('en-US', {
+  const startDateTime = parseUTC(booking.startTime);
+  const formattedDate = startDateTime.toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
 
-  const formattedTime = new Date(booking.startTime).toLocaleTimeString('en-US', {
+  const formattedTime = startDateTime.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
   });
@@ -207,14 +226,15 @@ Thank you for choosing MedBookings! 🏥`;
  * Used when template HXf24f9f7d50ef56e67348e5fb15ad0ed7 (provider_booking_notification_v2) fails
  */
 export function generateProviderBookingWhatsAppMessage(booking: BookingDetails): string {
-  const formattedDate = new Date(booking.startTime).toLocaleDateString('en-US', {
+  const startDateTime = parseUTC(booking.startTime);
+  const formattedDate = startDateTime.toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
 
-  const formattedTime = new Date(booking.startTime).toLocaleTimeString('en-US', {
+  const formattedTime = startDateTime.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
   });

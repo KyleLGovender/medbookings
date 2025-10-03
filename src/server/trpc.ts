@@ -121,8 +121,7 @@ const enforceUserHasRole = (allowedRoles: string[]) => {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
 
-    const user = ctx.session.user as any;
-    if (!allowedRoles.includes(user.role)) {
+    if (!allowedRoles.includes(ctx.session.user.role)) {
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: 'You do not have permission to perform this action',

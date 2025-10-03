@@ -19,7 +19,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getCurrentUser } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
+import { parseUTC } from '@/lib/timezone';
 
 /**
  * User Dashboard Page
@@ -123,7 +125,9 @@ export default async function DashboardPage() {
       });
     }
   } catch (error) {
-    console.error('Error loading dashboard data:', error);
+    logger.error('Error loading dashboard data', {
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 
   // Helper function to get status color
@@ -333,8 +337,8 @@ export default async function DashboardPage() {
                   <div>
                     <p className="text-sm font-medium">{booking.client?.name || 'Client'}</p>
                     <p className="text-xs text-gray-600">
-                      {new Date(booking.availability.startTime).toLocaleDateString()} at{' '}
-                      {new Date(booking.availability.startTime).toLocaleTimeString([], {
+                      {parseUTC(booking.availability.startTime).toLocaleDateString()} at{' '}
+                      {parseUTC(booking.availability.startTime).toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}

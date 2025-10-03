@@ -141,9 +141,10 @@ export function ProviderProfileEditClient() {
       router.push('/profile');
     },
     onError: (error) => {
+      const message = error instanceof Error ? error.message : 'Deletion failed';
       toast({
         title: 'Deletion failed',
-        description: error.message,
+        description: message,
         variant: 'destructive',
       });
     },

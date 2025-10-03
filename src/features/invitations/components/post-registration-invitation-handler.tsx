@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { logger } from '@/lib/logger';
 import { type RouterOutputs, api } from '@/utils/api';
 
 // Infer types from tRPC router outputs
@@ -89,7 +90,9 @@ export function PostRegistrationInvitationHandler({
     },
 
     onError: (err, variables, context) => {
-      console.error('Banner invitation acceptance failed, rolling back:', err);
+      logger.error('Banner invitation acceptance failed, rolling back', {
+        error: err instanceof Error ? err.message : String(err),
+      });
 
       // Roll back to previous state
       if (context?.previousData && context?.actualKey) {

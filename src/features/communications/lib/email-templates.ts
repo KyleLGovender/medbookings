@@ -1,6 +1,7 @@
 /**
  * Email templates for booking confirmations and notifications
  */
+import { nowUTC, parseUTC } from '@/lib/timezone';
 
 interface BookingDetails {
   bookingId: string;
@@ -26,19 +27,22 @@ interface TemplateData {
  * Guest booking confirmation email template
  */
 export function getGuestBookingConfirmationTemplate(booking: BookingDetails): TemplateData {
-  const date = new Date(booking.startTime).toLocaleDateString('en-US', {
+  const startDateTime = parseUTC(booking.startTime);
+  const endDateTime = parseUTC(booking.endTime);
+
+  const date = startDateTime.toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
 
-  const startTime = new Date(booking.startTime).toLocaleTimeString('en-US', {
+  const startTime = startDateTime.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
   });
 
-  const endTime = new Date(booking.endTime).toLocaleTimeString('en-US', {
+  const endTime = endDateTime.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
   });
@@ -194,19 +198,22 @@ MedBookings Team
  * Provider booking notification email template
  */
 export function getProviderBookingNotificationTemplate(booking: BookingDetails): TemplateData {
-  const date = new Date(booking.startTime).toLocaleDateString('en-US', {
+  const startDateTime = parseUTC(booking.startTime);
+  const endDateTime = parseUTC(booking.endTime);
+
+  const date = startDateTime.toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
 
-  const startTime = new Date(booking.startTime).toLocaleTimeString('en-US', {
+  const startTime = startDateTime.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
   });
 
-  const endTime = new Date(booking.endTime).toLocaleTimeString('en-US', {
+  const endTime = endDateTime.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
   });
@@ -452,7 +459,7 @@ export function getRequirementUpdateNotificationTemplate(data: {
 
           <div class="detail-row">
             <span class="label">Submission Time:</span>
-            <span class="value">${new Date().toLocaleString()}</span>
+            <span class="value">${nowUTC().toLocaleString()}</span>
           </div>
         </div>
 
@@ -497,7 +504,7 @@ Document Details:
 - Type: ${data.requirementType}
 - Document URL: ${data.documentUrl}
 ${data.notes ? `- Notes: ${data.notes}` : ''}
-- Submission Time: ${new Date().toLocaleString()}
+- Submission Time: ${nowUTC().toLocaleString()}
 
 Action Required:
 1. Review the submitted document for compliance

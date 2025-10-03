@@ -28,7 +28,7 @@ export default async function AdminProvidersPage({ searchParams }: AdminProvider
     ProviderStatus.REJECTED,
   ] as const;
   const initialStatus =
-    status && validStatuses.includes(status as any)
+    status && (validStatuses as readonly string[]).includes(status)
       ? (status as (typeof validStatuses)[number])
       : undefined;
 

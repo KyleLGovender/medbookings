@@ -28,6 +28,7 @@ import {
   SlotStatus,
 } from '@prisma/client';
 
+import { nowUTC } from '@/lib/timezone';
 // Import tRPC types for server data
 import type { RouterOutputs } from '@/utils/api';
 
@@ -1089,8 +1090,12 @@ export type AvailabilityContextType = AvailabilityContext;
 export const getDefaultExportConfig = (): ExportConfig => ({
   format: 'ical',
   dateRange: {
-    start: new Date(),
-    end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+    start: nowUTC(),
+    end: (() => {
+      const d = nowUTC();
+      d.setDate(d.getDate() + 30);
+      return d;
+    })(), // 30 days from now
   },
   includeFields: {
     eventDetails: true,

@@ -7,6 +7,7 @@
  *
  * @author MedBookings Development Team
  */
+import { logger } from '@/lib/logger';
 
 // =============================================================================
 // ERROR TYPES AND INTERFACES
@@ -309,7 +310,7 @@ export async function apiRequest<T = any>(
 export function logApiError(error: ApiError, context?: Record<string, any>): void {
   // In development, log to console
   if (process.env.NODE_ENV === 'development') {
-    console.error('API Error:', {
+    logger.error('API Error', {
       code: error.code,
       status: error.status,
       message: error.message,

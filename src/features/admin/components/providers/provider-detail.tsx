@@ -23,6 +23,7 @@ import {
   useAdminProvider,
   useAdminProviderRequirements,
 } from '@/features/providers/hooks/use-admin-providers';
+import { logger } from '@/lib/logger';
 import { type RouterOutputs } from '@/utils/api';
 
 // Infer types from tRPC router outputs
@@ -73,7 +74,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
   const resetProviderStatusMutation = useResetProviderStatus();
 
   const handleApproveProvider = async () => {
-    console.log('Attempting to approve provider:', {
+    logger.debug('admin', 'Attempting to approve provider', {
       providerId,
       requiredSubmissions: requiredSubmissions.length,
       approvedRequired: approvedRequiredSubmissions.length,
@@ -83,9 +84,12 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
 
     try {
       await approveProviderMutation.mutateAsync({ id: providerId });
-      console.log('Provider approval successful');
+      logger.info('Provider approval successful', { providerId });
     } catch (error) {
-      console.error('Provider approval failed:', error);
+      logger.error('Provider approval failed', {
+        providerId,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   };
 
@@ -99,30 +103,40 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
   };
 
   const handleResetProviderStatus = async () => {
-    console.log('Attempting to reset provider status:', {
+    logger.debug('admin', 'Attempting to reset provider status', {
       providerId,
       currentStatus: provider?.status,
     });
 
     try {
       await resetProviderStatusMutation.mutateAsync({ id: providerId });
-      console.log('Provider status reset successful');
+      logger.info('Provider status reset successful', { providerId });
     } catch (error) {
-      console.error('Provider status reset failed:', error);
+      logger.error('Provider status reset failed', {
+        providerId,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   };
 
   const handleApproveRequirement = async (requirementSubmissionId: string) => {
-    console.log('Starting requirement approval:', { requirementSubmissionId, providerId });
+    logger.debug('admin', 'Starting requirement approval', { requirementSubmissionId, providerId });
     setProcessingRequirementId(requirementSubmissionId);
     try {
       const result = await approveRequirementMutation.mutateAsync({
         providerId,
         requirementId: requirementSubmissionId,
       });
-      console.log('Requirement approval successful:', result);
+      logger.info('Requirement approval successful', {
+        requirementSubmissionId,
+        providerId,
+      });
     } catch (error) {
-      console.error('Requirement approval failed:', error);
+      logger.error('Requirement approval failed', {
+        requirementSubmissionId,
+        providerId,
+        error: error instanceof Error ? error.message : String(error),
+      });
     } finally {
       setProcessingRequirementId(null);
     }
@@ -172,7 +186,8 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
   // Debug logging - Must be before conditional returns to maintain hook order
   useEffect(() => {
     if (requirements) {
-      console.log('Provider requirements updated:', {
+      logger.debug('admin', 'Provider requirements updated', {
+        providerId,
         total: requirements.length,
         submissions: requirements.map((sub: RequirementSubmission) => ({
           id: sub.id,
@@ -182,7 +197,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
         })),
       });
     }
-  }, [requirements]);
+  }, [providerId, requirements]);
 
   if (error) {
     return (
@@ -332,13 +347,13 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Submitted</label>
                 <p className="text-sm">
-                  {provider?.createdAt ? new Date(provider.createdAt).toLocaleDateString() : 'N/A'}
+                  {provider?.createdAt ? provider.createdAt.toLocaleDateString() : 'N/A'}
                 </p>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
                 <p className="text-sm">
-                  {provider?.updatedAt ? new Date(provider.updatedAt).toLocaleDateString() : 'N/A'}
+                  {provider?.updatedAt ? provider.updatedAt.toLocaleDateString() : 'N/A'}
                 </p>
               </div>
             </div>
@@ -554,7 +569,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                       Provider Approved
                     </p>
                     <p className="text-sm text-green-600 dark:text-green-400">
-                      {new Date(provider.approvedAt).toLocaleString()}
+                      {provider.approvedAt.toLocaleString()}
                       {provider.approvedById && ' by Admin'}
                     </p>
                   </div>
@@ -567,7 +582,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                   <div>
                     <p className="font-medium text-red-800 dark:text-red-300">Provider Rejected</p>
                     <p className="text-sm text-red-600 dark:text-red-400">
-                      {new Date(provider.rejectedAt).toLocaleString()}
+                      {provider.rejectedAt.toLocaleString()}
                     </p>
                     {provider.rejectionReason && (
                       <p className="mt-1 text-sm text-red-600 dark:text-red-400">
@@ -585,9 +600,7 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                     Application Submitted
                   </p>
                   <p className="text-sm text-blue-600 dark:text-blue-400">
-                    {provider?.createdAt
-                      ? new Date(provider.createdAt).toLocaleString()
-                      : 'Unknown'}
+                    {provider?.createdAt ? provider.createdAt.toLocaleString() : 'Unknown'}
                   </p>
                 </div>
               </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 import { appRouter } from '@/server/api/root';
 import { createCallerFactory, createInnerTRPCContext } from '@/server/trpc';
 
@@ -40,7 +41,9 @@ export async function POST(request: NextRequest) {
       alreadyVerified: result.alreadyVerified,
     });
   } catch (error) {
-    console.error('Complete verification error:', error);
+    logger.error('Complete verification error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

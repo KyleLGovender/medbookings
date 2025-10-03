@@ -6,6 +6,7 @@ import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { logger } from '@/lib/logger';
 
 interface CalendarErrorBoundaryProps {
   children: ReactNode;
@@ -41,13 +42,13 @@ export class CalendarErrorBoundary extends Component<
       this.props.onError(error, errorInfo);
     }
 
-    // In development, log to console for debugging
-    if (process.env.NODE_ENV === 'development') {
-      console.group('Calendar Error Boundary');
-      console.error('Error caught by CalendarErrorBoundary:', error);
-      console.error('Error info:', errorInfo);
-      console.groupEnd();
-    }
+    // Log error with structured logging
+    logger.error('Error caught by CalendarErrorBoundary', {
+      error: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+      isDevelopment: process.env.NODE_ENV === 'development',
+    });
   }
 
   handleReset = () => {

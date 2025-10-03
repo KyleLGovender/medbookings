@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { z } from 'zod';
 
+import { logger, sanitizeEmail } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
+import { addMilliseconds, nowUTC } from '@/lib/timezone';
 
 // Simple password hashing utility (matches auth.ts)
 async function hashPassword(password: string): Promise<string> {
@@ -55,7 +57,7 @@ export async function POST(request: NextRequest) {
       const { sendEmailVerification } = await import('@/lib/communications/email');
       const crypto = await import('crypto');
       const token = crypto.randomBytes(32).toString('hex');
-      const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      const expires = addMilliseconds(nowUTC(), 24 * 60 * 60 * 1000); // 24 hours
 
       // Store verification token in database
       await prisma.emailVerificationToken.create({
@@ -68,9 +70,15 @@ export async function POST(request: NextRequest) {
 
       // Send verification email
       await sendEmailVerification(email, token, name);
-      console.log(`Verification email sent to new user: ${email}`);
+      logger.info('Verification email sent to new user', {
+        to: sanitizeEmail(email),
+        userId: user.id,
+      });
     } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
+      logger.error('Failed to send verification email', {
+        to: sanitizeEmail(email),
+        error: emailError instanceof Error ? emailError.message : String(emailError),
+      });
       // Don't fail the registration if email sending fails
     }
 
@@ -79,7 +87,9 @@ export async function POST(request: NextRequest) {
       user,
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    logger.error('Registration error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

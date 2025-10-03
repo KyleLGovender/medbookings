@@ -9,6 +9,7 @@ import {
 import { CreateAvailabilityData, UpdateAvailabilityData } from '@/features/calendar/types/types';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { parseUTC } from '@/lib/timezone';
 
 import { validateAvailability, validateRecurringAvailability } from './availability-validation';
 import { generateRecurringInstances } from './recurrence-utils';
@@ -102,7 +103,7 @@ export async function validateAvailabilityCreation(data: CreateAvailabilityData)
     if (validatedData.isRecurring && validatedData.recurrencePattern) {
       // Validate end date is after start date
       if (validatedData.recurrencePattern.endDate) {
-        const endDate = new Date(validatedData.recurrencePattern.endDate);
+        const endDate = parseUTC(validatedData.recurrencePattern.endDate);
         if (endDate <= validatedData.startTime) {
           return { success: false, error: 'Recurrence end date must be after start date' };
         }
@@ -329,7 +330,7 @@ export async function validateAvailabilityUpdate(data: UpdateAvailabilityData): 
     let affectedAvailabilityIds: string[] = [validatedData.id];
 
     if (validatedData.scope && existingAvailability.isRecurring && existingAvailability.seriesId) {
-      const currentDate = new Date(existingAvailability.startTime);
+      const currentDate = existingAvailability.startTime;
 
       if (validatedData.scope === 'future') {
         const futureAvailabilities = await prisma.availability.findMany({
@@ -443,7 +444,7 @@ export async function validateAvailabilityDeletion(
     let affectedAvailabilityIds: string[] = [id];
 
     if (scope && existingAvailability.seriesId) {
-      const currentDate = new Date(existingAvailability.startTime);
+      const currentDate = existingAvailability.startTime;
 
       if (scope === 'future') {
         const futureAvailabilities = await prisma.availability.findMany({

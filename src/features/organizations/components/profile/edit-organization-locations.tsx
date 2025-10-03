@@ -74,8 +74,8 @@ export function EditOrganizationLocations({ organizationId }: EditOrganizationLo
           'lat' in loc.coordinates &&
           'lng' in loc.coordinates
             ? {
-                lat: (loc.coordinates as any).lat as number,
-                lng: (loc.coordinates as any).lng as number,
+                lat: (loc.coordinates as { lat: number; lng: number }).lat,
+                lng: (loc.coordinates as { lat: number; lng: number }).lng,
               }
             : { lat: 0, lng: 0 }; // Default or error handling
 

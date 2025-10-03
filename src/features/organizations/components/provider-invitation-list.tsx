@@ -36,6 +36,7 @@ import {
   useResendProviderInvitation,
 } from '@/features/organizations/hooks/use-provider-invitations';
 import { useToast } from '@/hooks/use-toast';
+import { nowUTC } from '@/lib/timezone';
 import { type RouterOutputs } from '@/utils/api';
 
 // Extract type from tRPC response
@@ -197,29 +198,25 @@ export function ProviderInvitationList({
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-col">
-                    <span className="text-sm">
-                      {format(new Date(invitation.createdAt), 'MMM d, yyyy')}
-                    </span>
+                    <span className="text-sm">{format(invitation.createdAt, 'MMM d, yyyy')}</span>
                     <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(invitation.createdAt), { addSuffix: true })}
+                      {formatDistanceToNow(invitation.createdAt, { addSuffix: true })}
                     </span>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-col">
-                    <span className="text-sm">
-                      {format(new Date(invitation.expiresAt), 'MMM d, yyyy')}
-                    </span>
+                    <span className="text-sm">{format(invitation.expiresAt, 'MMM d, yyyy')}</span>
                     <span
                       className={`text-xs ${
-                        new Date(invitation.expiresAt) < new Date()
+                        invitation.expiresAt < nowUTC()
                           ? 'text-destructive'
                           : 'text-muted-foreground'
                       }`}
                     >
-                      {new Date(invitation.expiresAt) < new Date()
+                      {invitation.expiresAt < nowUTC()
                         ? 'Expired'
-                        : formatDistanceToNow(new Date(invitation.expiresAt), { addSuffix: true })}
+                        : formatDistanceToNow(invitation.expiresAt, { addSuffix: true })}
                     </span>
                   </div>
                 </TableCell>

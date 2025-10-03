@@ -31,6 +31,8 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useProviderByUserId } from '@/features/providers/hooks/use-provider-by-user-id';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
+import { nowUTC } from '@/lib/timezone';
 import { type RouterOutputs, api } from '@/utils/api';
 
 // Extract types from tRPC response
@@ -122,9 +124,9 @@ export function ExistingUserInvitationFlow({
                       action === 'accept'
                         ? ProviderInvitationStatus.ACCEPTED
                         : ProviderInvitationStatus.REJECTED,
-                    ...(action === 'accept' && { acceptedAt: new Date().toISOString() }),
+                    ...(action === 'accept' && { acceptedAt: nowUTC().toISOString() }),
                     ...(action === 'reject' && {
-                      rejectedAt: new Date().toISOString(),
+                      rejectedAt: nowUTC().toISOString(),
                       rejectionReason: rejectionReason || null,
                     }),
                   }
@@ -142,9 +144,9 @@ export function ExistingUserInvitationFlow({
           return {
             ...old,
             status: action === 'accept' ? 'ACCEPTED' : 'REJECTED',
-            ...(action === 'accept' && { acceptedAt: new Date().toISOString() }),
+            ...(action === 'accept' && { acceptedAt: nowUTC().toISOString() }),
             ...(action === 'reject' && {
-              rejectedAt: new Date().toISOString(),
+              rejectedAt: nowUTC().toISOString(),
               rejectionReason: rejectionReason || null,
             }),
           };
@@ -171,7 +173,9 @@ export function ExistingUserInvitationFlow({
 
     // Step 2: Handle errors with rollback
     onError: (err, variables, context) => {
-      console.error('Invitation response failed, rolling back:', err);
+      logger.error('Invitation response failed, rolling back', {
+        error: err instanceof Error ? err.message : String(err),
+      });
 
       // Roll back cache data
       if (context?.previousInvitationsData && context?.invitationsKey) {
@@ -523,9 +527,9 @@ export function ExistingUserInvitationFlow({
                   <span className="font-medium">Invitation expires:</span>
                 </div>
                 <p className="ml-6 text-muted-foreground">
-                  {format(new Date(invitation.expiresAt), 'MMM d, yyyy')}
+                  {format(invitation.expiresAt, 'MMM d, yyyy')}
                   <span className="ml-2 text-xs">
-                    ({formatDistanceToNow(new Date(invitation.expiresAt), { addSuffix: true })})
+                    ({formatDistanceToNow(invitation.expiresAt, { addSuffix: true })})
                   </span>
                 </p>
               </div>

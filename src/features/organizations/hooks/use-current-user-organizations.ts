@@ -10,7 +10,7 @@ import { api } from '@/utils/api';
  */
 export function useCurrentUserOrganizations() {
   const { data: session, status: sessionStatus } = useSession();
-  const userId = (session?.user as any)?.id;
+  const userId = session?.user?.id;
 
   const organizationsQuery = api.organizations.getByUserId.useQuery(
     { userId: userId! },

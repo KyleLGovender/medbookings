@@ -16,7 +16,7 @@ export function useOrganizationProviderConnections(organizationId: string) {
 
 interface ManageOrganizationProviderConnectionOptions {
   onSuccess?: (data: any, variables: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }
 
 export function useManageOrganizationProviderConnection(
@@ -32,7 +32,7 @@ export function useManageOrganizationProviderConnection(
       utils.organizations.getProviderConnections.invalidate({ organizationId });
       options.onSuccess?.(data, variables);
     },
-    onError: (error) => options.onError?.(error as any),
+    onError: options.onError,
   });
 
   // Delete provider connection
@@ -42,7 +42,7 @@ export function useManageOrganizationProviderConnection(
       utils.organizations.getProviderConnections.invalidate({ organizationId });
       options.onSuccess?.(data, variables);
     },
-    onError: (error) => options.onError?.(error as any),
+    onError: options.onError,
   });
 
   return {

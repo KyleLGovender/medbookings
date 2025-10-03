@@ -2,10 +2,19 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { addHours, setYear, setMonth, setDate as setDateFns, setHours, setMinutes, setSeconds, setMilliseconds } from 'date-fns';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SchedulingRule } from '@prisma/client';
+import {
+  addHours,
+  setDate as setDateFns,
+  setHours,
+  setMilliseconds,
+  setMinutes,
+  setMonth,
+  setSeconds,
+  setYear,
+} from 'date-fns';
 import { Calendar, Clock, Loader2, Repeat } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
 
@@ -44,6 +53,7 @@ import { CustomRecurrenceData, DayOfWeek, RecurrenceOption } from '@/features/ca
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 import { nowUTC, parseUTC } from '@/lib/timezone';
 import { type RouterInputs, type RouterOutputs } from '@/utils/api';
 
@@ -203,7 +213,9 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
 
       await createMutation.mutateAsync(submitData);
     } catch (error) {
-      console.error('Failed to create availability:', error);
+      logger.error('Failed to create availability', {
+        error: error instanceof Error ? error.message : String(error),
+      });
 
       // Show user-friendly error message
       const errorMessage =

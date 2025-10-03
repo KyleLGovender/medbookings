@@ -1,6 +1,7 @@
 import { BookingStatus } from '@prisma/client';
 
 import { calculateSlotTimeRange, getSlotsForDay } from '@/features/calendar/lib/calendar-utils';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 
 import { SlotData, SlotThreeDayViewProps } from './types';
 
@@ -16,10 +17,12 @@ export function SlotThreeDayView({
 }: SlotThreeDayViewProps) {
   // Calculate the three days: previous, current, next
   const getDaysArray = () => {
-    const prevDay = new Date(currentDate);
+    const prevDay = nowUTC();
+    prevDay.setTime(currentDate.getTime());
     prevDay.setDate(currentDate.getDate() - 1);
 
-    const nextDay = new Date(currentDate);
+    const nextDay = nowUTC();
+    nextDay.setTime(currentDate.getTime());
     nextDay.setDate(currentDate.getDate() + 1);
 
     return [prevDay, currentDate, nextDay];
@@ -43,8 +46,8 @@ export function SlotThreeDayView({
 
   // Calculate slot position and height based on time (same as week view)
   const calculateSlotPosition = (slot: SlotData) => {
-    const startTime = new Date(slot.startTime);
-    const endTime = new Date(slot.endTime);
+    const startTime = slot.startTime;
+    const endTime = slot.endTime;
 
     // Calculate position from top (in minutes from start of time range)
     const minutesFromStart = (startTime.getHours() - timeRange.start) * 60 + startTime.getMinutes();
@@ -202,7 +205,7 @@ export function SlotThreeDayView({
                             <div className="flex h-full flex-col justify-center">
                               <div className="flex items-center justify-between">
                                 <span className="text-xs font-semibold">
-                                  {formatTime(new Date(slot.startTime))}
+                                  {formatTime(slot.startTime)}
                                 </span>
                                 {price && !isBooked && height > 25 && hasMediumSpace && (
                                   <span className="text-xs font-bold">R{price}</span>

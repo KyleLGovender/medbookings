@@ -3,6 +3,7 @@
 import { ReactNode } from 'react';
 
 import { usePermissions } from '@/hooks/use-permissions';
+import { logger } from '@/lib/logger';
 import {
   OrganizationRole,
   Permission,
@@ -85,13 +86,13 @@ export function PermissionGate({
 
   // Debug mode - show permission information
   if (debug) {
-    console.log('PermissionGate Debug:', {
-      userPermissions,
+    logger.info('PermissionGate Debug', {
+      hasUserPermissions: !!userPermissions,
       requestedPermission: permission,
       requestedPermissions: permissions,
       systemRole,
       organizationRole,
-      context,
+      hasContext: !!context,
       checks,
     });
   }

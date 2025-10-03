@@ -1,5 +1,6 @@
 'use server';
 
+import { logger } from '@/lib/logger';
 import { type RouterOutputs } from '@/utils/api';
 
 import { sendGuestVCardToProvider } from './server-helper';
@@ -13,12 +14,16 @@ export async function sendProviderPatientsDetailsByWhatsapp(
   try {
     // OPTION C: Server action now only handles business logic, no database queries
     await sendGuestVCardToProvider(booking);
-    console.log('[Action] sendGuestVCardToProvider completed.');
+    logger.info('sendGuestVCardToProvider completed', {
+      bookingId: booking.id,
+    });
 
     // Return minimal metadata
     return { success: true, message: 'Patient details sent successfully via WhatsApp!' };
   } catch (error) {
-    console.error('[Action] Error sending details:', error);
+    logger.error('Error sending details', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     // Return error metadata
     return { error: 'Failed to send patient details' };
   }

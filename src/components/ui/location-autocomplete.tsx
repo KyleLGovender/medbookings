@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import { MapPin } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
+import { logger } from '@/lib/logger';
+import { nowUTC } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
 
 interface LocationAutocompleteProps {
@@ -57,7 +59,7 @@ export function LocationAutocomplete({
       }
 
       // Create callback function
-      const callbackName = `initGoogleMapsAutocomplete${Date.now()}`;
+      const callbackName = `initGoogleMapsAutocomplete${nowUTC().getTime()}`;
       window[callbackName] = initializeAutocomplete;
 
       // Load the script
@@ -135,7 +137,9 @@ export function LocationAutocomplete({
         setIsLoaded(true);
         setError(null);
       } catch (err) {
-        console.error('Error initializing autocomplete:', err);
+        logger.error('Error initializing autocomplete', {
+          error: err instanceof Error ? err.message : String(err),
+        });
         setError('Failed to initialize location search');
       }
     };

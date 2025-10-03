@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { api } from '@/utils/api';
 
 interface UseUserBookingsOptions {
@@ -16,7 +17,7 @@ export function useUserBookings(options?: UseUserBookingsOptions) {
 
 interface UseUpdateBookingOptions {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }
 
 export function useUpdateBooking(options?: UseUpdateBookingOptions) {
@@ -34,7 +35,7 @@ export function useUpdateBooking(options?: UseUpdateBookingOptions) {
         });
       }
 
-      console.log('Booking updated successfully:', {
+      logger.info('Booking updated successfully', {
         bookingId: data.id,
         status: data.status,
       });
@@ -42,7 +43,9 @@ export function useUpdateBooking(options?: UseUpdateBookingOptions) {
       options?.onSuccess?.(data);
     },
     onError: (error) => {
-      console.error('Booking update failed:', error.message);
+      logger.error('Booking update failed', {
+        error: error.message,
+      });
       options?.onError?.(new Error(error.message));
     },
   });
@@ -63,14 +66,16 @@ export function useCancelBooking(options?: UseUpdateBookingOptions) {
         });
       }
 
-      console.log('Booking cancelled successfully:', {
+      logger.info('Booking cancelled successfully', {
         bookingId: data.id,
       });
 
       options?.onSuccess?.(data);
     },
     onError: (error) => {
-      console.error('Booking cancellation failed:', error.message);
+      logger.error('Booking cancellation failed', {
+        error: error.message,
+      });
       options?.onError?.(new Error(error.message));
     },
   });
@@ -78,7 +83,7 @@ export function useCancelBooking(options?: UseUpdateBookingOptions) {
 
 interface UseRescheduleBookingOptions {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: unknown) => void;
 }
 
 export function useRescheduleBooking(options?: UseRescheduleBookingOptions) {
@@ -96,7 +101,7 @@ export function useRescheduleBooking(options?: UseRescheduleBookingOptions) {
         });
       }
 
-      console.log('Booking rescheduled successfully:', {
+      logger.info('Booking rescheduled successfully', {
         bookingId: data.id,
         newStartTime: data.slot?.startTime,
       });
@@ -104,7 +109,9 @@ export function useRescheduleBooking(options?: UseRescheduleBookingOptions) {
       options?.onSuccess?.(data);
     },
     onError: (error) => {
-      console.error('Booking reschedule failed:', error.message);
+      logger.error('Booking reschedule failed', {
+        error: error.message,
+      });
       options?.onError?.(new Error(error.message));
     },
   });

@@ -236,7 +236,7 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm text-muted-foreground">
-                            {new Date(organization.createdAt).toLocaleDateString()}
+                            {organization.createdAt.toLocaleDateString()}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
