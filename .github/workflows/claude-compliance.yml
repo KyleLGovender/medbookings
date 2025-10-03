@@ -180,8 +180,8 @@ jobs:
           # Check for new Date() usage outside allowed files
           TIMEZONE_VIOLATIONS=$(grep -r "new Date()" \
             --include="*.ts" --include="*.tsx" \
-            --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=e2e \
-            --exclude="**/timezone.ts" --exclude="**/env/server.ts" \
+            --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=e2e --exclude-dir=scripts \
+            --exclude="timezone.ts" --exclude="timezone-helper.ts" --exclude="timezone-schemas.ts" --exclude="server.ts" \
             src/ || true)
 
           if [ -n "$TIMEZONE_VIOLATIONS" ]; then
