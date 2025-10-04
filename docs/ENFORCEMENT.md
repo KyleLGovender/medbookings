@@ -44,10 +44,10 @@ The enforcement system uses a **three-layer defense strategy**:
 | Component | Purpose | Location |
 |-----------|---------|----------|
 | **Core Validator** | Pattern-based code analysis engine | `scripts/validation/claude-code-validator.js` |
-| **ESLint Rules** | Real-time IDE feedback | `eslint-rules/claude-compliance.js` |
+| **ESLint Rules** | Real-time IDE feedback | `eslint-rules/` (no-new-date.js, type-organization.js) |
 | **Pre-Commit Hook** | Git commit validation | `.husky/pre-commit` |
 | **CI/CD Workflow** | GitHub Actions validation | `.github/workflows/claude-compliance.yml` |
-| **Validation Wrappers** | Claude Code agent interception | `scripts/claude-*-validator.sh` |
+| **Validation Wrappers** | Claude Code agent interception | `scripts/validation/claude-*-validator.sh` |
 
 ---
 
@@ -56,8 +56,8 @@ The enforcement system uses a **three-layer defense strategy**:
 ### Layer 1: Real-Time IDE Feedback (ESLint)
 
 **When:** As you type in your IDE
-**What:** 8 custom ESLint rules provide instant feedback
-**How:** ESLint plugin with custom rules from `eslint-rules/claude-compliance.js`
+**What:** Custom ESLint rules provide instant feedback
+**How:** ESLint plugin with custom rules from `eslint-rules/` directory
 
 **Configured Rules:**
 
@@ -537,7 +537,7 @@ npx eslint --print-config src/lib/auth.ts | grep rulesdir
 **Fix:**
 1. Check if file should be whitelisted (e.g., `auth.ts` for `as any`)
 2. Update validator whitelist in `scripts/validation/claude-code-validator.js`
-3. Update ESLint rule in `eslint-rules/claude-compliance.js`
+3. Update ESLint rule in appropriate file in `eslint-rules/` directory
 
 **Example:**
 ```javascript
@@ -609,35 +609,37 @@ validateMyNewRule(addedLines, filePath) {
 }
 ```
 
-**2. Add ESLint rule in `eslint-rules/claude-compliance.js`:**
+**2. Add ESLint rule in `eslint-rules/` directory:**
+
+Create a new file `eslint-rules/my-new-rule.js`:
 
 ```javascript
 module.exports = {
-  'my-new-rule': {
-    meta: {
-      type: 'error',
-      docs: {
-        description: 'Rule description',
-        category: 'CLAUDE.md Compliance',
-        recommended: true,
-      },
-      messages: {
-        violation: 'Error message',
-      },
+  meta: {
+    type: 'error',
+    docs: {
+      description: 'Rule description',
+      category: 'CLAUDE.md Compliance',
+      recommended: true,
     },
-    create(context) {
-      return {
-        // AST visitor pattern
-        Identifier(node) {
-          if (node.name === 'forbiddenThing') {
-            context.report({ node, messageId: 'violation' });
-          }
-        },
-      };
+    messages: {
+      violation: 'Error message',
     },
+  },
+  create(context) {
+    return {
+      // AST visitor pattern
+      Identifier(node) {
+        if (node.name === 'forbiddenThing') {
+          context.report({ node, messageId: 'violation' });
+        }
+      },
+    };
   },
 };
 ```
+
+Then register it in `eslint-rules/index.js`.
 
 **3. Enable rule in `.eslintrc.json`:**
 
@@ -687,10 +689,11 @@ validateTimezone(addedLines, filePath) {
 
 **For ESLint:**
 
-Edit `eslint-rules/claude-compliance.js`:
+Edit the appropriate rule file in `eslint-rules/` (e.g., `eslint-rules/no-new-date.js`):
 
 ```javascript
-'no-new-date': {
+module.exports = {
+  meta: { /* ... */ },
   create(context) {
     const filename = context.getFilename();
     const allowedFiles = [
@@ -701,7 +704,7 @@ Edit `eslint-rules/claude-compliance.js`:
     ];
     // ... rest of rule
   }
-}
+};
 ```
 
 ---

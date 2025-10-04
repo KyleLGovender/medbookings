@@ -38,8 +38,11 @@ src/
 │   ├── billing/          # Subscription management
 │   ├── calendar/         # Scheduling system
 │   ├── communications/   # Notifications
+│   ├── invitations/      # User and provider invitations
 │   ├── organizations/    # Multi-provider support
+│   ├── profile/          # User profile management
 │   ├── providers/        # Provider management
+│   ├── reviews/          # Rating and review system
 │   └── settings/         # User settings
 ├── server/
 │   ├── api/
@@ -137,6 +140,11 @@ npm run dev
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint with auto-fix
 - `npm run format` - Format code with Prettier
+
+### Code Quality & Enforcement
+- `npm run prepare` - Install git hooks (runs automatically on `npm install`)
+- `npm run setup-enforcement` - Setup CLAUDE.md enforcement system
+- `npm run sync:enforcement` - Sync enforcement rules with CLAUDE.md changes
 
 ### Database Management
 - `npm run db:migrate` - Apply migrations
