@@ -280,7 +280,7 @@ class ClaudeMdParser {
       results.referencedDocs.push(docFile);
 
       // Check if referenced doc exists
-      const docPath = path.join(__dirname, '..', 'docs', docFile);
+      const docPath = path.join(__dirname, '..', '..', 'docs', docFile);
       if (!fs.existsSync(docPath)) {
         results.errors.push({
           type: 'MISSING_DOC',
@@ -292,7 +292,7 @@ class ClaudeMdParser {
     }
 
     // Check for orphaned docs (exist but not referenced)
-    const docsDir = path.join(__dirname, '..', 'docs');
+    const docsDir = path.join(__dirname, '..', '..', 'docs');
     if (fs.existsSync(docsDir)) {
       const actualDocs = fs.readdirSync(docsDir).filter(f => f.endsWith('.md'));
 
@@ -531,14 +531,14 @@ function main() {
   const args = process.argv.slice(2);
   const command = args[0] || 'check';
 
-  const claudeMdPath = path.join(__dirname, '..', 'CLAUDE.md');
+  const claudeMdPath = path.join(__dirname, '..', '..', 'CLAUDE.md');
   const syncManager = new EnforcementSyncManager(claudeMdPath);
 
   switch (command) {
     case 'check':
       if (syncManager.hasChanged()) {
         console.log('⚠️  CLAUDE.md has changed - enforcement rules need updating');
-        console.log('   Run: node scripts/sync-enforcement-rules.js sync');
+        console.log('   Run: node scripts/enforcement/sync-enforcement-rules.js sync');
         process.exit(1);
       } else {
         console.log('✅ Enforcement rules are up to date');

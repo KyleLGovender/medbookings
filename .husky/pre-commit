@@ -26,13 +26,13 @@ fi
 if echo "$STAGED_FILES" | grep -q "^CLAUDE.md$"; then
   echo "⚠️  CLAUDE.md has been modified - syncing enforcement rules..."
 
-  if node scripts/sync-enforcement-rules.js sync; then
+  if node scripts/enforcement/sync-enforcement-rules.js sync; then
     echo "✅ Enforcement rules synced with CLAUDE.md"
 
     # Stage the updated enforcement config
-    git add scripts/enforcement-config.json
+    git add scripts/enforcement/enforcement-config.json
 
-    echo "📝 Auto-staged: scripts/enforcement-config.json"
+    echo "📝 Auto-staged: scripts/enforcement/enforcement-config.json"
     echo ""
   else
     echo "❌ Failed to sync enforcement rules"
@@ -76,7 +76,7 @@ for FILE in $STAGED_FILES; do
   echo "$OLD_CONTENT" > "$OLD_TEMP"
 
   # Validate the file
-  RESULT=$(node scripts/claude-code-validator.js validate-change "$FILE" "$OLD_TEMP" "$FILE" 2>&1)
+  RESULT=$(node scripts/validation/claude-code-validator.js validate-change "$FILE" "$OLD_TEMP" "$FILE" 2>&1)
   EXIT_CODE=$?
 
   # Clean up temp file

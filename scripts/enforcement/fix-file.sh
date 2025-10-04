@@ -98,7 +98,7 @@ echo ""
 echo "After fixing, run:"
 echo "  npx eslint $FILE_PATH --fix"
 echo "  npm run build"
-echo "  node scripts/claude-code-validator.js validate-file $FILE_PATH"
+echo "  node scripts/validation/claude-code-validator.js validate-file $FILE_PATH"
 echo ""
 
 # Open file in editor (optional)

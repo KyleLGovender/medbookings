@@ -9,7 +9,7 @@
   - 95% CONFIDENCE RULE: Ask questions when confidence < 95%
   - VERIFY EVERYTHING: Never skip because it "looks fine" - check EVERYTHING
   - NO ASSUMPTIONS: Don't trust comments saying "this works" - test EVERYTHING
-  - FOCUSED AGENT: Complete tasks and code changes systematically one-by-one, not using a 'Batch process' or a 'Task agent'
+  - SYSTEMATIC TASK COMPLETION: Complete tasks and code changes systematically one-by-one, not using a 'Batch process' or a 'Task agent'
   - PREFER EDITING: Always edit existing code over creating new
   - NEXT.JS PRINCIPLES: Always strictly follow Next.js 14 App Router best practices
   - EXPLICIT CONFIRMATION: Require user satisfaction before marking tasks complete
@@ -29,6 +29,10 @@
   - Perform large refactors unless explicitly instructed
   - Create dummy/placeholder implementations
   - Give up on tasks - identify root causes instead
+  - Commit changes to git without explicit user request
+  - Push to GitHub without user confirmation
+  - Bypass pre-commit hooks (--no-verify) without explicit approval
+  - Run destructive git commands (--force, hard reset) unless explicitly requested
 
   📂 SECTION 2: CODE ANALYSIS & CONTEXT PROTOCOL
 
@@ -603,6 +607,42 @@
   - Direct imports (no barrels)
   - Single quotes, semicolons, arrow functions
   - 2 spaces, 100 char max lines
+
+  File Reorganization Protocol:
+  When moving, renaming, or reorganizing files, ALWAYS follow this systematic approach:
+
+  1. SEARCH COMPREHENSIVELY
+     - Search ALL file types: .ts, .tsx, .js, .jsx, .json, .md, .sh, .yml, .yaml
+     - Include: Source code, documentation, configs, scripts, workflows
+     - Never assume only code files reference the moved files
+
+  2. USE SYSTEMATIC PATTERNS
+     - Search for exact file paths (e.g., "scripts/file.js")
+     - Search for all moved files, not just assumed references
+     - Use grep/ripgrep with proper file type filters
+
+  3. UPDATE ALL REFERENCES
+     - Code imports and require() statements
+     - Documentation examples and file paths
+     - Shell scripts and automation
+     - CI/CD workflows and GitHub Actions
+     - Configuration files (.eslintrc, tsconfig, etc.)
+     - Pre-commit hooks and git hooks
+
+  4. VERIFY EXHAUSTIVELY
+     - Grep for old paths after updating: grep -r "old/path" --include="*.{ts,js,md,sh,yml}"
+     - Ensure 0 results before considering complete
+     - Test affected functionality (build, lint, hooks)
+     - Run pre-commit validation if applicable
+
+  5. NEVER ASSUME
+     - Don't assume documentation is auto-generated
+     - Don't assume only code references the files
+     - Don't assume CI/CD is up to date
+     - Check EVERY file type, no exceptions
+
+  CRITICAL: Missing even ONE reference can break builds, deployments, or developer workflows.
+  Treat file reorganization with the same rigor as critical database migrations.
 
   🛠️ SECTION 13: TOOLS & UTILITIES
 

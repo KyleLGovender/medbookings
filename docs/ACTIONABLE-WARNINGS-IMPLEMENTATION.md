@@ -78,7 +78,7 @@ docs/
 
 ### Phase 1: PHI Validator Enhancement ✅ (Completed)
 
-**File**: `scripts/enhanced-phi-validator.js`
+**File**: `scripts/validation/enhanced-phi-validator.js`
 
 **Features**:
 - ✅ Confidence levels (HIGH/MEDIUM/LOW)
@@ -97,7 +97,7 @@ logger.info('message', { field: value });
 
 ### Phase 2: Transaction Validator Enhancement ✅ (Completed)
 
-**File**: `scripts/enhanced-transaction-validator.js`
+**File**: `scripts/validation/enhanced-transaction-validator.js`
 
 **Features**:
 - ✅ Risk levels (CRITICAL/HIGH/MEDIUM/LOW)
@@ -137,7 +137,7 @@ await ctx.prisma.model.operation();
 **Changes Required**:
 
 ```javascript
-// File: scripts/claude-code-validator.js
+// File: scripts/validation/claude-code-validator.js
 
 const { EnhancedPHIValidator } = require('./enhanced-phi-validator');
 const { EnhancedTransactionValidator } = require('./enhanced-transaction-validator');
@@ -183,7 +183,7 @@ class CodeValidator {
 **Changes Required**:
 
 ```javascript
-// File: scripts/claude-code-validator.js
+// File: scripts/validation/claude-code-validator.js
 
 function main() {
   // ... existing code ...
@@ -435,8 +435,8 @@ await ctx.prisma.booking.create({ data });
    - [example-enhanced-warnings.txt](/scripts/example-enhanced-warnings.txt) - Examples
 
 2. **For Maintainers**:
-   - [enhanced-phi-validator.js](/scripts/enhanced-phi-validator.js) - PHI validator code
-   - [enhanced-transaction-validator.js](/scripts/enhanced-transaction-validator.js) - Transaction validator code
+   - [enhanced-phi-validator.js](/scripts/validation/enhanced-phi-validator.js) - PHI validator code
+   - [enhanced-transaction-validator.js](/scripts/validation/enhanced-transaction-validator.js) - Transaction validator code
    - [ENFORCEMENT.md](/docs/ENFORCEMENT.md) - Overall enforcement system
 
 3. **Domain-Specific**:

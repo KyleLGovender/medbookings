@@ -96,12 +96,12 @@ echo ""
 
 # 4. Run validator (if exists)
 echo -e "${BLUE}4️⃣  Running validator...${NC}"
-if [ -f "$PROJECT_ROOT/scripts/claude-code-validator.js" ]; then
-    if node "$PROJECT_ROOT/scripts/claude-code-validator.js" validate-file "$FILE_PATH" 2>&1 | grep -q "PASS"; then
+if [ -f "$PROJECT_ROOT/scripts/validation/claude-code-validator.js" ]; then
+    if node "$PROJECT_ROOT/scripts/validation/claude-code-validator.js" validate-file "$FILE_PATH" 2>&1 | grep -q "PASS"; then
         echo -e "  ${GREEN}✓${NC} Validator passed"
     else
         echo -e "  ${RED}✗${NC} Validator failed"
-        node "$PROJECT_ROOT/scripts/claude-code-validator.js" validate-file "$FILE_PATH" || true
+        node "$PROJECT_ROOT/scripts/validation/claude-code-validator.js" validate-file "$FILE_PATH" || true
         ALL_PASSED=false
     fi
 else

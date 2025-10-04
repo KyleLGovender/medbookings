@@ -334,13 +334,13 @@ await ctx.prisma.model.upsert(...);
 
 ```bash
 # See all warnings in codebase
-node scripts/claude-code-validator.js scan-all
+node scripts/validation/claude-code-validator.js scan-all
 
 # Filter by severity
-node scripts/claude-code-validator.js scan-all --severity=HIGH
+node scripts/validation/claude-code-validator.js scan-all --severity=HIGH
 
 # Generate suppression report
-node scripts/claude-code-validator.js suppression-report
+node scripts/validation/claude-code-validator.js suppression-report
 ```
 
 ### Expected Output

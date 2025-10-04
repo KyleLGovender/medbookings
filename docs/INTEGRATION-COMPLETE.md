@@ -79,12 +79,12 @@ const data = await ctx.prisma.model.findMany();
 ## 📁 Files Modified
 
 ### **Core Integration**
-- ✅ `/scripts/claude-code-validator.js` - Enhanced with new validators
-- ✅ `/scripts/claude-code-validator.js.backup` - Original backed up
+- ✅ `/scripts/validation/claude-code-validator.js` - Enhanced with new validators
+- ✅ `/scripts/validation/claude-code-validator.js.backup` - Original backed up
 
 ### **New Validators**
-- ✅ `/scripts/enhanced-phi-validator.js` - Confidence-based PHI detection
-- ✅ `/scripts/enhanced-transaction-validator.js` - Risk-based transaction analysis
+- ✅ `/scripts/validation/enhanced-phi-validator.js` - Confidence-based PHI detection
+- ✅ `/scripts/validation/enhanced-transaction-validator.js` - Risk-based transaction analysis
 
 ### **Documentation**
 - ✅ `/docs/WARNING-SUPPRESSION-GUIDE.md` - Complete guide
@@ -94,7 +94,7 @@ const data = await ctx.prisma.model.findMany();
 
 ### **Examples**
 - ✅ `/scripts/example-enhanced-warnings.txt` - Before/after comparison
-- ✅ `/scripts/test-enhanced-warnings.js` - Test suite
+- ✅ `/scripts/testing/test-enhanced-warnings.js` - Test suite
 
 ---
 
@@ -103,7 +103,7 @@ const data = await ctx.prisma.model.findMany();
 ### **Test Results**
 
 ```bash
-$ node scripts/test-enhanced-warnings.js
+$ node scripts/testing/test-enhanced-warnings.js
 
 Test 1: HIGH Confidence PHI Warning - ✅ PASS
 Test 2: MEDIUM Confidence PHI - ✅ PASS
@@ -244,7 +244,7 @@ await ctx.prisma.model.operation()
 
 ### **Adding New PHI Patterns**
 
-Edit `/scripts/claude-code-validator.js`, line ~155:
+Edit `/scripts/validation/claude-code-validator.js`, line ~155:
 
 ```javascript
 const phiPatterns = [
@@ -261,7 +261,7 @@ const phiPatterns = [
 
 ### **Adjusting Risk Levels**
 
-Edit `/scripts/claude-code-validator.js`, line ~428:
+Edit `/scripts/validation/claude-code-validator.js`, line ~428:
 
 ```javascript
 assessRiskLevel(operations) {
@@ -330,7 +330,7 @@ logger.info(...)
 - Report pattern to improve validator
 
 **Need help?**
-- Test your code: `node scripts/test-enhanced-warnings.js`
+- Test your code: `node scripts/testing/test-enhanced-warnings.js`
 - Review examples: `/scripts/example-enhanced-warnings.txt`
 
 ---

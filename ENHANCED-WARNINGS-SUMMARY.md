@@ -300,7 +300,7 @@ await prisma.model.operation()
 
 ```bash
 # Test the enhanced system
-$ node scripts/test-enhanced-warnings.js
+$ node scripts/testing/test-enhanced-warnings.js
 
 ✅ All tests passed
 
@@ -324,7 +324,7 @@ Key Features:
 
 2. ✅ **Test it**
    ```bash
-   node scripts/test-enhanced-warnings.js
+   node scripts/testing/test-enhanced-warnings.js
    ```
 
 3. ✅ **Use it**

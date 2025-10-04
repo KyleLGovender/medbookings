@@ -20,7 +20,7 @@ The documentation validation system ensures CLAUDE.md and /docs/ folder stay syn
 ### Validate Documentation Alignment
 
 ```bash
-node scripts/sync-enforcement-rules.js validate-docs
+node scripts/enforcement/sync-enforcement-rules.js validate-docs
 ```
 
 **Output**:
@@ -38,7 +38,7 @@ node scripts/sync-enforcement-rules.js validate-docs
 ### Check Enforcement Status
 
 ```bash
-node scripts/sync-enforcement-rules.js status
+node scripts/enforcement/sync-enforcement-rules.js status
 ```
 
 **Output includes**:
@@ -50,7 +50,7 @@ node scripts/sync-enforcement-rules.js status
 ### Sync Enforcement Rules
 
 ```bash
-node scripts/sync-enforcement-rules.js sync
+node scripts/enforcement/sync-enforcement-rules.js sync
 ```
 
 **This command**:
@@ -130,7 +130,7 @@ Edit the appropriate section:
 
 ```bash
 # Check alignment
-node scripts/sync-enforcement-rules.js validate-docs
+node scripts/enforcement/sync-enforcement-rules.js validate-docs
 
 # Expected output:
 # ✅ Referenced docs: 11
@@ -233,15 +233,15 @@ vim CLAUDE.md
 **Fix**:
 ```bash
 # 1. Run validation to see errors
-node scripts/sync-enforcement-rules.js validate-docs
+node scripts/enforcement/sync-enforcement-rules.js validate-docs
 
 # 2. Fix all reported errors
 
 # 3. Re-validate
-node scripts/sync-enforcement-rules.js validate-docs
+node scripts/enforcement/sync-enforcement-rules.js validate-docs
 
 # 4. Try sync again
-node scripts/sync-enforcement-rules.js sync
+node scripts/enforcement/sync-enforcement-rules.js sync
 ```
 
 ---
@@ -292,7 +292,7 @@ The validation system expects these files to be referenced:
 The validation logic is in:
 
 ```
-scripts/sync-enforcement-rules.js
+scripts/enforcement/sync-enforcement-rules.js
 └── ClaudeMdParser.validateDocsAlignment()
 ```
 
@@ -305,7 +305,7 @@ scripts/sync-enforcement-rules.js
 
 **Configuration stored in**:
 ```
-scripts/enforcement-config.json
+scripts/enforcement/enforcement-config.json
 └── docsAlignment: {
       referencedDocs: [...],
       orphanedDocs: [...],
@@ -324,7 +324,7 @@ The GitHub Actions workflow validates docs alignment:
 
 - name: Validate Documentation Alignment
   run: |
-    node scripts/sync-enforcement-rules.js validate-docs
+    node scripts/enforcement/sync-enforcement-rules.js validate-docs
     if [ $? -ne 0 ]; then
       echo "❌ Documentation alignment validation failed"
       exit 1
@@ -369,7 +369,7 @@ Before committing CLAUDE.md changes:
 - [ ] All `/docs/*.md` references point to existing files
 - [ ] No orphaned docs exist (or intentionally kept)
 - [ ] Reference format is consistent
-- [ ] `node scripts/sync-enforcement-rules.js validate-docs` passes
+- [ ] `node scripts/enforcement/sync-enforcement-rules.js validate-docs` passes
 
 ---
 

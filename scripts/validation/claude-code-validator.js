@@ -533,7 +533,7 @@ class CodeValidator {
   }
 
   loadEnforcementConfig() {
-    const configPath = path.join(__dirname, 'enforcement-config.json');
+    const configPath = path.join(__dirname, '../enforcement/enforcement-config.json');
 
     if (fs.existsSync(configPath)) {
       try {

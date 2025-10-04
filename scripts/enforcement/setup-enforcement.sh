@@ -73,7 +73,7 @@ print_success "npm $(npm --version) detected"
 # Check if required files exist
 REQUIRED_FILES=(
   "CLAUDE.md"
-  "scripts/claude-code-validator.js"
+  "scripts/validation/claude-code-validator.js"
   "eslint-rules/claude-compliance.js"
   ".eslintrc.json"
   "tsconfig.json"
@@ -118,13 +118,13 @@ print_success "Git hooks initialized"
 
 print_section "Step 4: Making Scripts Executable"
 
-chmod +x scripts/claude-code-validator.js
+chmod +x scripts/validation/claude-code-validator.js
 print_success "claude-code-validator.js is executable"
 
-chmod +x scripts/claude-pre-write-validator.sh
+chmod +x scripts/validation/claude-pre-write-validator.sh
 print_success "claude-pre-write-validator.sh is executable"
 
-chmod +x scripts/claude-post-write-validator.sh
+chmod +x scripts/validation/claude-post-write-validator.sh
 print_success "claude-post-write-validator.sh is executable"
 
 chmod +x .husky/pre-commit
@@ -190,7 +190,7 @@ print_info "Created test file with violations: $TEST_FILE"
 
 # Run validator on test file (should fail)
 print_info "Running validator on test file (expecting failures)..."
-if node scripts/claude-code-validator.js validate-file "$TEST_FILE" 2>&1 | grep -q "TIMEZONE_VIOLATION"; then
+if node scripts/validation/claude-code-validator.js validate-file "$TEST_FILE" 2>&1 | grep -q "TIMEZONE_VIOLATION"; then
   print_success "Validator correctly detected timezone violation"
 else
   print_error "Validator failed to detect violations"
@@ -215,8 +215,8 @@ else
   print_info "Please add the following to package.json manually:"
   echo ""
   echo "  \"scripts\": {"
-  echo "    \"setup-enforcement\": \"bash scripts/setup-enforcement.sh\","
-  echo "    \"validate-claude\": \"node scripts/claude-code-validator.js validate-file\""
+  echo "    \"setup-enforcement\": \"bash scripts/enforcement/setup-enforcement.sh\","
+  echo "    \"validate-claude\": \"node scripts/validation/claude-code-validator.js validate-file\""
   echo "  }"
   echo ""
 fi

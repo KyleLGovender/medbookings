@@ -12,7 +12,7 @@ rulesDirPlugin.RULES_DIR = path.join(__dirname, 'eslint-rules');
 let timezoneRuleEnabled = 'error'; // Default to enabled
 
 try {
-  const configPath = path.join(__dirname, 'scripts', 'enforcement-config.json');
+  const configPath = path.join(__dirname, 'scripts', 'enforcement', 'enforcement-config.json');
   if (fs.existsSync(configPath)) {
     const enforcementConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     const timezoneConfig = enforcementConfig.validatorConfig?.rules?.timezone;
@@ -103,12 +103,12 @@ module.exports = {
     // =============================================================================
     // CLAUDE.md COMPLIANCE RULES (Custom Rules from eslint-rules/)
     // =============================================================================
-    // NOTE: Full validation is performed by scripts/claude-code-validator.js
+    // NOTE: Full validation is performed by scripts/validation/claude-code-validator.js
     //       ESLint rules provide real-time feedback for most critical violations
-    // NOTE: Rule severity is dynamically loaded from scripts/enforcement-config.json
+    // NOTE: Rule severity is dynamically loaded from scripts/enforcement/enforcement-config.json
 
     // Timezone compliance - prevent new Date() and Date.now() usage
-    // Dynamically enabled/disabled based on enforcement-config.json
+    // Dynamically enabled/disabled based on scripts/enforcement/enforcement-config.json
     'rulesdir/no-new-date': timezoneRuleEnabled,
 
     // Additional rules (validated by pre-commit hook):

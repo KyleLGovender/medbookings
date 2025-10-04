@@ -43,7 +43,7 @@ The enforcement system uses a **three-layer defense strategy**:
 
 | Component | Purpose | Location |
 |-----------|---------|----------|
-| **Core Validator** | Pattern-based code analysis engine | `scripts/claude-code-validator.js` |
+| **Core Validator** | Pattern-based code analysis engine | `scripts/validation/claude-code-validator.js` |
 | **ESLint Rules** | Real-time IDE feedback | `eslint-rules/claude-compliance.js` |
 | **Pre-Commit Hook** | Git commit validation | `.husky/pre-commit` |
 | **CI/CD Workflow** | GitHub Actions validation | `.github/workflows/claude-compliance.yml` |
@@ -399,7 +399,7 @@ await ctx.prisma.booking.create({ data: bookingData });
 npm run setup-enforcement
 ```
 
-This runs `scripts/setup-enforcement.sh` which:
+This runs `scripts/enforcement/setup-enforcement.sh` which:
 1. Installs dependencies (husky, eslint-plugin-rulesdir)
 2. Initializes git hooks
 3. Makes scripts executable
@@ -418,16 +418,16 @@ npm install --save-dev husky eslint-plugin-rulesdir
 npx husky init
 
 # 3. Make scripts executable
-chmod +x scripts/claude-code-validator.js
-chmod +x scripts/claude-pre-write-validator.sh
-chmod +x scripts/claude-post-write-validator.sh
+chmod +x scripts/validation/claude-code-validator.js
+chmod +x scripts/validation/claude-pre-write-validator.sh
+chmod +x scripts/validation/claude-post-write-validator.sh
 chmod +x .husky/pre-commit
 
 # 4. Verify ESLint configuration
 npx eslint --print-config src/lib/auth.ts | grep rulesdir
 
 # 5. Run test validation
-node scripts/claude-code-validator.js validate-file src/lib/auth.ts
+node scripts/validation/claude-code-validator.js validate-file src/lib/auth.ts
 ```
 
 ---
@@ -462,10 +462,10 @@ Your IDE (VS Code, etc.) will show violations in real-time if you have ESLint ex
 
 ```bash
 # Validate a single file
-node scripts/claude-code-validator.js validate-file src/lib/auth.ts
+node scripts/validation/claude-code-validator.js validate-file src/lib/auth.ts
 
 # Validate changes to a file
-node scripts/claude-code-validator.js validate-change \
+node scripts/validation/claude-code-validator.js validate-change \
   src/lib/auth.ts \
   /path/to/old/version.ts \
   /path/to/new/version.ts
@@ -536,12 +536,12 @@ npx eslint --print-config src/lib/auth.ts | grep rulesdir
 
 **Fix:**
 1. Check if file should be whitelisted (e.g., `auth.ts` for `as any`)
-2. Update validator whitelist in `scripts/claude-code-validator.js`
+2. Update validator whitelist in `scripts/validation/claude-code-validator.js`
 3. Update ESLint rule in `eslint-rules/claude-compliance.js`
 
 **Example:**
 ```javascript
-// In scripts/claude-code-validator.js
+// In scripts/validation/claude-code-validator.js
 validateTypeSafety(addedLines, filePath) {
   const whitelist = [
     'src/lib/auth.ts',
@@ -588,7 +588,7 @@ git commit --no-verify -m "hotfix: critical production issue"
 
 ### Adding New Validation Rules
 
-**1. Add validator in `scripts/claude-code-validator.js`:**
+**1. Add validator in `scripts/validation/claude-code-validator.js`:**
 
 ```javascript
 validateMyNewRule(addedLines, filePath) {
@@ -656,7 +656,7 @@ module.exports = {
 echo "const forbiddenThing = 1;" > test-violation.ts
 
 # Run validator
-node scripts/claude-code-validator.js validate-file test-violation.ts
+node scripts/validation/claude-code-validator.js validate-file test-violation.ts
 
 # Run ESLint
 npx eslint test-violation.ts
@@ -671,7 +671,7 @@ rm test-violation.ts
 
 **For validator:**
 
-Edit `scripts/claude-code-validator.js`:
+Edit `scripts/validation/claude-code-validator.js`:
 
 ```javascript
 validateTimezone(addedLines, filePath) {

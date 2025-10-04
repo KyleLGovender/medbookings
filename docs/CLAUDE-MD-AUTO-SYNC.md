@@ -21,15 +21,15 @@ Pre-Commit Hook Detects Change
     ↓
     ↓ [Triggers]
     ↓
-scripts/sync-enforcement-rules.js
+scripts/enforcement/sync-enforcement-rules.js
     ↓
     ↓ [Parses & Extracts]
     ↓
-scripts/enforcement-config.json
+scripts/enforcement/enforcement-config.json
     ↓
     ↓ [Read By]
     ↓
-scripts/claude-code-validator.js
+scripts/validation/claude-code-validator.js
     ↓
     ↓ [Validates Code]
     ↓
@@ -43,9 +43,9 @@ Enforcement System Blocks Violations
 | **Condensed CLAUDE.md** | Main rules (17k chars) | `/CLAUDE.md` |
 | **Full CLAUDE.md Backup** | Original version (40k chars) | `/CLAUDE.md.full-backup` |
 | **Extracted Documentation** | Verbose sections | `/docs/*` |
-| **Sync Script** | Parses CLAUDE.md and generates config | `scripts/sync-enforcement-rules.js` |
-| **Enforcement Config** | Auto-generated rule definitions | `scripts/enforcement-config.json` |
-| **Validator** | Validates code against config | `scripts/claude-code-validator.js` |
+| **Sync Script** | Parses CLAUDE.md and generates config | `scripts/enforcement/sync-enforcement-rules.js` |
+| **Enforcement Config** | Auto-generated rule definitions | `scripts/enforcement/enforcement-config.json` |
+| **Validator** | Validates code against config | `scripts/validation/claude-code-validator.js` |
 | **Pre-Commit Hook** | Detects CLAUDE.md changes | `.husky/pre-commit` |
 
 ---
@@ -74,12 +74,12 @@ $ git commit -m "docs: update timezone rules"
 🔍 Running CLAUDE.md compliance validation...
 ⚠️  CLAUDE.md has been modified - syncing enforcement rules...
 ✅ Enforcement rules synced with CLAUDE.md
-📝 Auto-staged: scripts/enforcement-config.json
+📝 Auto-staged: scripts/enforcement/enforcement-config.json
 ```
 
 ### 3. Sync Script Parses CLAUDE.md
 
-`scripts/sync-enforcement-rules.js` extracts enforceable rules:
+`scripts/enforcement/sync-enforcement-rules.js` extracts enforceable rules:
 
 ```javascript
 class ClaudeMdParser {
@@ -98,7 +98,7 @@ class ClaudeMdParser {
 
 ### 4. Config is Generated
 
-The script generates `scripts/enforcement-config.json`:
+The script generates `scripts/enforcement/enforcement-config.json`:
 
 ```json
 {
@@ -121,10 +121,10 @@ The script generates `scripts/enforcement-config.json`:
 
 ### 5. Validator Uses Config
 
-`scripts/claude-code-validator.js` reads the config to validate code:
+`scripts/validation/claude-code-validator.js` reads the config to validate code:
 
 ```javascript
-const config = JSON.parse(fs.readFileSync('scripts/enforcement-config.json'));
+const config = JSON.parse(fs.readFileSync('scripts/enforcement/enforcement-config.json'));
 
 if (config.validatorConfig.rules.timezone.enabled) {
   // Check for forbidden patterns
@@ -204,7 +204,7 @@ npm run check-enforcement-sync
 ### Check Sync Status
 
 ```bash
-$ node scripts/sync-enforcement-rules.js status
+$ node scripts/enforcement/sync-enforcement-rules.js status
 
 Enforcement System Status:
   Last sync: 2025-10-02T14:49:19.505Z
@@ -228,7 +228,7 @@ class ClaudeMdParser {
 }
 ```
 
-**Hash is stored in:** `scripts/enforcement-config.json`
+**Hash is stored in:** `scripts/enforcement/enforcement-config.json`
 **Checked by:** Pre-commit hook, CI/CD workflow
 
 If CLAUDE.md hash doesn't match config hash → **Sync required**
@@ -340,7 +340,7 @@ The GitHub Actions workflow also checks sync status:
 
 4. **Verify sync:**
    ```bash
-   cat scripts/enforcement-config.json | grep "newRule"
+   cat scripts/enforcement/enforcement-config.json | grep "newRule"
    ```
 
 ### When Extracting Sections to Docs
@@ -365,7 +365,7 @@ If a section becomes too verbose in CLAUDE.md:
 
 If you need to extract new rule types:
 
-1. **Edit** `scripts/sync-enforcement-rules.js`
+1. **Edit** `scripts/enforcement/sync-enforcement-rules.js`
 2. **Add extraction method:**
    ```javascript
    extractNewRuleType() {
@@ -388,7 +388,7 @@ If you need to extract new rule types:
 4. **Test extraction:**
    ```bash
    npm run sync-enforcement
-   cat scripts/enforcement-config.json | grep "newRuleType"
+   cat scripts/enforcement/enforcement-config.json | grep "newRuleType"
    ```
 
 ---
@@ -402,7 +402,7 @@ If you need to extract new rule types:
 **Fix:**
 ```bash
 # Run sync manually to see detailed error
-node scripts/sync-enforcement-rules.js sync
+node scripts/enforcement/sync-enforcement-rules.js sync
 
 # Check for syntax errors in CLAUDE.md
 cat CLAUDE.md | grep "🔴\|📂\|🏗️"  # Verify sections
@@ -421,7 +421,7 @@ npm run check-enforcement-sync
 npm run sync-enforcement
 
 # Verify hash
-git diff scripts/enforcement-config.json
+git diff scripts/enforcement/enforcement-config.json
 ```
 
 ### Config Not Auto-Staged
@@ -432,7 +432,7 @@ git diff scripts/enforcement-config.json
 ```bash
 # Manually sync and stage
 npm run sync-enforcement
-git add scripts/enforcement-config.json
+git add scripts/enforcement/enforcement-config.json
 
 # Verify pre-commit hook
 cat .husky/pre-commit | grep "CLAUDE.md"
