@@ -107,8 +107,12 @@ jobs:
 
             echo "Validating: $FILE"
 
-            # Get old version of file
-            OLD_CONTENT=$(git show HEAD~1:"$FILE" 2>/dev/null || echo "")
+            # Get old version of file (use correct baseline for PR vs push)
+            if [ "${{ github.event_name }}" == "pull_request" ]; then
+              OLD_CONTENT=$(git show origin/${{ github.base_ref }}:"$FILE" 2>/dev/null || echo "")
+            else
+              OLD_CONTENT=$(git show ${{ github.event.before }}:"$FILE" 2>/dev/null || echo "")
+            fi
             OLD_TEMP=$(mktemp)
             echo "$OLD_CONTENT" > "$OLD_TEMP"
 

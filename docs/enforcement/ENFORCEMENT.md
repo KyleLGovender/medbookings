@@ -584,6 +584,186 @@ git commit --no-verify -m "hotfix: critical production issue"
 
 ---
 
+### "ESLint not loading enforcement rules"
+
+**Cause:** `enforcement-config.json` is missing, corrupted, or unreadable
+
+**Behavior:** ESLint uses **fail-safe mode** with default (strict) rules enabled
+
+**How it works:**
+
+The ESLint configuration (`.eslintrc.js`) dynamically loads rule severity from `scripts/enforcement/enforcement-config.json`:
+
+```javascript
+// .eslintrc.js
+let timezoneRuleEnabled = 'error'; // Default to enabled (fail-safe)
+
+try {
+  const configPath = path.join(__dirname, 'scripts', 'enforcement', 'enforcement-config.json');
+  if (fs.existsSync(configPath)) {
+    const enforcementConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const timezoneConfig = enforcementConfig.validatorConfig?.rules?.timezone;
+
+    // Only disable if explicitly disabled in config
+    if (timezoneConfig && timezoneConfig.enabled === false) {
+      timezoneRuleEnabled = 'off';
+    }
+  }
+} catch (error) {
+  // Fail-safe: If config can't be read, default to enabled for safety
+  console.warn('Warning: Could not load enforcement-config.json for ESLint, using defaults');
+}
+```
+
+**Fail-Safe Behavior:**
+
+| Scenario | ESLint Rule State | Rationale |
+|----------|------------------|-----------|
+| Config file exists and valid | Rules loaded from config | Normal operation |
+| Config file missing | **Rules enabled (strict)** | Safety: Prevent violations from slipping through |
+| Config file corrupted | **Rules enabled (strict)** | Safety: Better to block than allow violations |
+| Config read error | **Rules enabled (strict)** | Safety: Filesystem issue shouldn't disable enforcement |
+
+**Why Fail-Safe Matters:**
+
+This design ensures that **enforcement is never accidentally disabled** due to:
+- File permissions issues
+- Corrupted JSON
+- Missing dependencies
+- Filesystem errors
+
+**Fix:**
+
+1. **Regenerate enforcement-config.json:**
+   ```bash
+   node scripts/enforcement/sync-enforcement-rules.js sync
+   ```
+
+2. **Verify file integrity:**
+   ```bash
+   # Check if file exists
+   ls -la scripts/enforcement/enforcement-config.json
+
+   # Validate JSON syntax
+   cat scripts/enforcement/enforcement-config.json | jq .
+   ```
+
+3. **Check file permissions:**
+   ```bash
+   # Ensure file is readable
+   chmod 644 scripts/enforcement/enforcement-config.json
+   ```
+
+4. **Verify CLAUDE.md hash:**
+   ```bash
+   # Check if config is out of sync with CLAUDE.md
+   node scripts/enforcement/sync-enforcement-rules.js status
+   ```
+
+**Expected Output (Healthy System):**
+
+```bash
+$ node scripts/enforcement/sync-enforcement-rules.js status
+Enforcement System Status:
+  Last sync: 2025-10-05T09:35:28.628Z
+  CLAUDE.md hash: 9f6619689296ae5a...
+  Changed: NO ✅
+
+Documentation Alignment:
+  Referenced docs: 10
+  Orphaned docs: 5
+  Last validated: 2025-10-05T09:35:28.628Z
+```
+
+**Warning Signs (Action Required):**
+
+```bash
+$ node scripts/enforcement/sync-enforcement-rules.js status
+Enforcement System Status:
+  Last sync: 2025-09-30T12:00:00.000Z
+  CLAUDE.md hash: abc123...
+  Changed: YES ⚠️   # ← CLAUDE.md has changed, need to sync!
+```
+
+**Emergency Bypass (Use With Caution):**
+
+If ESLint is incorrectly blocking due to a known false positive and you need to commit immediately:
+
+```bash
+# Temporarily disable ESLint for a specific line
+/* eslint-disable-next-line rulesdir/no-new-date */
+const timestamp = new Date(); // With documented reason why this is safe
+```
+
+**Note:** CI/CD will still enforce rules, so false positives must be fixed before merging.
+
+---
+
+### "Enforcement config out of sync with CLAUDE.md"
+
+**Cause:** CLAUDE.md was modified but enforcement rules weren't regenerated
+
+**Detection:**
+
+```bash
+$ node scripts/enforcement/sync-enforcement-rules.js check
+⚠️  CLAUDE.md has changed - enforcement rules need updating
+   Run: node scripts/enforcement/sync-enforcement-rules.js sync
+```
+
+**Auto-Fix (Preferred):**
+
+The pre-commit hook automatically syncs when CLAUDE.md changes:
+
+```bash
+# When you commit CLAUDE.md changes
+git add CLAUDE.md
+git commit -m "docs: update CLAUDE.md rules"
+
+# Output:
+🔍 Running CLAUDE.md compliance validation...
+⚠️  CLAUDE.md has been modified - syncing enforcement rules...
+✅ Enforcement rules synced with CLAUDE.md
+📝 Auto-staged: scripts/enforcement/enforcement-config.json
+```
+
+**Manual Sync:**
+
+```bash
+# Regenerate enforcement-config.json from CLAUDE.md
+node scripts/enforcement/sync-enforcement-rules.js sync
+
+# Stage the updated config
+git add scripts/enforcement/enforcement-config.json
+```
+
+**Verify Sync:**
+
+```bash
+# Validate documentation alignment
+node scripts/enforcement/sync-enforcement-rules.js validate-docs
+
+# Check sync status
+node scripts/enforcement/sync-enforcement-rules.js status
+```
+
+**What Gets Updated:**
+
+When you sync, the system regenerates:
+1. Rule enabled/disabled states
+2. Pattern definitions
+3. Severity levels (ERROR/WARNING)
+4. Allowed file lists
+5. Documentation references
+6. ESLint rule configuration
+7. SHA-256 hash for change detection
+
+**Version Tracking:**
+
+All sync operations are logged in `scripts/enforcement/CHANGELOG.md` for audit purposes.
+
+---
+
 ## Extending the System
 
 ### Adding New Validation Rules
@@ -771,6 +951,7 @@ module.exports = {
 ## Related Documentation
 
 - [CLAUDE.md](/CLAUDE.md) - Complete coding guidelines
+- [CHANGELOG.md](/scripts/enforcement/CHANGELOG.md) - Enforcement system version history and changes
 - [TIMEZONE-GUIDELINES.md](/docs/enforcement/TIMEZONE-GUIDELINES.md) - Timezone handling
 - [TYPE-SAFETY.md](/docs/enforcement/TYPE-SAFETY.md) - Type system patterns
 - [LOGGING.md](/docs/enforcement/LOGGING.md) - Logging and PHI protection

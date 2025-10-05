@@ -72,7 +72,7 @@ await ctx.prisma.auditLog.create({
 ];
 
 // Run tests
-const claudeMdPath = path.join(__dirname, '..', 'CLAUDE.md');
+const claudeMdPath = path.join(__dirname, '..', '..', 'CLAUDE.md');
 const rules = new ClaudeRulesEngine(claudeMdPath);
 const validator = new CodeValidator(rules.rules);
 
