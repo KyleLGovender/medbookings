@@ -115,7 +115,7 @@ class EnhancedPHIValidator {
             message: this.buildMessage(phiDetection),
             fix: this.buildFix(phiDetection),
             suppressionGuidance: this.buildSuppressionGuidance(phiDetection),
-            reference: '/docs/LOGGING.md',
+            reference: '/docs/enforcement/LOGGING.md',
           });
         }
       }
@@ -624,7 +624,7 @@ class CodeValidator {
           content: line.trim(),
           message: 'Use timezone utilities from @/lib/timezone instead of new Date()',
           fix: 'Replace with nowUTC(), parseUTC(), or date-fns functions',
-          reference: '/docs/TIMEZONE-GUIDELINES.md',
+          reference: '/docs/enforcement/TIMEZONE-GUIDELINES.md',
         });
       }
 
@@ -636,7 +636,7 @@ class CodeValidator {
           line: idx + 1,
           content: line.trim(),
           message: 'Use nowUTC() from @/lib/timezone instead of Date.now()',
-          reference: '/docs/TIMEZONE-GUIDELINES.md',
+          reference: '/docs/enforcement/TIMEZONE-GUIDELINES.md',
         });
       }
     });
@@ -661,7 +661,7 @@ class CodeValidator {
           content: line.trim(),
           message: '"as any" violates type safety. Use proper type guards or type narrowing',
           fix: 'Create a type guard or use proper TypeScript narrowing',
-          reference: '/docs/TYPE-SAFETY.md',
+          reference: '/docs/enforcement/TYPE-SAFETY.md',
         });
       }
 
@@ -699,7 +699,7 @@ class CodeValidator {
             content: line.trim(),
             message: 'Use logger from @/lib/logger instead of console',
             fix: 'Replace with logger.info(), logger.error(), logger.audit()',
-            reference: '/docs/LOGGING.md',
+            reference: '/docs/enforcement/LOGGING.md',
           });
         }
       }
@@ -885,8 +885,8 @@ function main() {
       }
 
       console.log(`\n   📚 Quick Help:`);
-      console.log(`     - Full guide: /docs/WARNING-SUPPRESSION-GUIDE.md`);
-      console.log(`     - Quick ref:  /docs/WARNING-QUICK-REFERENCE.md`);
+      console.log(`     - Full guide: /docs/guides/WARNING-SUPPRESSION-GUIDE.md`);
+      console.log(`     - Quick ref:  /docs/guides/WARNING-QUICK-REFERENCE.md`);
       console.log('\n' + '━'.repeat(80) + '\n');
 
       // Only exit with error for ERROR severity, not WARNING

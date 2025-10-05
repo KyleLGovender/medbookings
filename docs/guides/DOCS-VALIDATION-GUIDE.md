@@ -28,8 +28,8 @@ node scripts/enforcement/sync-enforcement-rules.js validate-docs
 📋 Validating CLAUDE.md ↔ /docs/ alignment...
 
 ✅ Referenced documentation files:
-   • /docs/CONTEXT-LOADING.md
-   • /docs/TYPE-SAFETY.md
+   • /docs/enforcement/CONTEXT-LOADING.md
+   • /docs/enforcement/TYPE-SAFETY.md
    [... 8 more ...]
 
 ✅ Documentation alignment is valid
@@ -73,12 +73,12 @@ node scripts/enforcement/sync-enforcement-rules.js sync
 
 **Simple**:
 ```markdown
-📄 **Complete Workflow Guide**: See `/docs/DEVELOPMENT-WORKFLOW.md` for detailed task execution flow, development standards, and command execution policy.
+📄 **Complete Workflow Guide**: See `/docs/enforcement/DEVELOPMENT-WORKFLOW.md` for detailed task execution flow, development standards, and command execution policy.
 ```
 
 **With Bullets**:
 ```markdown
-📄 **Type Safety Patterns**: See `/docs/TYPE-SAFETY.md` for:
+📄 **Type Safety Patterns**: See `/docs/enforcement/TYPE-SAFETY.md` for:
 - Prisma JSON field handling with Zod schemas
 - Type guard implementation patterns
 - tRPC type extraction examples

@@ -109,7 +109,7 @@ git commit --no-verify
    Use timezone utilities from @/lib/timezone instead of new Date()
    Code: if (user.accountLockedUntil < new Date()) {
    Fix: Replace with nowUTC(), parseUTC(), or date-fns functions
-   Reference: /docs/TIMEZONE-GUIDELINES.md
+   Reference: /docs/enforcement/TIMEZONE-GUIDELINES.md
 
 🚫 Commit blocked. Please fix the violations above.
 💡 To bypass (not recommended): git commit --no-verify
@@ -166,7 +166,7 @@ const dayStart = startOfDaySAST(new Date());
 ❌ const expires = new Date(Date.now() + 86400000);
 ```
 
-**Reference:** [TIMEZONE-GUIDELINES.md](/docs/TIMEZONE-GUIDELINES.md)
+**Reference:** [TIMEZONE-GUIDELINES.md](/docs/enforcement/TIMEZONE-GUIDELINES.md)
 
 ---
 
@@ -195,7 +195,7 @@ if (isUser(data)) {
 ❌ return response.data as any;
 ```
 
-**Reference:** [TYPE-SAFETY.md](/docs/TYPE-SAFETY.md)
+**Reference:** [TYPE-SAFETY.md](/docs/enforcement/TYPE-SAFETY.md)
 
 ---
 
@@ -330,7 +330,7 @@ import { logger, sanitizeEmail, sanitizePhone, sanitizeName } from '@/lib/logger
 ❌ logger.error('Booking failed', { phone: user.phone }); // Raw phone
 ```
 
-**Reference:** [LOGGING.md](/docs/LOGGING.md)
+**Reference:** [LOGGING.md](/docs/enforcement/LOGGING.md)
 
 ---
 
@@ -771,9 +771,9 @@ module.exports = {
 ## Related Documentation
 
 - [CLAUDE.md](/CLAUDE.md) - Complete coding guidelines
-- [TIMEZONE-GUIDELINES.md](/docs/TIMEZONE-GUIDELINES.md) - Timezone handling
-- [TYPE-SAFETY.md](/docs/TYPE-SAFETY.md) - Type system patterns
-- [LOGGING.md](/docs/LOGGING.md) - Logging and PHI protection
+- [TIMEZONE-GUIDELINES.md](/docs/enforcement/TIMEZONE-GUIDELINES.md) - Timezone handling
+- [TYPE-SAFETY.md](/docs/enforcement/TYPE-SAFETY.md) - Type system patterns
+- [LOGGING.md](/docs/enforcement/LOGGING.md) - Logging and PHI protection
 
 ---
 

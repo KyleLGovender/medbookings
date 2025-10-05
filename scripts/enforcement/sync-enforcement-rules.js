@@ -74,7 +74,7 @@ class ClaudeMdParser {
         'formatSAST()',
       ],
       allowedFiles: ['timezone.ts', 'env/server.ts'],  // Removed test file exclusions
-      reference: '/docs/TIMEZONE-GUIDELINES.md',
+      reference: '/docs/enforcement/TIMEZONE-GUIDELINES.md',
       severity: 'ERROR',
     };
   }
@@ -93,7 +93,7 @@ class ClaudeMdParser {
         { pattern: '@ts-ignore', message: '@ts-ignore must be documented', requiresComment: true },
       ],
       allowedFiles: ['src/lib/auth.ts', 'src/server/trpc.ts', 'src/types/guards.ts'],
-      reference: '/docs/TYPE-SAFETY.md',
+      reference: '/docs/enforcement/TYPE-SAFETY.md',
       severity: 'ERROR',
     };
   }
@@ -120,7 +120,7 @@ class ClaudeMdParser {
         providerId: 'sanitizeProviderId',
       },
       allowedFiles: ['logger.ts', 'env/server.ts', 'audit.ts', 'debug.ts'],
-      reference: '/docs/LOGGING.md',
+      reference: '/docs/enforcement/LOGGING.md',
       severity: 'ERROR',
     };
   }
@@ -257,26 +257,26 @@ class ClaudeMdParser {
       missingDocs: [],
     };
 
-    // Expected /docs/ files
+    // Expected /docs/enforcement/ files
     const expectedDocs = [
-      'CONTEXT-LOADING.md',
-      'TYPE-SAFETY.md',
-      'VERIFICATION-PROTOCOLS.md',
-      'TIMEZONE-GUIDELINES.md',
-      'LOGGING.md',
-      'BUG-DETECTION.md',
-      'DEVELOPMENT-WORKFLOW.md',
-      'ENFORCEMENT.md',
-      'DEPLOYMENT.md',
-      'CLAUDE-MD-AUTO-SYNC.md',
+      'enforcement/CONTEXT-LOADING.md',
+      'enforcement/TYPE-SAFETY.md',
+      'enforcement/VERIFICATION-PROTOCOLS.md',
+      'enforcement/TIMEZONE-GUIDELINES.md',
+      'enforcement/LOGGING.md',
+      'enforcement/BUG-DETECTION.md',
+      'enforcement/DEVELOPMENT-WORKFLOW.md',
+      'enforcement/ENFORCEMENT.md',
+      'enforcement/DEPLOYMENT.md',
+      'enforcement/CLAUDE-MD-AUTO-SYNC.md',
     ];
 
-    // Extract all /docs/ references from CLAUDE.md
-    const docRefPattern = /\/docs\/([A-Z-]+\.md)/g;
+    // Extract all /docs/ references from CLAUDE.md (including subdirectories)
+    const docRefPattern = /\/docs\/((?:enforcement|guides)\/[A-Z-]+\.md)/g;
     const matches = this.content.matchAll(docRefPattern);
 
     for (const match of matches) {
-      const docFile = match[1];
+      const docFile = match[1]; // Now includes subdirectory (e.g., 'enforcement/FILE.md')
       results.referencedDocs.push(docFile);
 
       // Check if referenced doc exists
@@ -294,7 +294,17 @@ class ClaudeMdParser {
     // Check for orphaned docs (exist but not referenced)
     const docsDir = path.join(__dirname, '..', '..', 'docs');
     if (fs.existsSync(docsDir)) {
-      const actualDocs = fs.readdirSync(docsDir).filter(f => f.endsWith('.md'));
+      // Check subdirectories: enforcement/ and guides/
+      const subdirs = ['enforcement', 'guides'];
+      const actualDocs = [];
+
+      for (const subdir of subdirs) {
+        const subdirPath = path.join(docsDir, subdir);
+        if (fs.existsSync(subdirPath)) {
+          const files = fs.readdirSync(subdirPath).filter(f => f.endsWith('.md'));
+          files.forEach(f => actualDocs.push(`${subdir}/${f}`));
+        }
+      }
 
       for (const docFile of actualDocs) {
         if (!results.referencedDocs.includes(docFile)) {

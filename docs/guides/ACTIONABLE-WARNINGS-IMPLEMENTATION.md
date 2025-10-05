@@ -118,8 +118,8 @@ await ctx.prisma.model.operation();
 ### Phase 3: Documentation ✅ (Completed)
 
 **Files Created**:
-1. ✅ `/docs/WARNING-SUPPRESSION-GUIDE.md` - Complete guide
-2. ✅ `/docs/WARNING-QUICK-REFERENCE.md` - Quick lookup
+1. ✅ `/docs/guides/WARNING-SUPPRESSION-GUIDE.md` - Complete guide
+2. ✅ `/docs/guides/WARNING-QUICK-REFERENCE.md` - Quick lookup
 3. ✅ `/scripts/example-enhanced-warnings.txt` - Before/after examples
 
 **Content**:
@@ -244,8 +244,8 @@ function main() {
     }
 
     console.log(`\n   📚 Quick Help:`);
-    console.log(`     - Full guide: /docs/WARNING-SUPPRESSION-GUIDE.md`);
-    console.log(`     - Quick ref:  /docs/WARNING-QUICK-REFERENCE.md`);
+    console.log(`     - Full guide: /docs/guides/WARNING-SUPPRESSION-GUIDE.md`);
+    console.log(`     - Quick ref:  /docs/guides/WARNING-QUICK-REFERENCE.md`);
     console.log(`\n━'.repeat(80));
   }
 }
@@ -430,19 +430,19 @@ await ctx.prisma.booking.create({ data });
 ## 📚 Related Documentation
 
 1. **For Developers**:
-   - [WARNING-SUPPRESSION-GUIDE.md](/docs/WARNING-SUPPRESSION-GUIDE.md) - Complete guide
-   - [WARNING-QUICK-REFERENCE.md](/docs/WARNING-QUICK-REFERENCE.md) - Quick lookup
+   - [WARNING-SUPPRESSION-GUIDE.md](/docs/guides/WARNING-SUPPRESSION-GUIDE.md) - Complete guide
+   - [WARNING-QUICK-REFERENCE.md](/docs/guides/WARNING-QUICK-REFERENCE.md) - Quick lookup
    - [example-enhanced-warnings.txt](/scripts/example-enhanced-warnings.txt) - Examples
 
 2. **For Maintainers**:
    - [enhanced-phi-validator.js](/scripts/validation/enhanced-phi-validator.js) - PHI validator code
    - [enhanced-transaction-validator.js](/scripts/validation/enhanced-transaction-validator.js) - Transaction validator code
-   - [ENFORCEMENT.md](/docs/ENFORCEMENT.md) - Overall enforcement system
+   - [ENFORCEMENT.md](/docs/enforcement/ENFORCEMENT.md) - Overall enforcement system
 
 3. **Domain-Specific**:
-   - [LOGGING.md](/docs/LOGGING.md) - PHI protection patterns
-   - [TIMEZONE-GUIDELINES.md](/docs/TIMEZONE-GUIDELINES.md) - Timezone patterns
-   - [TYPE-SAFETY.md](/docs/TYPE-SAFETY.md) - Type safety patterns
+   - [LOGGING.md](/docs/enforcement/LOGGING.md) - PHI protection patterns
+   - [TIMEZONE-GUIDELINES.md](/docs/enforcement/TIMEZONE-GUIDELINES.md) - Timezone patterns
+   - [TYPE-SAFETY.md](/docs/enforcement/TYPE-SAFETY.md) - Type safety patterns
 
 ---
 

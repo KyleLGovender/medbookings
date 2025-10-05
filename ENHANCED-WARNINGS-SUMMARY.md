@@ -84,8 +84,8 @@ $ git commit -m "Add booking feature"
      🔴 HIGH/CRITICAL: 2  ← Fix immediately
 
    📚 Quick Help:
-     - Full guide: /docs/WARNING-SUPPRESSION-GUIDE.md
-     - Quick ref:  /docs/WARNING-QUICK-REFERENCE.md
+     - Full guide: /docs/guides/WARNING-SUPPRESSION-GUIDE.md
+     - Quick ref:  /docs/guides/WARNING-QUICK-REFERENCE.md
 
 ✅ Commit allowed (warnings present)
 ⚠️  Please review and resolve warnings
@@ -284,15 +284,15 @@ await prisma.model.operation()
 ## 📚 Documentation
 
 ### **Quick Reference**
-- [WARNING-QUICK-REFERENCE.md](/docs/WARNING-QUICK-REFERENCE.md) - Decision trees and examples
+- [WARNING-QUICK-REFERENCE.md](/docs/guides/WARNING-QUICK-REFERENCE.md) - Decision trees and examples
 
 ### **Complete Guide**
-- [WARNING-SUPPRESSION-GUIDE.md](/docs/WARNING-SUPPRESSION-GUIDE.md) - Full guide with patterns
+- [WARNING-SUPPRESSION-GUIDE.md](/docs/guides/WARNING-SUPPRESSION-GUIDE.md) - Full guide with patterns
 
 ### **Related Docs**
-- [LOGGING.md](/docs/LOGGING.md) - PHI protection
-- [ENFORCEMENT.md](/docs/ENFORCEMENT.md) - Overall enforcement
-- [INTEGRATION-COMPLETE.md](/docs/INTEGRATION-COMPLETE.md) - Technical details
+- [LOGGING.md](/docs/enforcement/LOGGING.md) - PHI protection
+- [ENFORCEMENT.md](/docs/enforcement/ENFORCEMENT.md) - Overall enforcement
+- [INTEGRATION-COMPLETE.md](/docs/guides/INTEGRATION-COMPLETE.md) - Technical details
 
 ---
 
@@ -319,8 +319,8 @@ Key Features:
 ### **For You**
 
 1. ✅ **Read the docs**
-   - Start: [WARNING-QUICK-REFERENCE.md](/docs/WARNING-QUICK-REFERENCE.md)
-   - Deep dive: [WARNING-SUPPRESSION-GUIDE.md](/docs/WARNING-SUPPRESSION-GUIDE.md)
+   - Start: [WARNING-QUICK-REFERENCE.md](/docs/guides/WARNING-QUICK-REFERENCE.md)
+   - Deep dive: [WARNING-SUPPRESSION-GUIDE.md](/docs/guides/WARNING-SUPPRESSION-GUIDE.md)
 
 2. ✅ **Test it**
    ```bash
@@ -373,8 +373,8 @@ Every warning tells you:
 
 ## 📞 Questions?
 
-- **Quick answers**: [WARNING-QUICK-REFERENCE.md](/docs/WARNING-QUICK-REFERENCE.md)
-- **Full guide**: [WARNING-SUPPRESSION-GUIDE.md](/docs/WARNING-SUPPRESSION-GUIDE.md)
-- **Technical details**: [INTEGRATION-COMPLETE.md](/docs/INTEGRATION-COMPLETE.md)
+- **Quick answers**: [WARNING-QUICK-REFERENCE.md](/docs/guides/WARNING-QUICK-REFERENCE.md)
+- **Full guide**: [WARNING-SUPPRESSION-GUIDE.md](/docs/guides/WARNING-SUPPRESSION-GUIDE.md)
+- **Technical details**: [INTEGRATION-COMPLETE.md](/docs/guides/INTEGRATION-COMPLETE.md)
 
 **Need help?** The documentation has decision trees, examples, and copy-paste fixes! 📚

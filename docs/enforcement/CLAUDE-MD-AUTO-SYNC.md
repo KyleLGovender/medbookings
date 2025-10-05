@@ -158,15 +158,15 @@ CLAUDE.md now references these extracted docs for verbose details:
 
 | Reference | Description | Size | Location |
 |-----------|-------------|------|----------|
-| **Context Loading** | Initial context, task-specific context, context management | 900+ lines | `/docs/CONTEXT-LOADING.md` |
-| **Type Safety** | Type system architecture, Prisma JSON fields | 530+ lines | `/docs/TYPE-SAFETY.md` |
-| **Timezone Guidelines** | UTC storage, SAST display, utilities | 450+ lines | `/docs/TIMEZONE-GUIDELINES.md` |
-| **Logging** | Logger API, PHI sanitization, POPIA compliance | 925+ lines | `/docs/LOGGING.md` |
-| **Deployment** | Production requirements, pre-deployment checklist | 416+ lines | `/docs/DEPLOYMENT.md` |
-| **Enforcement** | Three-layer enforcement system, rule documentation | 500+ lines | `/docs/ENFORCEMENT.md` |
-| **Verification Protocols** | Route validation, data source checks, build protocol | 150+ lines | `/docs/VERIFICATION-PROTOCOLS.md` |
-| **Bug Detection** | React issues, database issues, debugging protocol | 200+ lines | `/docs/BUG-DETECTION.md` |
-| **Development Workflow** | Task execution flow, development standards | 150+ lines | `/docs/DEVELOPMENT-WORKFLOW.md` |
+| **Context Loading** | Initial context, task-specific context, context management | 900+ lines | `/docs/enforcement/CONTEXT-LOADING.md` |
+| **Type Safety** | Type system architecture, Prisma JSON fields | 530+ lines | `/docs/enforcement/TYPE-SAFETY.md` |
+| **Timezone Guidelines** | UTC storage, SAST display, utilities | 450+ lines | `/docs/enforcement/TIMEZONE-GUIDELINES.md` |
+| **Logging** | Logger API, PHI sanitization, POPIA compliance | 925+ lines | `/docs/enforcement/LOGGING.md` |
+| **Deployment** | Production requirements, pre-deployment checklist | 416+ lines | `/docs/enforcement/DEPLOYMENT.md` |
+| **Enforcement** | Three-layer enforcement system, rule documentation | 500+ lines | `/docs/enforcement/ENFORCEMENT.md` |
+| **Verification Protocols** | Route validation, data source checks, build protocol | 150+ lines | `/docs/enforcement/VERIFICATION-PROTOCOLS.md` |
+| **Bug Detection** | React issues, database issues, debugging protocol | 200+ lines | `/docs/enforcement/BUG-DETECTION.md` |
+| **Development Workflow** | Task execution flow, development standards | 150+ lines | `/docs/enforcement/DEVELOPMENT-WORKFLOW.md` |
 
 ---
 
@@ -464,10 +464,10 @@ cat .husky/pre-commit | grep "CLAUDE.md"
 ## Related Documentation
 
 - [CLAUDE.md](/CLAUDE.md) - Main coding guidelines (condensed)
-- [ENFORCEMENT.md](/docs/ENFORCEMENT.md) - Enforcement system details
-- [TYPE-SAFETY.md](/docs/TYPE-SAFETY.md) - Type system architecture
-- [TIMEZONE-GUIDELINES.md](/docs/TIMEZONE-GUIDELINES.md) - Timezone handling
-- [LOGGING.md](/docs/LOGGING.md) - Logging & PHI protection
+- [ENFORCEMENT.md](/docs/enforcement/ENFORCEMENT.md) - Enforcement system details
+- [TYPE-SAFETY.md](/docs/enforcement/TYPE-SAFETY.md) - Type system architecture
+- [TIMEZONE-GUIDELINES.md](/docs/enforcement/TIMEZONE-GUIDELINES.md) - Timezone handling
+- [LOGGING.md](/docs/enforcement/LOGGING.md) - Logging & PHI protection
 
 ---
 

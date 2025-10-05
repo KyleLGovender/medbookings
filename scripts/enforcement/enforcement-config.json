@@ -1,9 +1,9 @@
 {
-  "claudeMdHash": "93a1818c373a6a0de117f0a909b4fb27eeba77c34f5a4767a104bc8762f29434",
-  "lastSync": "2025-10-04T16:00:49.577Z",
+  "claudeMdHash": "9f6619689296ae5a381162c0e843ac69b1f3e03be7bb1c46e4046c81cf46f336",
+  "lastSync": "2025-10-05T09:35:28.628Z",
   "validatorConfig": {
     "version": "1.0.0",
-    "lastUpdated": "2025-10-04T16:00:49.576Z",
+    "lastUpdated": "2025-10-05T09:35:28.628Z",
     "rules": {
       "timezone": {
         "enabled": true,
@@ -28,7 +28,7 @@
           "env/server.ts"
         ],
         "severity": "ERROR",
-        "reference": "/docs/TIMEZONE-GUIDELINES.md"
+        "reference": "/docs/enforcement/TIMEZONE-GUIDELINES.md"
       },
       "typeSafety": {
         "enabled": true,
@@ -44,7 +44,7 @@
           "src/types/guards.ts"
         ],
         "severity": "ERROR",
-        "reference": "/docs/TYPE-SAFETY.md"
+        "reference": "/docs/enforcement/TYPE-SAFETY.md"
       },
       "logging": {
         "enabled": true,
@@ -69,7 +69,7 @@
           "debug.ts"
         ],
         "severity": "ERROR",
-        "reference": "/docs/LOGGING.md"
+        "reference": "/docs/enforcement/LOGGING.md"
       },
       "architecture": [
         {
@@ -128,24 +128,24 @@
   },
   "docsAlignment": {
     "referencedDocs": [
-      "CONTEXT-LOADING.md",
-      "TYPE-SAFETY.md",
-      "VERIFICATION-PROTOCOLS.md",
-      "TIMEZONE-GUIDELINES.md",
-      "LOGGING.md",
-      "BUG-DETECTION.md",
-      "DEVELOPMENT-WORKFLOW.md",
-      "ENFORCEMENT.md",
-      "CLAUDE-MD-AUTO-SYNC.md",
-      "DEPLOYMENT.md"
+      "enforcement/CONTEXT-LOADING.md",
+      "enforcement/TYPE-SAFETY.md",
+      "enforcement/VERIFICATION-PROTOCOLS.md",
+      "enforcement/TIMEZONE-GUIDELINES.md",
+      "enforcement/LOGGING.md",
+      "enforcement/BUG-DETECTION.md",
+      "enforcement/DEVELOPMENT-WORKFLOW.md",
+      "enforcement/ENFORCEMENT.md",
+      "enforcement/CLAUDE-MD-AUTO-SYNC.md",
+      "enforcement/DEPLOYMENT.md"
     ],
     "orphanedDocs": [
-      "ACTIONABLE-WARNINGS-IMPLEMENTATION.md",
-      "DOCS-VALIDATION-GUIDE.md",
-      "INTEGRATION-COMPLETE.md",
-      "WARNING-QUICK-REFERENCE.md",
-      "WARNING-SUPPRESSION-GUIDE.md"
+      "guides/ACTIONABLE-WARNINGS-IMPLEMENTATION.md",
+      "guides/DOCS-VALIDATION-GUIDE.md",
+      "guides/INTEGRATION-COMPLETE.md",
+      "guides/WARNING-QUICK-REFERENCE.md",
+      "guides/WARNING-SUPPRESSION-GUIDE.md"
     ],
-    "lastValidated": "2025-10-04T16:00:49.577Z"
+    "lastValidated": "2025-10-05T09:35:28.628Z"
   }
 }

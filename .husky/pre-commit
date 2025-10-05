@@ -105,12 +105,15 @@ fi
 # Run ESLint on staged files (only TypeScript/JavaScript files)
 echo "🔍 Running ESLint..."
 
-# Filter staged files to only include lintable files (exclude config files)
+# Filter staged files to only include lintable files (exclude config files and ignored dirs)
 LINTABLE_FILES=""
 for FILE in $STAGED_FILES; do
   if [[ "$FILE" =~ \.(ts|tsx|js|jsx)$ ]] && [ -f "$FILE" ]; then
-    # Skip ESLint config files (they're ignored by default and cause warnings)
-    if [[ ! "$FILE" =~ \.eslintrc\.(js|cjs|mjs)$ ]]; then
+    # Skip ESLint config files and directories in ignorePatterns (.eslintrc.json line 100)
+    if [[ ! "$FILE" =~ \.eslintrc\.(js|cjs|mjs)$ ]] && \
+       [[ ! "$FILE" =~ ^scripts/ ]] && \
+       [[ ! "$FILE" =~ ^eslint-rules/ ]] && \
+       [[ ! "$FILE" =~ ^e2e/ ]]; then
       LINTABLE_FILES="$LINTABLE_FILES $FILE"
     fi
   fi

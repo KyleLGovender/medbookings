@@ -491,7 +491,7 @@ await ctx.prisma.auditLog.create({ data: auditData }).catch(err => {
 1. Check confidence level (HIGH = probably real)
 2. Review the specific fix suggestion
 3. Ask in code review
-4. Consult `/docs/LOGGING.md` or `/docs/TIMEZONE-GUIDELINES.md`
+4. Consult `/docs/enforcement/LOGGING.md` or `/docs/enforcement/TIMEZONE-GUIDELINES.md`
 
 **Tool showing false positives?**
 1. Add suppression comment with rationale

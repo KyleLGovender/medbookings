@@ -87,10 +87,10 @@ const data = await ctx.prisma.model.findMany();
 - ✅ `/scripts/validation/enhanced-transaction-validator.js` - Risk-based transaction analysis
 
 ### **Documentation**
-- ✅ `/docs/WARNING-SUPPRESSION-GUIDE.md` - Complete guide
-- ✅ `/docs/WARNING-QUICK-REFERENCE.md` - Quick decision trees
-- ✅ `/docs/ACTIONABLE-WARNINGS-IMPLEMENTATION.md` - Implementation plan
-- ✅ `/docs/INTEGRATION-COMPLETE.md` - This file
+- ✅ `/docs/guides/WARNING-SUPPRESSION-GUIDE.md` - Complete guide
+- ✅ `/docs/guides/WARNING-QUICK-REFERENCE.md` - Quick decision trees
+- ✅ `/docs/guides/ACTIONABLE-WARNINGS-IMPLEMENTATION.md` - Implementation plan
+- ✅ `/docs/guides/INTEGRATION-COMPLETE.md` - This file
 
 ### **Examples**
 - ✅ `/scripts/example-enhanced-warnings.txt` - Before/after comparison
@@ -230,13 +230,13 @@ await ctx.prisma.model.operation()
 4. **Add suppression** → Document with `// phi-safe:` or `// tx-safe:`
 
 ### **Full Guides**
-- [WARNING-SUPPRESSION-GUIDE.md](/docs/WARNING-SUPPRESSION-GUIDE.md) - Complete guide with examples
-- [WARNING-QUICK-REFERENCE.md](/docs/WARNING-QUICK-REFERENCE.md) - Quick decision trees
+- [WARNING-SUPPRESSION-GUIDE.md](/docs/guides/WARNING-SUPPRESSION-GUIDE.md) - Complete guide with examples
+- [WARNING-QUICK-REFERENCE.md](/docs/guides/WARNING-QUICK-REFERENCE.md) - Quick decision trees
 
 ### **Related Documentation**
-- [LOGGING.md](/docs/LOGGING.md) - PHI protection patterns
-- [ENFORCEMENT.md](/docs/ENFORCEMENT.md) - Overall enforcement system
-- [TIMEZONE-GUIDELINES.md](/docs/TIMEZONE-GUIDELINES.md) - Timezone patterns
+- [LOGGING.md](/docs/enforcement/LOGGING.md) - PHI protection patterns
+- [ENFORCEMENT.md](/docs/enforcement/ENFORCEMENT.md) - Overall enforcement system
+- [TIMEZONE-GUIDELINES.md](/docs/enforcement/TIMEZONE-GUIDELINES.md) - Timezone patterns
 
 ---
 
@@ -292,7 +292,7 @@ logger.info(...)
 ```
 
 **Step 3**: Show docs
-- Quick ref: `/docs/WARNING-QUICK-REFERENCE.md`
+- Quick ref: `/docs/guides/WARNING-QUICK-REFERENCE.md`
 
 ### **Resources**
 - Example output: `/scripts/example-enhanced-warnings.txt`
@@ -321,8 +321,8 @@ logger.info(...)
 ## 📞 Support
 
 **Questions?**
-- Check `/docs/WARNING-QUICK-REFERENCE.md` for quick answers
-- Read full guide: `/docs/WARNING-SUPPRESSION-GUIDE.md`
+- Check `/docs/guides/WARNING-QUICK-REFERENCE.md` for quick answers
+- Read full guide: `/docs/guides/WARNING-SUPPRESSION-GUIDE.md`
 - Ask in code review
 
 **Found a false positive?**

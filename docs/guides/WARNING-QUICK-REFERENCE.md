@@ -395,7 +395,7 @@ await ctx.prisma.$transaction(async (tx) => {
 
 ## 🔗 Related Documentation
 
-- [Full Warning Suppression Guide](/docs/WARNING-SUPPRESSION-GUIDE.md)
-- [LOGGING.md](/docs/LOGGING.md) - PHI protection details
-- [ENFORCEMENT.md](/docs/ENFORCEMENT.md) - Overall enforcement system
-- [TIMEZONE-GUIDELINES.md](/docs/TIMEZONE-GUIDELINES.md) - Timezone patterns
+- [Full Warning Suppression Guide](/docs/guides/WARNING-SUPPRESSION-GUIDE.md)
+- [LOGGING.md](/docs/enforcement/LOGGING.md) - PHI protection details
+- [ENFORCEMENT.md](/docs/enforcement/ENFORCEMENT.md) - Overall enforcement system
+- [TIMEZONE-GUIDELINES.md](/docs/enforcement/TIMEZONE-GUIDELINES.md) - Timezone patterns
