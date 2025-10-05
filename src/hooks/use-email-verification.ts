@@ -8,9 +8,9 @@ export function useEmailVerification() {
   const { toast } = useToast();
 
   const verifyEmail = useCallback(
-    async (token: string): Promise<'success' | 'error' | 'already-verified'> => {
+    async (token: string, email?: string): Promise<'success' | 'error' | 'already-verified'> => {
       try {
-        const result = await completeEmailVerification(token);
+        const result = await completeEmailVerification(token, email);
 
         if (!result.success) {
           toast({

@@ -1,8 +1,8 @@
 import { test as setup } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { nowUTC } from '../../src/lib/timezone';
 
+import { nowUTC } from '../../src/lib/timezone';
 import { setupTestEnvironment } from '../utils/database';
 
 setup('authenticate', async ({ page }) => {

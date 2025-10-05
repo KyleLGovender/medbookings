@@ -1,6 +1,6 @@
 import { Page, expect } from '@playwright/test';
-import { nowUTC } from '../../../src/lib/timezone';
 
+import { nowUTC } from '../../../src/lib/timezone';
 import { BasePage } from './base-page';
 
 export class LoginPage extends BasePage {

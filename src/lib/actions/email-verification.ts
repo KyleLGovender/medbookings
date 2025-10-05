@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger';
 import { appRouter } from '@/server/api/root';
 import { createCallerFactory, createInnerTRPCContext } from '@/server/trpc';
 
-export async function completeEmailVerification(verificationToken: string) {
+export async function completeEmailVerification(verificationToken: string, email?: string) {
   try {
     // Get current user for context
     const currentUser = await getCurrentUser();
@@ -23,6 +23,7 @@ export async function completeEmailVerification(verificationToken: string) {
     // Call the tRPC procedure
     const result = await caller.auth.completeEmailVerification({
       token: verificationToken,
+      email: email, // Pass email for race condition handling
     });
 
     // Revalidate any cached user data if successful

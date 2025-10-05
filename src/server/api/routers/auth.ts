@@ -13,6 +13,7 @@ export const authRouter = createTRPCRouter({
     .input(
       z.object({
         token: z.string().min(1, 'Verification token is required'),
+        email: z.string().email().optional(), // Email for race condition handling
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -28,6 +29,50 @@ export const authRouter = createTRPCRouter({
         });
 
         if (!tokenRecord) {
+          // Token not found - might be expired, invalid, or already used
+          // Check if user's email is already verified (handles duplicate/race requests)
+
+          // For authenticated users: check session user
+          if (ctx.session?.user) {
+            const currentUser = await ctx.prisma.user.findUnique({
+              where: { id: ctx.session.user.id },
+              select: { emailVerified: true },
+            });
+
+            if (currentUser?.emailVerified) {
+              logger.info('Verification token not found but authenticated user already verified', {
+                email: sanitizeEmail(ctx.session.user.email ?? ''),
+              });
+              return {
+                success: true,
+                message: 'Email already verified',
+                alreadyVerified: true,
+              };
+            }
+          }
+
+          // For unauthenticated users: check using provided email (from race condition)
+          if (!ctx.session?.user && input.email) {
+            const userByEmail = await ctx.prisma.user.findUnique({
+              where: { email: input.email },
+              select: { emailVerified: true },
+            });
+
+            if (userByEmail?.emailVerified) {
+              logger.info(
+                'Verification token not found but unauthenticated user already verified',
+                {
+                  email: sanitizeEmail(input.email),
+                }
+              );
+              return {
+                success: true,
+                message: 'Email already verified',
+                alreadyVerified: true,
+              };
+            }
+          }
+
           return {
             success: false,
             error: 'Invalid or expired verification token',

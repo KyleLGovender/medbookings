@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import { nowUTC } from '../../src/lib/timezone';
 
+import { nowUTC } from '../../src/lib/timezone';
 import {
   TEST_LOCATIONS,
   TEST_PROVIDERS,

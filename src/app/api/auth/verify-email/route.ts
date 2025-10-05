@@ -42,6 +42,11 @@ export async function GET(request: NextRequest) {
     // This page will handle both authenticated and unauthenticated users
     const verifyUrl = new URL('/verify-email-complete', request.url);
     verifyUrl.searchParams.set('verificationToken', token);
+    // Pass email to help with race condition handling (base64 encoded)
+    verifyUrl.searchParams.set(
+      'email',
+      Buffer.from(verificationToken.identifier).toString('base64')
+    );
 
     return NextResponse.redirect(verifyUrl);
   } catch (error) {

@@ -25,6 +25,12 @@ function VerifyEmailCompleteContent() {
   const hasAttemptedVerification = useRef(false);
 
   const verificationToken = searchParams.get('verificationToken');
+  const encodedEmail = searchParams.get('email');
+
+  // Decode email from base64 (for race condition handling)
+  const userEmail = encodedEmail
+    ? Buffer.from(encodedEmail, 'base64').toString('utf-8')
+    : undefined;
 
   // Create a robust cleanup function for localStorage
   const cleanupLocalStorage = useCallback((token: string) => {
@@ -165,7 +171,7 @@ function VerifyEmailCompleteContent() {
 
     const processVerification = async () => {
       try {
-        const result = await verifyEmailRef(verificationToken);
+        const result = await verifyEmailRef(verificationToken, userEmail);
         setVerificationStatus(result);
         localStorage.setItem(`${tokenKey}_result`, result);
 

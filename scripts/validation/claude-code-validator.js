@@ -360,9 +360,9 @@ class EnhancedTransactionValidator {
 
     if (currentIdx < 0) return context;
 
-    // Check if we're inside a transaction
-    const beforeContext = lines.slice(Math.max(0, currentIdx - 10), currentIdx).join('\n');
-    if (/\$transaction\s*\(|transaction\s*\(async/.test(beforeContext)) {
+    // Check if we're inside a transaction (look back up to 50 lines)
+    const beforeContext = lines.slice(Math.max(0, currentIdx - 50), currentIdx).join('\n');
+    if (/\$transaction\s*[\(\[]|transaction\s*\(async/.test(beforeContext)) {
       context.hasTransaction = true;
       return context;
     }
@@ -817,7 +817,7 @@ function main() {
     const oldContent = fs.existsSync(oldContentPath) ? fs.readFileSync(oldContentPath, 'utf-8') : '';
     const newContent = fs.readFileSync(newContentPath, 'utf-8');
 
-    const claudeMdPath = path.join(__dirname, '..', 'CLAUDE.md');
+    const claudeMdPath = path.join(__dirname, '..', '..', 'CLAUDE.md');
     const rules = new ClaudeRulesEngine(claudeMdPath);
     const validator = new CodeValidator(rules.rules);
     const result = validator.validateChanges(filePath, oldContent, newContent);
@@ -906,7 +906,7 @@ function main() {
     const filePath = args[1];
     const content = fs.readFileSync(filePath, 'utf-8');
 
-    const claudeMdPath = path.join(__dirname, '..', 'CLAUDE.md');
+    const claudeMdPath = path.join(__dirname, '..', '..', 'CLAUDE.md');
     const rules = new ClaudeRulesEngine(claudeMdPath);
     const validator = new CodeValidator(rules.rules);
     const result = validator.validateChanges(filePath, '', content);
