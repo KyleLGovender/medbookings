@@ -92,7 +92,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
       // Get provider type IDs from the typeAssignments array
       const providerTypeIds =
         provider.typeAssignments?.length > 0
-          ? provider.typeAssignments.map((assignment: any) => assignment.providerType.id)
+          ? provider.typeAssignments.map((assignment) => assignment.providerType.id)
           : [];
 
       // Set form values including provider type IDs
@@ -292,7 +292,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
               <h3 className="mb-2 font-medium">Current Types</h3>
               <div className="mb-4 flex flex-wrap gap-2">
                 {provider?.typeAssignments && provider.typeAssignments.length > 0 ? (
-                  provider.typeAssignments.map((assignment: any) => (
+                  provider.typeAssignments.map((assignment) => (
                     <Badge key={assignment.id} variant="secondary">
                       {assignment.providerType.name}
                     </Badge>

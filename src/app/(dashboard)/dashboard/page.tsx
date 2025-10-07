@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import type { Prisma } from '@prisma/client';
 import {
   Activity,
   AlertCircle,
@@ -21,7 +22,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { getCurrentUser } from '@/lib/auth';
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
-import { parseUTC } from '@/lib/timezone';
 
 /**
  * User Dashboard Page
@@ -42,8 +42,42 @@ export default async function DashboardPage() {
 
   // Get comprehensive user data
   let provider = null;
-  let organizationMemberships: any[] = [];
-  let recentBookings: any[] = [];
+  let organizationMemberships: Prisma.OrganizationMembershipGetPayload<{
+    include: {
+      organization: {
+        select: {
+          id: true;
+          name: true;
+          status: true;
+        };
+      };
+    };
+  }>[] = [];
+  let recentBookings: Prisma.BookingGetPayload<{
+    select: {
+      id: true;
+      status: true;
+      createdAt: true;
+      client: {
+        select: {
+          name: true;
+          email: true;
+        };
+      };
+      slot: {
+        select: {
+          startTime: true;
+          endTime: true;
+          availability: {
+            select: {
+              startTime: true;
+              endTime: true;
+            };
+          };
+        };
+      };
+    };
+  }>[] = [];
 
   try {
     // Get provider profile if exists
@@ -244,7 +278,7 @@ export default async function DashboardPage() {
                   <div>
                     <span className="text-sm text-gray-600">Specialties:</span>
                     <div className="mt-1 flex flex-wrap gap-1">
-                      {provider.typeAssignments.map((assignment: any) => (
+                      {provider.typeAssignments.map((assignment) => (
                         <Badge key={assignment.id} variant="outline" className="text-xs">
                           {assignment.providerType.name}
                         </Badge>
@@ -287,7 +321,7 @@ export default async function DashboardPage() {
           <CardContent>
             {organizationMemberships.length > 0 ? (
               <div className="space-y-3">
-                {organizationMemberships.map((membership: any) => (
+                {organizationMemberships.map((membership) => (
                   <div key={membership.id} className="rounded border p-3">
                     <div className="mb-2 flex items-center justify-between">
                       <h4 className="text-sm font-medium">{membership.organization.name}</h4>
@@ -332,13 +366,13 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {recentBookings.map((booking: any) => (
+              {recentBookings.map((booking) => (
                 <div key={booking.id} className="flex items-center justify-between border-b pb-2">
                   <div>
                     <p className="text-sm font-medium">{booking.client?.name || 'Client'}</p>
                     <p className="text-xs text-gray-600">
-                      {parseUTC(booking.availability.startTime).toLocaleDateString()} at{' '}
-                      {parseUTC(booking.availability.startTime).toLocaleTimeString([], {
+                      {booking.slot?.availability.startTime.toLocaleDateString()} at{' '}
+                      {booking.slot?.availability.startTime.toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}

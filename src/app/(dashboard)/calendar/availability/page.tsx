@@ -22,6 +22,7 @@ import { nowUTC, parseUTC } from '@/lib/timezone';
 import { type RouterOutputs, api } from '@/utils/api';
 
 type AvailabilityData = RouterOutputs['calendar']['searchAvailability'][number];
+type CalculatedSlot = NonNullable<AvailabilityData['calculatedSlots']>[number];
 
 export default function AvailabilityManagementPage() {
   const { data: currentProvider, isLoading: isProviderLoading } = useCurrentUserProvider();
@@ -43,7 +44,8 @@ export default function AvailabilityManagementPage() {
 
   const handleDeleteAvailability = (availability: AvailabilityData) => {
     // Check for existing bookings first
-    const bookedSlots = availability.calculatedSlots?.filter((slot: any) => slot.booking) || [];
+    const bookedSlots =
+      availability.calculatedSlots?.filter((slot: CalculatedSlot) => slot.booking) || [];
     if (bookedSlots.length > 0) {
       toast({
         title: 'Cannot Delete',

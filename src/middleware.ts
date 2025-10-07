@@ -7,7 +7,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-import { getToken } from 'next-auth/jwt';
+import { type JWT, getToken } from 'next-auth/jwt';
 import { withAuth } from 'next-auth/middleware';
 
 /**
@@ -68,15 +68,15 @@ function isEmailVerified(emailVerified: Date | null): boolean {
 /**
  * Check if user meets verification requirements
  */
-function checkVerificationRequirement(requirement: string | string[], token: any): boolean {
+function checkVerificationRequirement(requirement: string | string[], token: JWT): boolean {
   if (Array.isArray(requirement)) {
     // Standard role check
-    return hasRole(token.role, requirement);
+    return hasRole(token.role as string, requirement);
   }
 
   if (requirement === 'VERIFIED_USER') {
     // Must be verified user
-    return isEmailVerified(token.emailVerified);
+    return isEmailVerified(token.emailVerified ?? null);
   }
 
   return false;
@@ -103,15 +103,15 @@ function extractRouteParams(pathname: string): Record<string, string> {
 /**
  * Check route-specific permissions
  */
-async function checkRoutePermissions(pathname: string, token: any): Promise<boolean> {
+async function checkRoutePermissions(pathname: string, token: JWT): Promise<boolean> {
   // Check admin routes
   if (pathname.startsWith('/admin')) {
-    return hasRole(token.role, ['ADMIN', 'SUPER_ADMIN']);
+    return hasRole(token.role as string, ['ADMIN', 'SUPER_ADMIN']);
   }
 
   // Check organization routes (admin only)
   if (pathname.startsWith('/organizations')) {
-    return hasRole(token.role, ['ADMIN', 'SUPER_ADMIN']);
+    return hasRole(token.role as string, ['ADMIN', 'SUPER_ADMIN']);
   }
 
   // Check provider routes (verified users only)

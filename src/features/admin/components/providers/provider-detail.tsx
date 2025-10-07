@@ -490,7 +490,6 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                       key={submission.id}
                       submission={{
                         ...submission,
-                        createdAt: submission.createdAt.toISOString(),
                         notes: submission.notes || undefined,
                         documentMetadata: submission.documentMetadata as Record<string, any> | null,
                       }}

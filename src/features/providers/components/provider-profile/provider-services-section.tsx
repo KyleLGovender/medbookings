@@ -58,7 +58,7 @@ export function ProviderServicesSection({
       <CardContent>
         {services && services.length > 0 ? (
           <div className="space-y-4">
-            {services.map((service: any) => (
+            {services.map((service) => (
               <div
                 key={service.id}
                 className="flex items-start justify-between rounded-lg border p-4"
@@ -68,7 +68,7 @@ export function ProviderServicesSection({
                   <p className="text-sm text-muted-foreground">{service.description}</p>
                   {service.defaultPrice && (
                     <p className="text-sm font-medium">
-                      R{service.defaultPrice} • {service.defaultDuration} min
+                      R{Number(service.defaultPrice)} • {service.defaultDuration} min
                     </p>
                   )}
                 </div>

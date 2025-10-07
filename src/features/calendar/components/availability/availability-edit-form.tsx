@@ -242,8 +242,8 @@ const transformAvailabilityToForm = (
 ): FormValues => {
   return {
     providerId: availability.providerId,
-    startTime: parseUTC(availability.startTime.toISOString()),
-    endTime: parseUTC(availability.endTime.toISOString()),
+    startTime: availability.startTime,
+    endTime: availability.endTime,
     isRecurring: availability.isRecurring,
     recurrencePattern: availability.recurrencePattern,
     schedulingRule: availability.schedulingRule,
@@ -1151,7 +1151,7 @@ export function AvailabilityEditForm({
         availabilityTitle={availability?.provider?.user?.name || 'Provider Availability'}
         availabilityDate={
           availability?.startTime
-            ? parseUTC(availability.startTime.toISOString()).toLocaleDateString()
+            ? availability.startTime.toLocaleDateString()
             : ''
         }
         isDestructive={true}

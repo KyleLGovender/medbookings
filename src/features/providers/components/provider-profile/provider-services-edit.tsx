@@ -184,7 +184,7 @@ export function ProviderServicesEdit({ providerId }: ProviderServicesEditProps) 
         <CardContent>
           {services && services.length > 0 ? (
             <div className="space-y-4">
-              {services.map((service: any) => (
+              {services.map((service) => (
                 <div
                   key={service.id}
                   className="flex items-start justify-between rounded-lg border p-4"
@@ -199,11 +199,11 @@ export function ProviderServicesEdit({ providerId }: ProviderServicesEditProps) 
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        <span>{service.defaultDuration || service.duration || 30} min</span>
+                        <span>{service.defaultDuration || 30} min</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <span className="text-sm font-medium">
-                          R{service.defaultPrice || service.price || 0}
+                          R{Number(service.defaultPrice) || 0}
                         </span>
                       </div>
                     </div>

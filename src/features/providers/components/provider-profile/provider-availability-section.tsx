@@ -56,7 +56,7 @@ export function ProviderAvailabilitySection({ providerId }: ProviderAvailability
       <CardContent>
         {availabilities && availabilities.length > 0 ? (
           <div className="space-y-3">
-            {availabilities.slice(0, 5).map((availability: any) => (
+            {availabilities.slice(0, 5).map((availability) => (
               <div
                 key={availability.id}
                 className="flex items-center justify-between rounded-lg border p-3"

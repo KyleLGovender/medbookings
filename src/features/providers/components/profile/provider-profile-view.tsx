@@ -100,7 +100,7 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
           <h3 className="font-medium">Provider Type{hasMultipleTypes ? 's' : ''}</h3>
           {providerTypes.length > 0 ? (
             <div className="mt-2 flex flex-wrap gap-2">
-              {providerTypes.map((type: any) => (
+              {providerTypes.map((type) => (
                 <div key={type.id} className="rounded-md bg-muted px-3 py-1">
                   <p className="font-medium">{type.name}</p>
                   {type.description && (
@@ -206,8 +206,8 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
         {provider.services && provider.services.length > 0 ? (
           <div className="space-y-4">
             {provider.services
-              .sort((a: any, b: any) => (a.displayPriority ?? 999) - (b.displayPriority ?? 999))
-              .map((service: any) => {
+              .sort((a, b) => (a.displayPriority ?? 999) - (b.displayPriority ?? 999))
+              .map((service) => {
                 // Get service configuration with fallback to defaults (client-side logic)
                 const customConfig = provider.availabilityConfigs?.find(
                   (config: any) => config.serviceId === service.id
@@ -215,6 +215,7 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
                 const isCustomConfig = !!customConfig;
 
                 const effectivePrice = customConfig?.price ?? service.defaultPrice;
+                const priceDisplay = effectivePrice ? Number(effectivePrice) : null;
                 const effectiveDuration = customConfig?.duration ?? service.defaultDuration;
                 const isOnlineAvailable = customConfig?.isOnlineAvailable ?? true;
                 const isInPerson = customConfig?.isInPerson ?? false;
@@ -237,7 +238,7 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
                         <div className="flex items-center">
                           <span className="w-16 text-xs text-muted-foreground">Price:</span>
                           <span className="text-sm font-semibold text-primary">
-                            R{effectivePrice || 'Varies'}
+                            R{priceDisplay || 'Varies'}
                           </span>
                         </div>
                         <div className="flex items-center">
@@ -304,8 +305,15 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
                 const priorityB = b.requirementType?.displayPriority ?? 999;
                 return priorityA - priorityB;
               })
-              .map((submission: any) => (
-                <RequirementSubmissionCard key={submission.id} submission={submission} />
+              .map((submission) => (
+                <RequirementSubmissionCard
+                  key={submission.id}
+                  submission={{
+                    ...submission,
+                    notes: submission.notes ?? undefined,
+                    documentMetadata: submission.documentMetadata as Record<string, any> | null,
+                  }}
+                />
               ))}
           </div>
         ) : (

@@ -247,7 +247,7 @@ export function ProviderProfileClient() {
                           Specializations
                         </h4>
                         <div className="flex flex-wrap gap-2">
-                          {provider.typeAssignments.map((assignment: any) => (
+                          {provider.typeAssignments.map((assignment) => (
                             <Badge key={assignment.id} variant="outline">
                               {assignment.providerType.name}
                             </Badge>

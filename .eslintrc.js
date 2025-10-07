@@ -101,6 +101,17 @@ module.exports = {
     'no-console': ['error'],
 
     // =============================================================================
+    // TYPE SAFETY RULES
+    // =============================================================================
+
+    // Prevent explicit 'any' type usage (enforces type safety per CLAUDE.md Section 3)
+    // NOTE: Set to 'warn' due to 245+ existing violations - will migrate to 'error' incrementally
+    '@typescript-eslint/no-explicit-any': 'warn',
+
+    // Prevent unsafe assignments (catches implicit any propagation)
+    '@typescript-eslint/no-unsafe-assignment': 'warn',
+
+    // =============================================================================
     // CLAUDE.md COMPLIANCE RULES (Custom Rules from eslint-rules/)
     // =============================================================================
     // NOTE: Full validation is performed by scripts/commit-gate/compliance-validator.js
@@ -147,6 +158,38 @@ module.exports = {
         'no-console': 'off',
         'import/no-extraneous-dependencies': 'off', // Allow test files to import from src/
         'rulesdir/no-new-date': 'off', // Allow Date usage in test/infrastructure files
+      },
+    },
+    {
+      // Type guards use (value as any) for runtime validation - this is documented and acceptable
+      files: ['**/types/guards.ts'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-unsafe-assignment': 'off',
+      },
+    },
+    {
+      // tRPC routers have conditional includes that create complex any types - acceptable architectural trade-off
+      files: ['src/server/api/routers/**/*.ts'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-unsafe-assignment': 'off',
+      },
+    },
+    {
+      // tRPC route adapter requires any for Next.js App Router compatibility
+      files: ['src/app/api/trpc/[trpc]/route.ts'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-unsafe-assignment': 'off',
+      },
+    },
+    {
+      // Development utilities and logger - infrastructure files with legitimate any usage
+      files: ['src/utils/development.ts', 'src/lib/logger.ts', 'src/lib/debug.ts'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-unsafe-assignment': 'off',
       },
     },
   ],

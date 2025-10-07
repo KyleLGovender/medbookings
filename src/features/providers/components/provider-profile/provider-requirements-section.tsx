@@ -67,7 +67,7 @@ export function ProviderRequirementsSection({ providerId }: ProviderRequirements
       <CardContent>
         {requirements && requirements.length > 0 ? (
           <div className="space-y-4">
-            {requirements.map((req: any) => (
+            {requirements.map((req) => (
               <div key={req.id} className="flex items-center justify-between rounded-lg border p-4">
                 <div className="flex items-start gap-3">
                   {getStatusIcon(req.status)}

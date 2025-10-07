@@ -20,7 +20,45 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { ProviderSearchResults } from '@/features/calendar/components/provider-search-results';
-import { api } from '@/utils/api';
+import { type RouterOutputs, api } from '@/utils/api';
+
+// Extract types from tRPC RouterOutputs for type safety
+type ProvidersSearchResult = RouterOutputs['providers']['search'];
+
+// Note: The tRPC query has conditional includes, so we define the expected shape
+// based on how we call the query (includeServices: true, includeRequirements: false)
+interface ProviderWithRelations {
+  id: string;
+  name: string;
+  bio: string | null;
+  status: string;
+  languages: string[];
+  website: string | null;
+  whatsapp: string | null;
+  user: { email: string } | null;
+  typeAssignments: Array<{
+    providerType: {
+      id: string;
+      name: string;
+      description: string | null;
+    };
+  }>;
+  services: Array<{
+    id: string;
+    name: string;
+  }>;
+  availabilities?: Array<{
+    id: string;
+    isOnlineAvailable: boolean;
+    location: {
+      name: string;
+      formattedAddress: string;
+    } | null;
+  }>;
+  requirementSubmissions?: Array<{
+    status: string;
+  }>;
+}
 
 export default function ProvidersPage() {
   const urlSearchParams = useSearchParams();
@@ -90,13 +128,15 @@ export default function ProvidersPage() {
 
   // Apply additional client-side filters that the API doesn't support yet
   const filteredProviders = useMemo(() => {
-    return searchResults?.providers?.filter((provider: any) => {
+    // Type assertion: we know the shape because we call the query with specific includes
+    const providers = searchResults?.providers as unknown as ProviderWithRelations[] | undefined;
+    return providers?.filter((provider) => {
       // Location filter (if provider has availability with location or matches search)
       if (selectedLocation && selectedLocation.trim()) {
         const locationQuery = selectedLocation.toLowerCase().trim();
         const hasMatchingLocation =
           provider.availabilities?.some(
-            (avail: any) =>
+            (avail) =>
               avail.location?.name?.toLowerCase().includes(locationQuery) ||
               avail.location?.formattedAddress?.toLowerCase().includes(locationQuery)
           ) ||
@@ -108,7 +148,7 @@ export default function ProvidersPage() {
 
       // Service type filter (virtual/in-person)
       if (serviceType && serviceType !== 'all') {
-        const hasServiceType = provider.availabilities?.some((avail: any) => {
+        const hasServiceType = provider.availabilities?.some((avail) => {
           if (serviceType === 'virtual') return avail.isOnlineAvailable === true;
           if (serviceType === 'in-person') return avail.isOnlineAvailable === false;
           return true;
@@ -333,7 +373,7 @@ export default function ProvidersPage() {
           </div>
         ) : filteredProviders && filteredProviders.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredProviders.map((provider: any) => (
+            {filteredProviders.map((provider) => (
               <Card key={provider.id} className="transition-shadow hover:shadow-lg">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -360,7 +400,7 @@ export default function ProvidersPage() {
                     <div className="space-y-2">
                       <div className="text-sm font-medium text-gray-900">Specialties:</div>
                       <div className="flex flex-wrap gap-1">
-                        {provider.typeAssignments.map((assignment: any) => (
+                        {provider.typeAssignments.map((assignment) => (
                           <Badge
                             key={assignment.providerType.id}
                             variant="outline"
@@ -378,7 +418,7 @@ export default function ProvidersPage() {
                     <div className="space-y-2">
                       <div className="text-sm font-medium text-gray-900">Services:</div>
                       <div className="text-sm text-gray-600">
-                        {provider.services.slice(0, 3).map((service: any, index: number) => (
+                        {provider.services.slice(0, 3).map((service, index: number) => (
                           <span key={service.id}>
                             {service.name}
                             {index < Math.min(provider.services.length - 1, 2) && ', '}
@@ -439,7 +479,7 @@ export default function ProvidersPage() {
                           Verified Requirements:{' '}
                           {
                             provider.requirementSubmissions.filter(
-                              (req: any) => req.status === 'APPROVED'
+                              (req) => req.status === 'APPROVED'
                             ).length
                           }
                           /{provider.requirementSubmissions.length}
@@ -512,7 +552,7 @@ export default function ProvidersPage() {
               <div>
                 <div className="text-2xl font-bold text-green-600">
                   {searchResults.providers.reduce(
-                    (acc: number, p: any) => acc + (p.services?.length || 0),
+                    (acc: number, p) => acc + (p.services?.length || 0),
                     0
                   )}
                 </div>
@@ -522,8 +562,8 @@ export default function ProvidersPage() {
                 <div className="text-2xl font-bold text-purple-600">
                   {
                     new Set(
-                      searchResults.providers.flatMap(
-                        (p: any) => p.typeAssignments?.map((ta: any) => ta.providerType.name) || []
+                      (searchResults.providers as unknown as ProviderWithRelations[]).flatMap(
+                        (p) => p.typeAssignments?.map((ta) => ta.providerType.name) || []
                       )
                     ).size
                   }

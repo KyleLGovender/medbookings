@@ -8,8 +8,11 @@ import { CalendarDays, Clock, FileText, TrendingUp, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
-import { nowUTC, parseUTC } from '@/lib/timezone';
-import { api } from '@/utils/api';
+import { nowUTC } from '@/lib/timezone';
+import { type RouterOutputs, api } from '@/utils/api';
+
+type AvailabilityWithSlots = RouterOutputs['calendar']['searchAvailability'][number];
+type CalculatedSlot = NonNullable<AvailabilityWithSlots['calculatedSlots']>[number];
 
 export default function CalendarOverviewPage() {
   const { data: currentProvider, isLoading: isProviderLoading } = useCurrentUserProvider();
@@ -100,9 +103,9 @@ export default function CalendarOverviewPage() {
       const today = nowUTC();
       return (
         count +
-        (availability.calculatedSlots?.filter((slot: any) => {
-          const slotDate = parseUTC(slot.startTime);
-          return slotDate.toDateString() === today.toDateString() && slot.booking;
+        (availability.calculatedSlots?.filter((slot: CalculatedSlot) => {
+          // slot.startTime is already a Date object from tRPC (superjson deserialization)
+          return slot.startTime.toDateString() === today.toDateString() && slot.booking;
         }).length || 0)
       );
     }, 0) || 0;
@@ -113,9 +116,9 @@ export default function CalendarOverviewPage() {
       const weekFromNow = addDays(now, 7);
       return (
         count +
-        (availability.calculatedSlots?.filter((slot: any) => {
-          const slotDate = parseUTC(slot.startTime);
-          return slotDate >= now && slotDate <= weekFromNow && slot.booking;
+        (availability.calculatedSlots?.filter((slot: CalculatedSlot) => {
+          // slot.startTime is already a Date object from tRPC (superjson deserialization)
+          return slot.startTime >= now && slot.startTime <= weekFromNow && slot.booking;
         }).length || 0)
       );
     }, 0) || 0;
@@ -126,9 +129,9 @@ export default function CalendarOverviewPage() {
       const weekFromNow = addDays(now, 7);
       return (
         count +
-        (availability.calculatedSlots?.filter((slot: any) => {
-          const slotDate = parseUTC(slot.startTime);
-          return slotDate >= now && slotDate <= weekFromNow && !slot.booking;
+        (availability.calculatedSlots?.filter((slot: CalculatedSlot) => {
+          // slot.startTime is already a Date object from tRPC (superjson deserialization)
+          return slot.startTime >= now && slot.startTime <= weekFromNow && !slot.booking;
         }).length || 0)
       );
     }, 0) || 0;

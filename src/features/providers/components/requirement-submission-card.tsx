@@ -13,8 +13,8 @@ import { extractFilenameFromUrl } from '@/lib/utils/document-utils';
 interface RequirementSubmission {
   id: string;
   status?: string;
-  createdAt: string;
-  submittedAt?: string;
+  createdAt: Date; // tRPC deserializes DateTime to Date
+  submittedAt?: Date;
   adminNotes?: string;
   rejectionReason?: string;
   notes?: string;
@@ -64,7 +64,7 @@ export function RequirementSubmissionCard({
               <>
                 <p className="font-medium">{extractFilenameFromUrl(value)}</p>
                 <p className="text-xs text-muted-foreground">
-                  Submitted: {parseUTC(submission.createdAt).toLocaleDateString()}
+                  Submitted: {submission.createdAt.toLocaleDateString()}
                 </p>
               </>
             ) : (
@@ -103,7 +103,7 @@ export function RequirementSubmissionCard({
           <div>
             <p className="font-medium">{isTrue ? 'Yes' : 'No'}</p>
             <p className="text-xs text-muted-foreground">
-              Submitted: {parseUTC(submission.createdAt).toLocaleDateString()}
+              Submitted: {submission.createdAt.toLocaleDateString()}
             </p>
           </div>
         </>
@@ -119,7 +119,7 @@ export function RequirementSubmissionCard({
               {value ? parseUTC(value.toString()).toLocaleDateString() : 'No date provided'}
             </p>
             <p className="text-xs text-muted-foreground">
-              Submitted: {parseUTC(submission.createdAt).toLocaleDateString()}
+              Submitted: {submission.createdAt.toLocaleDateString()}
             </p>
           </div>
         </>
@@ -133,7 +133,7 @@ export function RequirementSubmissionCard({
         <div>
           <p className="font-medium">{value?.toString() || 'No value provided'}</p>
           <p className="text-xs text-muted-foreground">
-            Submitted: {parseUTC(submission.createdAt).toLocaleDateString()}
+            Submitted: {submission.createdAt.toLocaleDateString()}
           </p>
         </div>
       </>

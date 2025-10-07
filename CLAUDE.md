@@ -33,6 +33,7 @@
   - Push to GitHub without user confirmation
   - Bypass pre-commit hooks (--no-verify) without explicit approval
   - Run destructive git commands (--force, hard reset) unless explicitly requested
+  - Ignore violations that are related to what you are currently addressing
 
   📂 SECTION 2: CODE ANALYSIS & CONTEXT PROTOCOL
 
