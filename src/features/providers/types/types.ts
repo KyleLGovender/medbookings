@@ -1,14 +1,15 @@
-// =============================================================================
-// PROVIDERS FEATURE TYPES
-// =============================================================================
-// All type definitions for the providers feature in one place
-// Domain enums, business logic types, and form schemas only
-//
-// OPTION C COMPLIANT:
-// - NO Prisma enum re-exports (import directly from @prisma/client where used)
-// - Server data interfaces removed (use tRPC RouterOutputs)
-// - Only domain logic and client-only types remain
-// =============================================================================
+/**
+ * =============================================================================
+ * PROVIDERS FEATURE TYPES
+ * =============================================================================
+ * All type definitions for the providers feature in one place
+ * Domain enums, business logic types, and form schemas only
+ *
+ * OPTION C COMPLIANT:
+ * - NO Prisma enum re-exports (import directly from @prisma/client where used)
+ * - Server data interfaces removed (use tRPC RouterOutputs)
+ * - Only domain logic and client-only types remain
+ */
 // =============================================================================
 // PRISMA ENUM IMPORTS
 // =============================================================================
@@ -31,7 +32,18 @@ export { RequirementValidationType };
 // BASE INTERFACES (Client-only types)
 // =============================================================================
 
-// Provider-related base interfaces for client-side use
+/**
+ * Provider-related base interfaces for client-side use
+ * Contains essential provider information for display and filtering
+ *
+ * @property {string} id - Unique provider identifier
+ * @property {string} name - Provider display name
+ * @property {string} email - Provider email address
+ * @property {string} [phone] - Provider phone number
+ * @property {string} [whatsapp] - Provider WhatsApp number
+ * @property {ProviderStatus} status - Provider account status
+ * @property {boolean} isActive - Whether provider is currently active
+ */
 export interface BasicProviderInfo {
   id: string;
   name: string;
@@ -196,6 +208,18 @@ export type RequirementSubmission = {
 // FORM AND INPUT TYPES (Client-side)
 // =============================================================================
 
+/**
+ * Data structure for creating a new provider
+ * Used in provider registration and admin provider creation flows
+ *
+ * @property {string} name - Provider full name
+ * @property {string} email - Provider email address
+ * @property {string} [phone] - Provider phone number
+ * @property {string} [whatsapp] - Provider WhatsApp number
+ * @property {string[]} providerTypeIds - Provider type classifications
+ * @property {string[]} serviceIds - Services offered by provider
+ * @property {Array} [requirementSubmissions] - Initial requirement submissions
+ */
 export interface CreateProviderData {
   name: string;
   email: string;

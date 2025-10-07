@@ -1,9 +1,10 @@
-// =============================================================================
-// ORGANIZATIONS FEATURE TYPES
-// =============================================================================
-// All type definitions for the organizations feature in one place
-// Domain enums, business logic types, and form schemas only
-//
+/**
+ * =============================================================================
+ * ORGANIZATIONS FEATURE TYPES
+ * =============================================================================
+ * All type definitions for the organizations feature in one place
+ * Domain enums, business logic types, and form schemas only
+ */
 // =============================================================================
 // MIGRATION NOTES - SERVER DATA REMOVED
 // =============================================================================
@@ -42,7 +43,18 @@ export enum InvitationAction {
 // BASE INTERFACES
 // =============================================================================
 
-// Organization-related base interfaces
+/**
+ * Basic organization information for display and filtering
+ * Contains essential organization data used across the application
+ *
+ * @property {string} id - Unique organization identifier
+ * @property {string} name - Organization display name
+ * @property {string} [email] - Organization contact email
+ * @property {string} [phone] - Organization contact phone
+ * @property {string} [website] - Organization website URL
+ * @property {OrganizationStatus} status - Organization account status
+ * @property {boolean} isActive - Whether organization is currently active
+ */
 export interface BasicOrganizationInfo {
   id: string;
   name: string;
@@ -53,7 +65,22 @@ export interface BasicOrganizationInfo {
   isActive: boolean;
 }
 
-// Types moved from hooks files
+/**
+ * Organization physical location information
+ * Represents a location/branch where an organization operates
+ * Includes Google Places integration for address lookup
+ *
+ * @property {string} [id] - Unique location identifier
+ * @property {string} name - Location display name
+ * @property {string} [organizationId] - Parent organization identifier
+ * @property {string} formattedAddress - Full formatted address string
+ * @property {string} [phone] - Location contact phone
+ * @property {string} [email] - Location contact email
+ * @property {string | Date} [createdAt] - Location creation timestamp
+ * @property {string} [googlePlaceId] - Google Places ID for integration
+ * @property {any} [coordinates] - Geographic coordinates (lat/lng)
+ * @property {string[]} [searchTerms] - Search optimization terms
+ */
 export interface OrganizationLocation {
   id?: string;
   name: string;
@@ -80,6 +107,10 @@ export interface OrganizationLocation {
 // FORM AND INPUT TYPES
 // =============================================================================
 
+/**
+ * Data structure for creating a new organization
+ * Used in organization registration forms and admin creation flows
+ */
 export interface CreateOrganizationData {
   name: string;
   email?: string;
@@ -119,6 +150,17 @@ export interface CreateMembershipData {
   role: OrganizationRole;
 }
 
+/**
+ * Data structure for creating a new organization location
+ * Used when organizations add physical locations/branches
+ *
+ * @property {string} organizationId - Parent organization
+ * @property {string} name - Location name
+ * @property {string} formattedAddress - Full address string
+ * @property {string} [phone] - Location phone number
+ * @property {string} [email] - Location email address
+ * @property {string} [googlePlaceId] - Google Places ID
+ */
 export interface CreateLocationData {
   organizationId: string;
   name: string;
@@ -132,7 +174,20 @@ export interface OrganizationLocationsData {
   locations: OrganizationLocation[];
 }
 
-// Location with required fields for mutation operations
+/**
+ * Location data optimized for create/update/delete operations
+ * Contains required fields for database mutations on organization locations
+ *
+ * @property {string} [id] - Location identifier (for updates/deletes)
+ * @property {string} organizationId - Parent organization
+ * @property {string} name - Location name
+ * @property {string} formattedAddress - Full address string
+ * @property {string} [phone] - Location phone
+ * @property {string} [email] - Location email
+ * @property {string} [googlePlaceId] - Google Places ID
+ * @property {any} [coordinates] - Geographic coordinates
+ * @property {string[]} [searchTerms] - Search optimization terms
+ */
 export interface OrganizationLocationForMutation {
   id?: string;
   organizationId: string;

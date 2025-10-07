@@ -1,9 +1,11 @@
-// =============================================================================
-// INVITATIONS FEATURE TYPES
-// =============================================================================
-// All type definitions for the invitations feature in one place
-// Domain enums, business logic types, and form schemas only
-//
+/**
+ * =============================================================================
+ * INVITATIONS FEATURE TYPES
+ * =============================================================================
+ * All type definitions for the invitations feature in one place
+ * Domain enums, business logic types, and form schemas only
+ */
+
 // =============================================================================
 // MIGRATION NOTES - SERVER DATA REMOVED
 // =============================================================================
@@ -85,7 +87,20 @@ export enum DeliveryStatus {
 // BASE INTERFACES
 // =============================================================================
 
-// Basic invitation info
+/**
+ * Basic invitation information
+ * Core invitation data including status, tokens, and timestamps
+ *
+ * @property {string} id - Unique invitation identifier
+ * @property {string} email - Recipient email address
+ * @property {string} token - Unique invitation token for authentication
+ * @property {InvitationStatus | ProviderInvitationStatus} status - Current invitation status
+ * @property {Date} expiresAt - Invitation expiration timestamp
+ * @property {Date} createdAt - Invitation creation timestamp
+ * @property {Date} [acceptedAt] - Timestamp when invitation was accepted
+ * @property {Date} [rejectedAt] - Timestamp when invitation was rejected
+ * @property {Date} [cancelledAt] - Timestamp when invitation was cancelled
+ */
 export interface InvitationInfo {
   id: string;
   email: string;
@@ -98,7 +113,18 @@ export interface InvitationInfo {
   cancelledAt?: Date;
 }
 
-// Organization context for invitations
+/**
+ * Organization context information for invitations
+ * Provides organization details shown to invited users
+ *
+ * @property {string} id - Unique organization identifier
+ * @property {string} name - Organization display name
+ * @property {string} [description] - Organization description
+ * @property {string} [logo] - Organization logo URL
+ * @property {string} [email] - Organization contact email
+ * @property {string} [phone] - Organization contact phone
+ * @property {string} [website] - Organization website URL
+ */
 export interface OrganizationContext {
   id: string;
   name: string;
@@ -109,7 +135,10 @@ export interface OrganizationContext {
   website?: string | null;
 }
 
-// User context for invitations
+/**
+ * User context information for invitations
+ * Contains inviter's details shown in invitation emails and pages
+ */
 export interface UserContext {
   id: string;
   name?: string | null;
@@ -156,7 +185,17 @@ export interface InvitationFlowState {
 // API REQUEST/RESPONSE TYPES
 // =============================================================================
 
-// Create organization invitation request
+/**
+ * Request payload for creating organization member invitations
+ * Used when inviting users to join an organization with specific roles and permissions
+ *
+ * @property {string} organizationId - Organization extending the invitation
+ * @property {string} email - Recipient email address
+ * @property {OrganizationRole} role - Role to assign to invited user
+ * @property {OrganizationPermission[]} permissions - Permissions to grant
+ * @property {string} [customMessage] - Custom message to include in invitation email
+ * @property {number} [expiresInDays] - Days until invitation expires (default: 7)
+ */
 export interface CreateOrganizationInvitationRequest {
   organizationId: string;
   email: string;
@@ -203,7 +242,15 @@ export interface InvitationResponse {
   redirectUrl?: string;
 }
 
-// Bulk invitation request
+/**
+ * Request payload for sending multiple invitations at once
+ * Allows batch invitation creation with default roles and permissions
+ *
+ * @property {string} organizationId - Organization sending the invitations
+ * @property {Array} invitations - List of individual invitation details
+ * @property {OrganizationRole} [defaultRole] - Default role for invitations without specified role
+ * @property {OrganizationPermission[]} [defaultPermissions] - Default permissions for invitations without specified permissions
+ */
 export interface BulkInvitationRequest {
   organizationId: string;
   invitations: Array<{
@@ -276,7 +323,17 @@ export interface InvitationQueryOptions {
   includeExpired?: boolean;
 }
 
-// Invitation statistics
+/**
+ * Aggregated invitation statistics
+ * Provides counts of invitations by status for analytics and reporting
+ *
+ * @property {number} total - Total number of invitations
+ * @property {number} pending - Number of pending invitations
+ * @property {number} accepted - Number of accepted invitations
+ * @property {number} rejected - Number of rejected invitations
+ * @property {number} expired - Number of expired invitations
+ * @property {number} cancelled - Number of cancelled invitations
+ */
 export interface InvitationStats {
   total: number;
   pending: number;
@@ -286,7 +343,18 @@ export interface InvitationStats {
   cancelled: number;
 }
 
-// Invitation email template data
+/**
+ * Email template data for invitation messages
+ * Contains all variables needed to render personalized invitation emails
+ *
+ * @property {string} recipientEmail - Recipient's email address
+ * @property {string} inviterName - Name of person sending invitation
+ * @property {string} organizationName - Organization name
+ * @property {string} invitationUrl - Unique URL to accept invitation
+ * @property {string} [customMessage] - Optional custom message from inviter
+ * @property {Date} expiresAt - Invitation expiration date
+ * @property {string} [role] - Role being offered (for display in email)
+ */
 export interface InvitationEmailTemplate {
   recipientEmail: string;
   inviterName: string;
@@ -297,7 +365,18 @@ export interface InvitationEmailTemplate {
   role?: string;
 }
 
-// Invitation tracking data
+/**
+ * Invitation engagement tracking data
+ * Tracks user interactions with invitation emails and pages for analytics
+ *
+ * @property {string} invitationId - Invitation being tracked
+ * @property {boolean} emailSent - Whether invitation email was sent
+ * @property {boolean} emailDelivered - Whether email was successfully delivered
+ * @property {boolean} linkClicked - Whether invitation link was clicked
+ * @property {boolean} pageViewed - Whether invitation page was viewed
+ * @property {string} [actionTaken] - Final action taken (ACCEPTED or REJECTED)
+ * @property {Date} [actionTimestamp] - When action was taken
+ */
 export interface InvitationTracking {
   invitationId: string;
   emailSent: boolean;

@@ -1,8 +1,10 @@
-// =============================================================================
-// ADMIN FEATURE TYPES
-// =============================================================================
-// All type definitions for the admin feature in one place
-// Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
+/**
+ * =============================================================================
+ * ADMIN FEATURE TYPES
+ * =============================================================================
+ * All type definitions for the admin feature in one place
+ * Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
+ */
 // =============================================================================
 // PRISMA TYPE IMPORTS
 // =============================================================================
@@ -181,6 +183,17 @@ export interface AdminOrganizationDetailPageProps {
 // Component Props Types (using tRPC types, not manual interfaces)
 // These will be migrated to use RouterOutputs extraction in Task 4.0
 
+/**
+ * Props for approval/rejection action buttons component
+ * Handles approve and reject actions for admin-managed entities (providers, organizations, requirements)
+ *
+ * @property {ApprovalEntityType} entityType - Type of entity being approved/rejected (PROVIDER, ORGANIZATION, REQUIREMENT)
+ * @property {string} entityId - Unique identifier of the entity
+ * @property {ApprovalStatus} currentStatus - Current approval status of the entity
+ * @property {Function} [onApprove] - Optional callback function triggered when entity is approved
+ * @property {Function} [onReject] - Optional callback function triggered when entity is rejected
+ * @property {boolean} [disabled] - Whether the approval/rejection buttons should be disabled
+ */
 export interface ApprovalButtonsProps {
   entityType: ApprovalEntityType;
   entityId: string;
@@ -190,6 +203,17 @@ export interface ApprovalButtonsProps {
   disabled?: boolean;
 }
 
+/**
+ * Props for rejection reason modal component
+ * Collects rejection reason when admin rejects an entity (provider, organization, requirement)
+ *
+ * @property {boolean} isOpen - Whether the rejection modal is currently open/visible
+ * @property {Function} onClose - Callback function to close the modal without rejecting
+ * @property {Function} onReject - Callback function with rejection reason when admin confirms rejection
+ * @property {ApprovalEntityType} entityType - Type of entity being rejected (PROVIDER, ORGANIZATION, REQUIREMENT)
+ * @property {string} [entityName] - Optional display name of the entity being rejected
+ * @property {boolean} [isLoading] - Whether the rejection operation is in progress
+ */
 export interface RejectionModalProps {
   isOpen: boolean;
   onClose: () => void;
