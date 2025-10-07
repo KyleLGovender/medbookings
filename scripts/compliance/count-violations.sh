@@ -19,8 +19,13 @@ echo "  STRICT ENFORCEMENT VIOLATION COUNTER"
 echo "================================================"
 echo ""
 
-# Project root
-PROJECT_ROOT="/Users/kylegovender/Documents/softwareDev/medbookings"
+# Project root - detect dynamically using git
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+if [ -z "$PROJECT_ROOT" ]; then
+    # Fallback to script location if not in a git repo
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+fi
 cd "$PROJECT_ROOT"
 
 # Timezone violations
