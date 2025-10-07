@@ -2,76 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Development Commands
-
-### Core Development
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production (includes Prisma generate)
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint with auto-fix
-- `npm run format` - Format code with Prettier
-- `npx playwright test` - Run Playwright e2e tests
-
-### Database Operations
-
-- `npx prisma generate` - Generate Prisma client
-- `npx prisma db push` - Push schema to database (development)
-- `npx prisma migrate deploy` - Deploy migrations (production)
-- `npx prisma studio` - Open database GUI
-- `npx prisma db seed` - Seed database with sample data
-
-### Docker Development
-
-- `docker compose up` - Start PostgreSQL database locally
-
-## Development Workflow
-
-### Task Completion Reporting
-
-- Always display a list of files that were modified once a task is complete explaining briefly what was modified in each file
-
-### Git Workflow
-
-- **Commit changes after completing each subtask** to maintain clear development history
-- Create descriptive commit messages that explain what was accomplished
-- Use standard co-authored footer for AI-assisted development
-
-## Server Management
-
-- Let the user run the dev server... never start the dev server yourself... just request the user to do it
-
-## Command Execution Policy
-
-- **NEVER execute commands like `npm run build`, `npm run lint`, `npm run format`, or `npm run dev` directly**
-- **ALWAYS present the command to the user and ask them to run it**
-- **Wait for the user to provide the output/feedback before proceeding**
-- **Only run simple file operations and searches directly**
-
-### Commands to Present to User:
-- `npm run build` - For checking build/compilation
-- `npm run lint` - For linting code 
-- `npm run format` - For formatting code
-- `npm run dev` - For starting development server
-- `npm run test` - For running tests
-- Any other npm scripts or long-running processes
-
-## Command Line Usage Guidelines
-
-### Search Commands
-
-- **Use `grep` instead of `find` for file searches** - The Grep tool is more reliable and has better permissions handling
-- **Use `rg` (ripgrep) for fast text searches** - Pre-installed and optimized for code searching
-- **Avoid complex bash pipelines** - Use dedicated tools (Grep, Glob) when possible
-
-### Examples:
-- ✅ Use: `grep -r "pattern" .` or the Grep tool
-- ❌ Avoid: `find . -name "*.js" | xargs grep "pattern"`
-
-## Bash Tips
-
-- Prefer `grep` over `find` for searching text within files - it's more efficient and straightforward for text-based searches
-
 ## Architecture Overview
 
 ### Tech Stack
@@ -106,28 +36,30 @@ The MedBookings codebase has successfully implemented a **dual-source type safet
 
 #### Type Source Decision Matrix
 
-| Type Category | Source | Example | Pattern |
-|--------------|--------|---------|---------|
-| **Database Enums** | Prisma | `ProviderStatus`, `AvailabilityStatus` | `import { Status } from '@prisma/client'` |
-| **Domain Enums** | Manual | `RecurrenceOption`, `AdminAction` | `/features/*/types/types.ts` |
-| **Form Schemas** | Manual + Prisma | `z.nativeEnum(ProviderStatus)` | `/features/*/types/schemas.ts` |
-| **Business Logic** | Manual | Complex domain calculations | `/features/*/types/types.ts` |
-| **Type Guards** | Manual | Runtime validation | `/features/*/types/guards.ts` |
-| **API Responses** | tRPC | Server query results | `RouterOutputs['router']['procedure']` |
-| **Database Entities** | tRPC | Prisma query outputs | `RouterOutputs['router']['procedure']` |
-| **Server-Derived** | tRPC | Any data from server procedures | `RouterOutputs['router']['procedure']` |
+| Type Category         | Source          | Example                                | Pattern                                   |
+| --------------------- | --------------- | -------------------------------------- | ----------------------------------------- |
+| **Database Enums**    | Prisma          | `ProviderStatus`, `AvailabilityStatus` | `import { Status } from '@prisma/client'` |
+| **Domain Enums**      | Manual          | `RecurrenceOption`, `AdminAction`      | `/features/*/types/types.ts`              |
+| **Form Schemas**      | Manual + Prisma | `z.nativeEnum(ProviderStatus)`         | `/features/*/types/schemas.ts`            |
+| **Business Logic**    | Manual          | Complex domain calculations            | `/features/*/types/types.ts`              |
+| **Type Guards**       | Manual          | Runtime validation                     | `/features/*/types/guards.ts`             |
+| **API Responses**     | tRPC            | Server query results                   | `RouterOutputs['router']['procedure']`    |
+| **Database Entities** | tRPC            | Prisma query outputs                   | `RouterOutputs['router']['procedure']`    |
+| **Server-Derived**    | tRPC            | Any data from server procedures        | `RouterOutputs['router']['procedure']`    |
 
 #### Manual Type Organization (`/features/[feature-name]/types/`)
 
 ##### File Structure
+
 ```
 src/features/[feature-name]/types/
 ├── types.ts          # Domain enums, business logic types, utility types
-├── schemas.ts        # Zod validation schemas for forms and user input  
+├── schemas.ts        # Zod validation schemas for forms and user input
 ├── guards.ts         # Type guard functions for runtime type checking
 ```
 
 ##### Import Patterns
+
 - ✅ **Direct imports**: `import { Type } from '@/features/calendar/types/types'`
 - ❌ **Barrel exports**: `import { Type } from '@/features/calendar/types'` (not allowed)
 
@@ -149,6 +81,7 @@ export enum ProviderStatus { PENDING = 'PENDING' } // DON'T DO THIS
 ```
 
 **Available Prisma Enums:**
+
 - **User**: `UserRole`
 - **Provider**: `ProviderStatus`, `Languages`, `RequirementsValidationStatus`, `RequirementValidationType`
 - **Organization**: `OrganizationStatus`, `OrganizationRole`, `OrganizationBillingModel`, `MembershipStatus`, `InvitationStatus`
@@ -157,6 +90,7 @@ export enum ProviderStatus { PENDING = 'PENDING' } // DON'T DO THIS
 - **Communications**: `CommunicationType`, `CommunicationChannel`
 
 ##### Manual Type Standards
+
 1. **Domain Enums**: UI-specific enums not in database (`RecurrenceOption`, `AdminAction`)
 2. **Form Types**: User input structures with Zod validation
 3. **Business Logic Types**: Complex domain calculations and transformations
@@ -326,25 +260,28 @@ feature/
 
 ```typescript
 // ✅ CORRECT: Hook calls tRPC procedure
-import { api } from '@/lib/trpc/client'
+// ✅ CORRECT: tRPC procedure queries database directly for automatic type inference
+// /lib/trpc/routers/providers.ts
+import { z } from 'zod';
+
+import { api } from '@/lib/trpc/client';
+
+import { publicProcedure, router } from '../trpc';
 
 export const useProviders = () => {
   return api.providers.getAll.useQuery({
     // Optional input parameters
-  })
-}
-
-// ✅ CORRECT: tRPC procedure queries database directly for automatic type inference
-// /lib/trpc/routers/providers.ts
-import { z } from 'zod'
-import { publicProcedure, router } from '../trpc'
+  });
+};
 
 export const providersRouter = router({
   getAll: publicProcedure
-    .input(z.object({
-      limit: z.number().optional(),
-      offset: z.number().optional(),
-    }))
+    .input(
+      z.object({
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       // Direct Prisma query for automatic type inference
       return ctx.prisma.provider.findMany({
@@ -354,30 +291,30 @@ export const providersRouter = router({
           user: { select: { id: true, name: true, email: true } },
           services: true,
           // Full relations for complete type safety
-        }
-      })
+        },
+      });
     }),
-})
+});
 
 // ✅ CORRECT: Server action handles business logic only, returns metadata
 // /features/providers/lib/actions.ts
 export async function createProvider(data: CreateProviderData) {
   // Validation, notifications, business logic
-  const validatedData = validateProviderData(data)
-  
+  const validatedData = validateProviderData(data);
+
   if (!validatedData.isValid) {
-    return { success: false, error: validatedData.error }
+    return { success: false, error: validatedData.error };
   }
 
   // Send notifications, trigger workflows, etc.
-  await sendProviderRegistrationEmail(data.email)
-  
+  await sendProviderRegistrationEmail(data.email);
+
   // Return minimal metadata only
-  return { 
-    success: true, 
+  return {
+    success: true,
     providerId: data.userId, // Just the ID for tRPC to query
-    requiresApproval: true 
-  }
+    requiresApproval: true,
+  };
 }
 
 // ✅ CORRECT: Mutation with business logic + database query
@@ -389,36 +326,35 @@ export const useCreateProvider = () => {
     onError: (error) => {
       // Handle error with full type safety
     },
-  })
-}
+  });
+};
 
 // ✅ CORRECT: tRPC mutation procedure pattern
-create: protectedProcedure
-  .input(createProviderSchema)
-  .mutation(async ({ ctx, input }) => {
-    // Call server action for business logic
-    const result = await createProvider(input)
-    
-    if (!result.success) {
-      throw new Error(result.error)
-    }
-    
-    // Single database query with full relations for type safety
-    return ctx.prisma.provider.findUnique({
-      where: { id: result.providerId },
-      include: {
-        user: { select: { id: true, name: true, email: true } },
-        services: true,
-        typeAssignments: { include: { providerType: true } },
-        // Complete data with automatic type inference
-      }
-    })
-  })
+create: protectedProcedure.input(createProviderSchema).mutation(async ({ ctx, input }) => {
+  // Call server action for business logic
+  const result = await createProvider(input);
+
+  if (!result.success) {
+    throw new Error(result.error);
+  }
+
+  // Single database query with full relations for type safety
+  return ctx.prisma.provider.findUnique({
+    where: { id: result.providerId },
+    include: {
+      user: { select: { id: true, name: true, email: true } },
+      services: true,
+      typeAssignments: { include: { providerType: true } },
+      // Complete data with automatic type inference
+    },
+  });
+});
 ```
 
 #### Legacy REST API Exceptions
 
 Some endpoints remain as REST APIs in `/app/api/`:
+
 - File uploads (`/api/upload/*`)
 - Webhook endpoints
 - Third-party integrations
@@ -433,7 +369,7 @@ Some endpoints remain as REST APIs in `/app/api/`:
 ##### Implementation Summary
 
 - **All 27 Client Hooks**: Migrated to thin tRPC wrappers with no type exports
-- **All 77 Feature Components**: Migrated to RouterOutputs type extraction patterns  
+- **All 77 Feature Components**: Migrated to RouterOutputs type extraction patterns
 - **All 54 Page Components**: Migrated to dual-source type safety architecture
 - **All 8 tRPC Routers**: Implementing single-query pattern with automatic type inference
 - **All Manual Type Files**: Cleaned to contain only domain logic (enums, form schemas, business logic)
@@ -461,26 +397,27 @@ export const adminRouter = createTRPCRouter({
           services: true,
         },
       });
-      
+
       if (!provider) {
         throw new Error('Provider not found');
       }
-      
+
       return provider; // ← Return type automatically inferred by tRPC
     }),
-    
-  getProviders: adminProcedure
-    .input(adminSearchParamsSchema)
-    .query(async ({ ctx, input }) => {
-      return await ctx.prisma.provider.findMany({
-        where: buildWhereClause(input),
-        include: { /* ... */ },
-      }); // ← Return type automatically inferred
-    }),
+
+  getProviders: adminProcedure.input(adminSearchParamsSchema).query(async ({ ctx, input }) => {
+    return await ctx.prisma.provider.findMany({
+      where: buildWhereClause(input),
+      include: {
+        /* ... */
+      },
+    }); // ← Return type automatically inferred
+  }),
 });
 ```
 
 **Key Points:**
+
 - Server procedures return Prisma query results directly
 - tRPC automatically infers and captures return types
 - No manual type definitions needed at server level
@@ -510,6 +447,7 @@ export function useAdminProviders(status?: AdminApprovalStatus) {
 ```
 
 **Key Points:**
+
 - Hooks are thin wrappers around tRPC queries
 - No type exports from hook files
 - Components handle their own type extraction
@@ -531,16 +469,16 @@ export function ProviderDetail({ providerId }: { providerId: string }) {
   // Hook returns fully typed data
   const { data: provider, isLoading, error } = useAdminProvider(providerId);
   //    ↑ TypeScript knows this is AdminProvider | undefined
-  
+
   // Full type safety in component logic
-  const providerTypes = provider?.typeAssignments?.map((assignment: TypeAssignment) => 
+  const providerTypes = provider?.typeAssignments?.map((assignment: TypeAssignment) =>
     assignment.providerType?.name
   );
-  
-  const services = provider?.services?.map((service: Service) => 
+
+  const services = provider?.services?.map((service: Service) =>
     service.name
   );
-  
+
   return (
     <div>
       {/* TypeScript provides full intellisense */}
@@ -553,6 +491,7 @@ export function ProviderDetail({ providerId }: { providerId: string }) {
 ```
 
 **Key Points:**
+
 - Import `RouterOutputs` from `@/utils/api`
 - Extract exact types using bracket notation: `RouterOutputs['router']['procedure']`
 - Use `NonNullable<>` for nested types when needed
@@ -581,17 +520,20 @@ type Status = NonNullable<Output>['status']; // Extracts the exact enum/union
 ##### 5. Dual-Source Type Usage Rules
 
 **✅ For Server Data (use tRPC):**
+
 - Extract types in each component that needs them: `RouterOutputs['router']['procedure']`
 - Keep hooks simple and focused on data fetching
 - Import types directly from tRPC source of truth
 - Use for: API responses, database entities, server-derived data
 
 **✅ For Domain Logic (use Manual Types):**
+
 - Import from feature type files: `import { Type } from '@/features/feature/types/types'`
 - Use for: Domain enums, form schemas, business logic, type guards
 - Keep in `/features/*/types/` files with proper documentation
 
 **❌ DON'T:**
+
 - Re-export types from hook files
 - Create manual interfaces that duplicate tRPC server data
 - Use `any` types with tRPC data
@@ -620,15 +562,18 @@ providers?.map((provider: AdminProvider) => /* ... */);
 
 ```typescript
 // ✅ CORRECT: Mixed usage with clear boundaries
-import { AdminApprovalStatus } from '@/features/admin/types/types'; // Domain enum
-import { type RouterOutputs } from '@/utils/api'; // Server data
+import { AdminApprovalStatus } from '@/features/admin/types/types';
+// Domain enum
+import { type RouterOutputs } from '@/utils/api';
+
+// Server data
 
 type AdminProvider = RouterOutputs['admin']['getProviderById']; // Server data
 type AdminProviders = RouterOutputs['admin']['getProviders']; // Server data
 
 function ProviderComponent({ providerId }: { providerId: string }) {
   const { data: provider } = useAdminProvider(providerId); // provider: AdminProvider
-  
+
   // Mix server data (provider) with domain logic (status enum)
   const handleStatusUpdate = (newStatus: AdminApprovalStatus) => {
     // Business logic using domain enum + server data
@@ -639,22 +584,26 @@ function ProviderComponent({ providerId }: { providerId: string }) {
 #### Complete Type Safety Implementation Roadmap
 
 ##### Phase 1: Audit & Categorize All Types
+
 1. **Identify Server Data Types**: All interfaces that represent API responses or database entities
 2. **Identify Domain Types**: All enums, business logic types, form schemas, type guards
 3. **Mark for Migration**: Server data types → tRPC, Keep domain types as manual
 
 ##### Phase 2: Component-by-Component Migration
+
 1. **Replace server data imports** with tRPC type extraction
 2. **Keep domain type imports** from manual type files
 3. **Remove redundant manual interfaces** that duplicate server data
 4. **Update manual type files** to contain only domain logic
 
 ##### Phase 3: Validation & Cleanup
+
 1. **Remove unused manual types** that were migrated to tRPC
 2. **Ensure consistent patterns** across all components
 3. **Update type documentation** to reflect dual-source approach
 
 **This comprehensive approach ensures:**
+
 - Zero type drift between server and client for API data
 - Consistent domain logic representation across features
 - Clear boundaries between server and client concerns
@@ -662,11 +611,12 @@ function ProviderComponent({ providerId }: { providerId: string }) {
 - Maximum type safety and developer experience throughout the application
 
 #### ❌ FORBIDDEN PATTERNS
+
 ```typescript
 // ❌ NEVER: Duplicate Prisma enums in manual types
-export enum ProviderStatus { 
-  PENDING = 'PENDING', 
-  APPROVED = 'APPROVED' 
+export enum ProviderStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED'
 } // WRONG! Import from @prisma/client
 
 // ❌ NEVER: Re-export Prisma enums from manual types
@@ -742,13 +692,15 @@ type MixedWrong = AdminProvider & RouterOutputs['admin']['getProviders'][number]
 #### Global Types Structure
 
 ##### Manual Global Types (`/src/types/`)
+
 - **`/src/types/api.ts`**: Generic API patterns, error types, pagination
-- **`/src/types/guards.ts`**: Common validation functions across features  
+- **`/src/types/guards.ts`**: Common validation functions across features
 - **`/src/types/ui.ts`**: Shared UI component types, theme types
 
 ##### tRPC Global Types (`/src/utils/api.ts`)
+
 - **`RouterInputs`**: Input types for all tRPC procedures
-- **`RouterOutputs`**: Output types for all tRPC procedures  
+- **`RouterOutputs`**: Output types for all tRPC procedures
 - **`api`**: The tRPC client with full type safety
 
 ### Form Implementation Patterns
@@ -807,7 +759,7 @@ export function useApproveRequirement(options?: {
       const allQueries = cache.getAll();
       let previousData;
       let actualKey;
-      
+
       for (const query of allQueries) {
         const keyStr = JSON.stringify(query.queryKey);
         if (keyStr.includes('getProviderRequirements') && keyStr.includes(providerId)) {
@@ -846,7 +798,7 @@ export function useApproveRequirement(options?: {
     // Step 3: Handle errors with rollback
     onError: (err, variables, context) => {
       console.error('Mutation failed, rolling back:', err);
-      
+
       // Roll back to previous state
       if (context?.previousData && context?.actualKey) {
         queryClient.setQueryData(context.actualKey, context.previousData);
@@ -864,8 +816,9 @@ export function useApproveRequirement(options?: {
       await queryClient.invalidateQueries({
         predicate: (query) => {
           const keyStr = JSON.stringify(query.queryKey);
-          return keyStr.includes('getProviderRequirements') && 
-                 keyStr.includes(variables.providerId);
+          return (
+            keyStr.includes('getProviderRequirements') && keyStr.includes(variables.providerId)
+          );
         },
       });
 
@@ -889,6 +842,7 @@ export function useApproveRequirement(options?: {
 #### Key Implementation Details
 
 ##### 1. Query Cancellation
+
 ```typescript
 // ALWAYS cancel outgoing queries to prevent race conditions
 await queryClient.cancelQueries({
@@ -900,6 +854,7 @@ await queryClient.cancelQueries({
 ```
 
 ##### 2. Cache Key Discovery
+
 ```typescript
 // The tRPC query keys can be complex, so we search for them dynamically
 const cache = queryClient.getQueryCache();
@@ -916,20 +871,22 @@ for (const query of allQueries) {
 ```
 
 ##### 3. Safe Cache Updates
+
 ```typescript
 // ALWAYS check data exists and has expected shape before updating
 queryClient.setQueryData(actualKey, (old: any) => {
   if (!old) return old; // Guard against undefined
-  
+
   // Transform data based on mutation type
   return transformedData;
 });
 ```
 
 ##### 4. Context for Rollback
+
 ```typescript
 // ALWAYS return context with snapshot for rollback capability
-return { 
+return {
   previousData,     // Snapshot of data before mutation
   actualKey,        // The exact query key for updates
   ...otherContext   // Any other data needed for rollback
@@ -939,6 +896,7 @@ return {
 #### Real-World Examples from Codebase
 
 ##### Example 1: Requirement Approval (List Update)
+
 ```typescript
 // Updates a single item in a list
 queryClient.setQueryData(actualKey, (old: any) => {
@@ -958,6 +916,7 @@ queryClient.setQueryData(actualKey, (old: any) => {
 ```
 
 ##### Example 2: Provider Status Update (Object Update)
+
 ```typescript
 // Updates a single object
 queryClient.setQueryData(actualKey, (old: any) => {
@@ -987,12 +946,14 @@ queryClient.setQueryData(actualKey, (old: any) => {
 #### When to Use This Pattern
 
 ✅ **Use for:**
+
 - Admin approval/rejection workflows
 - Status updates that need immediate feedback
 - Toggle operations (active/inactive, enabled/disabled)
 - Any mutation where the user expects instant feedback
 
 ❌ **Don't use for:**
+
 - Create operations (no existing data to update)
 - Delete operations (consider hiding item instead)
 - Complex multi-step workflows
@@ -1013,7 +974,7 @@ queryClient.setQueryData(actualKey, (old: any) => {
 const SIMULATE_DELAY = true;
 
 if (SIMULATE_DELAY) {
-  await new Promise(resolve => setTimeout(resolve, 3000));
+  await new Promise((resolve) => setTimeout(resolve, 3000));
 }
 
 // Simulate random failures to test rollback
@@ -1175,7 +1136,7 @@ Imports are automatically sorted in this order:
 ### Zero Prisma Imports in Client Code ✅ **ACHIEVED**
 
 - **✅ VALIDATED**: All 27 client hooks use only tRPC procedures with zero direct Prisma imports
-- **✅ VALIDATED**: All React components access database only through tRPC procedures 
+- **✅ VALIDATED**: All React components access database only through tRPC procedures
 - **✅ ENFORCED**: Database queries occur exclusively in tRPC procedures (`/server/api/routers/`) for automatic type inference
 - **✅ IMPLEMENTED**: Server actions handle only business logic, validation, and notifications
 
