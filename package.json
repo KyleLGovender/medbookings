@@ -33,6 +33,11 @@
     "test:full": "npm run test:db:setup && npm run test:db:migrate && npm run test",
     "test:ci": "npm run test:install && npm run test:full",
     "architecture:check": "git fetch origin && node scripts/architecture/check-core-files.js",
+    "compliance:sync": "node scripts/compliance/sync-compliance-rules.js sync",
+    "compliance:check": "node scripts/compliance/sync-compliance-rules.js check",
+    "compliance:status": "node scripts/compliance/sync-compliance-rules.js status",
+    "compliance:setup": "bash scripts/compliance/setup-compliance.sh",
+    "compliance:validate": "node scripts/commit-gate/compliance-validator.js validate-file",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "verceldb:migrateintegrity": "dotenv -e .env.vercel.production.local -- npx prisma migrate deploy"

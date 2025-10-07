@@ -529,10 +529,10 @@ class CodeValidator {
     this.transactionValidator = new EnhancedTransactionValidator();
 
     // Load compliance configuration
-    this.loadEnforcementConfig();
+    this.loadComplianceConfig();
   }
 
-  loadEnforcementConfig() {
+  loadComplianceConfig() {
     const configPath = path.join(__dirname, '../compliance/compliance-config.json');
 
     if (fs.existsSync(configPath)) {

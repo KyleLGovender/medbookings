@@ -1,6 +1,6 @@
-# Enforcement System Changelog
+# Compliance System Changelog
 
-All notable changes to the CLAUDE.md enforcement system will be documented in this file.
+All notable changes to the CLAUDE.md compliance system will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -205,11 +205,11 @@ No rules or features are deprecated in the current version.
 
 ## Contributing
 
-When making changes to the enforcement system:
+When making changes to the compliance system:
 
 1. **Update this CHANGELOG** with your changes
 2. **Bump version** in `compliance-config.json` if changing schema
-3. **Update documentation** in `/docs/enforcement/`
+3. **Update documentation** in `/docs/compliance/`
 4. **Test thoroughly** with both passing and failing cases
 5. **Run validation suite**:
    ```bash
@@ -222,10 +222,10 @@ When making changes to the enforcement system:
 
 ## Questions or Issues?
 
-- **Bug Reports**: File an issue with the `enforcement-system` label
+- **Bug Reports**: File an issue with the `compliance-system` label
 - **Feature Requests**: Open a discussion in GitHub Discussions
 - **Questions**: Ask in team chat or code reviews
 
 ---
 
-**Note**: This changelog tracks changes to the enforcement system infrastructure itself, not to individual CLAUDE.md rules. For CLAUDE.md changes, see the main project changelog or git history.
+**Note**: This changelog tracks changes to the compliance system infrastructure itself, not to individual CLAUDE.md rules. For CLAUDE.md changes, see the main project changelog or git history.

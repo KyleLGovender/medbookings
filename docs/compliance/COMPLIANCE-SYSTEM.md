@@ -599,10 +599,10 @@ The ESLint configuration (`.eslintrc.js`) dynamically loads rule severity from `
 let timezoneRuleEnabled = 'error'; // Default to enabled (fail-safe)
 
 try {
-  const configPath = path.join(__dirname, 'scripts', 'enforcement', 'compliance-config.json');
+  const configPath = path.join(__dirname, 'scripts', 'compliance', 'compliance-config.json');
   if (fs.existsSync(configPath)) {
-    const enforcementConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    const timezoneConfig = enforcementConfig.validatorConfig?.rules?.timezone;
+    const complianceConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const timezoneConfig = complianceConfig.validatorConfig?.rules?.timezone;
 
     // Only disable if explicitly disabled in config
     if (timezoneConfig && timezoneConfig.enabled === false) {
@@ -699,7 +699,7 @@ const timestamp = new Date(); // With documented reason why this is safe
 
 ---
 
-### "Enforcement config out of sync with CLAUDE.md"
+### "Compliance config out of sync with CLAUDE.md"
 
 **Cause:** CLAUDE.md was modified but compliance rules weren't regenerated
 
@@ -951,7 +951,7 @@ module.exports = {
 ## Related Documentation
 
 - [CLAUDE.md](/CLAUDE.md) - Complete coding guidelines
-- [CHANGELOG.md](/scripts/compliance/CHANGELOG.md) - Enforcement system version history and changes
+- [CHANGELOG.md](/scripts/compliance/CHANGELOG.md) - Compliance system version history and changes
 - [TIMEZONE-GUIDELINES.md](/docs/compliance/TIMEZONE-GUIDELINES.md) - Timezone handling
 - [TYPE-SAFETY.md](/docs/compliance/TYPE-SAFETY.md) - Type system patterns
 - [LOGGING.md](/docs/compliance/LOGGING.md) - Logging and PHI protection

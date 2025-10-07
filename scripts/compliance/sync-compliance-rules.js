@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * CLAUDE.md Enforcement Rules Synchronization System
+ * CLAUDE.md Compliance Rules Synchronization System
  *
  * PURPOSE: Automatically sync compliance validators with CLAUDE.md changes
  * USAGE: Called by pre-commit hook when CLAUDE.md is modified
@@ -262,7 +262,7 @@ class ClaudeMdParser {
       'compliance/LOGGING.md',
       'compliance/BUG-DETECTION.md',
       'compliance/DEVELOPMENT-WORKFLOW.md',
-      'compliance/ENFORCEMENT.md',
+      'compliance/COMPLIANCE-SYSTEM.md',
       'compliance/DEPLOYMENT.md',
       'compliance/CLAUDE-MD-AUTO-SYNC.md',
     ];
@@ -414,7 +414,7 @@ class ValidatorConfigGenerator {
 // SECTION 3: SYNC MANAGER
 // ============================================================================
 
-class EnforcementSyncManager {
+class ComplianceSyncManager {
   constructor(claudeMdPath) {
     this.claudeMdPath = claudeMdPath;
     this.configPath = path.join(__dirname, 'compliance-config.json');
@@ -510,7 +510,7 @@ class EnforcementSyncManager {
 
     fs.writeFileSync(this.configPath, JSON.stringify(config, null, 2));
 
-    console.log('\n✅ Enforcement rules synced successfully');
+    console.log('\n✅ Compliance rules synced successfully');
     console.log(`   Hash: ${this.parser.hash.substring(0, 8)}...`);
     console.log(`   Rules: ${Object.keys(rules).length} categories`);
 
@@ -538,7 +538,7 @@ function main() {
   const command = args[0] || 'check';
 
   const claudeMdPath = path.join(__dirname, '..', '..', 'CLAUDE.md');
-  const syncManager = new EnforcementSyncManager(claudeMdPath);
+  const syncManager = new ComplianceSyncManager(claudeMdPath);
 
   switch (command) {
     case 'check':
@@ -547,7 +547,7 @@ function main() {
         console.log('   Run: node scripts/compliance/sync-compliance-rules.js sync');
         process.exit(1);
       } else {
-        console.log('✅ Enforcement rules are up to date');
+        console.log('✅ Compliance rules are up to date');
         process.exit(0);
       }
 
@@ -557,7 +557,7 @@ function main() {
 
     case 'status':
       const config = syncManager.getConfig();
-      console.log('Enforcement System Status:');
+      console.log('Compliance System Status:');
       console.log(`  Last sync: ${config.lastSync}`);
       console.log(`  CLAUDE.md hash: ${config.claudeMdHash.substring(0, 16)}...`);
       console.log(`  Changed: ${syncManager.hasChanged() ? 'YES ⚠️' : 'NO ✅'}`);
@@ -635,4 +635,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { ClaudeMdParser, ValidatorConfigGenerator, EnforcementSyncManager };
+module.exports = { ClaudeMdParser, ValidatorConfigGenerator, ComplianceSyncManager };

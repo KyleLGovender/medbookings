@@ -431,7 +431,7 @@ await ctx.prisma.booking.create({ data });
 2. **For Maintainers**:
    - [phi-validator.js](/scripts/commit-gate/phi-validator.js) - PHI validator code
    - [transaction-validator.js](/scripts/commit-gate/transaction-validator.js) - Transaction validator code
-   - [ENFORCEMENT.md](/docs/compliance/ENFORCEMENT.md) - Overall compliance system
+   - [COMPLIANCE-SYSTEM.md](/docs/compliance/COMPLIANCE-SYSTEM.md) - Overall compliance system
 
 3. **Domain-Specific**:
    - [LOGGING.md](/docs/compliance/LOGGING.md) - PHI protection patterns

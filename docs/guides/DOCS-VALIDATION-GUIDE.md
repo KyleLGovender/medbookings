@@ -281,7 +281,7 @@ The validation system expects these files to be referenced:
 5. ✅ `LOGGING.md` - Logging & PHI protection
 6. ✅ `BUG-DETECTION.md` - Bug detection patterns
 7. ✅ `DEVELOPMENT-WORKFLOW.md` - Development workflow
-8. ✅ `ENFORCEMENT.md` - Enforcement system
+8. ✅ `COMPLIANCE-SYSTEM.md` - Enforcement system
 9. ✅ `CLAUDE-MD-AUTO-SYNC.md` - Auto-sync system
 10. ✅ `DEPLOYMENT.md` - Production deployment
 

@@ -315,9 +315,9 @@ npm run build
 
 ## 📚 **Related Documentation**
 
-- `/docs/enforcement/ENFORCEMENT.md` - Detailed enforcement system guide
-- `/docs/enforcement/TIMEZONE-GUIDELINES.md` - Timezone handling rules
-- `/docs/enforcement/LOGGING.md` - Logging and PHI protection
+- `/docs/compliance/COMPLIANCE-SYSTEM.md` - Detailed enforcement system guide
+- `/docs/compliance/TIMEZONE-GUIDELINES.md` - Timezone handling rules
+- `/docs/compliance/LOGGING.md` - Logging and PHI protection
 - `/CLAUDE.md` - Complete project rules and patterns
 
 ---
