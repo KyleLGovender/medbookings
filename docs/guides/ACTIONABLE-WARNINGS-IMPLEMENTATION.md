@@ -44,8 +44,6 @@ scripts/
 └── enforcement-config.json            # Configuration
 
 docs/
-├── WARNING-SUPPRESSION-GUIDE.md       # Complete guide
-├── WARNING-QUICK-REFERENCE.md         # Quick lookup
 └── ACTIONABLE-WARNINGS-IMPLEMENTATION.md  # This file
 ```
 
@@ -118,9 +116,7 @@ await ctx.prisma.model.operation();
 ### Phase 3: Documentation ✅ (Completed)
 
 **Files Created**:
-1. ✅ `/docs/guides/WARNING-SUPPRESSION-GUIDE.md` - Complete guide
-2. ✅ `/docs/guides/WARNING-QUICK-REFERENCE.md` - Quick lookup
-3. ✅ `/scripts/example-enhanced-warnings.txt` - Before/after examples
+1. ✅ `/scripts/example-enhanced-warnings.txt` - Before/after examples
 
 **Content**:
 - Decision trees for each warning type
@@ -244,8 +240,8 @@ function main() {
     }
 
     console.log(`\n   📚 Quick Help:`);
-    console.log(`     - Full guide: /docs/guides/WARNING-SUPPRESSION-GUIDE.md`);
-    console.log(`     - Quick ref:  /docs/guides/WARNING-QUICK-REFERENCE.md`);
+    console.log(`     - PHI sanitization: Use sanitizeEmail(), sanitizePhone(), sanitizeName()`);
+    console.log(`     - Transactions: Wrap booking operations in prisma.$transaction()`);
     console.log(`\n━'.repeat(80));
   }
 }
@@ -329,7 +325,7 @@ Time per Warning: ~2 minutes
 - [ ] Test with existing violations
 
 ### Week 2: Documentation & Training
-- [ ] Share `WARNING-SUPPRESSION-GUIDE.md` with team
+- [ ] Share actionable warnings documentation with team
 - [ ] Create video walkthrough (5 minutes)
 - [ ] Add to onboarding docs
 
@@ -430,9 +426,7 @@ await ctx.prisma.booking.create({ data });
 ## 📚 Related Documentation
 
 1. **For Developers**:
-   - [WARNING-SUPPRESSION-GUIDE.md](/docs/guides/WARNING-SUPPRESSION-GUIDE.md) - Complete guide
-   - [WARNING-QUICK-REFERENCE.md](/docs/guides/WARNING-QUICK-REFERENCE.md) - Quick lookup
-   - [example-enhanced-warnings.txt](/scripts/example-enhanced-warnings.txt) - Examples
+   - [example-enhanced-warnings.txt](/scripts/example-enhanced-warnings.txt) - Warning examples
 
 2. **For Maintainers**:
    - [enhanced-phi-validator.js](/scripts/validation/enhanced-phi-validator.js) - PHI validator code

@@ -121,40 +121,23 @@ module.exports = {
     // - Pagination (take:) for findMany
 
     // =============================================================================
-    // TYPE ORGANIZATION LINTING RULES
+    // TYPE ORGANIZATION LINTING RULES (Custom Rules from eslint-rules/type-organization.js)
     // =============================================================================
 
-    // Prevent barrel exports in type files
-    'no-restricted-syntax': [
-      'error',
-      {
-        selector: 'ExportAllDeclaration',
-        message: 'Barrel exports are not allowed in type files. Use direct imports instead.',
-      },
-    ],
+    // Rule 1: Prevent barrel exports AND index.ts files in type directories
+    'rulesdir/no-type-barrel-exports': 'error',
 
-    // Enforce proper type file naming - prevent index files in types directories
-    'check-file/folder-naming-convention': [
-      'error',
-      {
-        'src/features/*/types/': 'KEBAB_CASE',
-      },
-    ],
+    // Rule 2: Enforce type file structure (headers, JSDoc, section ordering)
+    'rulesdir/enforce-type-file-structure': 'warn',
 
-    // Additional type organization rules
-    'import/no-restricted-paths': [
-      'error',
-      {
-        zones: [
-          {
-            target: './src/**/*',
-            from: './src/features/*/types/index.{ts,tsx}',
-            message:
-              'Import directly from types.ts, schemas.ts, or guards.ts instead of index files',
-          },
-        ],
-      },
-    ],
+    // Rule 3: Enforce direct type imports (no barrel exports)
+    'rulesdir/enforce-direct-type-imports': 'error',
+
+    // Rule 4: Enforce type file naming (types.ts, schemas.ts, guards.ts, enums.ts)
+    'rulesdir/enforce-type-file-naming': 'error',
+
+    // Rule 5: Enforce Prisma-derived type patterns
+    'rulesdir/enforce-prisma-derived-patterns': 'warn',
   },
   overrides: [
     {

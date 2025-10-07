@@ -73,7 +73,7 @@ The enforcement system uses a **three-layer defense strategy**:
 | `require-take-for-findMany` | Error | Requires pagination for `findMany()` |
 
 **Bypass:** Cannot bypass (design intentional)
-**Configuration:** `.eslintrc.json`
+**Configuration:** `.eslintrc.js`
 
 ---
 
@@ -821,12 +821,12 @@ module.exports = {
 
 Then register it in `eslint-rules/index.js`.
 
-**3. Enable rule in `.eslintrc.json`:**
+**3. Enable rule in `.eslintrc.js`:**
 
-```json
-{
-  "rules": {
-    "rulesdir/my-new-rule": "error"
+```javascript
+module.exports = {
+  rules: {
+    'rulesdir/my-new-rule': 'error'
   }
 }
 ```

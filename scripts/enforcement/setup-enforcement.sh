@@ -75,7 +75,7 @@ REQUIRED_FILES=(
   "CLAUDE.md"
   "scripts/validation/claude-code-validator.js"
   "eslint-rules/claude-compliance.js"
-  ".eslintrc.json"
+  ".eslintrc.js"
   "tsconfig.json"
 )
 
@@ -138,7 +138,7 @@ print_section "Step 5: Validating Configuration"
 
 # Check ESLint configuration
 print_info "Checking ESLint configuration..."
-if grep -q "rulesdir" .eslintrc.json; then
+if grep -q "rulesdir" .eslintrc.js; then
   print_success "ESLint configured with custom rules"
 else
   print_error "ESLint not configured correctly (missing rulesdir)"

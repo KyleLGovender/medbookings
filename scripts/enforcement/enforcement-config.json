@@ -141,10 +141,7 @@
     ],
     "orphanedDocs": [
       "guides/ACTIONABLE-WARNINGS-IMPLEMENTATION.md",
-      "guides/DOCS-VALIDATION-GUIDE.md",
-      "guides/INTEGRATION-COMPLETE.md",
-      "guides/WARNING-QUICK-REFERENCE.md",
-      "guides/WARNING-SUPPRESSION-GUIDE.md"
+      "guides/DOCS-VALIDATION-GUIDE.md"
     ],
     "lastValidated": "2025-10-05T09:35:28.628Z"
   }

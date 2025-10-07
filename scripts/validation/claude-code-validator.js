@@ -885,8 +885,8 @@ function main() {
       }
 
       console.log(`\n   📚 Quick Help:`);
-      console.log(`     - Full guide: /docs/guides/WARNING-SUPPRESSION-GUIDE.md`);
-      console.log(`     - Quick ref:  /docs/guides/WARNING-QUICK-REFERENCE.md`);
+      console.log(`     - PHI sanitization: Use sanitizeEmail(), sanitizePhone(), sanitizeName()`);
+      console.log(`     - Transactions: Wrap booking operations in prisma.$transaction()`);
       console.log('\n' + '━'.repeat(80) + '\n');
 
       // Only exit with error for ERROR severity, not WARNING
