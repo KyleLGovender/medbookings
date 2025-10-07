@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useAdminOrganization } from '@/features/organizations/hooks/use-admin-organizations';
+import { useAdminOrganization } from '@/features/admin/hooks/use-admin-organizations';
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganization } from '@/features/organizations/hooks/use-organization';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';

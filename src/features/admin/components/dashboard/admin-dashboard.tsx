@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { NavigationButton } from '@/components/ui/navigation-button';
 import { NavigationLink } from '@/components/ui/navigation-link';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAdminOrganizationCounts } from '@/features/organizations/hooks/use-admin-organizations';
+import { useAdminOrganizationCounts } from '@/features/admin/hooks/use-admin-organizations';
 import { useAdminProviderCounts } from '@/features/admin/hooks/use-admin-providers';
 
 interface StatCardProps {

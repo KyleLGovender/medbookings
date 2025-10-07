@@ -48,7 +48,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   useApproveOrganization,
   useRejectOrganization,
-} from '@/features/organizations/hooks/use-admin-organization-approval';
+} from '@/features/admin/hooks/use-organization-approval';
 import {
   useApproveProvider,
   useRejectProvider,

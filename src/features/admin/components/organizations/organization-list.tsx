@@ -29,8 +29,8 @@ import type { AdminFilterStatus } from '@/features/admin/types/types';
 import {
   useApproveOrganization,
   useRejectOrganization,
-} from '@/features/organizations/hooks/use-admin-organization-approval';
-import { useAdminOrganizations } from '@/features/organizations/hooks/use-admin-organizations';
+} from '@/features/admin/hooks/use-organization-approval';
+import { useAdminOrganizations } from '@/features/admin/hooks/use-admin-organizations';
 import { type RouterOutputs } from '@/utils/api';
 
 import { StatusBadge } from '../../../../components/status-badge';

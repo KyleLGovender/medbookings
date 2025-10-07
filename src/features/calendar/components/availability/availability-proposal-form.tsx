@@ -35,17 +35,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { TimePicker } from '@/components/ui/time-picker';
 import { CustomRecurrenceModal } from '@/features/calendar/components/availability/custom-recurrence-modal';
 import { ServiceSelectionSection } from '@/features/calendar/components/availability/service-selection-section';
+import { useAssociatedServices } from '@/features/calendar/hooks/use-associated-services';
 import { useCreateAvailability } from '@/features/calendar/hooks/use-availability';
+import { useCurrentProvider } from '@/features/calendar/hooks/use-current-provider';
+import { useOrganizationLocations } from '@/features/calendar/hooks/use-organization-locations';
+import { useUserOrganizations } from '@/features/calendar/hooks/use-user-organizations';
 import {
   createRecurrencePattern,
   getRecurrenceOptions,
 } from '@/features/calendar/lib/recurrence-utils';
 import { createAvailabilityDataSchema } from '@/features/calendar/types/schemas';
 import { CustomRecurrenceData, RecurrenceOption } from '@/features/calendar/types/types';
-import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
-import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
-import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
-import { useAssociatedServices } from '@/features/calendar/hooks/use-associated-services';
 import { useToast } from '@/hooks/use-toast';
 import { addMilliseconds, cloneDate, nowUTC, parseUTC } from '@/lib/timezone';
 import { type RouterInputs } from '@/utils/api';
@@ -126,8 +126,8 @@ export function AvailabilityProposalForm({
   const { toast } = useToast();
 
   // Fetch user data for profile selection
-  const { data: currentUserProvider } = useCurrentUserProvider();
-  const { data: userOrganizations = [] } = useCurrentUserOrganizations();
+  const { data: currentUserProvider } = useCurrentProvider();
+  const { data: userOrganizations = [] } = useUserOrganizations();
 
   // Fetch provider's services
   const {

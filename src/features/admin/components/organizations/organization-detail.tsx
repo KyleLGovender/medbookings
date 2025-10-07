@@ -19,8 +19,8 @@ import {
   useApproveOrganization,
   useRejectOrganization,
   useResetOrganizationStatus,
-} from '@/features/organizations/hooks/use-admin-organization-approval';
-import { useAdminOrganization } from '@/features/organizations/hooks/use-admin-organizations';
+} from '@/features/admin/hooks/use-organization-approval';
+import { useAdminOrganization } from '@/features/admin/hooks/use-admin-organizations';
 import { logger } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';
 import { type RouterOutputs } from '@/utils/api';

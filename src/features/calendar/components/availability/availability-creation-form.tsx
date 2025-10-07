@@ -43,15 +43,15 @@ import { Separator } from '@/components/ui/separator';
 import { TimePicker } from '@/components/ui/time-picker';
 import { CustomRecurrenceModal } from '@/features/calendar/components/availability/custom-recurrence-modal';
 import { ServiceSelectionSection } from '@/features/calendar/components/availability/service-selection-section';
+import { useAssociatedServices } from '@/features/calendar/hooks/use-associated-services';
 import { useCreateAvailability } from '@/features/calendar/hooks/use-availability';
+import { useCurrentProvider } from '@/features/calendar/hooks/use-current-provider';
 import {
   createRecurrencePattern,
   getRecurrenceOptions,
 } from '@/features/calendar/lib/recurrence-utils';
 import { createAvailabilityDataSchema } from '@/features/calendar/types/schemas';
 import { CustomRecurrenceData, DayOfWeek, RecurrenceOption } from '@/features/calendar/types/types';
-import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
-import { useAssociatedServices } from '@/features/calendar/hooks/use-associated-services';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 import { nowUTC, parseUTC } from '@/lib/timezone';
@@ -108,7 +108,7 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
   const router = useRouter();
 
   // Fetch current provider data - required for this form
-  const { data: currentUserProvider, isLoading: isProviderLoading } = useCurrentUserProvider();
+  const { data: currentUserProvider, isLoading: isProviderLoading } = useCurrentProvider();
 
   // Fetch provider's services - must call hook unconditionally
   const {
