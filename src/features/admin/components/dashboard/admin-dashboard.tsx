@@ -5,7 +5,7 @@ import { NavigationButton } from '@/components/ui/navigation-button';
 import { NavigationLink } from '@/components/ui/navigation-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAdminOrganizationCounts } from '@/features/organizations/hooks/use-admin-organizations';
-import { useAdminProviderCounts } from '@/features/providers/hooks/use-admin-providers';
+import { useAdminProviderCounts } from '@/features/admin/hooks/use-admin-providers';
 
 interface StatCardProps {
   title: string;

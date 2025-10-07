@@ -45,7 +45,7 @@ import { CustomRecurrenceData, RecurrenceOption } from '@/features/calendar/type
 import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
 import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
-import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
+import { useAssociatedServices } from '@/features/calendar/hooks/use-associated-services';
 import { useToast } from '@/hooks/use-toast';
 import { addMilliseconds, cloneDate, nowUTC, parseUTC } from '@/lib/timezone';
 import { type RouterInputs } from '@/utils/api';
@@ -134,7 +134,7 @@ export function AvailabilityProposalForm({
     data: availableServices,
     isLoading: isServicesLoading,
     error: servicesError,
-  } = useProviderAssociatedServices(providerId);
+  } = useAssociatedServices(providerId);
 
   // Fetch organization locations
   const organizationIds = userOrganizations.map((org: any) => org.id);

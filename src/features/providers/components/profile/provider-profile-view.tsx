@@ -11,7 +11,7 @@ import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { Separator } from '@/components/ui/separator';
 import { DeleteProviderButton } from '@/features/providers/components/delete-provider-button';
 import { OrganizationConnectionsManager } from '@/features/providers/components/organization-connections-manager';
-import { RequirementSubmissionCard } from '@/features/providers/components/requirement-submission-card';
+import { RequirementSubmissionCard } from '@/components/requirement-submission-card';
 // Remove server-side import - will use inline logic
 import { useProvider } from '@/features/providers/hooks/use-provider';
 

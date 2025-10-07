@@ -52,7 +52,7 @@ import {
 import {
   useApproveProvider,
   useRejectProvider,
-} from '@/features/providers/hooks/use-admin-provider-approval';
+} from '@/features/admin/hooks/use-provider-approval';
 import { usePermissions } from '@/hooks/use-permissions';
 import { logger } from '@/lib/logger';
 import { Permission } from '@/types/permissions';

@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
-import { useApproveProvider } from '@/features/providers/hooks/use-admin-provider-approval';
+import { useApproveProvider } from '@/features/admin/hooks/use-provider-approval';
 import { logger } from '@/lib/logger';
 
 interface ApproveProviderButtonProps {

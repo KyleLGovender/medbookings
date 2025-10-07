@@ -58,7 +58,7 @@ import {
 } from '@/features/calendar/lib/recurrence-utils';
 import { updateAvailabilityDataSchema } from '@/features/calendar/types/schemas';
 import { CustomRecurrenceData, DayOfWeek, RecurrenceOption } from '@/features/calendar/types/types';
-import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
+import { useAssociatedServices } from '@/features/calendar/hooks/use-associated-services';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 import { nowUTC, parseUTC } from '@/lib/timezone';
@@ -308,7 +308,7 @@ export function AvailabilityEditForm({
     data: availableServices,
     isLoading: isServicesLoading,
     error: servicesError,
-  } = useProviderAssociatedServices(availability?.providerId || '');
+  } = useAssociatedServices(availability?.providerId || '');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(updateAvailabilityDataSchema.omit({ id: true })),

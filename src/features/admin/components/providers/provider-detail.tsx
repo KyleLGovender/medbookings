@@ -11,18 +11,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ProviderDetailSkeleton } from '@/features/admin/components/ui/admin-loading-states';
 import { ApprovalButtons } from '@/features/admin/components/ui/approval-buttons';
 import { RejectionModal } from '@/features/admin/components/ui/rejection-modal';
-import { RequirementSubmissionCard } from '@/features/providers/components/requirement-submission-card';
+import { RequirementSubmissionCard } from '@/components/requirement-submission-card';
 import {
   useApproveProvider,
   useApproveRequirement,
   useRejectProvider,
   useRejectRequirement,
   useResetProviderStatus,
-} from '@/features/providers/hooks/use-admin-provider-approval';
+} from '@/features/admin/hooks/use-provider-approval';
 import {
   useAdminProvider,
   useAdminProviderRequirements,
-} from '@/features/providers/hooks/use-admin-providers';
+} from '@/features/admin/hooks/use-admin-providers';
 import { logger } from '@/lib/logger';
 import { type RouterOutputs } from '@/utils/api';
 

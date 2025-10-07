@@ -30,8 +30,8 @@ import type { AdminFilterStatus } from '@/features/admin/types/types';
 import {
   useApproveProvider,
   useRejectProvider,
-} from '@/features/providers/hooks/use-admin-provider-approval';
-import { useAdminProviders } from '@/features/providers/hooks/use-admin-providers';
+} from '@/features/admin/hooks/use-provider-approval';
+import { useAdminProviders } from '@/features/admin/hooks/use-admin-providers';
 import { type RouterOutputs } from '@/utils/api';
 
 import { StatusBadge } from '../../../../components/status-badge';
