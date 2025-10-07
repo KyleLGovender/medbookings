@@ -15,7 +15,7 @@ import {
   useUpdateBooking,
   useUserBookings,
 } from '@/features/calendar/hooks/use-user-bookings';
-import { BookingUpdateData } from '@/features/calendar/types/booking-types';
+import { BookingUpdateData } from '@/features/calendar/types/types';
 import { useToast } from '@/hooks/use-toast';
 import { type RouterOutputs } from '@/utils/api';
 

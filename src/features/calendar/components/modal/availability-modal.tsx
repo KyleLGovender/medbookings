@@ -30,7 +30,7 @@ import type {
   AvailabilityAction,
   AvailabilityPermissions,
   SeriesActionScope,
-} from '@/features/calendar/types/modal';
+} from '@/features/calendar/types/types';
 import { parseUTC } from '@/lib/timezone';
 import type { RouterOutputs } from '@/utils/api';
 

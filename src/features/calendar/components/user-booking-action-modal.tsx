@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/user-avatar';
-import { BookingUpdateData } from '@/features/calendar/types/booking-types';
+import { BookingUpdateData } from '@/features/calendar/types/types';
 import { type RouterOutputs } from '@/utils/api';
 
 type UserBooking = RouterOutputs['calendar']['getUserBookings'][number];

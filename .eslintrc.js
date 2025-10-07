@@ -134,7 +134,8 @@ module.exports = {
     'rulesdir/enforce-direct-type-imports': 'error',
 
     // Rule 4: Enforce type file naming (types.ts, schemas.ts, guards.ts, enums.ts)
-    'rulesdir/enforce-type-file-naming': 'error',
+    // Downgraded to warn to allow gradual migration
+    'rulesdir/enforce-type-file-naming': 'warn',
 
     // Rule 5: Enforce Prisma-derived type patterns
     'rulesdir/enforce-prisma-derived-patterns': 'warn',

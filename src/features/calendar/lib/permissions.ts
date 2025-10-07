@@ -1,6 +1,6 @@
 import type { User } from '@prisma/client';
 
-import type { AvailabilityPermissions } from '@/features/calendar/types/modal';
+import type { AvailabilityPermissions } from '@/features/calendar/types/types';
 import type { RouterOutputs } from '@/utils/api';
 
 // Extract proper types from tRPC

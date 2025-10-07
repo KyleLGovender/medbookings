@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/user-avatar';
-import { BookingSlot } from '@/features/calendar/types/booking-types';
+import { BookingSlot } from '@/features/calendar/types/types';
 
 interface BookingSlotModalProps {
   slot: BookingSlot | null;

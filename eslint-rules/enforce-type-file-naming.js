@@ -24,6 +24,18 @@ module.exports = {
       Program(node) {
         if (filename.includes('/types/')) {
           const baseName = filename.split('/').pop();
+
+          // Exclude TypeScript declaration files (*.d.ts)
+          if (baseName.endsWith('.d.ts')) {
+            return;
+          }
+
+          // Exclude special root-level type files (not in feature modules)
+          const isRootTypeFile = filename.match(/\/src\/types\/[^/]+\.ts$/);
+          if (isRootTypeFile) {
+            return; // Allow api.ts, permissions.ts, etc. in /src/types/
+          }
+
           const validNames = ['types.ts', 'schemas.ts', 'guards.ts', 'enums.ts'];
 
           if (baseName === 'interfaces.ts') {
