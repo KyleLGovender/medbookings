@@ -1,8 +1,34 @@
 #!/usr/bin/env node
 
 const { execSync } = require('child_process');
-const chalk = require('chalk');
-const path = require('path');
+
+// FIX #1: Graceful fallback if chalk is not installed
+let chalk;
+try {
+  chalk = require('chalk');
+} catch (e) {
+  // Fallback to no colors if chalk not installed
+  const noColor = (s) => s;
+  const noBold = {
+    red: noColor,
+    yellow: noColor,
+    green: noColor,
+    blue: noColor,
+    white: noColor,
+    cyan: noColor
+  };
+  chalk = {
+    red: noColor,
+    yellow: noColor,
+    green: noColor,
+    blue: noColor,
+    cyan: noColor,
+    gray: noColor,
+    white: noColor,
+    bold: noBold
+  };
+  console.warn('[!] chalk package not installed - running without colors');
+}
 
 // File categorization with CLAUDE.md section references and validation requirements
 const CRITICAL_FILES = [
@@ -128,32 +154,61 @@ const MODERATE_FILES = [
   },
 ];
 
+// FIX #2: Dynamic branch detection instead of hardcoded 'master'
+function getDefaultBranch() {
+  try {
+    // Try to get the default branch from remote HEAD
+    const branch = execSync('git symbolic-ref refs/remotes/origin/HEAD', { encoding: 'utf8' })
+      .trim()
+      .replace('refs/remotes/origin/', '');
+    return branch;
+  } catch {
+    // Fallback to 'master' if detection fails
+    return 'master';
+  }
+}
+
 function getChangedFiles() {
   try {
-    console.log(chalk.gray('🔍 Comparing with master branch...'));
-    const output = execSync('git diff master --name-only', { encoding: 'utf8' });
+    const branch = getDefaultBranch();
+    console.log(chalk.gray(`[*] Comparing with ${branch} branch...`));
+    const output = execSync(`git diff ${branch} --name-only`, { encoding: 'utf8' });
     const files = output.split('\n').filter(Boolean);
 
     if (files.length === 0) {
-      console.log(chalk.gray('📍 No differences found from master'));
+      console.log(chalk.gray('[+] No differences found from base branch'));
     } else {
-      console.log(chalk.gray(`📍 Found ${files.length} changed file(s)`));
+      console.log(chalk.gray(`[+] Found ${files.length} changed file(s)`));
     }
 
     return files;
   } catch (error) {
-    console.error(chalk.yellow('⚠️  Could not compare with master branch'));
-    console.error(chalk.gray(`   Reason: ${error.message}`));
+    console.error(chalk.yellow('[!] Could not compare with base branch'));
+    console.error(chalk.gray(`    Reason: ${error.message}`));
     return [];
   }
 }
 
+// FIX #4: Improved pattern matching with normalization and anchor matching
 function matchesPattern(file, pattern) {
-  if (pattern.includes('*')) {
-    const regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
-    return new RegExp(regexPattern).test(file);
+  // Normalize paths to use forward slashes
+  const normalizedFile = file.replace(/\\/g, '/');
+  const normalizedPattern = pattern.replace(/\\/g, '/');
+
+  if (normalizedPattern.includes('*')) {
+    // Escape special regex characters, then convert * to .*
+    const regexPattern = normalizedPattern
+      .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/\*/g, '.*');
+
+    // Use anchored regex for exact matching from start
+    return new RegExp(`^${regexPattern}$`).test(normalizedFile);
   }
-  return file.includes(pattern);
+
+  // For non-wildcard patterns, check exact match or path contains pattern
+  return normalizedFile === normalizedPattern ||
+         normalizedFile.includes('/' + normalizedPattern) ||
+         normalizedFile.startsWith(normalizedPattern + '/');
 }
 
 function categorizeFiles(files) {
@@ -199,13 +254,41 @@ function generateValidationChecklist(categorizedFiles) {
   return Array.from(checklist);
 }
 
+// FIX #5: Validate file definitions at startup
+function validateFileDefinitions() {
+  const allDefs = [...CRITICAL_FILES, ...HIGH_RISK_FILES, ...MODERATE_FILES];
+
+  allDefs.forEach((def, index) => {
+    if (!def.pattern) {
+      throw new Error(`[VALIDATION ERROR] Missing pattern at definition index ${index}`);
+    }
+    if (!def.claudeSection) {
+      throw new Error(`[VALIDATION ERROR] Missing claudeSection for pattern: ${def.pattern}`);
+    }
+    if (!def.rule) {
+      throw new Error(`[VALIDATION ERROR] Missing rule for pattern: ${def.pattern}`);
+    }
+    if (!Array.isArray(def.validations) || def.validations.length === 0) {
+      throw new Error(`[VALIDATION ERROR] Invalid or empty validations array for pattern: ${def.pattern}`);
+    }
+  });
+}
+
 function main() {
-  console.log(chalk.blue('📊 Architecture Impact Report\n'));
+  // Validate file definitions before processing
+  try {
+    validateFileDefinitions();
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    return 1;
+  }
+
+  console.log(chalk.blue('[INFO] Architecture Impact Report\n'));
 
   const changedFiles = getChangedFiles();
 
   if (changedFiles.length === 0) {
-    console.log(chalk.green('✅ No files changed from master'));
+    console.log(chalk.green('[OK] No files changed from base branch'));
     return 0;
   }
 
@@ -213,80 +296,80 @@ function main() {
 
   // If no architectural files changed, report and exit
   if (critical.length === 0 && highRisk.length === 0 && moderate.length === 0) {
-    console.log(chalk.green('✅ No architectural files modified'));
+    console.log(chalk.green('[OK] No architectural files modified'));
     return 0;
   }
 
   // Show summary first
-  console.log(chalk.white('📋 Architectural Changes Detected:\n'));
+  console.log(chalk.white('[REPORT] Architectural Changes Detected:\n'));
 
   // CRITICAL FILES - Enhanced with CLAUDE.md references
   if (critical.length > 0) {
     console.log(
-      chalk.red.bold(`🔴 CRITICAL: Core architectural files modified [${critical.length}]`)
+      chalk.red.bold(`[CRITICAL] Core architectural files modified [${critical.length}]`)
     );
     critical.forEach((item) => {
-      console.log(chalk.red(`\n   📄 ${item.file}`));
+      console.log(chalk.red(`\n   File: ${item.file}`));
       console.log(chalk.gray(`      Reference: CLAUDE.md ${item.claudeSection}`));
       console.log(chalk.yellow(`      Rule: ${item.rule}`));
       console.log(chalk.white(`      Required validations:`));
-      item.validations.forEach(v => console.log(chalk.cyan(`         • ${v}`)));
+      item.validations.forEach(v => console.log(chalk.cyan(`         - ${v}`)));
     });
   }
 
   // HIGH RISK FILES - Enhanced with CLAUDE.md references
   if (highRisk.length > 0) {
-    console.log(chalk.yellow.bold(`\n🟡 HIGH RISK: Important files modified [${highRisk.length}]`));
+    console.log(chalk.yellow.bold(`\n[HIGH RISK] Important files modified [${highRisk.length}]`));
     highRisk.forEach((item) => {
-      console.log(chalk.yellow(`\n   📄 ${item.file}`));
+      console.log(chalk.yellow(`\n   File: ${item.file}`));
       console.log(chalk.gray(`      Reference: CLAUDE.md ${item.claudeSection}`));
       console.log(chalk.yellow(`      Rule: ${item.rule}`));
       console.log(chalk.white(`      Required validations:`));
-      item.validations.forEach(v => console.log(chalk.cyan(`         • ${v}`)));
+      item.validations.forEach(v => console.log(chalk.cyan(`         - ${v}`)));
     });
   }
 
   // MODERATE FILES - Enhanced with CLAUDE.md references
   if (moderate.length > 0) {
     console.log(
-      chalk.cyan.bold(`\n🔵 MODERATE: Configuration files modified [${moderate.length}]`)
+      chalk.cyan.bold(`\n[MODERATE] Configuration files modified [${moderate.length}]`)
     );
     moderate.forEach((item) => {
-      console.log(chalk.cyan(`\n   📄 ${item.file}`));
+      console.log(chalk.cyan(`\n   File: ${item.file}`));
       console.log(chalk.gray(`      Reference: CLAUDE.md ${item.claudeSection}`));
       console.log(chalk.yellow(`      Rule: ${item.rule}`));
       console.log(chalk.white(`      Required validations:`));
-      item.validations.forEach(v => console.log(chalk.cyan(`         • ${v}`)));
+      item.validations.forEach(v => console.log(chalk.cyan(`         - ${v}`)));
     });
   }
 
   // VALIDATION CHECKLIST
   const checklist = generateValidationChecklist({ critical, highRisk, moderate });
-  console.log(chalk.white.bold('\n✅ Validation Checklist:'));
+  console.log(chalk.white.bold('\n[CHECKLIST] Validation Checklist:'));
   console.log(chalk.gray('   Run these validations before PR/commit:\n'));
   checklist.forEach((validation, index) => {
     console.log(chalk.green(`   ${index + 1}. ${validation}`));
   });
 
   // SUMMARY
-  console.log(chalk.white.bold('\n📊 Summary:'));
+  console.log(chalk.white.bold('\n[SUMMARY] Summary:'));
   const total = critical.length + highRisk.length + moderate.length;
   console.log(chalk.white(`   Total architectural files modified: ${total}`));
-  if (critical.length > 0) console.log(chalk.red(`   • Critical: ${critical.length}`));
-  if (highRisk.length > 0) console.log(chalk.yellow(`   • High Risk: ${highRisk.length}`));
-  if (moderate.length > 0) console.log(chalk.cyan(`   • Moderate: ${moderate.length}`));
-  console.log(chalk.white(`   • Validations required: ${checklist.length}`));
+  if (critical.length > 0) console.log(chalk.red(`   - Critical: ${critical.length}`));
+  if (highRisk.length > 0) console.log(chalk.yellow(`   - High Risk: ${highRisk.length}`));
+  if (moderate.length > 0) console.log(chalk.cyan(`   - Moderate: ${moderate.length}`));
+  console.log(chalk.white(`   - Validations required: ${checklist.length}`));
 
   // CLAUDE.md REMINDER
-  console.log(chalk.blue.bold('\n📖 CLAUDE.md Sections to Review:'));
+  console.log(chalk.blue.bold('\n[DOCS] CLAUDE.md Sections to Review:'));
   const sections = new Set();
   [...critical, ...highRisk, ...moderate].forEach(item => sections.add(item.claudeSection));
   Array.from(sections).forEach(section => {
-    console.log(chalk.blue(`   • ${section}`));
+    console.log(chalk.blue(`   - ${section}`));
   });
 
   // INFORMATIONAL STATUS - Always success
-  console.log(chalk.green('\n✅ Architecture check complete - follow validation checklist above'));
+  console.log(chalk.green('\n[OK] Architecture check complete - follow validation checklist above'));
 
   // Always return 0 for non-blocking behavior
   return 0;
