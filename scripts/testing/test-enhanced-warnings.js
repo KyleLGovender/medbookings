@@ -6,7 +6,7 @@
  * Demonstrates the new confidence levels, risk assessment, and suppression features
  */
 
-const { CodeValidator, ClaudeRulesEngine } = require('./claude-code-validator');
+const { CodeValidator, ClaudeRulesEngine } = require('../commit-gate/compliance-validator');
 const path = require('path');
 const fs = require('fs');
 

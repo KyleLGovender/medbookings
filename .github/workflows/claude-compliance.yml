@@ -117,7 +117,7 @@ jobs:
             echo "$OLD_CONTENT" > "$OLD_TEMP"
 
             # Run validator
-            if ! node scripts/validation/claude-code-validator.js validate-change "$FILE" "$OLD_TEMP" "$FILE"; then
+            if ! node scripts/commit-gate/compliance-validator.js validate-change "$FILE" "$OLD_TEMP" "$FILE"; then
               EXIT_CODE=1
             fi
 

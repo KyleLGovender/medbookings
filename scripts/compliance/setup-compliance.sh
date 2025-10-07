@@ -2,15 +2,15 @@
 # ============================================================================
 # CLAUDE.md Enforcement System Setup Script
 # ============================================================================
-# PURPOSE: One-command setup for the entire enforcement system
-# USAGE: npm run setup-enforcement
+# PURPOSE: One-command setup for the entire compliance system
+# USAGE: npm run setup-compliance
 #
 # This script:
 # 1. Installs required dependencies
 # 2. Initializes git hooks
 # 3. Makes scripts executable
 # 4. Validates configuration
-# 5. Runs test validation
+# 5. Runs test commit-gate
 # ============================================================================
 
 set -e  # Exit on error
@@ -73,7 +73,7 @@ print_success "npm $(npm --version) detected"
 # Check if required files exist
 REQUIRED_FILES=(
   "CLAUDE.md"
-  "scripts/validation/claude-code-validator.js"
+  "scripts/commit-gate/claude-code-validator.js"
   "eslint-rules/claude-compliance.js"
   ".eslintrc.js"
   "tsconfig.json"
@@ -118,13 +118,13 @@ print_success "Git hooks initialized"
 
 print_section "Step 4: Making Scripts Executable"
 
-chmod +x scripts/validation/claude-code-validator.js
+chmod +x scripts/commit-gate/claude-code-validator.js
 print_success "claude-code-validator.js is executable"
 
-chmod +x scripts/validation/claude-pre-write-validator.sh
+chmod +x scripts/commit-gate/claude-pre-write-validator.sh
 print_success "claude-pre-write-validator.sh is executable"
 
-chmod +x scripts/validation/claude-post-write-validator.sh
+chmod +x scripts/commit-gate/claude-post-write-validator.sh
 print_success "claude-post-write-validator.sh is executable"
 
 chmod +x .husky/pre-commit
@@ -178,7 +178,7 @@ fi
 print_section "Step 6: Running Test Validation"
 
 # Create a temporary test file with a known violation
-TEST_FILE="test-enforcement-violation.ts"
+TEST_FILE="test-compliance-violation.ts"
 cat > "$TEST_FILE" << 'EOF'
 // Test file with intentional violations
 const now = new Date(); // TIMEZONE_VIOLATION
@@ -190,7 +190,7 @@ print_info "Created test file with violations: $TEST_FILE"
 
 # Run validator on test file (should fail)
 print_info "Running validator on test file (expecting failures)..."
-if node scripts/validation/claude-code-validator.js validate-file "$TEST_FILE" 2>&1 | grep -q "TIMEZONE_VIOLATION"; then
+if node scripts/commit-gate/claude-code-validator.js validate-file "$TEST_FILE" 2>&1 | grep -q "TIMEZONE_VIOLATION"; then
   print_success "Validator correctly detected timezone violation"
 else
   print_error "Validator failed to detect violations"
@@ -200,7 +200,7 @@ fi
 
 # Clean up test file
 rm "$TEST_FILE"
-print_success "Test validation completed"
+print_success "Test commit-gate completed"
 
 # ============================================================================
 # STEP 7: ADD PACKAGE.JSON SCRIPTS
@@ -208,15 +208,15 @@ print_success "Test validation completed"
 
 print_section "Step 7: Checking package.json Scripts"
 
-if grep -q "setup-enforcement" package.json; then
+if grep -q "setup-compliance" package.json; then
   print_success "package.json scripts already configured"
 else
-  print_info "Adding setup-enforcement script to package.json..."
+  print_info "Adding setup-compliance script to package.json..."
   print_info "Please add the following to package.json manually:"
   echo ""
   echo "  \"scripts\": {"
-  echo "    \"setup-enforcement\": \"bash scripts/enforcement/setup-enforcement.sh\","
-  echo "    \"validate-claude\": \"node scripts/validation/claude-code-validator.js validate-file\""
+  echo "    \"setup-compliance\": \"bash scripts/compliance/setup-compliance.sh\","
+  echo "    \"validate-claude\": \"node scripts/commit-gate/claude-code-validator.js validate-file\""
   echo "  }"
   echo ""
 fi
@@ -243,11 +243,11 @@ echo "     - Bypass: git commit --no-verify (use sparingly)"
 echo ""
 echo "  3. 🚀 CI/CD Gates (GitHub Actions)"
 echo "     - Blocks PRs with violations"
-echo "     - Comprehensive validation suite"
+echo "     - Comprehensive commit-gate suite"
 echo "     - Cannot bypass (protects production)"
 echo ""
 echo "📚 Documentation:"
-echo "   - Full guide: docs/enforcement/ENFORCEMENT.md"
+echo "   - Full guide: docs/compliance/ENFORCEMENT.md"
 echo "   - CLAUDE.md: Project guidelines"
 echo ""
 echo "🧪 Test the system:"

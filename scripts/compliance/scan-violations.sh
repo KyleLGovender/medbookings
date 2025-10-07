@@ -2,7 +2,7 @@
 
 # Violation Scanner Script
 # Generates detailed list of violations by file
-# Usage: ./scripts/enforcement/scan-violations.sh [category]
+# Usage: ./scripts/compliance/scan-violations.sh [category]
 #   category: timezone | logging | type-safety | all (default: all)
 
 set -e
@@ -19,7 +19,7 @@ PROJECT_ROOT="/Users/kylegovender/Documents/softwareDev/medbookings"
 cd "$PROJECT_ROOT"
 
 # Output directory
-OUTPUT_DIR="$PROJECT_ROOT/docs/enforcement-remediation/scans"
+OUTPUT_DIR="$PROJECT_ROOT/docs/compliance-remediation/scans"
 mkdir -p "$OUTPUT_DIR"
 
 CATEGORY="${1:-all}"

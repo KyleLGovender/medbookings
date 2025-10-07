@@ -1,9 +1,9 @@
 {
-  "claudeMdHash": "9f6619689296ae5a381162c0e843ac69b1f3e03be7bb1c46e4046c81cf46f336",
-  "lastSync": "2025-10-05T09:35:28.628Z",
+  "claudeMdHash": "bc4c272315ccc8ed3e31184155b2878b35c3fa11fc7f4203adb3b21d7b5da4a4",
+  "lastSync": "2025-10-07T17:19:50.703Z",
   "validatorConfig": {
     "version": "1.0.0",
-    "lastUpdated": "2025-10-05T09:35:28.628Z",
+    "lastUpdated": "2025-10-07T17:19:50.702Z",
     "rules": {
       "timezone": {
         "enabled": true,
@@ -28,7 +28,7 @@
           "env/server.ts"
         ],
         "severity": "ERROR",
-        "reference": "/docs/enforcement/TIMEZONE-GUIDELINES.md"
+        "reference": "/docs/compliance/TIMEZONE-GUIDELINES.md"
       },
       "typeSafety": {
         "enabled": true,
@@ -44,7 +44,7 @@
           "src/types/guards.ts"
         ],
         "severity": "ERROR",
-        "reference": "/docs/enforcement/TYPE-SAFETY.md"
+        "reference": "/docs/compliance/TYPE-SAFETY.md"
       },
       "logging": {
         "enabled": true,
@@ -69,7 +69,7 @@
           "debug.ts"
         ],
         "severity": "ERROR",
-        "reference": "/docs/enforcement/LOGGING.md"
+        "reference": "/docs/compliance/LOGGING.md"
       },
       "architecture": [
         {
@@ -96,7 +96,7 @@
         {
           "name": "MISSING_ZOD_VALIDATION",
           "pattern": {},
-          "message": "tRPC procedures should have .input() Zod validation",
+          "message": "tRPC procedures should have .input() Zod commit_gate",
           "applies": "/routers/",
           "severity": "WARNING"
         }
@@ -128,21 +128,21 @@
   },
   "docsAlignment": {
     "referencedDocs": [
-      "enforcement/CONTEXT-LOADING.md",
-      "enforcement/TYPE-SAFETY.md",
-      "enforcement/VERIFICATION-PROTOCOLS.md",
-      "enforcement/TIMEZONE-GUIDELINES.md",
-      "enforcement/LOGGING.md",
-      "enforcement/BUG-DETECTION.md",
-      "enforcement/DEVELOPMENT-WORKFLOW.md",
-      "enforcement/ENFORCEMENT.md",
-      "enforcement/CLAUDE-MD-AUTO-SYNC.md",
-      "enforcement/DEPLOYMENT.md"
+      "compliance/CONTEXT-LOADING.md",
+      "compliance/TYPE-SAFETY.md",
+      "compliance/VERIFICATION-PROTOCOLS.md",
+      "compliance/TIMEZONE-GUIDELINES.md",
+      "compliance/LOGGING.md",
+      "compliance/BUG-DETECTION.md",
+      "compliance/DEVELOPMENT-WORKFLOW.md",
+      "compliance/COMPLIANCE-SYSTEM.md",
+      "compliance/CLAUDE-MD-AUTO-SYNC.md",
+      "compliance/DEPLOYMENT.md"
     ],
     "orphanedDocs": [
       "guides/ACTIONABLE-WARNINGS-IMPLEMENTATION.md",
       "guides/DOCS-VALIDATION-GUIDE.md"
     ],
-    "lastValidated": "2025-10-05T09:35:28.628Z"
+    "lastValidated": "2025-10-07T17:19:50.703Z"
   }
 }

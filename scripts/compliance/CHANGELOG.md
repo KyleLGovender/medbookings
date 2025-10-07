@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **GitHub Actions Baseline Fix**: CI validation now correctly compares against PR base branch or push parent commit instead of always using `HEAD~1`
 - **CHANGELOG.md**: Added this changelog for tracking enforcement system changes over time
-- **ESLint Fallback Documentation**: Documented fail-safe behavior when `enforcement-config.json` is unreadable
+- **ESLint Fallback Documentation**: Documented fail-safe behavior when `compliance-config.json` is unreadable
 
 ### Fixed
 - **Path Resolution Bug**: Fixed test script (`test-enhanced-warnings.js`) using incorrect path to CLAUDE.md
@@ -70,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - PHI sanitization (WARNING)
   - Zod validation (WARNING)
   - Booking transactions (WARNING)
-- **Enforcement Configuration**: Dynamic rule loading from `enforcement-config.json`
+- **Enforcement Configuration**: Dynamic rule loading from `compliance-config.json`
 - **Documentation**:
   - ENFORCEMENT.md
   - TIMEZONE-GUIDELINES.md
@@ -106,18 +106,18 @@ Verify the upgrade:
 
 ```bash
 # Check enforcement config version
-cat scripts/enforcement/enforcement-config.json | grep version
+cat scripts/enforcement/compliance-config.json | grep version
 
 # Run a test validation
-node scripts/validation/claude-code-validator.js validate-file src/lib/auth.ts
+node scripts/commit-gate/compliance-validator.js validate-file src/lib/auth.ts
 ```
 
 ### Upgrading to 1.0.0 from 0.9.0
 
 1. **Update CLAUDE.md** if you have local modifications
-2. **Run sync** to regenerate enforcement-config.json:
+2. **Run sync** to regenerate compliance-config.json:
    ```bash
-   node scripts/enforcement/sync-enforcement-rules.js sync
+   node scripts/enforcement/sync-compliance-rules.js sync
    ```
 3. **Test suppression comments** if you have false positives:
    ```typescript
@@ -129,7 +129,7 @@ node scripts/validation/claude-code-validator.js validate-file src/lib/auth.ts
 
 ## Configuration Changes Log
 
-### enforcement-config.json Schema Evolution
+### compliance-config.json Schema Evolution
 
 #### Version 1.1.0
 - No schema changes
@@ -208,7 +208,7 @@ No rules or features are deprecated in the current version.
 When making changes to the enforcement system:
 
 1. **Update this CHANGELOG** with your changes
-2. **Bump version** in `enforcement-config.json` if changing schema
+2. **Bump version** in `compliance-config.json` if changing schema
 3. **Update documentation** in `/docs/enforcement/`
 4. **Test thoroughly** with both passing and failing cases
 5. **Run validation suite**:

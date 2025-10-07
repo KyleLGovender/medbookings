@@ -36,7 +36,7 @@
 
   📂 SECTION 2: CODE ANALYSIS & CONTEXT PROTOCOL
 
-  📄 **Full Context Protocol**: See `/docs/enforcement/CONTEXT-LOADING.md` for comprehensive context management rules, task-specific loading patterns, and context efficiency guidelines.
+  📄 **Full Context Protocol**: See `/docs/compliance/CONTEXT-LOADING.md` for comprehensive context management rules, task-specific loading patterns, and context efficiency guidelines.
 
   Code Analysis Guidelines
 
@@ -139,7 +139,7 @@
 
   Type System Architecture
 
-  📄 **Type Safety Patterns**: See `/docs/enforcement/TYPE-SAFETY.md` for:
+  📄 **Type Safety Patterns**: See `/docs/compliance/TYPE-SAFETY.md` for:
   - Prisma JSON field handling with Zod schemas and conversion helpers
   - Type guard implementation patterns (acceptable `as any` usage)
   - tRPC type extraction detailed examples
@@ -376,7 +376,7 @@
 
   🔍 SECTION 6: VERIFICATION PROTOCOLS
 
-  📄 **Complete Verification Checklist**: See `/docs/enforcement/VERIFICATION-PROTOCOLS.md` for full route validation, data source verification, and build error resolution protocol.
+  📄 **Complete Verification Checklist**: See `/docs/compliance/VERIFICATION-PROTOCOLS.md` for full route validation, data source verification, and build error resolution protocol.
 
   Route & Navigation Validation
 
@@ -413,13 +413,13 @@
 
   🏥 SECTION 7: HEALTHCARE COMPLIANCE
 
-  📄 **Timezone Implementation Guide**: See `/docs/enforcement/TIMEZONE-GUIDELINES.md` for:
+  📄 **Timezone Implementation Guide**: See `/docs/compliance/TIMEZONE-GUIDELINES.md` for:
   - Complete utility reference (`nowUTC()`, `startOfDaySAST()`, `endOfDaySAST()`, `formatSAST()`)
   - Pattern examples with before/after code (current time, date ranges, token expiry)
   - Testing strategies for timezone code
   - Debugging timezone issues and common violations
 
-  📄 **Logging & PHI Protection**: See `/docs/enforcement/LOGGING.md` for:
+  📄 **Logging & PHI Protection**: See `/docs/compliance/LOGGING.md` for:
   - Logger API reference (`logger.debug()`, `logger.info()`, `logger.warn()`, `logger.error()`, `logger.audit()`)
   - PHI sanitization functions (`sanitizeEmail()`, `sanitizeName()`, `sanitizePhone()`)
   - Feature-based debug flag system
@@ -506,7 +506,7 @@
 
   🐛 SECTION 10: BUG DETECTION PATTERNS
 
-  📄 **Bug Detection Reference**: See `/docs/enforcement/BUG-DETECTION.md` for complete debugging protocol and red flag priorities.
+  📄 **Bug Detection Reference**: See `/docs/compliance/BUG-DETECTION.md` for complete debugging protocol and red flag priorities.
 
   React Issues
 
@@ -562,7 +562,7 @@
 
   🔄 SECTION 12: DEVELOPMENT WORKFLOW
 
-  📄 **Complete Workflow Guide**: See `/docs/enforcement/DEVELOPMENT-WORKFLOW.md` for detailed task execution flow, development standards, and command execution policy.
+  📄 **Complete Workflow Guide**: See `/docs/compliance/DEVELOPMENT-WORKFLOW.md` for detailed task execution flow, development standards, and command execution policy.
 
   Task Execution Flow
 
@@ -646,13 +646,13 @@
 
   🛠️ SECTION 13: TOOLS & UTILITIES
 
-  📄 **CLAUDE.md Enforcement System**: See `/docs/enforcement/ENFORCEMENT.md` for:
-  - Three-layer enforcement architecture (IDE ESLint, Pre-commit hooks, CI/CD gates)
-  - All validation rules with examples (timezone, type safety, architecture, PHI)
+  📄 **CLAUDE.md Compliance System**: See `/docs/compliance/COMPLIANCE-SYSTEM.md` for:
+  - Three-layer compliance architecture (IDE Checks, Commit Gate, Rule Sync)
+  - All quality gates with examples (timezone, type safety, architecture, PHI)
   - Setup instructions and troubleshooting guide
-  - Extending the enforcement system with new rules
+  - Extending the compliance system with new rules
 
-  📄 **Auto-Sync System**: See `/docs/enforcement/CLAUDE-MD-AUTO-SYNC.md` for how CLAUDE.md changes automatically sync with enforcement rules using SHA-256 hash detection.
+  📄 **Auto-Sync System**: See `/docs/compliance/CLAUDE-MD-AUTO-SYNC.md` for how CLAUDE.md changes automatically sync with compliance rules using SHA-256 hash detection.
 
   MCP Tool Usage
 
@@ -718,7 +718,7 @@
 
   🚀 SECTION 15: DEPLOYMENT
 
-  📄 **Production Deployment Guide**: See `/docs/enforcement/DEPLOYMENT.md` for:
+  📄 **Production Deployment Guide**: See `/docs/compliance/DEPLOYMENT.md` for:
   - Complete environment variable reference (Database, Auth, Redis, Email, SMS)
   - Upstash Redis setup for rate limiting (CRITICAL for production)
   - Security verification checklist (POPIA compliance)

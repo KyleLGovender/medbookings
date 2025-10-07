@@ -37,7 +37,7 @@ class EnhancedPHIValidator {
             message: this.buildMessage(phiDetection),
             fix: this.buildFix(phiDetection),
             suppressionExample: this.buildSuppressionExample(phiDetection),
-            reference: '/docs/enforcement/LOGGING.md',
+            reference: '/docs/compliance/LOGGING.md',
           });
         }
       }

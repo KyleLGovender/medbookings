@@ -4,7 +4,7 @@
 
 This document describes the **automatic synchronization system** that keeps the enforcement validators synchronized with CLAUDE.md as it changes throughout the development lifecycle.
 
-**Problem Solved:** CLAUDE.md was 40,676 characters (exceeding Claude Code's 40k optimal limit). The file has been condensed to 17,151 characters (58% reduction) by extracting verbose sections to `/docs/*`. The auto-sync system ensures enforcement rules stay aligned with CLAUDE.md changes.
+**Problem Solved:** CLAUDE.md was 40,676 characters (exceeding Claude Code's 40k optimal limit). The file has been condensed to 17,151 characters (58% reduction) by extracting verbose sections to `/docs/*`. The auto-sync system ensures compliance rules stay aligned with CLAUDE.md changes.
 
 ---
 
@@ -21,15 +21,15 @@ Pre-Commit Hook Detects Change
     ↓
     ↓ [Triggers]
     ↓
-scripts/enforcement/sync-enforcement-rules.js
+scripts/compliance/sync-compliance-rules.js
     ↓
     ↓ [Parses & Extracts]
     ↓
-scripts/enforcement/enforcement-config.json
+scripts/compliance/compliance-config.json
     ↓
     ↓ [Read By]
     ↓
-scripts/validation/claude-code-validator.js
+scripts/commit-gate/compliance-validator.js
     ↓
     ↓ [Validates Code]
     ↓
@@ -43,9 +43,9 @@ Enforcement System Blocks Violations
 | **Condensed CLAUDE.md** | Main rules (17k chars) | `/CLAUDE.md` |
 | **Full CLAUDE.md Backup** | Original version (40k chars) | `/CLAUDE.md.full-backup` |
 | **Extracted Documentation** | Verbose sections | `/docs/*` |
-| **Sync Script** | Parses CLAUDE.md and generates config | `scripts/enforcement/sync-enforcement-rules.js` |
-| **Enforcement Config** | Auto-generated rule definitions | `scripts/enforcement/enforcement-config.json` |
-| **Validator** | Validates code against config | `scripts/validation/claude-code-validator.js` |
+| **Sync Script** | Parses CLAUDE.md and generates config | `scripts/compliance/sync-compliance-rules.js` |
+| **Enforcement Config** | Auto-generated rule definitions | `scripts/compliance/compliance-config.json` |
+| **Validator** | Validates code against config | `scripts/commit-gate/compliance-validator.js` |
 | **Pre-Commit Hook** | Detects CLAUDE.md changes | `.husky/pre-commit` |
 
 ---
@@ -72,14 +72,14 @@ When you run `git commit`, the pre-commit hook detects the CLAUDE.md change:
 $ git commit -m "docs: update timezone rules"
 
 🔍 Running CLAUDE.md compliance validation...
-⚠️  CLAUDE.md has been modified - syncing enforcement rules...
+⚠️  CLAUDE.md has been modified - syncing compliance rules...
 ✅ Enforcement rules synced with CLAUDE.md
-📝 Auto-staged: scripts/enforcement/enforcement-config.json
+📝 Auto-staged: scripts/compliance/compliance-config.json
 ```
 
 ### 3. Sync Script Parses CLAUDE.md
 
-`scripts/enforcement/sync-enforcement-rules.js` extracts enforceable rules:
+`scripts/compliance/sync-compliance-rules.js` extracts enforceable rules:
 
 ```javascript
 class ClaudeMdParser {
@@ -98,7 +98,7 @@ class ClaudeMdParser {
 
 ### 4. Config is Generated
 
-The script generates `scripts/enforcement/enforcement-config.json`:
+The script generates `scripts/compliance/compliance-config.json`:
 
 ```json
 {
@@ -121,10 +121,10 @@ The script generates `scripts/enforcement/enforcement-config.json`:
 
 ### 5. Validator Uses Config
 
-`scripts/validation/claude-code-validator.js` reads the config to validate code:
+`scripts/commit-gate/compliance-validator.js` reads the config to validate code:
 
 ```javascript
-const config = JSON.parse(fs.readFileSync('scripts/enforcement/enforcement-config.json'));
+const config = JSON.parse(fs.readFileSync('scripts/compliance/compliance-config.json'));
 
 if (config.validatorConfig.rules.timezone.enabled) {
   // Check for forbidden patterns
@@ -163,7 +163,7 @@ CLAUDE.md now references these extracted docs for verbose details:
 | **Timezone Guidelines** | UTC storage, SAST display, utilities | 450+ lines | `/docs/enforcement/TIMEZONE-GUIDELINES.md` |
 | **Logging** | Logger API, PHI sanitization, POPIA compliance | 925+ lines | `/docs/enforcement/LOGGING.md` |
 | **Deployment** | Production requirements, pre-deployment checklist | 416+ lines | `/docs/enforcement/DEPLOYMENT.md` |
-| **Enforcement** | Three-layer enforcement system, rule documentation | 500+ lines | `/docs/enforcement/ENFORCEMENT.md` |
+| **Enforcement** | Three-layer compliance system, rule documentation | 500+ lines | `/docs/enforcement/ENFORCEMENT.md` |
 | **Verification Protocols** | Route validation, data source checks, build protocol | 150+ lines | `/docs/enforcement/VERIFICATION-PROTOCOLS.md` |
 | **Bug Detection** | React issues, database issues, debugging protocol | 200+ lines | `/docs/enforcement/BUG-DETECTION.md` |
 | **Development Workflow** | Task execution flow, development standards | 150+ lines | `/docs/enforcement/DEVELOPMENT-WORKFLOW.md` |
@@ -185,8 +185,8 @@ git add CLAUDE.md
 git commit -m "docs: update timezone rules"
 
 # ✅ Auto-sync happens in pre-commit hook
-# ✅ enforcement-config.json is auto-generated
-# ✅ enforcement-config.json is auto-staged
+# ✅ compliance-config.json is auto-generated
+# ✅ compliance-config.json is auto-staged
 ```
 
 ### Manual Sync
@@ -194,7 +194,7 @@ git commit -m "docs: update timezone rules"
 You can also manually sync:
 
 ```bash
-# Sync enforcement rules from CLAUDE.md
+# Sync compliance rules from CLAUDE.md
 npm run sync-enforcement
 
 # Check if sync is needed
@@ -204,7 +204,7 @@ npm run check-enforcement-sync
 ### Check Sync Status
 
 ```bash
-$ node scripts/enforcement/sync-enforcement-rules.js status
+$ node scripts/compliance/sync-compliance-rules.js status
 
 Enforcement System Status:
   Last sync: 2025-10-02T14:49:19.505Z
@@ -228,7 +228,7 @@ class ClaudeMdParser {
 }
 ```
 
-**Hash is stored in:** `scripts/enforcement/enforcement-config.json`
+**Hash is stored in:** `scripts/compliance/compliance-config.json`
 **Checked by:** Pre-commit hook, CI/CD workflow
 
 If CLAUDE.md hash doesn't match config hash → **Sync required**
@@ -309,7 +309,7 @@ The GitHub Actions workflow also checks sync status:
 - name: Check Enforcement Sync
   run: |
     if ! npm run check-enforcement-sync; then
-      echo "❌ CLAUDE.md has changed but enforcement rules not synced"
+      echo "❌ CLAUDE.md has changed but compliance rules not synced"
       echo "Run: npm run sync-enforcement"
       exit 1
     fi
@@ -340,7 +340,7 @@ The GitHub Actions workflow also checks sync status:
 
 4. **Verify sync:**
    ```bash
-   cat scripts/enforcement/enforcement-config.json | grep "newRule"
+   cat scripts/compliance/compliance-config.json | grep "newRule"
    ```
 
 ### When Extracting Sections to Docs
@@ -365,7 +365,7 @@ If a section becomes too verbose in CLAUDE.md:
 
 If you need to extract new rule types:
 
-1. **Edit** `scripts/enforcement/sync-enforcement-rules.js`
+1. **Edit** `scripts/compliance/sync-compliance-rules.js`
 2. **Add extraction method:**
    ```javascript
    extractNewRuleType() {
@@ -388,7 +388,7 @@ If you need to extract new rule types:
 4. **Test extraction:**
    ```bash
    npm run sync-enforcement
-   cat scripts/enforcement/enforcement-config.json | grep "newRuleType"
+   cat scripts/compliance/compliance-config.json | grep "newRuleType"
    ```
 
 ---
@@ -397,12 +397,12 @@ If you need to extract new rule types:
 
 ### "Sync failed" Error
 
-**Cause:** Parsing error in sync-enforcement-rules.js
+**Cause:** Parsing error in sync-compliance-rules.js
 
 **Fix:**
 ```bash
 # Run sync manually to see detailed error
-node scripts/enforcement/sync-enforcement-rules.js sync
+node scripts/compliance/sync-compliance-rules.js sync
 
 # Check for syntax errors in CLAUDE.md
 cat CLAUDE.md | grep "🔴\|📂\|🏗️"  # Verify sections
@@ -421,7 +421,7 @@ npm run check-enforcement-sync
 npm run sync-enforcement
 
 # Verify hash
-git diff scripts/enforcement/enforcement-config.json
+git diff scripts/compliance/compliance-config.json
 ```
 
 ### Config Not Auto-Staged
@@ -432,7 +432,7 @@ git diff scripts/enforcement/enforcement-config.json
 ```bash
 # Manually sync and stage
 npm run sync-enforcement
-git add scripts/enforcement/enforcement-config.json
+git add scripts/compliance/compliance-config.json
 
 # Verify pre-commit hook
 cat .husky/pre-commit | grep "CLAUDE.md"
@@ -483,4 +483,4 @@ The auto-sync system ensures that:
 6. ✅ Documentation extracted for verbosity
 7. ✅ Performance optimized
 
-**Result:** Maintainable, automated, and performant enforcement system that scales with CLAUDE.md changes.
+**Result:** Maintainable, automated, and performant compliance system that scales with CLAUDE.md changes.

@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Violation Counter Script
-# Counts all enforcement violations in the codebase
-# Usage: ./scripts/enforcement/count-violations.sh
+# Counts all compliance violations in the codebase
+# Usage: ./scripts/compliance/count-violations.sh
 
 set -e
 
@@ -86,6 +86,6 @@ if [ "$GRAND_TOTAL" -eq 0 ]; then
 else
     echo -e "${RED}❌ VIOLATIONS FOUND: $GRAND_TOTAL remaining${NC}"
     echo ""
-    echo "Run detailed scan: ./scripts/enforcement/scan-violations.sh"
+    echo "Run detailed scan: ./scripts/compliance/scan-violations.sh"
     exit 1
 fi

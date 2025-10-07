@@ -2,7 +2,7 @@
 
 # Fix File Script
 # Interactive script to fix violations in a specific file
-# Usage: ./scripts/enforcement/fix-file.sh <file-path>
+# Usage: ./scripts/compliance/fix-file.sh <file-path>
 
 set -e
 
@@ -98,7 +98,7 @@ echo ""
 echo "After fixing, run:"
 echo "  npx eslint $FILE_PATH --fix"
 echo "  npm run build"
-echo "  node scripts/validation/claude-code-validator.js validate-file $FILE_PATH"
+echo "  node scripts/commit-gate/claude-code-validator.js validate-file $FILE_PATH"
 echo ""
 
 # Open file in editor (optional)
@@ -117,5 +117,5 @@ fi
 
 echo ""
 echo -e "${BLUE}📝 After fixing, verify with:${NC}"
-echo "  ./scripts/enforcement/verify-file.sh $FILE_PATH"
+echo "  ./scripts/compliance/verify-file.sh $FILE_PATH"
 echo ""

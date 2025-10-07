@@ -8,14 +8,14 @@ const fs = require('fs');
 const rulesDirPlugin = require('eslint-plugin-rulesdir');
 rulesDirPlugin.RULES_DIR = path.join(__dirname, 'eslint-rules');
 
-// Load enforcement config to dynamically enable/disable rules
+// Load compliance config to dynamically enable/disable rules
 let timezoneRuleEnabled = 'error'; // Default to enabled
 
 try {
-  const configPath = path.join(__dirname, 'scripts', 'enforcement', 'enforcement-config.json');
+  const configPath = path.join(__dirname, 'scripts', 'compliance', 'compliance-config.json');
   if (fs.existsSync(configPath)) {
-    const enforcementConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    const timezoneConfig = enforcementConfig.validatorConfig?.rules?.timezone;
+    const complianceConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const timezoneConfig = complianceConfig.validatorConfig?.rules?.timezone;
 
     // Check if timezone rule is explicitly disabled
     if (timezoneConfig && timezoneConfig.enabled === false) {
@@ -25,7 +25,7 @@ try {
   }
 } catch (error) {
   // If config can't be read, default to enabled for safety
-  console.warn('Warning: Could not load enforcement-config.json for ESLint, using defaults');
+  console.warn('Warning: Could not load compliance-config.json for ESLint, using defaults');
 }
 
 module.exports = {
@@ -103,12 +103,12 @@ module.exports = {
     // =============================================================================
     // CLAUDE.md COMPLIANCE RULES (Custom Rules from eslint-rules/)
     // =============================================================================
-    // NOTE: Full validation is performed by scripts/validation/claude-code-validator.js
-    //       ESLint rules provide real-time feedback for most critical violations
-    // NOTE: Rule severity is dynamically loaded from scripts/enforcement/enforcement-config.json
+    // NOTE: Full validation is performed by scripts/commit-gate/compliance-validator.js
+    //       ESLint rules provide real-time IDE feedback for most critical violations
+    // NOTE: Rule severity is dynamically loaded from scripts/compliance/compliance-config.json
 
     // Timezone compliance - prevent new Date() and Date.now() usage
-    // Dynamically enabled/disabled based on scripts/enforcement/enforcement-config.json
+    // Dynamically enabled/disabled based on scripts/compliance/compliance-config.json
     'rulesdir/no-new-date': timezoneRuleEnabled,
 
     // Additional rules (validated by pre-commit hook):

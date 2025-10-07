@@ -2,15 +2,15 @@
 /**
  * CLAUDE.md Enforcement Rules Synchronization System
  *
- * PURPOSE: Automatically sync enforcement validators with CLAUDE.md changes
+ * PURPOSE: Automatically sync compliance validators with CLAUDE.md changes
  * USAGE: Called by pre-commit hook when CLAUDE.md is modified
  *
- * This ensures the enforcement system always matches CLAUDE.md rules.
+ * This ensures the compliance system always matches CLAUDE.md rules.
  *
  * WORKFLOW:
  * 1. Parse CLAUDE.md to extract enforceable rules
  * 2. Generate validator configuration
- * 3. Update claude-code-validator.js patterns
+ * 3. Update compliance-validator.js patterns
  * 4. Update ESLint rule patterns
  * 5. Update documentation
  */
@@ -56,11 +56,12 @@ class ClaudeMdParser {
 
     // STRICT ENFORCEMENT: Always enabled if CLAUDE.md references timezone guidelines
     // No auto-disable - violations must be fixed to use in production
-    const ruleDefinedInClaudeMd = /TIMEZONE-GUIDELINES\.md/i.test(this.content) ||
-                                   /nowUTC\(\)|parseUTC\(\)/i.test(this.content);
+    const ruleDefinedInClaudeMd =
+      /TIMEZONE-GUIDELINES\.md/i.test(this.content) ||
+      /nowUTC\(\)|parseUTC\(\)/i.test(this.content);
 
     return {
-      enabled: ruleDefinedInClaudeMd,  // Always enabled if CLAUDE.md defines it
+      enabled: ruleDefinedInClaudeMd, // Always enabled if CLAUDE.md defines it
       forbidden: [
         { pattern: 'new Date()', message: 'Use timezone utilities from @/lib/timezone' },
         { pattern: 'Date.now()', message: 'Use nowUTC() from @/lib/timezone' },
@@ -73,8 +74,8 @@ class ClaudeMdParser {
         'endOfDaySAST()',
         'formatSAST()',
       ],
-      allowedFiles: ['timezone.ts', 'env/server.ts'],  // Removed test file exclusions
-      reference: '/docs/enforcement/TIMEZONE-GUIDELINES.md',
+      allowedFiles: ['timezone.ts', 'env/server.ts'], // Removed test file exclusions
+      reference: '/docs/compliance/TIMEZONE-GUIDELINES.md',
       severity: 'ERROR',
     };
   }
@@ -83,17 +84,17 @@ class ClaudeMdParser {
     const section = this.extractSection('Type Safety Rules');
 
     // STRICT ENFORCEMENT: Always enabled if CLAUDE.md references type safety
-    const ruleDefinedInClaudeMd = /TYPE-SAFETY\.md/i.test(this.content) ||
-                                   /NEVER.*as any/i.test(this.content);
+    const ruleDefinedInClaudeMd =
+      /TYPE-SAFETY\.md/i.test(this.content) || /NEVER.*as any/i.test(this.content);
 
     return {
-      enabled: ruleDefinedInClaudeMd,  // Always enabled if defined
+      enabled: ruleDefinedInClaudeMd, // Always enabled if defined
       forbidden: [
         { pattern: 'as any', message: 'Use proper type guards or type narrowing' },
         { pattern: '@ts-ignore', message: '@ts-ignore must be documented', requiresComment: true },
       ],
       allowedFiles: ['src/lib/auth.ts', 'src/server/trpc.ts', 'src/types/guards.ts'],
-      reference: '/docs/enforcement/TYPE-SAFETY.md',
+      reference: '/docs/compliance/TYPE-SAFETY.md',
       severity: 'ERROR',
     };
   }
@@ -102,11 +103,11 @@ class ClaudeMdParser {
     const section = this.extractSection('SECTION 8.5: LOGGING SYSTEM');
 
     // STRICT ENFORCEMENT: Always enabled if CLAUDE.md references logging
-    const ruleDefinedInClaudeMd = /LOGGING\.md/i.test(this.content) ||
-                                   /NEVER use console/i.test(this.content);
+    const ruleDefinedInClaudeMd =
+      /LOGGING\.md/i.test(this.content) || /NEVER use console/i.test(this.content);
 
     return {
-      enabled: ruleDefinedInClaudeMd,  // Always enabled if defined
+      enabled: ruleDefinedInClaudeMd, // Always enabled if defined
       forbidden: [
         { pattern: 'console.log', message: 'Use logger.info() from @/lib/logger' },
         { pattern: 'console.error', message: 'Use logger.error() from @/lib/logger' },
@@ -120,7 +121,7 @@ class ClaudeMdParser {
         providerId: 'sanitizeProviderId',
       },
       allowedFiles: ['logger.ts', 'env/server.ts', 'audit.ts', 'debug.ts'],
-      reference: '/docs/enforcement/LOGGING.md',
+      reference: '/docs/compliance/LOGGING.md',
       severity: 'ERROR',
     };
   }
@@ -153,7 +154,7 @@ class ClaudeMdParser {
         {
           name: 'MISSING_ZOD_VALIDATION',
           pattern: /\.(query|mutation)\(async/,
-          message: 'tRPC procedures should have .input() Zod validation',
+          message: 'tRPC procedures should have .input() Zod commit_gate',
           applies: '/routers/',
           severity: 'WARNING',
         },
@@ -191,12 +192,7 @@ class ClaudeMdParser {
       rules: [
         {
           name: 'EXPOSED_CREDENTIALS',
-          patterns: [
-            'process.env.API_KEY',
-            'password =',
-            'secret =',
-            'token =',
-          ],
+          patterns: ['process.env.API_KEY', 'password =', 'secret =', 'token ='],
           severity: 'ERROR',
         },
         {
@@ -245,7 +241,7 @@ class ClaudeMdParser {
 
   /**
    * Validate CLAUDE.md ↔ /docs/ alignment
-   * Returns validation results with warnings/errors
+   * Returns commit_gate results with warnings/errors
    */
   validateDocsAlignment() {
     const results = {
@@ -257,26 +253,26 @@ class ClaudeMdParser {
       missingDocs: [],
     };
 
-    // Expected /docs/enforcement/ files
+    // Expected /docs/compliance/ files
     const expectedDocs = [
-      'enforcement/CONTEXT-LOADING.md',
-      'enforcement/TYPE-SAFETY.md',
-      'enforcement/VERIFICATION-PROTOCOLS.md',
-      'enforcement/TIMEZONE-GUIDELINES.md',
-      'enforcement/LOGGING.md',
-      'enforcement/BUG-DETECTION.md',
-      'enforcement/DEVELOPMENT-WORKFLOW.md',
-      'enforcement/ENFORCEMENT.md',
-      'enforcement/DEPLOYMENT.md',
-      'enforcement/CLAUDE-MD-AUTO-SYNC.md',
+      'compliance/CONTEXT-LOADING.md',
+      'compliance/TYPE-SAFETY.md',
+      'compliance/VERIFICATION-PROTOCOLS.md',
+      'compliance/TIMEZONE-GUIDELINES.md',
+      'compliance/LOGGING.md',
+      'compliance/BUG-DETECTION.md',
+      'compliance/DEVELOPMENT-WORKFLOW.md',
+      'compliance/ENFORCEMENT.md',
+      'compliance/DEPLOYMENT.md',
+      'compliance/CLAUDE-MD-AUTO-SYNC.md',
     ];
 
     // Extract all /docs/ references from CLAUDE.md (including subdirectories)
-    const docRefPattern = /\/docs\/((?:enforcement|guides)\/[A-Z-]+\.md)/g;
+    const docRefPattern = /\/docs\/((?:compliance|guides)\/[A-Z-]+\.md)/g;
     const matches = this.content.matchAll(docRefPattern);
 
     for (const match of matches) {
-      const docFile = match[1]; // Now includes subdirectory (e.g., 'enforcement/FILE.md')
+      const docFile = match[1]; // Now includes subdirectory (e.g., 'compliance/FILE.md')
       results.referencedDocs.push(docFile);
 
       // Check if referenced doc exists
@@ -294,15 +290,15 @@ class ClaudeMdParser {
     // Check for orphaned docs (exist but not referenced)
     const docsDir = path.join(__dirname, '..', '..', 'docs');
     if (fs.existsSync(docsDir)) {
-      // Check subdirectories: enforcement/ and guides/
-      const subdirs = ['enforcement', 'guides'];
+      // Check subdirectories: compliance/ and guides/
+      const subdirs = ['compliance', 'guides'];
       const actualDocs = [];
 
       for (const subdir of subdirs) {
         const subdirPath = path.join(docsDir, subdir);
         if (fs.existsSync(subdirPath)) {
-          const files = fs.readdirSync(subdirPath).filter(f => f.endsWith('.md'));
-          files.forEach(f => actualDocs.push(`${subdir}/${f}`));
+          const files = fs.readdirSync(subdirPath).filter((f) => f.endsWith('.md'));
+          files.forEach((f) => actualDocs.push(`${subdir}/${f}`));
         }
       }
 
@@ -358,7 +354,7 @@ class ValidatorConfigGenerator {
   }
 
   /**
-   * Generate configuration for claude-code-validator.js
+   * Generate configuration for compliance-validator.js
    */
   generateValidatorConfig() {
     return {
@@ -370,7 +366,7 @@ class ValidatorConfigGenerator {
           disabledReason: this.rules.timezone.disabledReason || null,
           violationCount: this.rules.timezone.violationCount || 0,
           patterns: {
-            forbidden: this.rules.timezone.forbidden.map(f => f.pattern),
+            forbidden: this.rules.timezone.forbidden.map((f) => f.pattern),
             allowed: this.rules.timezone.utilities,
           },
           allowedFiles: this.rules.timezone.allowedFiles,
@@ -380,7 +376,7 @@ class ValidatorConfigGenerator {
         typeSafety: {
           enabled: this.rules.typeSafety.enabled,
           patterns: {
-            forbidden: this.rules.typeSafety.forbidden.map(f => f.pattern),
+            forbidden: this.rules.typeSafety.forbidden.map((f) => f.pattern),
           },
           allowedFiles: this.rules.typeSafety.allowedFiles,
           severity: this.rules.typeSafety.severity,
@@ -389,7 +385,7 @@ class ValidatorConfigGenerator {
         logging: {
           enabled: this.rules.logging.enabled,
           patterns: {
-            forbidden: this.rules.logging.forbidden.map(f => f.pattern),
+            forbidden: this.rules.logging.forbidden.map((f) => f.pattern),
           },
           phiSanitization: this.rules.logging.phiSanitization,
           allowedFiles: this.rules.logging.allowedFiles,
@@ -421,7 +417,7 @@ class ValidatorConfigGenerator {
 class EnforcementSyncManager {
   constructor(claudeMdPath) {
     this.claudeMdPath = claudeMdPath;
-    this.configPath = path.join(__dirname, 'enforcement-config.json');
+    this.configPath = path.join(__dirname, 'compliance-config.json');
     this.parser = new ClaudeMdParser(claudeMdPath);
   }
 
@@ -438,27 +434,27 @@ class EnforcementSyncManager {
   }
 
   /**
-   * Sync enforcement system with CLAUDE.md
+   * Sync compliance system with CLAUDE.md
    */
   sync() {
-    console.log('🔄 Syncing enforcement rules with CLAUDE.md...');
+    console.log('🔄 Syncing compliance rules with CLAUDE.md...');
 
     // Validate /docs/ alignment first
     console.log('📋 Validating CLAUDE.md ↔ /docs/ alignment...');
-    const validation = this.parser.validateDocsAlignment();
+    const commit_gate = this.parser.validateDocsAlignment();
 
-    // Report validation results
-    if (validation.errors.length > 0) {
+    // Report commit_gate results
+    if (commit_gate.errors.length > 0) {
       console.log('\n❌ Documentation Alignment Errors:');
-      validation.errors.forEach(err => {
+      commit_gate.errors.forEach((err) => {
         console.log(`   ${err.type}: ${err.message}`);
       });
       throw new Error('Documentation alignment errors must be fixed before syncing');
     }
 
-    if (validation.warnings.length > 0) {
+    if (commit_gate.warnings.length > 0) {
       console.log('\n⚠️  Documentation Alignment Warnings:');
-      validation.warnings.forEach(warn => {
+      commit_gate.warnings.forEach((warn) => {
         console.log(`   ${warn.type}: ${warn.message}`);
         if (warn.suggestion) {
           console.log(`   💡 ${warn.suggestion}`);
@@ -466,9 +462,9 @@ class EnforcementSyncManager {
       });
     }
 
-    console.log(`\n✅ Referenced docs: ${validation.referencedDocs.length} files`);
-    if (validation.orphanedDocs.length > 0) {
-      console.log(`⚠️  Orphaned docs: ${validation.orphanedDocs.join(', ')}`);
+    console.log(`\n✅ Referenced docs: ${commit_gate.referencedDocs.length} files`);
+    if (commit_gate.orphanedDocs.length > 0) {
+      console.log(`⚠️  Orphaned docs: ${commit_gate.orphanedDocs.join(', ')}`);
     }
 
     // Parse CLAUDE.md
@@ -506,8 +502,8 @@ class EnforcementSyncManager {
       validatorConfig,
       eslintConfig,
       docsAlignment: {
-        referencedDocs: validation.referencedDocs,
-        orphanedDocs: validation.orphanedDocs,
+        referencedDocs: commit_gate.referencedDocs,
+        orphanedDocs: commit_gate.orphanedDocs,
         lastValidated: new Date().toISOString(),
       },
     };
@@ -547,14 +543,13 @@ function main() {
   switch (command) {
     case 'check':
       if (syncManager.hasChanged()) {
-        console.log('⚠️  CLAUDE.md has changed - enforcement rules need updating');
-        console.log('   Run: node scripts/enforcement/sync-enforcement-rules.js sync');
+        console.log('⚠️  CLAUDE.md has changed - compliance rules need updating');
+        console.log('   Run: node scripts/compliance/sync-compliance-rules.js sync');
         process.exit(1);
       } else {
         console.log('✅ Enforcement rules are up to date');
         process.exit(0);
       }
-      break;
 
     case 'sync':
       syncManager.sync();
@@ -576,19 +571,19 @@ function main() {
 
     case 'validate-docs':
       console.log('📋 Validating CLAUDE.md ↔ /docs/ alignment...\n');
-      const validation = syncManager.parser.validateDocsAlignment();
+      const commit_gate = syncManager.parser.validateDocsAlignment();
 
-      if (validation.errors.length > 0) {
+      if (commit_gate.errors.length > 0) {
         console.log('❌ Errors:');
-        validation.errors.forEach(err => {
+        commit_gate.errors.forEach((err) => {
           console.log(`   • ${err.message}`);
         });
         console.log('');
       }
 
-      if (validation.warnings.length > 0) {
+      if (commit_gate.warnings.length > 0) {
         console.log('⚠️  Warnings:');
-        validation.warnings.forEach(warn => {
+        commit_gate.warnings.forEach((warn) => {
           console.log(`   • ${warn.message}`);
           if (warn.suggestion) {
             console.log(`     💡 ${warn.suggestion}`);
@@ -598,39 +593,40 @@ function main() {
       }
 
       console.log('📊 Summary:');
-      console.log(`   Referenced docs: ${validation.referencedDocs.length}`);
-      console.log(`   Orphaned docs: ${validation.orphanedDocs.length}`);
-      console.log(`   Missing references: ${validation.missingDocs.length}`);
+      console.log(`   Referenced docs: ${commit_gate.referencedDocs.length}`);
+      console.log(`   Orphaned docs: ${commit_gate.orphanedDocs.length}`);
+      console.log(`   Missing references: ${commit_gate.missingDocs.length}`);
 
-      if (validation.referencedDocs.length > 0) {
+      if (commit_gate.referencedDocs.length > 0) {
         console.log('\n✅ Referenced documentation files:');
-        validation.referencedDocs.forEach(doc => {
+        commit_gate.referencedDocs.forEach((doc) => {
           console.log(`   • /docs/${doc}`);
         });
       }
 
-      if (validation.orphanedDocs.length > 0) {
+      if (commit_gate.orphanedDocs.length > 0) {
         console.log('\n⚠️  Orphaned documentation files:');
-        validation.orphanedDocs.forEach(doc => {
+        commit_gate.orphanedDocs.forEach((doc) => {
           console.log(`   • /docs/${doc}`);
         });
       }
 
-      if (validation.valid) {
+      if (commit_gate.valid) {
         console.log('\n✅ Documentation alignment is valid');
         process.exit(0);
       } else {
         console.log('\n❌ Documentation alignment has errors');
         process.exit(1);
       }
-      break;
 
     default:
       console.log('Usage:');
-      console.log('  node sync-enforcement-rules.js check         # Check if sync needed');
-      console.log('  node sync-enforcement-rules.js sync          # Sync rules from CLAUDE.md');
-      console.log('  node sync-enforcement-rules.js status        # Show sync status');
-      console.log('  node sync-enforcement-rules.js validate-docs # Validate CLAUDE.md ↔ /docs/ alignment');
+      console.log('  node sync-compliance-rules.js check         # Check if sync needed');
+      console.log('  node sync-compliance-rules.js sync          # Sync rules from CLAUDE.md');
+      console.log('  node sync-compliance-rules.js status        # Show sync status');
+      console.log(
+        '  node sync-compliance-rules.js validate-docs # Validate CLAUDE.md ↔ /docs/ alignment'
+      );
       break;
   }
 }

@@ -115,7 +115,7 @@ class EnhancedPHIValidator {
             message: this.buildMessage(phiDetection),
             fix: this.buildFix(phiDetection),
             suppressionGuidance: this.buildSuppressionGuidance(phiDetection),
-            reference: '/docs/enforcement/LOGGING.md',
+            reference: '/docs/compliance/LOGGING.md',
           });
         }
       }
@@ -528,28 +528,28 @@ class CodeValidator {
     this.phiValidator = new EnhancedPHIValidator();
     this.transactionValidator = new EnhancedTransactionValidator();
 
-    // Load enforcement configuration
+    // Load compliance configuration
     this.loadEnforcementConfig();
   }
 
   loadEnforcementConfig() {
-    const configPath = path.join(__dirname, '../enforcement/enforcement-config.json');
+    const configPath = path.join(__dirname, '../compliance/compliance-config.json');
 
     if (fs.existsSync(configPath)) {
       try {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-        this.enforcementConfig = config.validatorConfig?.rules || {};
+        this.complianceConfig = config.validatorConfig?.rules || {};
       } catch (error) {
-        console.warn('Warning: Could not load enforcement-config.json, using defaults');
-        this.enforcementConfig = {};
+        console.warn('Warning: Could not load compliance-config.json, using defaults');
+        this.complianceConfig = {};
       }
     } else {
-      this.enforcementConfig = {};
+      this.complianceConfig = {};
     }
   }
 
   isRuleEnabled(ruleName) {
-    const ruleConfig = this.enforcementConfig[ruleName];
+    const ruleConfig = this.complianceConfig[ruleName];
     if (!ruleConfig) return true;
     return ruleConfig.enabled !== false;
   }
@@ -624,7 +624,7 @@ class CodeValidator {
           content: line.trim(),
           message: 'Use timezone utilities from @/lib/timezone instead of new Date()',
           fix: 'Replace with nowUTC(), parseUTC(), or date-fns functions',
-          reference: '/docs/enforcement/TIMEZONE-GUIDELINES.md',
+          reference: '/docs/compliance/TIMEZONE-GUIDELINES.md',
         });
       }
 
@@ -636,7 +636,7 @@ class CodeValidator {
           line: idx + 1,
           content: line.trim(),
           message: 'Use nowUTC() from @/lib/timezone instead of Date.now()',
-          reference: '/docs/enforcement/TIMEZONE-GUIDELINES.md',
+          reference: '/docs/compliance/TIMEZONE-GUIDELINES.md',
         });
       }
     });
@@ -661,7 +661,7 @@ class CodeValidator {
           content: line.trim(),
           message: '"as any" violates type safety. Use proper type guards or type narrowing',
           fix: 'Create a type guard or use proper TypeScript narrowing',
-          reference: '/docs/enforcement/TYPE-SAFETY.md',
+          reference: '/docs/compliance/TYPE-SAFETY.md',
         });
       }
 
@@ -699,7 +699,7 @@ class CodeValidator {
             content: line.trim(),
             message: 'Use logger from @/lib/logger instead of console',
             fix: 'Replace with logger.info(), logger.error(), logger.audit()',
-            reference: '/docs/enforcement/LOGGING.md',
+            reference: '/docs/compliance/LOGGING.md',
           });
         }
       }
@@ -915,8 +915,8 @@ function main() {
     console.log(JSON.stringify(result, null, 2));
   } else {
     console.log('Usage:');
-    console.log('  node claude-code-validator.js validate-change <file> <old> <new>');
-    console.log('  node claude-code-validator.js validate-file <file>');
+    console.log('  node compliance-validator.js validate-change <file> <old> <new>');
+    console.log('  node compliance-validator.js validate-file <file>');
   }
 }
 

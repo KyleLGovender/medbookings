@@ -8,9 +8,9 @@ Organized utility scripts for the MedBookings project, grouped by purpose.
 scripts/
 ├── architecture/       # Architecture validation scripts
 ├── communications/     # Email/SMS/WhatsApp templates and testing
-├── enforcement/       # CLAUDE.md enforcement and setup
+├── compliance/        # CLAUDE.md compliance system (Rule Sync)
 ├── testing/           # Test utilities and E2E setup
-├── validation/        # Code validation and compliance checking
+├── commit-gate/       # Pre-commit validation (Commit Gate)
 └── archive/           # Deprecated/old scripts
 ```
 
@@ -54,14 +54,14 @@ node scripts/communications/create-or-update-templates.js
 
 ---
 
-## 🛡️ **Enforcement** (`enforcement/`)
+## 🛡️ **Compliance System** (`compliance/`)
 
-CLAUDE.md compliance enforcement system setup, configuration, and violation scanning.
+CLAUDE.md compliance system management (Rule Sync component) - handles configuration and synchronization.
 
 ### Files
-- **`setup-enforcement.sh`** - One-command setup for entire enforcement system
-- **`sync-enforcement-rules.js`** - Syncs CLAUDE.md changes with enforcement rules
-- **`enforcement-config.json`** - Enforcement configuration and rule severity
+- **`setup-compliance.sh`** - One-command setup for entire compliance system
+- **`sync-compliance-rules.js`** - Syncs CLAUDE.md changes with compliance rules
+- **`compliance-config.json`** - Compliance configuration and rule severity
 - **`count-violations.sh`** - Counts CLAUDE.md violations in the codebase
 - **`scan-violations.sh`** - Scans for violations across files
 - **`fix-file.sh`** - Interactive script to fix violations in a specific file
@@ -70,23 +70,47 @@ CLAUDE.md compliance enforcement system setup, configuration, and violation scan
 ### Usage
 ```bash
 # Initial setup (run once)
-bash scripts/enforcement/setup-enforcement.sh
+bash scripts/compliance/setup-compliance.sh
 
-# Sync enforcement rules after CLAUDE.md changes
-node scripts/enforcement/sync-enforcement-rules.js
+# Sync compliance rules after CLAUDE.md changes
+node scripts/compliance/sync-compliance-rules.js
 
 # Scan for violations
-bash scripts/enforcement/scan-violations.sh
+bash scripts/compliance/scan-violations.sh
 
 # Count violations by category
-bash scripts/enforcement/count-violations.sh
+bash scripts/compliance/count-violations.sh
 
 # Fix violations in a specific file
-bash scripts/enforcement/fix-file.sh src/path/to/file.ts
+bash scripts/compliance/fix-file.sh src/path/to/file.ts
 
 # Verify a file is clean
-bash scripts/enforcement/verify-file.sh src/path/to/file.ts
+bash scripts/compliance/verify-file.sh src/path/to/file.ts
 ```
+
+---
+
+## 🚪 **Commit Gate** (`commit-gate/`)
+
+Pre-commit validation scripts (Commit Gate component) - validates changes before commits.
+
+### Files
+- **`compliance-validator.js`** - Main compliance validator engine
+- **`pre-write-gate.sh`** - Pre-write validation wrapper
+- **`post-write-gate.sh`** - Post-write validation wrapper
+- **`phi-validator.js`** - PHI (Protected Health Information) validator
+- **`transaction-validator.js`** - Database transaction validator
+
+### Usage
+```bash
+# Validate a specific file
+node scripts/commit-gate/compliance-validator.js validate-file src/path/to/file.ts
+
+# Validate changes between old and new versions
+node scripts/commit-gate/compliance-validator.js validate-change src/path/to/file.ts old.ts new.ts
+```
+
+**Note:** These scripts are typically called automatically by the pre-commit hook (`.husky/pre-commit`)
 
 ---
 
@@ -126,25 +150,25 @@ node scripts/testing/test-enhanced-warnings.js
 Code validation, compliance checking, and CLAUDE.md rule enforcement.
 
 ### Files
-- **`claude-code-validator.js`** - Main CLAUDE.md compliance validator
+- **`compliance-validator.js`** - Main CLAUDE.md compliance validator
 - **`claude-pre-write-validator.sh`** - Pre-write validation hook
 - **`claude-post-write-validator.sh`** - Post-write validation hook
-- **`enhanced-phi-validator.js`** - PHI (Protected Health Information) validation
-- **`enhanced-transaction-validator.js`** - Database transaction validation
+- **`phi-validator.js`** - PHI (Protected Health Information) validation
+- **`transaction-validator.js`** - Database transaction validation
 
 ### Usage
 ```bash
 # Validate a specific file
-node scripts/validation/claude-code-validator.js validate-file src/path/to/file.ts
+node scripts/commit-gate/compliance-validator.js validate-file src/path/to/file.ts
 
 # Validate code changes
-node scripts/validation/claude-code-validator.js validate-change <file> <old-temp> <new-file>
+node scripts/commit-gate/compliance-validator.js validate-change <file> <old-temp> <new-file>
 
 # Run PHI validation
-node scripts/validation/enhanced-phi-validator.js
+node scripts/commit-gate/phi-validator.js
 
 # Run transaction validation
-node scripts/validation/enhanced-transaction-validator.js
+node scripts/commit-gate/transaction-validator.js
 ```
 
 ---
@@ -155,7 +179,7 @@ node scripts/validation/enhanced-transaction-validator.js
 The pre-commit hook automatically runs validation scripts before each commit:
 ```bash
 # Validation order:
-1. claude-code-validator.js - CLAUDE.md compliance
+1. compliance-validator.js - CLAUDE.md compliance
 2. Console statement check
 3. Timezone violation check
 4. Backup file check
@@ -176,9 +200,9 @@ GitHub Actions runs comprehensive validation on every push:
 ```json
 {
   "scripts": {
-    "setup-enforcement": "bash scripts/enforcement/setup-enforcement.sh",
-    "validate-claude": "node scripts/validation/claude-code-validator.js validate-file",
-    "sync:enforcement": "node scripts/enforcement/sync-enforcement-rules.js"
+    "setup-compliance": "bash scripts/compliance/setup-compliance.sh",
+    "validate-claude": "node scripts/commit-gate/compliance-validator.js validate-file",
+    "sync:compliance": "node scripts/compliance/sync-enforcement-rules.js"
   }
 }
 ```
@@ -193,7 +217,7 @@ GitHub Actions runs comprehensive validation on every push:
 npm install
 
 # 2. Setup enforcement system
-npm run setup-enforcement
+npm run setup-compliance
 
 # 3. Verify setup
 npm run validate-claude src/lib/auth.ts
@@ -202,19 +226,19 @@ npm run validate-claude src/lib/auth.ts
 ### Fixing Violations
 ```bash
 # 1. Scan for violations
-bash scripts/enforcement/scan-violations.sh
+bash scripts/compliance/scan-violations.sh
 
 # 2. Fix specific file
-bash scripts/enforcement/fix-file.sh src/path/to/file.ts
+bash scripts/compliance/fix-file.sh src/path/to/file.ts
 
 # 3. Verify fix
-bash scripts/enforcement/verify-file.sh src/path/to/file.ts
+bash scripts/compliance/verify-file.sh src/path/to/file.ts
 ```
 
 ### After CLAUDE.md Changes
 ```bash
 # Sync enforcement rules with CLAUDE.md
-npm run sync:enforcement
+npm run sync:compliance
 
 # Verify sync worked
 npm run lint
@@ -250,7 +274,7 @@ npm run lint
 
 4. **Path References**
    - All scripts expect to be run from project root
-   - Use relative paths: `scripts/validation/...`
+   - Use relative paths: `scripts/commit-gate/...`
    - Import references use `../enforcement/` for config
 
 ---
@@ -266,7 +290,7 @@ brew install node  # macOS
 ### "Permission denied" errors
 ```bash
 # Make script executable
-chmod +x scripts/enforcement/setup-enforcement.sh
+chmod +x scripts/compliance/setup-compliance.sh
 ```
 
 ### "Config file not found"
@@ -275,13 +299,13 @@ chmod +x scripts/enforcement/setup-enforcement.sh
 pwd  # Should show: .../medbookings
 
 # Check config exists
-ls -la scripts/enforcement/enforcement-config.json
+ls -la scripts/compliance/compliance-config.json
 ```
 
 ### Validation fails after moving files
 ```bash
 # Re-sync enforcement rules
-npm run sync:enforcement
+npm run sync:compliance
 
 # Rebuild
 npm run build
@@ -312,7 +336,7 @@ When adding new scripts:
 2. **Follow naming conventions**
    - kebab-case: `check-something.js`
    - Descriptive: `validate-timezone-usage.sh`
-   - Purpose-focused: `setup-enforcement.sh`
+   - Purpose-focused: `setup-compliance.sh`
 
 3. **Add to README**
    - List under appropriate category

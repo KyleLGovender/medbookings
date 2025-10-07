@@ -20,7 +20,7 @@ The documentation validation system ensures CLAUDE.md and /docs/ folder stay syn
 ### Validate Documentation Alignment
 
 ```bash
-node scripts/enforcement/sync-enforcement-rules.js validate-docs
+node scripts/compliance/sync-compliance-rules.js validate-docs
 ```
 
 **Output**:
@@ -28,8 +28,8 @@ node scripts/enforcement/sync-enforcement-rules.js validate-docs
 📋 Validating CLAUDE.md ↔ /docs/ alignment...
 
 ✅ Referenced documentation files:
-   • /docs/enforcement/CONTEXT-LOADING.md
-   • /docs/enforcement/TYPE-SAFETY.md
+   • /docs/compliance/CONTEXT-LOADING.md
+   • /docs/compliance/TYPE-SAFETY.md
    [... 8 more ...]
 
 ✅ Documentation alignment is valid
@@ -38,7 +38,7 @@ node scripts/enforcement/sync-enforcement-rules.js validate-docs
 ### Check Enforcement Status
 
 ```bash
-node scripts/enforcement/sync-enforcement-rules.js status
+node scripts/compliance/sync-compliance-rules.js status
 ```
 
 **Output includes**:
@@ -50,14 +50,14 @@ node scripts/enforcement/sync-enforcement-rules.js status
 ### Sync Enforcement Rules
 
 ```bash
-node scripts/enforcement/sync-enforcement-rules.js sync
+node scripts/compliance/sync-compliance-rules.js sync
 ```
 
 **This command**:
 1. Validates docs alignment first
 2. Blocks if errors exist
 3. Warns if orphaned docs found
-4. Syncs enforcement rules if valid
+4. Syncs compliance rules if valid
 
 ---
 
@@ -73,12 +73,12 @@ node scripts/enforcement/sync-enforcement-rules.js sync
 
 **Simple**:
 ```markdown
-📄 **Complete Workflow Guide**: See `/docs/enforcement/DEVELOPMENT-WORKFLOW.md` for detailed task execution flow, development standards, and command execution policy.
+📄 **Complete Workflow Guide**: See `/docs/compliance/DEVELOPMENT-WORKFLOW.md` for detailed task execution flow, development standards, and command execution policy.
 ```
 
 **With Bullets**:
 ```markdown
-📄 **Type Safety Patterns**: See `/docs/enforcement/TYPE-SAFETY.md` for:
+📄 **Type Safety Patterns**: See `/docs/compliance/TYPE-SAFETY.md` for:
 - Prisma JSON field handling with Zod schemas
 - Type guard implementation patterns
 - tRPC type extraction examples
@@ -130,7 +130,7 @@ Edit the appropriate section:
 
 ```bash
 # Check alignment
-node scripts/enforcement/sync-enforcement-rules.js validate-docs
+node scripts/compliance/sync-compliance-rules.js validate-docs
 
 # Expected output:
 # ✅ Referenced docs: 11
@@ -145,8 +145,8 @@ git commit -m "docs: add NEW-TOPIC documentation with CLAUDE.md reference"
 
 # Pre-commit hook will:
 # 1. Validate docs alignment
-# 2. Sync enforcement rules
-# 3. Auto-stage enforcement-config.json
+# 2. Sync compliance rules
+# 3. Auto-stage compliance-config.json
 ```
 
 ---
@@ -233,15 +233,15 @@ vim CLAUDE.md
 **Fix**:
 ```bash
 # 1. Run validation to see errors
-node scripts/enforcement/sync-enforcement-rules.js validate-docs
+node scripts/compliance/sync-compliance-rules.js validate-docs
 
 # 2. Fix all reported errors
 
 # 3. Re-validate
-node scripts/enforcement/sync-enforcement-rules.js validate-docs
+node scripts/compliance/sync-compliance-rules.js validate-docs
 
 # 4. Try sync again
-node scripts/enforcement/sync-enforcement-rules.js sync
+node scripts/compliance/sync-compliance-rules.js sync
 ```
 
 ---
@@ -257,8 +257,8 @@ git commit -m "docs: update references"
 # Hook runs automatically:
 # 1. Detects CLAUDE.md changed
 # 2. Validates docs alignment
-# 3. Syncs enforcement rules
-# 4. Auto-stages enforcement-config.json
+# 3. Syncs compliance rules
+# 4. Auto-stages compliance-config.json
 # 5. Continues commit if valid
 ```
 
@@ -292,7 +292,7 @@ The validation system expects these files to be referenced:
 The validation logic is in:
 
 ```
-scripts/enforcement/sync-enforcement-rules.js
+scripts/compliance/sync-compliance-rules.js
 └── ClaudeMdParser.validateDocsAlignment()
 ```
 
@@ -305,7 +305,7 @@ scripts/enforcement/sync-enforcement-rules.js
 
 **Configuration stored in**:
 ```
-scripts/enforcement/enforcement-config.json
+scripts/compliance/compliance-config.json
 └── docsAlignment: {
       referencedDocs: [...],
       orphanedDocs: [...],
@@ -324,7 +324,7 @@ The GitHub Actions workflow validates docs alignment:
 
 - name: Validate Documentation Alignment
   run: |
-    node scripts/enforcement/sync-enforcement-rules.js validate-docs
+    node scripts/compliance/sync-compliance-rules.js validate-docs
     if [ $? -ne 0 ]; then
       echo "❌ Documentation alignment validation failed"
       exit 1
@@ -369,7 +369,7 @@ Before committing CLAUDE.md changes:
 - [ ] All `/docs/*.md` references point to existing files
 - [ ] No orphaned docs exist (or intentionally kept)
 - [ ] Reference format is consistent
-- [ ] `node scripts/enforcement/sync-enforcement-rules.js validate-docs` passes
+- [ ] `node scripts/compliance/sync-compliance-rules.js validate-docs` passes
 
 ---
 

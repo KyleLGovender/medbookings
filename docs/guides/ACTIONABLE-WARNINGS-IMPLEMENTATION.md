@@ -38,10 +38,10 @@
 
 ```
 scripts/
-├── enhanced-phi-validator.js          # PHI detection with confidence
-├── enhanced-transaction-validator.js  # Transaction risk analysis
+├── phi-validator.js          # PHI detection with confidence
+├── transaction-validator.js  # Transaction risk analysis
 ├── example-enhanced-warnings.txt      # Before/after comparison
-└── enforcement-config.json            # Configuration
+└── compliance-config.json            # Configuration
 
 docs/
 └── ACTIONABLE-WARNINGS-IMPLEMENTATION.md  # This file
@@ -54,7 +54,7 @@ docs/
 │   Git Commit Hook (Pre-commit)         │
 │                                         │
 │  ┌───────────────────────────────────┐ │
-│  │ claude-code-validator.js          │ │
+│  │ compliance-validator.js          │ │
 │  │                                   │ │
 │  │  Calls:                           │ │
 │  │  ├─ EnhancedPHIValidator          │ │
@@ -76,7 +76,7 @@ docs/
 
 ### Phase 1: PHI Validator Enhancement ✅ (Completed)
 
-**File**: `scripts/validation/enhanced-phi-validator.js`
+**File**: `scripts/commit-gate/phi-validator.js`
 
 **Features**:
 - ✅ Confidence levels (HIGH/MEDIUM/LOW)
@@ -95,7 +95,7 @@ logger.info('message', { field: value });
 
 ### Phase 2: Transaction Validator Enhancement ✅ (Completed)
 
-**File**: `scripts/validation/enhanced-transaction-validator.js`
+**File**: `scripts/commit-gate/transaction-validator.js`
 
 **Features**:
 - ✅ Risk levels (CRITICAL/HIGH/MEDIUM/LOW)
@@ -128,15 +128,15 @@ await ctx.prisma.model.operation();
 
 ### Phase 4: Integration (Next Step) ⏭️
 
-**Task**: Integrate enhanced validators into `claude-code-validator.js`
+**Task**: Integrate enhanced validators into `compliance-validator.js`
 
 **Changes Required**:
 
 ```javascript
-// File: scripts/validation/claude-code-validator.js
+// File: scripts/commit-gate/compliance-validator.js
 
-const { EnhancedPHIValidator } = require('./enhanced-phi-validator');
-const { EnhancedTransactionValidator } = require('./enhanced-transaction-validator');
+const { EnhancedPHIValidator } = require('./phi-validator');
+const { EnhancedTransactionValidator } = require('./transaction-validator');
 
 class CodeValidator {
   constructor(rules) {
@@ -179,7 +179,7 @@ class CodeValidator {
 **Changes Required**:
 
 ```javascript
-// File: scripts/validation/claude-code-validator.js
+// File: scripts/commit-gate/compliance-validator.js
 
 function main() {
   // ... existing code ...
@@ -320,7 +320,7 @@ Time per Warning: ~2 minutes
 ## 🚀 Rollout Plan
 
 ### Week 1: Integration
-- [ ] Integrate enhanced validators into `claude-code-validator.js`
+- [ ] Integrate enhanced validators into `compliance-validator.js`
 - [ ] Update output formatting
 - [ ] Test with existing violations
 
@@ -429,14 +429,14 @@ await ctx.prisma.booking.create({ data });
    - [example-enhanced-warnings.txt](/scripts/example-enhanced-warnings.txt) - Warning examples
 
 2. **For Maintainers**:
-   - [enhanced-phi-validator.js](/scripts/validation/enhanced-phi-validator.js) - PHI validator code
-   - [enhanced-transaction-validator.js](/scripts/validation/enhanced-transaction-validator.js) - Transaction validator code
-   - [ENFORCEMENT.md](/docs/enforcement/ENFORCEMENT.md) - Overall enforcement system
+   - [phi-validator.js](/scripts/commit-gate/phi-validator.js) - PHI validator code
+   - [transaction-validator.js](/scripts/commit-gate/transaction-validator.js) - Transaction validator code
+   - [ENFORCEMENT.md](/docs/compliance/ENFORCEMENT.md) - Overall compliance system
 
 3. **Domain-Specific**:
-   - [LOGGING.md](/docs/enforcement/LOGGING.md) - PHI protection patterns
-   - [TIMEZONE-GUIDELINES.md](/docs/enforcement/TIMEZONE-GUIDELINES.md) - Timezone patterns
-   - [TYPE-SAFETY.md](/docs/enforcement/TYPE-SAFETY.md) - Type safety patterns
+   - [LOGGING.md](/docs/compliance/LOGGING.md) - PHI protection patterns
+   - [TIMEZONE-GUIDELINES.md](/docs/compliance/TIMEZONE-GUIDELINES.md) - Timezone patterns
+   - [TYPE-SAFETY.md](/docs/compliance/TYPE-SAFETY.md) - Type safety patterns
 
 ---
 
@@ -445,7 +445,7 @@ await ctx.prisma.booking.create({ data });
 1. **Immediate** (This PR):
    - ✅ Enhanced validators created
    - ✅ Documentation written
-   - ⏭️ Integration into `claude-code-validator.js`
+   - ⏭️ Integration into `compliance-validator.js`
    - ⏭️ Output formatting updated
 
 2. **Follow-up** (Next Sprint):

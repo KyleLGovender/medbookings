@@ -141,10 +141,10 @@ npm run dev
 - `npm run lint` - Run ESLint with auto-fix
 - `npm run format` - Format code with Prettier
 
-### Code Quality & Enforcement
+### Code Quality & Compliance
 - `npm run prepare` - Install git hooks (runs automatically on `npm install`)
-- `npm run setup-enforcement` - Setup CLAUDE.md enforcement system
-- `npm run sync:enforcement` - Sync enforcement rules with CLAUDE.md changes
+- `npm run setup-compliance` - Setup CLAUDE.md compliance system
+- `npm run sync:compliance` - Sync compliance rules with CLAUDE.md changes
 
 ### Database Management
 - `npm run db:migrate` - Apply migrations
@@ -214,7 +214,7 @@ const { data: providers } = api.providers.getAll.useQuery();
 - Audit trails for data access
 - Consent tracking mechanisms
 - Data encryption in transit and at rest
-- Session timeout enforcement
+- Session timeout (30 minutes)
 
 ### Data Security
 - PHI (Protected Health Information) isolation
@@ -268,7 +268,7 @@ npm run test:debug    # Debug mode
 ## 📚 Documentation
 
 - [E2E Testing Guide](./README-E2E-TESTING.md) - Complete testing documentation
-- [CLAUDE.md](./CLAUDE.md) - Development guidelines, patterns, and enforcement rules
+- [CLAUDE.md](./CLAUDE.md) - Development guidelines, patterns, and compliance rules
 
 ## 🛠️ Troubleshooting
 
@@ -303,7 +303,7 @@ npm run build
 2. Ensure all tests pass (`npm run test`)
 3. Run architecture checks before PRs (`npm run architecture:check`)
 4. Follow TypeScript strict mode
-5. Adhere to established patterns and enforcement rules
+5. Adhere to established patterns and compliance rules
 
 ## 📄 License
 

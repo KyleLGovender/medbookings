@@ -1,20 +1,20 @@
-# CLAUDE.md Enforcement System
+# CLAUDE.md Compliance System
 
 ## Overview
 
-This document describes the automated enforcement system that ensures code changes adhere to the rules, patterns, and guidelines specified in [CLAUDE.md](/CLAUDE.md).
+This document describes the automated compliance system that ensures code changes adhere to the rules, patterns, and guidelines specified in [CLAUDE.md](/CLAUDE.md).
 
-**Purpose:** Prevent code violations BEFORE they reach production through multi-layered validation gates.
+**Purpose:** Prevent code violations BEFORE they reach production through multi-layered quality gates.
 
-**Coverage:** ~85-95% of CLAUDE.md rules can be automatically enforced.
+**Coverage:** ~85-95% of CLAUDE.md rules can be automatically validated.
 
 ---
 
 ## Table of Contents
 
 1. [Architecture](#architecture)
-2. [Enforcement Layers](#enforcement-layers)
-3. [Validation Rules](#validation-rules)
+2. [Quality Gates](#quality-gates)
+3. [Compliance Rules](#compliance-rules)
 4. [Setup & Installation](#setup--installation)
 5. [Usage](#usage)
 6. [Troubleshooting](#troubleshooting)
@@ -24,15 +24,15 @@ This document describes the automated enforcement system that ensures code chang
 
 ## Architecture
 
-The enforcement system uses a **three-layer defense strategy**:
+The compliance system uses a **three-layer quality gate strategy**:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ Layer 1: Real-Time IDE Feedback (ESLint)               │
-│ ↓ Detects violations as you type                       │
+│ Layer 1: IDE Checks (ESLint)                           │
+│ ↓ Real-time feedback as you type in your editor        │
 ├─────────────────────────────────────────────────────────┤
-│ Layer 2: Pre-Commit Hooks (Git Hooks)                  │
-│ ↓ Validates changes before git commit                  │
+│ Layer 2: Commit Gate (Pre-commit Hook)                 │
+│ ↓ Validates changes before allowing commit             │
 ├─────────────────────────────────────────────────────────┤
 │ Layer 3: CI/CD Gates (GitHub Actions)                  │
 │ ↓ Blocks PRs/pushes with violations                    │
@@ -43,17 +43,17 @@ The enforcement system uses a **three-layer defense strategy**:
 
 | Component | Purpose | Location |
 |-----------|---------|----------|
-| **Core Validator** | Pattern-based code analysis engine | `scripts/validation/claude-code-validator.js` |
+| **Core Validator** | Pattern-based code analysis engine | `scripts/commit-gate/compliance-validator.js` |
 | **ESLint Rules** | Real-time IDE feedback | `eslint-rules/` (no-new-date.js, type-organization.js) |
-| **Pre-Commit Hook** | Git commit validation | `.husky/pre-commit` |
+| **Pre-Commit Hook** | Commit gate validation | `.husky/pre-commit` |
 | **CI/CD Workflow** | GitHub Actions validation | `.github/workflows/claude-compliance.yml` |
-| **Validation Wrappers** | Claude Code agent interception | `scripts/validation/claude-*-validator.sh` |
+| **Rule Sync** | Config management and synchronization | `scripts/compliance/sync-compliance-rules.js` |
 
 ---
 
-## Enforcement Layers
+## Quality Gates
 
-### Layer 1: Real-Time IDE Feedback (ESLint)
+### Layer 1: IDE Checks (ESLint)
 
 **When:** As you type in your IDE
 **What:** Custom ESLint rules provide instant feedback
@@ -77,15 +77,15 @@ The enforcement system uses a **three-layer defense strategy**:
 
 ---
 
-### Layer 2: Pre-Commit Hooks (Git Hooks)
+### Layer 2: Commit Gate (Pre-commit Hook)
 
 **When:** Before `git commit` executes
 **What:** Validates all staged files against CLAUDE.md rules
-**How:** Husky hook runs validator on changed files
+**How:** Husky hook runs compliance validator on changed files
 
 **Validation Steps:**
 
-1. **CLAUDE.md Validator** - Pattern-based code analysis
+1. **Compliance Validator** - Pattern-based code analysis
 2. **ESLint Check** - Runs ESLint on staged files
 3. **TypeScript Check** - Runs `tsc --noEmit`
 
@@ -109,7 +109,7 @@ git commit --no-verify
    Use timezone utilities from @/lib/timezone instead of new Date()
    Code: if (user.accountLockedUntil < new Date()) {
    Fix: Replace with nowUTC(), parseUTC(), or date-fns functions
-   Reference: /docs/enforcement/TIMEZONE-GUIDELINES.md
+   Reference: /docs/compliance/TIMEZONE-GUIDELINES.md
 
 🚫 Commit blocked. Please fix the violations above.
 💡 To bypass (not recommended): git commit --no-verify
@@ -166,7 +166,7 @@ const dayStart = startOfDaySAST(new Date());
 ❌ const expires = new Date(Date.now() + 86400000);
 ```
 
-**Reference:** [TIMEZONE-GUIDELINES.md](/docs/enforcement/TIMEZONE-GUIDELINES.md)
+**Reference:** [TIMEZONE-GUIDELINES.md](/docs/compliance/TIMEZONE-GUIDELINES.md)
 
 ---
 
@@ -195,7 +195,7 @@ if (isUser(data)) {
 ❌ return response.data as any;
 ```
 
-**Reference:** [TYPE-SAFETY.md](/docs/enforcement/TYPE-SAFETY.md)
+**Reference:** [TYPE-SAFETY.md](/docs/compliance/TYPE-SAFETY.md)
 
 ---
 
@@ -330,7 +330,7 @@ import { logger, sanitizeEmail, sanitizePhone, sanitizeName } from '@/lib/logger
 ❌ logger.error('Booking failed', { phone: user.phone }); // Raw phone
 ```
 
-**Reference:** [LOGGING.md](/docs/enforcement/LOGGING.md)
+**Reference:** [LOGGING.md](/docs/compliance/LOGGING.md)
 
 ---
 
@@ -396,10 +396,10 @@ await ctx.prisma.booking.create({ data: bookingData });
 ### One-Command Setup
 
 ```bash
-npm run setup-enforcement
+npm run setup-compliance
 ```
 
-This runs `scripts/enforcement/setup-enforcement.sh` which:
+This runs `scripts/compliance/setup-compliance.sh` which:
 1. Installs dependencies (husky, eslint-plugin-rulesdir)
 2. Initializes git hooks
 3. Makes scripts executable
@@ -418,16 +418,16 @@ npm install --save-dev husky eslint-plugin-rulesdir
 npx husky init
 
 # 3. Make scripts executable
-chmod +x scripts/validation/claude-code-validator.js
-chmod +x scripts/validation/claude-pre-write-validator.sh
-chmod +x scripts/validation/claude-post-write-validator.sh
+chmod +x scripts/commit-gate/compliance-validator.js
+chmod +x scripts/commit-gate/pre-write-gate.sh
+chmod +x scripts/commit-gate/post-write-gate.sh
 chmod +x .husky/pre-commit
 
 # 4. Verify ESLint configuration
 npx eslint --print-config src/lib/auth.ts | grep rulesdir
 
 # 5. Run test validation
-node scripts/validation/claude-code-validator.js validate-file src/lib/auth.ts
+node scripts/commit-gate/compliance-validator.js validate-file src/lib/auth.ts
 ```
 
 ---
@@ -462,10 +462,10 @@ Your IDE (VS Code, etc.) will show violations in real-time if you have ESLint ex
 
 ```bash
 # Validate a single file
-node scripts/validation/claude-code-validator.js validate-file src/lib/auth.ts
+node scripts/commit-gate/compliance-validator.js validate-file src/lib/auth.ts
 
 # Validate changes to a file
-node scripts/validation/claude-code-validator.js validate-change \
+node scripts/commit-gate/compliance-validator.js validate-change \
   src/lib/auth.ts \
   /path/to/old/version.ts \
   /path/to/new/version.ts
@@ -475,7 +475,7 @@ node scripts/validation/claude-code-validator.js validate-change \
 
 ### For Claude Code Agent
 
-The enforcement system automatically intercepts Claude Code's file modifications.
+The compliance system automatically intercepts Claude Code's file modifications.
 
 **Workflow:**
 
@@ -536,12 +536,12 @@ npx eslint --print-config src/lib/auth.ts | grep rulesdir
 
 **Fix:**
 1. Check if file should be whitelisted (e.g., `auth.ts` for `as any`)
-2. Update validator whitelist in `scripts/validation/claude-code-validator.js`
+2. Update validator whitelist in `scripts/commit-gate/compliance-validator.js`
 3. Update ESLint rule in appropriate file in `eslint-rules/` directory
 
 **Example:**
 ```javascript
-// In scripts/validation/claude-code-validator.js
+// In scripts/commit-gate/compliance-validator.js
 validateTypeSafety(addedLines, filePath) {
   const whitelist = [
     'src/lib/auth.ts',
@@ -584,22 +584,22 @@ git commit --no-verify -m "hotfix: critical production issue"
 
 ---
 
-### "ESLint not loading enforcement rules"
+### "ESLint not loading compliance rules"
 
-**Cause:** `enforcement-config.json` is missing, corrupted, or unreadable
+**Cause:** `compliance-config.json` is missing, corrupted, or unreadable
 
 **Behavior:** ESLint uses **fail-safe mode** with default (strict) rules enabled
 
 **How it works:**
 
-The ESLint configuration (`.eslintrc.js`) dynamically loads rule severity from `scripts/enforcement/enforcement-config.json`:
+The ESLint configuration (`.eslintrc.js`) dynamically loads rule severity from `scripts/compliance/compliance-config.json`:
 
 ```javascript
 // .eslintrc.js
 let timezoneRuleEnabled = 'error'; // Default to enabled (fail-safe)
 
 try {
-  const configPath = path.join(__dirname, 'scripts', 'enforcement', 'enforcement-config.json');
+  const configPath = path.join(__dirname, 'scripts', 'enforcement', 'compliance-config.json');
   if (fs.existsSync(configPath)) {
     const enforcementConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     const timezoneConfig = enforcementConfig.validatorConfig?.rules?.timezone;
@@ -611,7 +611,7 @@ try {
   }
 } catch (error) {
   // Fail-safe: If config can't be read, default to enabled for safety
-  console.warn('Warning: Could not load enforcement-config.json for ESLint, using defaults');
+  console.warn('Warning: Could not load compliance-config.json for ESLint, using defaults');
 }
 ```
 
@@ -634,37 +634,37 @@ This design ensures that **enforcement is never accidentally disabled** due to:
 
 **Fix:**
 
-1. **Regenerate enforcement-config.json:**
+1. **Regenerate compliance-config.json:**
    ```bash
-   node scripts/enforcement/sync-enforcement-rules.js sync
+   node scripts/compliance/sync-compliance-rules.js sync
    ```
 
 2. **Verify file integrity:**
    ```bash
    # Check if file exists
-   ls -la scripts/enforcement/enforcement-config.json
+   ls -la scripts/compliance/compliance-config.json
 
    # Validate JSON syntax
-   cat scripts/enforcement/enforcement-config.json | jq .
+   cat scripts/compliance/compliance-config.json | jq .
    ```
 
 3. **Check file permissions:**
    ```bash
    # Ensure file is readable
-   chmod 644 scripts/enforcement/enforcement-config.json
+   chmod 644 scripts/compliance/compliance-config.json
    ```
 
 4. **Verify CLAUDE.md hash:**
    ```bash
    # Check if config is out of sync with CLAUDE.md
-   node scripts/enforcement/sync-enforcement-rules.js status
+   node scripts/compliance/sync-compliance-rules.js status
    ```
 
 **Expected Output (Healthy System):**
 
 ```bash
-$ node scripts/enforcement/sync-enforcement-rules.js status
-Enforcement System Status:
+$ node scripts/compliance/sync-compliance-rules.js status
+Compliance System Status:
   Last sync: 2025-10-05T09:35:28.628Z
   CLAUDE.md hash: 9f6619689296ae5a...
   Changed: NO ✅
@@ -678,8 +678,8 @@ Documentation Alignment:
 **Warning Signs (Action Required):**
 
 ```bash
-$ node scripts/enforcement/sync-enforcement-rules.js status
-Enforcement System Status:
+$ node scripts/compliance/sync-compliance-rules.js status
+Compliance System Status:
   Last sync: 2025-09-30T12:00:00.000Z
   CLAUDE.md hash: abc123...
   Changed: YES ⚠️   # ← CLAUDE.md has changed, need to sync!
@@ -701,14 +701,14 @@ const timestamp = new Date(); // With documented reason why this is safe
 
 ### "Enforcement config out of sync with CLAUDE.md"
 
-**Cause:** CLAUDE.md was modified but enforcement rules weren't regenerated
+**Cause:** CLAUDE.md was modified but compliance rules weren't regenerated
 
 **Detection:**
 
 ```bash
-$ node scripts/enforcement/sync-enforcement-rules.js check
-⚠️  CLAUDE.md has changed - enforcement rules need updating
-   Run: node scripts/enforcement/sync-enforcement-rules.js sync
+$ node scripts/compliance/sync-compliance-rules.js check
+⚠️  CLAUDE.md has changed - compliance rules need updating
+   Run: node scripts/compliance/sync-compliance-rules.js sync
 ```
 
 **Auto-Fix (Preferred):**
@@ -722,29 +722,29 @@ git commit -m "docs: update CLAUDE.md rules"
 
 # Output:
 🔍 Running CLAUDE.md compliance validation...
-⚠️  CLAUDE.md has been modified - syncing enforcement rules...
-✅ Enforcement rules synced with CLAUDE.md
-📝 Auto-staged: scripts/enforcement/enforcement-config.json
+⚠️  CLAUDE.md has been modified - syncing compliance rules...
+✅ Compliance rules synced with CLAUDE.md
+📝 Auto-staged: scripts/compliance/compliance-config.json
 ```
 
 **Manual Sync:**
 
 ```bash
-# Regenerate enforcement-config.json from CLAUDE.md
-node scripts/enforcement/sync-enforcement-rules.js sync
+# Regenerate compliance-config.json from CLAUDE.md
+node scripts/compliance/sync-compliance-rules.js sync
 
 # Stage the updated config
-git add scripts/enforcement/enforcement-config.json
+git add scripts/compliance/compliance-config.json
 ```
 
 **Verify Sync:**
 
 ```bash
 # Validate documentation alignment
-node scripts/enforcement/sync-enforcement-rules.js validate-docs
+node scripts/compliance/sync-compliance-rules.js validate-docs
 
 # Check sync status
-node scripts/enforcement/sync-enforcement-rules.js status
+node scripts/compliance/sync-compliance-rules.js status
 ```
 
 **What Gets Updated:**
@@ -760,7 +760,7 @@ When you sync, the system regenerates:
 
 **Version Tracking:**
 
-All sync operations are logged in `scripts/enforcement/CHANGELOG.md` for audit purposes.
+All sync operations are logged in `scripts/compliance/CHANGELOG.md` for audit purposes.
 
 ---
 
@@ -768,7 +768,7 @@ All sync operations are logged in `scripts/enforcement/CHANGELOG.md` for audit p
 
 ### Adding New Validation Rules
 
-**1. Add validator in `scripts/validation/claude-code-validator.js`:**
+**1. Add validator in `scripts/commit-gate/compliance-validator.js`:**
 
 ```javascript
 validateMyNewRule(addedLines, filePath) {
@@ -838,7 +838,7 @@ module.exports = {
 echo "const forbiddenThing = 1;" > test-violation.ts
 
 # Run validator
-node scripts/validation/claude-code-validator.js validate-file test-violation.ts
+node scripts/commit-gate/compliance-validator.js validate-file test-violation.ts
 
 # Run ESLint
 npx eslint test-violation.ts
@@ -853,7 +853,7 @@ rm test-violation.ts
 
 **For validator:**
 
-Edit `scripts/validation/claude-code-validator.js`:
+Edit `scripts/commit-gate/compliance-validator.js`:
 
 ```javascript
 validateTimezone(addedLines, filePath) {
@@ -943,7 +943,7 @@ module.exports = {
 - Update documentation
 
 **Per Sprint:**
-- Validate enforcement coverage for new features
+- Validate compliance coverage for new features
 - Add feature-specific rules if needed
 
 ---
@@ -951,10 +951,10 @@ module.exports = {
 ## Related Documentation
 
 - [CLAUDE.md](/CLAUDE.md) - Complete coding guidelines
-- [CHANGELOG.md](/scripts/enforcement/CHANGELOG.md) - Enforcement system version history and changes
-- [TIMEZONE-GUIDELINES.md](/docs/enforcement/TIMEZONE-GUIDELINES.md) - Timezone handling
-- [TYPE-SAFETY.md](/docs/enforcement/TYPE-SAFETY.md) - Type system patterns
-- [LOGGING.md](/docs/enforcement/LOGGING.md) - Logging and PHI protection
+- [CHANGELOG.md](/scripts/compliance/CHANGELOG.md) - Enforcement system version history and changes
+- [TIMEZONE-GUIDELINES.md](/docs/compliance/TIMEZONE-GUIDELINES.md) - Timezone handling
+- [TYPE-SAFETY.md](/docs/compliance/TYPE-SAFETY.md) - Type system patterns
+- [LOGGING.md](/docs/compliance/LOGGING.md) - Logging and PHI protection
 
 ---
 

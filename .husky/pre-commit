@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 # ============================================================================
-# CLAUDE.md Compliance Pre-Commit Hook
+# CLAUDE.md Compliance System - Commit Gate
 # ============================================================================
 # Validates code changes against CLAUDE.md rules before allowing commit
 # Blocks commits with ERROR severity violations
@@ -10,7 +10,7 @@
 # BYPASS: git commit --no-verify (use with caution!)
 # ============================================================================
 
-echo "🔍 Running CLAUDE.md compliance validation..."
+echo "🔍 Running CLAUDE.md compliance checks..."
 
 # =============================================================================
 # ARCHITECTURE IMPACT CHECK (NON-BLOCKING WARNINGS)
@@ -28,21 +28,21 @@ if [ -z "$STAGED_FILES" ]; then
 fi
 
 # ============================================================================
-# CHECK IF CLAUDE.md WAS MODIFIED - AUTO-SYNC ENFORCEMENT RULES
+# CHECK IF CLAUDE.md WAS MODIFIED - AUTO-SYNC COMPLIANCE RULES
 # ============================================================================
 if echo "$STAGED_FILES" | grep -q "^CLAUDE.md$"; then
-  echo "⚠️  CLAUDE.md has been modified - syncing enforcement rules..."
+  echo "⚠️  CLAUDE.md has been modified - syncing compliance rules..."
 
-  if node scripts/enforcement/sync-enforcement-rules.js sync; then
-    echo "✅ Enforcement rules synced with CLAUDE.md"
+  if node scripts/compliance/sync-compliance-rules.js sync; then
+    echo "✅ Compliance rules synced with CLAUDE.md"
 
-    # Stage the updated enforcement config
-    git add scripts/enforcement/enforcement-config.json
+    # Stage the updated compliance config
+    git add scripts/compliance/compliance-config.json
 
-    echo "📝 Auto-staged: scripts/enforcement/enforcement-config.json"
+    echo "📝 Auto-staged: scripts/compliance/compliance-config.json"
     echo ""
   else
-    echo "❌ Failed to sync enforcement rules"
+    echo "❌ Failed to sync compliance rules"
     echo "🚫 Commit blocked. Please fix sync errors."
     exit 1
   fi
@@ -83,7 +83,7 @@ for FILE in $STAGED_FILES; do
   echo "$OLD_CONTENT" > "$OLD_TEMP"
 
   # Validate the file
-  RESULT=$(node scripts/validation/claude-code-validator.js validate-change "$FILE" "$OLD_TEMP" "$FILE" 2>&1)
+  RESULT=$(node scripts/commit-gate/compliance-validator.js validate-change "$FILE" "$OLD_TEMP" "$FILE" 2>&1)
   EXIT_CODE=$?
 
   # Clean up temp file
