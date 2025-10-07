@@ -52,5 +52,3 @@ logs/
 .workflow-enabled
 package.json.local
 run-local.js
-WORKFLOW-SCRIPTS.md
-WORKFLOW-INTEGRATION.md
