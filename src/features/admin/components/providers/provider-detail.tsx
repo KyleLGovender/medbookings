@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { ProviderStatus, RequirementsValidationStatus } from '@prisma/client';
 
+import { RequirementSubmissionCard } from '@/components/requirement-submission-card';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ProviderDetailSkeleton } from '@/features/admin/components/ui/admin-loading-states';
 import { ApprovalButtons } from '@/features/admin/components/ui/approval-buttons';
 import { RejectionModal } from '@/features/admin/components/ui/rejection-modal';
-import { RequirementSubmissionCard } from '@/components/requirement-submission-card';
+import {
+  useAdminProvider,
+  useAdminProviderRequirements,
+} from '@/features/admin/hooks/use-admin-providers';
 import {
   useApproveProvider,
   useApproveRequirement,
@@ -19,10 +23,6 @@ import {
   useRejectRequirement,
   useResetProviderStatus,
 } from '@/features/admin/hooks/use-provider-approval';
-import {
-  useAdminProvider,
-  useAdminProviderRequirements,
-} from '@/features/admin/hooks/use-admin-providers';
 import { logger } from '@/lib/logger';
 import { type RouterOutputs } from '@/utils/api';
 

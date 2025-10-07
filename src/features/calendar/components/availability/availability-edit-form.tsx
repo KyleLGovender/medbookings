@@ -48,6 +48,7 @@ import {
   type SeriesActionScope,
 } from '@/features/calendar/components/availability/series-action-dialog';
 import { ServiceSelectionSection } from '@/features/calendar/components/availability/service-selection-section';
+import { useAssociatedServices } from '@/features/calendar/hooks/use-associated-services';
 import {
   useAvailabilityById,
   useDeleteAvailability,
@@ -58,7 +59,6 @@ import {
 } from '@/features/calendar/lib/recurrence-utils';
 import { updateAvailabilityDataSchema } from '@/features/calendar/types/schemas';
 import { CustomRecurrenceData, DayOfWeek, RecurrenceOption } from '@/features/calendar/types/types';
-import { useAssociatedServices } from '@/features/calendar/hooks/use-associated-services';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 import { nowUTC, parseUTC } from '@/lib/timezone';
@@ -1150,9 +1150,7 @@ export function AvailabilityEditForm({
         actionType="delete"
         availabilityTitle={availability?.provider?.user?.name || 'Provider Availability'}
         availabilityDate={
-          availability?.startTime
-            ? availability.startTime.toLocaleDateString()
-            : ''
+          availability?.startTime ? availability.startTime.toLocaleDateString() : ''
         }
         isDestructive={true}
       />

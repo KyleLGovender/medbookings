@@ -26,12 +26,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { AdminFilterStatus } from '@/features/admin/types/types';
+import { useAdminProviders } from '@/features/admin/hooks/use-admin-providers';
 import {
   useApproveProvider,
   useRejectProvider,
 } from '@/features/admin/hooks/use-provider-approval';
-import { useAdminProviders } from '@/features/admin/hooks/use-admin-providers';
+import type { AdminFilterStatus } from '@/features/admin/types/types';
 import { type RouterOutputs } from '@/utils/api';
 
 import { StatusBadge } from '../../../../components/status-badge';

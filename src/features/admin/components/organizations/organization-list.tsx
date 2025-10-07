@@ -25,12 +25,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { AdminFilterStatus } from '@/features/admin/types/types';
+import { useAdminOrganizations } from '@/features/admin/hooks/use-admin-organizations';
 import {
   useApproveOrganization,
   useRejectOrganization,
 } from '@/features/admin/hooks/use-organization-approval';
-import { useAdminOrganizations } from '@/features/admin/hooks/use-admin-organizations';
+import type { AdminFilterStatus } from '@/features/admin/types/types';
 import { type RouterOutputs } from '@/utils/api';
 
 import { StatusBadge } from '../../../../components/status-badge';

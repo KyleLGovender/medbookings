@@ -15,12 +15,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAdminOrganization } from '@/features/admin/hooks/use-admin-organizations';
 import {
   useApproveOrganization,
   useRejectOrganization,
   useResetOrganizationStatus,
 } from '@/features/admin/hooks/use-organization-approval';
-import { useAdminOrganization } from '@/features/admin/hooks/use-admin-organizations';
 import { logger } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';
 import { type RouterOutputs } from '@/utils/api';

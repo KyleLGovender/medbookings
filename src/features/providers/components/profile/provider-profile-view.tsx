@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 
 import { PenSquare } from 'lucide-react';
 
+import { RequirementSubmissionCard } from '@/components/requirement-submission-card';
 import { ProviderProfileSkeleton } from '@/components/skeletons/provider-profile-skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,7 +12,6 @@ import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { Separator } from '@/components/ui/separator';
 import { DeleteProviderButton } from '@/features/providers/components/delete-provider-button';
 import { OrganizationConnectionsManager } from '@/features/providers/components/organization-connections-manager';
-import { RequirementSubmissionCard } from '@/components/requirement-submission-card';
 // Remove server-side import - will use inline logic
 import { useProvider } from '@/features/providers/hooks/use-provider';
 
