@@ -12,6 +12,13 @@
 
 echo "🔍 Running CLAUDE.md compliance validation..."
 
+# =============================================================================
+# ARCHITECTURE IMPACT CHECK (NON-BLOCKING WARNINGS)
+# =============================================================================
+echo "🏗️  Checking architectural impact..."
+node scripts/architecture/check-core-files.js || true  # Always succeed, just show warnings
+echo ""
+
 # Get list of staged files
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
 

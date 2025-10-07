@@ -165,9 +165,7 @@ See [README-E2E-TESTING.md](./README-E2E-TESTING.md) for detailed testing docume
 - `npm run verceldb:studio` - Open Vercel database studio
 - `npm run verceldb:seed` - Seed Vercel database
 
-### Workflow & Validation
-- `npm run workflow:check` - Check workflow configuration
-- `npm run validate:all` - Run all validations
+### Architecture Validation
 - `npm run architecture:check` - Validate architecture compliance
 
 ## 🔐 Authentication
@@ -270,8 +268,7 @@ npm run test:debug    # Debug mode
 ## 📚 Documentation
 
 - [E2E Testing Guide](./README-E2E-TESTING.md) - Complete testing documentation
-- [CLAUDE.md](./CLAUDE.md) - AI development guidelines and patterns
-- [Workflow Documentation](./.claude/WORKFLOW.md) - Development workflow
+- [CLAUDE.md](./CLAUDE.md) - Development guidelines, patterns, and enforcement rules
 
 ## 🛠️ Troubleshooting
 
@@ -302,11 +299,11 @@ npm run build
 
 ## 🤝 Contributing
 
-1. Follow the PRP workflow in `.claude/WORKFLOW.md`
-2. Ensure all tests pass
-3. Run architecture checks before PRs
+1. Follow development guidelines in [CLAUDE.md](./CLAUDE.md)
+2. Ensure all tests pass (`npm run test`)
+3. Run architecture checks before PRs (`npm run architecture:check`)
 4. Follow TypeScript strict mode
-5. Use the established patterns in CLAUDE.md
+5. Adhere to established patterns and enforcement rules
 
 ## 📄 License
 
