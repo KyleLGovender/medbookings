@@ -1,4 +1,13 @@
-Please help me create a detailed Issue Specification document based on: $ARGUMENTS
+Please help me create a detailed Issue Specification document.
+
+## Required User Input (MUST ASK FIRST)
+
+**CRITICAL:** Check if the user provided an issue description via $ARGUMENTS or in their message. If not provided or unclear, you MUST ask the user:
+
+1. **Issue Description:** "What issue or bug are you experiencing? Please provide a brief description of the problem."
+2. **When Does It Occur:** "When does this issue happen? (e.g., specific page, user action, always vs sometimes)"
+
+Once you have this basic information from $ARGUMENTS or user input, proceed to the clarifying questions phase.
 
 ## Goal
 
@@ -6,7 +15,7 @@ To guide an AI assistant in creating a detailed Issue Specification document in 
 
 ## Process
 
-1. **Receive Initial Prompt:** The user provides a brief description of a bug, problem, or issue they've encountered.
+1. **Receive Initial Prompt:** The user provides a brief description of a bug, problem, or issue they've encountered (via $ARGUMENTS or when asked).
 2. **Ask Clarifying Questions:** Before writing the issue specification, the AI _must_ ask clarifying questions to gather sufficient detail. The goal is to understand the "what", "when", "where", and "why" of the issue.
 3. **Generate Issue Specification:** Based on the initial prompt and the user's answers to the clarifying questions, generate an issue specification using the structure outlined below.
 4. **Save Issue Specification:** Save the generated document as `[issue-name]-issue.md` inside the `/workflow/issues/` directory.

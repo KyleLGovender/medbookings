@@ -1,11 +1,18 @@
+Please generate a detailed task list from a specification file.
 
-Please generate a detailed task list from the specification file: $ARGUMENTS
+## Required User Input (MUST ASK FIRST)
+
+**CRITICAL:** Check if the user provided a specification file path via $ARGUMENTS or in their message. If not provided or unclear, you MUST ask the user:
+
+1. **Specification File Path:** "What is the path to the specification file (PRD or Issue) that you want to generate tasks from?"
+
+Once you have this file path from $ARGUMENTS or user input, proceed to reading the specification.
 
 Follow these steps:
 
-1. **Read Specification File:** Use the Read tool to read the contents of the specification file from the path provided in $ARGUMENTS
+1. **Read Specification File:** Use the Read tool to read the contents of the specification file from the path provided in $ARGUMENTS or user input
 2. **Determine Document Type:** Identify if this is a PRD (Product Requirements Document), Issue Specification, or other type of specification
-3. **Analyze Content:** 
+3. **Analyze Content:**
    - For PRDs: Analyze functional requirements, user stories, and implementation needs
    - For Issues: Analyze problem description, reproduction steps, and resolution requirements
    - For other specs: Analyze the core requirements and objectives

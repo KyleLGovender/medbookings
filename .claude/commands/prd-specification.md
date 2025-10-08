@@ -4,6 +4,15 @@
 
 To guide an AI assistant in creating a detailed Product Requirements Document (PRD) in Markdown format, based on an initial user prompt. The PRD should be clear, actionable, and suitable for a junior developer to understand and implement the feature.
 
+## Required User Input (MUST ASK FIRST)
+
+**CRITICAL:** Before proceeding with PRD generation, check if the user provided a feature description. If not provided or unclear, you MUST ask the user:
+
+1. **Feature Description:** "What feature or functionality would you like to create a PRD for? Please provide a brief description of what you have in mind."
+2. **Initial Context:** "What problem does this solve or what opportunity does it address?"
+
+Once you have this basic information, proceed to the clarifying questions phase.
+
 ## Process
 
 1. **Receive Initial Prompt:** The user provides a brief description or request for a new feature or functionality.
