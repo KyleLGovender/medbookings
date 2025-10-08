@@ -130,7 +130,8 @@ done
 if [ -n "$LINTABLE_FILES" ]; then
   # Allow warnings (max-warnings=100) since 'warn' level rules are intentionally non-blocking
   # Only errors will block commits
-  npx eslint $LINTABLE_FILES --max-warnings=100
+  # Use increased memory for large codebases
+  NODE_OPTIONS="--max-old-space-size=8192" npx eslint $LINTABLE_FILES --max-warnings=100
   ESLINT_EXIT=$?
 
   if [ $ESLINT_EXIT -ne 0 ]; then

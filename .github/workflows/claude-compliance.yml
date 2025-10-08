@@ -134,7 +134,7 @@ jobs:
       - name: Run ESLint
         run: |
           echo "🔍 Running ESLint with CLAUDE.md custom rules..."
-          npm run lint
+          NODE_OPTIONS="--max-old-space-size=8192" npm run lint
 
       - name: Run TypeScript Type Check
         run: |
