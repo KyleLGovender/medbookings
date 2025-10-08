@@ -311,4 +311,3 @@ Private repository - All rights reserved
 
 ---
 
-Built with ❤️ using Next.js, tRPC, and PostgreSQL
