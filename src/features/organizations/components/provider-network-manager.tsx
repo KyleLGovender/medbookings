@@ -85,7 +85,7 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
 
   const LoadingCards = () => (
     <div className="space-y-4">
-      {[...Array(3)].map((_, i) => (
+      {([...Array(3)] as unknown[]).map((_, i) => (
         <Card key={i}>
           <CardContent className="p-6">
             <div className="flex items-start gap-3">

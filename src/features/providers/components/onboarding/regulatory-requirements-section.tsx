@@ -69,7 +69,7 @@ export function RegulatoryRequirementsSection({
       description: req.description,
       validationType: req.validationType as RequirementValidationType,
       isRequired: req.isRequired,
-      validationConfig: req.validationConfig,
+      validationConfig: req.validationConfig as Record<string, unknown>,
       displayPriority: req.displayPriority,
       index: idx,
     }));
@@ -80,9 +80,9 @@ export function RegulatoryRequirementsSection({
     setValue(
       'regulatoryRequirements.requirements',
       transformedReqs.map((req, idx) => ({
-        requirementTypeId: req.id,
+        requirementTypeId: req.id as string,
         index: idx,
-      }))
+      })) as Array<{ requirementTypeId: string; index: number }>
     );
   }, [requirements, selectedProviderTypeId, setValue]);
 
@@ -121,7 +121,7 @@ export function RegulatoryRequirementsSection({
       <div className="space-y-4">
         {transformedRequirements
           .sort((a, b) => (a.displayPriority ?? 999) - (b.displayPriority ?? 999))
-          .map((requirement, index) => (
+          .map((requirement: RequirementType, index: number) => (
             <Card key={requirement.id}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">

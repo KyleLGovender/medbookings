@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 import { PenSquare } from 'lucide-react';
@@ -124,10 +125,13 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
 
           {provider.image && (
             <div className="flex justify-start">
-              <img
+              <Image
                 src={provider.image}
                 alt={provider.name}
-                className="h-40 w-40 rounded-full object-cover"
+                width={160}
+                height={160}
+                className="rounded-full object-cover"
+                priority={false}
               />
             </div>
           )}
@@ -311,7 +315,7 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
                   submission={{
                     ...submission,
                     notes: submission.notes ?? undefined,
-                    documentMetadata: submission.documentMetadata as Record<string, any> | null,
+                    documentMetadata: submission.documentMetadata as Record<string, unknown> | null,
                   }}
                 />
               ))}

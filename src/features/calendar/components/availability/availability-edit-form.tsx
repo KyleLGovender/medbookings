@@ -138,7 +138,8 @@ function useUpdateAvailabilityOptimistic(
           startTime: variables.startTime || availability.startTime,
           endTime: variables.endTime || availability.endTime,
           isRecurring: variables.isRecurring ?? availability.isRecurring,
-          recurrencePattern: variables.recurrencePattern || availability.recurrencePattern,
+          recurrencePattern: (variables.recurrencePattern ||
+            availability.recurrencePattern) as typeof variables.recurrencePattern,
           schedulingRule: variables.schedulingRule || availability.schedulingRule,
           isOnlineAvailable: variables.isOnlineAvailable ?? availability.isOnlineAvailable,
           requiresConfirmation: variables.requiresConfirmation ?? availability.requiresConfirmation,
@@ -148,7 +149,7 @@ function useUpdateAvailabilityOptimistic(
               serviceId: service.serviceId,
               durationMinutes: service.duration,
               price: service.price,
-            })) || availability.availableServices,
+            })) || (availability.availableServices as typeof variables.services),
         };
       });
 
@@ -866,7 +867,10 @@ export function AvailabilityEditForm({
                             });
                           }
                         }}
-                        defaultValue={field.value?.option || RecurrenceOption.NONE}
+                        defaultValue={
+                          (field.value as { option?: string } | undefined)?.option ||
+                          RecurrenceOption.NONE
+                        }
                       >
                         <FormControl>
                           <SelectTrigger>

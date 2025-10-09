@@ -391,6 +391,293 @@ await ctx.prisma.booking.create({ data: bookingData });
 
 ---
 
+### New Validators (Option C - 85% Automation)
+
+#### 10. Image Component Usage (Phase 1 - Quick Win)
+**Rule:** `USE_NEXT_IMAGE`
+**Pattern:** Detects `<img>` tags in TSX files
+**Fix:** Use Next.js Image component for performance optimization
+
+**Forbidden:**
+```typescript
+❌ <img src="/logo.png" alt="Logo" />
+❌ <img src={user.avatar} alt={user.name} />
+```
+
+**Allowed:**
+```typescript
+✅ import Image from 'next/image';
+   <Image src="/logo.png" alt="Logo" width={100} height={100} />
+
+✅ <Image src={user.avatar} alt={user.name} width={50} height={50} />
+```
+
+**Reference:** DEVELOPER-PRINCIPLES.md Section 15 - Component Development
+
+---
+
+#### 11. State Management (Phase 1 - Quick Win)
+**Rule:** `FORBIDDEN_STATE_LIBRARY`
+**Pattern:** Detects Redux, Zustand, Recoil, Jotai, Context in features
+**Fix:** Use TanStack Query via tRPC for all state management
+
+**Forbidden:**
+```typescript
+❌ import { create } from 'zustand';
+❌ import { createContext, useContext } from 'react';
+❌ import { configureStore } from '@reduxjs/toolkit';
+❌ import { atom } from 'jotai';
+```
+
+**Allowed:**
+```typescript
+✅ import { api } from '@/utils/api';
+
+   export function useProviders() {
+     return api.providers.getAll.useQuery();
+   }
+
+✅ const { data, isLoading } = api.providers.getById.useQuery({ id });
+```
+
+**Reference:** DEVELOPER-PRINCIPLES.md Section 16 - State Management
+
+---
+
+#### 12. Procedure Type Validation (Phase 1 - Quick Win)
+**Rule:** `WRONG_PROCEDURE_TYPE`
+**Pattern:** Detects sensitive operations using wrong procedure type
+**Fix:** Use appropriate procedure type for authorization level
+
+**Forbidden:**
+```typescript
+❌ export const adminRouter = createTRPCRouter({
+     approveProvider: publicProcedure  // Wrong - should be adminProcedure
+       .mutation(async ({ ctx, input }) => {
+         return ctx.prisma.provider.update({ ... });
+       }),
+   });
+
+❌ deleteUser: protectedProcedure  // Wrong - should be adminProcedure
+```
+
+**Allowed:**
+```typescript
+✅ export const adminRouter = createTRPCRouter({
+     approveProvider: adminProcedure
+       .input(z.object({ id: z.string() }))
+       .mutation(async ({ ctx, input }) => {
+         return ctx.prisma.provider.update({ ... });
+       }),
+   });
+
+✅ createBooking: protectedProcedure  // Correct for user operations
+```
+
+**Reference:** DEVELOPER-PRINCIPLES.md Section 13 - Authentication & Authorization
+
+---
+
+#### 13. Multiple Queries Per Endpoint (Phase 2 - Medium)
+**Rule:** `MULTIPLE_QUERIES_PER_ENDPOINT`
+**Pattern:** Detects multiple database queries in single tRPC endpoint
+**Fix:** Combine queries with include or use transactions
+
+**Forbidden:**
+```typescript
+❌ getData: publicProcedure.query(async ({ ctx }) => {
+     const user = await ctx.prisma.user.findUnique({ where: { id } });
+     const provider = await ctx.prisma.provider.findFirst({ where: { userId: id } });
+     const bookings = await ctx.prisma.booking.findMany({ where: { userId: id } });
+     return { user, provider, bookings };
+   });
+```
+
+**Allowed:**
+```typescript
+✅ getData: publicProcedure.query(async ({ ctx }) => {
+     return ctx.prisma.user.findUnique({
+       where: { id },
+       include: {
+         provider: true,
+         bookings: true
+       }
+     });
+   });
+
+✅ getData: publicProcedure.query(async ({ ctx }) => {
+     return ctx.prisma.$transaction(async (tx) => {
+       const user = await tx.user.findUnique({ where: { id } });
+       const provider = await tx.provider.findFirst({ where: { userId: id } });
+       return { user, provider };
+     });
+   });
+```
+
+**Reference:** DEVELOPER-PRINCIPLES.md Section 14 - API Development
+
+---
+
+#### 14. Authorization Order (Phase 2 - Medium)
+**Rule:** `AUTH_CHECK_ORDER`
+**Pattern:** Detects business logic before authorization checks
+**Fix:** Move authorization checks to beginning of procedure
+
+**Forbidden:**
+```typescript
+❌ updateProvider: protectedProcedure
+     .mutation(async ({ ctx, input }) => {
+       const provider = await ctx.prisma.provider.update({ ... }); // Business logic first!
+
+       if (ctx.session.user.id !== provider.userId) {
+         throw new TRPCError({ code: 'FORBIDDEN' });
+       }
+
+       return provider;
+     });
+```
+
+**Allowed:**
+```typescript
+✅ updateProvider: protectedProcedure
+     .mutation(async ({ ctx, input }) => {
+       // Authorization check FIRST
+       const existing = await ctx.prisma.provider.findUnique({ where: { id: input.id } });
+       if (ctx.session.user.id !== existing?.userId) {
+         throw new TRPCError({ code: 'FORBIDDEN' });
+       }
+
+       // Business logic AFTER authorization
+       return ctx.prisma.provider.update({ ... });
+     });
+```
+
+**Reference:** DEVELOPER-PRINCIPLES.md Section 14 - API Development
+
+---
+
+#### 15. Input Sanitization (Phase 3 - Advanced)
+**Rule:** `UNSAFE_INPUT_HANDLING`
+**Pattern:** Detects dangerous patterns like dangerouslySetInnerHTML, eval()
+**Fix:** Use safe alternatives or sanitize with DOMPurify
+
+**Forbidden:**
+```typescript
+❌ <div dangerouslySetInnerHTML={{ __html: userContent }} />
+❌ element.innerHTML = userInput;
+❌ eval(userCode);
+```
+
+**Allowed:**
+```typescript
+✅ import DOMPurify from 'dompurify';
+   <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(userContent) }} />
+
+✅ element.textContent = userInput;  // Use textContent instead
+
+✅ // Avoid innerHTML entirely - use React rendering
+   <div>{userContent}</div>
+```
+
+**Reference:** DEVELOPER-PRINCIPLES.md Section 19 - Security Standards
+
+---
+
+#### 16. Performance Patterns (Phase 3 - Advanced)
+**Rules:** `API_CALL_IN_LOOP`, `MISSING_MEMOIZATION`, `MISSING_CACHE_CONFIG`
+**Pattern:** Detects performance anti-patterns
+**Fix:** Batch operations, add memoization, configure caching
+
+**Forbidden:**
+```typescript
+❌ // API calls in loops
+   for (const id of providerIds) {
+     const provider = await api.providers.getById.useQuery({ id });
+   }
+
+❌ // Large component without memoization
+   function LargeComponent({ items }) {
+     const sorted = items.sort();  // Expensive operation
+     const filtered = sorted.filter(x => x.active);
+     // 200+ lines of code...
+   }
+
+❌ // No cache configuration
+   const { data } = api.providers.getAll.useQuery();
+```
+
+**Allowed:**
+```typescript
+✅ // Batch fetch
+   const { data } = api.providers.getBatch.useQuery({ ids: providerIds });
+
+✅ // Memoization
+   function LargeComponent({ items }) {
+     const processed = useMemo(() => {
+       return items.sort().filter(x => x.active);
+     }, [items]);
+     // Component logic...
+   }
+
+✅ // Cache configuration
+   const { data } = api.providers.getAll.useQuery(undefined, {
+     staleTime: 5000,
+     cacheTime: 300000
+   });
+```
+
+**Reference:** DEVELOPER-PRINCIPLES.md Section 18 - Performance Standards
+
+---
+
+#### 17. Form Patterns (Phase 3 - Advanced)
+**Rules:** `MISSING_REACT_HOOK_FORM`, `MISSING_ZOD_RESOLVER`, `USE_NATIVE_ENUM`
+**Pattern:** Detects forms without React Hook Form + Zod
+**Fix:** Use React Hook Form with zodResolver
+
+**Forbidden:**
+```typescript
+❌ // Manual form state
+   function LoginForm() {
+     const [email, setEmail] = useState('');
+     const [password, setPassword] = useState('');
+     return <form>...</form>;
+   }
+
+❌ // React Hook Form without Zod
+   const form = useForm();
+
+❌ // Manual enum instead of Prisma enum
+   const schema = z.object({
+     status: z.enum(['PENDING', 'APPROVED', 'REJECTED'])
+   });
+```
+
+**Allowed:**
+```typescript
+✅ // React Hook Form + Zod
+   import { useForm } from 'react-hook-form';
+   import { zodResolver } from '@hookform/resolvers/zod';
+   import { z } from 'zod';
+   import { ProviderStatus } from '@prisma/client';
+
+   const schema = z.object({
+     email: z.string().email(),
+     status: z.nativeEnum(ProviderStatus)
+   });
+
+   function LoginForm() {
+     const form = useForm({
+       resolver: zodResolver(schema)
+     });
+     return <form>...</form>;
+   }
+```
+
+**Reference:** DEVELOPER-PRINCIPLES.md Section 17 - Form Handling
+
+---
+
 ## Setup & Installation
 
 ### One-Command Setup
@@ -902,6 +1189,14 @@ module.exports = {
 - Hooks type exports
 - Database queries outside tRPC
 - Unbounded queries (`findMany` without `take`)
+- **Image component usage** ⭐ NEW
+- **State management** ⭐ NEW
+- **Procedure type validation** ⭐ NEW
+- **Multiple queries per endpoint** ⭐ NEW
+- **Authorization order** ⭐ NEW
+- **Input sanitization** ⭐ NEW
+- **Performance patterns** ⭐ NEW
+- **Form patterns** ⭐ NEW
 - Backup file detection
 - Code formatting (ESLint/Prettier)
 - TypeScript strict mode

@@ -93,8 +93,7 @@ export function ProviderCalendarSlotView({
 
   const [isMobile, setIsMobile] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [selectedSlot, setSelectedSlot] = useState<any>(null); // Type mismatch between tRPC SlotData and BookingSlotModal props - needs refactor
+  const [selectedSlot, setSelectedSlot] = useState<SlotData | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [lastBookingDetails, setLastBookingDetails] = useState<{
@@ -200,7 +199,7 @@ export function ProviderCalendarSlotView({
     const slots: ProviderSlotsResult = slotsData || [];
     if (!Array.isArray(slots)) return [];
 
-    const serviceMap = new Map();
+    const serviceMap = new Map<string, { id: string; name: string }>();
 
     slots.forEach((slot: SlotData) => {
       if (slot.service && !serviceMap.has(slot.service.id)) {
@@ -211,7 +210,7 @@ export function ProviderCalendarSlotView({
       }
     });
 
-    return Array.from(serviceMap.values());
+    return Array.from(serviceMap.values()) as Array<{ id: string; name: string }>;
   }, [slotsData]);
 
   // Helper functions to convert between service names and IDs for URL readability
@@ -649,7 +648,7 @@ export function ProviderCalendarSlotView({
 
         {/* Booking Modal */}
         <BookingSlotModal
-          slot={selectedSlot}
+          slot={selectedSlot as BookingSlot | null}
           open={isBookingModalOpen}
           onOpenChange={setIsBookingModalOpen}
           onBookingConfirm={handleBookingConfirm}

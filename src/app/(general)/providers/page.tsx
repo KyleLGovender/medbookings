@@ -366,7 +366,7 @@ export default function ProvidersPage() {
           <div className="animate-pulse space-y-4">
             <div className="h-8 w-1/4 rounded bg-gray-200"></div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {[...Array(6)].map((_, i) => (
+              {([...Array(6)] as unknown[]).map((_, i) => (
                 <div key={i} className="h-64 rounded bg-gray-200"></div>
               ))}
             </div>

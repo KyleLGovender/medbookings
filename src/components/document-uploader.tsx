@@ -127,11 +127,15 @@ export function DocumentUploader({
       clearInterval(interval);
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = (await response.json()) as { error?: string };
         throw new Error(errorData.error || 'Upload failed');
       }
 
-      const result = await response.json();
+      const result = (await response.json()) as {
+        success: boolean;
+        url?: string;
+        error?: string;
+      };
       setUploadProgress(100);
 
       if (!result.success || !result.url) {

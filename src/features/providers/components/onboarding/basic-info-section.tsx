@@ -28,7 +28,7 @@ export function BasicInfoSection() {
   const { control, setValue, watch } = useFormContext();
 
   // Watch the bio field to show character count
-  const bio = watch('basicInfo.bio') || '';
+  const bio: string = (watch('basicInfo.bio') as string | undefined) || '';
 
   const handleProfileImageChange = (imageUrl: string | null) => {
     setProfileImage(imageUrl);
@@ -135,7 +135,7 @@ export function BasicInfoSection() {
                 </p>
               </div>
               <FormControl>
-                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                <Switch checked={field.value as boolean} onCheckedChange={field.onChange} />
               </FormControl>
             </FormItem>
           )}
@@ -191,7 +191,7 @@ export function BasicInfoSection() {
                     variant="ghost"
                     size="sm"
                     className="h-4 h-auto w-4 p-0"
-                    onClick={() => removeLanguage(language)}
+                    onClick={() => removeLanguage(language as string)}
                   >
                     <X className="h-3 w-3" />
                   </Button>

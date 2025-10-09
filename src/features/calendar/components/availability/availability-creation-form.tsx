@@ -409,7 +409,10 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
                             form.setValue('isRecurring', option !== RecurrenceOption.NONE);
                           }
                         }}
-                        defaultValue={field.value?.option || RecurrenceOption.NONE}
+                        defaultValue={
+                          (field.value as { option?: string } | undefined)?.option ||
+                          RecurrenceOption.NONE
+                        }
                       >
                         <FormControl>
                           <SelectTrigger>

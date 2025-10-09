@@ -78,14 +78,14 @@ export function useApproveRequirement(options?: {
       });
 
       // Snapshot the previous requirements value - try different query key patterns
-      let previousRequirements;
-      let actualKey;
+      let previousRequirements: unknown;
+      let actualKey: unknown[] | undefined;
 
       // Look for the actual key in the cache
       for (const query of allQueries) {
         const keyStr = JSON.stringify(query.queryKey);
         if (keyStr.includes('getProviderRequirements') && keyStr.includes(providerId)) {
-          actualKey = query.queryKey;
+          actualKey = query.queryKey as unknown[];
           previousRequirements = query.state.data;
           logger.debug('admin', 'Found requirements data with actual key', { actualKey });
           break;
@@ -271,14 +271,14 @@ export function useApproveProvider(options?: {
       // Snapshot the previous provider value
       const cache = queryClient.getQueryCache();
       const allQueries = cache.getAll();
-      let previousProvider;
-      let actualKey;
+      let previousProvider: unknown;
+      let actualKey: unknown[] | undefined;
 
       // Look for the actual key in the cache
       for (const query of allQueries) {
         const keyStr = JSON.stringify(query.queryKey);
         if (keyStr.includes('getProviderById') && keyStr.includes(id)) {
-          actualKey = query.queryKey;
+          actualKey = query.queryKey as unknown[];
           previousProvider = query.state.data;
           logger.debug('admin', 'Found provider data with actual key', { actualKey });
           break;
@@ -381,14 +381,14 @@ export function useRejectProvider(options?: {
       // Snapshot the previous provider value
       const cache = queryClient.getQueryCache();
       const allQueries = cache.getAll();
-      let previousProvider;
-      let actualKey;
+      let previousProvider: unknown;
+      let actualKey: unknown[] | undefined;
 
       // Look for the actual key in the cache
       for (const query of allQueries) {
         const keyStr = JSON.stringify(query.queryKey);
         if (keyStr.includes('getProviderById') && keyStr.includes(id)) {
-          actualKey = query.queryKey;
+          actualKey = query.queryKey as unknown[];
           previousProvider = query.state.data;
           logger.debug('admin', 'Found provider data with actual key', { actualKey });
           break;
@@ -488,14 +488,14 @@ export function useResetProviderStatus(options?: {
       // Snapshot the previous provider value
       const cache = queryClient.getQueryCache();
       const allQueries = cache.getAll();
-      let previousProvider;
-      let actualKey;
+      let previousProvider: unknown;
+      let actualKey: unknown[] | undefined;
 
       // Look for the actual key in the cache
       for (const query of allQueries) {
         const keyStr = JSON.stringify(query.queryKey);
         if (keyStr.includes('getProviderById') && keyStr.includes(id)) {
-          actualKey = query.queryKey;
+          actualKey = query.queryKey as unknown[];
           previousProvider = query.state.data;
           logger.debug('admin', 'Found provider data with actual key', { actualKey });
           break;

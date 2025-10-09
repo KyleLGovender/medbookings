@@ -241,7 +241,7 @@ export function OversightDashboard({
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const result = (await response.json()) as { redirectUrl?: string };
         if (result.redirectUrl) {
           router.push(result.redirectUrl);
         }

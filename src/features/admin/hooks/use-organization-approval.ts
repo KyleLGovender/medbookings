@@ -112,14 +112,14 @@ export function useResetOrganizationStatus(options?: {
       // Snapshot the previous organization value
       const cache = queryClient.getQueryCache();
       const allQueries = cache.getAll();
-      let previousOrganization;
-      let actualKey;
+      let previousOrganization: unknown;
+      let actualKey: unknown[] | undefined;
 
       // Look for the actual key in the cache
       for (const query of allQueries) {
         const keyStr = JSON.stringify(query.queryKey);
         if (keyStr.includes('getOrganizationById') && keyStr.includes(id)) {
-          actualKey = query.queryKey;
+          actualKey = query.queryKey as unknown[];
           previousOrganization = query.state.data;
           logger.debug('admin', 'Found organization data with actual key', { actualKey });
           break;

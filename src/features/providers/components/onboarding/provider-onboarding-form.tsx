@@ -191,8 +191,8 @@ export function ProviderOnboardingForm() {
       methods.setValue(
         'regulatoryRequirements.requirements',
         uniqueRequirementsForSelectedTypes.map((req, idx) => ({
-          requirementTypeId: req.id,
-          index: idx,
+          requirementTypeId: req.id as string,
+          index: idx as number,
         }))
       );
 

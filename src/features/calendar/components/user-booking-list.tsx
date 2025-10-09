@@ -139,7 +139,7 @@ export function UserBookingList({
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {[...Array(3)].map((_, i) => (
+        {([...Array(3)] as unknown[]).map((_, i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">

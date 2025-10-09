@@ -111,7 +111,7 @@ export async function createApiError(
 
   // Try to parse error response
   try {
-    errorData = await response.json();
+    errorData = (await response.json()) as Record<string, unknown>;
     code =
       (typeof errorData.code === 'string' ? errorData.code : null) ||
       (typeof errorData.error === 'string' ? errorData.error : null) ||
@@ -268,7 +268,7 @@ export function shouldRetry(failureCount: number, error: unknown): boolean {
  * @param context - Error context
  * @returns Promise that resolves to parsed response data
  */
-export async function apiRequest<T = any>(
+export async function apiRequest<T = unknown>(
   url: string,
   options: RequestInit = {},
   context: ErrorContext
@@ -310,7 +310,7 @@ export async function apiRequest<T = any>(
  * @param error - The error to log
  * @param context - Additional context
  */
-export function logApiError(error: ApiError, context?: Record<string, any>): void {
+export function logApiError(error: ApiError, context?: Record<string, unknown>): void {
   // In development, log to console
   if (process.env.NODE_ENV === 'development') {
     logger.error('API Error', {

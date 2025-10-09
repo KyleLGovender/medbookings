@@ -81,13 +81,29 @@ export const renderRequirementInput = (
   );
 
   // Initialize the field with existing value only if it doesn't already have a value
-  const currentValue = form.watch(`regulatoryRequirements.requirements.${requirement.index}.value`);
-  const hasExistingSubmission = requirement.existingSubmission;
+  const currentValue = form.watch(
+    `regulatoryRequirements.requirements.${requirement.index}.value`
+  ) as string | number | boolean | Date | File | undefined;
+  const hasExistingSubmission: AdminRequirement | undefined = requirement.existingSubmission as
+    | AdminRequirement
+    | undefined;
 
   if (!currentValue && hasExistingSubmission) {
-    const existingValue =
-      requirement.existingSubmission?.documentMetadata?.value ||
-      requirement.existingSubmission?.value;
+    const existingValue: string | number | boolean | Date | File | undefined =
+      (requirement.existingSubmission?.documentMetadata?.value as
+        | string
+        | number
+        | boolean
+        | Date
+        | File
+        | undefined) ||
+      (requirement.existingSubmission?.value as
+        | string
+        | number
+        | boolean
+        | Date
+        | File
+        | undefined);
     if (existingValue !== undefined) {
       form.setValue(
         `regulatoryRequirements.requirements.${requirement.index}.value`,
@@ -114,10 +130,12 @@ export const renderRequirementInput = (
   switch (requirement.validationType) {
     case RequirementValidationType.BOOLEAN:
       // Get current value from form watcher or existing submission
-      const currentValue =
-        form.watch(`regulatoryRequirements.requirements.${requirement.index}.value`) ||
-        requirement.existingSubmission?.documentMetadata?.value ||
-        requirement.existingSubmission?.value ||
+      const currentValue: string =
+        (form.watch(`regulatoryRequirements.requirements.${requirement.index}.value`) as
+          | string
+          | undefined) ||
+        (requirement.existingSubmission?.documentMetadata?.value as string | undefined) ||
+        (requirement.existingSubmission?.value as string | undefined) ||
         '';
 
       return (
@@ -140,16 +158,18 @@ export const renderRequirementInput = (
       );
     case RequirementValidationType.DOCUMENT:
       // Extract accepted file types from validation config
-      const acceptedFileTypes = isDocumentValidationConfig(requirement.validationConfig)
-        ? requirement.validationConfig.acceptedFileTypes || [
-            '.pdf',
-            '.doc',
-            '.docx',
-            '.jpg',
-            '.jpeg',
-            '.png',
-          ]
-        : ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
+      const acceptedFileTypes: string[] = (
+        isDocumentValidationConfig(requirement.validationConfig)
+          ? requirement.validationConfig.acceptedFileTypes || [
+              '.pdf',
+              '.doc',
+              '.docx',
+              '.jpg',
+              '.jpeg',
+              '.png',
+            ]
+          : ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+      ) as string[];
 
       return (
         <div className="space-y-2">
@@ -173,7 +193,7 @@ export const renderRequirementInput = (
                   </div>
                   <div className="flex gap-2">
                     <a
-                      href={requirement.existingSubmission.documentMetadata.value}
+                      href={requirement.existingSubmission.documentMetadata.value as string}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex h-8 items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
@@ -187,10 +207,10 @@ export const renderRequirementInput = (
             )}
           <DocumentUploader
             acceptedFormats={acceptedFileTypes}
-            purpose={requirement.name || `requirement-${requirement.index}`}
-            onUpload={(fileUrl) => {
+            purpose={(requirement.name as string | undefined) || `requirement-${requirement.index}`}
+            onUpload={(fileUrl: string | null) => {
               // Only trigger validation when needed
-              const shouldValidate = false;
+              const shouldValidate: boolean = false;
 
               if (fileUrl) {
                 form.setValue(
@@ -223,31 +243,31 @@ export const renderRequirementInput = (
       );
     case RequirementValidationType.TEXT:
       // Get the existing value specifically for this requirement
-      const textValue =
-        requirement.existingSubmission?.documentMetadata?.value ||
-        requirement.existingSubmission?.value ||
-        form.existingValue ||
+      const textValue: string =
+        (requirement.existingSubmission?.documentMetadata?.value as string | undefined) ||
+        (requirement.existingSubmission?.value as string | undefined) ||
+        (form.existingValue as string | undefined) ||
         '';
 
       return (
         <Input
           id={inputId}
-          required={requirement.isRequired}
+          required={requirement.isRequired as boolean | undefined}
           type="text"
           {...form.register(`regulatoryRequirements.requirements.${requirement.index}.value`, {
-            value: textValue,
+            value: textValue as string,
           })}
           className={error ? 'border-destructive' : ''}
         />
       );
     case RequirementValidationType.FUTURE_DATE:
-      const dateValue = form.watch(
+      const dateValue: string | undefined = form.watch(
         `regulatoryRequirements.requirements.${requirement.index}.value`
-      );
-      const existingDateValue =
-        requirement.existingSubmission?.documentMetadata?.value ||
-        requirement.existingSubmission?.value;
-      const currentDateValue = dateValue || existingDateValue;
+      ) as string | undefined;
+      const existingDateValue: string | undefined =
+        (requirement.existingSubmission?.documentMetadata?.value as string | undefined) ||
+        (requirement.existingSubmission?.value as string | undefined);
+      const currentDateValue: string | undefined = dateValue || existingDateValue;
 
       return (
         <div className="max-w-64">
@@ -273,13 +293,13 @@ export const renderRequirementInput = (
         </div>
       );
     case RequirementValidationType.PAST_DATE:
-      const pastDateValue = form.watch(
+      const pastDateValue: string | undefined = form.watch(
         `regulatoryRequirements.requirements.${requirement.index}.value`
-      );
-      const existingPastDateValue =
-        requirement.existingSubmission?.documentMetadata?.value ||
-        requirement.existingSubmission?.value;
-      const currentPastDateValue = pastDateValue || existingPastDateValue;
+      ) as string | undefined;
+      const existingPastDateValue: string | undefined =
+        (requirement.existingSubmission?.documentMetadata?.value as string | undefined) ||
+        (requirement.existingSubmission?.value as string | undefined);
+      const currentPastDateValue: string | undefined = pastDateValue || existingPastDateValue;
 
       return (
         <div className="max-w-64">
@@ -305,9 +325,11 @@ export const renderRequirementInput = (
         </div>
       );
     case RequirementValidationType.PREDEFINED_LIST:
-      const selectedValue =
-        requirement.existingSubmission?.documentMetadata?.value ||
-        form.watch(`regulatoryRequirements.requirements.${requirement.index}.value`);
+      const selectedValue: string | undefined =
+        (requirement.existingSubmission?.documentMetadata?.value as string | undefined) ||
+        (form.watch(`regulatoryRequirements.requirements.${requirement.index}.value`) as
+          | string
+          | undefined);
       return (
         <div>
           <Select
@@ -347,19 +369,19 @@ export const renderRequirementInput = (
                 className="mt-2 w-full"
                 placeholder={
                   requirement.validationConfig && 'otherLabel' in requirement.validationConfig
-                    ? requirement.validationConfig.otherLabel
+                    ? (requirement.validationConfig.otherLabel as string)
                     : 'Please specify'
                 }
                 value={
                   requirement.existingSubmission?.documentMetadata?.value === 'other'
-                    ? form.watch(
+                    ? (form.watch(
                         `regulatoryRequirements.requirements.${requirement.index}.otherValue`
-                      ) ||
-                      requirement.existingSubmission?.documentUrl ||
+                      ) as string | undefined) ||
+                      (requirement.existingSubmission?.documentUrl as string | undefined) ||
                       ''
-                    : form.watch(
+                    : (form.watch(
                         `regulatoryRequirements.requirements.${requirement.index}.otherValue`
-                      ) || ''
+                      ) as string | undefined) || ''
                 }
                 onChange={(e) => {
                   form.setValue(
@@ -373,21 +395,28 @@ export const renderRequirementInput = (
         </div>
       );
     case RequirementValidationType.NUMBER: {
-      const numberConfig = isNumberValidationConfig(requirement.validationConfig)
-        ? requirement.validationConfig
-        : undefined;
+      const numberConfig: NumberValidationConfig | undefined = (
+        isNumberValidationConfig(requirement.validationConfig)
+          ? requirement.validationConfig
+          : undefined
+      ) as NumberValidationConfig | undefined;
 
       return (
         <Input
           id={inputId}
-          required={requirement.isRequired}
+          required={requirement.isRequired as boolean | undefined}
           type="number"
-          min={numberConfig?.min}
-          max={numberConfig?.max}
-          step={numberConfig?.step || 1}
+          min={numberConfig?.min as number | undefined}
+          max={numberConfig?.max as number | undefined}
+          step={(numberConfig?.step as number | undefined) || 1}
           {...form.register(`regulatoryRequirements.requirements.${requirement.index}.value`)}
           className={error ? 'border-destructive' : ''}
-          defaultValue={requirement.existingSubmission?.documentMetadata?.value || ''}
+          defaultValue={
+            (requirement.existingSubmission?.documentMetadata?.value as
+              | string
+              | number
+              | undefined) || ''
+          }
         />
       );
     }
@@ -395,11 +424,13 @@ export const renderRequirementInput = (
       return (
         <Input
           id={inputId}
-          required={requirement.isRequired}
+          required={requirement.isRequired as boolean | undefined}
           type="text"
           {...form.register(`regulatoryRequirements.requirements.${requirement.index}.value`)}
           className={error ? 'border-destructive' : ''}
-          defaultValue={requirement.existingSubmission?.documentMetadata?.value || ''}
+          defaultValue={
+            (requirement.existingSubmission?.documentMetadata?.value as string | undefined) || ''
+          }
         />
       );
   }

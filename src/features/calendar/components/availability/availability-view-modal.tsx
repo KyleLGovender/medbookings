@@ -85,7 +85,8 @@ export function AvailabilityViewModal({
     if (!pattern) return 'No recurrence';
 
     try {
-      const parsedPattern = typeof pattern === 'string' ? JSON.parse(pattern) : pattern;
+      const parsedPattern =
+        typeof pattern === 'string' ? (JSON.parse(pattern) as Record<string, unknown>) : pattern;
 
       if (parsedPattern.type === 'DAILY') {
         return `Daily, every ${parsedPattern.interval || 1} day(s)`;

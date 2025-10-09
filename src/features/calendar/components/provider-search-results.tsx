@@ -240,7 +240,7 @@ export function ProviderSearchResults({ filters }: ProviderSearchResultsProps) {
       {/* Provider results */}
       {isLoading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
+          {([...Array(6)] as unknown[]).map((_, i) => (
             <div key={i} className="animate-pulse">
               <Card className="h-80">
                 <CardContent className="p-6">

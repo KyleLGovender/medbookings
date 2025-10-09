@@ -54,6 +54,7 @@ InputComponent.displayName = 'InputComponent';
 
 type CountryEntry = { label: string; value: RPNInput.Country | undefined };
 
+// eslint-disable-next-line rulesdir/enforce-prisma-derived-patterns -- UI component types, not Prisma-related
 type CountrySelectProps = {
   disabled?: boolean;
   value: RPNInput.Country;

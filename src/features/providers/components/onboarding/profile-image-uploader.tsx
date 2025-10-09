@@ -75,7 +75,11 @@ export function ProfileImageUploader({ onImageChange, currentImage }: ProfileIma
         throw new Error('Failed to upload image');
       }
 
-      const result = await response.json();
+      const result = (await response.json()) as {
+        success: boolean;
+        url?: string;
+        error?: string;
+      };
 
       if (!result.success || !result.url) {
         throw new Error(result.error || 'Failed to upload image');

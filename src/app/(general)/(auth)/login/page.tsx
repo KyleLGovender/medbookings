@@ -153,7 +153,7 @@ function LoginPageContent() {
         body: JSON.stringify(data),
       });
 
-      const result = await response.json();
+      const result = (await response.json()) as { error?: string; success?: boolean };
 
       if (!response.ok) {
         toast({

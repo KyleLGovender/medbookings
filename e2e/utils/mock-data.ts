@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { type Languages, PrismaClient, type ProviderStatus } from '@prisma/client';
 
 import { nowUTC } from '../../src/lib/timezone';
 import {
@@ -50,10 +50,10 @@ export async function createTestProvider(providerData = TEST_PROVIDERS.approved,
       name: providerData.name,
       bio: providerData.bio,
       image: 'https://placeholder.com/150x150', // Default placeholder image
-      languages: providerData.languages as any,
+      languages: providerData.languages as Languages[],
       website: providerData.website,
       showPrice: providerData.showPrice,
-      status: providerData.status as any,
+      status: providerData.status as ProviderStatus,
       approvedAt: providerData.status === 'APPROVED' ? nowUTC() : null,
     },
   });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, CheckCircle2, Edit2, FileText, Upload, XCircle } from 'lucide-react';
@@ -82,7 +82,13 @@ export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEdi
     },
   });
 
-  const { data: requirements, isLoading } = api.providers.getRequirements.useQuery({ providerId });
+  const { data: requirements, isLoading } = api.providers.getRequirements.useQuery(
+    { providerId },
+    {
+      staleTime: 5000, // Consider data fresh for 5 seconds
+      gcTime: 300000, // Keep in cache for 5 minutes (garbage collection time)
+    }
+  );
 
   const updateRequirement = api.providers.updateRequirement.useMutation({
     onSuccess: () => {
@@ -104,48 +110,51 @@ export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEdi
     },
   });
 
-  const handleSubmitRequirement = async (data: { notes?: string }) => {
-    if (!selectedRequirement) return;
+  const handleSubmitRequirement = useCallback(
+    async (data: { notes?: string }) => {
+      if (!selectedRequirement) return;
 
-    // Get the requirement value from the form structure that renderRequirementInput uses
-    const formValues = form.getValues();
-    const requirementPath = 'regulatoryRequirements.requirements.0.value';
-    const documentPath = 'regulatoryRequirements.requirements.0.documentMetadata';
+      // Get the requirement value from the form structure that renderRequirementInput uses
+      const formValues = form.getValues();
+      const requirementPath = 'regulatoryRequirements.requirements.0.value';
+      const documentPath = 'regulatoryRequirements.requirements.0.documentMetadata';
 
-    const requirementValue =
-      form.watch(requirementPath) ||
-      formValues.regulatoryRequirements?.requirements?.[0]?.value ||
-      '';
-    const documentMetadata = form.watch(documentPath) || undefined;
+      const requirementValue =
+        form.watch(requirementPath) ||
+        formValues.regulatoryRequirements?.requirements?.[0]?.value ||
+        '';
+      const documentMetadata = form.watch(documentPath) || undefined;
 
-    // Build the request payload based on requirement type
-    const payload: Record<string, unknown> = {
-      requirementId: selectedRequirement.id,
-      notes: data.notes || '',
-    };
+      // Build the request payload based on requirement type
+      const payload: Record<string, unknown> = {
+        requirementId: selectedRequirement.id,
+        notes: data.notes || '',
+      };
 
-    if (selectedRequirement.requirementType.validationType === 'DOCUMENT') {
-      // For document requirements, use documentUrl
-      payload.documentUrl = requirementValue || undefined;
-      payload.documentMetadata = documentMetadata;
-    } else {
-      // For non-document requirements, use value field
-      payload.value = requirementValue;
-      payload.documentMetadata = documentMetadata || { value: requirementValue };
-    }
-
-    await updateRequirement.mutateAsync(
-      payload as {
-        requirementId: string;
-        value?: unknown;
-        documentMetadata?: unknown;
-        notes?: string;
-        documentUrl?: string;
+      if (selectedRequirement.requirementType.validationType === 'DOCUMENT') {
+        // For document requirements, use documentUrl
+        payload.documentUrl = requirementValue || undefined;
+        payload.documentMetadata = documentMetadata;
+      } else {
+        // For non-document requirements, use value field
+        payload.value = requirementValue;
+        payload.documentMetadata = documentMetadata || { value: requirementValue };
       }
-    );
-  };
 
-  const getStatusIcon = (status: string) => {
+      await updateRequirement.mutateAsync(
+        payload as {
+          requirementId: string;
+          value?: unknown;
+          documentMetadata?: unknown;
+          notes?: string;
+          documentUrl?: string;
+        }
+      );
+    },
+    [selectedRequirement, form, updateRequirement]
+  );
+
+  const getStatusIcon = useCallback((status: string) => {
     switch (status) {
       case 'APPROVED':
         return <CheckCircle2 className="h-5 w-5 text-green-500" />;
@@ -156,9 +165,9 @@ export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEdi
       default:
         return <AlertCircle className="h-5 w-5 text-gray-400" />;
     }
-  };
+  }, []);
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = useCallback((status: string) => {
     const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
       APPROVED: 'default',
       PENDING: 'secondary',
@@ -167,7 +176,21 @@ export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEdi
     };
 
     return <Badge variant={variants[status] || 'outline'}>{status.replace('_', ' ')}</Badge>;
-  };
+  }, []);
+
+  // Memoize requirements summary to avoid re-filtering on every render
+  const requirementsSummary = useMemo(() => {
+    if (!requirements || requirements.length === 0) return null;
+
+    return {
+      total: requirements.length,
+      approved: requirements.filter((r) => r.status === 'APPROVED').length,
+      pending: requirements.filter((r) => r.status === 'PENDING').length,
+      actionRequired: requirements.filter(
+        (r) => r.status === 'NOT_SUBMITTED' || r.status === 'REJECTED'
+      ).length,
+    };
+  }, [requirements]);
 
   if (isLoading) {
     return (
@@ -309,24 +332,15 @@ export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEdi
           )}
 
           {/* Summary Card */}
-          {requirements && requirements.length > 0 && (
+          {requirementsSummary && (
             <div className="mt-6 rounded-lg bg-muted/50 p-4">
               <h4 className="mb-2 text-sm font-medium">Requirements Summary</h4>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>Total: {requirements.length}</div>
-                <div className="text-green-600">
-                  Approved: {requirements.filter((r) => r.status === 'APPROVED').length}
-                </div>
-                <div className="text-yellow-600">
-                  Pending: {requirements.filter((r) => r.status === 'PENDING').length}
-                </div>
+                <div>Total: {requirementsSummary.total}</div>
+                <div className="text-green-600">Approved: {requirementsSummary.approved}</div>
+                <div className="text-yellow-600">Pending: {requirementsSummary.pending}</div>
                 <div className="text-red-600">
-                  Action Required:{' '}
-                  {
-                    requirements.filter(
-                      (r) => r.status === 'NOT_SUBMITTED' || r.status === 'REJECTED'
-                    ).length
-                  }
+                  Action Required: {requirementsSummary.actionRequired}
                 </div>
               </div>
             </div>

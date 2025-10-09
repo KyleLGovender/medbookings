@@ -78,6 +78,16 @@ export interface ProviderBusinessInfo {
   status: string;
 }
 
+/**
+ * Configuration for a settings page section
+ * Defines structure for collapsible settings sections in the UI
+ *
+ * @property {string} id - Unique section identifier
+ * @property {string} title - Section heading displayed to user
+ * @property {string} description - Brief explanation of section purpose
+ * @property {React.ComponentType} icon - Icon component for section header
+ * @property {boolean} visible - Whether section should be displayed
+ */
 export interface SettingsSection {
   id: string;
   title: string;
@@ -86,6 +96,16 @@ export interface SettingsSection {
   visible: boolean;
 }
 
+/**
+ * Props for the main settings page component
+ * Aggregates all user, provider, and preference data needed for settings UI
+ *
+ * @property {UserSettings} user - Current user account information
+ * @property {ProviderBusinessInfo} [provider] - Provider profile if user is a provider
+ * @property {CommunicationPreferences} [communicationPreferences] - User notification settings
+ * @property {boolean} isProvider - Whether user has provider account
+ * @property {boolean} isAdmin - Whether user has admin privileges
+ */
 export interface SettingsPageProps {
   user: UserSettings;
   provider?: ProviderBusinessInfo;

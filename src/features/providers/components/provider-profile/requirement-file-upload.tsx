@@ -89,7 +89,7 @@ export function RequirementFileUpload({
         throw new Error('Upload failed');
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as { url: string };
 
       onFileUploaded(data.url, {
         fileName: file.name,

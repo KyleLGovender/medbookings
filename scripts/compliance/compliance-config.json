@@ -118,7 +118,121 @@
           "applies": "/routers/",
           "severity": "ERROR"
         }
-      ]
+      ],
+      "images": {
+        "enabled": true,
+        "patterns": {
+          "forbidden": [
+            "<img"
+          ],
+          "allowed": [
+            "<Image"
+          ]
+        },
+        "applies": "*.tsx",
+        "severity": "ERROR",
+        "reference": "DEVELOPER-PRINCIPLES.md Section 15 - Component Development"
+      },
+      "stateManagement": {
+        "enabled": true,
+        "patterns": {
+          "forbidden": [
+            "from 'redux'",
+            "from 'zustand'",
+            "from 'recoil'",
+            "from 'jotai'",
+            "createContext(",
+            "useContext("
+          ]
+        },
+        "applies": "/features/",
+        "severity": "ERROR",
+        "reference": "DEVELOPER-PRINCIPLES.md Section 16 - State Management"
+      },
+      "procedureTypes": {
+        "enabled": true,
+        "applies": "/routers/",
+        "severity": "ERROR",
+        "reference": "DEVELOPER-PRINCIPLES.md Section 13 - Authentication & Authorization"
+      },
+      "apiPatterns": {
+        "enabled": true,
+        "rules": [
+          {
+            "name": "MULTIPLE_QUERIES_PER_ENDPOINT",
+            "message": "Use single query with include or transaction",
+            "severity": "WARNING"
+          },
+          {
+            "name": "AUTH_CHECK_ORDER",
+            "message": "Authorization checks should come BEFORE business logic",
+            "severity": "WARNING"
+          }
+        ],
+        "applies": "/routers/",
+        "reference": "DEVELOPER-PRINCIPLES.md Section 14 - API Development"
+      },
+      "security": {
+        "enabled": true,
+        "patterns": {
+          "forbidden": [
+            "dangerouslySetInnerHTML",
+            "innerHTML =",
+            "eval("
+          ]
+        },
+        "severity": "ERROR",
+        "reference": "DEVELOPER-PRINCIPLES.md Section 19 - Security Standards"
+      },
+      "performance": {
+        "enabled": true,
+        "rules": [
+          {
+            "name": "API_CALL_IN_LOOP",
+            "message": "API calls inside loops are forbidden",
+            "severity": "ERROR"
+          },
+          {
+            "name": "MISSING_MEMOIZATION",
+            "message": "Large components should use memoization",
+            "severity": "WARNING"
+          },
+          {
+            "name": "MISSING_CACHE_CONFIG",
+            "message": "GET requests should have cache configuration",
+            "severity": "WARNING"
+          }
+        ],
+        "applies": "*.tsx",
+        "reference": "DEVELOPER-PRINCIPLES.md Section 18 - Performance Standards"
+      },
+      "forms": {
+        "enabled": true,
+        "rules": [
+          {
+            "name": "MISSING_REACT_HOOK_FORM",
+            "message": "Forms must use React Hook Form",
+            "severity": "ERROR"
+          },
+          {
+            "name": "MISSING_ZOD_RESOLVER",
+            "message": "React Hook Form must use zodResolver",
+            "severity": "ERROR"
+          },
+          {
+            "name": "MISSING_ZOD_SCHEMA",
+            "message": "Form should have Zod schema",
+            "severity": "WARNING"
+          },
+          {
+            "name": "USE_NATIVE_ENUM",
+            "message": "Use z.nativeEnum(PrismaEnum) instead of z.enum()",
+            "severity": "WARNING"
+          }
+        ],
+        "applies": "/components/",
+        "reference": "DEVELOPER-PRINCIPLES.md Section 17 - Form Handling"
+      }
     }
   },
   "eslintConfig": {

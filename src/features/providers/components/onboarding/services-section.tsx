@@ -34,7 +34,8 @@ export function ServicesSection({
   const initializedRef = useRef(false);
 
   // Get the selected services from the form state
-  const watchedServices = watch('services.availableServices') || [];
+  const watchedServices: string[] =
+    (watch('services.availableServices') as string[] | undefined) || [];
 
   // Force clear services when component mounts and when available services change
   useEffect(() => {
@@ -96,18 +97,27 @@ export function ServicesSection({
                               onCheckedChange={(checked) => {
                                 // When checking the service, initialize its configuration
                                 if (checked) {
-                                  const currentConfigs = getValues('services.serviceConfigs') || {};
+                                  const currentConfigs: Record<
+                                    string,
+                                    { duration: number; price: number }
+                                  > =
+                                    (getValues('services.serviceConfigs') as
+                                      | Record<string, { duration: number; price: number }>
+                                      | undefined) || {};
                                   if (!currentConfigs[service.id]) {
-                                    const updatedConfigs = {
+                                    const updatedConfigs: Record<
+                                      string,
+                                      { duration: number; price: number }
+                                    > = {
                                       ...currentConfigs,
                                       [service.id]: {
                                         duration: service.defaultDuration,
-                                        price: service.defaultPrice,
+                                        price: Number(service.defaultPrice),
                                       },
                                     };
                                     setValue('services.serviceConfigs', updatedConfigs);
                                   }
-                                  field.onChange([...fieldValue, service.id]);
+                                  field.onChange([...fieldValue, service.id] as string[]);
                                 } else {
                                   field.onChange(
                                     fieldValue.filter((value: string) => value !== service.id)
@@ -139,7 +149,7 @@ export function ServicesSection({
                                         <Input
                                           type="number"
                                           className="h-8"
-                                          value={field.value}
+                                          value={(field.value as number | undefined) || 0}
                                           min="1"
                                           onChange={(e) => {
                                             // Ensure we're getting a number
@@ -172,7 +182,10 @@ export function ServicesSection({
                                             inputMode="numeric"
                                             pattern="[0-9]*"
                                             value={
-                                              field.value === 0 ? '' : field.value?.toString() || ''
+                                              (field.value as number | undefined) === 0
+                                                ? ''
+                                                : (field.value as number | undefined)?.toString() ||
+                                                  ''
                                             }
                                             onChange={(e) => {
                                               const rawValue = e.target.value;
