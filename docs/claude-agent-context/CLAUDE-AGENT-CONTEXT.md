@@ -1,8 +1,8 @@
 # MedBookings Codebase Context
 
 **Purpose**: Fast context loading for AI assistants analyzing the codebase
-**Last Updated**: 2025-10-09
-**Context Hash**: `a3f7b2c9e1d4f6a8`
+**Last Updated**: 2025-10-09 (22:50)
+**Context Hash**: `b4e8c3d0f2a5e7b9`
 **Maintained By**: Claude Code (auto-updated after changes)
 
 ---
@@ -593,7 +593,13 @@ UPSTASH_REDIS_REST_TOKEN
 
 ## 🔄 Recent Changes Log
 
-### 2025-10-09
+### 2025-10-09 (22:50)
+- **REMOVED**: `/DEVELOPER-ONBOARDING-GUIDE.md` - No longer needed in project root
+- **FIXED**: `/scripts/README.md` - Corrected validation/ directory references to commit-gate/
+- **UPDATED**: Script documentation now 100% accurate with actual structure
+- **VERIFIED**: All file paths and commands validated
+
+### 2025-10-09 (Earlier)
 - **CREATED**: `/docs/claude-agent-context/CLAUDE-AGENT-CONTEXT.md` - Initial version for token optimization
 - **ANALYSIS**: Full codebase analysis completed (82K tokens)
 - **CONTEXT**: Comprehensive understanding established
@@ -635,7 +641,7 @@ UPSTASH_REDIS_REST_TOKEN
 
 - **Master Rules**: `/CLAUDE.md`
 - **Compliance Guides**: `/docs/compliance/`
-- **Developer Onboarding**: `/docs/guides/DEVELOPER-PRINCIPLES.md`
+- **Developer Principles**: `/docs/guides/DEVELOPER-PRINCIPLES.md`
 - **Testing Guide**: `/README-E2E-TESTING.md`
 - **Main README**: `/README.md`
 

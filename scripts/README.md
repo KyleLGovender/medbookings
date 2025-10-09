@@ -145,34 +145,6 @@ node scripts/testing/test-enhanced-warnings.js
 
 ---
 
-## ✅ **Validation** (`validation/`)
-
-Code validation, compliance checking, and CLAUDE.md rule enforcement.
-
-### Files
-- **`compliance-validator.js`** - Main CLAUDE.md compliance validator
-- **`claude-pre-write-validator.sh`** - Pre-write validation hook
-- **`claude-post-write-validator.sh`** - Post-write validation hook
-- **`phi-validator.js`** - PHI (Protected Health Information) validation
-- **`transaction-validator.js`** - Database transaction validation
-
-### Usage
-```bash
-# Validate a specific file
-node scripts/commit-gate/compliance-validator.js validate-file src/path/to/file.ts
-
-# Validate code changes
-node scripts/commit-gate/compliance-validator.js validate-change <file> <old-temp> <new-file>
-
-# Run PHI validation
-node scripts/commit-gate/phi-validator.js
-
-# Run transaction validation
-node scripts/commit-gate/transaction-validator.js
-```
-
----
-
 ## 🔄 **Workflow Integration**
 
 ### Pre-commit Hook (`.husky/pre-commit`)
@@ -250,8 +222,8 @@ npm run lint
 
 | Category | Purpose | When to Use |
 |----------|---------|-------------|
-| **Validation** | Check code compliance | Before commits, during development |
-| **Enforcement** | Setup and maintain rules | Initial setup, after CLAUDE.md changes |
+| **Commit Gate** | Pre-commit validation | Automatic on commit, manual validation |
+| **Compliance** | Setup and maintain rules | Initial setup, after CLAUDE.md changes |
 | **Testing** | Test features and flows | Development, CI/CD |
 | **Communications** | Manage templates | Template updates, testing emails/SMS |
 | **Architecture** | Validate structure | After major changes, CI/CD |
@@ -260,13 +232,13 @@ npm run lint
 
 ## ⚠️ **Important Notes**
 
-1. **Validation vs Enforcement**
-   - `validation/` - Checks if code follows rules
-   - `enforcement/` - Sets up and maintains the rule system
+1. **Commit Gate vs Compliance Setup**
+   - `commit-gate/` - Validates code changes before commits
+   - `compliance/` - Sets up and maintains the rule system
 
 2. **Execution Order**
-   - Validation runs first (fast feedback)
-   - Enforcement setup runs once or after rule changes
+   - Commit Gate validation runs first (fast feedback)
+   - Compliance setup runs once or after rule changes
 
 3. **File Permissions**
    - All `.sh` scripts should be executable: `chmod +x scripts/**/*.sh`
@@ -275,7 +247,7 @@ npm run lint
 4. **Path References**
    - All scripts expect to be run from project root
    - Use relative paths: `scripts/commit-gate/...`
-   - Import references use `../enforcement/` for config
+   - Import references use `../compliance/` for config
 
 ---
 
@@ -327,8 +299,8 @@ npm run build
 When adding new scripts:
 
 1. **Choose the correct category**
-   - Validation: Code checking/compliance
-   - Enforcement: Rule setup/maintenance
+   - Commit Gate: Pre-commit validation and code checking
+   - Compliance: Rule setup/maintenance and configuration
    - Testing: Test utilities
    - Communications: Templates/notifications
    - Architecture: Structure validation
@@ -350,5 +322,5 @@ When adding new scripts:
 
 ---
 
-**Last Updated:** 2025-10-04
+**Last Updated:** 2024-10-09
 **Maintainer:** Development Team

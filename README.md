@@ -117,7 +117,7 @@ npx prisma generate
 
 4. **Seed database (optional):**
 ```bash
-npx prisma db seed
+npm run seed:production
 ```
 
 5. **View database:**
@@ -143,21 +143,30 @@ npm run dev
 
 ### Code Quality & Compliance
 - `npm run prepare` - Install git hooks (runs automatically on `npm install`)
-- `npm run setup-compliance` - Setup CLAUDE.md compliance system
-- `npm run sync:compliance` - Sync compliance rules with CLAUDE.md changes
+- `npm run compliance:setup` - Setup CLAUDE.md compliance system
+- `npm run compliance:sync` - Sync compliance rules with CLAUDE.md changes
+- `npm run compliance:check` - Verify CLAUDE.md compliance
+- `npm run compliance:status` - Show compliance system status
+- `npm run compliance:validate` - Validate specific files for compliance
 
 ### Database Management
 - `npm run db:migrate` - Apply migrations
 - `npm run db:migrate:dev` - Create and apply dev migrations
-- `npm run db:integrity` - Check database health
+- `npm run seed:production` - Seed database with production data
 
 ### Testing
 - `npm run test` - Run all E2E tests
 - `npm run test:headed` - Run tests with visible browser
 - `npm run test:ui` - Open Playwright test explorer
+- `npm run test:debug` - Debug tests interactively
 - `npm run test:auth` - Test authentication flows
 - `npm run test:booking` - Test booking system
 - `npm run test:provider` - Test provider features
+- `npm run test:calendar` - Test calendar functionality
+- `npm run test:legacy` - Run legacy test suite
+- `npm run test:full` - Full test setup and run
+- `npm run test:ci` - CI-specific test run with installation
+- `npm run test:report` - Show test report
 See [README-E2E-TESTING.md](./README-E2E-TESTING.md) for detailed testing documentation.
 
 ### Vercel Production
@@ -249,9 +258,6 @@ vercel env pull .env.vercel.production.local
 
 # Run migrations
 npm run verceldb:migrate
-
-# Verify integrity
-npm run db:integrity:production
 ```
 
 ## 🧪 Testing
