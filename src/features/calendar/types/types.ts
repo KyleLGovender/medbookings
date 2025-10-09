@@ -602,6 +602,17 @@ export type AvailabilityAction = 'view' | 'edit' | 'delete' | 'accept' | 'reject
 
 export type SeriesActionScope = 'single' | 'all' | 'future';
 
+/**
+ * Availability permission flags for user actions
+ * Controls which availability actions a user can perform based on their role and context
+ *
+ * @property {boolean} canView - Whether user can view availability details
+ * @property {boolean} canEdit - Whether user can edit availability blocks
+ * @property {boolean} canDelete - Whether user can delete availability blocks
+ * @property {boolean} canAccept - Whether user can accept proposed availabilities
+ * @property {boolean} canReject - Whether user can reject proposed availabilities
+ * @property {boolean} canCreate - Whether user can create new availability blocks
+ */
 export interface AvailabilityPermissions {
   canView: boolean;
   canEdit: boolean;
@@ -1222,6 +1233,17 @@ export interface ValidationResult {
 }
 
 // Slot Generation Types (moved from slot-generation.ts)
+/**
+ * Configuration options for availability slot generation
+ * Defines time range, scheduling rules, and service configurations for generating bookable slots
+ *
+ * @property {string} availabilityId - Parent availability block for slot generation
+ * @property {Date} startTime - Generation window start time in UTC
+ * @property {Date} endTime - Generation window end time in UTC
+ * @property {SchedulingRule} schedulingRule - Slot generation rule (OPEN, FIXED_INTERVALS, etc.)
+ * @property {number} [schedulingInterval] - Interval in minutes for fixed scheduling (deprecated)
+ * @property {Array} services - Services offered with pricing and duration configurations
+ */
 export interface SlotGenerationOptions {
   availabilityId: string;
   startTime: Date;
@@ -1337,6 +1359,19 @@ export interface CleanupOptions {
   cleanupOrphanedSlots?: boolean;
 }
 
+/**
+ * Results of slot cleanup operation
+ * Contains statistics and errors from cleaning up availability slots
+ *
+ * @property {number} totalSlotsProcessed - Total slots evaluated during cleanup
+ * @property {number} slotsDeleted - Number of slots removed from database
+ * @property {number} slotsMarkedUnavailable - Number of slots marked as unavailable
+ * @property {number} bookingsAffected - Number of bookings impacted by cleanup
+ * @property {number} customersNotified - Number of customers notified of changes
+ * @property {string[]} errors - Error messages encountered during cleanup
+ * @property {string[]} warnings - Warning messages from cleanup process
+ * @property {number} processingTimeMs - Total cleanup processing time in milliseconds
+ */
 export interface CleanupResult {
   totalSlotsProcessed: number;
   slotsDeleted: number;
@@ -1680,6 +1715,17 @@ export interface SlotConflictDetails {
 }
 
 // Search Performance Types (moved from search-performance-service.ts)
+/**
+ * Search performance optimization options
+ * Controls caching, indexing, query parallelization, and result limiting for provider searches
+ *
+ * @property {boolean} [enableCaching] - Whether to cache search results
+ * @property {boolean} [useIndexHints] - Whether to use database index hints
+ * @property {number} [limitResults] - Maximum number of results to return
+ * @property {boolean} [enableParallelQueries] - Whether to run queries in parallel
+ * @property {boolean} [optimizeForDistance] - Whether to optimize for geographic distance
+ * @property {boolean} [prefetchRelations] - Whether to prefetch related data
+ */
 export interface SearchPerformanceOptions {
   enableCaching?: boolean;
   useIndexHints?: boolean;
@@ -1689,6 +1735,17 @@ export interface SearchPerformanceOptions {
   prefetchRelations?: boolean;
 }
 
+/**
+ * Performance metrics for search operations
+ * Contains execution statistics, index usage, caching data, and optimization suggestions
+ *
+ * @property {number} queryExecutionTime - Query execution time in milliseconds
+ * @property {number} totalResults - Total number of results found
+ * @property {string[]} indexesUsed - Database indexes used during query
+ * @property {number} [cacheHitRatio] - Cache hit ratio (0-1)
+ * @property {number} [memoryUsage] - Memory usage in bytes
+ * @property {string[]} optimizationSuggestions - Suggested performance improvements
+ */
 export interface PerformanceMetrics {
   queryExecutionTime: number;
   totalResults: number;
@@ -1767,7 +1824,22 @@ export interface TimeSlotWithDetails {
   slotId?: string; // If slot exists in database
 }
 
-// Internal slot representation for generation
+/**
+ * Internal slot representation for generation
+ * Temporary slot data structure used during slot generation process before database persistence
+ *
+ * @property {string} availabilityId - Parent availability block
+ * @property {string} serviceId - Service offered in slot
+ * @property {string} serviceConfigId - Service configuration reference
+ * @property {Date} startTime - Slot start time
+ * @property {Date} endTime - Slot end time
+ * @property {number} duration - Duration in minutes
+ * @property {number} price - Slot price
+ * @property {boolean} isOnlineAvailable - Whether online appointments available
+ * @property {SlotStatus} status - Slot status
+ * @property {string} [billedToSubscriptionId] - Subscription being billed
+ * @property {string} [locationId] - Physical location if in-person
+ */
 export interface GeneratedSlot {
   availabilityId: string;
   serviceId: string;
@@ -1875,6 +1947,17 @@ export interface SlotGenerationResultDetailed {
   duration: number; // generation time in ms
 }
 
+/**
+ * Availability conflict information for slot scheduling
+ * Describes scheduling conflicts detected when creating or updating availability blocks
+ *
+ * @property {string} conflictType - Type of scheduling conflict detected (overlapping availability, unavailable provider/location, or calendar conflict)
+ * @property {string} [conflictingAvailabilityId] - ID of the conflicting availability block if applicable
+ * @property {string} [conflictingEventId] - ID of the conflicting external calendar event if applicable
+ * @property {string} message - Human-readable description of the conflict
+ * @property {Date} startTime - Start time of the conflict period
+ * @property {Date} endTime - End time of the conflict period
+ */
 export interface AvailabilityConflict {
   conflictType:
     | 'OVERLAPPING_AVAILABILITY'
@@ -1892,6 +1975,18 @@ export interface AvailabilityConflict {
 // BILLING AND CONTEXT TYPES
 // =============================================================================
 
+/**
+ * Availability billing context for slot generation
+ * Contains billing entity information and cost estimates for generating availability slots
+ *
+ * @property {BillingEntity} billingEntity - Entity responsible for billing (PROVIDER or ORGANIZATION)
+ * @property {string} [subscriptionId] - Subscription being billed
+ * @property {string} [organizationId] - Organization context if applicable
+ * @property {string} [locationId] - Location context if applicable
+ * @property {string} providerId - Provider creating availability
+ * @property {number} estimatedSlots - Estimated number of slots to generate
+ * @property {number} estimatedCost - Estimated billing cost
+ */
 export interface AvailabilityBillingContext {
   billingEntity: BillingEntity;
   subscriptionId?: string;

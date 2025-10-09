@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, CheckCircle2, Edit2, FileText, Upload, XCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import type { FieldErrors, UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
+import { z } from 'zod';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -34,20 +36,38 @@ type RequirementEditForm = RequirementForm & {
   notes: string;
 };
 
+// Zod schema for form validation
+const requirementEditSchema = z.object({
+  regulatoryRequirements: z.object({
+    requirements: z.array(
+      z.object({
+        requirementTypeId: z.string(),
+        value: z
+          .union([z.string(), z.number(), z.boolean(), z.date(), z.instanceof(File)])
+          .optional(),
+        documentMetadata: z.record(z.unknown()).optional(),
+      })
+    ),
+  }),
+  notes: z.string(),
+});
+
 interface ProviderRequirementsEditProps {
   providerId: string;
 }
 
+// Type alias for requirement to avoid inference issues
+type ProviderRequirement = RouterOutputs['providers']['getRequirements'][number];
+
 export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEditProps) {
   const { toast } = useToast();
   const utils = api.useUtils();
-  const [selectedRequirement, setSelectedRequirement] = useState<
-    RouterOutputs['providers']['getRequirements'][number] | null
-  >(null);
+  const [selectedRequirement, setSelectedRequirement] = useState<ProviderRequirement | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // React Hook Form for requirement input - structure matches renderRequirementInput expectations
   const form = useForm<RequirementEditForm>({
+    resolver: zodResolver(requirementEditSchema),
     defaultValues: {
       regulatoryRequirements: {
         requirements: [
@@ -235,13 +255,30 @@ export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEdi
                             regulatoryRequirements: {
                               requirements: [
                                 {
-                                  requirementTypeId: req.requirementType.id,
-                                  value: req.documentMetadata?.value || req.value || '',
-                                  documentMetadata: req.documentMetadata || undefined,
+                                  requirementTypeId: req.requirementType.id as string,
+                                  value:
+                                    (req.documentMetadata?.value as
+                                      | string
+                                      | number
+                                      | boolean
+                                      | Date
+                                      | File
+                                      | undefined) ||
+                                    (req.value as
+                                      | string
+                                      | number
+                                      | boolean
+                                      | Date
+                                      | File
+                                      | undefined) ||
+                                    '',
+                                  documentMetadata:
+                                    (req.documentMetadata as Record<string, unknown> | undefined) ||
+                                    undefined,
                                 },
                               ],
                             },
-                            notes: req.notes || '',
+                            notes: (req.notes as string | undefined) || '',
                           });
                           setIsDialogOpen(true);
                         }}
@@ -335,7 +372,7 @@ export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEdi
                       {
                         ...selectedRequirement.requirementType,
                         index: 0,
-                        existingSubmission: selectedRequirement,
+                        existingSubmission: selectedRequirement as ProviderRequirement,
                       },
                       {
                         register: form.register as unknown as UseFormRegister<RequirementForm>,
@@ -344,7 +381,20 @@ export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEdi
                         errors: form.formState.errors as FieldErrors<RequirementForm>,
                         fieldName: 'requirementValue',
                         existingValue:
-                          selectedRequirement.documentMetadata?.value || selectedRequirement.value,
+                          (selectedRequirement.documentMetadata?.value as
+                            | string
+                            | number
+                            | boolean
+                            | Date
+                            | File
+                            | undefined) ||
+                          (selectedRequirement.value as
+                            | string
+                            | number
+                            | boolean
+                            | Date
+                            | File
+                            | undefined),
                       }
                     )}
                   </div>

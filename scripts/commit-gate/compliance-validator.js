@@ -14,6 +14,19 @@
  * - Better guidance with actionable recommendations
  *
  * This ensures Claude Code agent adheres to CLAUDE.md during code generation
+ *
+ * @typedef {Object} Violation
+ * @property {'ERROR'|'WARNING'} severity - Violation severity level
+ * @property {string} rule - Rule identifier
+ * @property {string} file - File path where violation occurred
+ * @property {number} [line] - Line number of violation
+ * @property {string} [content] - Code content with violation
+ * @property {string} message - Human-readable violation message
+ * @property {string} [fix] - Suggested fix
+ * @property {string} [reference] - Documentation reference
+ * @property {'HIGH'|'MEDIUM'|'LOW'} [confidence] - PHI detection confidence
+ * @property {'CRITICAL'|'HIGH'|'MEDIUM'|'LOW'} [riskLevel] - Transaction risk level
+ * @property {string} [suppressionGuidance] - How to suppress if false positive
  */
 
 const fs = require('fs');
@@ -24,10 +37,18 @@ const path = require('path');
 // ============================================================================
 
 class ClaudeRulesEngine {
+  /**
+   * @param {string} claudeMdPath - Path to CLAUDE.md file
+   */
   constructor(claudeMdPath) {
     this.rules = this.parseClaudeMd(claudeMdPath);
   }
 
+  /**
+   * Parse CLAUDE.md and extract rules
+   * @param {string} filePath - Path to CLAUDE.md
+   * @returns {Object} Parsed rules object
+   */
   parseClaudeMd(filePath) {
     const content = fs.readFileSync(filePath, 'utf-8');
 
@@ -71,6 +92,12 @@ class ClaudeRulesEngine {
     };
   }
 
+  /**
+   * Extract a specific rule from CLAUDE.md content
+   * @param {string} content - CLAUDE.md file content
+   * @param {string} keyword - Rule keyword to search for
+   * @returns {string|null} Extracted rule text or null
+   */
   extractRule(content, keyword) {
     const regex = new RegExp(`[-•]\\s*${keyword}:?(.+?)(?=\\n[-•]|\\n\\n|$)`, 'i');
     const match = content.match(regex);
@@ -86,7 +113,15 @@ class ClaudeRulesEngine {
  * Enhanced PHI Validator with confidence levels
  */
 class EnhancedPHIValidator {
+  /**
+   * Validate PHI sanitization in logger calls
+   * @param {string[]} addedLines - Lines added in this change
+   * @param {string} filePath - Path to file being validated
+   * @param {string} fullContent - Complete file content
+   * @returns {Violation[]} Array of PHI violations found
+   */
   validatePHISanitization(addedLines, filePath, fullContent) {
+    /** @type {Violation[]} */
     const violations = [];
     const lines = fullContent.split('\n');
 
@@ -520,8 +555,12 @@ class EnhancedTransactionValidator {
 // ============================================================================
 
 class CodeValidator {
+  /**
+   * @param {Object} rules - Parsed CLAUDE.md rules
+   */
   constructor(rules) {
     this.rules = rules;
+    /** @type {Violation[]} */
     this.violations = [];
 
     // Initialize enhanced validators
@@ -554,6 +593,13 @@ class CodeValidator {
     return ruleConfig.enabled !== false;
   }
 
+  /**
+   * Validate all code changes against CLAUDE.md rules
+   * @param {string} filePath - Path to file being validated
+   * @param {string} oldContent - Original file content
+   * @param {string} newContent - Modified file content
+   * @returns {{valid: boolean, violations: Violation[]}} Validation result
+   */
   validateChanges(filePath, oldContent, newContent) {
     this.violations = [];
     const addedLines = this.getAddedLines(oldContent, newContent);
@@ -594,12 +640,33 @@ class CodeValidator {
     // Keep unbounded query check
     this.validateUnboundedQueries(filePath, newContent);
 
+    // NEW VALIDATORS (Option C - 85% Automation)
+    // Phase 1: Quick Wins
+    this.validateImageUsage(filePath, newContent);              // Validator 6
+    this.validateStateManagement(filePath, newContent);         // Validator 7
+    this.validateProcedureType(filePath, newContent);           // Validator 8
+
+    // Phase 2: Medium Complexity
+    this.validateSingleQueryPerEndpoint(filePath, newContent);  // Validator 9
+    this.validateAuthorizationOrder(filePath, newContent);      // Validator 10
+
+    // Phase 3: Advanced
+    this.validateInputSanitization(filePath, newContent);       // Validator 11
+    this.validatePerformancePatterns(filePath, newContent);     // Validator 12
+    this.validateFormPatterns(filePath, newContent);            // Validator 13
+
     return {
       valid: this.violations.length === 0,
       violations: this.violations,
     };
   }
 
+  /**
+   * Extract lines that were added (not in old content)
+   * @param {string} oldContent - Original content
+   * @param {string} newContent - New content
+   * @returns {string[]} Array of added lines
+   */
   getAddedLines(oldContent, newContent) {
     const oldLines = oldContent.split('\n');
     const newLines = newContent.split('\n');
@@ -809,6 +876,476 @@ class CodeValidator {
           }
         });
       }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // VALIDATOR 6: Image Component Usage (Phase 1 - Quick Win)
+  // -------------------------------------------------------------------------
+  validateImageUsage(filePath, fullContent) {
+    // Skip non-TSX files and README
+    if (!filePath.endsWith('.tsx') || filePath.includes('README')) {
+      return;
+    }
+
+    // Detect <img> tags
+    const imgTagPattern = /<img\s+[^>]*>/g;
+    const matches = fullContent.match(imgTagPattern);
+
+    if (matches) {
+      const lines = fullContent.split('\n');
+      matches.forEach(match => {
+        const lineIdx = lines.findIndex(line => line.includes(match));
+
+        this.violations.push({
+          severity: 'ERROR',
+          rule: 'USE_NEXT_IMAGE',
+          file: filePath,
+          line: lineIdx + 1,
+          content: match.substring(0, 80) + '...',
+          message: 'Use Next.js Image component instead of <img> tag',
+          fix: 'Replace <img> with <Image> from "next/image"\n' +
+               '   import Image from "next/image";\n' +
+               '   <Image src="/path" alt="..." width={X} height={Y} />',
+          reference: 'DEVELOPER-PRINCIPLES.md Section 15 - Component Development',
+        });
+      });
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // VALIDATOR 7: State Management (Phase 1 - Quick Win)
+  // -------------------------------------------------------------------------
+  validateStateManagement(filePath, fullContent) {
+    // Skip if not a feature file
+    if (!filePath.includes('/features/')) {
+      return;
+    }
+
+    const forbiddenLibraries = [
+      { pattern: /from ['"]redux['"]|import.*from ['"]react-redux['"]/, name: 'Redux' },
+      { pattern: /from ['"]zustand['"]/, name: 'Zustand' },
+      { pattern: /createContext\(|useContext\(/, name: 'React Context (for features)' },
+      { pattern: /from ['"]@reduxjs\/toolkit['"]/, name: 'Redux Toolkit' },
+      { pattern: /from ['"]jotai['"]/, name: 'Jotai' },
+      { pattern: /from ['"]recoil['"]/, name: 'Recoil' },
+    ];
+
+    forbiddenLibraries.forEach(lib => {
+      if (lib.pattern.test(fullContent)) {
+        const lines = fullContent.split('\n');
+        const lineIdx = lines.findIndex(line => lib.pattern.test(line));
+
+        this.violations.push({
+          severity: 'ERROR',
+          rule: 'FORBIDDEN_STATE_LIBRARY',
+          file: filePath,
+          line: lineIdx + 1,
+          content: lines[lineIdx]?.trim(),
+          message: `${lib.name} is forbidden in features. Use TanStack Query via tRPC for state management`,
+          fix: 'Replace with tRPC hooks:\n' +
+               '   import { api } from "@/utils/api";\n' +
+               '   const { data } = api.router.procedure.useQuery();',
+          reference: 'DEVELOPER-PRINCIPLES.md Section 16 - State Management',
+        });
+      }
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // VALIDATOR 8: Procedure Type (Phase 1 - Quick Win)
+  // -------------------------------------------------------------------------
+  validateProcedureType(filePath, fullContent) {
+    // Only check router files
+    if (!filePath.includes('/routers/')) {
+      return;
+    }
+
+    const lines = fullContent.split('\n');
+
+    // Patterns that require specific procedures
+    const sensitivePatterns = [
+      {
+        operation: /\.(delete|update).*[Uu]ser/,
+        requires: 'adminProcedure or superAdminProcedure',
+        wrongProcedures: ['publicProcedure', 'protectedProcedure'],
+      },
+      {
+        operation: /approve[A-Z]|reject[A-Z]|updateRole|deleteUser/,
+        requires: 'adminProcedure or superAdminProcedure',
+        wrongProcedures: ['publicProcedure', 'protectedProcedure'],
+      },
+      {
+        operation: /\.(create|update|delete).*[Bb]ooking/,
+        requires: 'protectedProcedure or higher',
+        wrongProcedures: ['publicProcedure'],
+      },
+    ];
+
+    lines.forEach((line, idx) => {
+      sensitivePatterns.forEach(pattern => {
+        if (pattern.operation.test(line)) {
+          // Look back up to 20 lines for procedure definition
+          const contextStart = Math.max(0, idx - 20);
+          const context = lines.slice(contextStart, idx + 1).join('\n');
+
+          // Check if using wrong procedure type
+          pattern.wrongProcedures.forEach(wrongProc => {
+            if (new RegExp(wrongProc).test(context)) {
+              this.violations.push({
+                severity: 'ERROR',
+                rule: 'WRONG_PROCEDURE_TYPE',
+                file: filePath,
+                line: idx + 1,
+                content: line.trim(),
+                message: `Sensitive operation requires ${pattern.requires}, not ${wrongProc}`,
+                fix: `Change procedure type:\n` +
+                     `   ${wrongProc} → ${pattern.requires}`,
+                reference: 'DEVELOPER-PRINCIPLES.md Section 13 - Authentication & Authorization',
+              });
+            }
+          });
+        }
+      });
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // VALIDATOR 9: Multiple Queries Per Endpoint (Phase 2 - Medium)
+  // -------------------------------------------------------------------------
+  validateSingleQueryPerEndpoint(filePath, fullContent) {
+    // Only check router files
+    if (!filePath.includes('/routers/')) {
+      return;
+    }
+
+    // Find all tRPC procedures
+    const procedurePattern = /(\w+):\s*(publicProcedure|protectedProcedure|adminProcedure|superAdminProcedure)[^}]+?\.(?:query|mutation)\(async[^}]+?\{([^}]+?)\}\)/gs;
+
+    let match;
+    while ((match = procedurePattern.exec(fullContent)) !== null) {
+      const procedureName = match[1];
+      const procedureBody = match[3];
+
+      // Skip if inside transaction
+      if (/\$transaction\(async/.test(procedureBody)) {
+        continue;
+      }
+
+      // Count prisma queries
+      const queryPattern = /(?:ctx\.)?prisma\.\w+\.(findMany|findUnique|findFirst|create|update|delete|upsert)\(/g;
+      const queries = procedureBody.match(queryPattern) || [];
+
+      if (queries.length > 1) {
+        // Find line number
+        const beforeMatch = fullContent.substring(0, match.index);
+        const lineNumber = beforeMatch.split('\n').length;
+
+        this.violations.push({
+          severity: 'WARNING',
+          rule: 'MULTIPLE_QUERIES_PER_ENDPOINT',
+          file: filePath,
+          line: lineNumber,
+          content: `${procedureName}: ${queries.length} queries detected`,
+          message: `Found ${queries.length} database queries in single endpoint. Use single query with include or transaction`,
+          fix: 'Combine queries:\n' +
+               '   ✅ Single query: await ctx.prisma.model.findUnique({ include: { related: true } })\n' +
+               '   ✅ Transaction: await ctx.prisma.$transaction(async (tx) => { ... })',
+          reference: 'DEVELOPER-PRINCIPLES.md Section 14 - API Development',
+        });
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // VALIDATOR 10: Authorization Order (Phase 2 - Medium)
+  // -------------------------------------------------------------------------
+  validateAuthorizationOrder(filePath, fullContent) {
+    // Only check router files
+    if (!filePath.includes('/routers/')) {
+      return;
+    }
+
+    const procedurePattern = /(protectedProcedure|adminProcedure|superAdminProcedure)[^}]+?\.(?:query|mutation)\(async[^}]+?\{([^}]+?)\}\)/gs;
+
+    let match;
+    while ((match = procedurePattern.exec(fullContent)) !== null) {
+      const procedureBody = match[2];
+      const lines = procedureBody.split('\n');
+
+      let hasBusinessLogic = false;
+      let businessLogicLine = -1;
+      let hasAuthCheck = false;
+      let authCheckLine = -1;
+
+      lines.forEach((line, idx) => {
+        // Detect business logic (DB operations, return statements)
+        if (/prisma\.\w+\.(create|update|delete)|return\s+/.test(line) && !hasBusinessLogic) {
+          hasBusinessLogic = true;
+          businessLogicLine = idx;
+        }
+
+        // Detect auth checks
+        if (/if\s*\(.*?(session|user|role|permission)|throw new TRPCError.*FORBIDDEN|UNAUTHORIZED/.test(line)) {
+          hasAuthCheck = true;
+          authCheckLine = idx;
+        }
+      });
+
+      // If business logic comes before auth check
+      if (hasBusinessLogic && hasAuthCheck && businessLogicLine < authCheckLine) {
+        const beforeMatch = fullContent.substring(0, match.index);
+        const lineNumber = beforeMatch.split('\n').length + businessLogicLine;
+
+        this.violations.push({
+          severity: 'WARNING',
+          rule: 'AUTH_CHECK_ORDER',
+          file: filePath,
+          line: lineNumber,
+          message: 'Authorization checks should come BEFORE business logic',
+          fix: 'Move authorization checks to the beginning of the procedure:\n' +
+               '   1. Authorization check (if/throw)\n' +
+               '   2. Business logic (DB queries)\n' +
+               '   3. Return data',
+          reference: 'DEVELOPER-PRINCIPLES.md Section 14 - API Development',
+        });
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // VALIDATOR 11: Input Sanitization (Phase 3 - Advanced)
+  // -------------------------------------------------------------------------
+  validateInputSanitization(filePath, fullContent) {
+    // Check both routers and components
+    if (!filePath.includes('/routers/') && !filePath.includes('/components/') && !filePath.includes('/features/')) {
+      return;
+    }
+
+    const lines = fullContent.split('\n');
+
+    // Dangerous patterns
+    const dangerousPatterns = [
+      {
+        pattern: /dangerouslySetInnerHTML/,
+        severity: 'ERROR',
+        message: 'dangerouslySetInnerHTML is forbidden without explicit sanitization',
+        fix: 'Use DOMPurify.sanitize() or avoid innerHTML entirely',
+      },
+      {
+        pattern: /innerHTML\s*=/,
+        severity: 'ERROR',
+        message: 'Direct innerHTML assignment is forbidden',
+        fix: 'Use textContent or sanitize with DOMPurify',
+      },
+      {
+        pattern: /eval\(/,
+        severity: 'ERROR',
+        message: 'eval() is forbidden (arbitrary code execution)',
+        fix: 'Remove eval() and use safe alternatives',
+      },
+    ];
+
+    lines.forEach((line, idx) => {
+      dangerousPatterns.forEach(danger => {
+        if (danger.pattern.test(line)) {
+          this.violations.push({
+            severity: danger.severity,
+            rule: 'UNSAFE_INPUT_HANDLING',
+            file: filePath,
+            line: idx + 1,
+            content: line.trim(),
+            message: danger.message,
+            fix: danger.fix,
+            reference: 'DEVELOPER-PRINCIPLES.md Section 19 - Security Standards',
+          });
+        }
+      });
+    });
+
+    // Check for direct user input rendering without validation
+    if (filePath.endsWith('.tsx')) {
+      lines.forEach((line, idx) => {
+        // Detect {userInput} in JSX without sanitization
+        if (/\{.*?(input|params|searchParams|query)\.\w+\}/.test(line) &&
+            !/sanitize|escape|encode/.test(line)) {
+
+          this.violations.push({
+            severity: 'WARNING',
+            rule: 'UNVALIDATED_USER_INPUT',
+            file: filePath,
+            line: idx + 1,
+            content: line.trim(),
+            message: 'User input should be validated before rendering',
+            fix: 'Add validation:\n' +
+                 '   1. Validate with Zod schema\n' +
+                 '   2. Escape special characters\n' +
+                 '   3. Use textContent instead of innerHTML',
+            reference: 'DEVELOPER-PRINCIPLES.md Section 19 - Security Standards',
+          });
+        }
+      });
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // VALIDATOR 12: Performance Patterns (Phase 3 - Advanced)
+  // -------------------------------------------------------------------------
+  validatePerformancePatterns(filePath, fullContent) {
+    // Only check React components
+    if (!filePath.endsWith('.tsx') || filePath.includes('.test.')) {
+      return;
+    }
+
+    const lines = fullContent.split('\n');
+
+    // Pattern 1: API calls in loops
+    lines.forEach((line, idx) => {
+      if (/for\s*\(|\.forEach\(|\.map\(/.test(line)) {
+        // Look ahead for API calls
+        const nextLines = lines.slice(idx, Math.min(idx + 10, lines.length)).join('\n');
+
+        if (/\.useQuery\(|\.useMutation\(|await.*api\.|fetch\(/.test(nextLines)) {
+          this.violations.push({
+            severity: 'ERROR',
+            rule: 'API_CALL_IN_LOOP',
+            file: filePath,
+            line: idx + 1,
+            content: line.trim(),
+            message: 'API calls inside loops are forbidden (performance issue)',
+            fix: 'Batch fetch instead:\n' +
+                 '   ❌ for (id of ids) { await api.get({ id }) }\n' +
+                 '   ✅ await api.getBatch({ ids })',
+            reference: 'DEVELOPER-PRINCIPLES.md Section 18 - Performance Standards',
+          });
+        }
+      }
+    });
+
+    // Pattern 2: Large components without memoization
+    const hasExpensiveOps = /map\(|filter\(|reduce\(|sort\(/.test(fullContent);
+    const hasMemoization = /useMemo|useCallback|memo\(/.test(fullContent);
+    const lineCount = lines.length;
+
+    if (hasExpensiveOps && !hasMemoization && lineCount > 100) {
+      this.violations.push({
+        severity: 'WARNING',
+        rule: 'MISSING_MEMOIZATION',
+        file: filePath,
+        message: 'Large component with expensive operations should use memoization',
+        fix: 'Consider adding:\n' +
+             '   - useMemo() for expensive calculations\n' +
+             '   - useCallback() for event handlers\n' +
+             '   - memo() for component itself',
+        reference: 'DEVELOPER-PRINCIPLES.md Section 18 - Performance Standards',
+      });
+    }
+
+    // Pattern 3: Missing cache configuration for useQuery
+    const queryPattern = /\.useQuery\([^)]+\)/gs;
+    let queryMatch;
+    while ((queryMatch = queryPattern.exec(fullContent)) !== null) {
+      const queryCall = queryMatch[0];
+
+      // Check if has cache config
+      if (!/staleTime|cacheTime/.test(queryCall)) {
+        const beforeMatch = fullContent.substring(0, queryMatch.index);
+        const lineNumber = beforeMatch.split('\n').length;
+
+        this.violations.push({
+          severity: 'WARNING',
+          rule: 'MISSING_CACHE_CONFIG',
+          file: filePath,
+          line: lineNumber,
+          message: 'GET requests should have cache configuration (min 5 seconds)',
+          fix: 'Add cache config:\n' +
+               '   api.router.get.useQuery(input, {\n' +
+               '     staleTime: 5000,  // 5 seconds\n' +
+               '     cacheTime: 300000 // 5 minutes\n' +
+               '   })',
+          reference: 'DEVELOPER-PRINCIPLES.md Section 18 - Performance Standards',
+        });
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // VALIDATOR 13: Form Patterns (Phase 3 - Advanced)
+  // -------------------------------------------------------------------------
+  validateFormPatterns(filePath, fullContent) {
+    // Only check component files
+    if (!filePath.endsWith('.tsx') || !filePath.includes('/components/')) {
+      return;
+    }
+
+    // Detect form usage
+    const hasFormElement = /<form/.test(fullContent);
+    if (!hasFormElement) {
+      return;
+    }
+
+    // Updated regex to handle TypeScript generics: useForm() or useForm<Type>()
+    const hasUseForm = /useForm[<(]/.test(fullContent);
+    const hasZodResolver = /zodResolver/.test(fullContent);
+    const hasZodSchema = /z\.object\(/.test(fullContent) || /import.*Schema.*from/.test(fullContent);
+
+    if (!hasUseForm) {
+      this.violations.push({
+        severity: 'ERROR',
+        rule: 'MISSING_REACT_HOOK_FORM',
+        file: filePath,
+        message: 'Forms must use React Hook Form (not manual state)',
+        fix: 'Add React Hook Form:\n' +
+             '   import { useForm } from "react-hook-form";\n' +
+             '   const { register, handleSubmit } = useForm();',
+        reference: 'DEVELOPER-PRINCIPLES.md Section 17 - Form Handling',
+      });
+    }
+
+    if (hasUseForm && !hasZodResolver) {
+      this.violations.push({
+        severity: 'ERROR',
+        rule: 'MISSING_ZOD_RESOLVER',
+        file: filePath,
+        message: 'React Hook Form must use zodResolver for validation',
+        fix: 'Add Zod resolver:\n' +
+             '   import { zodResolver } from "@hookform/resolvers/zod";\n' +
+             '   const form = useForm({ resolver: zodResolver(schema) });',
+        reference: 'DEVELOPER-PRINCIPLES.md Section 17 - Form Handling',
+      });
+    }
+
+    if (hasUseForm && hasZodResolver && !hasZodSchema) {
+      this.violations.push({
+        severity: 'WARNING',
+        rule: 'MISSING_ZOD_SCHEMA',
+        file: filePath,
+        message: 'Form should have Zod schema for validation',
+        fix: 'Create Zod schema:\n' +
+             '   const schema = z.object({ field: z.string() });',
+        reference: 'DEVELOPER-PRINCIPLES.md Section 17 - Form Handling',
+      });
+    }
+
+    // Check for Prisma enum usage in forms
+    if (hasZodSchema && /z\.enum\(\[/.test(fullContent) && filePath.includes('/features/')) {
+      const lines = fullContent.split('\n');
+      lines.forEach((line, idx) => {
+        if (/z\.enum\(\[/.test(line) && !/z\.nativeEnum/.test(line)) {
+          this.violations.push({
+            severity: 'WARNING',
+            rule: 'USE_NATIVE_ENUM',
+            file: filePath,
+            line: idx + 1,
+            content: line.trim(),
+            message: 'Use z.nativeEnum(PrismaEnum) instead of z.enum()',
+            fix: 'Replace with Prisma enum:\n' +
+                 '   import { Status } from "@prisma/client";\n' +
+                 '   z.nativeEnum(Status)',
+            reference: 'DEVELOPER-PRINCIPLES.md Section 17 - Form Handling',
+          });
+        }
+      });
     }
   }
 }

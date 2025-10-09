@@ -150,7 +150,20 @@ export interface UserContext {
 // COMPLEX INTERFACES
 // =============================================================================
 
-// General invitation data (for components that handle both types)
+/**
+ * General invitation data for components handling both organization and provider invitations
+ * Contains invitation details, organization context, and role/permission assignments
+ *
+ * @property {string} id - Unique invitation identifier
+ * @property {string} email - Recipient email address
+ * @property {string} [customMessage] - Optional custom message from the inviter
+ * @property {string} status - Current invitation status (PENDING, ACCEPTED, REJECTED, EXPIRED, CANCELLED)
+ * @property {string} expiresAt - Invitation expiration timestamp (ISO string format)
+ * @property {OrganizationContext} organization - Organization context information
+ * @property {UserContext} invitedBy - User who sent the invitation
+ * @property {OrganizationRole} [role] - Assigned role for organization member invitations
+ * @property {OrganizationPermission[]} [permissions] - Assigned permissions array for organization member invitations
+ */
 export interface InvitationData {
   id: string;
   email: string;
@@ -289,7 +302,17 @@ export interface InvitationListProps {
   onInvitationAction?: (invitationId: string, action: InvitationAction) => void;
 }
 
-// Invitation form props
+/**
+ * Props for invitation form component
+ * Handles both organization member and provider invitation forms
+ *
+ * @property {string} organizationId - Organization extending the invitation
+ * @property {string} type - Invitation type: 'organization' for members, 'provider' for healthcare providers
+ * @property {OrganizationRole} [defaultRole] - Default role pre-selected in the form (organization invitations only)
+ * @property {OrganizationPermission[]} [defaultPermissions] - Default permissions pre-selected in the form (organization invitations only)
+ * @property {Function} [onSuccess] - Callback executed on successful invitation creation with the created invitation data
+ * @property {Function} [onCancel] - Callback executed when the form is cancelled
+ */
 export interface InvitationFormProps {
   organizationId: string;
   type: 'organization' | 'provider';
