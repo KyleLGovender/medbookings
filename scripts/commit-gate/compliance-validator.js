@@ -646,7 +646,12 @@ class CodeValidator {
   // VALIDATOR 2: Type Safety
   // -------------------------------------------------------------------------
   validateTypeSafety(addedLines, filePath) {
-    const whitelist = ['src/lib/auth.ts', 'src/server/trpc.ts', 'src/types/guards.ts'];
+    const whitelist = [
+      'src/lib/auth.ts',
+      'src/server/trpc.ts',
+      'src/types/guards.ts',
+      'src/app/api/trpc/[trpc]/route.ts', // tRPC App Router adapter - type mismatch between Web API and Node API
+    ];
     if (whitelist.some(allowed => filePath.includes(allowed))) {
       return;
     }
