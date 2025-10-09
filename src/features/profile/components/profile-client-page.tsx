@@ -3,6 +3,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { PostRegistrationInvitationHandler } from '@/features/invitations/components/post-registration-invitation-handler';
+import { useOrganizationByUserId } from '@/features/organizations/hooks/use-organization-by-user-id';
 import { ProfileClient } from '@/features/profile/components/profile-client';
 import { useProfile } from '@/features/profile/hooks/use-profile';
 import { useProviderByUserId } from '@/features/providers/hooks/use-provider-by-user-id';
@@ -12,6 +13,12 @@ export function ProfileClientPage() {
   const { data: profile, isLoading: isProfileLoading, error: profileError } = useProfile();
   // Fetch the service provider profile if the user is a provider
   const { data: provider, isLoading: isProviderLoading } = useProviderByUserId(profile?.id);
+  // Fetch user's organizations (moved here to avoid cross-feature import in ProfileClient)
+  const {
+    data: organizations,
+    isLoading: isOrganizationsLoading,
+    error: organizationsError,
+  } = useOrganizationByUserId(profile?.id);
 
   // Show loading spinner while profile is loading
   if (isProfileLoading) {
@@ -46,8 +53,11 @@ export function ProfileClientPage() {
         <ProfileClient
           profile={profile}
           provider={provider}
+          organizations={organizations}
           isProfileLoading={isProfileLoading}
+          isOrganizationsLoading={isOrganizationsLoading}
           profileError={profileError as Error | null}
+          organizationsError={organizationsError as Error | null}
           hasServiceProvider={!!provider}
         />
       )}

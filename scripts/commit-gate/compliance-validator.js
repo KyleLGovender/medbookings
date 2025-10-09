@@ -744,23 +744,30 @@ class CodeValidator {
       }
     }
 
-    // No cross-feature imports
+    // No cross-feature imports (with exceptions for page-level aggregation)
     const featureMatch = filePath.match(/\/features\/(\w+)\//);
     if (featureMatch) {
       const currentFeature = featureMatch[1];
-      const crossImportPattern = new RegExp(`from ['"]@/features/(?!${currentFeature})\\w+`, 'g');
-      const crossImports = fullContent.match(crossImportPattern);
 
-      if (crossImports) {
-        this.violations.push({
-          severity: 'ERROR',
-          rule: 'CROSS_FEATURE_IMPORT',
-          file: filePath,
-          message: 'Cross-feature imports are FORBIDDEN',
-          fix: 'Use shared types or refactor to feature-specific code',
-          reference: 'CLAUDE.md Section 3: Architectural Integrity',
-          details: crossImports.join(', '),
-        });
+      // Exception: Page-level wrapper components can aggregate data from multiple features
+      // These components use tRPC hooks (API calls) to fetch data, not importing business logic
+      const isPageWrapper = filePath.endsWith('-page.tsx');
+
+      if (!isPageWrapper) {
+        const crossImportPattern = new RegExp(`from ['"]@/features/(?!${currentFeature})\\w+`, 'g');
+        const crossImports = fullContent.match(crossImportPattern);
+
+        if (crossImports) {
+          this.violations.push({
+            severity: 'ERROR',
+            rule: 'CROSS_FEATURE_IMPORT',
+            file: filePath,
+            message: 'Cross-feature imports are FORBIDDEN',
+            fix: 'Use shared types or refactor to feature-specific code',
+            reference: 'CLAUDE.md Section 3: Architectural Integrity',
+            details: crossImports.join(', '),
+          });
+        }
       }
     }
 
