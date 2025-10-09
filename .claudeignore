@@ -97,3 +97,11 @@ test-results/
 !playwright.config.*
 !vitest.config.*
 !.testing/
+
+# Analysis optimization - Skip implementation details on initial scan
+# Claude reads these files on-demand when needed for specific tasks
+# This reduces token usage during "analyze the codebase" requests
+**/components/**/*.stories.tsx
+**/components/**/*.stories.ts
+**/*.spec.tsx
+**/*.spec.ts

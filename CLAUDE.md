@@ -1,5 +1,27 @@
   This file provides guidance to Claude Code when working with the MedBookings repository.
 
+  🔴 SECTION 0: CODE GENERATION COMPLIANCE CHECKLIST
+
+  Claude Code: Read this BEFORE generating or editing ANY code.
+
+  BEFORE CODE GENERATION:
+  ☐ Review relevant section in /docs/guides/DEVELOPER-PRINCIPLES.md
+  ☐ Identify required utilities (timezone, logger, etc.)
+
+  DURING CODE GENERATION - ALWAYS USE:
+  ☐ nowUTC() from @/lib/timezone (NEVER new Date() or Date.now())
+  ☐ logger.info/warn/error from @/lib/logger with PHI sanitization
+  ☐ take: for ALL prisma.*.findMany() queries (min 20 items)
+  ☐ prisma.$transaction() for multi-table operations
+  ☐ Zod validation for all tRPC inputs
+  ☐ RouterOutputs['router']['procedure'] for types (NO any)
+  ☐ Feature isolation (NO cross-feature imports)
+
+  AFTER CODE GENERATION - ALWAYS RUN:
+  npx tsc --noEmit && npm run build && npm run lint
+
+  If ANY command fails, fix violations before presenting code to user.
+
   🔴 SECTION 1: CRITICAL RULES - ALWAYS ENFORCE
 
   FUNDAMENTAL PRINCIPLES

@@ -2,7 +2,59 @@
 
 **Reference:** CLAUDE.md Section 2
 
-## Initial Context Loading (ALWAYS READ)
+## Efficient Context Loading (NEW - 98% Token Reduction)
+
+**For comprehensive codebase analysis**, use the optimized workflow:
+
+### Step 1: Read Context Document
+```
+/docs/claude-agent-context/CLAUDE-AGENT-CONTEXT.md (~2K tokens)
+```
+This file contains:
+- Quick statistics and overview
+- Critical files index (15 files)
+- Architecture summary
+- Database schema overview (30+ models)
+- Feature modules index (12 features)
+- API routers overview (10 routers)
+- UI components catalog (47+ components)
+- Compliance system patterns
+- Recent changes log
+
+### Step 2: Batch-Read Critical Files
+Use `mcp__filesystem-server__read_multiple_files` (~10K tokens):
+```typescript
+[
+  'prisma/schema.prisma',
+  'src/lib/auth.ts',
+  'src/server/trpc.ts',
+  'src/server/api/root.ts',
+  'src/utils/api.ts',
+  'src/middleware.ts',
+  'CLAUDE.md'
+]
+```
+
+### Step 3: Pattern Verification via Grep (~2K tokens)
+```bash
+Grep: 'createTRPCRouter'          # Count API routers
+Grep: 'enum.*Status'              # Find status enums
+Grep: 'export const.*Procedure'   # Find tRPC procedures
+```
+
+### Step 4: On-Demand Reading (~1K tokens)
+Read specific files only when needed for the current task.
+
+**Total: ~15K tokens (vs 82K with old approach)**
+
+### Maintenance
+- **After changes**: Update relevant sections in `/docs/claude-agent-context/CLAUDE-AGENT-CONTEXT.md`
+- **Periodic refresh**: Run full re-scan every ~20 conversations
+- **User command**: "refresh the codebase context" triggers full update
+
+---
+
+## Initial Context Loading (Traditional Approach)
 
 ### Architecture Foundation
 - `/src/app/layout.tsx` - App structure and providers

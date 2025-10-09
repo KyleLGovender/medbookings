@@ -364,7 +364,7 @@ When adding a new feature module to your codebase:
 - [ ] **2.** Add documentation comment in logger.ts with `DEBUG_FEATURENAME=true`
 - [ ] **3.** Import logger in your feature files: `import { logger } from '@/lib/logger'`
 - [ ] **4.** Add debug logs at key decision points in your code
-- [ ] **5.** Update `/docs/LOGGING.md` (optional but recommended)
+- [ ] **5.** Update `/docs/compliance/LOGGING.md` (optional but recommended)
 - [ ] **6.** Test in development - verify logs appear
 - [ ] **7.** Test flag control - verify `DEBUG_FEATURENAME=false` disables logs
 
