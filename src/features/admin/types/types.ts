@@ -47,7 +47,7 @@ export type ApprovalStatus = ProviderStatus | OrganizationStatus;
 export type AdminFilterStatus = 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
 
 // API Response Types
-export interface AdminApiResponse<T = any> {
+export interface AdminApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;

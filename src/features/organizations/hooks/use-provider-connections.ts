@@ -15,7 +15,7 @@ export function useOrganizationProviderConnections(organizationId: string) {
 }
 
 interface ManageOrganizationProviderConnectionOptions {
-  onSuccess?: (data: any, variables: any) => void;
+  onSuccess?: (data: unknown, variables: unknown) => void;
   onError?: (error: unknown) => void;
 }
 

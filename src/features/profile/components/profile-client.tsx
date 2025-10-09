@@ -134,7 +134,7 @@ export function ProfileClient({
               <CardContent className="flex flex-col items-center space-y-4">
                 {organizations && organizations.length > 0 ? (
                   <div className="w-full space-y-4">
-                    {organizations.map((org: any) => (
+                    {organizations.map((org) => (
                       <div
                         key={org.id}
                         className="flex flex-col items-center space-y-3 rounded-lg border p-4"

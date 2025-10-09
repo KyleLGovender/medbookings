@@ -38,7 +38,10 @@ export default function GlobalAvailabilityPage() {
 
   const handleDeleteAvailability = (availability: AvailabilityData) => {
     // Check for existing bookings first
-    const bookedSlots = availability.calculatedSlots?.filter((slot: any) => slot.booking) || [];
+    const bookedSlots =
+      availability.calculatedSlots?.filter(
+        (slot: unknown) => slot && typeof slot === 'object' && 'booking' in slot && slot.booking
+      ) || [];
     if (bookedSlots.length > 0) {
       toast({
         title: 'Cannot Delete',

@@ -25,8 +25,8 @@ export function useProviderInvitations(status?: InvitationStatus) {
  * @returns Mutation object for responding to invitations
  */
 export function useRespondToInvitation(options?: {
-  onSuccess?: (data: any) => void;
-  onError?: (error: any) => void;
+  onSuccess?: (data: unknown) => void;
+  onError?: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -59,8 +59,8 @@ export function useOrganizationConnections(status?: ConnectionStatus) {
  * @returns Mutation object for updating connections
  */
 export function useUpdateConnection(options?: {
-  onSuccess?: (data: any) => void;
-  onError?: (error: any) => void;
+  onSuccess?: (data: unknown) => void;
+  onError?: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -80,8 +80,8 @@ export function useUpdateConnection(options?: {
  * @returns Mutation object for deleting connections
  */
 export function useDeleteConnection(options?: {
-  onSuccess?: (data: any) => void;
-  onError?: (error: any) => void;
+  onSuccess?: (data: unknown) => void;
+  onError?: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
 

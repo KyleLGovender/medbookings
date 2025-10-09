@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { AlertCircle, CheckCircle2, Edit2, FileText, Upload, XCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
+import type { FieldErrors, UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -24,9 +25,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { parseUTC } from '@/lib/timezone';
-import { api } from '@/utils/api';
+import { type RouterOutputs, api } from '@/utils/api';
 
-import { renderRequirementInput } from '../render-requirement-input';
+import { type RequirementForm, renderRequirementInput } from '../render-requirement-input';
+
+// Extended form with notes field
+type RequirementEditForm = RequirementForm & {
+  notes: string;
+};
 
 interface ProviderRequirementsEditProps {
   providerId: string;
@@ -35,18 +41,20 @@ interface ProviderRequirementsEditProps {
 export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEditProps) {
   const { toast } = useToast();
   const utils = api.useUtils();
-  const [selectedRequirement, setSelectedRequirement] = useState<any>(null);
+  const [selectedRequirement, setSelectedRequirement] = useState<
+    RouterOutputs['providers']['getRequirements'][number] | null
+  >(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // React Hook Form for requirement input - structure matches renderRequirementInput expectations
-  const form = useForm({
+  const form = useForm<RequirementEditForm>({
     defaultValues: {
       regulatoryRequirements: {
         requirements: [
           {
             requirementTypeId: '',
             value: '',
-            documentMetadata: null,
+            documentMetadata: undefined,
           },
         ],
       },
@@ -76,7 +84,7 @@ export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEdi
     },
   });
 
-  const handleSubmitRequirement = async (data: any) => {
+  const handleSubmitRequirement = async (data: { notes?: string }) => {
     if (!selectedRequirement) return;
 
     // Get the requirement value from the form structure that renderRequirementInput uses
@@ -88,10 +96,10 @@ export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEdi
       form.watch(requirementPath) ||
       formValues.regulatoryRequirements?.requirements?.[0]?.value ||
       '';
-    const documentMetadata = form.watch(documentPath) || null;
+    const documentMetadata = form.watch(documentPath) || undefined;
 
     // Build the request payload based on requirement type
-    const payload: any = {
+    const payload: Record<string, unknown> = {
       requirementId: selectedRequirement.id,
       notes: data.notes || '',
     };
@@ -106,7 +114,15 @@ export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEdi
       payload.documentMetadata = documentMetadata || { value: requirementValue };
     }
 
-    await updateRequirement.mutateAsync(payload);
+    await updateRequirement.mutateAsync(
+      payload as {
+        requirementId: string;
+        value?: unknown;
+        documentMetadata?: unknown;
+        notes?: string;
+        documentUrl?: string;
+      }
+    );
   };
 
   const getStatusIcon = (status: string) => {
@@ -221,7 +237,7 @@ export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEdi
                                 {
                                   requirementTypeId: req.requirementType.id,
                                   value: req.documentMetadata?.value || req.value || '',
-                                  documentMetadata: req.documentMetadata || null,
+                                  documentMetadata: req.documentMetadata || undefined,
                                 },
                               ],
                             },
@@ -262,16 +278,16 @@ export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEdi
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>Total: {requirements.length}</div>
                 <div className="text-green-600">
-                  Approved: {requirements.filter((r: any) => r.status === 'APPROVED').length}
+                  Approved: {requirements.filter((r) => r.status === 'APPROVED').length}
                 </div>
                 <div className="text-yellow-600">
-                  Pending: {requirements.filter((r: any) => r.status === 'PENDING').length}
+                  Pending: {requirements.filter((r) => r.status === 'PENDING').length}
                 </div>
                 <div className="text-red-600">
                   Action Required:{' '}
                   {
                     requirements.filter(
-                      (r: any) => r.status === 'NOT_SUBMITTED' || r.status === 'REJECTED'
+                      (r) => r.status === 'NOT_SUBMITTED' || r.status === 'REJECTED'
                     ).length
                   }
                 </div>
@@ -322,10 +338,10 @@ export function ProviderRequirementsEdit({ providerId }: ProviderRequirementsEdi
                         existingSubmission: selectedRequirement,
                       },
                       {
-                        register: form.register,
-                        watch: form.watch,
-                        setValue: form.setValue,
-                        errors: form.formState.errors,
+                        register: form.register as unknown as UseFormRegister<RequirementForm>,
+                        watch: form.watch as unknown as UseFormWatch<RequirementForm>,
+                        setValue: form.setValue as unknown as UseFormSetValue<RequirementForm>,
+                        errors: form.formState.errors as FieldErrors<RequirementForm>,
                         fieldName: 'requirementValue',
                         existingValue:
                           selectedRequirement.documentMetadata?.value || selectedRequirement.value,

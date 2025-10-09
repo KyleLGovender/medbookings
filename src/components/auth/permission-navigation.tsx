@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/navigation-menu';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
-import { OrganizationRole, Permission, SystemRole } from '@/types/permissions';
+import { OrganizationRole, Permission, SystemRole, UserPermissions } from '@/types/permissions';
 
 /**
  * Permission-aware navigation components
@@ -38,7 +38,7 @@ interface NavigationItem {
   organizationId?: string;
 
   // Custom access check
-  customCheck?: (permissions: any) => boolean;
+  customCheck?: (permissions: UserPermissions) => boolean;
 
   // Nested items
   children?: NavigationItem[];
@@ -76,7 +76,7 @@ export function PermissionNavigation({
 
   const checkAccess = (item: NavigationItem): boolean => {
     // Check custom access function first
-    if (item.customCheck) {
+    if (item.customCheck && userPermissions) {
       return item.customCheck(userPermissions);
     }
 

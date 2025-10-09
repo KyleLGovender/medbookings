@@ -5,6 +5,7 @@
  * across the platform, including role-based access control and context-aware
  * permission validation.
  */
+import { UserRole as PrismaUserRole } from '@prisma/client';
 import { Session } from 'next-auth';
 
 import {
@@ -23,9 +24,21 @@ import {
   UserPermissions,
 } from '@/types/permissions';
 
-// Type guard for extended session user with permissions
+/**
+ * Extended session user interface with all possible fields
+ *
+ * Note: Only id and role are guaranteed to be in the session.
+ * organizationRoles, providerRole, and providerId may be populated
+ * separately via database queries when needed for permission checks.
+ *
+ * Uses PrismaUserRole to match NextAuth session type exactly.
+ */
 interface ExtendedSessionUser {
-  role?: SystemRole;
+  id: string;
+  email?: string | null;
+  name?: string | null;
+  role: PrismaUserRole; // Must match NextAuth session user type
+  // Optional fields that might be populated from database
   organizationRoles?: Array<{
     organizationId: string;
     role: OrganizationRole;
@@ -34,8 +47,50 @@ interface ExtendedSessionUser {
   providerId?: string;
 }
 
-function hasExtendedUserProperties(user: unknown): user is ExtendedSessionUser {
-  return typeof user === 'object' && user !== null;
+/**
+ * Type guard to validate session user structure
+ *
+ * Performs runtime validation to ensure the user object has the
+ * required fields and optional fields are properly typed.
+ */
+function isExtendedSessionUser(user: unknown): user is ExtendedSessionUser {
+  if (typeof user !== 'object' || user === null) {
+    return false;
+  }
+
+  const u = user as Record<string, unknown>;
+
+  // Validate required fields
+  if (typeof u.id !== 'string' || !u.id) {
+    return false;
+  }
+
+  if (typeof u.role !== 'string' || !u.role) {
+    return false;
+  }
+
+  // Validate optional fields when present
+  if (u.email !== undefined && u.email !== null && typeof u.email !== 'string') {
+    return false;
+  }
+
+  if (u.name !== undefined && u.name !== null && typeof u.name !== 'string') {
+    return false;
+  }
+
+  if (u.organizationRoles !== undefined && !Array.isArray(u.organizationRoles)) {
+    return false;
+  }
+
+  if (u.providerRole !== undefined && typeof u.providerRole !== 'string') {
+    return false;
+  }
+
+  if (u.providerId !== undefined && typeof u.providerId !== 'string') {
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -208,21 +263,34 @@ export function canManageUser(
 
 /**
  * Extract user permissions from NextAuth session
+ *
+ * Uses type guard to safely extract permissions from the session.
+ * Returns null if session is invalid or user doesn't have required fields.
+ *
+ * Note: organizationRoles, providerRole, and providerId are optional
+ * and may need to be fetched separately from the database for full
+ * permission checking. This function only extracts what's in the session.
  */
 export function getUserPermissionsFromSession(session: Session | null): UserPermissions | null {
-  if (!session?.user) return null;
+  if (!session?.user) {
+    return null;
+  }
 
-  // This would typically extract from session.user
-  // For now, we'll return a basic structure that needs to be populated
-  // from the database in the actual implementation
+  // Validate session user structure with type guard
+  if (!isExtendedSessionUser(session.user)) {
+    // Session user doesn't have required fields
+    return null;
+  }
 
-  const user = session.user as any; // TODO: Fetch extended user properties from database
+  // Safe to access after type guard validation
+  // Cast to ExtendedSessionUser to access optional fields
+  const user = session.user as ExtendedSessionUser;
 
   return {
-    systemRole: user?.role || SystemRole.USER,
-    organizationRoles: user?.organizationRoles || [],
-    providerRole: user?.providerRole,
-    providerId: user?.providerId,
+    systemRole: (user.role as SystemRole) || SystemRole.USER,
+    organizationRoles: user.organizationRoles || [],
+    providerRole: user.providerRole,
+    providerId: user.providerId,
   };
 }
 

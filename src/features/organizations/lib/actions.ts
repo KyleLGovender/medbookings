@@ -63,7 +63,10 @@ export interface MemberManagementResult {
   success: boolean;
   message: string;
   error?: string;
-  data?: any;
+  data?: {
+    currentUserId?: string;
+    currentUserEmail?: string;
+  };
 }
 
 /**
@@ -147,7 +150,10 @@ export async function validateInvitationAcceptance(token: string): Promise<Membe
     return {
       success: true,
       message: 'Invitation acceptance validated',
-      data: { currentUserId: currentUser.id, currentUserEmail: currentUser.email },
+      data: {
+        currentUserId: currentUser.id,
+        currentUserEmail: currentUser.email ?? undefined,
+      },
     };
   } catch (error) {
     logger.error('Invitation acceptance validation error', {

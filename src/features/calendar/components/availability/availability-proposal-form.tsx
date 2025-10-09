@@ -137,7 +137,7 @@ export function AvailabilityProposalForm({
   } = useAssociatedServices(providerId);
 
   // Fetch organization locations
-  const organizationIds = userOrganizations.map((org: any) => org.id);
+  const organizationIds = userOrganizations.map((org) => org.id);
   const { data: availableLocations = [], isLoading: isLocationsLoading } =
     useOrganizationLocations(organizationIds);
 
@@ -185,8 +185,7 @@ export function AvailabilityProposalForm({
   const selectedLocation = useMemo(() => {
     if (!watchLocationId) return null;
     return (
-      availableLocations.filter((loc) => loc.id).find((loc: any) => loc.id === watchLocationId) ||
-      null
+      availableLocations.filter((loc) => loc.id).find((loc) => loc.id === watchLocationId) || null
     );
   }, [watchLocationId, availableLocations]);
 
@@ -541,7 +540,7 @@ export function AvailabilityProposalForm({
                         <SelectContent>
                           {availableLocations
                             .filter((location) => location.id)
-                            .map((location: any) => (
+                            .map((location) => (
                               <SelectItem key={location.id} value={location.id!}>
                                 {location.name}
                               </SelectItem>
@@ -582,9 +581,11 @@ export function AvailabilityProposalForm({
               <ServiceSelectionSection
                 providerId={providerId}
                 organizationId={organizationId}
-                availableServices={(availableServices || []).map((s: any) => ({
+                availableServices={(availableServices || []).map((s) => ({
                   ...s,
                   description: s.description ?? undefined,
+                  price: Number(s.defaultPrice),
+                  duration: s.defaultDuration,
                 }))}
               />
             )}

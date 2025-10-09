@@ -16,9 +16,48 @@ interface LocationAutocompleteProps {
   className?: string;
 }
 
+// Minimal Google Maps type definition
+interface GoogleMapsAPI {
+  maps: {
+    places: {
+      Autocomplete: new (
+        input: HTMLInputElement,
+        options?: Record<string, unknown>
+      ) => AutocompleteInstance;
+    };
+    event?: {
+      clearInstanceListeners(instance: unknown): void;
+    };
+  };
+}
+
+// Google Maps Place result type
+interface PlaceResult {
+  place_id?: string;
+  formatted_address?: string;
+  name?: string;
+  address_components?: Array<{
+    long_name: string;
+    short_name: string;
+    types: string[];
+  }>;
+  geometry?: {
+    location: {
+      lat(): number;
+      lng(): number;
+    };
+  };
+}
+
+// Autocomplete instance type
+interface AutocompleteInstance {
+  addListener(event: string, handler: () => void): void;
+  getPlace(): PlaceResult;
+}
+
 declare global {
   interface Window {
-    google: any;
+    google: GoogleMapsAPI;
     initGoogleMaps?: () => void;
   }
 }
@@ -30,7 +69,7 @@ export function LocationAutocomplete({
   className,
 }: LocationAutocompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<any>(null);
+  const autocompleteRef = useRef<AutocompleteInstance | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [inputValue, setInputValue] = useState(value);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +99,7 @@ export function LocationAutocomplete({
 
       // Create callback function
       const callbackName = `initGoogleMapsAutocomplete${nowUTC().getTime()}`;
-      window[callbackName] = initializeAutocomplete;
+      (window as unknown as Record<string, () => void>)[callbackName] = initializeAutocomplete;
 
       // Load the script
       const script = document.createElement('script');
@@ -95,20 +134,20 @@ export function LocationAutocomplete({
 
         // Add listener for place selection
         autocompleteRef.current.addListener('place_changed', () => {
-          const place = autocompleteRef.current.getPlace();
+          const place = autocompleteRef.current?.getPlace();
 
           if (place && (place.formatted_address || place.name)) {
             // Extract city/locality information for cleaner display
-            let displayName = place.name || place.formatted_address;
+            let displayName = place.name || place.formatted_address || '';
 
             if (place.address_components) {
-              const locality = place.address_components.find((comp: any) =>
+              const locality = place.address_components.find((comp: { types: string[] }) =>
                 comp.types.includes('locality')
               );
-              const adminArea1 = place.address_components.find((comp: any) =>
+              const adminArea1 = place.address_components.find((comp: { types: string[] }) =>
                 comp.types.includes('administrative_area_level_1')
               );
-              const country = place.address_components.find((comp: any) =>
+              const country = place.address_components.find((comp: { types: string[] }) =>
                 comp.types.includes('country')
               );
 

@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { addDays, addMonths, differenceInMinutes, endOfMonth, startOfMonth } from 'date-fns';
 
 import { AvailabilityValidationOptions, ValidationResult } from '@/features/calendar/types/types';
@@ -54,7 +55,7 @@ async function validateOverlaps(options: AvailabilityValidationOptions): Promise
   const errors: string[] = [];
 
   // Get all existing availabilities for this provider
-  const whereClause: any = {
+  const whereClause: Prisma.AvailabilityWhereInput = {
     providerId: options.providerId,
     // Only check against accepted/pending availabilities (not cancelled/rejected)
     status: { in: ['ACCEPTED', 'PENDING'] },

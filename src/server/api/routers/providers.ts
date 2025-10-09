@@ -313,7 +313,7 @@ export const providersRouter = createTRPCRouter({
       }
 
       // Build optimized include clause based on requirements
-      const include: any = {
+      const include: Prisma.ProviderInclude = {
         user: {
           select: {
             email: true,
@@ -627,7 +627,7 @@ export const providersRouter = createTRPCRouter({
       }
 
       // Build update data object only with changed fields
-      const updateData: any = {};
+      const updateData: Prisma.ProviderUpdateInput = {};
 
       // Only include fields that were actually changed and provided
       if (input.name && input.name !== currentProvider.name) updateData.name = input.name;
@@ -888,7 +888,7 @@ export const providersRouter = createTRPCRouter({
         id: string;
         serviceId: string;
         duration: number;
-        price: any;
+        price: Prisma.Decimal | number;
         isOnlineAvailable: boolean;
         isInPerson: boolean;
         locationId: string | null;
@@ -1007,7 +1007,7 @@ export const providersRouter = createTRPCRouter({
         id: string;
         serviceId: string;
         duration: number;
-        price: any;
+        price: Prisma.Decimal | number;
         isOnlineAvailable: boolean;
         isInPerson: boolean;
         locationId: string | null;
@@ -1299,7 +1299,7 @@ export const providersRouter = createTRPCRouter({
       });
 
       // Flatten requirements and add provider type info
-      const allRequirements: any[] = [];
+      const allRequirements: Array<Record<string, unknown>> = [];
       const seenRequirementIds = new Set<string>();
 
       providerTypesWithRequirements.forEach((providerType) => {
@@ -1493,7 +1493,7 @@ export const providersRouter = createTRPCRouter({
       }
 
       // Build where clause
-      const whereClause: any = {
+      const whereClause: Prisma.OrganizationProviderConnectionWhereInput = {
         providerId: provider.id,
       };
 
@@ -1689,7 +1689,7 @@ export const providersRouter = createTRPCRouter({
       }
 
       // Build where clause
-      const whereClause: any = {
+      const whereClause: Prisma.ProviderInvitationWhereInput = {
         email: ctx.session.user.email,
       };
 

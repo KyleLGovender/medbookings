@@ -593,9 +593,11 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
             ) : (
               <ServiceSelectionSection
                 providerId={currentUserProvider?.id || ''}
-                availableServices={(availableServices || []).map((s: any) => ({
+                availableServices={(availableServices || []).map((s) => ({
                   ...s,
                   description: s.description ?? undefined,
+                  price: Number(s.defaultPrice),
+                  duration: s.defaultDuration,
                 }))}
               />
             )}

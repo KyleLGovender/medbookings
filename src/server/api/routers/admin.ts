@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import {
@@ -131,7 +132,7 @@ export const adminRouter = createTRPCRouter({
    */
   getProviders: adminProcedure.input(adminSearchParamsSchema).query(async ({ ctx, input }) => {
     // Build where clause with optional status and search filters
-    const whereClause: any = {};
+    const whereClause: Prisma.ProviderWhereInput = {};
 
     if (input.status) {
       whereClause.status = input.status;
@@ -619,7 +620,7 @@ export const adminRouter = createTRPCRouter({
    */
   getOrganizations: adminProcedure.input(adminSearchParamsSchema).query(async ({ ctx, input }) => {
     // Build where clause with optional status and search filters
-    const whereClause: any = {};
+    const whereClause: Prisma.OrganizationWhereInput = {};
 
     if (input.status) {
       whereClause.status = input.status;

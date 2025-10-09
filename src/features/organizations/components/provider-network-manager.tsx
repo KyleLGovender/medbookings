@@ -55,13 +55,13 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
   const invitations = invitationsData || [];
 
   // Filter data based on search query
-  const filteredConnections = connections.filter((connection: any) => {
+  const filteredConnections = connections.filter((connection) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
       connection.provider.name.toLowerCase().includes(query) ||
       connection.provider.email.toLowerCase().includes(query) ||
-      connection.provider.providerType?.name.toLowerCase().includes(query)
+      connection.provider.serviceProviderType?.name.toLowerCase().includes(query)
     );
   });
 
@@ -111,7 +111,7 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
     title,
     description,
   }: {
-    icon: any;
+    icon: React.ComponentType<{ className?: string }>;
     title: string;
     description: string;
   }) => (

@@ -8,7 +8,7 @@ import { api } from '@/utils/api';
  * @returns Mutation object for deleting a provider
  */
 export function useDeleteProvider(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();

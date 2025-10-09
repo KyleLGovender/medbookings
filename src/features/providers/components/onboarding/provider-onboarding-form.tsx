@@ -241,8 +241,9 @@ export function ProviderOnboardingForm() {
       });
 
       // Redirect if provided in the response
-      if (data.redirect) {
-        window.location.href = data.redirect;
+      const result = data as { redirect?: string };
+      if (result.redirect) {
+        window.location.href = result.redirect;
       }
     },
     onError: (error: unknown) => {

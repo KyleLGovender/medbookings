@@ -53,7 +53,7 @@ export function useAdminProviderCounts() {
       select: (providers) => {
         // Calculate counts by status
         const counts = providers.reduce(
-          (acc: Record<string, number>, provider: any) => {
+          (acc: Record<string, number>, provider) => {
             const status = provider.status || ProviderStatus.PENDING_APPROVAL;
             acc[status] = (acc[status] || 0) + 1;
             acc.total = (acc.total || 0) + 1;
@@ -65,11 +65,11 @@ export function useAdminProviderCounts() {
         // Calculate requirement-based counts
         // Note: Basic getProviders query only includes requirementSubmissions.status
         // For detailed requirement analysis, use getProviderRequirements
-        const requirementCounts = providers.reduce((acc: Record<string, number>, provider: any) => {
+        const requirementCounts = providers.reduce((acc: Record<string, number>, provider) => {
           const submissions = provider.requirementSubmissions || [];
 
           const approvedCount = submissions.filter(
-            (sub: any) => sub.status === RequirementsValidationStatus.APPROVED
+            (sub) => sub.status === RequirementsValidationStatus.APPROVED
           ).length;
 
           const totalCount = submissions.length;
@@ -105,11 +105,11 @@ export function useAdminProvidersWithPendingRequirements() {
       select: (providers) => {
         // Filter providers with pending requirements
         // Note: Using all submissions since requirementType.isRequired is not available in basic query
-        return providers.filter((provider: any) => {
+        return providers.filter((provider) => {
           const submissions = provider.requirementSubmissions || [];
 
           const approvedCount = submissions.filter(
-            (sub: any) => sub.status === RequirementsValidationStatus.APPROVED
+            (sub) => sub.status === RequirementsValidationStatus.APPROVED
           ).length;
 
           const totalCount = submissions.length;
@@ -132,14 +132,14 @@ export function useAdminProvidersReadyForApproval() {
     {
       select: (providers) => {
         // Filter providers ready for approval
-        return providers.filter((provider: any) => {
+        return providers.filter((provider) => {
           // Only consider providers that are still pending
           if (provider.status !== ProviderStatus.PENDING_APPROVAL) return false;
 
           const submissions = provider.requirementSubmissions || [];
 
           const approvedCount = submissions.filter(
-            (sub: any) => sub.status === RequirementsValidationStatus.APPROVED
+            (sub) => sub.status === RequirementsValidationStatus.APPROVED
           ).length;
 
           const totalCount = submissions.length;

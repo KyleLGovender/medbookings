@@ -120,7 +120,7 @@ export function ProviderCalendarView({
 
     availabilities.forEach((availability) => {
       if (availability.calculatedSlots) {
-        availability.calculatedSlots.forEach((slot: any) => {
+        availability.calculatedSlots.forEach((slot) => {
           if (slot.booking) {
             const slotHours =
               (slot.endTime.getTime() - slot.startTime.getTime()) / (1000 * 60 * 60);

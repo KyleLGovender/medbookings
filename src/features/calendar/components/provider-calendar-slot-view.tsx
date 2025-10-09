@@ -29,6 +29,7 @@ import { SlotWeekView } from '@/features/calendar/components/views/slot-week-vie
 import { useCreateBooking } from '@/features/calendar/hooks/use-create-booking';
 import { useProviderSlots } from '@/features/calendar/hooks/use-provider-slots';
 import { calculateDateRange, navigateCalendarDate } from '@/features/calendar/lib/calendar-utils';
+import { type BookingSlot } from '@/features/calendar/types/types';
 import { CalendarViewMode } from '@/features/calendar/types/types';
 import { logger } from '@/lib/logger';
 import { nowUTC, parseUTC } from '@/lib/timezone';
@@ -39,10 +40,14 @@ type ProviderSlotsResult = RouterOutputs['calendar']['getProviderSlots'];
 type SlotData = ProviderSlotsResult[number];
 
 // Performance monitoring functions removed - using simplified approach
-const measureCalendarDataProcessing = (fn: () => any) => fn();
-const measureCalendarRendering = (fn: () => any) => fn();
-const recordCalendarCyclePerformance = (eventCount: number, viewMode: string, dateRange: any) => {};
-const usePerformanceMonitor = (name: string, deps: any[]) => ({
+const measureCalendarDataProcessing = (fn: () => unknown) => fn();
+const measureCalendarRendering = (fn: () => unknown) => fn();
+const recordCalendarCyclePerformance = (
+  eventCount: number,
+  viewMode: string,
+  dateRange: unknown
+) => {};
+const usePerformanceMonitor = (name: string, deps: unknown[]) => ({
   startMeasurement: () => {},
   endMeasurement: () => {},
 });
@@ -88,7 +93,8 @@ export function ProviderCalendarSlotView({
 
   const [isMobile, setIsMobile] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [selectedSlot, setSelectedSlot] = useState<any>(null); // Type mismatch between tRPC SlotData and BookingSlotModal props - needs refactor
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [lastBookingDetails, setLastBookingDetails] = useState<{

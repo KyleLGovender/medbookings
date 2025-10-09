@@ -50,7 +50,7 @@ import { logger, sanitizeEmail } from '@/lib/logger';
 import { OrganizationRole, Permission } from '@/types/permissions';
 
 // Temporary placeholder functions until proper hooks are implemented
-const inviteOrganizationMember = async (data: any) => ({
+const inviteOrganizationMember = async (data: Record<string, unknown>) => ({
   success: false,
   message: 'Member invitation functionality is temporarily disabled',
 });

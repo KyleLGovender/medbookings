@@ -84,12 +84,13 @@ export function ProviderConnectionCard({
 
   const manageConnectionMutation = useManageOrganizationProviderConnection(organizationId, {
     onSuccess: (data, variables) => {
+      const vars = variables as { action: 'update' | 'delete'; data?: { status?: string } };
       let message = '';
-      switch (variables.action) {
+      switch (vars.action) {
         case 'update':
-          if (variables.data?.status === 'SUSPENDED') {
+          if (vars.data?.status === 'SUSPENDED') {
             message = 'Provider connection suspended successfully';
-          } else if (variables.data?.status === 'ACCEPTED') {
+          } else if (vars.data?.status === 'ACCEPTED') {
             message = 'Provider connection reactivated successfully';
           }
           break;

@@ -90,6 +90,8 @@ export const basicInfoSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   whatsapp: z.string().min(10, 'Please enter a valid WhatsApp number'),
   showPrice: z.boolean().default(true),
+  providerTypeIds: z.array(z.string()).optional(), // Provider types for edit form
+  providerTypeId: z.string().optional(), // Legacy single provider type for backward compatibility
 });
 
 export const providerTypeSchema = z.object({});

@@ -97,9 +97,10 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
       setPendingAction(null);
     },
     onError: (error) => {
+      const err = error as Error;
       toast({
         title: 'Failed to update connection',
-        description: error.message,
+        description: err.message,
         variant: 'destructive',
       });
       setIsActionDialogOpen(false);
@@ -118,9 +119,10 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
       setPendingAction(null);
     },
     onError: (error) => {
+      const err = error as Error;
       toast({
         title: 'Failed to delete connection',
-        description: error.message,
+        description: err.message,
         variant: 'destructive',
       });
       setIsActionDialogOpen(false);

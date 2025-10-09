@@ -11,7 +11,15 @@ import { logger } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';
 
 interface RequirementFileUploadProps {
-  onFileUploaded: (url: string, metadata: any) => void;
+  onFileUploaded: (
+    url: string,
+    metadata: {
+      fileName: string;
+      fileSize: number;
+      fileType: string;
+      uploadedAt: string;
+    } | null
+  ) => void;
   existingFile?: {
     url?: string;
     name?: string;

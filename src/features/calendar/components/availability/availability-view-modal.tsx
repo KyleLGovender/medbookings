@@ -9,9 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { useAvailabilityById } from '@/features/calendar/hooks/use-availability';
+import { type RouterOutputs } from '@/utils/api';
 
-// Temporary type fix - needs proper tRPC procedure with relations
-type AvailabilityWithRelations = any;
+// Use tRPC-inferred type for availability with relations - matches useAvailabilityById return type
+type AvailabilityWithRelations = RouterOutputs['calendar']['getById'];
 
 interface AvailabilityViewModalProps {
   isOpen: boolean;
@@ -43,9 +44,8 @@ export function AvailabilityViewModal({
   } = useAvailabilityById(isOpen ? availabilityId || undefined : undefined);
 
   const selectedLocation = useMemo(() => {
-    const typedAvailability = availability as AvailabilityWithRelations;
-    if (!typedAvailability?.locationId) return null;
-    return typedAvailability.location || null;
+    if (!availability?.locationId) return null;
+    return availability.location || null;
   }, [availability]);
 
   const formatDateTime = (date: Date) => {
@@ -81,7 +81,7 @@ export function AvailabilityViewModal({
     }
   };
 
-  const formatRecurrencePattern = (pattern: any) => {
+  const formatRecurrencePattern = (pattern: Record<string, unknown> | string | null) => {
     if (!pattern) return 'No recurrence';
 
     try {
@@ -138,265 +138,238 @@ export function AvailabilityViewModal({
           </Alert>
         )}
 
-        {!!availability &&
-          (() => {
-            const typedAvailability = availability as AvailabilityWithRelations;
-            return (
-              <div className="space-y-6">
-                {/* Profile Information */}
-                <div className="space-y-4">
-                  <h3 className="flex items-center gap-2 text-lg font-medium">
-                    <User className="h-4 w-4" />
-                    Profile Information
-                  </h3>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Created by</label>
-                      <div className="rounded-md border bg-gray-50 p-3">
-                        <div className="text-sm font-medium">
-                          {(availability as AvailabilityWithRelations).createdBy?.name || 'Unknown'}
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          {(availability as AvailabilityWithRelations).providerId ===
-                          (availability as AvailabilityWithRelations).createdBy?.id
-                            ? 'Provider (Self)'
-                            : 'Organization Role'}
-                        </div>
-                      </div>
+        {!!availability && (
+          <div className="space-y-6">
+            {/* Profile Information */}
+            <div className="space-y-4">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
+                <User className="h-4 w-4" />
+                Profile Information
+              </h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Created by</label>
+                  <div className="rounded-md border bg-gray-50 p-3">
+                    <div className="text-sm font-medium">
+                      {availability.provider?.name || 'Unknown'}
                     </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Provider</label>
-                      <div className="rounded-md border bg-gray-50 p-3">
-                        <div className="text-sm font-medium">
-                          {(availability as AvailabilityWithRelations).provider?.name ||
-                            'Unknown Provider'}
-                        </div>
-                        <div className="text-xs text-gray-600">Service Provider</div>
-                      </div>
+                    <div className="text-xs text-gray-600">
+                      {availability.providerId ? 'Provider (Self)' : 'Organization Role'}
                     </div>
                   </div>
                 </div>
 
-                <Separator />
-
-                {/* Time Settings */}
-                <div className="space-y-4">
-                  <h3 className="flex items-center gap-2 text-lg font-medium">
-                    <Clock className="h-4 w-4" />
-                    Time Settings
-                  </h3>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Start Time</label>
-                      <div className="rounded-md border bg-gray-50 p-3">
-                        <div className="text-sm font-medium">
-                          {formatDateTime((availability as AvailabilityWithRelations).startTime)}
-                        </div>
-                      </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Provider</label>
+                  <div className="rounded-md border bg-gray-50 p-3">
+                    <div className="text-sm font-medium">
+                      {availability.provider?.name || 'Unknown Provider'}
                     </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">End Time</label>
-                      <div className="rounded-md border bg-gray-50 p-3">
-                        <div className="text-sm font-medium">
-                          {formatDateTime((availability as AvailabilityWithRelations).endTime)}
-                        </div>
-                      </div>
-                    </div>
+                    <div className="text-xs text-gray-600">Service Provider</div>
                   </div>
+                </div>
+              </div>
+            </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Duration</label>
-                    <div className="rounded-md border bg-gray-50 p-3">
-                      <div className="text-sm font-medium">
-                        {Math.round(
-                          ((availability as AvailabilityWithRelations).endTime.getTime() -
-                            (availability as AvailabilityWithRelations).startTime.getTime()) /
-                            (1000 * 60)
-                        )}{' '}
-                        minutes
-                      </div>
+            <Separator />
+
+            {/* Time Settings */}
+            <div className="space-y-4">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
+                <Clock className="h-4 w-4" />
+                Time Settings
+              </h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Start Time</label>
+                  <div className="rounded-md border bg-gray-50 p-3">
+                    <div className="text-sm font-medium">
+                      {formatDateTime(availability.startTime)}
                     </div>
                   </div>
                 </div>
 
-                <Separator />
-
-                {/* Recurrence Settings */}
-                <div className="space-y-4">
-                  <h3 className="flex items-center gap-2 text-lg font-medium">
-                    <Repeat className="h-4 w-4" />
-                    Recurrence Settings
-                  </h3>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Recurrence Pattern</label>
-                    <div className="rounded-md border bg-gray-50 p-3">
-                      <div className="flex items-center gap-2">
-                        {(availability as AvailabilityWithRelations).isRecurring && (
-                          <Badge variant="secondary">
-                            <Repeat className="mr-1 h-3 w-3" />
-                            Recurring
-                          </Badge>
-                        )}
-                        <span className="text-sm font-medium">
-                          {formatRecurrencePattern(
-                            (availability as AvailabilityWithRelations).recurrencePattern
-                          )}
-                        </span>
-                      </div>
-                      {(availability as AvailabilityWithRelations).seriesId && (
-                        <div className="mt-2 text-xs text-gray-600">
-                          Series ID: {(availability as AvailabilityWithRelations).seriesId}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Location */}
-                <div className="space-y-4">
-                  <h3 className="flex items-center gap-2 text-lg font-medium">
-                    <MapPin className="h-4 w-4" />
-                    Location
-                  </h3>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Online Availability</label>
-                      <div className="rounded-md border bg-gray-50 p-3">
-                        <div className="text-sm font-medium">
-                          {(availability as AvailabilityWithRelations).isOnlineAvailable
-                            ? 'Yes'
-                            : 'No'}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Physical Location</label>
-                      <div className="rounded-md border bg-gray-50 p-3">
-                        {selectedLocation ? (
-                          <div>
-                            <div className="text-sm font-medium">{selectedLocation.name}</div>
-                            {selectedLocation.formattedAddress && (
-                              <div className="mt-1 text-xs text-gray-600">
-                                {selectedLocation.formattedAddress}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="text-sm text-gray-500">No physical location</div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Services */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Services Offered</h3>
-                  <div className="space-y-2">
-                    {(availability as AvailabilityWithRelations)?.availableServices &&
-                    (availability as AvailabilityWithRelations)?.availableServices!.length > 0 ? (
-                      (availability as AvailabilityWithRelations).availableServices!.map(
-                        (serviceConfig: any, index: number) => (
-                          <div key={index} className="rounded-md border bg-gray-50 p-3">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="text-sm font-medium">
-                                  {serviceConfig.service?.name || 'Unknown Service'}
-                                </div>
-                                <div className="text-xs text-gray-600">
-                                  Duration: {serviceConfig.duration} minutes
-                                </div>
-                              </div>
-                              <div className="text-sm font-medium">R{serviceConfig.price}</div>
-                            </div>
-                          </div>
-                        )
-                      )
-                    ) : (
-                      <div className="rounded-md border bg-gray-50 p-3">
-                        <div className="text-sm text-gray-500">No services configured</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Status and Additional Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Status & Additional Information</h3>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Status</label>
-                      <div className="rounded-md border bg-gray-50 p-3">
-                        <Badge
-                          className={getStatusColor(
-                            (availability as AvailabilityWithRelations).status
-                          )}
-                        >
-                          {(availability as AvailabilityWithRelations).status
-                            .toLowerCase()
-                            .replace('_', ' ')}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Requires Confirmation</label>
-                      <div className="rounded-md border bg-gray-50 p-3">
-                        <div className="text-sm font-medium">
-                          {(availability as AvailabilityWithRelations).requiresConfirmation
-                            ? 'Yes'
-                            : 'No'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Scheduling Rule</label>
-                    <div className="rounded-md border bg-gray-50 p-3">
-                      <div className="text-sm font-medium">
-                        {(availability as AvailabilityWithRelations).schedulingRule ===
-                          'CONTINUOUS' && 'Continuous'}
-                        {(availability as AvailabilityWithRelations).schedulingRule ===
-                          'ON_THE_HOUR' && 'On the Hour'}
-                        {(availability as AvailabilityWithRelations).schedulingRule ===
-                          'ON_THE_HALF_HOUR' && 'On the Half Hour'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Created At</label>
-                      <div className="rounded-md border bg-gray-50 p-3">
-                        <div className="text-sm font-medium">
-                          {formatDateTime((availability as AvailabilityWithRelations).createdAt)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Last Updated</label>
-                      <div className="rounded-md border bg-gray-50 p-3">
-                        <div className="text-sm font-medium">
-                          {formatDateTime((availability as AvailabilityWithRelations).updatedAt)}
-                        </div>
-                      </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">End Time</label>
+                  <div className="rounded-md border bg-gray-50 p-3">
+                    <div className="text-sm font-medium">
+                      {formatDateTime(availability.endTime)}
                     </div>
                   </div>
                 </div>
               </div>
-            );
-          })()}
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Duration</label>
+                <div className="rounded-md border bg-gray-50 p-3">
+                  <div className="text-sm font-medium">
+                    {Math.round(
+                      (availability.endTime.getTime() - availability.startTime.getTime()) /
+                        (1000 * 60)
+                    )}{' '}
+                    minutes
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Recurrence Settings */}
+            <div className="space-y-4">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
+                <Repeat className="h-4 w-4" />
+                Recurrence Settings
+              </h3>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Recurrence Pattern</label>
+                <div className="rounded-md border bg-gray-50 p-3">
+                  <div className="flex items-center gap-2">
+                    {availability.isRecurring && (
+                      <Badge variant="secondary">
+                        <Repeat className="mr-1 h-3 w-3" />
+                        Recurring
+                      </Badge>
+                    )}
+                    <span className="text-sm font-medium">
+                      {formatRecurrencePattern(
+                        availability.recurrencePattern as Record<string, unknown> | null
+                      )}
+                    </span>
+                  </div>
+                  {availability.seriesId && (
+                    <div className="mt-2 text-xs text-gray-600">
+                      Series ID: {availability.seriesId}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Location */}
+            <div className="space-y-4">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
+                <MapPin className="h-4 w-4" />
+                Location
+              </h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Online Availability</label>
+                  <div className="rounded-md border bg-gray-50 p-3">
+                    <div className="text-sm font-medium">
+                      {availability.isOnlineAvailable ? 'Yes' : 'No'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Physical Location</label>
+                  <div className="rounded-md border bg-gray-50 p-3">
+                    {selectedLocation ? (
+                      <div>
+                        <div className="text-sm font-medium">{selectedLocation.name}</div>
+                        {selectedLocation.formattedAddress && (
+                          <div className="mt-1 text-xs text-gray-600">
+                            {selectedLocation.formattedAddress}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-gray-500">No physical location</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Services */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Services Offered</h3>
+              <div className="space-y-2">
+                {availability?.availableServices && availability.availableServices.length > 0 ? (
+                  availability.availableServices.map((serviceConfig, index: number) => (
+                    <div key={index} className="rounded-md border bg-gray-50 p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-medium">Service {index + 1}</div>
+                          <div className="text-xs text-gray-600">
+                            Duration: {serviceConfig.duration} minutes
+                          </div>
+                        </div>
+                        <div className="text-sm font-medium">R{serviceConfig.price.toString()}</div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-md border bg-gray-50 p-3">
+                    <div className="text-sm text-gray-500">No services configured</div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Status and Additional Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Status & Additional Information</h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Status</label>
+                  <div className="rounded-md border bg-gray-50 p-3">
+                    <Badge className={getStatusColor(availability.status)}>
+                      {availability.status.toLowerCase().replace('_', ' ')}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Requires Confirmation</label>
+                  <div className="rounded-md border bg-gray-50 p-3">
+                    <div className="text-sm font-medium">
+                      {availability.requiresConfirmation ? 'Yes' : 'No'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Scheduling Rule</label>
+                <div className="rounded-md border bg-gray-50 p-3">
+                  <div className="text-sm font-medium">
+                    {availability.schedulingRule === 'CONTINUOUS' && 'Continuous'}
+                    {availability.schedulingRule === 'ON_THE_HOUR' && 'On the Hour'}
+                    {availability.schedulingRule === 'ON_THE_HALF_HOUR' && 'On the Half Hour'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Created At</label>
+                  <div className="rounded-md border bg-gray-50 p-3">
+                    <div className="text-sm font-medium">
+                      {formatDateTime(availability.createdAt)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Last Updated</label>
+                  <div className="rounded-md border bg-gray-50 p-3">
+                    <div className="text-sm font-medium">
+                      {formatDateTime(availability.updatedAt)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

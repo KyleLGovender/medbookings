@@ -10,6 +10,7 @@ import {
   PermissionCheck,
   PermissionContext,
   SystemRole,
+  UserPermissions,
 } from '@/types/permissions';
 
 /**
@@ -39,7 +40,7 @@ interface PermissionGateProps {
   checks?: PermissionCheck[];
 
   // Custom permission function
-  custom?: (permissions: any) => boolean;
+  custom?: (permissions: UserPermissions) => boolean;
 
   // Fallback content when access is denied
   fallback?: ReactNode;
@@ -145,7 +146,7 @@ export function PermissionGate({
   }
 
   // Check custom permission function
-  if (custom) {
+  if (custom && userPermissions) {
     hasAccess = hasAccess && custom(userPermissions);
   }
 

@@ -1,4 +1,4 @@
-import { SubscriptionType } from '@prisma/client';
+import { Prisma, SubscriptionType } from '@prisma/client';
 import { z } from 'zod';
 
 import {
@@ -23,7 +23,7 @@ export const billingRouter = createTRPCRouter({
     .input(getSubscriptionsQuerySchema)
     .query(async ({ ctx, input }) => {
       // Build where clause based on provided filters
-      const whereClause: any = {};
+      const whereClause: Prisma.SubscriptionWhereInput = {};
 
       if (input.organizationId) {
         whereClause.organizationId = input.organizationId;
@@ -142,8 +142,8 @@ export const billingRouter = createTRPCRouter({
       }
 
       // Prepare update data
-      const updateData: any = { ...input };
-      delete updateData.id; // Remove ID from update data
+      const updateData: Prisma.SubscriptionUpdateInput = { ...input };
+      delete (updateData as Record<string, unknown>).id; // Remove ID from update data
 
       // Apply polymorphic relationship updates if needed
       if (Object.keys(validation.validatedData!.polymorphicUpdateData).length > 0) {
@@ -159,14 +159,14 @@ export const billingRouter = createTRPCRouter({
           ...(input.planId && {
             plan: { connect: { id: input.planId } },
           }),
-          ...(updateData.organizationId && {
-            organization: { connect: { id: updateData.organizationId } },
+          ...(input.organizationId && {
+            organization: { connect: { id: input.organizationId } },
           }),
-          ...(updateData.locationId && {
-            location: { connect: { id: updateData.locationId } },
+          ...(input.locationId && {
+            location: { connect: { id: input.locationId } },
           }),
-          ...(updateData.providerId && {
-            provider: { connect: { id: updateData.providerId } },
+          ...(input.providerId && {
+            provider: { connect: { id: input.providerId } },
           }),
         },
         include: {

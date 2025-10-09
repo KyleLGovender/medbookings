@@ -101,10 +101,11 @@ export function ProviderInvitationList({
         description: 'The invitation has been cancelled successfully.',
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
+      const err = error as Error;
       toast({
         title: 'Failed to cancel invitation',
-        description: error.message || 'An error occurred',
+        description: err.message || 'An error occurred',
         variant: 'destructive',
       });
     },
@@ -117,10 +118,11 @@ export function ProviderInvitationList({
         description: 'The invitation has been resent successfully.',
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
+      const err = error as Error;
       toast({
         title: 'Failed to resend invitation',
-        description: error.message || 'An error occurred',
+        description: err.message || 'An error occurred',
         variant: 'destructive',
       });
     },

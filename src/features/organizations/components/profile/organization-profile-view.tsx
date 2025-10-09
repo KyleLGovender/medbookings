@@ -31,6 +31,18 @@ interface OrganizationProfileViewProps {
   userId?: string;
 }
 
+// Type guard for coordinates
+function isValidCoordinates(coords: unknown): coords is { lat: number; lng: number } {
+  return (
+    typeof coords === 'object' &&
+    coords !== null &&
+    'lat' in coords &&
+    'lng' in coords &&
+    typeof (coords as { lat: unknown }).lat === 'number' &&
+    typeof (coords as { lng: unknown }).lng === 'number'
+  );
+}
+
 export function OrganizationProfileView({ organizationId, userId }: OrganizationProfileViewProps) {
   const router = useRouter();
   const { data: organization, isLoading, error } = useOrganization(organizationId);
@@ -61,7 +73,7 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
 
   // Check if current user is a member of this organization with admin privileges
   const isOwner = organization.memberships?.some(
-    (membership: any) =>
+    (membership) =>
       membership.userId === userId &&
       ['OWNER', 'ADMIN'].includes(membership.role) &&
       membership.status === 'ACTIVE'
@@ -209,7 +221,7 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
 
         {organization.locations && organization.locations.length > 0 ? (
           <div className="space-y-6">
-            {organization.locations.map((location: any, index: number) => (
+            {organization.locations.map((location, index: number) => (
               <Card key={location.id} className="overflow-hidden">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
@@ -217,26 +229,23 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
                       <MapPin className="h-5 w-5 text-primary" />
                       {location.name}
                     </CardTitle>
-                    {location.coordinates &&
-                      typeof location.coordinates === 'object' &&
-                      'lat' in location.coordinates &&
-                      'lng' in location.coordinates && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-2"
-                          onClick={() => {
-                            const { lat, lng } = location.coordinates;
-                            window.open(
-                              `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
-                              '_blank'
-                            );
-                          }}
-                        >
-                          <Navigation className="h-4 w-4" />
-                          Directions
-                        </Button>
-                      )}
+                    {isValidCoordinates(location.coordinates) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                        onClick={() => {
+                          const { lat, lng } = location.coordinates as { lat: number; lng: number };
+                          window.open(
+                            `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
+                            '_blank'
+                          );
+                        }}
+                      >
+                        <Navigation className="h-4 w-4" />
+                        Directions
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -253,28 +262,28 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
                         <p className="pl-6 text-sm text-muted-foreground">
                           {location.formattedAddress}
                         </p>
-                        {location.coordinates &&
-                          typeof location.coordinates === 'object' &&
-                          'lat' in location.coordinates &&
-                          'lng' in location.coordinates && (
-                            <div className="pl-6">
-                              <Button
-                                variant="link"
-                                size="sm"
-                                className="h-auto p-0 text-primary hover:underline"
-                                onClick={() => {
-                                  const { lat, lng } = location.coordinates;
-                                  window.open(
-                                    `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
-                                    '_blank'
-                                  );
-                                }}
-                              >
-                                <ExternalLink className="mr-1 h-3 w-3" />
-                                View on Google Maps
-                              </Button>
-                            </div>
-                          )}
+                        {isValidCoordinates(location.coordinates) && (
+                          <div className="pl-6">
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="h-auto p-0 text-primary hover:underline"
+                              onClick={() => {
+                                const { lat, lng } = location.coordinates as {
+                                  lat: number;
+                                  lng: number;
+                                };
+                                window.open(
+                                  `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
+                                  '_blank'
+                                );
+                              }}
+                            >
+                              <ExternalLink className="mr-1 h-3 w-3" />
+                              View on Google Maps
+                            </Button>
+                          </div>
+                        )}
                       </div>
 
                       {/* Contact Information */}
@@ -414,7 +423,7 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
 
         {organization.memberships && organization.memberships.length > 0 ? (
           <div className="space-y-4">
-            {organization.memberships.map((membership: any) => (
+            {organization.memberships.map((membership) => (
               <div key={membership.id} className="rounded-md border p-4">
                 <div className="flex items-center justify-between">
                   <div>

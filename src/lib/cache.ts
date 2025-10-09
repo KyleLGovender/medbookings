@@ -58,8 +58,8 @@ class MemoryCache<T> {
 export const providerTypeStatsCache = new MemoryCache<
   Array<{ typeId: string; typeName: string; count: number }>
 >(30); // 30 min TTL
-export const providerSearchCache = new MemoryCache<any>(10); // 10 min TTL for search results
-export const providersByTypeCache = new MemoryCache<any>(20); // 20 min TTL
+export const providerSearchCache = new MemoryCache<unknown>(10); // 10 min TTL for search results
+export const providersByTypeCache = new MemoryCache<unknown>(20); // 20 min TTL
 
 // Cache key generators
 export function generateSearchCacheKey(
@@ -142,7 +142,7 @@ export async function getCachedProviderSearch<T>(
   // Try to get from cache
   const cached = providerSearchCache.get(cacheKey);
   if (cached) {
-    return cached;
+    return cached as T;
   }
 
   // Fetch fresh data
@@ -161,7 +161,7 @@ export async function getCachedProvidersByType<T>(
   // Try to get from cache
   const cached = providersByTypeCache.get(cacheKey);
   if (cached) {
-    return cached;
+    return cached as T;
   }
 
   // Fetch fresh data

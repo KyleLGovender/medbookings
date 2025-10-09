@@ -3,7 +3,7 @@ import { logger } from '@/lib/logger';
 import { api } from '@/utils/api';
 
 interface UseCreateBookingOptions {
-  onSuccess?: (data: any, variables: BookingFormData) => void;
+  onSuccess?: (data: unknown, variables: BookingFormData) => void;
   onError?: (error: unknown) => void;
   providerId?: string;
 }

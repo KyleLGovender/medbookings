@@ -93,7 +93,7 @@ export async function createApiError(
 ): Promise<ApiError> {
   let status = 0;
   let code = 'UNKNOWN';
-  let errorData: any = {};
+  let errorData: Record<string, unknown> = {};
 
   // Handle network errors (no response)
   if (!response) {
@@ -112,7 +112,10 @@ export async function createApiError(
   // Try to parse error response
   try {
     errorData = await response.json();
-    code = errorData.code || errorData.error || status.toString();
+    code =
+      (typeof errorData.code === 'string' ? errorData.code : null) ||
+      (typeof errorData.error === 'string' ? errorData.error : null) ||
+      status.toString();
   } catch {
     // If we can't parse the response, use status as code
     code = status.toString();

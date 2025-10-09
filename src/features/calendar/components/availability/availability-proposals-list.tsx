@@ -27,10 +27,12 @@ import {
   useRejectAvailabilityProposal,
 } from '@/features/calendar/hooks/use-availability';
 import { useToast } from '@/hooks/use-toast';
+import { type RouterOutputs } from '@/utils/api';
 
-// Temporary type fixes - need proper tRPC procedures with relations
-type AvailabilityWithRelations = any;
-type ServiceAvailabilityConfigWithRelations = any;
+// Use tRPC-inferred types for availability with relations
+type AvailabilityWithRelations = RouterOutputs['calendar']['searchAvailability'][number];
+type ServiceAvailabilityConfigWithRelations =
+  AvailabilityWithRelations['availableServices'][number];
 
 interface AvailabilityProposalsListProps {
   providerId: string;
@@ -251,17 +253,24 @@ function ProposalCard({
               Recurring Schedule
             </h4>
             <div className="rounded bg-muted/50 p-2 text-sm text-muted-foreground">
-              <p>Type: {proposal.recurrencePattern.option}</p>
-              {proposal.recurrencePattern.weeklyDay !== undefined && (
-                <p>Weekly on: Day {proposal.recurrencePattern.weeklyDay}</p>
-              )}
-              {proposal.recurrencePattern.customDays &&
-                proposal.recurrencePattern.customDays.length > 0 && (
-                  <p>Custom days: {proposal.recurrencePattern.customDays.join(', ')}</p>
-                )}
-              {proposal.recurrencePattern.endDate && (
-                <p>Ends on: {proposal.recurrencePattern.endDate}</p>
-              )}
+              {(() => {
+                const pattern = proposal.recurrencePattern as unknown as {
+                  option?: string;
+                  weeklyDay?: number;
+                  customDays?: number[];
+                  endDate?: string;
+                };
+                return (
+                  <>
+                    <p>Type: {pattern.option}</p>
+                    {pattern.weeklyDay !== undefined && <p>Weekly on: Day {pattern.weeklyDay}</p>}
+                    {pattern.customDays && pattern.customDays.length > 0 && (
+                      <p>Custom days: {pattern.customDays.join(', ')}</p>
+                    )}
+                    {pattern.endDate && <p>Ends on: {pattern.endDate}</p>}
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}

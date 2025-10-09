@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import sgMail from '@sendgrid/mail';
 import { put } from '@vercel/blob';
 import twilio from 'twilio';
@@ -5,10 +6,23 @@ import vCardsJS from 'vcards-js';
 
 import env from '@/config/env/server';
 import { logger, sanitizeName, sanitizePhone } from '@/lib/logger';
-import { type RouterOutputs } from '@/utils/api';
 
-// OPTION C: Use tRPC-inferred type for booking data from calendar router
-type BookingWithDetails = RouterOutputs['calendar']['getBookingWithDetails'];
+// Use Prisma type matching getBookingWithDetails from calendar router
+type BookingWithDetails = Prisma.BookingGetPayload<{
+  include: {
+    slot: {
+      include: {
+        service: true;
+        serviceConfig: true;
+        availability: {
+          include: {
+            provider: true;
+          };
+        };
+      };
+    };
+  };
+}>;
 
 // Load environment variables
 const accountSid = env.TWILIO_ACCOUNT_SID;

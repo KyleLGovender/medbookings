@@ -110,16 +110,16 @@ export function ProviderRequirementsSection({ providerId }: ProviderRequirements
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>Total: {requirements.length}</div>
               <div className="text-green-600">
-                Approved: {requirements.filter((r: any) => r.status === 'APPROVED').length}
+                Approved: {requirements.filter((r) => r.status === 'APPROVED').length}
               </div>
               <div className="text-yellow-600">
-                Pending: {requirements.filter((r: any) => r.status === 'PENDING').length}
+                Pending: {requirements.filter((r) => r.status === 'PENDING').length}
               </div>
               <div className="text-red-600">
                 Action Required:{' '}
                 {
                   requirements.filter(
-                    (r: any) => r.status === 'NOT_SUBMITTED' || r.status === 'REJECTED'
+                    (r) => r.status === 'NOT_SUBMITTED' || r.status === 'REJECTED'
                   ).length
                 }
               </div>

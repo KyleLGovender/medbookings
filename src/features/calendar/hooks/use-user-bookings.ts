@@ -16,7 +16,7 @@ export function useUserBookings(options?: UseUserBookingsOptions) {
 }
 
 interface UseUpdateBookingOptions {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }
 
@@ -82,7 +82,7 @@ export function useCancelBooking(options?: UseUpdateBookingOptions) {
 }
 
 interface UseRescheduleBookingOptions {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }
 

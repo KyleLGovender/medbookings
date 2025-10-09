@@ -100,7 +100,7 @@ export function ReviewStep() {
               </div>
             ) : (
               <div className="space-y-4">
-                {formData.locations.map((location: any, index: number) => (
+                {formData.locations.map((location, index: number) => (
                   <div key={index} className="rounded-lg border p-4">
                     <div className="mb-2 flex items-center gap-2">
                       <div className="font-medium">{location.name}</div>

@@ -15,11 +15,12 @@ import { createTRPCContext } from '@/server/trpc';
  */
 const createContext = async (_req: NextRequest) => {
   // createTRPCContext doesn't actually use req/res in App Router - it uses getCurrentUser()
-  // Cast to any to bypass type mismatch between App Router (Web API) and Pages Router (Node API)
+  // Type assertion to bypass type mismatch between App Router (Web API) and Pages Router (Node API)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return createTRPCContext({
     req: undefined,
     res: undefined,
-  } as any);
+  } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 };
 
 const handler = (req: NextRequest) =>

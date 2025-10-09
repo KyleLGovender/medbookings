@@ -126,25 +126,29 @@ function useUpdateAvailabilityOptimistic(
       }
 
       // Optimistically update the availability cache
-      queryClient.setQueryData(actualKey, (old: any) => {
+      queryClient.setQueryData(actualKey, (old: unknown) => {
         if (!old) return old;
 
+        // Type guard for availability data
+        if (typeof old !== 'object' || old === null) return old;
+        const availability = old as Record<string, unknown>;
+
         return {
-          ...old,
-          startTime: variables.startTime || old.startTime,
-          endTime: variables.endTime || old.endTime,
-          isRecurring: variables.isRecurring ?? old.isRecurring,
-          recurrencePattern: variables.recurrencePattern || old.recurrencePattern,
-          schedulingRule: variables.schedulingRule || old.schedulingRule,
-          isOnlineAvailable: variables.isOnlineAvailable ?? old.isOnlineAvailable,
-          requiresConfirmation: variables.requiresConfirmation ?? old.requiresConfirmation,
+          ...availability,
+          startTime: variables.startTime || availability.startTime,
+          endTime: variables.endTime || availability.endTime,
+          isRecurring: variables.isRecurring ?? availability.isRecurring,
+          recurrencePattern: variables.recurrencePattern || availability.recurrencePattern,
+          schedulingRule: variables.schedulingRule || availability.schedulingRule,
+          isOnlineAvailable: variables.isOnlineAvailable ?? availability.isOnlineAvailable,
+          requiresConfirmation: variables.requiresConfirmation ?? availability.requiresConfirmation,
           // Update service configurations if provided
           availableServices:
-            variables.services?.map((service: any) => ({
+            variables.services?.map((service) => ({
               serviceId: service.serviceId,
               durationMinutes: service.duration,
               price: service.price,
-            })) || old.availableServices,
+            })) || availability.availableServices,
         };
       });
 
@@ -252,10 +256,11 @@ const transformAvailabilityToForm = (
     requiresConfirmation: availability.requiresConfirmation,
     services:
       availability.availableServices?.length > 0
-        ? availability.availableServices.map((service: any) => ({
+        ? availability.availableServices.map((service) => ({
             serviceId: service.serviceId,
-            duration: service.durationMinutes || service.duration,
-            price: typeof service.price === 'string' ? parseFloat(service.price) : service.price,
+            duration: service.duration,
+            price:
+              typeof service.price === 'string' ? parseFloat(service.price) : Number(service.price),
           }))
         : [], // Empty array as fallback - this might cause validation to fail
   };
@@ -338,7 +343,7 @@ export function AvailabilityEditForm({
 
       // Check for existing bookings
       if (availability.calculatedSlots) {
-        const bookedSlots = availability.calculatedSlots.filter((slot: any) => slot.booking);
+        const bookedSlots = availability.calculatedSlots.filter((slot) => slot.booking);
         setHasExistingBookings(bookedSlots.length > 0);
         setBookingCount(bookedSlots.length);
       }
@@ -1045,9 +1050,11 @@ export function AvailabilityEditForm({
             ) : (
               <ServiceSelectionSection
                 providerId={availability.providerId}
-                availableServices={(availableServices || []).map((s: any) => ({
+                availableServices={(availableServices || []).map((s) => ({
                   ...s,
                   description: s.description ?? undefined,
+                  price: Number(s.defaultPrice),
+                  duration: s.defaultDuration,
                 }))}
               />
             )}

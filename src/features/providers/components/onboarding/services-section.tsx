@@ -85,7 +85,7 @@ export function ServicesSection({
               <FormItem>
                 <FormLabel>Select services you provide *</FormLabel>
                 <div className="space-y-4">
-                  {availableServices.map((service: any) => {
+                  {availableServices.map((service) => {
                     const isChecked = fieldValue.includes(service.id);
                     return (
                       <div key={service.id} className="rounded-md border p-4">

@@ -492,7 +492,17 @@ export interface CalendarGridProps {
 export interface FilterBarProps {
   filters: {
     activeFilters: BookingFilters;
-    updateFilter: (key: keyof BookingFilters, value: any) => void;
+    updateFilter: (
+      key: keyof BookingFilters,
+      value:
+        | { start: Date; end: Date }
+        | { startTime: string; endTime: string }
+        | 'online'
+        | 'in-person'
+        | 'all'
+        | string[]
+        | { min?: number; max?: number }
+    ) => void;
     clearAllFilters: () => void;
     hasActiveFilters: boolean;
   };
@@ -1236,7 +1246,7 @@ export interface SlotGenerationResult {
 export interface WorkflowResult {
   success: boolean;
   // availability will be typed using tRPC RouterOutputs in Task 4.0
-  availability?: any; // Temporary - will use RouterOutputs['calendar']['createAvailability']
+  availability?: Record<string, unknown>; // Generic object type for workflow results
   slotsGenerated?: number;
   error?: string;
   notifications?: {
@@ -1428,7 +1438,7 @@ export interface NotificationPayload {
 
 export interface AvailabilityNotificationContext {
   // availability will be typed using tRPC RouterOutputs in Task 4.0
-  availability: any; // Temporary - will use RouterOutputs['calendar']['getAvailabilityDetail']
+  availability: Record<string, unknown>; // Generic object type for notification context
   previousStatus?: AvailabilityStatus;
   newStatus: AvailabilityStatus;
   actionBy: {

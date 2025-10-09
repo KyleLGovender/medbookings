@@ -1,6 +1,12 @@
 'use server';
 
-import { AvailabilityStatus, BillingEntity, OrganizationRole, UserRole } from '@prisma/client';
+import {
+  AvailabilityStatus,
+  BillingEntity,
+  OrganizationRole,
+  Prisma,
+  UserRole,
+} from '@prisma/client';
 
 import {
   createAvailabilityDataSchema,
@@ -13,6 +19,17 @@ import { parseUTC } from '@/lib/timezone';
 
 import { validateAvailability, validateRecurringAvailability } from './availability-validation';
 import { generateRecurringInstances } from './recurrence-utils';
+
+// Use Prisma type matching the actual availability query structure used in validation functions
+type AvailabilityWithSlots = Prisma.AvailabilityGetPayload<{
+  include: {
+    calculatedSlots: {
+      include: {
+        booking: true;
+      };
+    };
+  };
+}>;
 
 /**
  * Validate availability creation and prepare data for database operations
@@ -205,7 +222,7 @@ export async function validateAvailabilityUpdate(data: UpdateAvailabilityData): 
     updateStrategy: 'single' | 'future' | 'all';
     needsSlotRegeneration: boolean;
     affectedAvailabilityIds?: string[];
-    existingAvailability?: any;
+    existingAvailability?: AvailabilityWithSlots;
   };
   error?: string;
 }> {
@@ -382,7 +399,7 @@ export async function validateAvailabilityDeletion(
     targetAvailabilityId: string;
     deleteStrategy: 'single' | 'future' | 'all';
     affectedAvailabilityIds: string[];
-    existingAvailability: any;
+    existingAvailability: AvailabilityWithSlots;
     canDelete: boolean;
   };
   error?: string;

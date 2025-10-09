@@ -5,6 +5,8 @@ import type { RouterOutputs } from '@/utils/api';
 
 // Extract proper types from tRPC
 type AvailabilityData = RouterOutputs['calendar']['searchAvailability'][number];
+type ProviderData = RouterOutputs['providers']['getById'];
+type OrganizationMembership = RouterOutputs['organizations']['getMembers'][number];
 
 // Session user type (subset of full User)
 type SessionUser = {
@@ -19,7 +21,7 @@ type SessionUser = {
 export function getProviderCalendarPermissions(
   event: AvailabilityData | null,
   currentUser: SessionUser | null,
-  currentProvider: any | null // Provider with relations
+  currentProvider: ProviderData | null
 ): AvailabilityPermissions {
   if (!event || !currentUser) {
     return {
@@ -55,7 +57,7 @@ export function getProviderCalendarPermissions(
 export function getOrganizationCalendarPermissions(
   event: AvailabilityData | null,
   currentUser: SessionUser | null,
-  membership: any | null // OrganizationMembership with permissions
+  membership: OrganizationMembership | null
 ): AvailabilityPermissions {
   if (!event || !currentUser || !membership) {
     return {

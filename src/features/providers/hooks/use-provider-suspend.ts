@@ -8,7 +8,7 @@ import { api } from '@/utils/api';
  * @returns Mutation object for suspending own provider profile
  */
 export function useProviderSelfSuspend(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
@@ -33,7 +33,7 @@ export function useProviderSelfSuspend(options?: {
  * @returns Mutation object for unsuspending own provider profile
  */
 export function useProviderSelfUnsuspend(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();

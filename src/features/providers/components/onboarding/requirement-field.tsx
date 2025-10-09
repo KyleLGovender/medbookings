@@ -24,14 +24,14 @@ interface RequirementFieldProps {
     options?: string[];
     acceptedFormats?: string[];
   };
-  onChange: (value: any) => void;
+  onChange: (value: string | number | boolean | File) => void;
 }
 
 export function RequirementField({ requirement, onChange }: RequirementFieldProps) {
   const [otherValue, setOtherValue] = useState('');
-  const [value, setValue] = useState<any>(null);
+  const [value, setValue] = useState<string | number | boolean | File | null>(null);
 
-  const handleChange = (newValue: any) => {
+  const handleChange = (newValue: string | number | boolean | File) => {
     setValue(newValue);
     onChange(newValue);
   };
@@ -57,7 +57,11 @@ export function RequirementField({ requirement, onChange }: RequirementFieldProp
     case 'DOCUMENT':
       return (
         <DocumentUploader
-          onUpload={handleChange}
+          onUpload={(fileUrl) => {
+            if (fileUrl) {
+              handleChange(fileUrl);
+            }
+          }}
           acceptedFormats={requirement.acceptedFormats}
           purpose={`requirement-${requirement.id}`}
         />
@@ -67,7 +71,7 @@ export function RequirementField({ requirement, onChange }: RequirementFieldProp
       return (
         <Textarea
           placeholder={`Enter ${requirement.title.toLowerCase()}`}
-          value={value || ''}
+          value={typeof value === 'string' ? value : ''}
           onChange={(e) => handleChange(e.target.value)}
           className="min-h-[80px]"
         />
@@ -79,7 +83,7 @@ export function RequirementField({ requirement, onChange }: RequirementFieldProp
       return (
         <Input
           type="date"
-          value={value || ''}
+          value={typeof value === 'string' ? value : ''}
           onChange={(e) => handleChange(e.target.value)}
           min={
             requirement.validationType === 'FUTURE_DATE'
@@ -99,7 +103,7 @@ export function RequirementField({ requirement, onChange }: RequirementFieldProp
         <Input
           type="number"
           placeholder={`Enter ${requirement.title.toLowerCase()}`}
-          value={value || ''}
+          value={typeof value === 'number' ? value : ''}
           onChange={(e) => handleChange(Number.parseInt(e.target.value) || '')}
           min="0"
         />
@@ -108,7 +112,7 @@ export function RequirementField({ requirement, onChange }: RequirementFieldProp
     case 'PREDEFINED_LIST':
       return (
         <div className="space-y-2">
-          <Select onValueChange={handleSelectChange} value={value || ''}>
+          <Select onValueChange={handleSelectChange} value={typeof value === 'string' ? value : ''}>
             <SelectTrigger>
               <SelectValue placeholder={`Select ${requirement.title.toLowerCase()}`} />
             </SelectTrigger>
@@ -139,7 +143,7 @@ export function RequirementField({ requirement, onChange }: RequirementFieldProp
       return (
         <Input
           placeholder={`Enter ${requirement.title.toLowerCase()}`}
-          value={value || ''}
+          value={typeof value === 'string' ? value : ''}
           onChange={(e) => handleChange(e.target.value)}
         />
       );

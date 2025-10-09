@@ -67,7 +67,14 @@ export type RequirementTypeData = {
   description: string | null;
   validationType: RequirementValidationType;
   isRequired: boolean;
-  validationConfig: any;
+  validationConfig: {
+    minLength?: number;
+    maxLength?: number;
+    pattern?: string;
+    options?: Array<{ value: string; label: string }>;
+    accept?: string;
+    maxSize?: number;
+  };
   displayPriority?: number;
 };
 
@@ -170,7 +177,7 @@ export type RequirementType = {
   index: number;
   existingSubmission?: {
     documentUrl: string | null;
-    documentMetadata: Record<string, any> | null;
+    documentMetadata: Record<string, unknown> | null;
     value?: string | boolean | number | null;
   };
 };
@@ -189,7 +196,7 @@ export type RequirementSubmission = {
   /** Current validation status of the submission */
   status?: RequirementsValidationStatus;
   /** Metadata for document submissions including URLs and file info */
-  documentMetadata?: Record<string, any> | null;
+  documentMetadata?: Record<string, unknown> | null;
   /** Expiration date for time-sensitive requirements (e.g., licenses) */
   expiresAt?: Date | null;
   /** Additional notes or comments about the submission */
@@ -241,7 +248,7 @@ export interface UpdateProviderData extends Partial<CreateProviderData> {
 // API RESPONSE TYPES (Client-side)
 // =============================================================================
 
-export interface ProviderApiResponse<T = any> {
+export interface ProviderApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;

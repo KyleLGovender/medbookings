@@ -10,8 +10,9 @@ export function useOrganizationByUserId(userId: string | undefined) {
     { userId: userId || '' },
     {
       enabled: !!userId,
-      retry: (failureCount, error: any) => {
-        if (error?.message?.includes('Forbidden')) return false;
+      retry: (failureCount, error) => {
+        const err = error as unknown as Error;
+        if (err?.message?.includes('Forbidden')) return false;
         return failureCount < 3;
       },
     }

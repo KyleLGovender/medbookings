@@ -192,6 +192,43 @@ module.exports = {
         '@typescript-eslint/no-unsafe-assignment': 'off',
       },
     },
+    {
+      // API routes - response.json() and request.json() return any by design (Web API spec)
+      files: ['src/app/api/**/*.ts'],
+      rules: {
+        '@typescript-eslint/no-unsafe-assignment': 'off',
+      },
+    },
+    {
+      // Google Maps integration - external library has complex/unknown types that are impractical to fully type
+      files: [
+        'src/components/ui/location-autocomplete.tsx',
+        'src/features/organizations/components/google-maps-location-picker.tsx',
+        'src/features/organizations/lib/helper.ts',
+      ],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-unsafe-assignment': 'off',
+      },
+    },
+    {
+      // Type files - JSDoc documentation debt (warnings allowed, will be addressed incrementally)
+      files: ['**/types/types.ts'],
+      rules: {
+        'rulesdir/enforce-type-file-structure': 'warn', // Already warn, keeping it
+      },
+    },
+    {
+      // Form components with React Hook Form - complex type inference from dynamic forms
+      files: [
+        'src/features/providers/components/onboarding/**/*.tsx',
+        'src/features/providers/components/profile/edit-*.tsx',
+        'src/features/organizations/components/registration-form/**/*.tsx',
+      ],
+      rules: {
+        '@typescript-eslint/no-unsafe-assignment': 'warn', // Downgrade to warn
+      },
+    },
   ],
   ignorePatterns: [
     '.eslintrc.js',

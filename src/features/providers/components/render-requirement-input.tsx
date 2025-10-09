@@ -1,5 +1,5 @@
 import { ExternalLinkIcon, FileIcon } from 'lucide-react';
-import { UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
+import { FieldErrors, UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
 
 import { DocumentUploader } from '@/components/document-uploader';
 import { DatePickerWithInput } from '@/components/ui/date-picker-with-input';
@@ -50,12 +50,13 @@ type RequirementType = RequirementFromOnboarding & {
 };
 
 // Define a specific type for our form structure to match how we're accessing requirements
-interface RequirementForm {
+export interface RequirementForm {
   regulatoryRequirements: {
     requirements: Array<{
       requirementTypeId: string;
-      value?: any;
+      value?: string | number | boolean | Date | File;
       documentUrl?: string;
+      documentMetadata?: Record<string, unknown>;
       otherValue?: string;
       index?: number;
     }>;
@@ -65,12 +66,12 @@ interface RequirementForm {
 export const renderRequirementInput = (
   requirement: RequirementType,
   form: {
-    register: UseFormRegister<any>;
-    watch: UseFormWatch<any>;
-    setValue: UseFormSetValue<any>;
-    errors: any;
+    register: UseFormRegister<RequirementForm>;
+    watch: UseFormWatch<RequirementForm>;
+    setValue: UseFormSetValue<RequirementForm>;
+    errors: FieldErrors<RequirementForm>;
     fieldName?: string;
-    existingValue?: any;
+    existingValue?: string | number | boolean | Date | File;
   }
 ) => {
   // Set the requirement ID directly
@@ -206,12 +207,12 @@ export const renderRequirementInput = (
               } else {
                 form.setValue(
                   `regulatoryRequirements.requirements.${requirement.index}.documentMetadata`,
-                  null,
+                  undefined,
                   { shouldValidate }
                 );
                 form.setValue(
                   `regulatoryRequirements.requirements.${requirement.index}.value`,
-                  null,
+                  undefined,
                   { shouldValidate }
                 );
               }
@@ -263,7 +264,7 @@ export const renderRequirementInput = (
               } else {
                 form.setValue(
                   `regulatoryRequirements.requirements.${requirement.index}.value`,
-                  null,
+                  undefined,
                   { shouldValidate: true, shouldDirty: true }
                 );
               }
@@ -295,7 +296,7 @@ export const renderRequirementInput = (
               } else {
                 form.setValue(
                   `regulatoryRequirements.requirements.${requirement.index}.value`,
-                  null,
+                  undefined,
                   { shouldValidate: true, shouldDirty: true }
                 );
               }
@@ -321,11 +322,13 @@ export const renderRequirementInput = (
             <SelectContent>
               {requirement.validationConfig &&
                 'options' in requirement.validationConfig &&
-                requirement.validationConfig.options?.map((option: any) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
+                requirement.validationConfig.options?.map(
+                  (option: { value: string; label: string }) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  )
+                )}
               {requirement.validationConfig &&
                 'allowOther' in requirement.validationConfig &&
                 requirement.validationConfig.allowOther && (

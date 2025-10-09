@@ -7,7 +7,10 @@ import { useFormContext } from 'react-hook-form';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { renderRequirementInput } from '@/features/providers/components/render-requirement-input';
+import {
+  type RequirementForm,
+  renderRequirementInput,
+} from '@/features/providers/components/render-requirement-input';
 import { type RouterOutputs } from '@/utils/api';
 
 // Extract the actual requirement type from the onboarding data tRPC response
@@ -26,7 +29,14 @@ interface RegulatoryRequirementsSectionProps {
     description: string | null;
     validationType: string;
     isRequired: boolean;
-    validationConfig: any;
+    validationConfig: {
+      minLength?: number;
+      maxLength?: number;
+      pattern?: string;
+      options?: Array<{ value: string; label: string }>;
+      accept?: string;
+      maxSize?: number;
+    };
     displayPriority?: number;
   }>;
   selectedProviderTypeId: string;
@@ -42,7 +52,7 @@ export function RegulatoryRequirementsSection({
     watch,
     register,
     formState: { errors },
-  } = useFormContext();
+  } = useFormContext<RequirementForm>();
   const [transformedRequirements, setTransformedRequirements] = useState<RequirementType[]>([]);
 
   // Transform requirements when they change

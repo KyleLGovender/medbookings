@@ -90,7 +90,7 @@ export function useRejectOrganization(callbacks?: MutationCallbacks) {
  * @returns Mutation object for resetting organization status
  */
 export function useResetOrganizationStatus(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
@@ -134,7 +134,7 @@ export function useResetOrganizationStatus(options?: {
       }
 
       // Optimistically update the organization cache
-      queryClient.setQueryData(actualKey, (old: any) => {
+      queryClient.setQueryData(actualKey, (old: unknown) => {
         if (!old) return old;
 
         const updated = {

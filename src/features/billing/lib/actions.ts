@@ -102,7 +102,11 @@ export async function validateSubscriptionUpdate(data: {
   success: boolean;
   validatedData?: typeof data & {
     userId: string;
-    polymorphicUpdateData: any;
+    polymorphicUpdateData: {
+      organizationId?: string | null;
+      locationId?: string | null;
+      providerId?: string | null;
+    };
   };
   error?: string;
 }> {
@@ -118,7 +122,11 @@ export async function validateSubscriptionUpdate(data: {
     }
 
     // Handle polymorphic relationship updates
-    let polymorphicUpdateData: any = {};
+    let polymorphicUpdateData: {
+      organizationId?: string | null;
+      locationId?: string | null;
+      providerId?: string | null;
+    } = {};
 
     if (
       data.organizationId !== undefined ||

@@ -1,12 +1,27 @@
 'use server';
 
+import { Prisma } from '@prisma/client';
+
 import { logger } from '@/lib/logger';
-import { type RouterOutputs } from '@/utils/api';
 
 import { sendGuestVCardToProvider } from './server-helper';
 
-// OPTION C: Use tRPC-inferred type for booking data from calendar router
-type BookingWithDetails = RouterOutputs['calendar']['getBookingWithDetails'];
+// Use Prisma type matching getBookingWithDetails from calendar router
+type BookingWithDetails = Prisma.BookingGetPayload<{
+  include: {
+    slot: {
+      include: {
+        service: true;
+        serviceConfig: true;
+        availability: {
+          include: {
+            provider: true;
+          };
+        };
+      };
+    };
+  };
+}>;
 
 export async function sendProviderPatientsDetailsByWhatsapp(
   booking: BookingWithDetails

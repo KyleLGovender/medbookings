@@ -98,9 +98,10 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
       setRejectionReason('');
     },
     onError: (error) => {
+      const err = error as Error;
       toast({
         title: 'Failed to respond to invitation',
-        description: error.message,
+        description: err.message,
         variant: 'destructive',
       });
     },

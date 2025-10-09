@@ -42,7 +42,7 @@ export function useRequiredRequirementsStatus(providerId: string | undefined) {
  * @returns Mutation object for approving a requirement
  */
 export function useApproveRequirement(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
@@ -98,10 +98,10 @@ export function useApproveRequirement(options?: {
       }
 
       // Optimistically update the requirements cache using the actual key
-      queryClient.setQueryData(actualKey, (old: any) => {
+      queryClient.setQueryData(actualKey, (old: unknown) => {
         if (!old || !Array.isArray(old)) return old;
 
-        const updated = old.map((sub: any) =>
+        const updated = old.map((sub) =>
           sub.id === requirementId
             ? {
                 ...sub,
@@ -172,7 +172,7 @@ export function useApproveRequirement(options?: {
  * @returns Mutation object for rejecting a requirement
  */
 export function useRejectRequirement(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
@@ -194,10 +194,10 @@ export function useRejectRequirement(options?: {
       // Optimistically update the requirements cache
       queryClient.setQueryData(
         ['admin', 'getProviderRequirements', { id: providerId }],
-        (old: any) => {
+        (old: unknown) => {
           if (!old || !Array.isArray(old)) return old;
 
-          return old.map((sub: any) =>
+          return old.map((sub) =>
             sub.id === requirementId
               ? {
                   ...sub,
@@ -251,7 +251,7 @@ export function useRejectRequirement(options?: {
  * @returns Mutation object for approving a provider
  */
 export function useApproveProvider(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
@@ -291,7 +291,7 @@ export function useApproveProvider(options?: {
       }
 
       // Optimistically update the provider cache
-      queryClient.setQueryData(actualKey, (old: any) => {
+      queryClient.setQueryData(actualKey, (old: unknown) => {
         if (!old) return old;
 
         const updated = {
@@ -358,7 +358,7 @@ export function useApproveProvider(options?: {
  * @returns Mutation object for rejecting a provider
  */
 export function useRejectProvider(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
@@ -401,7 +401,7 @@ export function useRejectProvider(options?: {
       }
 
       // Optimistically update the provider cache
-      queryClient.setQueryData(actualKey, (old: any) => {
+      queryClient.setQueryData(actualKey, (old: unknown) => {
         if (!old) return old;
 
         const updated = {
@@ -468,7 +468,7 @@ export function useRejectProvider(options?: {
  * @returns Mutation object for resetting provider status
  */
 export function useResetProviderStatus(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
@@ -508,7 +508,7 @@ export function useResetProviderStatus(options?: {
       }
 
       // Optimistically update the provider cache
-      queryClient.setQueryData(actualKey, (old: any) => {
+      queryClient.setQueryData(actualKey, (old: unknown) => {
         if (!old) return old;
 
         const updated = {

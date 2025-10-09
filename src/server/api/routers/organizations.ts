@@ -132,8 +132,8 @@ export const organizationsRouter = createTRPCRouter({
                 googlePlaceId: location.googlePlaceId || `temp-${nowUTC().getTime()}`,
                 formattedAddress: location.formattedAddress || '',
                 coordinates: {
-                  lat: location.coordinates.lat,
-                  lng: location.coordinates.lng,
+                  lat: location.coordinates?.lat ?? 0,
+                  lng: location.coordinates?.lng ?? 0,
                 },
                 searchTerms: location.searchTerms || [],
                 phone: location.phone || '',
@@ -1159,7 +1159,7 @@ export const organizationsRouter = createTRPCRouter({
           role: input.role,
           token: validation.invitationToken!,
           expiresAt: validation.expiresAt!,
-          invitedById: validation.data.currentUserId,
+          invitedById: validation.data!.currentUserId!,
           status: 'PENDING',
         },
         include: {
@@ -1211,7 +1211,7 @@ export const organizationsRouter = createTRPCRouter({
         throw new Error('Invitation has expired');
       }
 
-      if (invitation.email.toLowerCase() !== validation.data.currentUserEmail.toLowerCase()) {
+      if (invitation.email.toLowerCase() !== validation.data!.currentUserEmail!.toLowerCase()) {
         throw new Error('This invitation is not for your email address');
       }
 
@@ -1220,7 +1220,7 @@ export const organizationsRouter = createTRPCRouter({
         where: {
           organizationId_userId: {
             organizationId: invitation.organizationId,
-            userId: validation.data.currentUserId,
+            userId: validation.data!.currentUserId!,
           },
         },
       });
@@ -1234,7 +1234,7 @@ export const organizationsRouter = createTRPCRouter({
         // Create membership
         const membership = await tx.organizationMembership.create({
           data: {
-            userId: validation.data.currentUserId,
+            userId: validation.data!.currentUserId!,
             organizationId: invitation.organizationId,
             role: invitation.role,
             status: 'ACTIVE',
@@ -1363,7 +1363,7 @@ export const organizationsRouter = createTRPCRouter({
       }
 
       // Cannot change own role
-      if (targetMembership.userId === validation.data.currentUserId) {
+      if (targetMembership.userId === validation.data!.currentUserId!) {
         throw new Error('Cannot change your own role');
       }
 
@@ -1428,7 +1428,7 @@ export const organizationsRouter = createTRPCRouter({
       }
 
       // Cannot remove yourself
-      if (targetMembership.userId === validation.data.currentUserId) {
+      if (targetMembership.userId === validation.data!.currentUserId!) {
         throw new Error('Cannot remove yourself from the organization');
       }
 

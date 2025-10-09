@@ -176,7 +176,7 @@ export interface InvitationFlowState {
   step: 'LOADING' | 'VALIDATING' | 'ACCEPTING' | 'COMPLETING' | 'SUCCESS' | 'ERROR';
   invitation?: InvitationData;
   // user will be typed using tRPC RouterOutputs in Task 4.0
-  user?: any; // Temporary - will use RouterOutputs['auth']['getCurrentUser']
+  user?: Record<string, unknown>; // Generic user object type
   error?: string;
   isNewUser: boolean;
 }
@@ -283,7 +283,7 @@ export interface InvitationFlowProps {
 // Invitation list props
 export interface InvitationListProps {
   // invitations will be typed using tRPC RouterOutputs in Task 4.0
-  invitations: any[]; // Temporary - will use RouterOutputs['invitations']['getInvitations']
+  invitations: Array<Record<string, unknown>>; // Generic array of invitation objects
   organizationId: string;
   canManageInvitations: boolean;
   onInvitationAction?: (invitationId: string, action: InvitationAction) => void;

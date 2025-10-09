@@ -28,6 +28,18 @@ import {
 } from '@prisma/client';
 
 // =============================================================================
+// SHARED TYPES
+// =============================================================================
+
+/**
+ * Geographic coordinates for location data
+ */
+export interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
+// =============================================================================
 // DOMAIN ENUMS - CLIENT-ONLY BUSINESS LOGIC
 // =============================================================================
 
@@ -90,9 +102,8 @@ export interface OrganizationLocation {
   email?: string;
   createdAt?: string | Date;
   googlePlaceId?: string;
-  coordinates?: any;
+  coordinates?: Coordinates;
   searchTerms?: string[];
-  [key: string]: any; // Allow other properties from the API response
 }
 
 // OrganizationProviderConnection moved to server data - use tRPC RouterOutputs
@@ -135,7 +146,7 @@ export interface OrganizationRegistrationData {
     phone?: string;
     email?: string;
     googlePlaceId?: string;
-    coordinates?: any;
+    coordinates?: Coordinates;
     searchTerms?: string[];
   }>;
 }
@@ -196,7 +207,7 @@ export interface OrganizationLocationForMutation {
   phone?: string;
   email?: string;
   googlePlaceId?: string;
-  coordinates?: any;
+  coordinates?: Coordinates;
   searchTerms?: string[];
 }
 
@@ -206,7 +217,7 @@ export interface OrganizationLocationForMutation {
 // API RESPONSE TYPES
 // =============================================================================
 
-export interface OrganizationApiResponse<T = any> {
+export interface OrganizationApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;

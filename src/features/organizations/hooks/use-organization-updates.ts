@@ -6,7 +6,7 @@ import { type RouterInputs, api } from '@/utils/api';
  * @returns Mutation object for updating organization basic info
  */
 export function useUpdateOrganizationBasicInfo(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
@@ -30,7 +30,7 @@ type OrganizationUpdateInput = RouterInputs['organizations']['update'];
  * @returns Mutation object for updating organization billing model
  */
 export function useUpdateOrganizationBilling(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
@@ -53,7 +53,7 @@ type UpdateOrganizationLocationsInput = RouterInputs['organizations']['updateLoc
  * @returns Mutation object for updating organization locations
  */
 export function useUpdateOrganizationLocations(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();

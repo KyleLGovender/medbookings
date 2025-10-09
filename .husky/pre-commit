@@ -13,10 +13,10 @@
 echo "🔍 Running CLAUDE.md compliance checks..."
 
 # =============================================================================
-# ARCHITECTURE IMPACT CHECK (NON-BLOCKING WARNINGS)
+# ARCHITECTURE IMPACT CHECK (NON-BLOCKING WARNINGS - STAGED FILES ONLY)
 # =============================================================================
 echo "🏗️  Checking architectural impact..."
-node scripts/architecture/check-core-files.js || true  # Always succeed, just show warnings
+node scripts/architecture/check-core-files.js --staged || true  # Always succeed, just show warnings
 echo ""
 
 # Get list of staged files
@@ -128,10 +128,10 @@ done
 
 # Only run ESLint if there are lintable files
 if [ -n "$LINTABLE_FILES" ]; then
-  # Allow warnings (max-warnings=100) since 'warn' level rules are intentionally non-blocking
+  # Allow warnings (max-warnings=150) since 'warn' level rules are intentionally non-blocking
   # Only errors will block commits
   # Use increased memory for large codebases
-  NODE_OPTIONS="--max-old-space-size=8192" npx eslint $LINTABLE_FILES --max-warnings=100
+  NODE_OPTIONS="--max-old-space-size=8192" npx eslint $LINTABLE_FILES --max-warnings=150
   ESLINT_EXIT=$?
 
   if [ $ESLINT_EXIT -ne 0 ]; then

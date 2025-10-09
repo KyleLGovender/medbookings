@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { FormProvider, useForm } from 'react-hook-form';
+import { type FieldErrors, FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 // UI Components
@@ -14,7 +14,10 @@ import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 // Feature components
-import { renderRequirementInput } from '@/features/providers/components/render-requirement-input';
+import {
+  type RequirementForm,
+  renderRequirementInput,
+} from '@/features/providers/components/render-requirement-input';
 import { useProvider } from '@/features/providers/hooks/use-provider';
 import { useProviderRequirementTypes } from '@/features/providers/hooks/use-provider-requirements';
 import { useUpdateProviderRequirements } from '@/features/providers/hooks/use-provider-updates';
@@ -27,9 +30,13 @@ export const regulatoryRequirementsSchema = z.object({
       .array(
         z.object({
           requirementTypeId: z.string(),
-          value: z.any().optional(),
-          documentMetadata: z.record(z.any()).optional(), // For storing document URLs and other metadata
+          value: z
+            .union([z.string(), z.number(), z.boolean(), z.date(), z.instanceof(File)])
+            .optional(),
+          documentUrl: z.string().optional(),
+          documentMetadata: z.record(z.unknown()).optional(), // For storing document URLs and other metadata
           otherValue: z.string().optional(),
+          index: z.number().optional(),
         })
       )
       .min(1, 'Please complete all required regulatory requirements'),
@@ -89,17 +96,18 @@ export function EditRegulatoryRequirements({
     const existingRequirements = provider.requirementSubmissions || [];
 
     // Prepare form data by merging requirement types with existing submissions
-    const requirementsData = requirementTypes.map((req: any, index: number) => {
+    const requirementsData = requirementTypes.map((req, index) => {
       // Find existing submission for this specific requirement type
       const existingSubmission = existingRequirements.find(
-        (sub: any) => sub.requirementTypeId === req.id
+        (sub) => sub.requirementTypeId === req.id
       );
 
       // Create form entry with proper values - ONLY for THIS requirement
-      const formEntry: any = {
-        requirementTypeId: req.id,
-        // Don't set any value initially - let the render function handle it
-      };
+      const formEntry: RegulatoryRequirementsFormValues['regulatoryRequirements']['requirements'][number] =
+        {
+          requirementTypeId: req.id as string,
+          // Don't set any value initially - let the render function handle it
+        };
 
       return formEntry;
     });
@@ -114,7 +122,7 @@ export function EditRegulatoryRequirements({
 
   // Create indexed requirement types for rendering
   const indexedRequirementTypes = requirementTypes
-    ? requirementTypes.map((req: any, index: number) => ({
+    ? requirementTypes.map((req, index) => ({
         ...req,
         index: index,
       }))
@@ -140,9 +148,10 @@ export function EditRegulatoryRequirements({
       const requirements = requirementsData
         .filter((req) => req && req.requirementTypeId) // Only include valid requirements
         .map((req) => {
-          const transformedReq: any = {
-            requirementTypeId: req.requirementTypeId,
-          };
+          const transformedReq: RegulatoryRequirementsFormValues['regulatoryRequirements']['requirements'][number] =
+            {
+              requirementTypeId: req.requirementTypeId,
+            };
 
           // For document type requirements, prioritize using the value as documentMetadata
           if (
@@ -241,10 +250,20 @@ export function EditRegulatoryRequirements({
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {indexedRequirementTypes.map((requirement: any, index: number) => {
+                  {indexedRequirementTypes.map((requirement, index) => {
                     // Find existing submission for this requirement
+                    const req = requirement as unknown as {
+                      id?: string;
+                      name?: string;
+                      description?: string | null;
+                      isRequired?: boolean;
+                      validationType?: string;
+                      validationConfig?: unknown;
+                      displayPriority?: number;
+                      index: number;
+                    };
                     const existingSubmission = provider.requirementSubmissions?.find(
-                      (sub: any) => sub.requirementTypeId === requirement.id
+                      (sub) => sub.requirementTypeId === req.id
                     );
 
                     // Get the field name for this requirement
@@ -255,17 +274,18 @@ export function EditRegulatoryRequirements({
                     // Create requirement object with existing submission data
                     const requirementWithSubmission = {
                       ...requirement,
+                      id: req.id,
                       existingSubmission,
                       index, // Ensure index is set correctly
                     };
 
                     return (
-                      <div key={requirement.id} className="rounded-md border p-4">
+                      <div key={req.id} className="rounded-md border p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
                             <h3 className="text-sm font-medium">
-                              {requirement.name}
-                              {requirement.isRequired && <span className="text-red-500">*</span>}
+                              {req.name}
+                              {req.isRequired && <span className="text-red-500">*</span>}
                               {existingSubmission && existingSubmission.status && (
                                 <span className="ml-2">
                                   <StatusBadge
@@ -283,10 +303,8 @@ export function EditRegulatoryRequirements({
                           </div>
                         </div>
 
-                        {requirement.description && (
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {requirement.description}
-                          </p>
+                        {req.description && (
+                          <p className="mt-1 text-xs text-muted-foreground">{req.description}</p>
                         )}
 
                         <div className="mt-4">
@@ -294,14 +312,13 @@ export function EditRegulatoryRequirements({
                             register: methods.register,
                             watch: methods.watch,
                             setValue: methods.setValue,
-                            errors: methods.formState.errors,
+                            errors: methods.formState.errors as FieldErrors<RequirementForm>,
                             fieldName,
-                            existingValue:
-                              existingSubmission?.documentMetadata &&
-                              typeof existingSubmission.documentMetadata === 'object' &&
-                              'value' in existingSubmission.documentMetadata
-                                ? (existingSubmission.documentMetadata as { value: unknown }).value
-                                : undefined,
+                            existingValue: (existingSubmission?.documentMetadata &&
+                            typeof existingSubmission.documentMetadata === 'object' &&
+                            'value' in existingSubmission.documentMetadata
+                              ? (existingSubmission.documentMetadata as { value: unknown }).value
+                              : undefined) as string | number | boolean | Date | File | undefined,
                           })}
                           {fieldError && (
                             <p className="mt-1 text-xs text-red-500">

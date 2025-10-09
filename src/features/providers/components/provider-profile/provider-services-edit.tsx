@@ -32,7 +32,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { api } from '@/utils/api';
+import { type RouterOutputs, api } from '@/utils/api';
 
 const serviceSchema = z.object({
   name: z.string().min(2, 'Service name must be at least 2 characters'),
@@ -51,7 +51,9 @@ export function ProviderServicesEdit({ providerId }: ProviderServicesEditProps) 
   const { toast } = useToast();
   const utils = api.useUtils();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingService, setEditingService] = useState<any>(null);
+  const [editingService, setEditingService] = useState<
+    RouterOutputs['providers']['getMyServices'][number] | null
+  >(null);
 
   const { data: services, isLoading } = api.providers.getMyServices.useQuery({ providerId });
 
@@ -126,13 +128,20 @@ export function ProviderServicesEdit({ providerId }: ProviderServicesEditProps) 
     }
   };
 
-  const handleEditService = (service: any) => {
-    setEditingService(service);
+  const handleEditService = (service: {
+    name: string;
+    description?: string | null;
+    defaultDuration?: number;
+    duration?: number;
+    defaultPrice?: number | { toNumber?: () => number };
+    price?: number | { toNumber?: () => number };
+  }) => {
+    setEditingService(service as RouterOutputs['providers']['getMyServices'][number]);
     form.reset({
       name: service.name,
       description: service.description || '',
       duration: service.defaultDuration || service.duration || 30,
-      price: service.defaultPrice || service.price || 0,
+      price: Number(service.defaultPrice || service.price || 0),
     });
     setIsDialogOpen(true);
   };

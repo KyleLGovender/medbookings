@@ -84,7 +84,15 @@ export function LocationSetupStep() {
   };
 
   const handleLocationSelect = useCallback(
-    async (locationIndex: number, locationData: any) => {
+    async (
+      locationIndex: number,
+      locationData: {
+        googlePlaceId: string;
+        formattedAddress: string;
+        coordinates: { lat: number; lng: number };
+        searchTerms?: string[];
+      }
+    ) => {
       logger.debug('forms', 'Setting location data for index', {
         locationIndex,
         hasGooglePlaceId: !!locationData.googlePlaceId,
@@ -239,8 +247,10 @@ export function LocationSetupStep() {
                     initialLocation={
                       form.getValues(`locations.${index}.coordinates.lat`)
                         ? {
-                            coordinates: form.getValues(`locations.${index}.coordinates`),
-                            formattedAddress: form.getValues(`locations.${index}.formattedAddress`),
+                            coordinates: form.getValues(`locations.${index}.coordinates`)!,
+                            formattedAddress: form.getValues(
+                              `locations.${index}.formattedAddress`
+                            )!,
                           }
                         : undefined
                     }

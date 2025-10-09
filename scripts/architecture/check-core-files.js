@@ -168,22 +168,32 @@ function getDefaultBranch() {
   }
 }
 
-function getChangedFiles() {
+function getChangedFiles(stagedOnly = false) {
   try {
-    const branch = getDefaultBranch();
-    console.log(chalk.gray(`[*] Comparing with ${branch} branch...`));
-    const output = execSync(`git diff ${branch} --name-only`, { encoding: 'utf8' });
+    let output;
+
+    if (stagedOnly) {
+      // Check only staged files (for pre-commit hook)
+      console.log(chalk.gray('[*] Checking staged files only...'));
+      output = execSync('git diff --cached --name-only --diff-filter=ACM', { encoding: 'utf8' });
+    } else {
+      // Check all changes vs base branch (for manual run)
+      const branch = getDefaultBranch();
+      console.log(chalk.gray(`[*] Comparing with ${branch} branch...`));
+      output = execSync(`git diff ${branch} --name-only`, { encoding: 'utf8' });
+    }
+
     const files = output.split('\n').filter(Boolean);
 
     if (files.length === 0) {
-      console.log(chalk.gray('[+] No differences found from base branch'));
+      console.log(chalk.gray(stagedOnly ? '[+] No staged files' : '[+] No differences found from base branch'));
     } else {
       console.log(chalk.gray(`[+] Found ${files.length} changed file(s)`));
     }
 
     return files;
   } catch (error) {
-    console.error(chalk.yellow('[!] Could not compare with base branch'));
+    console.error(chalk.yellow('[!] Could not get changed files'));
     console.error(chalk.gray(`    Reason: ${error.message}`));
     return [];
   }
@@ -285,7 +295,9 @@ function main() {
 
   console.log(chalk.blue('[INFO] Architecture Impact Report\n'));
 
-  const changedFiles = getChangedFiles();
+  // Check if --staged flag is passed (from pre-commit hook)
+  const stagedOnly = process.argv.includes('--staged');
+  const changedFiles = getChangedFiles(stagedOnly);
 
   if (changedFiles.length === 0) {
     console.log(chalk.green('[OK] No files changed from base branch'));

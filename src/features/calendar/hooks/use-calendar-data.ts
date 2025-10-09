@@ -26,7 +26,7 @@ interface ProviderCalendarData {
     isLoading: boolean;
     isSuccess: boolean;
     isError: boolean;
-    error: any;
+    error: unknown; // tRPC error type (TRPCClientErrorLike) doesn't exactly match Error
     refetch: () => void;
   };
   availability: {
@@ -34,7 +34,7 @@ interface ProviderCalendarData {
     isLoading: boolean;
     isSuccess: boolean;
     isError: boolean;
-    error: any;
+    error: unknown; // tRPC error type (TRPCClientErrorLike) doesn't exactly match Error
     refetch: () => void;
   };
 }

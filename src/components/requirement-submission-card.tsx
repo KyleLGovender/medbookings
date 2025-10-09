@@ -18,7 +18,7 @@ interface RequirementSubmission {
   adminNotes?: string;
   rejectionReason?: string;
   notes?: string;
-  documentMetadata?: Record<string, any> | null;
+  documentMetadata?: Record<string, unknown> | null;
   requirementType?: {
     id: string;
     name: string;
@@ -53,7 +53,7 @@ export function RequirementSubmissionCard({
 }: RequirementSubmissionCardProps) {
   const renderContent = () => {
     const validationType = submission.requirementType?.validationType;
-    const value = submission.documentMetadata?.value;
+    const value = submission.documentMetadata?.value as string | undefined;
 
     if (validationType === 'DOCUMENT') {
       return (
@@ -76,7 +76,7 @@ export function RequirementSubmissionCard({
     }
 
     if (validationType === 'BOOLEAN') {
-      const isTrue = value === 'true' || value === true;
+      const isTrue = value === 'true';
       const isApproved = submission.status === RequirementsValidationStatus.APPROVED;
       const isRejected =
         submission.status === RequirementsValidationStatus.REJECTED ||
@@ -143,7 +143,7 @@ export function RequirementSubmissionCard({
   const shouldShowViewButton =
     showViewDocumentButton &&
     submission.requirementType?.validationType === 'DOCUMENT' &&
-    submission.documentMetadata?.value;
+    (submission.documentMetadata?.value as string | undefined);
 
   const shouldShowPendingButtons =
     isAdminView &&
@@ -248,7 +248,7 @@ export function RequirementSubmissionCard({
 
               {shouldShowViewButton && (
                 <NavigationLink
-                  href={submission.documentMetadata?.value}
+                  href={(submission.documentMetadata?.value as string) || ''}
                   className="inline-flex h-8 items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
                 >
                   View Document

@@ -24,6 +24,7 @@ import {
   availabilitySearchParamsSchema,
   updateAvailabilityDataSchema,
 } from '@/features/calendar/types/schemas';
+import { RecurrencePattern } from '@/features/calendar/types/types';
 import {
   getGuestBookingConfirmationTemplate,
   getProviderBookingNotificationTemplate,
@@ -303,6 +304,9 @@ export const calendarRouter = createTRPCRouter({
       if (!validatedData) {
         throw new Error('Validation data is missing');
       }
+      if (!validatedData.existingAvailability) {
+        throw new Error('Existing availability data is missing');
+      }
 
       // 2. Perform all database operations in single transaction with timeout
       let result;
@@ -310,7 +314,7 @@ export const calendarRouter = createTRPCRouter({
         result = await ctx.prisma.$transaction(
           async (tx) => {
             // Prepare update data
-            const updateData: any = {};
+            const updateData: Prisma.AvailabilityUpdateInput = {};
             if (validatedData.startTime !== undefined)
               updateData.startTime = validatedData.startTime;
             if (validatedData.endTime !== undefined) updateData.endTime = validatedData.endTime;
@@ -385,7 +389,7 @@ export const calendarRouter = createTRPCRouter({
                   tx,
                   updatedAvailabilities,
                   validatedData.services,
-                  validatedData.existingAvailability.providerId,
+                  validatedData.existingAvailability!.providerId,
                   validatedData.isOnlineAvailable,
                   validatedData.locationId
                 );
@@ -399,6 +403,9 @@ export const calendarRouter = createTRPCRouter({
             // Series updates (future/all) - delete and recreate approach
             if (validatedData.updateStrategy !== 'single') {
               const { existingAvailability } = validatedData;
+              if (!existingAvailability) {
+                throw new Error('Existing availability is required for series updates');
+              }
 
               // Step 1: Clean up existing data
               await tx.calculatedAvailabilitySlot.deleteMany({
@@ -435,7 +442,7 @@ export const calendarRouter = createTRPCRouter({
                 existingAvailability,
                 newStartTime,
                 newEndTime,
-                newRecurrencePattern
+                newRecurrencePattern as Record<string, unknown> | null
               );
 
               // Step 4: Create new availabilities
@@ -517,7 +524,7 @@ export const calendarRouter = createTRPCRouter({
                   tx,
                   updatedAvailabilities,
                   validatedData.services,
-                  validatedData.existingAvailability.providerId,
+                  validatedData.existingAvailability!.providerId,
                   validatedData.isOnlineAvailable,
                   validatedData.locationId
                 );
@@ -529,6 +536,11 @@ export const calendarRouter = createTRPCRouter({
                 );
               }
             } // End of series update block
+
+            // Ensure updatedAvailabilities is defined
+            if (!updatedAvailabilities) {
+              throw new Error('Failed to update availabilities');
+            }
 
             // Handle slot regeneration if needed
             let totalSlotsRegenerated = 0;
@@ -624,35 +636,48 @@ export const calendarRouter = createTRPCRouter({
             timeout: 30000, // 30 seconds timeout
           }
         );
-      } catch (transactionError: any) {
+      } catch (transactionError: unknown) {
         logger.error('Transaction failed during availability update', {
           error:
             transactionError instanceof Error ? transactionError.message : String(transactionError),
-          code: transactionError.code,
+          code:
+            transactionError && typeof transactionError === 'object' && 'code' in transactionError
+              ? String(transactionError.code)
+              : undefined,
         });
 
         // Provide specific error messages for different transaction failures
-        if (transactionError.code === 'P2028') {
+        const errorCode =
+          transactionError && typeof transactionError === 'object' && 'code' in transactionError
+            ? String(transactionError.code)
+            : undefined;
+        const errorMessage =
+          transactionError instanceof Error ? transactionError.message : String(transactionError);
+
+        if (errorCode === 'P2028') {
           throw new Error(
             'Database transaction timed out. This may be due to high server load. Please try again in a moment.'
           );
-        } else if (transactionError.code === 'P2034') {
+        } else if (errorCode === 'P2034') {
           throw new Error(
             'Database transaction failed due to a conflict. Please refresh and try again.'
           );
-        } else if (transactionError.message?.includes('timeout')) {
+        } else if (errorMessage.includes('timeout')) {
           throw new Error(
             'Operation timed out. Please try updating with fewer changes or try again later.'
           );
         } else {
           throw new Error(
-            `Failed to update availability: ${transactionError.message || 'Unknown database error'}`
+            `Failed to update availability: ${errorMessage || 'Unknown database error'}`
           );
         }
       }
 
       // 3. Handle cache revalidation
       const { existingAvailability } = validatedData;
+      if (!existingAvailability) {
+        throw new Error('Existing availability is required for cache revalidation');
+      }
 
       revalidatePath('/dashboard/availability');
       revalidatePath('/dashboard/calendar');
@@ -728,7 +753,7 @@ export const calendarRouter = createTRPCRouter({
         throw new Error('Authentication required');
       }
 
-      const where: any = {};
+      const where: Prisma.AvailabilityWhereInput = {};
 
       if (input.providerId) {
         where.providerId = input.providerId;
@@ -847,7 +872,7 @@ export const calendarRouter = createTRPCRouter({
         throw new Error('Authentication required');
       }
 
-      const where: any = { providerId: input.providerId };
+      const where: Prisma.AvailabilityWhereInput = { providerId: input.providerId };
 
       // Add permission filters for non-admin users
       if (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
@@ -917,7 +942,7 @@ export const calendarRouter = createTRPCRouter({
         throw new Error('Authentication required');
       }
 
-      const where: any = { organizationId: input.organizationId };
+      const where: Prisma.AvailabilityWhereInput = { organizationId: input.organizationId };
 
       // Add permission filters for non-admin users
       if (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
@@ -987,7 +1012,7 @@ export const calendarRouter = createTRPCRouter({
         throw new Error('Authentication required');
       }
 
-      const where: any = { seriesId: input.seriesId };
+      const where: Prisma.AvailabilityWhereInput = { seriesId: input.seriesId };
 
       // Add permission filters for non-admin users
       if (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
@@ -1312,7 +1337,7 @@ export const calendarRouter = createTRPCRouter({
       const dateEnd = endDate ? parseUTC(endDate) : addDays(nowUTC(), 30); // 30 days ahead
 
       // Build where clause for provider search
-      const whereClause: any = {
+      const whereClause: Prisma.ProviderWhereInput = {
         status: 'APPROVED', // Only show approved providers
         availabilities: {
           some: {
@@ -1344,7 +1369,7 @@ export const calendarRouter = createTRPCRouter({
         whereClause.OR = [
           // Search in organization locations
           {
-            organizationConnections: {
+            providerConnections: {
               some: {
                 organization: {
                   locations: {
@@ -1455,8 +1480,8 @@ export const calendarRouter = createTRPCRouter({
         ),
         locations: provider.availabilities
           .map((a) => a.location)
-          .filter((location) => location !== null)
-          .reduce((unique: any[], location) => {
+          .filter((location): location is NonNullable<typeof location> => location !== null)
+          .reduce((unique: Array<{ id: string; name: string }>, location) => {
             if (location && !unique.find((l) => l.id === location.id)) {
               unique.push(location);
             }
@@ -1840,7 +1865,7 @@ export const calendarRouter = createTRPCRouter({
       const userId = ctx.session.user.id;
 
       // Build status filter
-      let statusFilter: any = {};
+      let statusFilter: Prisma.BookingWhereInput = {};
       const now = nowUTC();
 
       if (status === 'upcoming') {
@@ -2094,18 +2119,21 @@ export const calendarRouter = createTRPCRouter({
  */
 function generateInstancesForStrategy(
   strategy: 'future' | 'all',
-  existingAvailability: any,
+  existingAvailability: { startTime: Date; isRecurring: boolean },
   newStartTime: Date,
   newEndTime: Date,
-  newRecurrencePattern: any
+  newRecurrencePattern: Record<string, unknown> | null
 ): Array<{ startTime: Date; endTime: Date }> {
   if (strategy === 'future') {
     const currentDate = parseUTC(existingAvailability.startTime.toISOString());
 
     if (newRecurrencePattern && existingAvailability.isRecurring) {
-      return generateRecurringInstances(newRecurrencePattern, newStartTime, newEndTime, 365).filter(
-        (instance) => instance.startTime >= currentDate
-      );
+      return generateRecurringInstances(
+        newRecurrencePattern as unknown as RecurrencePattern,
+        newStartTime,
+        newEndTime,
+        365
+      ).filter((instance) => instance.startTime >= currentDate);
     }
 
     return [{ startTime: newStartTime, endTime: newEndTime }];
@@ -2113,7 +2141,12 @@ function generateInstancesForStrategy(
 
   // 'all' strategy
   if (newRecurrencePattern && existingAvailability.isRecurring) {
-    return generateRecurringInstances(newRecurrencePattern, newStartTime, newEndTime, 365);
+    return generateRecurringInstances(
+      newRecurrencePattern as unknown as RecurrencePattern,
+      newStartTime,
+      newEndTime,
+      365
+    );
   }
 
   return [{ startTime: newStartTime, endTime: newEndTime }];
@@ -2123,9 +2156,9 @@ function generateInstancesForStrategy(
  * Create service configurations for availabilities
  */
 async function createServiceConfigsForAvailabilities(
-  tx: any,
-  availabilities: any[],
-  services: any[],
+  tx: Prisma.TransactionClient,
+  availabilities: Array<{ id: string }>,
+  services: Array<{ serviceId: string; duration: number; price: number }>,
   providerId: string,
   isOnlineAvailable?: boolean,
   locationId?: string
@@ -2153,7 +2186,10 @@ async function createServiceConfigsForAvailabilities(
 /**
  * Fetch availabilities with all relations
  */
-async function fetchAvailabilitiesWithRelations(tx: any, availabilityIds: string[]) {
+async function fetchAvailabilitiesWithRelations(
+  tx: Prisma.TransactionClient,
+  availabilityIds: string[]
+) {
   return tx.availability.findMany({
     where: { id: { in: availabilityIds } },
     include: {
@@ -2203,6 +2239,9 @@ async function deleteSingleAvailability(
   const { validatedData } = validation;
   if (!validatedData) {
     throw new Error('Validation data is missing');
+  }
+  if (!validatedData.existingAvailability) {
+    throw new Error('Existing availability data is missing');
   }
 
   // 2. Perform all database operations in single transaction

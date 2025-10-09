@@ -73,7 +73,7 @@ export const providerDebug = {
   log(
     component: keyof typeof debugConfig.components | 'api' | 'action',
     message: string,
-    ...data: any[]
+    ...data: unknown[]
   ): void {
     const isApi = component === 'api';
     const isAction = component === 'action';
@@ -97,7 +97,7 @@ export const providerDebug = {
   error(
     component: keyof typeof debugConfig.components | 'api' | 'action',
     message: string,
-    ...data: any[]
+    ...data: unknown[]
   ): void {
     if (this.isLevelEnabled('error')) {
       console.error(`[ERROR][${component.toUpperCase()}] ${message}`, ...data);

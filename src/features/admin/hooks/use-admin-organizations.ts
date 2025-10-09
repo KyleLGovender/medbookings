@@ -39,7 +39,7 @@ export function useAdminOrganizationCounts() {
       select: (organizations) => {
         // Calculate counts by status
         const counts = organizations.reduce(
-          (acc: Record<string, number>, organization: any) => {
+          (acc: Record<string, number>, organization) => {
             const status = organization.status || OrganizationStatus.PENDING_APPROVAL;
             acc[status] = (acc[status] || 0) + 1;
             acc.total = (acc.total || 0) + 1;
@@ -49,7 +49,7 @@ export function useAdminOrganizationCounts() {
         );
 
         // Calculate additional metrics
-        const metrics = organizations.reduce((acc: Record<string, number>, organization: any) => {
+        const metrics = organizations.reduce((acc: Record<string, number>, organization) => {
           // Count organizations with members
           if (organization.memberships && organization.memberships.length > 0) {
             acc.withMembers = (acc.withMembers || 0) + 1;
@@ -94,7 +94,7 @@ export function useAdminOrganizationsNeedingReview() {
     {
       select: (organizations) => {
         // Filter organizations that need review
-        return organizations.filter((organization: any) => {
+        return organizations.filter((organization) => {
           // Organizations that are pending
           if (organization.status === OrganizationStatus.PENDING_APPROVAL) return true;
 
@@ -125,7 +125,7 @@ export function useAdminRecentlyApprovedOrganizations(days: number = 30) {
         const cutoffDate = nowUTC();
         cutoffDate.setDate(cutoffDate.getDate() - days);
 
-        return organizations.filter((organization: any) => {
+        return organizations.filter((organization) => {
           if (!organization.approvedAt) return false;
           const approvedDate = organization.approvedAt;
           return approvedDate >= cutoffDate;

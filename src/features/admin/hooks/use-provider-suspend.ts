@@ -8,7 +8,7 @@ import { api } from '@/utils/api';
  * @returns Mutation object for suspending a provider
  */
 export function useSuspendProvider(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
@@ -36,7 +36,7 @@ export function useSuspendProvider(options?: {
  * @returns Mutation object for unsuspending a provider
  */
 export function useUnsuspendProvider(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();

@@ -6,7 +6,7 @@ import { api } from '@/utils/api';
  * @returns Mutation object for updating provider basic info
  */
 export function useUpdateProviderBasicInfo(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
@@ -27,7 +27,7 @@ export function useUpdateProviderBasicInfo(options?: {
  * @returns Mutation object for updating provider services
  */
 export function useUpdateProviderServices(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
@@ -49,7 +49,7 @@ export function useUpdateProviderServices(options?: {
  * @returns Mutation object for updating provider requirements
  */
 export function useUpdateProviderRequirements(options?: {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();

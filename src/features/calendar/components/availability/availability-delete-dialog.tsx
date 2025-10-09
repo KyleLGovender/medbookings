@@ -23,7 +23,7 @@ import { useDeleteAvailability } from '@/features/calendar/hooks/use-availabilit
 import { useToast } from '@/hooks/use-toast';
 import { type RouterOutputs } from '@/utils/api';
 
-type AvailabilityWithRelations = any; // Temporary fix - needs proper tRPC procedure with relations
+type AvailabilityWithRelations = RouterOutputs['calendar']['searchAvailability'][number];
 
 interface AvailabilityDeleteDialogProps {
   availability: AvailabilityWithRelations;
@@ -54,13 +54,15 @@ export function AvailabilityDeleteDialog({
   // Calculate booking statistics
   const totalSlots = availability.calculatedSlots?.length || 0;
   const bookedSlots =
-    availability.calculatedSlots?.filter((slot: any) => slot.booking)?.length || 0;
+    availability.calculatedSlots?.filter(
+      (slot: unknown) => slot && typeof slot === 'object' && 'booking' in slot && slot.booking
+    )?.length || 0;
   const hasBookings = bookedSlots > 0;
 
   // Check if this is a recurring series
   const isRecurring = availability.isRecurring;
   const seriesCount = isRecurring
-    ? availability.calculatedSlots?.reduce((acc: number, slot: any) => {
+    ? availability.calculatedSlots?.reduce((acc: number, slot) => {
         // In a real implementation, we'd count unique series occurrences
         return acc;
       }, 0) || 1
@@ -177,19 +179,27 @@ export function AvailabilityDeleteDialog({
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Affected Services:</p>
                   <div className="space-y-1">
-                    {availability.availableServices?.map((serviceConfig: any, index: number) => (
-                      <div
-                        key={index}
-                        className="rounded bg-muted/50 p-2 text-xs text-muted-foreground"
-                      >
-                        {serviceConfig.service?.name || 'Unknown Service'}
-                        {' - '}
-                        {serviceConfig.duration} min
-                        {serviceConfig.provider?.showPrice && serviceConfig.price && (
-                          <span> - R{serviceConfig.price.toString()}</span>
-                        )}
-                      </div>
-                    ))}
+                    {availability.availableServices?.map((serviceConfig, index: number) => {
+                      const config = serviceConfig as unknown as {
+                        service?: { name?: string };
+                        duration?: number;
+                        provider?: { showPrice?: boolean };
+                        price?: number | string;
+                      };
+                      return (
+                        <div
+                          key={index}
+                          className="rounded bg-muted/50 p-2 text-xs text-muted-foreground"
+                        >
+                          {config.service?.name || 'Unknown Service'}
+                          {' - '}
+                          {config.duration} min
+                          {config.provider?.showPrice && config.price && (
+                            <span> - R{config.price.toString()}</span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

@@ -25,7 +25,13 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { usePermissions } from '@/hooks/use-permissions';
-import { OrganizationRole, Permission, PermissionContext, SystemRole } from '@/types/permissions';
+import {
+  OrganizationRole,
+  Permission,
+  PermissionContext,
+  SystemRole,
+  UserPermissions,
+} from '@/types/permissions';
 
 /**
  * Role-based form field visibility controls and permission-based form components
@@ -40,7 +46,7 @@ interface PermissionFieldProps {
   systemRole?: SystemRole | SystemRole[];
   organizationRole?: OrganizationRole | OrganizationRole[];
   context?: PermissionContext;
-  customCheck?: (permissions: any) => boolean;
+  customCheck?: (permissions: UserPermissions) => boolean;
 
   // Field configuration
   name: string;
@@ -222,7 +228,7 @@ interface PermissionButtonProps {
   systemRole?: SystemRole | SystemRole[];
   organizationRole?: OrganizationRole | OrganizationRole[];
   context?: PermissionContext;
-  customCheck?: (permissions: any) => boolean;
+  customCheck?: (permissions: UserPermissions) => boolean;
 
   // Button properties
   children: ReactNode;
@@ -322,7 +328,7 @@ interface PermissionSectionProps {
   systemRole?: SystemRole | SystemRole[];
   organizationRole?: OrganizationRole | OrganizationRole[];
   context?: PermissionContext;
-  customCheck?: (permissions: any) => boolean;
+  customCheck?: (permissions: UserPermissions) => boolean;
 
   // Styling
   className?: string;

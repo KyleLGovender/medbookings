@@ -491,7 +491,10 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                       submission={{
                         ...submission,
                         notes: submission.notes || undefined,
-                        documentMetadata: submission.documentMetadata as Record<string, any> | null,
+                        documentMetadata: submission.documentMetadata as Record<
+                          string,
+                          unknown
+                        > | null,
                       }}
                       isAdminView={true}
                       onApprove={() => handleApproveRequirement(submission.id)}
