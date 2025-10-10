@@ -59,6 +59,48 @@
 
   📂 SECTION 2: CODE ANALYSIS & CONTEXT PROTOCOL
 
+  ⚡ **CACHE-FIRST ANALYSIS PROTOCOL** (MANDATORY - DO THIS FIRST)
+
+  When user requests: "Analyze the codebase", "Analyze comprehensively", or similar analysis tasks:
+
+  **STEP 1 - CHECK FOR CACHE (ALWAYS)**:
+  ```bash
+  find . -name "CLAUDE-AGENT-CONTEXT.md" -o -name "CODEBASE-CONTEXT.md"
+  ```
+
+  **STEP 2 - IF CACHE EXISTS**:
+  1. Read `/docs/claude-agent-context/CLAUDE-AGENT-CONTEXT.md` (~7k tokens)
+  2. Check "Last Updated" timestamp in the file header
+  3. Check "Recent Changes Log" section for latest changes
+  4. If cache is recent (< 2 weeks old):
+     - Use cached context for 90% of understanding
+     - Only read additional specific files on-demand as needed
+     - Total tokens: ~15k (vs ~72k for full scan)
+  5. If cache is stale (> 2 weeks old):
+     - Notify user: "Context cache is from [date]. Refresh?"
+     - Wait for user confirmation before full scan
+
+  **STEP 3 - IF CACHE MISSING** or **USER EXPLICITLY REQUESTS "REFRESH"**:
+  1. Proceed with full codebase analysis (instructions below)
+  2. After analysis, update `/docs/claude-agent-context/CLAUDE-AGENT-CONTEXT.md`:
+     - Update "Last Updated" timestamp
+     - Update relevant sections with new findings
+     - Add entry to "Recent Changes Log"
+     - Save changes for future sessions
+
+  **Token Efficiency**:
+  - Cache approach: ~15k tokens (7k cache + 8k on-demand)
+  - Full scan approach: ~72k tokens
+  - **Savings: 79%**
+
+  **User Commands** (recognize these automatically):
+  - "Analyze the codebase" → Check cache first, use if recent
+  - "Refresh the codebase context" → Full scan + update cache
+  - "What's changed recently?" → Read "Recent Changes Log" from cache only
+  - "Update the context document" → Update cache with recent work
+
+  ---
+
   📄 **Full Context Protocol**: See `/docs/compliance/CONTEXT-LOADING.md` for comprehensive context management rules, task-specific loading patterns, and context efficiency guidelines.
 
   Code Analysis Guidelines
