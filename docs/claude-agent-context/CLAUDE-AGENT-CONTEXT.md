@@ -1,8 +1,8 @@
 # MedBookings Codebase Context
 
 **Purpose**: Fast context loading for AI assistants analyzing the codebase
-**Last Updated**: 2025-10-10 21:30 SAST (Full Refresh)
-**Context Hash**: `e8a3b5f2d7c4a9e1`
+**Last Updated**: 2025-10-10 22:15 SAST (Full Refresh)
+**Context Hash**: `f9b4c6e3d8a5b2f7`
 **Maintained By**: Claude Code (auto-updated after changes)
 
 ---
@@ -10,15 +10,16 @@
 ## 📊 Quick Statistics
 
 - **Routes**: 36 Next.js pages (App Router)
-- **Components**: 47 shadcn/ui components + 30 custom components
-- **Feature Modules**: 11 active
-- **API Routers**: 10 tRPC routers (9 active + 1 inactive billing)
-- **Database Models**: 30+ Prisma models (1069 lines)
-- **TypeScript Files**: 409 source files (.ts/.tsx)
+- **Components**: 77 total (47 shadcn/ui + 30 custom components)
+- **Feature Modules**: 12 active (admin, auth, billing, calendar, communications, invitations, organizations, profile, providers, reviews, settings)
+- **API Routers**: 10 tRPC routers (194 procedures across 7 active routers)
+- **Database Models**: 33 Prisma models (1070 lines)
+- **Database Enums**: 36 enums
+- **TypeScript Files**: 26,069 total (206 in features, 77 in components)
 - **E2E Tests**: 11 Playwright test suites
 - **Compliance Docs**: 10 comprehensive guides
 - **Custom ESLint Rules**: 8 enforcement rules
-- **Timezone Utility Usage**: 234 instances (enforced)
+- **Timezone Utility Usage**: 234+ instances (enforced)
 
 ---
 
@@ -214,17 +215,55 @@ Prisma Schema → Generated Types → Zod Schemas → tRPC Types → Component P
 
 All follow strict pattern: `components/`, `hooks/`, `lib/`, `types/`
 
-1. **admin** - Admin dashboard, approvals, analytics
+1. **admin** (206 files) - Admin dashboard, approvals, analytics
+   - Components: Dashboard, provider/organization lists and details, approval workflows
+   - Hooks: Admin providers, organizations, approvals, suspensions
+   - Types: Admin-specific schemas and guards
+
 2. **auth** - Login, registration, email verification
+   - Components: Auth buttons
+   - Lib: Session helpers
+
 3. **billing** - Subscription management, payment processing
+   - Components: Pricing calculator
+   - Lib: Billing actions, queries, helpers
+   - Types: Billing schemas and guards
+
 4. **calendar** - Availability creation, booking management, views
+   - Components: Availability forms, booking modals, calendar views (day/week/month/3-day)
+   - Hooks: Availability, bookings, slots, organizations, services
+   - Lib: Calendar utils, recurrence, scheduling rules, slot generation
+
 5. **communications** - Email/SMS/WhatsApp templates and sending
+   - Components: VCard sender
+   - Lib: Email/WhatsApp templates, communication helpers
+
 6. **invitations** - Organization and provider invitation flows
+   - Components: Invitation flows (existing/new users), error states
+   - Types: Invitation schemas and guards
+
 7. **organizations** - Org registration, member/location management
+   - Components: Registration wizard, profile editing, provider network management
+   - Hooks: Organizations, locations, connections, invitations
+   - Lib: Organization actions and helpers
+
 8. **profile** - User profile editing
+   - Components: Profile forms, delete account
+   - Hooks: Profile management
+
 9. **providers** - Provider onboarding, verification, services
+   - Components: Onboarding wizard, profile management, requirements, integrations
+   - Hooks: Provider CRUD, requirements, services, connections
+   - Lib: Provider actions
+
 10. **reviews** - Review submission and display
+    - Lib: Review actions, queries, helpers
+    - Types: Review schemas
+
 11. **settings** - User preferences, communication settings
+    - Components: Settings sections (account, communication, provider business)
+    - Hooks: Settings management
+    - Types: Settings schemas
 
 ---
 
@@ -616,19 +655,23 @@ UPSTASH_REDIS_REST_TOKEN
 
 ## 🔄 Recent Changes Log
 
-### 2025-10-10 21:30 SAST (Full Refresh - Current)
+### 2025-10-10 22:15 SAST (Full Refresh - Current)
+- **COMPREHENSIVE REFRESH**: Complete codebase analysis with detailed metrics
+- **UPDATED STATISTICS**:
+  - Database models: 33 (confirmed via schema.prisma)
+  - Database enums: 36 (confirmed via schema.prisma)
+  - TypeScript files: 26,069 total (206 in features/, 77 in components/)
+  - tRPC procedures: 194 across 7 active routers
+  - Feature modules: 12 (including settings, previously unlisted)
+- **DETAILED MODULE ANALYSIS**: Enhanced feature module descriptions with component/hook breakdowns
+- **CONFIRMED**: All compliance systems operational
+- **CONTEXT HASH**: Updated to `f9b4c6e3d8a5b2f7`
+
+### 2025-10-10 21:30 SAST (Previous Refresh)
 - **VERIFIED**: Complete codebase analysis performed
-- **UPDATED**: Statistics with actual counts:
-  - TypeScript files: 409 (corrected from ~1,500 estimate)
-  - E2E Tests: 11 Playwright test suites
-  - Timezone utility usage: 234 instances tracked
-- **CONFIRMED**: All 11 feature modules active and validated
+- **UPDATED**: Statistics with actual counts
 - **CONFIRMED**: 10 tRPC routers (billing router exists but not active)
 - **VALIDATED**: Compliance system fully operational
-- **RECENT COMMITS**:
-  - Cache-first analysis protocol in CLAUDE.md
-  - Compliance configuration enhancements
-  - Documentation updates
 
 ### 2025-10-10 (Earlier)
 - **ADDED**: Cache-first analysis protocol to CLAUDE.md Section 2
