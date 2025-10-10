@@ -1,21 +1,22 @@
 # MedBookings Codebase Context
 
 **Purpose**: Fast context loading for AI assistants analyzing the codebase
-**Last Updated**: 2025-10-10 (Session)
-**Context Hash**: `b4e8c3d0f2a5e7b9`
+**Last Updated**: 2025-10-10 (Full Refresh)
+**Context Hash**: `d7f2a9e3c6b4f8d1`
 **Maintained By**: Claude Code (auto-updated after changes)
 
 ---
 
 ## 📊 Quick Statistics
 
-- **Routes**: 39 Next.js pages
-- **Components**: 77 UI components (shadcn/ui + custom)
-- **Feature Modules**: 12 (206 total files)
-- **API Routers**: 10 tRPC routers
-- **Database Models**: 30+ Prisma models
-- **Lines of Code**: ~50K (excluding node_modules, .next, generated)
-- **Compliance Docs**: 10 comprehensive guides
+- **Routes**: 36 Next.js pages (App Router)
+- **Components**: 47 shadcn/ui components + 30 custom components
+- **Feature Modules**: 11 active (206 total TypeScript files)
+- **API Routers**: 10 tRPC routers (9 active + 1 inactive)
+- **Database Models**: 30+ Prisma models (1069 lines)
+- **TypeScript Files**: ~1,500 active source files
+- **Compliance Docs**: 10 comprehensive guides (120KB total)
+- **Custom ESLint Rules**: 8 enforcement rules
 
 ---
 
@@ -32,13 +33,14 @@
 /CLAUDE.md (27KB)                         # Master compliance rules
 ```
 
-### Configuration (5 files)
+### Configuration (6 files)
 ```
 /package.json                              # Dependencies & scripts
 /tsconfig.json                             # TypeScript configuration
 /.eslintrc.js                              # ESLint + custom compliance rules
 /next.config.mjs                           # Next.js configuration
 /.env.example                              # Environment variables template
+/.husky/pre-commit                         # Pre-commit compliance validation
 ```
 
 ### Key Utilities (5 files)
@@ -336,8 +338,10 @@ cleanupOldAuditLogs(retentionDays)
 
 ## 📋 Compliance System
 
-### CLAUDE.md (27KB - Master Rules)
+### CLAUDE.md (32KB, 835 lines - Master Rules)
 **16 Sections**: Critical Rules, Code Analysis, Architecture, Business Rules, Build Gates, Verification, Healthcare Compliance, Security, Performance, Bug Detection, File Hierarchy, Workflow, Tools, Debugging, Deployment, Final Verification
+
+**Latest Enhancement**: Cache-First Analysis Protocol (Section 2) - Reduces token usage by 79%
 
 ### Compliance Docs (`/docs/compliance/`)
 1. `COMPLIANCE-SYSTEM.md` - Three-layer architecture (IDE, Commit Gate, Sync)
@@ -369,6 +373,8 @@ Validates:
 4. `enforce-direct-type-imports.js` - No barrel exports
 5. `enforce-type-file-naming.js` - types.ts, schemas.ts, guards.ts
 6. `enforce-prisma-derived-patterns.js` - Correct Prisma type extraction
+7. `type-organization.js` - Type organization patterns
+8. `index.js` - Rule loader and exports
 
 ---
 
@@ -488,25 +494,40 @@ export const myRouter = createTRPCRouter({
 - `(dashboard)/` - Protected user dashboard
 - `(admin)/` - Admin-only routes
 
-### Key Pages (39 total)
+### Key Pages (36 total)
+
+**Route Groups**:
+- `(general)/` - Public and auth routes (9 pages)
+- `(dashboard)/` - Protected user routes (26 pages)
+- `/` - Root routes (1 page: /help)
+
+**Critical Routes**:
 ```
 /                                           # Home page
 /login                                      # Authentication
 /providers                                  # Public provider search
-/providers/[id]                             # Provider profile
-/calendar/[id]                              # Calendar view
+/calendar/[id]                              # Public calendar view
+/invitation/[token]                         # Organization invitations
+/verify-email                               # Email verification
+/dashboard                                  # Main dashboard
+/profile                                    # User profile
+/settings                                   # User settings
+/providers/new                              # Provider onboarding
+/provider-profile                           # Provider management
 /organizations/new                          # Create organization
 /organizations/[id]                         # Organization dashboard
 /organizations/[id]/edit/*                  # Edit org (basic-info, locations, billing)
 /organizations/[id]/members                 # Member management
 /organizations/[id]/manage-calendar         # Calendar management
-/profile                                    # User profile
-/settings                                   # User settings
+/availability                               # Availability management
+/availability/create                        # Create availability
+/my-bookings                                # User bookings
 /admin                                      # Admin dashboard
-/verify-email                               # Email verification
-/unauthorized                               # Access denied
+/admin/providers                            # Provider approval
+/admin/organizations                        # Organization approval
 /terms-of-use                               # Legal
 /privacy-policy                             # Legal
+/unauthorized                               # Access denied
 ```
 
 ---
@@ -593,9 +614,24 @@ UPSTASH_REDIS_REST_TOKEN
 
 ## 🔄 Recent Changes Log
 
-### 2025-10-10
+### 2025-10-10 (Full Refresh - This Session)
+- **VERIFIED**: All critical architecture files and dependencies
+- **UPDATED**: Statistics to reflect actual current state:
+  - Routes: 36 (corrected from 39)
+  - ESLint rules: 8 total (added 2 previously undocumented)
+  - CLAUDE.md: 32KB, 835 lines (was 27KB)
+  - TypeScript files: ~1,500 active source files
+- **CONFIRMED**: 10 tRPC routers (9 active, 1 inactive billing router)
+- **CONFIRMED**: 11 feature modules with 206 total TypeScript files
+- **CONFIRMED**: 10 compliance docs (120KB total)
+- **VALIDATED**: Pre-commit hooks active and functioning
+- **COMMIT HISTORY**: Last 10 commits reviewed for recent changes
+  - Latest: Cache-first analysis protocol implementation
+  - Recent: Compliance enhancements, ESLint fixes, type improvements
+
+### 2025-10-10 (Earlier)
 - **ADDED**: Cache-first analysis protocol to CLAUDE.md Section 2
-- **ENFORCEMENT**: New sessions will automatically check for CLAUDE-AGENT-CONTEXT.md before full scan
+- **ENFORCEMENT**: New sessions automatically check for CLAUDE-AGENT-CONTEXT.md before full scan
 - **TOKEN SAVINGS**: Reduces analysis from ~72k tokens to ~15k tokens (79% savings)
 - **USER COMMANDS**: Added automatic recognition for "refresh", "what's changed", etc.
 
