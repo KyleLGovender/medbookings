@@ -1,8 +1,8 @@
 # MedBookings Codebase Context
 
 **Purpose**: Fast context loading for AI assistants analyzing the codebase
-**Last Updated**: 2025-10-10 21:17 SAST (Full Refresh)
-**Context Hash**: `d7f2a9e3c6b4f8d1`
+**Last Updated**: 2025-10-10 21:30 SAST (Full Refresh)
+**Context Hash**: `e8a3b5f2d7c4a9e1`
 **Maintained By**: Claude Code (auto-updated after changes)
 
 ---
@@ -11,12 +11,14 @@
 
 - **Routes**: 36 Next.js pages (App Router)
 - **Components**: 47 shadcn/ui components + 30 custom components
-- **Feature Modules**: 11 active (206 total TypeScript files)
-- **API Routers**: 10 tRPC routers (9 active + 1 inactive)
+- **Feature Modules**: 11 active
+- **API Routers**: 10 tRPC routers (9 active + 1 inactive billing)
 - **Database Models**: 30+ Prisma models (1069 lines)
-- **TypeScript Files**: ~1,500 active source files
-- **Compliance Docs**: 10 comprehensive guides (120KB total)
+- **TypeScript Files**: 409 source files (.ts/.tsx)
+- **E2E Tests**: 11 Playwright test suites
+- **Compliance Docs**: 10 comprehensive guides
 - **Custom ESLint Rules**: 8 enforcement rules
+- **Timezone Utility Usage**: 234 instances (enforced)
 
 ---
 
@@ -614,20 +616,19 @@ UPSTASH_REDIS_REST_TOKEN
 
 ## 🔄 Recent Changes Log
 
-### 2025-10-10 (Full Refresh - This Session)
-- **VERIFIED**: All critical architecture files and dependencies
-- **UPDATED**: Statistics to reflect actual current state:
-  - Routes: 36 (corrected from 39)
-  - ESLint rules: 8 total (added 2 previously undocumented)
-  - CLAUDE.md: 32KB, 835 lines (was 27KB)
-  - TypeScript files: ~1,500 active source files
-- **CONFIRMED**: 10 tRPC routers (9 active, 1 inactive billing router)
-- **CONFIRMED**: 11 feature modules with 206 total TypeScript files
-- **CONFIRMED**: 10 compliance docs (120KB total)
-- **VALIDATED**: Pre-commit hooks active and functioning
-- **COMMIT HISTORY**: Last 10 commits reviewed for recent changes
-  - Latest: Cache-first analysis protocol implementation
-  - Recent: Compliance enhancements, ESLint fixes, type improvements
+### 2025-10-10 21:30 SAST (Full Refresh - Current)
+- **VERIFIED**: Complete codebase analysis performed
+- **UPDATED**: Statistics with actual counts:
+  - TypeScript files: 409 (corrected from ~1,500 estimate)
+  - E2E Tests: 11 Playwright test suites
+  - Timezone utility usage: 234 instances tracked
+- **CONFIRMED**: All 11 feature modules active and validated
+- **CONFIRMED**: 10 tRPC routers (billing router exists but not active)
+- **VALIDATED**: Compliance system fully operational
+- **RECENT COMMITS**:
+  - Cache-first analysis protocol in CLAUDE.md
+  - Compliance configuration enhancements
+  - Documentation updates
 
 ### 2025-10-10 (Earlier)
 - **ADDED**: Cache-first analysis protocol to CLAUDE.md Section 2
