@@ -49,7 +49,7 @@
   - [x] 2.6 Verify AWS CLI is configured for eu-west-1 region
   - [x] 2.7 Create IAM service role for Amplify (managed by AWS - will be done during Amplify setup)
 
-- [ ] 3.0 AWS CDK Infrastructure as Code Setup
+- [x] 3.0 AWS CDK Infrastructure as Code Setup
 
   - [x] 3.1 Install AWS CDK CLI globally: `npm install -g aws-cdk`
   - [x] 3.2 Verify CDK installation: `cdk --version`
@@ -60,7 +60,7 @@
   - [x] 3.7 Bootstrap CDK in AWS account: `cdk bootstrap aws://ACCOUNT-ID/eu-west-1`
   - [x] 3.8 Create `infrastructure/lib/staging-stack.ts` for staging environment
   - [x] 3.9 Create `infrastructure/lib/production-stack.ts` for production environment
-  - [ ] 3.10 Update `infrastructure/bin/medbookings-infra.ts` to instantiate both stacks
+  - [x] 3.10 Update `infrastructure/bin/medbookings-infra.ts` to instantiate both stacks
 
 - [ ] 4.0 Database Infrastructure (RDS PostgreSQL via CDK)
 
