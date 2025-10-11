@@ -31,13 +31,13 @@
 
 ## Tasks
 
-- [ ] 1.0 Repository and Branch Setup
+- [x] 1.0 Repository and Branch Setup
 
   - [x] 1.1 Create `staging` branch from `master` branch
   - [x] 1.2 Configure branch protection rules for `staging` branch (require PR reviews) - SKIPPED (requires GitHub Pro)
   - [x] 1.3 Configure branch protection rules for `master` branch (require PR reviews) - SKIPPED (requires GitHub Pro)
-  - [ ] 1.4 Update `.gitignore` to exclude CDK build artifacts (`infrastructure/cdk.out/`, `infrastructure/node_modules/`)
-  - [ ] 1.5 Push `staging` branch to GitHub remote
+  - [x] 1.4 Update `.gitignore` to exclude CDK build artifacts (`infrastructure/cdk.out/`, `infrastructure/node_modules/`)
+  - [x] 1.5 Push `staging` branch to GitHub remote
 
 - [ ] 2.0 AWS Account and IAM Configuration
 
