@@ -51,7 +51,7 @@
 
 - [ ] 3.0 AWS CDK Infrastructure as Code Setup
 
-  - [ ] 3.1 Install AWS CDK CLI globally: `npm install -g aws-cdk`
+  - [x] 3.1 Install AWS CDK CLI globally: `npm install -g aws-cdk`
   - [ ] 3.2 Verify CDK installation: `cdk --version`
   - [ ] 3.3 Create `/infrastructure` directory in repository root
   - [ ] 3.4 Initialize CDK project: `cd infrastructure && cdk init app --language typescript`
