@@ -62,58 +62,58 @@
   - [x] 3.9 Create `infrastructure/lib/production-stack.ts` for production environment
   - [x] 3.10 Update `infrastructure/bin/medbookings-infra.ts` to instantiate both stacks
 
-- [ ] 4.0 Database Infrastructure (RDS PostgreSQL via CDK)
+- [x] 4.0 Database Infrastructure (RDS PostgreSQL via CDK)
 
-  - [ ] 4.1 Define VPC construct in CDK stack (or use default VPC)
-  - [ ] 4.2 Create security group for RDS instance (allow PostgreSQL port 5432 from Amplify/Lambda)
-  - [ ] 4.3 Define RDS PostgreSQL instance for staging (db.t4g.micro, single-AZ, PostgreSQL 16.4)
-  - [ ] 4.4 Define RDS PostgreSQL instance for production (db.t4g.small, multi-AZ, PostgreSQL 16.4)
-  - [ ] 4.5 Configure automated backups (7-day retention, 2-4 AM SAST backup window)
-  - [ ] 4.6 Enable point-in-time recovery (PITR)
-  - [ ] 4.7 Enable storage encryption at rest
-  - [ ] 4.8 Enable SSL/TLS encryption in transit
-  - [ ] 4.9 Configure storage auto-scaling (20GB initial, 100GB max)
-  - [ ] 4.10 Create database credentials in Secrets Manager (via CDK)
-  - [ ] 4.11 Output RDS endpoint hostname as CDK stack output
+  - [x] 4.1 Define VPC construct in CDK stack (or use default VPC)
+  - [x] 4.2 Create security group for RDS instance (allow PostgreSQL port 5432 from Amplify/Lambda)
+  - [x] 4.3 Define RDS PostgreSQL instance for staging (db.t4g.micro, single-AZ, PostgreSQL 16.4)
+  - [x] 4.4 Define RDS PostgreSQL instance for production (db.t4g.small, multi-AZ, PostgreSQL 16.4)
+  - [x] 4.5 Configure automated backups (7-day retention, 2-4 AM SAST backup window)
+  - [x] 4.6 Enable point-in-time recovery (PITR)
+  - [x] 4.7 Enable storage encryption at rest
+  - [x] 4.8 Enable SSL/TLS encryption in transit
+  - [x] 4.9 Configure storage auto-scaling (20GB initial, 100GB max)
+  - [x] 4.10 Create database credentials in Secrets Manager (via CDK)
+  - [x] 4.11 Output RDS endpoint hostname as CDK stack output
 
 - [ ] 5.0 S3 Storage Infrastructure (via CDK) and Code Migration
 
-  - [ ] 5.1 Define S3 bucket for staging: `medbookings-uploads-staging`
-  - [ ] 5.2 Define S3 bucket for production: `medbookings-uploads-production`
-  - [ ] 5.3 Configure bucket encryption (AES-256 server-side encryption)
-  - [ ] 5.4 Configure CORS policy for client-side uploads
-  - [ ] 5.5 Configure lifecycle policy for old file cleanup (optional, e.g., delete after 90 days)
-  - [ ] 5.6 Create IAM policy for S3 bucket access (read/write permissions)
-  - [ ] 5.7 Create IAM role for Amplify/Lambda to access S3 buckets
-  - [ ] 5.8 Output S3 bucket names as CDK stack outputs
+  - [x] 5.1 Define S3 bucket for staging: `medbookings-uploads-staging`
+  - [x] 5.2 Define S3 bucket for production: `medbookings-uploads-production`
+  - [x] 5.3 Configure bucket encryption (AES-256 server-side encryption)
+  - [x] 5.4 Configure CORS policy for client-side uploads
+  - [x] 5.5 Configure lifecycle policy for old file cleanup (optional, e.g., delete after 90 days)
+  - [x] 5.6 Create IAM policy for S3 bucket access (read/write permissions)
+  - [x] 5.7 Create IAM role for Amplify/Lambda to access S3 buckets
+  - [x] 5.8 Output S3 bucket names as CDK stack outputs
   - [ ] 5.9 Install AWS SDK v3 in main application: `npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner`
   - [ ] 5.10 Create `src/lib/storage/s3.ts` utility for S3 operations (upload, download, delete, generate presigned URLs)
   - [ ] 5.11 Update file upload logic in `src/lib/storage/upload.ts` to use S3 instead of Vercel Blob
   - [ ] 5.12 Search codebase for Vercel Blob usage and replace with S3 calls
   - [ ] 5.13 Remove `BLOB_READ_WRITE_TOKEN` from environment variables
 
-- [ ] 6.0 AWS Secrets Manager and Security Configuration (via CDK)
+- [x] 6.0 AWS Secrets Manager and Security Configuration (via CDK)
 
-  - [ ] 6.1 Create Secrets Manager secret for staging RDS database credentials
-  - [ ] 6.2 Create Secrets Manager secret for production RDS database credentials
-  - [ ] 6.3 Store database credentials: username, password, database name, host, port
-  - [ ] 6.4 Enable automatic secret rotation for database passwords (30-day rotation)
-  - [ ] 6.5 Create IAM policy for Amplify/Lambda to read Secrets Manager secrets
-  - [ ] 6.6 Define security groups for RDS (allow inbound on port 5432 only from Amplify VPC)
-  - [ ] 6.7 Output Secrets Manager ARNs as CDK stack outputs
+  - [x] 6.1 Create Secrets Manager secret for staging RDS database credentials
+  - [x] 6.2 Create Secrets Manager secret for production RDS database credentials
+  - [x] 6.3 Store database credentials: username, password, database name, host, port
+  - [x] 6.4 Enable automatic secret rotation for database passwords (30-day rotation)
+  - [x] 6.5 Create IAM policy for Amplify/Lambda to read Secrets Manager secrets
+  - [x] 6.6 Define security groups for RDS (allow inbound on port 5432 only from Amplify VPC)
+  - [x] 6.7 Output Secrets Manager ARNs as CDK stack outputs
 
-- [ ] 7.0 CloudWatch Monitoring and SNS Alerts (via CDK)
+- [x] 7.0 CloudWatch Monitoring and SNS Alerts (via CDK)
 
-  - [ ] 7.1 Create CloudWatch Log Group for application logs (30-day retention)
-  - [ ] 7.2 Create SNS topic for critical alerts: `medbookings-critical-alerts`
-  - [ ] 7.3 Subscribe email `aws-root@medbookings.co.za` to SNS topic
+  - [x] 7.1 Create CloudWatch Log Group for application logs (30-day retention)
+  - [x] 7.2 Create SNS topic for critical alerts: `medbookings-critical-alerts`
+  - [x] 7.3 Subscribe email `aws-root@medbookings.co.za` to SNS topic
   - [ ] 7.4 Confirm SNS email subscription (check email and confirm)
-  - [ ] 7.5 Create CloudWatch alarm for RDS CPU utilization (>80% for 5 minutes)
-  - [ ] 7.6 Create CloudWatch alarm for RDS storage space (>80% full)
-  - [ ] 7.7 Create CloudWatch alarm for RDS connection errors
-  - [ ] 7.8 Create CloudWatch alarm for high latency (p95 > 2 seconds) - configure after Amplify deployment
-  - [ ] 7.9 Create CloudWatch alarm for high error rate (>5% errors in 5 minutes) - configure after Amplify deployment
-  - [ ] 7.10 Output SNS topic ARN as CDK stack output
+  - [x] 7.5 Create CloudWatch alarm for RDS CPU utilization (>80% for 5 minutes)
+  - [x] 7.6 Create CloudWatch alarm for RDS storage space (>80% full)
+  - [x] 7.7 Create CloudWatch alarm for RDS connection errors
+  - [x] 7.8 Create CloudWatch alarm for high latency (p95 > 2 seconds) - configure after Amplify deployment
+  - [x] 7.9 Create CloudWatch alarm for high error rate (>5% errors in 5 minutes) - configure after Amplify deployment
+  - [x] 7.10 Output SNS topic ARN as CDK stack output
 
 - [ ] 8.0 Deploy CDK Stacks (Staging and Production)
 
