@@ -1,13 +1,13 @@
 import * as cdk from 'aws-cdk-lib';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
-import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
-import * as iam from 'aws-cdk-lib/aws-iam';
-import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
 export class StagingStack extends cdk.Stack {
@@ -94,7 +94,7 @@ export class StagingStack extends cdk.Stack {
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.MICRO),
       vpc,
       vpcSubnets: {
-        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+        subnetType: ec2.SubnetType.PUBLIC, // Default VPC only has public subnets
       },
       securityGroups: [dbSecurityGroup],
       databaseName: 'medbookings',
@@ -165,9 +165,7 @@ export class StagingStack extends cdk.Stack {
     });
 
     // Subscribe email to alerts
-    alertTopic.addSubscription(
-      new subscriptions.EmailSubscription('aws-root@medbookings.co.za')
-    );
+    alertTopic.addSubscription(new subscriptions.EmailSubscription('aws-root@medbookings.co.za'));
 
     // =========================================================================
     // CloudWatch Alarms
@@ -270,7 +268,8 @@ export class StagingStack extends cdk.Stack {
 
     new cdk.CfnOutput(this, 'DatabaseConnectionString', {
       value: `postgresql://\${SecretValue}@${database.dbInstanceEndpointAddress}:${database.dbInstanceEndpointPort}/medbookings?sslmode=require`,
-      description: 'Database connection string template (replace ${SecretValue} with credentials from Secrets Manager)',
+      description:
+        'Database connection string template (replace ${SecretValue} with credentials from Secrets Manager)',
     });
   }
 }

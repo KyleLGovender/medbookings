@@ -105,7 +105,7 @@ export class ProductionStack extends cdk.Stack {
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.SMALL),
       vpc,
       vpcSubnets: {
-        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+        subnetType: ec2.SubnetType.PUBLIC, // Default VPC only has public subnets
       },
       securityGroups: [dbSecurityGroup],
       databaseName: 'medbookings',
