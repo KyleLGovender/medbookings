@@ -59,7 +59,7 @@
   - [x] 3.6 Configure `cdk.json` with default region (eu-west-1) and context variables
   - [x] 3.7 Bootstrap CDK in AWS account: `cdk bootstrap aws://ACCOUNT-ID/eu-west-1`
   - [x] 3.8 Create `infrastructure/lib/staging-stack.ts` for staging environment
-  - [ ] 3.9 Create `infrastructure/lib/production-stack.ts` for production environment
+  - [x] 3.9 Create `infrastructure/lib/production-stack.ts` for production environment
   - [ ] 3.10 Update `infrastructure/bin/medbookings-infra.ts` to instantiate both stacks
 
 - [ ] 4.0 Database Infrastructure (RDS PostgreSQL via CDK)
