@@ -1,13 +1,13 @@
 import * as cdk from 'aws-cdk-lib';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
-import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
-import * as iam from 'aws-cdk-lib/aws-iam';
-import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
 export class ProductionStack extends cdk.Stack {
@@ -38,10 +38,7 @@ export class ProductionStack extends cdk.Stack {
             s3.HttpMethods.PUT,
             s3.HttpMethods.DELETE,
           ],
-          allowedOrigins: [
-            'https://medbookings.co.za',
-            'https://www.medbookings.co.za',
-          ],
+          allowedOrigins: ['https://medbookings.co.za', 'https://www.medbookings.co.za'],
           allowedHeaders: ['*'],
           maxAge: 3000,
         },
@@ -181,9 +178,7 @@ export class ProductionStack extends cdk.Stack {
     });
 
     // Subscribe email to alerts
-    alertTopic.addSubscription(
-      new subscriptions.EmailSubscription('aws-root@medbookings.co.za')
-    );
+    alertTopic.addSubscription(new subscriptions.EmailSubscription('aws-root@medbookings.co.za'));
 
     // =========================================================================
     // CloudWatch Alarms - Production (More Sensitive)
@@ -243,8 +238,15 @@ export class ProductionStack extends cdk.Stack {
     new cloudwatch.Alarm(this, 'DatabaseReadLatencyAlarm', {
       alarmName: 'medbookings-production-rds-high-read-latency',
       alarmDescription: 'Alert when RDS read latency is high',
-      metric: database.metricReadLatency(),
-      threshold: 100, // milliseconds
+      metric: new cloudwatch.Metric({
+        namespace: 'AWS/RDS',
+        metricName: 'ReadLatency',
+        dimensionsMap: {
+          DBInstanceIdentifier: database.instanceIdentifier,
+        },
+        statistic: 'Average',
+      }),
+      threshold: 0.1, // 100ms = 0.1 seconds
       evaluationPeriods: 2,
       datapointsToAlarm: 2,
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
@@ -255,8 +257,15 @@ export class ProductionStack extends cdk.Stack {
     new cloudwatch.Alarm(this, 'DatabaseWriteLatencyAlarm', {
       alarmName: 'medbookings-production-rds-high-write-latency',
       alarmDescription: 'Alert when RDS write latency is high',
-      metric: database.metricWriteLatency(),
-      threshold: 100, // milliseconds
+      metric: new cloudwatch.Metric({
+        namespace: 'AWS/RDS',
+        metricName: 'WriteLatency',
+        dimensionsMap: {
+          DBInstanceIdentifier: database.instanceIdentifier,
+        },
+        statistic: 'Average',
+      }),
+      threshold: 0.1, // 100ms = 0.1 seconds
       evaluationPeriods: 2,
       datapointsToAlarm: 2,
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
@@ -322,7 +331,8 @@ export class ProductionStack extends cdk.Stack {
 
     new cdk.CfnOutput(this, 'DatabaseConnectionString', {
       value: `postgresql://\${SecretValue}@${database.dbInstanceEndpointAddress}:${database.dbInstanceEndpointPort}/medbookings?sslmode=require`,
-      description: 'Database connection string template (replace ${SecretValue} with credentials from Secrets Manager)',
+      description:
+        'Database connection string template (replace ${SecretValue} with credentials from Secrets Manager)',
     });
   }
 }
