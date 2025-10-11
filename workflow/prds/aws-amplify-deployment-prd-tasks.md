@@ -58,7 +58,7 @@
   - [x] 3.5 Install CDK construct libraries: `npm install @aws-cdk/aws-rds @aws-cdk/aws-s3 @aws-cdk/aws-ec2 @aws-cdk/aws-secretsmanager @aws-cdk/aws-cloudwatch @aws-cdk/aws-sns @aws-cdk/aws-iam`
   - [x] 3.6 Configure `cdk.json` with default region (eu-west-1) and context variables
   - [x] 3.7 Bootstrap CDK in AWS account: `cdk bootstrap aws://ACCOUNT-ID/eu-west-1`
-  - [ ] 3.8 Create `infrastructure/lib/staging-stack.ts` for staging environment
+  - [x] 3.8 Create `infrastructure/lib/staging-stack.ts` for staging environment
   - [ ] 3.9 Create `infrastructure/lib/production-stack.ts` for production environment
   - [ ] 3.10 Update `infrastructure/bin/medbookings-infra.ts` to instantiate both stacks
 
