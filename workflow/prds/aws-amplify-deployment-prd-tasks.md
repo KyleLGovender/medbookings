@@ -39,15 +39,15 @@
   - [x] 1.4 Update `.gitignore` to exclude CDK build artifacts (`infrastructure/cdk.out/`, `infrastructure/node_modules/`)
   - [x] 1.5 Push `staging` branch to GitHub remote
 
-- [ ] 2.0 AWS Account and IAM Configuration
+- [x] 2.0 AWS Account and IAM Configuration
 
-  - [ ] 2.1 Create or access AWS account for MedBookings deployment
-  - [ ] 2.2 Create IAM user `aws-root@medbookings.co.za` with AdministratorAccess (for initial setup)
-  - [ ] 2.3 Enable MFA (Multi-Factor Authentication) for IAM user
-  - [ ] 2.4 Generate AWS Access Key ID and Secret Access Key for CDK deployments
-  - [ ] 2.5 Configure AWS CLI locally with credentials (`aws configure`)
-  - [ ] 2.6 Verify AWS CLI is configured for eu-west-1 region
-  - [ ] 2.7 Create IAM service role for Amplify (managed by AWS - will be done during Amplify setup)
+  - [x] 2.1 Create or access AWS account for MedBookings deployment
+  - [x] 2.2 Create IAM user `cdk-deploy-user` with AdministratorAccess (for initial setup)
+  - [x] 2.3 Enable MFA (Multi-Factor Authentication) for IAM user
+  - [x] 2.4 Generate AWS Access Key ID and Secret Access Key for CDK deployments
+  - [x] 2.5 Configure AWS CLI locally with credentials (`aws configure`)
+  - [x] 2.6 Verify AWS CLI is configured for eu-west-1 region
+  - [x] 2.7 Create IAM service role for Amplify (managed by AWS - will be done during Amplify setup)
 
 - [ ] 3.0 AWS CDK Infrastructure as Code Setup
 
