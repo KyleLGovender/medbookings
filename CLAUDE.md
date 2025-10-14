@@ -189,6 +189,14 @@
 
   The rule: Skip irrelevant files, but when a file IS relevant, read it completely.
 
+  📊 **Personal Workflow Note - Context Scoping**:
+  For implementation tasks following the PRP workflow (Step H in user workflow):
+  - Follow detailed context scoping instructions in `/.claude/commands/context-scoping-guide.md`
+  - Target: 3,000-5,000 tokens per task (optimal focus)
+  - Load ONLY files specified in technical plan (not entire modules)
+  - Use `node workflow/scripts/personal/suggest-context.js [name]` for context suggestions
+  - This is a personal workflow enhancement (does not affect team development)
+
   🏗️ SECTION 3: ARCHITECTURE & TECH STACK
 
   Tech Stack

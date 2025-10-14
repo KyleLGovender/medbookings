@@ -1,9 +1,9 @@
 {
-  "claudeMdHash": "dcaaf1034d1228de8367cb951a496da51cdb359c903171b0eb4adeede86382e4",
-  "lastSync": "2025-10-10T19:07:06.874Z",
+  "claudeMdHash": "e78c5052f63b5003c2615d8b2788e4e06aa32439d5c1de1b6c551d822f3a3a42",
+  "lastSync": "2025-10-14T18:52:18.631Z",
   "validatorConfig": {
     "version": "1.0.0",
-    "lastUpdated": "2025-10-10T19:07:06.873Z",
+    "lastUpdated": "2025-10-14T18:52:18.629Z",
     "rules": {
       "timezone": {
         "enabled": true,
@@ -144,6 +144,6 @@
       "guides/ACTIONABLE-WARNINGS-IMPLEMENTATION.md",
       "guides/DOCS-VALIDATION-GUIDE.md"
     ],
-    "lastValidated": "2025-10-10T19:07:06.874Z"
+    "lastValidated": "2025-10-14T18:52:18.631Z"
   }
 }
