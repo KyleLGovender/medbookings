@@ -29,6 +29,17 @@
 - Database migrations will be run manually using Prisma CLI
 - Sentry integration requires installing `@sentry/nextjs` package
 
+### Staging Stack Outputs (Deployed)
+
+- **RDS Endpoint**: `medbookingsinfrastack-staging-databaseb269d8bb-ynmq3xvpnv25.c9ccmo2uic7g.eu-west-1.rds.amazonaws.com:5432`
+- **Database Name**: `medbookings`
+- **Database Credentials ARN**: `arn:aws:secretsmanager:eu-west-1:455315867736:secret:medbookings-staging-db-credentials-rPlSQc`
+- **S3 Bucket**: `medbookings-uploads-staging`
+- **S3 Bucket ARN**: `arn:aws:s3:::medbookings-uploads-staging`
+- **Amplify Service Role ARN**: `arn:aws:iam::455315867736:role/MedBookingsInfraStack-Sta-AmplifyServiceRole1EB3E93-4jVdrlpJp4qW`
+- **SNS Alert Topic ARN**: `arn:aws:sns:eu-west-1:455315867736:medbookings-staging-critical-alerts`
+- **Log Group**: `/medbookings/staging/application`
+
 ## Tasks
 
 - [x] 1.0 Repository and Branch Setup
@@ -117,10 +128,10 @@
 
 - [ ] 8.0 Deploy CDK Stacks (Staging and Production)
 
-  - [ ] 8.1 Review CDK synthesized CloudFormation template: `cdk synth MedBookingsInfraStack-Staging`
-  - [ ] 8.2 Deploy staging infrastructure stack: `cdk deploy MedBookingsInfraStack-Staging`
+  - [x] 8.1 Review CDK synthesized CloudFormation template: `cdk synth MedBookingsInfraStack-Staging`
+  - [x] 8.2 Deploy staging infrastructure stack: `cdk deploy MedBookingsInfraStack-Staging`
   - [ ] 8.3 Verify staging resources in AWS Console (RDS, S3, Secrets Manager, SNS, CloudWatch)
-  - [ ] 8.4 Capture CDK stack outputs (RDS endpoint, S3 bucket names, Secrets Manager ARNs)
+  - [x] 8.4 Capture CDK stack outputs (RDS endpoint, S3 bucket names, Secrets Manager ARNs)
   - [ ] 8.5 Review CDK synthesized CloudFormation template: `cdk synth MedBookingsInfraStack-Production`
   - [ ] 8.6 Deploy production infrastructure stack: `cdk deploy MedBookingsInfraStack-Production`
   - [ ] 8.7 Verify production resources in AWS Console (RDS, S3, Secrets Manager, SNS, CloudWatch)
