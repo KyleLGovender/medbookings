@@ -102,7 +102,7 @@ export class ProductionStack extends cdk.Stack {
       engine: rds.DatabaseInstanceEngine.postgres({
         version: rds.PostgresEngineVersion.VER_16_4,
       }),
-      instanceType: ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.SMALL),
+      instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO), // Free tier eligible
       vpc,
       vpcSubnets: {
         subnetType: ec2.SubnetType.PUBLIC, // Default VPC only has public subnets
@@ -113,7 +113,7 @@ export class ProductionStack extends cdk.Stack {
       allocatedStorage: 20,
       maxAllocatedStorage: 100, // Enable storage auto-scaling
       storageEncrypted: true,
-      multiAz: true, // Multi-AZ for high availability in production
+      multiAz: false, // Single-AZ for free tier eligibility
       publiclyAccessible: false,
       backupRetention: cdk.Duration.days(7),
       preferredBackupWindow: '00:00-02:00', // 2-4 AM SAST (00:00-02:00 UTC)
