@@ -60,11 +60,20 @@ export class StagingStack extends cdk.Stack {
       allowAllOutbound: false,
     });
 
-    // Allow PostgreSQL access from within VPC (Amplify/Lambda will use this)
+    // Allow PostgreSQL access from within VPC (Amplify runtime will use this)
     dbSecurityGroup.addIngressRule(
       ec2.Peer.ipv4(vpc.vpcCidrBlock),
       ec2.Port.tcp(5432),
       'Allow PostgreSQL access from VPC'
+    );
+
+    // Allow PostgreSQL access from Amplify build environment
+    // Note: Amplify builds run outside VPC, so we need to allow internet access
+    // This is acceptable for staging with strong credentials
+    dbSecurityGroup.addIngressRule(
+      ec2.Peer.anyIpv4(),
+      ec2.Port.tcp(5432),
+      'Allow PostgreSQL access from Amplify build environment (staging only)'
     );
 
     // =========================================================================
