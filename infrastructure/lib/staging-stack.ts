@@ -112,7 +112,7 @@ export class StagingStack extends cdk.Stack {
       maxAllocatedStorage: 100, // Enable storage auto-scaling
       storageEncrypted: true,
       multiAz: false, // Single-AZ for staging (cost optimization)
-      publiclyAccessible: false,
+      publiclyAccessible: true, // Required for Amplify build to run migrations
       backupRetention: cdk.Duration.days(7),
       preferredBackupWindow: '00:00-02:00', // 2-4 AM SAST (00:00-02:00 UTC)
       deleteAutomatedBackups: false,
