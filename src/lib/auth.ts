@@ -58,6 +58,20 @@ export const authOptions: NextAuthOptions = {
           prompt: 'consent',
         },
       },
+      profile(profile) {
+        console.log('Google profile received:', {
+          id: profile.sub,
+          email: profile.email,
+          name: profile.name,
+        });
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+          role: 'USER' as any,
+        };
+      },
     }),
   ],
   pages: {
@@ -67,39 +81,56 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile, email, credentials }) {
       // Log sign-in attempts for monitoring
-      console.log('Sign-in attempt:', {
+      console.log('Sign-in callback started:', {
         userId: user?.id,
         email: user?.email,
         provider: account?.provider,
         timestamp: new Date().toISOString(),
       });
 
-      // Allow sign-in by default
-      // You can add custom logic here to deny sign-in for specific cases
-      return true;
+      try {
+        // Allow sign-in by default
+        // You can add custom logic here to deny sign-in for specific cases
+        console.log('Sign-in callback successful');
+        return true;
+      } catch (error) {
+        console.error('Sign-in callback error:', error);
+        return false;
+      }
     },
     async jwt({ token, user, account }) {
-      if (user) {
-        token.accessToken = account?.access_token;
-        token.refreshToken = account?.refresh_token;
-        return {
-          ...token,
-          id: user.id,
-          role: user.role,
-        };
+      try {
+        if (user) {
+          console.log('JWT callback - creating token for user:', user.email);
+          token.accessToken = account?.access_token;
+          token.refreshToken = account?.refresh_token;
+          return {
+            ...token,
+            id: user.id,
+            role: user.role,
+          };
+        }
+        return token;
+      } catch (error) {
+        console.error('JWT callback error:', error);
+        throw error;
       }
-      return token;
     },
     async session({ session, token }: { session: Session; token: JWT }) {
-      session.accessToken = token.accessToken;
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          id: token.id,
-          role: token.role,
-        },
-      };
+      try {
+        session.accessToken = token.accessToken;
+        return {
+          ...session,
+          user: {
+            ...session.user,
+            id: token.id,
+            role: token.role,
+          },
+        };
+      } catch (error) {
+        console.error('Session callback error:', error);
+        throw error;
+      }
     },
   },
   events: {
