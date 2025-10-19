@@ -47,7 +47,24 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  pages: {
+    signIn: '/login',
+    error: '/error', // Custom error page
+  },
   callbacks: {
+    async signIn({ user, account, profile, email, credentials }) {
+      // Log sign-in attempts for monitoring
+      console.log('Sign-in attempt:', {
+        userId: user?.id,
+        email: user?.email,
+        provider: account?.provider,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Allow sign-in by default
+      // You can add custom logic here to deny sign-in for specific cases
+      return true;
+    },
     async jwt({ token, user, account }) {
       if (user) {
         token.accessToken = account?.access_token;
@@ -72,6 +89,26 @@ export const authOptions: NextAuthOptions = {
       };
     },
   },
+  events: {
+    async signIn({ user, account, profile, isNewUser }) {
+      // Log successful sign-ins
+      console.log('Successful sign-in:', {
+        userId: user.id,
+        email: user.email,
+        provider: account?.provider,
+        isNewUser,
+        timestamp: new Date().toISOString(),
+      });
+    },
+    async signOut({ session, token }) {
+      // Log sign-outs
+      console.log('Sign-out:', {
+        userId: token?.sub,
+        timestamp: new Date().toISOString(),
+      });
+    },
+  },
+  debug: process.env.NODE_ENV === 'development', // Enable debug logs in development
 };
 
 export async function getCurrentUser() {
