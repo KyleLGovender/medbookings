@@ -16,10 +16,15 @@ export async function GET(request: NextRequest) {
     allParams: Object.fromEntries(searchParams.entries()),
     timestamp: new Date().toISOString(),
     url: request.url,
+    headers: {
+      host: request.headers.get('host'),
+      origin: request.headers.get('origin'),
+    },
   });
 
-  // Redirect to the custom error page
-  const redirectUrl = new URL('/error', request.url);
+  // Use NEXTAUTH_URL or construct from request headers to avoid localhost
+  const baseUrl = process.env.NEXTAUTH_URL || `https://${request.headers.get('host')}`;
+  const redirectUrl = new URL('/error', baseUrl);
   redirectUrl.searchParams.set('error', error);
 
   return NextResponse.redirect(redirectUrl);
