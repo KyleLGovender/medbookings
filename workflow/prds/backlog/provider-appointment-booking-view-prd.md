@@ -29,6 +29,7 @@ The Provider Appointment Booking View is a calendar-based interface that allows 
 ## Functional Requirements
 
 1. **Calendar Display**
+
    - The system must display available slots as green, clickable entities on a calendar grid
    - The system must display unavailable slots as greyed out and non-clickable
    - The system must show time and derive duration from the visual position/size of the slot button
@@ -36,12 +37,14 @@ The Provider Appointment Booking View is a calendar-based interface that allows 
    - The system must use color coding to indicate slot status (green for available, grey for unavailable)
 
 2. **View Options**
+
    - The system must provide day view on mobile devices
    - The system must provide 3-day view option on mobile devices
    - The system must provide day, 3-day, and week views on desktop devices
    - The system must maintain the same navigation pattern as the existing provider-calendar-view component
 
 3. **Calendar Navigation**
+
    - The system must use the same navigation controls as the existing provider-calendar-view
    - The system must include a date picker with left/right navigation arrows
    - The system must include a "Today" button to quickly return to the current date
@@ -49,30 +52,35 @@ The Provider Appointment Booking View is a calendar-based interface that allows 
    - The system must automatically hide past time slots for the current day
 
 4. **Provider Selection**
+
    - The system must allow users to select one provider at a time
    - The system must not display multiple providers' availability simultaneously
 
 5. **Data Integration**
+
    - The system must pull availability data from the existing CalculatedAvailabilitySlot table
    - The system must show real-time availability accounting for bookings made by other users
    - The system must integrate with the existing provider availability management system
 
 6. **Slot Interaction**
+
    - The system must allow users to click on available (green) slots
    - The system must trigger a booking form when a slot is clicked (form implementation out of scope for this PRD)
 
 7. **Performance**
+
    - The system must efficiently handle displaying up to 40 slots per day (e.g., GP working 8am-6pm with 4 slots per hour)
    - The system must implement an effective UI solution for displaying many slots without overwhelming the user
 
 8. **Booking Constraints**
+
    - The system must prevent double-booking of slots
    - The system must enforce a maximum advance booking time of 3 days
    - The system must not enforce a minimum advance booking time
 
 9. **Access Control**
-    - The system must be accessible to non-logged-in users (public view)
-    - The system must display all available slots to all user types without restrictions
+   - The system must be accessible to non-logged-in users (public view)
+   - The system must display all available slots to all user types without restrictions
 
 ## Non-Goals (Out of Scope)
 
@@ -127,6 +135,7 @@ The Provider Appointment Booking View is a calendar-based interface that allows 
 ## Implementation Notes
 
 1. **Navigation Controls**: Use the exact same date picker and navigation pattern from provider-calendar-view.tsx including:
+
    - Date picker with calendar icon
    - Left/right arrow buttons for date navigation
    - "Today" button to return to current date

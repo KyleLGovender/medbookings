@@ -1,6 +1,7 @@
 # tRPC Type Extraction Quick Reference - Option C
 
 ## 🏗️ Option C Architecture
+
 - ✅ **tRPC procedures = ALL database queries** (automatic type inference)
 - ✅ **Server actions = ONLY business logic** (validation, notifications)
 - ✅ **Single query per endpoint** (optimal performance)
@@ -16,22 +17,26 @@ import { api } from '@/utils/api';
 ## 📋 Common Patterns
 
 ### Basic Extraction
+
 ```typescript
 type Output = RouterOutputs['router']['procedure'];
 ```
 
 ### Array Item
+
 ```typescript
 type Items = RouterOutputs['router']['getAll'];
 type Item = Items[number];
 ```
 
 ### Nested Field
+
 ```typescript
 type Nested = NonNullable<Output>['field'];
 ```
 
 ### Optional Field
+
 ```typescript
 type Maybe = NonNullable<Output>['optional'];
 ```
@@ -39,6 +44,7 @@ type Maybe = NonNullable<Output>['optional'];
 ## 🎯 Real Examples
 
 ### Admin Provider
+
 ```typescript
 type Provider = RouterOutputs['admin']['getProvider'];
 type Requirements = NonNullable<Provider>['requirementSubmissions'];
@@ -46,6 +52,7 @@ type Requirement = Requirements[number];
 ```
 
 ### Organization with Relations
+
 ```typescript
 type Org = RouterOutputs['organizations']['getDetail'];
 type Locations = NonNullable<Org>['locations'];
@@ -53,6 +60,7 @@ type Location = Locations[number];
 ```
 
 ### Billing Subscription
+
 ```typescript
 type Sub = RouterOutputs['billing']['getSubscription'];
 type Plan = NonNullable<Sub>['plan'];
@@ -61,12 +69,12 @@ type Usage = NonNullable<Sub>['usageRecords'];
 
 ## ⚡ Quick Conversions
 
-| From | To |
-|------|-----|
-| `Provider[]` | `RouterOutputs['providers']['getAll']` |
-| `Provider` | `RouterOutputs['providers']['getById']` |
+| From                       | To                                               |
+| -------------------------- | ------------------------------------------------ |
+| `Provider[]`               | `RouterOutputs['providers']['getAll']`           |
+| `Provider`                 | `RouterOutputs['providers']['getById']`          |
 | `Provider & { relations }` | `RouterOutputs['providers']['getWithRelations']` |
-| `Decimal` | `number` (automatic in tRPC) |
+| `Decimal`                  | `number` (automatic in tRPC)                     |
 
 ## 🔧 Component Pattern
 
@@ -74,7 +82,7 @@ type Usage = NonNullable<Sub>['usageRecords'];
 // Don't pass full objects
 ❌ <Component provider={provider} />
 
-// Pass IDs instead  
+// Pass IDs instead
 ✅ <Component providerId={provider.id} />
 
 // Fetch in component
@@ -115,12 +123,12 @@ const provider = data; // TypeScript infers!
 
 ## 🎭 Dual Source Rules
 
-| Type | Source | Import |
-|------|--------|---------|
-| Server data | tRPC | `RouterOutputs['...']['...']` |
-| Domain enums | Manual | `@/features/*/types/types` |
-| Form schemas | Manual | `@/features/*/types/schemas` |
-| Type guards | Manual | `@/features/*/types/guards` |
+| Type         | Source | Import                        |
+| ------------ | ------ | ----------------------------- |
+| Server data  | tRPC   | `RouterOutputs['...']['...']` |
+| Domain enums | Manual | `@/features/*/types/types`    |
+| Form schemas | Manual | `@/features/*/types/schemas`  |
+| Type guards  | Manual | `@/features/*/types/guards`   |
 
 ## 🛠️ VS Code Snippets
 
@@ -130,9 +138,7 @@ Add to `.vscode/snippets.code-snippets`:
 {
   "tRPC Type Extract": {
     "prefix": "trpc",
-    "body": [
-      "type ${1:TypeName} = RouterOutputs['${2:router}']['${3:procedure}'];"
-    ]
+    "body": ["type ${1:TypeName} = RouterOutputs['${2:router}']['${3:procedure}'];"]
   },
   "tRPC Array Type": {
     "prefix": "trpcarray",
@@ -143,9 +149,7 @@ Add to `.vscode/snippets.code-snippets`:
   },
   "tRPC Nested Type": {
     "prefix": "trpcnested",
-    "body": [
-      "type ${1:Nested} = NonNullable<${2:Parent}>['${3:field}'];"
-    ]
+    "body": ["type ${1:Nested} = NonNullable<${2:Parent}>['${3:field}'];"]
   }
 }
 ```

@@ -18,10 +18,10 @@ const s3Client = new S3Client({
   // 2. IAM role when running in AWS Amplify (no credentials needed)
 });
 
-const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME;
+const BUCKET_NAME = process.env.S3_BUCKET_NAME;
 
 if (!BUCKET_NAME) {
-  throw new Error('AWS_S3_BUCKET_NAME environment variable is not set');
+  throw new Error('S3_BUCKET_NAME environment variable is not set');
 }
 
 /**

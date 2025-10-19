@@ -29,9 +29,10 @@ The Administrative Status Management System provides administrators with compreh
 ### 1. Status Model Implementation
 
 1.1. The system must implement three separate status enums:
-   - `AdministrativeStatus`: PENDING_APPROVAL, REJECTED, ACTIVE, SUSPENDED, CANCELLED
-   - `SubscriptionStatus`: ACTIVE, PAST_DUE, CANCELLED, EXPIRED, NONE
-   - `TrialStatus`: NOT_STARTED, ACTIVE, EXPIRING_SOON, EXPIRED
+
+- `AdministrativeStatus`: PENDING_APPROVAL, REJECTED, ACTIVE, SUSPENDED, CANCELLED
+- `SubscriptionStatus`: ACTIVE, PAST_DUE, CANCELLED, EXPIRED, NONE
+- `TrialStatus`: NOT_STARTED, ACTIVE, EXPIRING_SOON, EXPIRED
 
 1.2. The system must compute `ProviderStatus` (operational status) based on the combination of these three statuses using defined business rules.
 
@@ -52,10 +53,11 @@ The Administrative Status Management System provides administrators with compreh
 ### 3. Status Display
 
 3.1. The system must display all four statuses in the admin interface:
-   - Administrative Status (with dropdown for changes)
-   - Subscription Status (read-only)
-   - Trial Status (read-only)
-   - Provider Status (computed, read-only)
+
+- Administrative Status (with dropdown for changes)
+- Subscription Status (read-only)
+- Trial Status (read-only)
+- Provider Status (computed, read-only)
 
 3.2. The system must clearly indicate which status is computed vs manually set.
 
@@ -76,12 +78,13 @@ The Administrative Status Management System provides administrators with compreh
 5.2. The system must provide a "Status History" tab in the provider detail view.
 
 5.3. The status history must display:
-   - Timestamp of change
-   - Previous status
-   - New status
-   - Admin who made the change
-   - Reason provided
-   - Status type (Administrative, Subscription, Trial)
+
+- Timestamp of change
+- Previous status
+- New status
+- Admin who made the change
+- Reason provided
+- Status type (Administrative, Subscription, Trial)
 
 5.4. The history view must include filters for date range and status type.
 
@@ -90,22 +93,25 @@ The Administrative Status Management System provides administrators with compreh
 ### 6. Business Rules
 
 6.1. When Administrative Status is SUSPENDED:
-   - Existing bookings must remain active
-   - No new bookings can be created
-   - Provider cannot modify availability
-   - Provider profile must be hidden from customer views
+
+- Existing bookings must remain active
+- No new bookings can be created
+- Provider cannot modify availability
+- Provider profile must be hidden from customer views
 
 6.2. When SubscriptionStatus is PAST_DUE:
-   - Service must stop immediately (no grace period)
-   - Provider Status must show PAYMENT_OVERDUE
+
+- Service must stop immediately (no grace period)
+- Provider Status must show PAYMENT_OVERDUE
 
 6.3. Operational Status Calculation:
-   - If AdministrativeStatus is PENDING_APPROVAL, REJECTED, SUSPENDED, or CANCELLED, use that as ProviderStatus
-   - If AdministrativeStatus is ACTIVE:
-     - If Trial is ACTIVE OR Subscription is ACTIVE → ProviderStatus = ACTIVE
-     - If Subscription is PAST_DUE → ProviderStatus = PAYMENT_OVERDUE
-     - If Trial is EXPIRED and Subscription is NONE → ProviderStatus = TRIAL_EXPIRED
-     - Otherwise → ProviderStatus = APPROVED
+
+- If AdministrativeStatus is PENDING_APPROVAL, REJECTED, SUSPENDED, or CANCELLED, use that as ProviderStatus
+- If AdministrativeStatus is ACTIVE:
+  - If Trial is ACTIVE OR Subscription is ACTIVE → ProviderStatus = ACTIVE
+  - If Subscription is PAST_DUE → ProviderStatus = PAYMENT_OVERDUE
+  - If Trial is EXPIRED and Subscription is NONE → ProviderStatus = TRIAL_EXPIRED
+  - Otherwise → ProviderStatus = APPROVED
 
 ### 7. Free Access Support
 
@@ -146,7 +152,8 @@ The Administrative Status Management System provides administrators with compreh
 
 1. **Status Dropdown**: Standard select component with all Administrative Status options
 2. **Update Button**: Primary action button, disabled until status changes
-3. **Confirmation Modal**: 
+3. **Confirmation Modal**:
+
    - Title: "Confirm Status Change"
    - Show current status → new status
    - Required textarea for reason
@@ -154,8 +161,9 @@ The Administrative Status Management System provides administrators with compreh
    - Warning text for destructive actions
 
 4. **Status Badges**: Color-coded badges for each status type
+
    - Administrative: Blue variants
-   - Subscription: Green (active) / Red (issues) variants  
+   - Subscription: Green (active) / Red (issues) variants
    - Trial: Purple variants
    - Operational: Mixed based on state
 
@@ -171,6 +179,7 @@ The Administrative Status Management System provides administrators with compreh
 ## Technical Considerations
 
 1. **Database Changes**:
+
    - Add `administrativeStatus` field to Provider model
    - Create StatusChangeHistory table
    - Add FREE subscription type to SubscriptionPlan

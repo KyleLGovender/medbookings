@@ -12,13 +12,13 @@ Route handlers replace traditional API routes in the app directory:
 // app/api/route.ts
 export async function GET(request: Request) {
   // Handle GET request
-  return Response.json({ data: 'Hello World' })
+  return Response.json({ data: 'Hello World' });
 }
 
 export async function POST(request: Request) {
-  const body = await request.json()
+  const body = await request.json();
   // Handle POST request
-  return Response.json({ success: true })
+  return Response.json({ success: true });
 }
 ```
 
@@ -35,7 +35,7 @@ import { revalidatePath } from 'next/cache'
 export async function createPost(formData: FormData) {
   // Perform database operations
   const post = await db.post.create({ data: {...} })
-  
+
   revalidatePath('/posts') // Revalidate cache
   redirect(`/post/${post.id}`) // Navigate to new post
 }
@@ -60,17 +60,17 @@ export default async function Page() {
 ### Routing Hooks
 
 ```typescript
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 function Component() {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   // Navigation
-  router.push('/dashboard')
-  router.replace('/login')
-  router.refresh()
+  router.push('/dashboard');
+  router.replace('/login');
+  router.refresh();
 }
 ```
 
@@ -78,19 +78,19 @@ function Component() {
 
 ```typescript
 // middleware.ts
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   // Redirect logic
   if (!request.cookies.get('token')) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*']
-}
+  matcher: ['/dashboard/:path*', '/admin/:path*'],
+};
 ```
 
 ### Dynamic Routes

@@ -24,6 +24,7 @@ Based on the **Availability Creation Form Technical Debt Cleanup PRD**, this doc
 ## Tasks
 
 - [x] 1.0 **Code Cleanup and Dead Code Removal**
+
   - [x] 1.1 Review entire component for unused variables and remove them
   - [x] 1.2 Remove all commented-out code blocks
   - [x] 1.3 Remove any console.log statements or debugging artifacts
@@ -32,6 +33,7 @@ Based on the **Availability Creation Form Technical Debt Cleanup PRD**, this doc
   - [x] 1.6 Identify and remove any development-only code
 
 - [x] 2.0 **Type Safety Improvements**
+
   - [x] 2.1 Replace `any` type at line 99 with proper TypeScript type
   - [x] 2.2 Replace `any` types at lines 486-487 with proper types
   - [x] 2.3 Import and use proper types from `/features/calendar/types/types.ts`
@@ -40,6 +42,7 @@ Based on the **Availability Creation Form Technical Debt Cleanup PRD**, this doc
   - [x] 2.6 Ensure all form data types align with Zod schemas
 
 - [x] 3.0 **CLAUDE.md Pattern Implementation**
+
   - [x] 3.1 Ensure React Hook Form is properly integrated with Zod schemas
   - [x] 3.2 Implement `z.record()` for nested data structures instead of arrays
   - [x] 3.3 Apply Controller pattern for complex form controls
@@ -49,6 +52,7 @@ Based on the **Availability Creation Form Technical Debt Cleanup PRD**, this doc
   - [x] 3.7 Remove any mock data and implement proper loading/error states
 
 - [x] 4.0 **Component Structure Refactoring**
+
   - [x] 4.1 Reorganize imports following order: React/Next.js → third-party → internal → relative
   - [x] 4.2 Group related logic together (form setup, handlers, effects)
   - [x] 4.3 Extract reusable functions to reduce component complexity
@@ -58,6 +62,7 @@ Based on the **Availability Creation Form Technical Debt Cleanup PRD**, this doc
   - [x] 4.7 Ensure proper separation between UI logic and business logic
 
 - [x] 5.0 **Performance and Optimization Review**
+
   - [x] 5.1 Review and optimize React Hook Form watch usage
   - [x] 5.2 Identify and fix unnecessary re-renders
   - [x] 5.3 Optimize form field dependencies

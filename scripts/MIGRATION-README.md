@@ -13,21 +13,25 @@ This migration fixes the issue where provider service default values (price and 
 ## Solution Implemented
 
 ### 1. Registration Flow Fix
+
 - Updated `registerProvider` to extract service configuration data from FormData
 - Added logic to create `ServiceAvailabilityConfig` records during registration
 - Implemented proper error handling for config creation
 
 ### 2. Display Logic Enhancement
+
 - Updated provider profile components to use `ServiceAvailabilityConfig` data with fallbacks
 - Added visual indicators for custom vs default pricing
 - Enhanced API endpoints to include service configuration data
 
 ### 3. Edit Services Page Fix
+
 - Updated form initialization to work with both existing and missing configs
 - Fixed server action to create/update `ServiceAvailabilityConfig` records instead of modifying Service defaults
 - Added proper cleanup for deselected services
 
 ### 4. Data Migration
+
 - Created SQL and TypeScript migration scripts to backfill missing configurations
 - Used Service default values as initial configuration values
 - Implemented verification queries to ensure migration completeness
@@ -35,11 +39,13 @@ This migration fixes the issue where provider service default values (price and 
 ## Migration Files
 
 ### SQL Migration (`scripts/migrate-service-configs.sql`)
+
 - Comprehensive SQL script with identification, migration, and verification queries
 - Includes rollback instructions
 - Safe for production use with proper constraints
 
 ### TypeScript Migration (`scripts/migrate-service-configs.ts`)
+
 - Node.js script using Prisma for type-safe migration
 - Detailed logging and error handling
 - Dry-run capability for testing
@@ -59,6 +65,7 @@ This migration fixes the issue where provider service default values (price and 
 ## Migration Execution Options
 
 ### Option 1: SQL Script (Recommended for Production)
+
 ```bash
 # Connect to production database
 psql $DATABASE_URL
@@ -68,6 +75,7 @@ psql $DATABASE_URL
 ```
 
 ### Option 2: TypeScript Script
+
 ```bash
 # Ensure production environment variables are set
 DATABASE_URL=your_production_url
@@ -77,6 +85,7 @@ npx ts-node scripts/migrate-service-configs.ts
 ## Post-Migration Verification
 
 ### 1. Check Migration Completeness
+
 ```sql
 -- Should return 0 incomplete migrations
 SELECT COUNT(*) as incomplete_migrations FROM (
@@ -92,9 +101,10 @@ SELECT COUNT(*) as incomplete_migrations FROM (
 ```
 
 ### 2. Verify Data Integrity
+
 ```sql
 -- Check that prices and durations were migrated correctly
-SELECT 
+SELECT
   sac.id,
   s.name as service_name,
   sac.price as config_price,
@@ -108,6 +118,7 @@ LIMIT 10;
 ```
 
 ### 3. Test Application Functionality
+
 - Register a new provider with custom service pricing
 - Verify prices are displayed correctly on provider profile
 - Test editing services for existing providers
@@ -119,7 +130,7 @@ If issues are discovered after migration:
 
 ```sql
 -- Rollback: Delete all ServiceAvailabilityConfig records created by migration
-DELETE FROM "ServiceAvailabilityConfig" 
+DELETE FROM "ServiceAvailabilityConfig"
 WHERE "createdAt" >= 'YYYY-MM-DD HH:MM:SS' -- Use migration timestamp
   AND id LIKE 'cm%'; -- Only delete records created by migration script
 ```
@@ -127,6 +138,7 @@ WHERE "createdAt" >= 'YYYY-MM-DD HH:MM:SS' -- Use migration timestamp
 ## Monitoring
 
 After migration, monitor:
+
 - Provider registration success rates
 - Service configuration display accuracy
 - Edit services functionality
@@ -142,6 +154,7 @@ After migration, monitor:
 ## Contact
 
 For questions or issues during migration:
+
 - Development Team: Check codebase for implementation details
 - Database Team: Review SQL scripts before execution
 - Operations Team: Coordinate maintenance windows

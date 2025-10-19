@@ -35,6 +35,7 @@ pnpm add class-variance-authority clsx tailwind-merge lucide-react tailwindcss-a
 ### Configuration Files
 
 #### `components.json`
+
 ```json
 {
   "$schema": "https://ui.shadcn.com/schema.json",
@@ -60,12 +61,13 @@ pnpm add class-variance-authority clsx tailwind-merge lucide-react tailwindcss-a
 ```
 
 #### Utility Function (`lib/utils.ts`)
+
 ```typescript
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 ```
 
@@ -113,7 +115,7 @@ shadcn/ui uses a **background/foreground convention** with CSS variables:
   --medical-warning: 45 93% 47%;
   --medical-error: 0 84% 60%;
   --medical-info: 199 89% 48%;
-  
+
   /* Appointment status colors */
   --appointment-confirmed: 142 76% 36%;
   --appointment-pending: 45 93% 47%;
@@ -172,14 +174,14 @@ import { Button } from "@/components/ui/button"
 ```tsx
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog';
 
 // Appointment booking dialog
 function BookingDialog() {
@@ -221,7 +223,7 @@ function BookingDialog() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 ```
 
@@ -235,7 +237,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from '@/components/ui/card';
 
 // Patient information card
 function PatientCard({ patient }) {
@@ -270,29 +272,29 @@ function PatientCard({ patient }) {
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button variant="outline" size="sm">View Profile</Button>
+        <Button variant="outline" size="sm">
+          View Profile
+        </Button>
         <Button size="sm">Schedule Appointment</Button>
       </CardFooter>
     </Card>
-  )
+  );
 }
 
 // Appointment status card
 function AppointmentCard({ appointment }) {
   const statusColors = {
-    confirmed: "bg-green-100 text-green-800 border-green-200",
-    pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    cancelled: "bg-red-100 text-red-800 border-red-200",
-  }
+    confirmed: 'bg-green-100 text-green-800 border-green-200',
+    pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    cancelled: 'bg-red-100 text-red-800 border-red-200',
+  };
 
   return (
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">{appointment.patientName}</CardTitle>
-          <Badge className={statusColors[appointment.status]}>
-            {appointment.status}
-          </Badge>
+          <Badge className={statusColors[appointment.status]}>{appointment.status}</Badge>
         </div>
         <CardDescription>
           {appointment.service} with Dr. {appointment.provider}
@@ -302,21 +304,22 @@ function AppointmentCard({ appointment }) {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="h-4 w-4" />
           {appointment.date}
-          <Clock className="h-4 w-4 ml-2" />
+          <Clock className="ml-2 h-4 w-4" />
           {appointment.time}
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 ```
 
 ### Form Components with Medical Validation
 
 ```tsx
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+
 import {
   Form,
   FormControl,
@@ -325,39 +328,39 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
+} from '@/components/ui/form';
 
 // Patient registration schema
 const patientSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().regex(/^\+?[\d\s\-\(\)]+$/, "Invalid phone number"),
-  dateOfBirth: z.string().min(1, "Date of birth is required"),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().regex(/^\+?[\d\s\-\(\)]+$/, 'Invalid phone number'),
+  dateOfBirth: z.string().min(1, 'Date of birth is required'),
   emergencyContact: z.object({
-    name: z.string().min(1, "Emergency contact name is required"),
-    phone: z.string().regex(/^\+?[\d\s\-\(\)]+$/, "Invalid phone number"),
+    name: z.string().min(1, 'Emergency contact name is required'),
+    phone: z.string().regex(/^\+?[\d\s\-\(\)]+$/, 'Invalid phone number'),
   }),
-})
+});
 
 function PatientRegistrationForm() {
   const form = useForm<z.infer<typeof patientSchema>>({
     resolver: zodResolver(patientSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      dateOfBirth: "",
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      dateOfBirth: '',
       emergencyContact: {
-        name: "",
-        phone: "",
+        name: '',
+        phone: '',
       },
     },
-  })
+  });
 
   function onSubmit(values: z.infer<typeof patientSchema>) {
-    console.log(values)
+    console.log(values);
   }
 
   return (
@@ -401,9 +404,7 @@ function PatientRegistrationForm() {
               <FormControl>
                 <Input type="email" placeholder="john.doe@example.com" {...field} />
               </FormControl>
-              <FormDescription>
-                We'll use this email for appointment confirmations.
-              </FormDescription>
+              <FormDescription>We'll use this email for appointment confirmations.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -474,7 +475,7 @@ function PatientRegistrationForm() {
         </Button>
       </form>
     </Form>
-  )
+  );
 }
 ```
 
@@ -483,22 +484,20 @@ function PatientRegistrationForm() {
 ### Status Badge System
 
 ```tsx
-import { Badge } from "@/components/ui/badge"
+import { Badge } from '@/components/ui/badge';
 
 // Appointment status badges
 function AppointmentStatusBadge({ status }) {
   const variants = {
-    confirmed: "bg-green-100 text-green-800 hover:bg-green-200",
-    pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
-    cancelled: "bg-red-100 text-red-800 hover:bg-red-200",
-    completed: "bg-blue-100 text-blue-800 hover:bg-blue-200",
-  }
+    confirmed: 'bg-green-100 text-green-800 hover:bg-green-200',
+    pending: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
+    cancelled: 'bg-red-100 text-red-800 hover:bg-red-200',
+    completed: 'bg-blue-100 text-blue-800 hover:bg-blue-200',
+  };
 
   return (
-    <Badge className={variants[status]}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </Badge>
-  )
+    <Badge className={variants[status]}>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>
+  );
 }
 
 // Provider specialization badges
@@ -507,7 +506,7 @@ function SpecialtyBadge({ specialty }) {
     <Badge variant="secondary" className="text-xs">
       {specialty}
     </Badge>
-  )
+  );
 }
 ```
 
@@ -521,7 +520,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from '@/components/ui/table';
 
 function AppointmentsTable({ appointments }) {
   return (
@@ -538,13 +537,9 @@ function AppointmentsTable({ appointments }) {
       <TableBody>
         {appointments.map((appointment) => (
           <TableRow key={appointment.id}>
-            <TableCell className="font-medium">
-              {appointment.patientName}
-            </TableCell>
+            <TableCell className="font-medium">{appointment.patientName}</TableCell>
             <TableCell>Dr. {appointment.providerName}</TableCell>
-            <TableCell>
-              {format(appointment.dateTime, "MMM dd, yyyy 'at' h:mm a")}
-            </TableCell>
+            <TableCell>{format(appointment.dateTime, "MMM dd, yyyy 'at' h:mm a")}</TableCell>
             <TableCell>
               <AppointmentStatusBadge status={appointment.status} />
             </TableCell>
@@ -562,13 +557,14 @@ function AppointmentsTable({ appointments }) {
         ))}
       </TableBody>
     </Table>
-  )
+  );
 }
 ```
 
 ## Available Components for MedBookings
 
 ### Layout & Navigation
+
 - **Card** - Patient info, appointment cards
 - **Separator** - Section dividers
 - **Tabs** - Multi-section forms
@@ -577,6 +573,7 @@ function AppointmentsTable({ appointments }) {
 - **Sidebar** - Dashboard navigation
 
 ### Forms & Inputs
+
 - **Button** - Actions, submissions
 - **Input** - Patient data entry
 - **Textarea** - Medical notes
@@ -587,6 +584,7 @@ function AppointmentsTable({ appointments }) {
 - **Date Picker** - Appointment scheduling
 
 ### Overlays & Feedback
+
 - **Dialog** - Booking confirmations
 - **Alert Dialog** - Cancellation warnings
 - **Sheet** - Mobile-friendly modals
@@ -596,6 +594,7 @@ function AppointmentsTable({ appointments }) {
 - **Alert** - Important notifications
 
 ### Data Display
+
 - **Table** - Appointment lists
 - **Badge** - Status indicators
 - **Avatar** - Patient/provider images
@@ -604,6 +603,7 @@ function AppointmentsTable({ appointments }) {
 - **Calendar** - Date selection
 
 ### Utility Components
+
 - **Command** - Quick actions
 - **Combobox** - Searchable selects
 - **Data Table** - Advanced tables with sorting
@@ -612,39 +612,37 @@ function AppointmentsTable({ appointments }) {
 ## Best Practices for MedBookings
 
 ### 1. Consistent Status Colors
+
 ```tsx
 // Define medical status color system
 const statusColors = {
-  confirmed: "bg-green-100 text-green-800 border-green-200",
-  pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  cancelled: "bg-red-100 text-red-800 border-red-200",
-  completed: "bg-blue-100 text-blue-800 border-blue-200",
-  emergency: "bg-red-500 text-white border-red-600",
-}
+  confirmed: 'bg-green-100 text-green-800 border-green-200',
+  pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  cancelled: 'bg-red-100 text-red-800 border-red-200',
+  completed: 'bg-blue-100 text-blue-800 border-blue-200',
+  emergency: 'bg-red-500 text-white border-red-600',
+};
 ```
 
 ### 2. Accessible Medical Forms
+
 ```tsx
 // Always include proper labels and descriptions
 <FormItem>
   <FormLabel>Medical History</FormLabel>
   <FormControl>
-    <Textarea 
-      placeholder="Please describe any relevant medical history..."
-      {...field} 
-    />
+    <Textarea placeholder="Please describe any relevant medical history..." {...field} />
   </FormControl>
-  <FormDescription>
-    This information helps providers give you better care.
-  </FormDescription>
+  <FormDescription>This information helps providers give you better care.</FormDescription>
   <FormMessage />
 </FormItem>
 ```
 
 ### 3. Mobile-First Medical UI
+
 ```tsx
 // Use responsive classes for medical dashboards
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
   {appointments.map((appointment) => (
     <AppointmentCard key={appointment.id} appointment={appointment} />
   ))}
@@ -652,6 +650,7 @@ const statusColors = {
 ```
 
 ### 4. Loading States for Critical Actions
+
 ```tsx
 // Always show loading states for booking actions
 <Button disabled={isBooking}>
@@ -661,7 +660,7 @@ const statusColors = {
       Booking...
     </>
   ) : (
-    "Confirm Appointment"
+    'Confirm Appointment'
   )}
 </Button>
 ```

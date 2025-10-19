@@ -52,29 +52,29 @@ model Profile {
 ### Basic Queries
 
 ```typescript
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 // Find many with relations
 const users = await prisma.user.findMany({
   include: {
     posts: true,
-    profile: true
-  }
-})
+    profile: true,
+  },
+});
 
 // Find unique
 const user = await prisma.user.findUnique({
-  where: { email: 'user@example.com' }
-})
+  where: { email: 'user@example.com' },
+});
 
 // Find first matching
 const firstAdmin = await prisma.user.findFirst({
   where: {
-    role: 'ADMIN'
-  }
-})
+    role: 'ADMIN',
+  },
+});
 ```
 
 ### Creating Records
@@ -84,9 +84,9 @@ const firstAdmin = await prisma.user.findFirst({
 const user = await prisma.user.create({
   data: {
     name: 'Alice',
-    email: 'alice@example.com'
-  }
-})
+    email: 'alice@example.com',
+  },
+});
 
 // Create with relations
 const userWithPosts = await prisma.user.create({
@@ -94,20 +94,17 @@ const userWithPosts = await prisma.user.create({
     name: 'Bob',
     email: 'bob@example.com',
     posts: {
-      create: [
-        { title: 'Hello World' },
-        { title: 'My second post' }
-      ]
+      create: [{ title: 'Hello World' }, { title: 'My second post' }],
     },
     profile: {
-      create: { bio: 'I like coding' }
-    }
+      create: { bio: 'I like coding' },
+    },
   },
   include: {
     posts: true,
-    profile: true
-  }
-})
+    profile: true,
+  },
+});
 ```
 
 ### Updating Records
@@ -116,8 +113,8 @@ const userWithPosts = await prisma.user.create({
 // Simple update
 const updatedUser = await prisma.user.update({
   where: { id: 1 },
-  data: { name: 'Updated Name' }
-})
+  data: { name: 'Updated Name' },
+});
 
 // Update with relations
 const updateUserPosts = await prisma.user.update({
@@ -127,18 +124,18 @@ const updateUserPosts = await prisma.user.update({
       create: { title: 'New Post' },
       update: {
         where: { id: 1 },
-        data: { published: true }
+        data: { published: true },
       },
-      delete: { id: 2 }
-    }
-  }
-})
+      delete: { id: 2 },
+    },
+  },
+});
 
 // Update many
 const updateManyPosts = await prisma.post.updateMany({
   where: { published: false },
-  data: { published: true }
-})
+  data: { published: true },
+});
 ```
 
 ### Deleting Records
@@ -146,17 +143,17 @@ const updateManyPosts = await prisma.post.updateMany({
 ```typescript
 // Delete single record
 const deletedUser = await prisma.user.delete({
-  where: { id: 1 }
-})
+  where: { id: 1 },
+});
 
 // Delete many
 const deletedPosts = await prisma.post.deleteMany({
   where: {
     createdAt: {
-      lt: new Date('2024-01-01')
-    }
-  }
-})
+      lt: new Date('2024-01-01'),
+    },
+  },
+});
 ```
 
 ### Complex Queries
@@ -167,36 +164,36 @@ const publishedPosts = await prisma.post.findMany({
   where: {
     published: true,
     author: {
-      email: { contains: '@example.com' }
-    }
+      email: { contains: '@example.com' },
+    },
   },
   orderBy: {
-    createdAt: 'desc'
+    createdAt: 'desc',
   },
   include: {
     author: true,
-    tags: true
-  }
-})
+    tags: true,
+  },
+});
 
 // With pagination
 const paginatedPosts = await prisma.post.findMany({
   skip: 20,
   take: 10,
-  where: { published: true }
-})
+  where: { published: true },
+});
 
 // Count
 const postCount = await prisma.post.count({
-  where: { published: true }
-})
+  where: { published: true },
+});
 
 // Aggregations
 const stats = await prisma.post.aggregate({
   _count: { _all: true },
   _avg: { views: true },
-  _max: { views: true }
-})
+  _max: { views: true },
+});
 ```
 
 ### Transactions
@@ -205,29 +202,29 @@ const stats = await prisma.post.aggregate({
 // Sequential transactions
 const [post, totalPosts] = await prisma.$transaction([
   prisma.post.create({ data: { title: 'New Post' } }),
-  prisma.post.count()
-])
+  prisma.post.count(),
+]);
 
 // Interactive transactions
 await prisma.$transaction(async (tx) => {
   const user = await tx.user.create({
-    data: { email: 'new@example.com' }
-  })
-  
+    data: { email: 'new@example.com' },
+  });
+
   const post = await tx.post.create({
     data: {
       title: 'Post',
-      authorId: user.id
-    }
-  })
-  
+      authorId: user.id,
+    },
+  });
+
   // If error thrown here, entire transaction rolls back
   if (someCondition) {
-    throw new Error('Rollback')
+    throw new Error('Rollback');
   }
-  
-  return { user, post }
-})
+
+  return { user, post };
+});
 ```
 
 ### Raw Queries
@@ -236,12 +233,12 @@ await prisma.$transaction(async (tx) => {
 // Raw SQL
 const users = await prisma.$queryRaw`
   SELECT * FROM "User" WHERE email LIKE ${`%@example.com`}
-`
+`;
 
 // Execute raw SQL
 const result = await prisma.$executeRaw`
   UPDATE "Post" SET views = views + 1 WHERE id = ${postId}
-`
+`;
 ```
 
 ### Middleware
@@ -249,13 +246,13 @@ const result = await prisma.$executeRaw`
 ```typescript
 // Log all queries
 prisma.$use(async (params, next) => {
-  const before = Date.now()
-  const result = await next(params)
-  const after = Date.now()
-  
-  console.log(`Query ${params.model}.${params.action} took ${after - before}ms`)
-  return result
-})
+  const before = Date.now();
+  const result = await next(params);
+  const after = Date.now();
+
+  console.log(`Query ${params.model}.${params.action} took ${after - before}ms`);
+  return result;
+});
 ```
 
 ## Best Practices for MedBookings

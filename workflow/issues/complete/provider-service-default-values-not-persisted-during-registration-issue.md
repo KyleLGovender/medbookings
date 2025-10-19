@@ -9,6 +9,7 @@ When a new provider registers and sets custom price and duration values for serv
 The provider registration flow in `/src/features/providers/lib/actions/register-provider.ts` creates a `Provider` record and establishes many-to-many relationships with `Service` records via the `_ProviderToService` table, but it does not create corresponding `ServiceAvailabilityConfig` records that should store the provider's custom price and duration values.
 
 **Key Issues:**
+
 1. No `ServiceAvailabilityConfig` records are created during provider registration
 2. Provider profile pages fall back to displaying `Service.defaultPrice` and `Service.defaultDuration` instead of provider-specific values
 3. The edit services page at `/providers/{id}/edit/services` shows "Unable to load provider or services data" error
@@ -17,12 +18,14 @@ The provider registration flow in `/src/features/providers/lib/actions/register-
 ## Expected vs Actual Behavior
 
 ### Expected Behavior
+
 - During registration, when a provider selects services and sets custom price/duration values, `ServiceAvailabilityConfig` records should be created for each selected service
 - Provider profile pages should display the custom price/duration from the `ServiceAvailabilityConfig` table
 - The edit services page should load existing `ServiceAvailabilityConfig` records or allow creation of new ones
 - Custom values should persist and be displayed throughout the application
 
 ### Actual Behavior
+
 - No `ServiceAvailabilityConfig` records are created during registration
 - Provider profile pages show system default values from the `Service` table
 - Edit services page fails to load with "Unable to load provider or services data" error
@@ -42,7 +45,8 @@ The provider registration flow in `/src/features/providers/lib/actions/register-
 
 **Affected Users:** All newly registered providers who set custom service pricing/duration during registration
 
-**Scope:** 
+**Scope:**
+
 - Provider registration flow
 - Provider profile display pages
 - Provider service editing functionality
@@ -52,7 +56,8 @@ The provider registration flow in `/src/features/providers/lib/actions/register-
 
 **Severity:** High - Core functionality is broken
 **Frequency:** Consistent - Affects all new provider registrations
-**Business Impact:** 
+**Business Impact:**
+
 - Providers cannot set custom pricing, limiting platform value proposition
 - Provider profiles show incorrect pricing information to potential clients
 - Undermines trust in the platform's accuracy
@@ -61,11 +66,13 @@ The provider registration flow in `/src/features/providers/lib/actions/register-
 ## Error Details
 
 **Database Query Results:**
+
 - Provider ID `cmdjut9zi0001ja6jhqh3ezd4` exists in the `Provider` table
 - No records exist in `ServiceAvailabilityConfig` table for this provider
 - No records exist in `_ProviderToService` junction table for this provider
 
 **Console Errors:**
+
 - Edit services page shows "Unable to load provider or services data"
 
 ## Environment Information
@@ -73,7 +80,7 @@ The provider registration flow in `/src/features/providers/lib/actions/register-
 - **Browser:** Any browser
 - **User Role:** Service providers during registration
 - **Database:** PostgreSQL with Prisma ORM
-- **Affected URLs:** 
+- **Affected URLs:**
   - Provider registration form
   - `/providers/{id}` (profile display)
   - `/providers/{id}/edit/services` (service editing)
@@ -81,17 +88,20 @@ The provider registration flow in `/src/features/providers/lib/actions/register-
 ## Root Cause Analysis
 
 **Primary Cause:** The `registerProvider` server action in `/src/features/providers/lib/actions/register-provider.ts` only creates:
+
 1. The `Provider` record
 2. Many-to-many relationships in `_ProviderToService` (lines 102-104)
 3. Provider type assignments
 4. Requirement submissions
 
 **Missing Logic:** The registration action does not:
+
 1. Extract custom price/duration values from the form data
 2. Create `ServiceAvailabilityConfig` records for each selected service
 3. Store the provider-specific pricing/duration configuration
 
 **Database Schema Context:**
+
 - `Service` table has `defaultPrice` and `defaultDuration` (system defaults)
 - `ServiceAvailabilityConfig` table has `price` and `duration` (provider-specific overrides)
 - The application should query `ServiceAvailabilityConfig` first, then fall back to `Service` defaults
@@ -99,16 +109,18 @@ The provider registration flow in `/src/features/providers/lib/actions/register-
 ## Potential Solutions
 
 ### Solution 1: Modify Registration Server Action
+
 **File:** `/src/features/providers/lib/actions/register-provider.ts`
 
 1. Extract service-specific price/duration values from `FormData`
 2. After creating the Provider, create `ServiceAvailabilityConfig` records:
+
 ```typescript
 // After provider creation, create service availability configs
-const serviceConfigs = services.map(serviceId => {
+const serviceConfigs = services.map((serviceId) => {
   const price = formData.get(`serviceConfigs[${serviceId}][price]`) as string;
   const duration = formData.get(`serviceConfigs[${serviceId}][duration]`) as string;
-  
+
   return {
     serviceId,
     providerId: provider.id,
@@ -120,11 +132,12 @@ const serviceConfigs = services.map(serviceId => {
 });
 
 await prisma.serviceAvailabilityConfig.createMany({
-  data: serviceConfigs
+  data: serviceConfigs,
 });
 ```
 
 ### Solution 2: Update Profile Display Logic
+
 **Files:** Provider profile components and queries
 
 1. Modify provider profile queries to prioritize `ServiceAvailabilityConfig` data
@@ -132,6 +145,7 @@ await prisma.serviceAvailabilityConfig.createMany({
 3. Update all display components to use the correct data source
 
 ### Solution 3: Fix Edit Services Page
+
 **File:** `/src/features/providers/components/profile/edit-services.tsx`
 
 1. Update the `useProviderTypeServices` hook to handle missing `ServiceAvailabilityConfig` records
@@ -140,11 +154,13 @@ await prisma.serviceAvailabilityConfig.createMany({
 
 ## Workarounds
 
-**Temporary Workaround:** 
+**Temporary Workaround:**
+
 1. Manually create `ServiceAvailabilityConfig` records in the database for existing providers:
+
 ```sql
 INSERT INTO "ServiceAvailabilityConfig" (id, "serviceId", "providerId", duration, price, "isOnlineAvailable", "isInPerson", "createdAt", "updatedAt")
-SELECT 
+SELECT
   gen_random_uuid(),
   s.id,
   'cmdjut9zi0001ja6jhqh3ezd4',
@@ -174,6 +190,7 @@ WHERE ps."B" = 'cmdjut9zi0001ja6jhqh3ezd4';
 7. ✅ No regression in existing provider registration functionality
 
 **Acceptance Criteria:**
+
 - Database verification shows `ServiceAvailabilityConfig` records for newly registered providers
 - Provider profile pages show correct custom pricing/duration
 - Edit services page loads without errors and allows configuration changes
@@ -186,7 +203,8 @@ WHERE ps."B" = 'cmdjut9zi0001ja6jhqh3ezd4';
 **Estimated Effort:** Medium (2-3 developer days)  
 **Dependencies:** None  
 **Related Files:**
+
 - `/src/features/providers/lib/actions/register-provider.ts`
-- `/src/features/providers/components/profile/edit-services.tsx`  
+- `/src/features/providers/components/profile/edit-services.tsx`
 - Provider profile display components
 - Provider service hooks and queries

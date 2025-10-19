@@ -14,6 +14,7 @@
 ## Relevant Files
 
 ### New Files to Create (Only 7 files instead of 13)
+
 - `src/app/(general)/calendar/[id]/page.tsx` - Main page component for the booking calendar view
 - `src/features/calendar/components/provider-calendar-slot-view.tsx` - Main calendar component (copy of provider-calendar-view but for slots)
 - `src/features/calendar/hooks/use-provider-slots.ts` - Hook for fetching slot data (simplified version)
@@ -23,6 +24,7 @@
 - `src/features/calendar/types/slot-booking-types.ts` - Minimal type definitions for slot booking
 
 ### Existing Components to Reuse (No modifications needed)
+
 - `src/features/calendar/components/views/day-view.tsx` - Already handles slot display
 - `src/features/calendar/components/views/three-day-view.tsx` - Already handles slot display
 - `src/features/calendar/components/views/week-view.tsx` - Already handles slot display
@@ -33,6 +35,7 @@
 - `src/features/calendar/types/types.ts` - CalendarEvent type already supports slots
 
 ### Files NOT Needed (Removed from original plan)
+
 - ~~`booking-calendar-grid.tsx`~~ - Use existing view components instead
 - ~~`booking-calendar-header.tsx`~~ - Navigation handled in main component like provider-calendar-view
 - ~~`booking-slot-item.tsx`~~ - Existing views already render slots properly
@@ -41,6 +44,7 @@
 - ~~`mobile-slot-list.tsx`~~ - Existing views are already responsive
 
 ### Existing Files to Modify
+
 - `src/server/api/routers/calendar.ts` - Add tRPC procedure for fetching slots by service
 
 ### Notes
@@ -52,6 +56,7 @@
 ## Tasks
 
 ### Phase 1: Cleanup Previous Implementation
+
 - [x] 1.0 Remove unnecessary files from previous complex implementation
   - [x] 1.1 Delete `booking-calendar-grid.tsx`
   - [x] 1.2 Delete `booking-calendar-header.tsx`
@@ -62,6 +67,7 @@
   - [x] 1.7 Delete `provider-slot-view.tsx` (to be replaced)
 
 ### Phase 2: Create Simplified Provider Calendar Slot View
+
 - [x] 2.0 Create `provider-calendar-slot-view.tsx` (based on provider-calendar-view.tsx)
   - [x] 2.1 Copy structure from provider-calendar-view.tsx as starting point
   - [x] 2.2 Replace availability data fetching with slot data fetching
@@ -76,6 +82,7 @@
   - [x] 2.11 Add URL state management for date, view, and service parameters
 
 ### Phase 3: Create Data Fetching Hook
+
 - [x] 3.0 Create `use-provider-slots.ts` hook
   - [x] 3.1 Fetch CalculatedAvailabilitySlot data for provider
   - [x] 3.2 Add optional service filter parameter
@@ -86,6 +93,7 @@
   - [x] 3.7 Enforce 3-day advance booking limit
 
 ### Phase 4: Update/Simplify tRPC Procedures
+
 - [x] 4.0 Update calendar router tRPC procedures
   - [x] 4.1 Simplify `getAvailableSlots` to remove complex filtering
   - [x] 4.2 Add service parameter to filter by specific service
@@ -95,6 +103,7 @@
   - [x] 4.6 Include booking information to show slot status
 
 ### Phase 5: Keep Booking-Specific Components
+
 - [x] 5.0 Retain and integrate booking components
   - [x] 5.1 Keep `booking-slot-modal.tsx` for booking form
   - [x] 5.2 Keep `booking-success-toast.tsx` for success notifications
@@ -103,6 +112,7 @@
   - [x] 5.5 Integrate modal with slot click handler in main component
 
 ### Phase 6: Update Page Component
+
 - [x] 6.0 Update `/app/(general)/calendar/[id]/page.tsx`
   - [x] 6.1 Import and use `provider-calendar-slot-view` instead of `provider-slot-view`
   - [x] 6.2 Pass provider ID from route params

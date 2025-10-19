@@ -54,6 +54,7 @@ The task files contain actionable implementation steps, but the source specifica
 ## Task List Maintenance
 
 1. **Update the task list as you work:**
+
    - Mark tasks and subtasks as completed (`[x]`) per the protocol above.
    - Add new tasks as they emerge.
 
@@ -78,6 +79,7 @@ When implementing tasks, follow this Git workflow:
    ```
 
 2. **Regular Development:**
+
    - Make incremental commits as you complete sub-tasks
    - Use descriptive commit messages referencing task numbers
    - Example: `feat(task-1.2): add subscription creation API with polymorphic validation`
@@ -140,6 +142,7 @@ When implementing tasks, follow this Git workflow:
    ```
 
 5. **User Review Process (Only to be done by Developer. Never to be done by AI):**
+
    - User reviews PR on GitHub
    - User merges PR when satisfied
    - User deletes feature branch on GitHub (click "Delete branch" button)
@@ -173,6 +176,7 @@ When implementing tasks, follow this Git workflow:
 When working with task lists, the AI must:
 
 1. **Follow Git Workflow:**
+
    - **FIRST STEP**: Create feature branch before starting ANY work
    - Confirm branch creation and announce current branch to user
    - Make incremental commits after completing each sub-task
@@ -181,6 +185,7 @@ When working with task lists, the AI must:
    - Create detailed PR with proper description and test plan
 
 2. **Task Management:**
+
    - Regularly update the task list file after finishing any significant work
    - Follow the completion protocol:
      - Mark each finished **sub‑task** `[x]`
@@ -189,12 +194,14 @@ When working with task lists, the AI must:
    - Keep "Relevant Files" accurate and up to date
 
 3. **Execution Modes:**
+
    - **Before starting work**: Verify correct branch and announce current working branch
    - Check which sub‑task is next
    - **Default Mode:** After implementing a sub‑task, commit changes, update the file, and then pause for user approval
    - **YOLO Mode:** After implementing a sub‑task, commit changes, update the file, and immediately proceed to the next task without waiting for approval. When ALL tasks are complete, run `npm run build` repeatedly until it passes, then use Playwright MCP browser tools to manually test critical functionality and troubleshoot any issues until functionality is verified, then ASK USER for permission to create PR.
 
 4. **MCP Tool Usage:**
+
    - **PostgreSQL Server** (`mcp__postgres-server__query`): Use for database queries, constraint verification, data integrity checks
    - **Filesystem Server** (`mcp__filesystem-server__*`): Use for file operations when available, preferred over traditional file tools
    - **IDE Integration** (`mcp__ide__*`): Use for getting diagnostics and executing code when available
@@ -204,6 +211,7 @@ When working with task lists, the AI must:
    - **Test Debugging**: Use Playwright MCP tools to interactively debug failing tests, take screenshots, and verify fixes
 
 5. **Interactive Commands Policy:**
+
    - **NEVER** execute commands that require interactive environments (e.g., `npx prisma migrate dev`, `npm init`, interactive prompts)
    - **STOP and ASK** the user to execute these commands manually
    - **Commands to avoid**:
@@ -217,6 +225,7 @@ When working with task lists, the AI must:
      - Use MCP PostgreSQL server for database verification instead of interactive commands
 
 6. **Build and Test Verification:**
+
    - **CRITICAL**: Before creating any PR, ALWAYS run `npm run build` to verify the application compiles successfully
    - **CRITICAL**: After successful build, **MUST USE PLAYWRIGHT MCP SERVER** to verify end-to-end functionality
    - **NEVER use bash `npx playwright test`** - Always use Playwright MCP browser tools

@@ -1023,8 +1023,8 @@ import {
   Booking,
   BookingStatus,
   Organization,
-  SchedulingRule,
   Provider,
+  SchedulingRule,
   User,
   UserRole,
 } from '@prisma/client';

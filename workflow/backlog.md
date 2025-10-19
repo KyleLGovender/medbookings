@@ -1,21 +1,22 @@
 # MedBookings MVP Project Plan
 
-----------------------------------------------------------------------------------------
+---
 
 ## 🚀 Current Sprint (In Progress)
+
 - [ ] Create a view for booking appointments with providers
   - [ ] Display availability slots searchable by service, location, Online, price, etc
   - [ ] Ability to click on a slot and open a booking form
 
-----------------------------------------------------------------------------------------
+---
 
 ## 📋 Ready for Development (Prioritized)
 
-
-----------------------------------------------------------------------------------------
+---
 
 ## 📝 Quick Capture (New Issues)
-- [ ] Implement testing throughout the application. https://github.com/microsoft/playwright-mcp 
+
+- [ ] Implement testing throughout the application. https://github.com/microsoft/playwright-mcp
 - [ ] Populate provider and organization and user email addresses with the associated Google email. Not possible to edit.
 - [ ] Remove Calendar from Menu based on user logged in
 - [ ] Protect Calendar routes based on authentication
@@ -26,11 +27,12 @@
 - [ ] Dashboard navigation when not ADMIN. Can't get a list of providers or see yourself in sidebar menu
 - [ ] Personal Profile should reflect Role
 - [ ] Does Hybrid Billing actually exist?
-- [ ] Provider onboarding default prices... need to make sure the input fields make sense.  Price seems to only accept 5.
+- [ ] Provider onboarding default prices... need to make sure the input fields make sense. Price seems to only accept 5.
 
-----------------------------------------------------------------------------------------
+---
 
 ## ✅ Recently Completed
+
 - [x] **Technical Debt**: Critical cleanup of availability-creation-form.tsx as reference pattern - `src/features/calendar/availability/components/availability-creation-form.tsx:1`
   - **Issue**: The availability-creation-form.tsx component needs comprehensive cleanup to serve as a clean reference pattern before it can be used as a template for standardizing the edit form. Current issues include: potential legacy code, inconsistent patterns, TODO comments (line 237), unused variables, complex state management that may not follow CLAUDE.md patterns, and general code quality issues that make it difficult to maintain and use as a reliable reference.
   - **Impact**: Without a clean reference pattern, attempts to standardize the edit form will propagate existing technical debt and inconsistencies. This prevents the availability forms from serving as reliable patterns for other calendar implementations and makes future development more error-prone.
@@ -58,7 +60,7 @@
   - **Implementation**:
     1. **PREREQUISITE**: Complete cleanup of availability-creation-form.tsx first to ensure clean reference pattern
     2. **Pattern Analysis**: Study the cleaned creation form structure and identify all sections and patterns
-    3. **Add Missing Sections**: 
+    3. **Add Missing Sections**:
        - Profile selection section (creator type, provider selection) - adapted for edit mode
        - Recurrence settings section with custom recurrence modal support
        - Location section with online/physical location management
@@ -81,33 +83,34 @@
 - [x] Firecrawl
 - [x] provider-service-default-values-not-persisted-during-registration
 
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
+---
+
+---
+
+---
+
+---
+
+---
 
 ## 🌟 Issues and Bugs Backlog
 
-----------------------------------------------------------------------------------------
+---
 
 ## 🔥 High Priority Issues & Tasks
 
-----------------------------------------------------------------------------------------
+---
 
 ## 📊 Medium Priority Issues & Tasks
 
-
-  
-----------------------------------------------------------------------------------------
-
+---
 
 ## 🧹 Low Priority Issues & Tasks
 
-
-----------------------------------------------------------------------------------------
+---
 
 ## 📊 Project Health
+
 - **Total Active Issues**: 10
 - **High Priority**: 1
 - **Medium Priority**: 6
@@ -117,31 +120,40 @@
 - **Recently Completed**: 14
 - **Last Updated**: 2025-01-21
 
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
+---
+
+---
+
+---
+
+---
+
+---
 
 # 📋 MVP Roadmap
 
-----------------------------------------------------------------------------------------
+---
 
 ## 🎯 MVP Phase 1: Core Platform (Must-Have for Launch)
 
 ### Foundation (Get System Working)
+
 - [x] Fix all build errors and get system building cleanly
 - [x] Remove/clean up non-MVP code to focus on core functionality
 - [ ] Implement user roles system (guest, user, provider, organization manager, admin)
 
 ### Provider Management (Core)
-*Goal: A user can register as a provider and be approved by ADMIN*
+
+_Goal: A user can register as a provider and be approved by ADMIN_
+
 - [x] Provider registration flow exists
 - [x] Provider profile editing works
 - [x] Provider specialization and services selection works
 
 ### Organization Management (Core)
-*Goal: A user can register an organization, be approved by ADMIN, and invite providers*
+
+_Goal: A user can register an organization, be approved by ADMIN, and invite providers_
+
 - [x] Organization creation interface exists
 - [x] Organization profile management works
 - [x] Design organization approval workflow for admins
@@ -150,58 +162,65 @@
 - [ ] Define and implement organization roles (owner, manager, member, etc.)
 
 ### Admin Dashboard (Core)
-*Goal: Admin can approve providers and organizations*
+
+_Goal: Admin can approve providers and organizations_
+
 - [x] Create admin dashboard interface
 - [x] Implement provider approval management (approve/reject providers)
 - [x] Implement organization approval management (approve/reject organizations)
 - [ ] Basic user management functionality
 
-----------------------------------------------------------------------------------------
+---
 
 ## 🚀 MVP Phase 2: Booking System (Core Business Value)
 
 ### Availability Management
+
 - [ ] Design provider calendar view
 - [ ] Enable provider to create and edit availability
-    - [ ] Implement ability to select which provider it is and sync with URL params
-    - [ ] Day, 3 Day, Week and Monthly Views
-    - [ ] Well defined availability creation form
-    - [ ] Availability Edit form
-    - [ ] Ability to interact with availabilities
-    - [ ] Availability data structure
-        - [ ] Start time and end time
-        - [ ] Service types (with price and duration values)
-        - [ ] Location and/or online options
-        - [ ] Automated confirmation or manual confirmation required
-        - [ ] Billing entity rules (organization vs provider billing)
-    - [ ] Implement recurring availability patterns
-        - [ ] Specify recurrence schedule (weekly, daily, custom)
-        - [ ] Generate individual availability occurrences with availability series ID
-        - [ ] Enable individual availability changes and series management
+  - [ ] Implement ability to select which provider it is and sync with URL params
+  - [ ] Day, 3 Day, Week and Monthly Views
+  - [ ] Well defined availability creation form
+  - [ ] Availability Edit form
+  - [ ] Ability to interact with availabilities
+  - [ ] Availability data structure
+    - [ ] Start time and end time
+    - [ ] Service types (with price and duration values)
+    - [ ] Location and/or online options
+    - [ ] Automated confirmation or manual confirmation required
+    - [ ] Billing entity rules (organization vs provider billing)
+  - [ ] Implement recurring availability patterns
+    - [ ] Specify recurrence schedule (weekly, daily, custom)
+    - [ ] Generate individual availability occurrences with availability series ID
+    - [ ] Enable individual availability changes and series management
 - [ ] Availability slot generation and management
+
   - [ ] Generate availability slots from availability
   - [ ] Manage slot conflicts and overlaps
   - [ ] Handle BOOKED and INVALID slot states
 
 - [ ] Design a user calendar view to see a single providers calendar
-    - [ ] Display availability slots with various statuses
-    - [ ] Ability to change view by selecting service
-    - [ ] URL params to filter the view so that passing a URL can specify which provider for which service and which time frame
+
+  - [ ] Display availability slots with various statuses
+  - [ ] Ability to change view by selecting service
+  - [ ] URL params to filter the view so that passing a URL can specify which provider for which service and which time frame
 
 - [ ] Design organization calendar view based on patterns from provider availability
-    - [ ] View should aggregate overall availability and display per location or online how the overall organization's availability is configured (2 GP's during these hours etc)
-    - [ ] Should be possible for an organization role to click on any provider and see their availability configured with the organization
+  - [ ] View should aggregate overall availability and display per location or online how the overall organization's availability is configured (2 GP's during these hours etc)
+  - [ ] Should be possible for an organization role to click on any provider and see their availability configured with the organization
 - [ ] Availability proposal form and workflow for organization and provider to accept availability
-    - [ ] Either side can propose availability 
-    - [ ] Either side can edit a proposal and send it back
-    - [ ] If an availability is accepted by the other side it becomes ACCEPTED and thus active
+
+  - [ ] Either side can propose availability
+  - [ ] Either side can edit a proposal and send it back
+  - [ ] If an availability is accepted by the other side it becomes ACCEPTED and thus active
 
 - [ ] Design a user calendar view to see an organization's calendar
-    - [ ] Display availability slots with various statuses
-    - [ ] Ability to change view by selecting service or provider
-    - [ ] URL params to filter the view so that passing a URL can specify which organization and which provider for which service and which time frame
+  - [ ] Display availability slots with various statuses
+  - [ ] Ability to change view by selecting service or provider
+  - [ ] URL params to filter the view so that passing a URL can specify which organization and which provider for which service and which time frame
 
 ### Booking System
+
 - [ ] Create booking slot generation based on availability
 - [ ] Implement booking creation workflow for guests/users
 - [ ] Build booking confirmation and notification system
@@ -211,17 +230,19 @@
 - [ ] Build booking history views
 
 ### Basic Communications
+
 - [ ] Set up email service integration
 - [ ] Create email templates for registration, verification
 - [ ] Implement booking confirmation emails
 - [ ] Build reminder notification system
 - [ ] Create cancellation and modification communications
 
-----------------------------------------------------------------------------------------
+---
 
 ## 🌟 MVP Phase 3: Enhanced Features & Integrations
 
 ### Calendar Integration
+
 - [ ] Research and implement Google Calendar API integration
 - [ ] Build OAuth flow for Google Calendar authorization
 - [ ] Implement bidirectional sync for provider availability
@@ -231,6 +252,7 @@
 - [ ] Design fallback mechanisms for sync failures
 
 ### Enhanced Provider Features
+
 - [ ] Implement Google Calendar connection during provider registration
 - [ ] Add Google Meet integration for virtual appointments
 - [ ] Set up email sync permissions for notifications
@@ -238,11 +260,13 @@
 - [ ] Add profile image upload capability (with option to use Google profile image)
 
 ### Enhanced Organization Features
+
 - [ ] Implement organization public profile for guests/users to view
 - [ ] Create organization search and filtering
 - [ ] Implement location search with geolocation support
 
 ### Multi-provider Views & Management
+
 - [ ] Design organization diary views showing multiple providers
 - [ ] Implement filtering by provider type/specialization
 - [ ] Build time-slot allocation across providers
@@ -250,14 +274,16 @@
 - [ ] Implement team availability visualization
 
 ### Enhanced Communications
+
 - [ ] Implement organization invitation emails
 - [ ] Design HTML email templates with branding
 
-----------------------------------------------------------------------------------------
+---
 
 ## 🚀 MVP Phase 4: Advanced Features & Scalability
 
 ### WhatsApp Communications
+
 - [ ] Research and implement WhatsApp Business API integration
 - [ ] Set up WhatsApp templates for booking confirmations
 - [ ] Create WhatsApp reminder notification system
@@ -267,16 +293,19 @@
 - [ ] Create WhatsApp template approval workflow
 
 ### Advanced Admin Features
+
 - [ ] Design system-wide analytics and reporting
 - [ ] Create configuration settings interface
 
 ### Enhanced Platform Features
+
 - [ ] Change the database structure of provider type to include an icon. Drive all provider type fields such as landing page search from database. Make it so that it displays the top provider types by availability. All provider types throughout app will be driven from database.
 - [ ] Implement ability for a provider to configure their min availability slot and all availability slots must be multiples of this min availability slot. Enable the ability to manage multiple services in a single calendar.
 
 ## 🛠️ Technical Foundation & Operations
 
 ### Infrastructure & DevOps
+
 - [ ] Set up project repository and CI/CD pipeline
 - [ ] Configure database schema and migrations
 - [ ] Implement role-based access control system
@@ -287,6 +316,7 @@
 - [ ] Design global state management solution
 
 ### Testing & Quality Assurance
+
 - [ ] Write unit tests for critical components
 - [ ] Implement integration tests for main workflows
 - [ ] Create end-to-end tests for key user journeys
@@ -294,6 +324,7 @@
 - [ ] Conduct performance testing and optimization
 
 ### Deployment & Operations
+
 - [ ] Configure staging environment
 - [ ] Set up production environment
 - [ ] Implement database backup strategy
@@ -302,16 +333,18 @@
 - [ ] Implement SSL/TLS security
 
 ### Documentation & Support
+
 - [ ] Create user documentation and help guides
 - [ ] Write technical documentation for developers
 - [ ] Build API documentation for integrations
 - [ ] Create onboarding guides for different user types
 
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
+---
 
+---
 
+---
 
+---
+
+---

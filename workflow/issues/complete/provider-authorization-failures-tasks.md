@@ -26,6 +26,7 @@ This document addresses critical authorization failures throughout the calendar 
 ## Tasks
 
 - [x] 1.0 🔴 **CRITICAL**: Fix Authorization Pattern in Calendar Actions
+
   - [x] 1.1 Fix `createAvailability` authorization check at line 54 in `src/features/calendar/lib/actions.ts`
   - [x] 1.2 Add Provider lookup query: `await prisma.provider.findUnique({ where: { userId: currentUser.id } })`
   - [x] 1.3 Update authorization check to compare Provider IDs: `currentUserProvider?.id === validatedData.providerId`
@@ -40,6 +41,7 @@ This document addresses critical authorization failures throughout the calendar 
   - [ ] 1.12 Test organization admins can still manage provider availability within their organization
 
 - [x] 2.0 🔴 **CRITICAL**: Fix Authorization Pattern in Workflow Service
+
   - [x] 2.1 Fix authorization check at line 54 in `src/features/calendar/lib/workflow-service.ts`
   - [x] 2.2 Fix authorization check at line 178 in `src/features/calendar/lib/workflow-service.ts`
   - [x] 2.3 Fix authorization check at line 280 in `src/features/calendar/lib/workflow-service.ts`
@@ -64,6 +66,7 @@ This document addresses critical authorization failures throughout the calendar 
 ## Acceptance Criteria
 
 ### Task 1.0 Completion Criteria
+
 - [ ] All calendar action functions use correct Provider ID comparisons
 - [ ] Provider lookup queries are consolidated to avoid duplicates
 - [ ] Providers can successfully manage their own availability records
@@ -72,6 +75,7 @@ This document addresses critical authorization failures throughout the calendar 
 - [ ] Proper error messages for users without Provider records
 
 ### Task 2.0 Completion Criteria
+
 - [ ] All workflow service functions use correct Provider ID comparisons
 - [ ] Providers can accept/reject availability proposals directed to them
 - [ ] Organization workflow operations continue to function
@@ -79,6 +83,7 @@ This document addresses critical authorization failures throughout the calendar 
 - [ ] Error handling covers all edge cases
 
 ### Task 3.0 Completion Criteria
+
 - [ ] All field name references use consistent `providerId` naming
 - [ ] Search functionality works correctly with updated field names
 - [ ] No regression in existing search capabilities

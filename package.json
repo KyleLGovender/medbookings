@@ -7,7 +7,7 @@
     "build": "npx prisma generate && next build",
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
-    "format": "prettier --write .",
+    "format": "prettier --write . --ignore-path .prettierignore --ignore-unknown",
     "fix": "npm run format && npm run lint",
     "postinstall": "npx prisma generate",
     "verceldb:migrate": "dotenv -e .env.vercel.production.local -- npx prisma migrate deploy",

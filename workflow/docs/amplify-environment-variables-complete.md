@@ -20,7 +20,7 @@ AUTH_SECRET=<GENERATE_WITH_openssl_rand_-base64_32>
 DATABASE_URL=postgresql://medbookings_admin:ptzvm0CML6a44DL1WhfGLQkQJPNFYGje@medbookingsinfrastack-production-databaseb269d8bb-gexaxiwsid6a.c9ccmo2uic7g.eu-west-1.rds.amazonaws.com:5432/medbookings?sslmode=require
 
 # 4. AWS S3 Storage
-AWS_S3_BUCKET_NAME=medbookings-uploads-production
+S3_BUCKET_NAME=medbookings-uploads-production
 AWS_REGION=eu-west-1
 # Note: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are NOT needed - IAM role provides credentials
 
@@ -124,7 +124,7 @@ RUN_SEED=true
 NEXTAUTH_URL=https://staging.medbookings.co.za
 AUTH_SECRET=<GENERATE_DIFFERENT_SECRET>
 DATABASE_URL=postgresql://medbookings_admin:<STAGING_PASSWORD>@medbookingsinfrastack-staging-databaseb269d8bb-ynmq3xvpnv25.c9ccmo2uic7g.eu-west-1.rds.amazonaws.com:5432/medbookings?sslmode=require
-AWS_S3_BUCKET_NAME=medbookings-uploads-staging
+S3_BUCKET_NAME=medbookings-uploads-staging
 ```
 
 **All other variables** (Google OAuth, Twilio, SendGrid, etc.) can remain the same as production.
@@ -149,7 +149,7 @@ aws secretsmanager get-secret-value \
 | `NEXTAUTH_URL`                    | ✅ Yes       | Production URL    | Staging URL      | Environment-specific      |
 | `AUTH_SECRET`                     | ✅ Yes       | Unique secret     | Different secret | Generate with openssl     |
 | `DATABASE_URL`                    | ✅ Yes       | Production DB     | Staging DB       | From Secrets Manager      |
-| `AWS_S3_BUCKET_NAME`              | ✅ Yes       | Production bucket | Staging bucket   | From CDK outputs          |
+| `S3_BUCKET_NAME`                  | ✅ Yes       | Production bucket | Staging bucket   | From CDK outputs          |
 | `AWS_REGION`                      | ✅ Yes       | `eu-west-1`       | `eu-west-1`      | Same for both             |
 | `GOOGLE_CLIENT_ID`                | ✅ Yes       | Shared            | Shared           | Same OAuth app            |
 | `GOOGLE_CLIENT_SECRET`            | ✅ Yes       | Shared            | Shared           | Same OAuth app            |
@@ -302,7 +302,7 @@ After adding all environment variables:
 - [ ] `DATABASE_URL` includes `?sslmode=require` at the end
 - [ ] `NEXTAUTH_URL` matches your domain (no trailing slash)
 - [ ] `AUTH_SECRET` is a random 32+ character string (unique per environment)
-- [ ] `AWS_S3_BUCKET_NAME` matches your environment (staging/production)
+- [ ] `S3_BUCKET_NAME` matches your environment (staging/production)
 - [ ] `AWS_REGION` is set to `eu-west-1`
 - [ ] NO `AWS_ACCESS_KEY_ID` or `AWS_SECRET_ACCESS_KEY` added (IAM role provides them)
 - [ ] `NEXT_PUBLIC_*` variables included (client-side)

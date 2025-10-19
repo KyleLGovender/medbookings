@@ -11,9 +11,10 @@ npm install @trpc/server @trpc/client @trpc/react-query @trpc/next superjson
 ### 2. Create Base Infrastructure
 
 #### A. Create tRPC Context and Instance
+
 ```typescript
 // src/server/trpc.ts
-import { initTRPC, TRPCError } from '@trpc/server';
+import { TRPCError, initTRPC } from '@trpc/server';
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { type Session } from 'next-auth';
 import superjson from 'superjson';
@@ -51,8 +52,7 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
       ...shape,
       data: {
         ...shape.data,
-        zodError:
-          error.cause instanceof ZodError ? error.cause.flatten() : null,
+        zodError: error.cause instanceof ZodError ? error.cause.flatten() : null,
       },
     };
   },
@@ -82,9 +82,9 @@ const enforceUserHasRole = (allowedRoles: string[]) => {
 
     const user = ctx.session.user as any;
     if (!allowedRoles.includes(user.role)) {
-      throw new TRPCError({ 
+      throw new TRPCError({
         code: 'FORBIDDEN',
-        message: 'You do not have permission to perform this action'
+        message: 'You do not have permission to perform this action',
       });
     }
 
@@ -103,10 +103,12 @@ export const superAdminProcedure = t.procedure.use(enforceUserHasRole(['SUPER_AD
 ```
 
 #### B. Create App Router Handler
+
 ```typescript
 // src/app/api/trpc/[trpc]/route.ts
-import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { type NextRequest } from 'next/server';
+
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 
 import { env } from '@/env';
 import { appRouter } from '@/server/api/root';
@@ -121,9 +123,7 @@ const handler = (req: NextRequest) =>
     onError:
       env.NODE_ENV === 'development'
         ? ({ path, error }) => {
-            console.error(
-              `❌ tRPC failed on ${path ?? '<no-path>'}: ${error.message}`
-            );
+            console.error(`❌ tRPC failed on ${path ?? '<no-path>'}: ${error.message}`);
           }
         : undefined,
   });
@@ -132,6 +132,7 @@ export { handler as GET, handler as POST };
 ```
 
 #### C. Create Root Router
+
 ```typescript
 // src/server/api/root.ts
 import { createTRPCRouter } from '@/server/trpc';
@@ -159,6 +160,7 @@ export type AppRouter = typeof appRouter;
 ```
 
 #### D. Create tRPC Client
+
 ```typescript
 // src/utils/api.ts
 import { httpBatchLink, loggerLink } from '@trpc/client';
@@ -198,6 +200,7 @@ export type RouterOutputs = inferRouterOutputs<AppRouter>;
 ```
 
 #### E. Update Providers
+
 ```typescript
 // src/components/providers.tsx
 'use client';
@@ -233,6 +236,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 ### 3. Migration Patterns
 
 #### Pattern 1: Simple GET Endpoint
+
 ```typescript
 // Before: /api/providers/provider-types/route.ts
 export async function GET() {
@@ -271,63 +275,65 @@ export function useProviderTypes() {
 ```
 
 #### Pattern 2: Mutation with Validation
+
 ```typescript
+// After: /server/api/routers/providers.ts
+import { registerProvider } from '@/features/providers/lib/actions/register-provider';
+import { providerFormSchema } from '@/features/providers/types/schemas';
+
 // Before: /api/providers/route.ts
 export async function POST(request: NextRequest) {
   const session = await getServerSession();
   if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  
+
   const data = await request.json();
   // Manual validation...
-  
+
   const result = await registerProvider({}, formData);
   return NextResponse.json(result);
 }
 
-// After: /server/api/routers/providers.ts
-import { providerFormSchema } from '@/features/providers/types/schemas';
-import { registerProvider } from '@/features/providers/lib/actions/register-provider';
-
 export const providersRouter = createTRPCRouter({
-  register: protectedProcedure
-    .input(providerFormSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Convert input to FormData for existing action
-      const formData = new FormData();
-      formData.append('userId', ctx.session.user.id);
-      formData.append('name', input.basicInfo.name);
-      // ... map other fields
-      
-      const result = await registerProvider({}, formData);
-      
-      if (!result.success) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: result.error || 'Failed to register provider',
-        });
-      }
-      
-      return result;
-    }),
+  register: protectedProcedure.input(providerFormSchema).mutation(async ({ ctx, input }) => {
+    // Convert input to FormData for existing action
+    const formData = new FormData();
+    formData.append('userId', ctx.session.user.id);
+    formData.append('name', input.basicInfo.name);
+    // ... map other fields
+
+    const result = await registerProvider({}, formData);
+
+    if (!result.success) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: result.error || 'Failed to register provider',
+      });
+    }
+
+    return result;
+  }),
 });
 ```
 
 #### Pattern 3: Admin Endpoints with Complex Logic
+
 ```typescript
 // /server/api/routers/admin.ts
 export const adminRouter = createTRPCRouter({
   providers: createTRPCRouter({
     list: adminProcedure
-      .input(z.object({
-        status: z.enum(['PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED']).optional(),
-        page: z.number().default(1),
-        limit: z.number().default(20),
-      }))
+      .input(
+        z.object({
+          status: z.enum(['PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED']).optional(),
+          page: z.number().default(1),
+          limit: z.number().default(20),
+        })
+      )
       .query(async ({ ctx, input }) => {
         const where = input.status ? { status: input.status } : {};
-        
+
         const [providers, total] = await ctx.prisma.$transaction([
           ctx.prisma.provider.findMany({
             where,
@@ -346,7 +352,7 @@ export const adminRouter = createTRPCRouter({
           }),
           ctx.prisma.provider.count({ where }),
         ]);
-        
+
         return {
           providers,
           pagination: {
@@ -357,29 +363,31 @@ export const adminRouter = createTRPCRouter({
           },
         };
       }),
-    
+
     approve: adminProcedure
-      .input(z.object({
-        providerId: z.string(),
-        adminNotes: z.string().optional(),
-      }))
+      .input(
+        z.object({
+          providerId: z.string(),
+          adminNotes: z.string().optional(),
+        })
+      )
       .mutation(async ({ ctx, input }) => {
         // Import existing approval action
         const { approveProvider } = await import('@/features/admin/lib/approval-actions');
-        
+
         const result = await approveProvider({
           providerId: input.providerId,
           adminUserId: ctx.session.user.id,
           adminNotes: input.adminNotes,
         });
-        
+
         if (!result.success) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: result.error || 'Failed to approve provider',
           });
         }
-        
+
         return result;
       }),
   }),
@@ -387,15 +395,18 @@ export const adminRouter = createTRPCRouter({
 ```
 
 #### Pattern 4: File Upload (Keep as REST)
+
 ```typescript
 // Keep /api/upload/route.ts as is
 // Add a helper procedure for generating upload URLs if needed
 export const uploadRouter = createTRPCRouter({
   getUploadUrl: protectedProcedure
-    .input(z.object({
-      fileName: z.string(),
-      fileType: z.string(),
-    }))
+    .input(
+      z.object({
+        fileName: z.string(),
+        fileType: z.string(),
+      })
+    )
     .mutation(async ({ input }) => {
       // Generate presigned URL or upload token
       return {
@@ -409,6 +420,7 @@ export const uploadRouter = createTRPCRouter({
 ### 4. Hook Migration Examples
 
 #### Query Hook
+
 ```typescript
 // Before
 export function useProvider(providerId: string | undefined) {
@@ -434,11 +446,12 @@ export function useProvider(providerId: string | undefined) {
 ```
 
 #### Mutation Hook
+
 ```typescript
 // Before
 export function useUpdateProvider() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
       const response = await fetch(`/api/providers/${id}`, {
@@ -458,7 +471,7 @@ export function useUpdateProvider() {
 // After
 export function useUpdateProvider() {
   const utils = api.useContext();
-  
+
   return api.providers.update.useMutation({
     onSuccess: () => {
       utils.providers.get.invalidate();
@@ -471,30 +484,31 @@ export function useUpdateProvider() {
 ### 5. Testing Patterns
 
 #### Unit Testing Procedures
+
 ```typescript
 // src/server/api/routers/__tests__/providers.test.ts
-import { createInnerTRPCContext } from '@/server/trpc';
 import { appRouter } from '@/server/api/root';
+import { createInnerTRPCContext } from '@/server/trpc';
 
 describe('providers router', () => {
   it('should list provider types', async () => {
     const ctx = createInnerTRPCContext({
       session: null,
     });
-    
+
     const caller = appRouter.createCaller(ctx);
     const result = await caller.providers.getProviderTypes();
-    
+
     expect(Array.isArray(result)).toBe(true);
   });
-  
+
   it('should require auth for registration', async () => {
     const ctx = createInnerTRPCContext({
       session: null,
     });
-    
+
     const caller = appRouter.createCaller(ctx);
-    
+
     await expect(
       caller.providers.register({
         // ... input
@@ -507,17 +521,18 @@ describe('providers router', () => {
 ### 6. Common Gotchas and Solutions
 
 #### A. FormData Conversion
+
 ```typescript
 // Helper function for converting tRPC input to FormData
 function inputToFormData(input: any): FormData {
   const formData = new FormData();
-  
+
   function appendToFormData(obj: any, prefix = '') {
     Object.entries(obj).forEach(([key, value]) => {
       const fullKey = prefix ? `${prefix}[${key}]` : key;
-      
+
       if (value === null || value === undefined) return;
-      
+
       if (Array.isArray(value)) {
         value.forEach((item) => formData.append(fullKey, item));
       } else if (typeof value === 'object' && !(value instanceof File)) {
@@ -527,13 +542,14 @@ function inputToFormData(input: any): FormData {
       }
     });
   }
-  
+
   appendToFormData(input);
   return formData;
 }
 ```
 
 #### B. Error Handling
+
 ```typescript
 // Consistent error handling wrapper
 async function handleServerAction<T>(
@@ -541,25 +557,25 @@ async function handleServerAction<T>(
 ): Promise<T> {
   try {
     const result = await action();
-    
+
     if (!result.success) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: result.error || 'Operation failed',
       });
     }
-    
+
     if (!result.data) {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'No data returned',
       });
     }
-    
+
     return result.data;
   } catch (error) {
     if (error instanceof TRPCError) throw error;
-    
+
     console.error('Unexpected error:', error);
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
@@ -572,6 +588,7 @@ async function handleServerAction<T>(
 ### 7. Monitoring and Debugging
 
 #### Enable tRPC Panel in Development
+
 ```typescript
 // src/app/layout.tsx
 import { TRPCPanel } from '@trpc/panel';
@@ -596,6 +613,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 ### 8. Performance Optimization
 
 #### Query Options
+
 ```typescript
 // Optimize query performance
 const { data } = api.providers.list.useQuery(
@@ -609,12 +627,13 @@ const { data } = api.providers.list.useQuery(
 ```
 
 #### Selective Invalidation
+
 ```typescript
 // Invalidate specific queries instead of all
 const utils = api.useContext();
 
 // Instead of: utils.invalidate()
-// Do: 
+// Do:
 utils.providers.get.invalidate({ id: providerId });
 utils.providers.list.invalidate({ status: 'APPROVED' });
 ```
@@ -622,6 +641,7 @@ utils.providers.list.invalidate({ status: 'APPROVED' });
 ### 9. Migration Checklist
 
 For each endpoint:
+
 - [ ] Create tRPC procedure in appropriate router
 - [ ] Add proper input validation using existing Zod schemas
 - [ ] Implement error handling with TRPCError
@@ -634,6 +654,7 @@ For each endpoint:
 ### 10. Rollback Strategy
 
 If issues arise:
+
 1. Keep old API routes until migration is validated
 2. Use feature flags to switch between old/new:
    ```typescript
@@ -644,7 +665,7 @@ If issues arise:
      // Old implementation
      return useQuery({
        queryKey: ['providers'],
-       queryFn: () => fetch('/api/providers').then(res => res.json()),
+       queryFn: () => fetch('/api/providers').then((res) => res.json()),
      });
    }
    ```

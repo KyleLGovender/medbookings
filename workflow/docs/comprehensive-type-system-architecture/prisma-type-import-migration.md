@@ -12,6 +12,7 @@ This document provides a comprehensive audit of all manual type files in the Med
 ### Total Manual Type Files Audited: 29
 
 **Files by Feature:**
+
 - Admin: 3 files (types.ts, schemas.ts, guards.ts)
 - Billing: 5 files (interfaces.ts, enums.ts, types.ts, schemas.ts, guards.ts)
 - Calendar: 3 files (types.ts, schemas.ts, guards.ts)
@@ -32,7 +33,7 @@ enum UserRole {
 }
 
 enum ProviderStatus {
-  PENDING_APPROVAL, REJECTED, APPROVED, TRIAL, TRIAL_EXPIRED, 
+  PENDING_APPROVAL, REJECTED, APPROVED, TRIAL, TRIAL_EXPIRED,
   ACTIVE, PAYMENT_OVERDUE, SUSPENDED, CANCELLED
 }
 
@@ -88,7 +89,7 @@ enum SchedulingRule {
 }
 
 enum SlotStatus {
-  AVAILABLE, BOOKED, BLOCKED, INVALID  
+  AVAILABLE, BOOKED, BLOCKED, INVALID
 }
 
 enum BookingStatus {
@@ -115,8 +116,9 @@ enum ReviewStatus {
 **Status**: Contains duplicate enums that need migration
 
 **Duplicate Enums Found**:
+
 1. `AdminApprovalStatus` → Should use `ProviderStatus` and `OrganizationStatus` from Prisma
-2. `AdminProviderStatus` → Exact duplicate of `ProviderStatus` from Prisma  
+2. `AdminProviderStatus` → Exact duplicate of `ProviderStatus` from Prisma
 3. `AdminOrganizationStatus` → Exact duplicate of `OrganizationStatus` from Prisma
 4. `RequirementValidationStatus` → Exact duplicate of `RequirementsValidationStatus` from Prisma
 
@@ -126,12 +128,14 @@ enum ReviewStatus {
 ### ✅ Billing Types
 
 **Files Analyzed**:
+
 - `/src/features/billing/types/enums.ts` - Empty file (1 line only)
 - `/src/features/billing/types/types.ts` - Contains inline enum values as string literals
 
 **Status**: Uses string literals instead of enums - needs migration
 
 **String Literal Patterns Found**:
+
 - Subscription status: `'ACTIVE' | 'CANCELLED' | 'PAST_DUE' | 'UNPAID' | 'INCOMPLETE' | 'INCOMPLETE_EXPIRED' | 'TRIALING' | 'PAUSED'`
 - Payment status: `'PENDING' | 'PROCESSING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED' | 'REFUNDED'`
 - Billing intervals and other enums used as string literals
@@ -144,12 +148,14 @@ enum ReviewStatus {
 **Status**: Partially compliant - imports some Prisma enums but has duplicates
 
 **Already Importing from Prisma**:
+
 - `AvailabilityStatus`
 - `BillingEntity`
 - `SchedulingRule`
 - `SlotStatus`
 
 **Duplicate Enums Found**:
+
 1. `RecurrenceOption` - UI-only enum (KEEP)
 2. `DayOfWeek` - Custom implementation with numeric values (KEEP - different from potential Prisma version)
 3. `AvailabilityContext` - UI-only enum (KEEP)
@@ -161,6 +167,7 @@ enum ReviewStatus {
 ### ✅ Communications Types
 
 **Files Analyzed**:
+
 - `/src/features/communications/types/enums.ts` - Empty file (1 line only)
 - `/src/features/communications/types/types.ts` - Empty/placeholder
 
@@ -174,8 +181,9 @@ enum ReviewStatus {
 **Status**: Contains duplicate enums that need migration
 
 **Duplicate Enums Found**:
+
 1. `InvitationStatus` const object → Should use `InvitationStatus` from Prisma
-2. `ProviderInvitationStatus` const object → Should use `ProviderInvitationStatus` from Prisma  
+2. `ProviderInvitationStatus` const object → Should use `ProviderInvitationStatus` from Prisma
 3. `OrganizationRole` const object → Should use `OrganizationRole` from Prisma
 4. `OrganizationPermission` const object → Should use `OrganizationPermission` from Prisma
 
@@ -207,6 +215,7 @@ No enums defined, only form and UI state interfaces.
 **Status**: Clean - No duplicate enums (already compliant)
 
 The file contains extensive comments about importing Prisma enums directly:
+
 ```typescript
 // The following enums are defined in Prisma schema and should be imported
 // directly from '@prisma/client' where needed:
@@ -229,31 +238,35 @@ The file contains extensive comments about importing Prisma enums directly:
 
 ## Migration Priority Matrix
 
-| Feature | Files with Duplicates | Priority | Enum Count | Impact |
-|---------|----------------------|----------|------------|---------|
-| Admin | types.ts | HIGH | 4 enums | Core approval workflows |
-| Billing | types.ts | MEDIUM | ~6 string literals | Payment processing |
-| Invitations | types.ts | HIGH | 4 const objects | User onboarding |
-| Calendar | N/A | N/A | Already compliant | ✅ |
-| Organizations | N/A | N/A | Clean | ✅ |
-| Profile | N/A | N/A | Clean | ✅ |
-| Providers | N/A | N/A | Already compliant | ✅ |
-| Reviews | N/A | N/A | Empty | ✅ |
-| Communications | N/A | N/A | Empty | ✅ |
+| Feature        | Files with Duplicates | Priority | Enum Count         | Impact                  |
+| -------------- | --------------------- | -------- | ------------------ | ----------------------- |
+| Admin          | types.ts              | HIGH     | 4 enums            | Core approval workflows |
+| Billing        | types.ts              | MEDIUM   | ~6 string literals | Payment processing      |
+| Invitations    | types.ts              | HIGH     | 4 const objects    | User onboarding         |
+| Calendar       | N/A                   | N/A      | Already compliant  | ✅                      |
+| Organizations  | N/A                   | N/A      | Clean              | ✅                      |
+| Profile        | N/A                   | N/A      | Clean              | ✅                      |
+| Providers      | N/A                   | N/A      | Already compliant  | ✅                      |
+| Reviews        | N/A                   | N/A      | Empty              | ✅                      |
+| Communications | N/A                   | N/A      | Empty              | ✅                      |
 
 ## Migration Plan
 
 ### Phase 1: High Priority Migrations (Tasks 3.2, 3.6)
 
 #### 3.2 Admin Types Migration
+
 **Remove these duplicate enums**:
+
 - `AdminApprovalStatus` → Use `ProviderStatus | OrganizationStatus`
 - `AdminProviderStatus` → Use `ProviderStatus`
 - `AdminOrganizationStatus` → Use `OrganizationStatus`
 - `RequirementValidationStatus` → Use `RequirementsValidationStatus`
 
-#### 3.6 Invitations Types Migration  
+#### 3.6 Invitations Types Migration
+
 **Remove these const objects**:
+
 - `InvitationStatus` → Use `InvitationStatus` from Prisma
 - `ProviderInvitationStatus` → Use `ProviderInvitationStatus` from Prisma
 - `OrganizationRole` → Use `OrganizationRole` from Prisma
@@ -262,7 +275,9 @@ The file contains extensive comments about importing Prisma enums directly:
 ### Phase 2: Medium Priority Migrations (Task 3.3)
 
 #### 3.3 Billing Types Migration
+
 **Replace string literal unions** with Prisma enum imports:
+
 - `SubscriptionStatus` from Prisma
 - `PaymentStatus` from Prisma
 - Other billing-related enums
@@ -272,6 +287,7 @@ The file contains extensive comments about importing Prisma enums directly:
 The following types should remain as manual definitions because they represent client-side concepts, business logic, or calculations that don't exist in the database:
 
 #### Domain Logic Types
+
 - Form state interfaces (e.g., `ProviderFormState`, `OrganizationFormData`)
 - Calculated types (e.g., `ServiceConfigCalculation`, `AvailabilityStats`)
 - UI state types (e.g., `CalendarViewMode`, `FilterOptions`)
@@ -279,16 +295,19 @@ The following types should remain as manual definitions because they represent c
 - Validation result types (e.g., `ValidationError`, `FormErrors`)
 
 #### Client-Only Enums
+
 - Display modes (e.g., `ViewMode`, `SortOrder`)
 - UI states (e.g., `LoadingState`, `FormStep`)
 - Client-side filters (e.g., `DateRange`, `SearchScope`)
 
 #### Form Schemas (Zod)
+
 - All Zod schemas remain in `schemas.ts` files
 - These define user input validation rules
 - They often compose Prisma enums but add validation logic
 
 #### Type Guards
+
 - All type guard functions remain in `guards.ts` files
 - These provide runtime type checking
 - They often check for Prisma enum values
@@ -296,7 +315,11 @@ The following types should remain as manual definitions because they represent c
 ## Implementation Pattern
 
 ### Before (Manual Duplication)
+
 ```typescript
+// Component usage
+import { ProviderStatus } from '@/features/providers/types/types';
+
 // src/features/providers/types/types.ts
 export enum ProviderStatus {
   PENDING_APPROVAL = 'PENDING_APPROVAL',
@@ -304,12 +327,10 @@ export enum ProviderStatus {
   REJECTED = 'REJECTED',
   SUSPENDED = 'SUSPENDED',
 }
-
-// Component usage
-import { ProviderStatus } from '@/features/providers/types/types';
 ```
 
 ### After (Direct Import)
+
 ```typescript
 // Component or hook usage
 import { ProviderStatus } from '@prisma/client';
@@ -318,46 +339,49 @@ import { ProviderStatus } from '@prisma/client';
 ```
 
 ### Mixed Usage Pattern
+
 ```typescript
 // When you need Prisma types AND domain logic types
-import { 
-  ProviderStatus,
-  RequirementsValidationStatus 
-} from '@prisma/client';
+import { ProviderStatus, RequirementsValidationStatus } from '@prisma/client';
 
-import { 
-  ProviderFormState,  // Keep: Client-only type
-  ServiceConfigCalculation  // Keep: Business logic type
+import {
+  ProviderFormState, // Keep: Client-only type
+  ServiceConfigCalculation, // Keep: Business logic type
 } from '@/features/providers/types/types';
 ```
 
 ## Migration Checklist by Feature
 
 ### Admin Feature (`/src/features/admin/types/`)
+
 - [ ] Remove `AdminApprovalStatus` enum from types.ts
 - [ ] Remove `AdminActionType` enum from types.ts
 - [ ] Update all imports to use `@prisma/client`
 - [ ] Keep form state interfaces and business logic types
 
 ### Billing Feature (`/src/features/billing/types/`)
+
 - [ ] Remove all Prisma enums from types.ts/enums.ts
 - [ ] Update all imports to use `@prisma/client`
 - [ ] Keep pricing calculation types
 - [ ] Keep subscription management interfaces
 
 ### Calendar Feature (`/src/features/calendar/types/`)
+
 - [ ] Remove all availability and booking enums
 - [ ] Update all imports to use `@prisma/client`
 - [ ] Keep calendar view state types
 - [ ] Keep availability calculation types
 
 ### Organizations Feature (`/src/features/organizations/types/`)
+
 - [ ] Remove organization status and role enums
 - [ ] Update all imports to use `@prisma/client`
 - [ ] Keep organization form interfaces
 - [ ] Keep membership management types
 
 ### Providers Feature (`/src/features/providers/types/`)
+
 - [ ] Remove provider status and requirement enums
 - [ ] Update all imports to use `@prisma/client`
 - [ ] Keep provider form state types
@@ -374,19 +398,21 @@ import {
 ## Common Patterns
 
 ### Importing Multiple Enums
+
 ```typescript
-import { 
+import {
+  Languages,
   ProviderStatus,
-  RequirementsValidationStatus,
   RequirementValidationType,
-  Languages 
+  RequirementsValidationStatus,
 } from '@prisma/client';
 ```
 
 ### Using in Zod Schemas
+
 ```typescript
-import { z } from 'zod';
 import { ProviderStatus } from '@prisma/client';
+import { z } from 'zod';
 
 const providerSchema = z.object({
   status: z.nativeEnum(ProviderStatus),
@@ -395,6 +421,7 @@ const providerSchema = z.object({
 ```
 
 ### Using in Type Guards
+
 ```typescript
 import { ProviderStatus } from '@prisma/client';
 
@@ -412,6 +439,7 @@ export function isPendingProvider(status: unknown): status is ProviderStatus {
 ## Validation Steps
 
 After migration, ensure:
+
 1. TypeScript compilation succeeds with no errors
 2. All enum values match database schema exactly
 3. No duplicate enum definitions remain

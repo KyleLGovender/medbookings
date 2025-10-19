@@ -107,7 +107,6 @@ Each `schemas.ts` file contains Zod validation schemas:
 // [FEATURE NAME] FEATURE SCHEMAS
 // =============================================================================
 // Zod validation schemas for runtime validation
-
 import { z } from 'zod';
 
 // Base schemas
@@ -146,6 +145,7 @@ export function isValidExample(value: unknown): value is Example {
 ## Naming Conventions
 
 ### 1. File Names
+
 - ✅ `types.ts` - Main type definitions
 - ✅ `schemas.ts` - Zod validation schemas
 - ✅ `guards.ts` - Runtime type guards
@@ -155,6 +155,7 @@ export function isValidExample(value: unknown): value is Example {
 ### 2. Type Names
 
 #### Enums
+
 ```typescript
 export enum ExampleStatus {
   ACTIVE = 'ACTIVE',
@@ -163,6 +164,7 @@ export enum ExampleStatus {
 ```
 
 #### Interfaces
+
 ```typescript
 export interface ExampleData {
   id: string;
@@ -171,6 +173,7 @@ export interface ExampleData {
 ```
 
 #### Prisma-Derived Types
+
 ```typescript
 // For detailed views with comprehensive relations
 export type ExampleDetailSelect = Prisma.ExampleGetPayload<{...}>;
@@ -185,18 +188,19 @@ export type ExampleBasicSelect = Prisma.ExampleGetPayload<{...}>;
 ## Import Standards
 
 ### ✅ Correct Imports
+
 ```typescript
 // Direct imports from specific type files
-import { ExampleData } from '@/features/example/types/types';
-import { ExampleSchema } from '@/features/example/types/schemas';
 import { isValidExample } from '@/features/example/types/guards';
-
+import { ExampleSchema } from '@/features/example/types/schemas';
+import { ExampleData } from '@/features/example/types/types';
 // Global types
 import { ApiResponse } from '@/types/api';
 import { isValidUUID } from '@/types/guards';
 ```
 
 ### ❌ Incorrect Imports
+
 ```typescript
 // Barrel exports - NOT ALLOWED
 import { ExampleData } from '@/features/example/types';
@@ -209,16 +213,19 @@ import { ExampleData } from '@/features/example';
 ## Linting Rules
 
 ### 1. No Barrel Exports
+
 - **Rule**: Prevent `export *` from type directories
 - **Enforcement**: ESLint `no-restricted-syntax`
 - **Message**: "Barrel exports are not allowed in type files. Use direct imports instead."
 
 ### 2. File Naming Conventions
+
 - **Rule**: Type files must be named `types.ts`, `schemas.ts`, or `guards.ts`
 - **Enforcement**: ESLint `check-file/filename-blocklist`
 - **Message**: "Type barrel files (index.ts) are not allowed. Use direct file names instead."
 
 ### 3. JSDoc Requirements
+
 - **Rule**: Complex types (5+ properties) must have JSDoc documentation
 - **Level**: Warning
 - **Requirements**:
@@ -227,11 +234,13 @@ import { ExampleData } from '@/features/example';
   - `@example` block for complex types
 
 ### 4. Prisma Type Patterns
+
 - **Rule**: Use consistent naming for Prisma-derived types
 - **Pattern**: `ModelNameDetailSelect`, `ModelNameListSelect`, `ModelNameBasicSelect`
 - **Enforcement**: Pattern matching in ESLint rules
 
 ### 5. Import Path Validation
+
 - **Rule**: Enforce direct imports from specific type files
 - **Enforcement**: Custom ESLint rules
 - **Error**: Suggest correct import path when barrel imports are detected
@@ -239,28 +248,30 @@ import { ExampleData } from '@/features/example';
 ## Documentation Standards
 
 ### 1. File-Level Documentation
+
 ```typescript
 /**
  * @fileoverview Comprehensive type definitions for the [feature] feature.
- * 
+ *
  * This module contains all type definitions related to [feature] including:
  * - [List of main type categories]
  * - [Integration points]
  * - [Special considerations]
- * 
+ *
  * @author MedBookings Development Team
  * @version 1.0.0
  */
 ```
 
 ### 2. Complex Type Documentation
-```typescript
+
+````typescript
 /**
  * Represents [description of the type's purpose].
  * [Additional context about usage and behavior]
- * 
+ *
  * @interface TypeName
- * 
+ *
  * @example
  * ```typescript
  * const example: TypeName = {
@@ -272,13 +283,14 @@ export interface TypeName {
   /** Property documentation */
   property: string;
 }
-```
+````
 
 ### 3. Enum Documentation
+
 ```typescript
 /**
  * Enum representing [purpose] with [context].
- * 
+ *
  * @enum {string}
  */
 export enum ExampleStatus {
@@ -292,24 +304,28 @@ export enum ExampleStatus {
 ## Best Practices
 
 ### 1. Type Organization
+
 - Group related types together
 - Use consistent section headers
 - Order sections from simple to complex
 - Keep Prisma-derived types at the end
 
 ### 2. Type Naming
+
 - Use descriptive, self-documenting names
 - Follow established patterns consistently
 - Avoid abbreviations unless widely understood
 - Use PascalCase for types and interfaces
 
 ### 3. Import Management
+
 - Import only what you need
 - Use direct imports for better tree-shaking
 - Group imports by category (Prisma, local, external)
 - Keep import statements organized
 
 ### 4. Documentation
+
 - Document the "why" not just the "what"
 - Provide examples for complex types
 - Keep documentation up-to-date with changes
@@ -340,11 +356,13 @@ When updating existing code to follow these standards:
 ### Common Issues
 
 1. **Import Resolution Errors**
+
    - Check that the target file exists
    - Verify the import path is correct
    - Ensure no circular dependencies
 
 2. **Linting Errors**
+
    - Run `npm run lint` to see specific errors
    - Use `npm run lint -- --fix` for auto-fixable issues
    - Check the linting rules documentation

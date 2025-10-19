@@ -7,22 +7,22 @@ async function main() {
 
   // Clear all existing data in correct order (children first, then parents)
   console.log('Clearing existing data...');
-  
+
   // Delete requirement submissions first (they reference RequirementType)
   await prisma.requirementSubmission.deleteMany();
   console.log('Cleared RequirementSubmission table');
-  
+
   // Delete service availability configs (they reference Service)
   await prisma.serviceAvailabilityConfig.deleteMany();
   console.log('Cleared ServiceAvailabilityConfig table');
-  
+
   // Now delete the parent tables
   await prisma.requirementType.deleteMany();
   console.log('Cleared RequirementType table');
-  
+
   await prisma.service.deleteMany();
   console.log('Cleared Service table');
-  
+
   await prisma.providerType.deleteMany();
   console.log('Cleared ProviderType table');
 
@@ -478,7 +478,8 @@ async function main() {
             trueLabel: 'Yes, I am registered as a Dentist',
             falseLabel: 'No, I am not registered',
             defaultValue: null,
-            helpText: 'You must be a registered HPCSA member to practice as a Dentist in South Africa',
+            helpText:
+              'You must be a registered HPCSA member to practice as a Dentist in South Africa',
             validationError:
               'Please confirm your HPCSA registration status. This is a mandatory requirement.',
             placeholder: 'Select your HPCSA registration status',
@@ -490,7 +491,8 @@ async function main() {
       prisma.requirementType.create({
         data: {
           name: 'HPCSA Registration Document - Dentist',
-          description: 'Valid HPCSA registration certificate for practicing as a Dentist in South Africa',
+          description:
+            'Valid HPCSA registration certificate for practicing as a Dentist in South Africa',
           isRequired: true,
           validationType: 'DOCUMENT',
           validationConfig: {
@@ -517,7 +519,8 @@ async function main() {
             trueLabel: 'Yes, I am registered as a Speech Therapist',
             falseLabel: 'No, I am not registered',
             defaultValue: null,
-            helpText: 'You must be a registered HPCSA member to practice as a Speech Therapist in South Africa',
+            helpText:
+              'You must be a registered HPCSA member to practice as a Speech Therapist in South Africa',
             validationError:
               'Please confirm your HPCSA registration status. This is a mandatory requirement.',
             placeholder: 'Select your HPCSA registration status',
@@ -529,7 +532,8 @@ async function main() {
       prisma.requirementType.create({
         data: {
           name: 'HPCSA Registration Document - Speech Therapist',
-          description: 'Valid HPCSA registration certificate for practicing as a Speech Therapist in South Africa',
+          description:
+            'Valid HPCSA registration certificate for practicing as a Speech Therapist in South Africa',
           isRequired: true,
           validationType: 'DOCUMENT',
           validationConfig: {
@@ -556,7 +560,8 @@ async function main() {
             trueLabel: 'Yes, I am registered as a Physiotherapist',
             falseLabel: 'No, I am not registered',
             defaultValue: null,
-            helpText: 'You must be a registered HPCSA member to practice as a Physiotherapist in South Africa',
+            helpText:
+              'You must be a registered HPCSA member to practice as a Physiotherapist in South Africa',
             validationError:
               'Please confirm your HPCSA registration status. This is a mandatory requirement.',
             placeholder: 'Select your HPCSA registration status',
@@ -568,7 +573,8 @@ async function main() {
       prisma.requirementType.create({
         data: {
           name: 'HPCSA Registration Document - Physiotherapist',
-          description: 'Valid HPCSA registration certificate for practicing as a Physiotherapist in South Africa',
+          description:
+            'Valid HPCSA registration certificate for practicing as a Physiotherapist in South Africa',
           isRequired: true,
           validationType: 'DOCUMENT',
           validationConfig: {
@@ -595,7 +601,8 @@ async function main() {
             trueLabel: 'Yes, I am registered as an Occupational Therapist',
             falseLabel: 'No, I am not registered',
             defaultValue: null,
-            helpText: 'You must be a registered HPCSA member to practice as an Occupational Therapist in South Africa',
+            helpText:
+              'You must be a registered HPCSA member to practice as an Occupational Therapist in South Africa',
             validationError:
               'Please confirm your HPCSA registration status. This is a mandatory requirement.',
             placeholder: 'Select your HPCSA registration status',
@@ -607,7 +614,8 @@ async function main() {
       prisma.requirementType.create({
         data: {
           name: 'HPCSA Registration Document - Occupational Therapist',
-          description: 'Valid HPCSA registration certificate for practicing as an Occupational Therapist in South Africa',
+          description:
+            'Valid HPCSA registration certificate for practicing as an Occupational Therapist in South Africa',
           isRequired: true,
           validationType: 'DOCUMENT',
           validationConfig: {
@@ -634,7 +642,8 @@ async function main() {
             trueLabel: 'Yes, I am registered as a Dietitian',
             falseLabel: 'No, I am not registered',
             defaultValue: null,
-            helpText: 'You must be a registered HPCSA member to practice as a Dietitian in South Africa',
+            helpText:
+              'You must be a registered HPCSA member to practice as a Dietitian in South Africa',
             validationError:
               'Please confirm your HPCSA registration status. This is a mandatory requirement.',
             placeholder: 'Select your HPCSA registration status',
@@ -646,7 +655,8 @@ async function main() {
       prisma.requirementType.create({
         data: {
           name: 'HPCSA Registration Document - Dietitian',
-          description: 'Valid HPCSA registration certificate for practicing as a Dietitian in South Africa',
+          description:
+            'Valid HPCSA registration certificate for practicing as a Dietitian in South Africa',
           isRequired: true,
           validationType: 'DOCUMENT',
           validationConfig: {
