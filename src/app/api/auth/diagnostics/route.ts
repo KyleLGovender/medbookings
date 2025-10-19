@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 
-import env from '@/config/env/server';
-
 /**
  * Authentication Diagnostics API Endpoint
  *
  * Access this endpoint to check authentication configuration on any environment.
  * Safe for production - doesn't expose secrets, only checks if they exist.
+ *
+ * Note: This endpoint reads directly from process.env to avoid validation errors
+ * that would crash the endpoint before it can report what's missing.
  *
  * Usage:
  * - Local: http://localhost:3000/api/auth/diagnostics
@@ -15,38 +16,45 @@ import env from '@/config/env/server';
  */
 export async function GET() {
   try {
+    // Read directly from process.env to avoid validation errors
+    const nextAuthUrl = process.env.NEXTAUTH_URL;
+    const authSecret = process.env.AUTH_SECRET;
+    const googleClientId = process.env.GOOGLE_CLIENT_ID;
+    const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const databaseUrl = process.env.DATABASE_URL;
+
     const checks = {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV,
       checks: {
         environmentVariables: {
           NEXTAUTH_URL: {
-            exists: !!env.NEXTAUTH_URL,
-            value: env.NEXTAUTH_URL || 'NOT SET',
-            valid: isValidUrl(env.NEXTAUTH_URL),
+            exists: !!nextAuthUrl,
+            value: nextAuthUrl || 'NOT SET',
+            valid: isValidUrl(nextAuthUrl),
           },
           AUTH_SECRET: {
-            exists: !!env.AUTH_SECRET,
-            length: env.AUTH_SECRET?.length || 0,
-            valid: (env.AUTH_SECRET?.length || 0) >= 32,
+            exists: !!authSecret,
+            length: authSecret?.length || 0,
+            valid: (authSecret?.length || 0) >= 32,
           },
           GOOGLE_CLIENT_ID: {
-            exists: !!env.GOOGLE_CLIENT_ID,
-            length: env.GOOGLE_CLIENT_ID?.length || 0,
+            exists: !!googleClientId,
+            length: googleClientId?.length || 0,
             startsWithExpectedFormat:
-              env.GOOGLE_CLIENT_ID?.includes('.apps.googleusercontent.com') || false,
+              googleClientId?.includes('.apps.googleusercontent.com') || false,
           },
           GOOGLE_CLIENT_SECRET: {
-            exists: !!env.GOOGLE_CLIENT_SECRET,
-            length: env.GOOGLE_CLIENT_SECRET?.length || 0,
+            exists: !!googleClientSecret,
+            length: googleClientSecret?.length || 0,
           },
           DATABASE_URL: {
-            exists: !!env.DATABASE_URL,
-            protocol: getDatabaseProtocol(env.DATABASE_URL),
+            exists: !!databaseUrl,
+            protocol: getDatabaseProtocol(databaseUrl),
           },
         },
         expectedCallbackUrls: {
-          google: `${env.NEXTAUTH_URL || 'https://staging.medbookings.co.za'}/api/auth/callback/google`,
+          google: `${nextAuthUrl || 'https://staging.medbookings.co.za'}/api/auth/callback/google`,
         },
         configurationFiles: {
           authRoute: 'src/app/api/auth/[...nextauth]/route.ts',
