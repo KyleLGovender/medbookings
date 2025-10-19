@@ -27,6 +27,7 @@ This document addresses incomplete series management implementation in the MedBo
 ## Tasks
 
 - [x] 1.0 🟡 **HIGH**: Complete Edit Form Series Integration
+
   - [x] 1.1 Add `scope?: SeriesActionScope` prop to `AvailabilityEditFormProps` interface in `availability-edit-form.tsx`
   - [x] 1.2 Update form component to accept and store scope parameter from props
   - [x] 1.3 Modify form submission logic to include scope in API calls when editing recurring availability
@@ -39,6 +40,7 @@ This document addresses incomplete series management implementation in the MedBo
   - [ ] 1.10 Verify correct API calls include scope parameter in request payload
 
 - [x] 2.0 🟡 **HIGH**: Add Organization Calendar Series Support
+
   - [x] 2.1 Import `SeriesActionDialog` component in `organization-calendar-view.tsx`
   - [x] 2.2 Add series action state management using useState for dialog visibility and selected action
   - [x] 2.3 Add `isRecurring` and `seriesId` detection logic for availability events
@@ -51,6 +53,7 @@ This document addresses incomplete series management implementation in the MedBo
   - [ ] 2.10 Verify organization members can manage provider series within their organization
 
 - [x] 3.0 🔵 **MEDIUM**: Enhance Context Menu Visual Indicators ✅ **COMPLETED**
+
   - [x] 3.1 Add visual series indicator icons/badges to recurring events in `provider-calendar-view.tsx` ✅
   - [x] 3.2 Add visual series indicator icons/badges to recurring events in `organization-calendar-view.tsx` ✅
   - [x] 3.3 Update event styling to differentiate series vs individual availability with distinct colors/borders ✅
@@ -76,6 +79,7 @@ This document addresses incomplete series management implementation in the MedBo
 ## Acceptance Criteria
 
 ### Task 1.0 Completion Criteria
+
 - [ ] Edit form accepts and processes scope parameter correctly
 - [ ] Single occurrence edits don't affect other instances in series
 - [ ] Series edits propagate changes to all instances as expected
@@ -83,6 +87,7 @@ This document addresses incomplete series management implementation in the MedBo
 - [ ] Proper error handling for scope-related validation failures
 
 ### Task 2.0 Completion Criteria
+
 - [ ] Organization calendar detects and handles recurring availability
 - [ ] SeriesActionDialog appears and functions for organization users
 - [ ] All series scopes work correctly from organization calendar
@@ -90,6 +95,7 @@ This document addresses incomplete series management implementation in the MedBo
 - [ ] No regression in existing organization calendar functionality
 
 ### Task 3.0 Completion Criteria
+
 - [ ] Recurring events display clear visual series indicators
 - [ ] Indicators appear consistently across all calendar view modes
 - [ ] Clear differentiation between series and individual events
@@ -97,6 +103,7 @@ This document addresses incomplete series management implementation in the MedBo
 - [ ] Visual indicators enhance rather than clutter the interface
 
 ### Task 4.0 Completion Criteria
+
 - [ ] API endpoints accept and validate scope parameters correctly
 - [ ] Series operations respect scope boundaries in database
 - [ ] Proper error messages for invalid scope operations
@@ -129,7 +136,8 @@ This document addresses incomplete series management implementation in the MedBo
 
 **Root Cause**: Series management was partially implemented with dialog component but integration with edit forms and organization calendars was incomplete. This creates inconsistent user experience across different calendar views.
 
-**Key Integration Points**: 
+**Key Integration Points**:
+
 - Edit form scope parameter handling
 - Organization calendar series detection
 - Visual indicators for user clarity

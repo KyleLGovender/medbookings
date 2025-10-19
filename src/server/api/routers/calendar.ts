@@ -362,141 +362,140 @@ export const calendarRouter = createTRPCRouter({
                   validatedData.id,
                 ]);
               }
-
             }
 
             // Series updates (future/all) - delete and recreate approach
             if (validatedData.updateStrategy !== 'single') {
               const { existingAvailability } = validatedData;
 
-            // Step 1: Clean up existing data
-            await tx.calculatedAvailabilitySlot.deleteMany({
-              where: {
-                availabilityId: { in: validatedData.affectedAvailabilityIds || [] },
-              },
-            });
+              // Step 1: Clean up existing data
+              await tx.calculatedAvailabilitySlot.deleteMany({
+                where: {
+                  availabilityId: { in: validatedData.affectedAvailabilityIds || [] },
+                },
+              });
 
-            await tx.serviceAvailabilityConfig.deleteMany({
-              where: {
-                availabilities: {
-                  some: {
-                    id: { in: validatedData.affectedAvailabilityIds || [] },
+              await tx.serviceAvailabilityConfig.deleteMany({
+                where: {
+                  availabilities: {
+                    some: {
+                      id: { in: validatedData.affectedAvailabilityIds || [] },
+                    },
                   },
                 },
-              },
-            });
+              });
 
-            await tx.availability.deleteMany({
-              where: { id: { in: validatedData.affectedAvailabilityIds || [] } },
-            });
+              await tx.availability.deleteMany({
+                where: { id: { in: validatedData.affectedAvailabilityIds || [] } },
+              });
 
-            // Step 2: Prepare new values
-            const newStartTime = validatedData.startTime || existingAvailability.startTime;
-            const newEndTime = validatedData.endTime || existingAvailability.endTime;
-            const newRecurrencePattern =
-              validatedData.recurrencePattern !== undefined
-                ? validatedData.recurrencePattern
-                : existingAvailability.recurrencePattern;
+              // Step 2: Prepare new values
+              const newStartTime = validatedData.startTime || existingAvailability.startTime;
+              const newEndTime = validatedData.endTime || existingAvailability.endTime;
+              const newRecurrencePattern =
+                validatedData.recurrencePattern !== undefined
+                  ? validatedData.recurrencePattern
+                  : existingAvailability.recurrencePattern;
 
-            // Step 3: Generate instances based on strategy
-            const instances = generateInstancesForStrategy(
-              validatedData.updateStrategy,
-              existingAvailability,
-              newStartTime,
-              newEndTime,
-              newRecurrencePattern
-            );
+              // Step 3: Generate instances based on strategy
+              const instances = generateInstancesForStrategy(
+                validatedData.updateStrategy,
+                existingAvailability,
+                newStartTime,
+                newEndTime,
+                newRecurrencePattern
+              );
 
-            // Step 4: Create new availabilities
-            const newAvailabilities = await Promise.all(
-              instances.map(async (instance) => {
-                return tx.availability.create({
-                  data: {
-                    providerId: existingAvailability.providerId,
-                    organizationId: existingAvailability.organizationId,
-                    locationId: existingAvailability.locationId,
-                    connectionId: existingAvailability.connectionId,
-                    startTime: instance.startTime,
-                    endTime: instance.endTime,
-                    isRecurring:
-                      validatedData.isRecurring !== undefined
-                        ? validatedData.isRecurring
-                        : existingAvailability.isRecurring,
-                    recurrencePattern: newRecurrencePattern
-                      ? (newRecurrencePattern as any)
-                      : Prisma.JsonNull,
-                    seriesId: existingAvailability.seriesId,
-                    schedulingRule:
-                      validatedData.schedulingRule || existingAvailability.schedulingRule,
-                    schedulingInterval:
-                      validatedData.schedulingInterval !== undefined
-                        ? validatedData.schedulingInterval
-                        : existingAvailability.schedulingInterval,
-                    isOnlineAvailable:
-                      validatedData.isOnlineAvailable !== undefined
-                        ? validatedData.isOnlineAvailable
-                        : existingAvailability.isOnlineAvailable,
-                    requiresConfirmation:
-                      validatedData.requiresConfirmation !== undefined
-                        ? validatedData.requiresConfirmation
-                        : existingAvailability.requiresConfirmation,
-                    billingEntity:
-                      validatedData.billingEntity || existingAvailability.billingEntity,
-                    status: existingAvailability.status,
-                    createdById: existingAvailability.createdById,
-                    createdByMembershipId: existingAvailability.createdByMembershipId,
-                    isProviderCreated: existingAvailability.isProviderCreated,
-                    defaultSubscriptionId: existingAvailability.defaultSubscriptionId,
-                  },
-                  include: {
-                    provider: {
-                      include: {
-                        user: {
-                          select: {
-                            id: true,
-                            name: true,
-                            email: true,
-                            image: true,
+              // Step 4: Create new availabilities
+              const newAvailabilities = await Promise.all(
+                instances.map(async (instance) => {
+                  return tx.availability.create({
+                    data: {
+                      providerId: existingAvailability.providerId,
+                      organizationId: existingAvailability.organizationId,
+                      locationId: existingAvailability.locationId,
+                      connectionId: existingAvailability.connectionId,
+                      startTime: instance.startTime,
+                      endTime: instance.endTime,
+                      isRecurring:
+                        validatedData.isRecurring !== undefined
+                          ? validatedData.isRecurring
+                          : existingAvailability.isRecurring,
+                      recurrencePattern: newRecurrencePattern
+                        ? (newRecurrencePattern as any)
+                        : Prisma.JsonNull,
+                      seriesId: existingAvailability.seriesId,
+                      schedulingRule:
+                        validatedData.schedulingRule || existingAvailability.schedulingRule,
+                      schedulingInterval:
+                        validatedData.schedulingInterval !== undefined
+                          ? validatedData.schedulingInterval
+                          : existingAvailability.schedulingInterval,
+                      isOnlineAvailable:
+                        validatedData.isOnlineAvailable !== undefined
+                          ? validatedData.isOnlineAvailable
+                          : existingAvailability.isOnlineAvailable,
+                      requiresConfirmation:
+                        validatedData.requiresConfirmation !== undefined
+                          ? validatedData.requiresConfirmation
+                          : existingAvailability.requiresConfirmation,
+                      billingEntity:
+                        validatedData.billingEntity || existingAvailability.billingEntity,
+                      status: existingAvailability.status,
+                      createdById: existingAvailability.createdById,
+                      createdByMembershipId: existingAvailability.createdByMembershipId,
+                      isProviderCreated: existingAvailability.isProviderCreated,
+                      defaultSubscriptionId: existingAvailability.defaultSubscriptionId,
+                    },
+                    include: {
+                      provider: {
+                        include: {
+                          user: {
+                            select: {
+                              id: true,
+                              name: true,
+                              email: true,
+                              image: true,
+                            },
                           },
                         },
                       },
-                    },
-                    organization: true,
-                    location: true,
-                    availableServices: {
-                      include: {
-                        service: true,
+                      organization: true,
+                      location: true,
+                      availableServices: {
+                        include: {
+                          service: true,
+                        },
+                      },
+                      calculatedSlots: {
+                        include: {
+                          booking: true,
+                        },
                       },
                     },
-                    calculatedSlots: {
-                      include: {
-                        booking: true,
-                      },
-                    },
-                  },
-                });
-              })
-            );
-
-            updatedAvailabilities = newAvailabilities;
-
-            // Handle services for series updates
-            if (validatedData.services) {
-              await createServiceConfigsForAvailabilities(
-                tx,
-                updatedAvailabilities,
-                validatedData.services,
-                validatedData.existingAvailability.providerId,
-                validatedData.isOnlineAvailable,
-                validatedData.locationId
+                  });
+                })
               );
 
-              // Re-fetch with service configs
-              updatedAvailabilities = await fetchAvailabilitiesWithRelations(
-                tx,
-                updatedAvailabilities.map((a) => a.id)
-              );
-            }
+              updatedAvailabilities = newAvailabilities;
+
+              // Handle services for series updates
+              if (validatedData.services) {
+                await createServiceConfigsForAvailabilities(
+                  tx,
+                  updatedAvailabilities,
+                  validatedData.services,
+                  validatedData.existingAvailability.providerId,
+                  validatedData.isOnlineAvailable,
+                  validatedData.locationId
+                );
+
+                // Re-fetch with service configs
+                updatedAvailabilities = await fetchAvailabilitiesWithRelations(
+                  tx,
+                  updatedAvailabilities.map((a) => a.id)
+                );
+              }
             } // End of series update block
 
             // Handle slot regeneration if needed

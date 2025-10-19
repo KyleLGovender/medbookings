@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
-import { StagingStack } from '../lib/staging-stack';
+
 import { ProductionStack } from '../lib/production-stack';
+import { StagingStack } from '../lib/staging-stack';
 
 const app = new cdk.App();
 

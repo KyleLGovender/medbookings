@@ -3,8 +3,8 @@ import { ChevronLeft, ChevronRight, Repeat } from 'lucide-react';
 
 import {
   getAvailabilityForDay,
-  getWorkingTimeRange,
   getAvailabilityStyle,
+  getWorkingTimeRange,
 } from '@/features/calendar/lib/calendar-utils';
 
 import { AvailabilityData, AvailabilityMonthViewProps } from './types';

@@ -43,22 +43,23 @@ export const publicProcedure = t.procedure;
 ```typescript
 // server/appRouter.ts
 import { z } from 'zod';
-import { router, publicProcedure } from './trpc';
+
+import { publicProcedure, router } from './trpc';
 
 export const appRouter = router({
   // Query procedure
-  greeting: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .query(({ input }) => {
-      return `Hello ${input.name}!`;
-    }),
-  
+  greeting: publicProcedure.input(z.object({ name: z.string() })).query(({ input }) => {
+    return `Hello ${input.name}!`;
+  }),
+
   // Mutation procedure
   createUser: publicProcedure
-    .input(z.object({
-      name: z.string(),
-      email: z.string().email(),
-    }))
+    .input(
+      z.object({
+        name: z.string(),
+        email: z.string().email(),
+      })
+    )
     .mutation(async ({ input }) => {
       // Create user in database
       return { id: 1, ...input };
@@ -74,6 +75,7 @@ export type AppRouter = typeof appRouter;
 ```typescript
 // server/index.ts
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+
 import { appRouter } from './appRouter';
 
 const server = createHTTPServer({
@@ -91,6 +93,7 @@ server.listen(3000);
 ```typescript
 // client/index.ts
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+
 import type { AppRouter } from '../server/appRouter';
 
 const trpc = createTRPCProxyClient<AppRouter>({
@@ -122,29 +125,28 @@ tRPC has three types of procedures:
 ```typescript
 const appRouter = router({
   // Query - GET-like operations
-  getUser: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(({ input }) => {
-      return db.user.findById(input.id);
-    }),
-  
+  getUser: publicProcedure.input(z.object({ id: z.string() })).query(({ input }) => {
+    return db.user.findById(input.id);
+  }),
+
   // Mutation - POST/PUT/DELETE-like operations
   updateUser: publicProcedure
-    .input(z.object({
-      id: z.string(),
-      name: z.string(),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+      })
+    )
     .mutation(({ input }) => {
       return db.user.update(input);
     }),
-  
+
   // Subscription - real-time updates
-  onUserUpdate: publicProcedure
-    .subscription(() => {
-      return observable<User>((emit) => {
-        // Emit updates
-      });
-    }),
+  onUserUpdate: publicProcedure.subscription(() => {
+    return observable<User>((emit) => {
+      // Emit updates
+    });
+  }),
 });
 ```
 
@@ -205,12 +207,14 @@ tRPC uses Zod for runtime validation:
 ```typescript
 const appRouter = router({
   createPost: publicProcedure
-    .input(z.object({
-      title: z.string().min(1).max(100),
-      content: z.string().min(10),
-      published: z.boolean().default(false),
-      tags: z.array(z.string()).optional(),
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1).max(100),
+        content: z.string().min(10),
+        published: z.boolean().default(false),
+        tags: z.array(z.string()).optional(),
+      })
+    )
     .mutation(({ input }) => {
       // input is fully typed and validated
       return db.post.create(input);
@@ -224,20 +228,18 @@ const appRouter = router({
 import { TRPCError } from '@trpc/server';
 
 const appRouter = router({
-  getUser: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ input }) => {
-      const user = await db.user.findById(input.id);
-      
-      if (!user) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User not found',
-        });
-      }
-      
-      return user;
-    }),
+  getUser: publicProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+    const user = await db.user.findById(input.id);
+
+    if (!user) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'User not found',
+      });
+    }
+
+    return user;
+  }),
 });
 ```
 
@@ -248,6 +250,7 @@ const appRouter = router({
 ```typescript
 // app/api/trpc/[trpc]/route.ts
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+
 import { appRouter } from '@/server/appRouter';
 import { createContext } from '@/server/context';
 
@@ -265,8 +268,8 @@ export { handler as GET, handler as POST };
 ### Express
 
 ```typescript
-import express from 'express';
 import * as trpcExpress from '@trpc/server/adapters/express';
+import express from 'express';
 
 const app = express();
 
@@ -284,8 +287,8 @@ app.listen(4000);
 ### Fastify
 
 ```typescript
-import fastify from 'fastify';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import fastify from 'fastify';
 
 const server = fastify();
 
@@ -317,11 +320,13 @@ const [user, posts] = await Promise.all([
 const appRouter = router({
   getUser: publicProcedure
     .input(z.object({ id: z.string() }))
-    .output(z.object({
-      id: z.string(),
-      name: z.string(),
-      email: z.string().email(),
-    }))
+    .output(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        email: z.string().email(),
+      })
+    )
     .query(({ input }) => {
       // Return value must match output schema
       return db.user.findById(input.id);
@@ -334,15 +339,15 @@ const appRouter = router({
 Transform data between server and client:
 
 ```typescript
+// Client with superjson transformer
+import superjson from 'superjson';
+
 // Server
 export const appRouter = router({
   getDate: publicProcedure.query(() => {
     return { date: new Date() };
   }),
 });
-
-// Client with superjson transformer
-import superjson from 'superjson';
 
 const trpc = createTRPCProxyClient<AppRouter>({
   links: [
@@ -365,7 +370,7 @@ const appRouter = router({
     return observable<Message>((emit) => {
       const onMessage = (msg: Message) => emit.next(msg);
       eventEmitter.on('message', onMessage);
-      
+
       return () => {
         eventEmitter.off('message', onMessage);
       };
@@ -391,7 +396,7 @@ import { createInnerTRPCContext } from './context';
 test('greeting query', async () => {
   const ctx = createInnerTRPCContext({ user: null });
   const caller = appRouter.createCaller(ctx);
-  
+
   const result = await caller.greeting({ name: 'Test' });
   expect(result).toBe('Hello Test!');
 });

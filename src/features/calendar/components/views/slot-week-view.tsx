@@ -1,6 +1,6 @@
 import { BookingStatus } from '@prisma/client';
 
-import { getSlotsForDay, calculateSlotTimeRange } from '@/features/calendar/lib/calendar-utils';
+import { calculateSlotTimeRange, getSlotsForDay } from '@/features/calendar/lib/calendar-utils';
 import { cn } from '@/lib/utils';
 
 import { SlotData, SlotWeekViewProps } from './types';
@@ -52,7 +52,6 @@ export function SlotWeekView({
 
     return { top, height };
   };
-
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], {

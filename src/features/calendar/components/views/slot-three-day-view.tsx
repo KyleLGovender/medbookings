@@ -1,9 +1,6 @@
 import { BookingStatus } from '@prisma/client';
 
-import {
-  getSlotsForDay,
-  calculateSlotTimeRange
-} from '@/features/calendar/lib/calendar-utils';
+import { calculateSlotTimeRange, getSlotsForDay } from '@/features/calendar/lib/calendar-utils';
 
 import { SlotData, SlotThreeDayViewProps } from './types';
 
@@ -187,7 +184,9 @@ export function SlotThreeDayView({
                             key={slot.id}
                             type="button"
                             className={`absolute left-1 right-1 rounded border px-2 text-left transition-all ${getSlotButtonStyle(slot)} ${
-                              !isBooked ? 'cursor-pointer hover:z-10 hover:shadow-md' : 'cursor-not-allowed opacity-75'
+                              !isBooked
+                                ? 'cursor-pointer hover:z-10 hover:shadow-md'
+                                : 'cursor-not-allowed opacity-75'
                             }`}
                             style={{
                               top: `${top}px`,

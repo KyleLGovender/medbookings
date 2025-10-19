@@ -19,6 +19,7 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
 ## User Stories
 
 ### Developer Experience Stories
+
 - **As a developer**, I want automatic type checking between API and frontend so that I catch type errors at compile time
 - **As a developer**, I want automatic input validation so that I don't have to write manual validation logic
 - **As a developer**, I want IntelliSense for all API calls so that I can develop faster with confidence
@@ -26,6 +27,7 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
 - **As a developer**, I want to reuse existing server actions so that business logic remains unchanged
 
 ### Business Logic Stories
+
 - **As a developer**, I want to maintain all existing business logic during migration so that no functionality is lost
 - **As a developer**, I want consistent error handling across all procedures so that debugging is easier
 - **As a developer**, I want to preserve all authentication and authorization patterns so that security is maintained
@@ -36,6 +38,7 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
 ### Core Infrastructure Requirements
 
 1. **tRPC Server Configuration**
+
    ```typescript
    // src/server/trpc.ts
    - Initialize tRPC with superjson transformer
@@ -45,6 +48,7 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
    ```
 
 2. **Authentication Middleware**
+
    ```typescript
    - publicProcedure: No auth required
    - protectedProcedure: User must be authenticated
@@ -53,6 +57,7 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
    ```
 
 3. **Router Architecture**
+
    ```typescript
    // src/server/api/root.ts
    - Feature-based router organization
@@ -61,6 +66,7 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
    ```
 
 4. **Next.js App Router Integration**
+
    ```typescript
    // src/app/api/trpc/[trpc]/route.ts
    - HTTP handler for tRPC requests
@@ -69,6 +75,7 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
    ```
 
 5. **Client Configuration**
+
    ```typescript
    // src/utils/api.ts
    - tRPC client with TanStack Query
@@ -85,6 +92,7 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
 ### Migration Requirements by Phase
 
 #### Phase 1: Infrastructure & Basic Routes (Days 1-3, 12 routes)
+
 1. **Install dependencies**: @trpc/server, @trpc/client, @trpc/next, @trpc/react-query, superjson
 2. **Set up base infrastructure**: trpc.ts, context, middleware, error handling
 3. **Configure Next.js integration**: App Router handler
@@ -99,7 +107,9 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
    - `/api/invitations/[token]/validate` → `api.invitations.validate`
 
 #### Phase 2: CRUD Operations (Days 4-7, 20 routes)
+
 6. **Provider CRUD**:
+
    - GET/POST `/api/providers` → `api.providers.list`, `api.providers.create`
    - GET/PATCH/DELETE `/api/providers/[id]` → `api.providers.get`, `api.providers.update`, `api.providers.delete`
    - PATCH `/api/providers/[id]/basic-info` → `api.providers.updateBasicInfo`
@@ -107,6 +117,7 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
    - GET/POST `/api/providers/[id]/requirements` → `api.providers.getRequirements`, `api.providers.submitRequirements`
 
 7. **Organization CRUD**:
+
    - GET/POST `/api/organizations` → `api.organizations.list`, `api.organizations.create`
    - GET/PATCH/DELETE `/api/organizations/[id]` → `api.organizations.get`, `api.organizations.update`, `api.organizations.delete`
    - GET/POST `/api/organizations/[id]/locations` → `api.organizations.getLocations`, `api.organizations.addLocation`
@@ -118,7 +129,9 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
    - GET `/api/organizations/user/[userId]` → `api.organizations.getByUserId`
 
 #### Phase 3: Complex Business Logic (Days 8-12, 20 routes)
+
 9. **Calendar Operations**:
+
    - POST `/api/calendar/availability/create` → `api.calendar.createAvailability`
    - PATCH `/api/calendar/availability/update` → `api.calendar.updateAvailability`
    - DELETE `/api/calendar/availability/delete` → `api.calendar.deleteAvailability`
@@ -129,6 +142,7 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
    - GET `/api/calendar/availability` → `api.calendar.listAvailabilities`
 
 10. **Search Endpoints**:
+
     - GET `/api/calendar/availability/search/slots` → `api.calendar.searchSlots`
     - GET `/api/calendar/availability/search/providers` → `api.calendar.searchProviders`
     - GET `/api/calendar/availability/search/services` → `api.calendar.searchServices`
@@ -139,19 +153,23 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
     - GET/POST `/api/organizations/[id]/provider-connections` → `api.organizations.providerConnections.list`, `api.organizations.providerConnections.create`
 
 #### Phase 4: Admin Operations (Days 13-16, 8 routes)
+
 12. **Admin Provider Management**:
+
     - GET `/api/admin/providers` → `api.admin.providers.list`
     - GET `/api/admin/providers/[id]` → `api.admin.providers.get`
     - POST `/api/admin/providers/[id]/approve` → `api.admin.providers.approve`
     - POST `/api/admin/providers/[id]/reject` → `api.admin.providers.reject`
 
 13. **Admin Organization Management**:
+
     - GET `/api/admin/organizations` → `api.admin.organizations.list`
     - GET `/api/admin/organizations/[id]` → `api.admin.organizations.get`
     - POST `/api/admin/organizations/[id]/approve` → `api.admin.organizations.approve`
     - POST `/api/admin/organizations/[id]/reject` → `api.admin.organizations.reject`
 
 14. **Admin Requirements**:
+
     - POST `/api/admin/providers/[id]/requirements/[requirementId]/approve` → `api.admin.requirements.approve`
     - POST `/api/admin/providers/[id]/requirements/[requirementId]/reject` → `api.admin.requirements.reject`
 
@@ -159,7 +177,9 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
     - POST `/api/admin/override` → `api.admin.override`
 
 #### Phase 5: Special Cases & Cleanup (Days 17-20)
+
 16. **Keep as REST APIs** (not migrated):
+
     - `/api/auth/[...nextauth]` - NextAuth handlers
     - `/api/upload` - File upload with multipart
     - `/api/whatsapp-callback` - Webhook with signature validation
@@ -174,6 +194,7 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
 ### Frontend Integration Requirements
 
 1. **Hook Migration Pattern**:
+
    ```typescript
    // Before
    const { data } = useQuery({
@@ -186,6 +207,7 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
    ```
 
 2. **Mutation Pattern**:
+
    ```typescript
    const createProvider = api.providers.create.useMutation({
      onSuccess: () => {
@@ -194,7 +216,7 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
      },
      onError: (error) => {
        toast.error(error.message);
-     }
+     },
    });
    ```
 
@@ -213,38 +235,39 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
      },
      onSettled: () => {
        utils.providers.get.invalidate();
-     }
+     },
    });
    ```
 
 ### Type System Compliance
 
 1. **No Barrel Exports**: Direct imports only
+
    ```typescript
    // ❌ Wrong
    import { ProviderType } from '@/features/providers/types';
-   
+
    // ✅ Correct
    import { ProviderType } from '@/features/providers/types/types';
    ```
 
 2. **Leverage Existing Schemas**:
+
    ```typescript
    import { providerFormSchema } from '@/features/providers/types/schemas';
-   
+
    export const providersRouter = createTRPCRouter({
-     create: protectedProcedure
-       .input(providerFormSchema)
-       .mutation(async ({ ctx, input }) => {
-         // Reuse existing server action
-       })
+     create: protectedProcedure.input(providerFormSchema).mutation(async ({ ctx, input }) => {
+       // Reuse existing server action
+     }),
    });
    ```
 
 3. **Type Guards Integration**:
+
    ```typescript
    import { isValidProvider } from '@/features/providers/types/guards';
-   
+
    .query(async ({ ctx }) => {
      const provider = await getProvider();
      if (!isValidProvider(provider)) {
@@ -278,44 +301,46 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
 ### Migration Patterns
 
 1. **Simple Query Pattern**:
+
    ```typescript
    getProviderTypes: publicProcedure.query(async ({ ctx }) => {
      return ctx.prisma.providerType.findMany({
-       orderBy: { name: 'asc' }
+       orderBy: { name: 'asc' },
      });
-   })
+   });
    ```
 
 2. **Mutation with Server Action**:
+
    ```typescript
-   register: protectedProcedure
-     .input(providerFormSchema)
-     .mutation(async ({ ctx, input }) => {
-       const formData = convertToFormData(input);
-       const result = await registerProvider({}, formData);
-       if (!result.success) {
-         throw new TRPCError({ 
-           code: 'BAD_REQUEST', 
-           message: result.error 
-         });
-       }
-       return result;
-     })
+   register: protectedProcedure.input(providerFormSchema).mutation(async ({ ctx, input }) => {
+     const formData = convertToFormData(input);
+     const result = await registerProvider({}, formData);
+     if (!result.success) {
+       throw new TRPCError({
+         code: 'BAD_REQUEST',
+         message: result.error,
+       });
+     }
+     return result;
+   });
    ```
 
 3. **Admin Pattern**:
    ```typescript
    approve: adminProcedure
-     .input(z.object({ 
-       providerId: z.string(),
-       adminNotes: z.string().optional()
-     }))
+     .input(
+       z.object({
+         providerId: z.string(),
+         adminNotes: z.string().optional(),
+       })
+     )
      .mutation(async ({ ctx, input }) => {
        return approveProvider({
          ...input,
-         adminUserId: ctx.user.id
+         adminUserId: ctx.user.id,
        });
-     })
+     });
    ```
 
 ### Performance Considerations
@@ -329,6 +354,7 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
 ## Success Metrics
 
 ### Technical Metrics
+
 1. **100% type coverage** - No `any` types in API layer
 2. **Zero runtime type errors** - All validation handled by Zod
 3. **60 API routes migrated** successfully
@@ -336,12 +362,14 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
 5. **Bundle size impact** - Less than 50KB increase
 
 ### Developer Experience Metrics
+
 1. **70% reduction** in API-related bug reports
 2. **50% faster** feature development involving API changes
 3. **95% satisfaction** in developer surveys
 4. **Zero manual type synchronization** between frontend and backend
 
 ### Business Metrics
+
 1. **No functionality regression** - All features work identically
 2. **No security vulnerabilities** - Auth patterns preserved
 3. **99.9% uptime** during migration
@@ -358,16 +386,19 @@ Based on comprehensive codebase analysis, this migration will replace **60 exist
 ## Implementation Timeline
 
 ### Week 1 (Days 1-7)
+
 - Infrastructure setup and basic routes
 - Simple CRUD operations
 - Update corresponding frontend hooks
 
 ### Week 2 (Days 8-14)
+
 - Complex business logic migration
 - Admin operations
 - Search and filtering endpoints
 
 ### Week 3 (Days 15-20)
+
 - Special cases and edge scenarios
 - Cleanup and optimization
 - Documentation and training

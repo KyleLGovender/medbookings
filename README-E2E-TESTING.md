@@ -5,6 +5,7 @@ This document provides a comprehensive guide for running and maintaining E2E tes
 ## 🚀 Quick Start
 
 ### Initial Setup
+
 ```bash
 # Run the setup script to configure everything
 npm run test:setup
@@ -16,6 +17,7 @@ docker compose -f docker-compose.test.yml up -d postgres-test
 ```
 
 ### Running Tests
+
 ```bash
 # Run all E2E tests
 npm run test:e2e
@@ -31,7 +33,7 @@ npm run test:e2e:debug
 
 # Run specific test suites
 npm run test:e2e:auth        # Authentication & user onboarding
-npm run test:e2e:provider    # Provider management workflows  
+npm run test:e2e:provider    # Provider management workflows
 npm run test:e2e:cleanup     # Deletion and cleanup journeys
 
 # View test report
@@ -52,7 +54,7 @@ e2e/
 │   │   └── registration.spec.ts # Provider/org registration & invitations
 │   ├── provider/
 │   │   ├── approval-workflow.spec.ts    # Admin approval/rejection
-│   │   ├── profile-editing.spec.ts      # Provider profile management  
+│   │   ├── profile-editing.spec.ts      # Provider profile management
 │   │   └── calendar-management.spec.ts  # Availability creation/editing
 │   └── cleanup/
 │       └── deletion-journeys.spec.ts    # Deletion workflows & cleanup
@@ -65,17 +67,20 @@ e2e/
 ## 🧪 Test Coverage
 
 ### 1. Authentication & User Onboarding
+
 - ✅ Google OAuth login flow (`/login` → OAuth → `/profile`)
 - ✅ Provider registration journey (`/providers/new` → form completion → approval workflow)
 - ✅ Organization registration (`/organizations/new` → setup → approval)
 - ✅ Invitation acceptance (`/invitation/[token]` → registration/login → connection)
 
 ### 2. Provider Management Workflows
+
 - ✅ Provider approval workflow (Admin: pending → approve/reject → notifications)
 - ✅ Provider profile editing (`/providers/[id]/edit/*` → basic info, services, requirements)
 - ✅ Calendar availability setup (`/calendar/availability` → create/edit availability slots)
 
 ### 3. Deletion & Cleanup Journeys
+
 - ✅ Delete availability slots (single, recurring, bulk operations)
 - ✅ Delete provider profiles (with data export and confirmation)
 - ✅ Delete organizations (with ownership transfer and member cleanup)
@@ -84,6 +89,7 @@ e2e/
 ## 🔧 Configuration
 
 ### Environment Variables
+
 Create `.env.test.local` from the `.env.test` template:
 
 ```bash
@@ -96,11 +102,12 @@ NEXTAUTH_SECRET="test-secret-key"
 
 # Disable external services in tests
 DISABLE_EMAILS="true"
-DISABLE_SMS="true" 
+DISABLE_SMS="true"
 DISABLE_GOOGLE_CALENDAR="true"
 ```
 
 ### Test Database
+
 The tests use a separate PostgreSQL database to avoid interfering with development data:
 
 ```bash
@@ -114,6 +121,7 @@ DATABASE_URL="$TEST_DATABASE_URL" npx prisma migrate deploy
 ## 🎭 Test Patterns
 
 ### Authentication Mocking
+
 Tests mock Google OAuth to avoid dependencies on external services:
 
 ```typescript
@@ -132,6 +140,7 @@ await page.route('**/api/auth/session', async (route) => {
 ```
 
 ### Database State Management
+
 Each test suite starts with a clean database state:
 
 ```typescript
@@ -144,6 +153,7 @@ test.beforeEach(async ({ page }) => {
 ```
 
 ### Page Object Patterns
+
 Reusable helper functions encapsulate common user actions:
 
 ```typescript
@@ -157,6 +167,7 @@ await createAvailabilitySlot(page, TEST_AVAILABILITY_DATA);
 ## 🔍 Debugging Tests
 
 ### Visual Debugging
+
 ```bash
 # Run with browser UI visible
 npm run test:e2e:headed
@@ -166,6 +177,7 @@ npm run test:e2e:ui
 ```
 
 ### Debug Screenshots
+
 Tests automatically take screenshots on failure. Manual screenshots can be taken:
 
 ```typescript
@@ -173,6 +185,7 @@ await takeDebugScreenshot(page, 'after-form-submission');
 ```
 
 ### Console Logs
+
 Check browser console messages:
 
 ```bash
@@ -183,11 +196,14 @@ npx playwright test --reporter=line
 ## 🚦 CI/CD Integration
 
 ### GitHub Actions
+
 The `.github/workflows/e2e-tests.yml` workflow runs tests on:
+
 - Push to `main` or `develop` branches
 - Pull requests to `main` or `develop`
 
 ### Test Artifacts
+
 - Test reports are uploaded as artifacts
 - Screenshots from failed tests are preserved
 - Videos of failed test runs are available
@@ -195,11 +211,13 @@ The `.github/workflows/e2e-tests.yml` workflow runs tests on:
 ## 📊 Test Data Management
 
 ### Fixtures and Test Data
+
 - Test data is defined in `e2e/fixtures/test-data.ts`
 - Mock files (PDFs, images) are stored in `e2e/fixtures/files/`
 - Database seeding functions create consistent test data
 
 ### Data Isolation
+
 - Each test starts with a clean database state
 - Tests don't depend on external services
 - Deterministic test data ensures reliable results
@@ -207,17 +225,20 @@ The `.github/workflows/e2e-tests.yml` workflow runs tests on:
 ## 🛠️ Maintenance
 
 ### Adding New Tests
+
 1. Create test file in appropriate directory (`auth/`, `provider/`, `cleanup/`)
 2. Follow existing patterns for authentication and data setup
 3. Use helper functions for common actions
 4. Add data cleanup if needed
 
 ### Updating Test Data
+
 1. Modify fixtures in `e2e/fixtures/test-data.ts`
 2. Update database seeding functions in `e2e/utils/database.ts`
 3. Regenerate test files if needed
 
 ### Performance Optimization
+
 - Tests run in parallel by default
 - Database operations are optimized for speed
 - Use `fullyParallel: true` in test configuration
@@ -227,6 +248,7 @@ The `.github/workflows/e2e-tests.yml` workflow runs tests on:
 ### Common Issues
 
 **Database Connection Errors:**
+
 ```bash
 # Ensure test database is running
 docker compose -f docker-compose.test.yml up -d postgres-test
@@ -236,18 +258,21 @@ DATABASE_URL="$TEST_DATABASE_URL" npx prisma db push
 ```
 
 **Authentication Issues:**
+
 ```bash
 # Verify mock authentication is properly set up
 # Check that NextAuth routes are being mocked correctly
 ```
 
 **Test Timeouts:**
+
 ```bash
 # Increase timeout in playwright.config.ts
 # Check for slow network requests or database queries
 ```
 
 ### Getting Help
+
 - Review test logs and screenshots from failed tests
 - Use `--debug` flag to step through tests interactively
 - Check browser console for JavaScript errors

@@ -18,18 +18,21 @@ The system creates a new user type (BizOps Profile) that operates similarly to S
 ## User Stories
 
 ### BizOps Professionals
+
 - As a business operations consultant, I want to create a professional profile so that organizations can discover and engage my services
 - As a BizOps professional, I want to manage multiple organization clients from a single dashboard so that I can efficiently serve all my clients
 - As a consultant, I want to specialize in specific areas (billing, analytics, operations) so that organizations can find the right expertise
 - As a BizOps professional, I want to track my access permissions across organizations so that I understand my scope of work
 
 ### Organization Owners
+
 - As an organization owner, I want to grant limited access to a business operations consultant so that I can get expert help without giving full administrative control
 - As an owner, I want to revoke consultant access at any time so that I maintain control over my organization's security
 - As an organization leader, I want to see exactly what actions a consultant can perform so that I can make informed access decisions
 - As an owner, I want to find qualified BizOps professionals so that I can improve my organization's operations
 
 ### Platform Administrators
+
 - As a platform admin, I want to approve BizOps professional profiles so that only qualified consultants can offer services
 - As an admin, I want to monitor cross-organizational access patterns so that I can ensure platform security
 - As a platform administrator, I want to suspend problematic BizOps profiles so that I can protect organizations from poor service

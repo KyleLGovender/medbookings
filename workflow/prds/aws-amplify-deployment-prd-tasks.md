@@ -193,7 +193,7 @@
   - [ ] 11.5 Add `NEXTAUTH_URL=https://staging.medbookings.co.za`
   - [ ] 11.6 Generate new `AUTH_SECRET` for staging: `openssl rand -base64 32`
   - [ ] 11.7 Add database environment variables (DATABASE_URL, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME) from Secrets Manager
-  - [ ] 11.8 Add S3 environment variables: `AWS_S3_BUCKET_NAME`, `AWS_REGION=eu-west-1`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
+  - [ ] 11.8 Add S3 environment variables: `S3_BUCKET_NAME`, `AWS_REGION=eu-west-1`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
   - [ ] 11.9 Add existing third-party API keys (Google OAuth, Google Maps, Twilio, SendGrid, Firecrawl)
   - [ ] 11.10 Add `ADMIN_EMAILS` and `ADMIN_NOTIFICATION_EMAIL`
   - [ ] 11.11 Repeat steps 11.4-11.10 for production environment in Amplify Console

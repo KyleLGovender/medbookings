@@ -3,7 +3,7 @@
 **Category:** Bug Fix  
 **Priority:** Critical (🔴)  
 **Date Identified:** July 23, 2025  
-**Status:** Active  
+**Status:** Active
 
 ## Summary
 
@@ -16,7 +16,7 @@ A systematic authorization bug exists throughout the calendar system where User 
 The codebase contains a pervasive pattern where `currentUser.id` (a User ID) is directly compared with `providerId` fields (Provider IDs) in authorization checks. This comparison always fails because:
 
 - **User ID**: References the `User` table primary key
-- **Provider ID**: References the `Provider` table primary key  
+- **Provider ID**: References the `Provider` table primary key
 - **Relationship**: One-to-one via `Provider.userId → User.id`
 
 The correct approach requires fetching the Provider record first, then comparing Provider IDs.
@@ -67,16 +67,19 @@ This bug emerged during the migration from `ServiceProvider` to `Provider` model
 ### Primary Files with Authorization Issues
 
 **`src/features/calendar/lib/actions.ts`**
+
 - Line 54: `createAvailability` - Provider creation authorization
-- Line 310: `getAvailabilityById` - Provider viewing authorization  
+- Line 310: `getAvailabilityById` - Provider viewing authorization
 - Lines 479, 630, 727: `updateAvailability`, `deleteAvailability`, `cancelAvailability` - Provider modification authorization
 
-**`src/features/calendar/lib/workflow-service.ts`** 
+**`src/features/calendar/lib/workflow-service.ts`**
+
 - Lines 54, 178, 280, 401: Provider workflow authorization checks
 
 ### Field Name Inconsistencies
 
 **`src/features/calendar/lib/actions.ts`**
+
 - Lines 360, 422: References to `serviceProviderId` instead of `providerId`
 
 ## Detailed Code Analysis
@@ -93,7 +96,7 @@ const canAccess = currentUser.id === availability.providerId;
 ```typescript
 // ✅ CORRECT: Fetch Provider record first, then compare Provider IDs
 const currentUserProvider = await prisma.provider.findUnique({
-  where: { userId: currentUser.id }
+  where: { userId: currentUser.id },
 });
 const canAccess = currentUserProvider?.id === availability.providerId;
 ```
@@ -125,6 +128,7 @@ const canAccess = currentUserProvider?.id === availability.providerId;
 ## Error Scenarios
 
 ### Scenario 1: Provider Tries to Edit Own Availability
+
 ```
 Input: Provider user attempts to update their availability
 Expected: Update succeeds
@@ -133,14 +137,16 @@ Cause: currentUser.id (User ID) !== availability.providerId (Provider ID)
 ```
 
 ### Scenario 2: Provider Tries to View Own Availability
+
 ```
 Input: Provider user requests availability details
 Expected: Availability data returned
-Actual: Authorization error - "User not authorized to view this availability"  
+Actual: Authorization error - "User not authorized to view this availability"
 Cause: Same ID comparison issue
 ```
 
 ### Scenario 3: Provider Tries to Accept Availability Proposal
+
 ```
 Input: Provider attempts to accept an availability proposal created for them
 Expected: Proposal accepted, status changes to ACCEPTED
@@ -153,6 +159,7 @@ Cause: Workflow authorization uses same flawed pattern
 ### Authorization Testing Required
 
 1. **Provider CRUD Operations**:
+
    - Create availability as provider → should succeed
    - View own availability as provider → should succeed
    - Update own availability as provider → should succeed
@@ -160,10 +167,12 @@ Cause: Workflow authorization uses same flawed pattern
    - Cancel own availability as provider → should succeed
 
 2. **Cross-User Authorization**:
+
    - Provider A tries to access Provider B's availability → should fail
    - User without Provider record tries to access availability → should fail
 
 3. **Organization Authorization**:
+
    - Organization admin manages provider availability → should succeed
    - Organization admin from different org tries to access → should fail
 
@@ -196,17 +205,20 @@ Cause: Workflow authorization uses same flawed pattern
 ## Reproduction Steps
 
 ### Step 1: Create Provider User
+
 1. Register as provider
 2. Complete provider profile setup
 3. Log in as provider user
 
 ### Step 2: Attempt Availability Management
+
 1. Navigate to provider calendar
 2. Try to create availability → may fail at authorization
 3. Try to edit existing availability → will fail with unauthorized error
 4. Try to view availability details → will fail with unauthorized error
 
 ### Step 3: Verify Authorization Error
+
 1. Check browser console/network tab
 2. Look for 403/401 authorization errors
 3. Check server logs for authorization failures
@@ -214,10 +226,12 @@ Cause: Workflow authorization uses same flawed pattern
 ## Related Issues
 
 ### Fixed Issues
+
 - ✅ Provider availability status assignment (providers get ACCEPTED status)
 - ✅ Slot generation for provider-created availability
 
-### Remaining Issues  
+### Remaining Issues
+
 - ❌ Authorization checks throughout calendar system
 - ❌ Field name inconsistencies in search functionality
 - ❌ Workflow authorization for providers
@@ -235,6 +249,6 @@ Once this bug description is approved, a comprehensive task list should be gener
 ## Files Requiring Investigation
 
 - `src/features/calendar/lib/actions.ts` - Primary calendar operations
-- `src/features/calendar/lib/workflow-service.ts` - Availability workflows  
+- `src/features/calendar/lib/workflow-service.ts` - Availability workflows
 - `src/features/calendar/types/types.ts` - Type definitions verification
 - Related test files for comprehensive coverage

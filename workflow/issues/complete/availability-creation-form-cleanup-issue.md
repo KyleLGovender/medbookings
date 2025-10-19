@@ -9,11 +9,13 @@ The `availability-creation-form.tsx` component requires comprehensive technical 
 The availability creation form is a critical component in the calendar feature that manages provider availability scheduling. While it appears to function for basic operations, it contains several issues that compromise code quality and maintainability:
 
 1. **Functional Bugs**:
+
    - Location selection should not exist for provider self-scheduling (providers can only create online availability, locations are organization-only)
    - Custom recurrence pattern details are not displayed after selection
    - Mixed workflow confusion: form currently tries to handle both provider self-scheduling AND organization-created scheduling (should be separated)
 
 2. **Code Quality Issues**:
+
    - Complex state management that may not follow CLAUDE.md patterns
    - Potential legacy code and development artifacts
    - Inconsistent type safety patterns
@@ -27,6 +29,7 @@ The availability creation form is a critical component in the calendar feature t
 ## Expected vs Actual Behavior
 
 ### Expected Behavior
+
 - **Single Purpose**: Form should handle ONLY provider self-scheduling
 - **Clear Context Header**: Display informational text at top: "Creating online availability for [Provider Name]"
 - **No Location Selection**: Remove location UI entirely - provider availability is automatically online-only
@@ -36,6 +39,7 @@ The availability creation form is a critical component in the calendar feature t
 - **Code Quality**: Clean, maintainable code following CLAUDE.md patterns
 
 ### Actual Behavior
+
 - **Mixed Purpose**: Form attempts to handle both provider and organization workflows
 - **Location Selection**: Incorrectly shows location selection UI (locations are organization-only)
 - **Organization Role**: "Creating as" selector causes confusion and errors
@@ -65,7 +69,7 @@ The availability creation form is a critical component in the calendar feature t
 
 - **Severity**: High - Core functionality with data integrity implications
 - **Frequency**: Every availability creation operation
-- **Business Impact**: 
+- **Business Impact**:
   - Incorrect availability settings could lead to booking conflicts
   - Poor user experience during critical onboarding/setup flows
   - Technical debt propagation to related components
@@ -74,10 +78,12 @@ The availability creation form is a critical component in the calendar feature t
 ## Error Details
 
 1. **Workflow Confusion** (Lines 230-287):
+
    - "Creating as" selector and organization role logic should be removed entirely
    - This complexity is causing unnecessary state management and conditional logic
 
 2. **Type Safety Concerns**:
+
    - Component may not be using `RouterOutputs` for type extraction
    - Potential mixing of manual types where tRPC types should be used
 
@@ -89,7 +95,7 @@ The availability creation form is a critical component in the calendar feature t
 ## Environment Information
 
 - **Component**: `/src/features/calendar/components/availability/availability-creation-form.tsx`
-- **Dependencies**: 
+- **Dependencies**:
   - tRPC for API calls
   - React Hook Form for form management
   - Zod for validation
@@ -113,6 +119,7 @@ The availability creation form is a critical component in the calendar feature t
 ## Potential Solutions
 
 ### 1. **Simplify to Single Purpose**
+
 - Remove ALL organization-related logic and UI elements
 - Remove the "Creating as" selector entirely
 - Add clear informational header: "Creating online availability for [Provider Name]"
@@ -120,37 +127,43 @@ The availability creation form is a critical component in the calendar feature t
 - Ensure organization workflows use `availability-proposal-form.tsx` exclusively
 
 ### 2. **Remove All Location UI for Providers**
+
 - Remove ALL location-related UI elements (both online toggle and location selection)
 - Automatically set `isOnlineAvailable` to true in the backend submission
 - Locations are exclusively for organization-managed availability
 - Provider self-scheduling is ALWAYS online-only without needing UI selection
 
 ### 3. **Remove Organization Code**
+
 - Remove all organization-related imports and hooks
 - Remove organization-related state variables
 - Simplify component props to remove organizationId
 - Clean up any conditional logic based on creator type
 
 ### 4. **Implement Type Safety Patterns**
+
 ```typescript
+// Use domain types from manual files
+import { RecurrenceOption } from '@/features/calendar/types/types';
+
 // Extract types from RouterOutputs
 type AvailabilityData = RouterOutputs['calendar']['getAvailability'];
 type LocationData = RouterOutputs['organizations']['getLocations'];
-
-// Use domain types from manual files
-import { RecurrenceOption } from '@/features/calendar/types/types';
 ```
 
 ### 5. **Display Custom Recurrence Details**
+
 - Add UI component to show selected recurrence pattern
 - Update form state to track and display pattern details
 
 ### 6. **Simplify State Management**
+
 - Consolidate related state into single objects
 - Use form.watch more efficiently
 - Implement proper memoization
 
 ### 7. **Add Proper Error Handling**
+
 - Implement comprehensive error boundaries
 - Add loading states for all async operations
 - Provide clear user feedback for all actions

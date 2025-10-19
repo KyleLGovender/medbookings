@@ -6,10 +6,11 @@
 
 ```typescript
 // auth.ts
-import NextAuth from "next-auth"
-import Google from "next-auth/providers/google"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "@/lib/prisma"
+import { PrismaAdapter } from '@auth/prisma-adapter';
+import NextAuth from 'next-auth';
+import Google from 'next-auth/providers/google';
+
+import { prisma } from '@/lib/prisma';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -17,48 +18,48 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    })
+    }),
   ],
-  session: { strategy: "jwt" },
+  session: { strategy: 'jwt' },
   callbacks: {
     async session({ session, token, user }) {
       // Add custom fields to session
       if (token) {
-        session.user.id = token.id
-        session.user.role = token.role
+        session.user.id = token.id;
+        session.user.role = token.role;
       }
-      return session
+      return session;
     },
     async jwt({ token, user, account, profile }) {
       // Persist user data in JWT
       if (user) {
-        token.id = user.id
-        token.role = user.role
+        token.id = user.id;
+        token.role = user.role;
       }
-      return token
+      return token;
     },
     async signIn({ user, account, profile }) {
       // Control sign in flow
-      return true // or false to deny
+      return true; // or false to deny
     },
     authorized({ auth, request: { nextUrl } }) {
-      const isLoggedIn = !!auth?.user
-      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard')
-      
+      const isLoggedIn = !!auth?.user;
+      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
+
       if (isOnDashboard) {
-        if (isLoggedIn) return true
-        return false // Redirect unauthenticated users to login
+        if (isLoggedIn) return true;
+        return false; // Redirect unauthenticated users to login
       } else if (isLoggedIn) {
-        return Response.redirect(new URL('/dashboard', nextUrl))
+        return Response.redirect(new URL('/dashboard', nextUrl));
       }
-      return true
-    }
+      return true;
+    },
   },
   pages: {
     signIn: '/auth/signin',
     error: '/auth/error',
-  }
-})
+  },
+});
 ```
 
 ## Providers
@@ -66,9 +67,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 ### OAuth Providers
 
 ```typescript
-import Google from "next-auth/providers/google"
-import GitHub from "next-auth/providers/github"
-import Facebook from "next-auth/providers/facebook"
+import Facebook from 'next-auth/providers/facebook';
+import GitHub from 'next-auth/providers/github';
+import Google from 'next-auth/providers/google';
 
 providers: [
   Google({
@@ -76,11 +77,11 @@ providers: [
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     authorization: {
       params: {
-        prompt: "consent",
-        access_type: "offline",
-        response_type: "code"
-      }
-    }
+        prompt: 'consent',
+        access_type: 'offline',
+        response_type: 'code',
+      },
+    },
   }),
   GitHub({
     clientId: process.env.GITHUB_ID,
@@ -89,58 +90,58 @@ providers: [
   Facebook({
     clientId: process.env.FACEBOOK_CLIENT_ID,
     clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
-  })
-]
+  }),
+];
 ```
 
 ### Email Provider
 
 ```typescript
-import Resend from "next-auth/providers/resend"
+import Resend from 'next-auth/providers/resend';
 
 providers: [
   Resend({
     apiKey: process.env.AUTH_RESEND_KEY,
-    from: "no-reply@medbookings.com"
-  })
-]
+    from: 'no-reply@medbookings.com',
+  }),
+];
 ```
 
 ### Credentials Provider
 
 ```typescript
-import Credentials from "next-auth/providers/credentials"
-import bcrypt from "bcryptjs"
+import bcrypt from 'bcryptjs';
+import Credentials from 'next-auth/providers/credentials';
 
 providers: [
   Credentials({
-    name: "credentials",
+    name: 'credentials',
     credentials: {
-      email: { label: "Email", type: "email" },
-      password: { label: "Password", type: "password" }
+      email: { label: 'Email', type: 'email' },
+      password: { label: 'Password', type: 'password' },
     },
     async authorize(credentials) {
-      if (!credentials?.email || !credentials?.password) return null
-      
+      if (!credentials?.email || !credentials?.password) return null;
+
       const user = await prisma.user.findUnique({
-        where: { email: credentials.email }
-      })
-      
-      if (!user || !user.password) return null
-      
-      const isValid = await bcrypt.compare(credentials.password, user.password)
-      
-      if (!isValid) return null
-      
+        where: { email: credentials.email },
+      });
+
+      if (!user || !user.password) return null;
+
+      const isValid = await bcrypt.compare(credentials.password, user.password);
+
+      if (!isValid) return null;
+
       return {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role
-      }
-    }
-  })
-]
+        role: user.role,
+      };
+    },
+  }),
+];
 ```
 
 ## Usage in Components
@@ -153,11 +154,11 @@ import { redirect } from "next/navigation"
 
 export default async function ProtectedPage() {
   const session = await auth()
-  
+
   if (!session) {
     redirect('/auth/signin')
   }
-  
+
   return (
     <div>
       <h1>Welcome {session.user?.name}</h1>
@@ -177,11 +178,11 @@ import { signIn, signOut } from "next-auth/react"
 
 export function AuthButton() {
   const { data: session, status } = useSession()
-  
+
   if (status === "loading") {
     return <div>Loading...</div>
   }
-  
+
   if (session) {
     return (
       <>
@@ -190,7 +191,7 @@ export function AuthButton() {
       </>
     )
   }
-  
+
   return (
     <button onClick={() => signIn()}>Sign in</button>
   )
@@ -233,40 +234,40 @@ export default function RootLayout({
 ## Server Actions with Auth
 
 ```typescript
-import { auth } from "@/auth"
+import { auth } from '@/auth';
 
 export async function updateProfile(formData: FormData) {
-  const session = await auth()
-  
+  const session = await auth();
+
   if (!session?.user?.id) {
-    throw new Error('Unauthorized')
+    throw new Error('Unauthorized');
   }
-  
+
   // Update user profile
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { 
+    data: {
       name: formData.get('name') as string,
-      bio: formData.get('bio') as string
-    }
-  })
+      bio: formData.get('bio') as string,
+    },
+  });
 }
 
 export async function deleteAccount() {
-  const session = await auth()
-  
+  const session = await auth();
+
   if (!session?.user?.id) {
-    throw new Error('Unauthorized')
+    throw new Error('Unauthorized');
   }
-  
+
   // Soft delete user account
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { deletedAt: new Date() }
-  })
-  
+    data: { deletedAt: new Date() },
+  });
+
   // Sign out user
-  await signOut()
+  await signOut();
 }
 ```
 
@@ -274,15 +275,11 @@ export async function deleteAccount() {
 
 ```typescript
 // middleware.ts
-export { auth as middleware } from "@/auth"
+export { auth as middleware } from '@/auth';
 
 export const config = {
-  matcher: [
-    '/dashboard/:path*',
-    '/admin/:path*',
-    '/api/protected/:path*'
-  ]
-}
+  matcher: ['/dashboard/:path*', '/admin/:path*', '/api/protected/:path*'],
+};
 ```
 
 ## Custom Pages

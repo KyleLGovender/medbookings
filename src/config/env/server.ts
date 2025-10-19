@@ -10,7 +10,7 @@ const env = createEnv({
     AUTH_SECRET: z.string(),
     NEXTAUTH_URL: z.string(),
     // AWS S3 Configuration
-    AWS_S3_BUCKET_NAME: z.string(),
+    S3_BUCKET_NAME: z.string(),
     AWS_REGION: z.string().default('eu-west-1'),
     // AWS credentials are optional - automatically provided by IAM role in AWS Amplify
     AWS_ACCESS_KEY_ID: z.string().optional(),

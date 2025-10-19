@@ -2,10 +2,10 @@ import { AvailabilityStatus } from '@prisma/client';
 import { Repeat } from 'lucide-react';
 
 import {
-  getAvailabilityForDay,
-  getWorkingTimeRange,
   calculateAvailabilityTimeRange,
+  getAvailabilityForDay,
   getAvailabilityStyle,
+  getWorkingTimeRange,
 } from '@/features/calendar/lib/calendar-utils';
 
 import { AvailabilityData, AvailabilityThreeDayViewProps } from './types';

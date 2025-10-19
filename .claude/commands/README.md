@@ -79,6 +79,7 @@ Ask for any missing information before proceeding to the next phase.
 ### 1. prd-specification.md
 
 **Asks for:**
+
 - Feature description (what to document)
 - Initial context (problem/opportunity)
 
@@ -87,6 +88,7 @@ Ask for any missing information before proceeding to the next phase.
 ### 2. issue-specification.md
 
 **Asks for:**
+
 - Issue description (the bug/problem)
 - When it occurs (context)
 
@@ -95,6 +97,7 @@ Ask for any missing information before proceeding to the next phase.
 ### 3. issue-add-to-backlog.md
 
 **Asks for:**
+
 - Issue description (what to add)
 
 **Then proceeds to:** Priority and categorization questions
@@ -102,6 +105,7 @@ Ask for any missing information before proceeding to the next phase.
 ### 4. tasks-list.md
 
 **Asks for:**
+
 - Specification file path (source document)
 
 **Then proceeds to:** Task generation process
@@ -109,6 +113,7 @@ Ask for any missing information before proceeding to the next phase.
 ### 5. tasks-process.md
 
 **Asks for:**
+
 - Task list file path (what to implement)
 - Execution mode (optional: interactive vs YOLO)
 
@@ -136,12 +141,15 @@ Ask for any missing information before proceeding to the next phase.
 When testing a command, try these scenarios:
 
 1. **With $ARGUMENTS**: `/command arg1 arg2`
+
    - Should extract parameters and proceed
 
 2. **Without $ARGUMENTS**: `/command`
+
    - Should ask for required parameters
 
 3. **Partial $ARGUMENTS**: `/command arg1`
+
    - Should ask for missing parameters only
 
 4. **Invalid $ARGUMENTS**: `/command invalid-format`
@@ -157,6 +165,7 @@ When testing a command, try these scenarios:
 **CRITICAL:** Check if the user provided [required info] via $ARGUMENTS or in their message. If not provided or unclear, you MUST ask the user:
 
 1. **[Parameter 1 Name]:** "[Clear question asking for parameter 1]"
+
    - [Optional: Format, examples, or additional context]
 
 2. **[Parameter 2 Name (Optional)]:** "[Clear question for optional parameter]"
@@ -172,7 +181,7 @@ Once you have this information from $ARGUMENTS or user input, proceed to [next p
 
 1. [First step using the collected parameters]
 2. [Second step...]
-...
+   ...
 ```
 
 ## Migration Checklist
@@ -191,6 +200,7 @@ When updating existing commands:
 ## Summary
 
 This pattern ensures:
+
 - **Reliability**: Commands never execute with missing information
 - **User-Friendly**: Clear communication about what's needed
 - **Flexibility**: Works with various input methods

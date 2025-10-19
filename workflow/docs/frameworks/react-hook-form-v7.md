@@ -277,9 +277,9 @@ function DynamicForm() {
             {...register(`medicalHistory.${index}.condition`, { required: true })}
             placeholder="Condition"
           />
-          
+
           <input
-            {...register(`medicalHistory.${index}.year`, { 
+            {...register(`medicalHistory.${index}.year`, {
               required: true,
               valueAsNumber: true,
               min: 1900,
@@ -288,7 +288,7 @@ function DynamicForm() {
             type="number"
             placeholder="Year"
           />
-          
+
           <label>
             <input
               {...register(`medicalHistory.${index}.ongoing`)}
@@ -296,7 +296,7 @@ function DynamicForm() {
             />
             Ongoing condition
           </label>
-          
+
           <button
             type="button"
             onClick={() => remove(index)}
@@ -345,7 +345,7 @@ function AppointmentForm() {
   const onSubmit = async (data: AppointmentForm) => {
     try {
       const result = await createAppointment(data)
-      
+
       if (result.success) {
         toast.success('Appointment created successfully!')
         reset()
@@ -432,7 +432,7 @@ function WatchingForm() {
     <form>
       <input {...register('name')} />
       <input {...register('email')} />
-      
+
       <div>Current name: {watchedName}</div>
       <div>All values: {JSON.stringify(watchedValues)}</div>
     </form>
@@ -476,7 +476,7 @@ function SubmissionStates() {
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <input {...register('name', { required: true })} />
-      
+
       <div>
         <p>Is Valid: {isValid ? 'Yes' : 'No'}</p>
         <p>Is Dirty: {isDirty ? 'Yes' : 'No'}</p>
@@ -537,7 +537,7 @@ export function useFormWithToast<T>({
 
 // Usage
 function MyForm() {
-  const { register, onSubmit, formState: { errors, isSubmitting } } = 
+  const { register, onSubmit, formState: { errors, isSubmitting } } =
     useFormWithToast({
       schema: mySchema,
       onSubmit: async (data) => {

@@ -638,7 +638,7 @@ The MedBookings application is currently on Vercel but not live. We need a produ
 
    - Replace `BLOB_READ_WRITE_TOKEN` with S3 bucket configuration
    - Update file upload logic to use AWS SDK
-   - Add new environment variables: `AWS_S3_BUCKET_NAME`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
+   - Add new environment variables: `S3_BUCKET_NAME`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
 
 9. **Monitoring Dashboard**: Use **default AWS dashboards**
 

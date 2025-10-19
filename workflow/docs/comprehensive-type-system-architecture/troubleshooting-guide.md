@@ -5,7 +5,7 @@
 ## Table of Contents
 
 1. [TypeScript Compilation Errors](#typescript-compilation-errors)
-2. [tRPC Type Issues](#trpc-type-issues)  
+2. [tRPC Type Issues](#trpc-type-issues)
 3. [Import and Export Problems](#import-and-export-problems)
 4. [Type Extraction Issues](#type-extraction-issues)
 5. [Date and Time Type Problems](#date-and-time-type-problems)
@@ -97,12 +97,13 @@ import { api } from '@utils/api';   // Missing '@/'
 **Solution Checklist**:
 
 1. **Check tRPC procedure has return statement**:
+
    ```typescript
    // ❌ WRONG - no return statement
    getProviders: protectedProcedure.query(async ({ ctx }) => {
      ctx.prisma.provider.findMany(); // Missing return!
    });
-   
+
    // ✅ CORRECT - explicit return
    getProviders: protectedProcedure.query(async ({ ctx }) => {
      return ctx.prisma.provider.findMany(); // Has return
@@ -110,13 +111,14 @@ import { api } from '@utils/api';   // Missing '@/'
    ```
 
 2. **Check procedure name matches hook call**:
+
    ```typescript
    // ❌ WRONG - mismatched names
    // Procedure: 'getAllProviders'
    // Hook call: api.providers.getProviders.useQuery()
-   
+
    // ✅ CORRECT - names match
-   // Procedure: 'getProviders'  
+   // Procedure: 'getProviders'
    // Hook call: api.providers.getProviders.useQuery()
    ```
 
@@ -139,6 +141,7 @@ import { api } from '@utils/api';   // Missing '@/'
 4. **Hook calls correct path**: `api.[router].[procedure].useQuery()`
 
 Example debugging:
+
 ```typescript
 // 1. Check procedure exists in router
 export const providersRouter = createTRPCRouter({
@@ -197,7 +200,7 @@ type ProviderType = RouterOutputs['providers']['getTypes'][number];
 
 // ✅ SOLUTION: Extract shared types to separate file
 // /features/shared/types.ts - Common types
-// /features/providers/types.ts - Provider-specific types  
+// /features/providers/types.ts - Provider-specific types
 // /features/providers/components.tsx - Uses types but doesn't export them
 ```
 
@@ -236,7 +239,7 @@ type ServiceName = NonNullable<SlotService>['name'];
 **Common when trying to access dynamic properties**:
 
 ```typescript
-// ❌ ERROR: No index signature  
+// ❌ ERROR: No index signature
 const requirements = onboardingData.requirements;
 const providerTypeReqs = requirements[selectedTypeId]; // Error
 
@@ -269,11 +272,11 @@ const onSubmit = (data: FormData) => {
 const onSubmit = (data: FormData) => {
   const submitData: CreateAvailabilityInput = {
     ...data,
-    startTime: data.startTime instanceof Date 
-      ? data.startTime 
+    startTime: data.startTime instanceof Date
+      ? data.startTime
       : new Date(data.startTime),
-    endTime: data.endTime instanceof Date 
-      ? data.endTime 
+    endTime: data.endTime instanceof Date
+      ? data.endTime
       : new Date(data.endTime),
   };
   createMutation.mutateAsync(submitData);
@@ -288,12 +291,12 @@ const onSubmit = (data: FormData) => {
 // ✅ SOLUTION: Validate dates before conversion
 const convertToDate = (dateInput: string | Date): Date => {
   if (dateInput instanceof Date) return dateInput;
-  
+
   const date = new Date(dateInput);
   if (isNaN(date.getTime())) {
     throw new Error(`Invalid date: ${dateInput}`);
   }
-  
+
   return date;
 };
 
@@ -314,6 +317,7 @@ npx prisma generate
 ```
 
 If still not working, check:
+
 1. `package.json` has `@prisma/client` dependency
 2. `prisma/schema.prisma` file exists
 3. Run `npm install` to ensure dependencies are installed
@@ -324,11 +328,13 @@ If still not working, check:
 
 ```typescript
 // ❌ ERROR: ImportError - enum doesn't exist
-import { ProviderType } from '@prisma/client'; // Error
-
+import { ProviderType } from '@prisma/client';
+// Error
 // ✅ SOLUTION: Check the actual enum name in schema.prisma
 // Look for: enum ProviderStatus, enum OrganizationRole, etc.
-import { ProviderStatus } from '@prisma/client'; // Correct name
+import { ProviderStatus } from '@prisma/client';
+
+// Correct name
 ```
 
 **Check your `schema.prisma` file** for the exact enum names.
@@ -384,7 +390,7 @@ if (providerId) {
 
 // ✅ CORRECT: Use enabled option
 const { data } = useProvider(providerId, {
-  enabled: !!providerId // Hook always called, but query disabled when no ID
+  enabled: !!providerId, // Hook always called, but query disabled when no ID
 });
 ```
 
@@ -393,13 +399,14 @@ const { data } = useProvider(providerId, {
 **Solution**: Extract proper type at component level:
 
 ```typescript
+// ✅ CORRECT: Extract correct type
+import { type RouterOutputs } from '@/utils/api';
+
 // ❌ WRONG: Using wrong type for prop
 interface ProviderCardProps {
   provider: any; // Wrong type
 }
 
-// ✅ CORRECT: Extract correct type
-import { type RouterOutputs } from '@/utils/api';
 type Provider = RouterOutputs['providers']['getById'];
 
 interface ProviderCardProps {
@@ -416,6 +423,7 @@ interface ProviderCardProps {
 **Solution Checklist**:
 
 1. **Run TypeScript check locally**:
+
    ```bash
    npx tsc --noEmit
    ```
@@ -457,30 +465,35 @@ interface ProviderCardProps {
 When encountering any type issue:
 
 ### 1. ✅ Verify tRPC Setup
+
 - [ ] Procedure exists in router file
-- [ ] Router imported in root.ts  
+- [ ] Router imported in root.ts
 - [ ] Procedure has return statement
 - [ ] Hook calls correct path
 
 ### 2. ✅ Check Type Extraction
+
 - [ ] Using `RouterOutputs` for server data
 - [ ] Using `RouterInputs` for form inputs
 - [ ] Using `[number]` for array items
 - [ ] Using `NonNullable<>` for optional relations
 
 ### 3. ✅ Verify Imports
+
 - [ ] Correct import paths (`@/utils/api`)
 - [ ] No circular dependencies
 - [ ] Prisma types from `@prisma/client`
 - [ ] Manual types from feature directories
 
 ### 4. ✅ Check Runtime Data
+
 - [ ] Database includes required relations
 - [ ] Form data matches expected types
 - [ ] Dates properly converted
 - [ ] Null checking in place
 
 ### 5. ✅ Validate Build
+
 - [ ] TypeScript compilation passes
 - [ ] No `any` types used
 - [ ] All imports resolve
@@ -488,15 +501,15 @@ When encountering any type issue:
 
 ## Common Error Patterns and Solutions
 
-| Error Pattern | Likely Cause | Quick Fix |
-|---------------|-------------|-----------|
+| Error Pattern                 | Likely Cause                       | Quick Fix                     |
+| ----------------------------- | ---------------------------------- | ----------------------------- |
 | `Property 'X' does not exist` | Missing relation in tRPC procedure | Add `include` to Prisma query |
-| `Type 'any'` returned | No return statement in procedure | Add explicit `return` |
-| `Cannot find module` | Wrong import path | Check path and file existence |
-| `Type 'undefined'` error | Missing null checking | Add loading/error/null states |
-| `Date type mismatch` | Form string vs tRPC Date | Convert string to Date |
-| `Hook rule violation` | Conditional hook usage | Use `enabled` option instead |
-| `Build fails in prod` | TypeScript strict mode | Run `tsc --noEmit` locally |
+| `Type 'any'` returned         | No return statement in procedure   | Add explicit `return`         |
+| `Cannot find module`          | Wrong import path                  | Check path and file existence |
+| `Type 'undefined'` error      | Missing null checking              | Add loading/error/null states |
+| `Date type mismatch`          | Form string vs tRPC Date           | Convert string to Date        |
+| `Hook rule violation`         | Conditional hook usage             | Use `enabled` option instead  |
+| `Build fails in prod`         | TypeScript strict mode             | Run `tsc --noEmit` locally    |
 
 ## Getting Help
 

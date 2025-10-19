@@ -56,14 +56,14 @@ enum Permission {
   // System-level
   MANAGE_PLATFORM = 'MANAGE_PLATFORM',
   APPROVE_PROVIDERS = 'APPROVE_PROVIDERS',
-  
+
   // Organization-level
   MANAGE_ORGANIZATION = 'MANAGE_ORGANIZATION',
   INVITE_MEMBERS = 'INVITE_MEMBERS',
-  
+
   // Provider-level
   MANAGE_AVAILABILITY = 'MANAGE_AVAILABILITY',
-  MANAGE_SERVICES = 'MANAGE_SERVICES'
+  MANAGE_SERVICES = 'MANAGE_SERVICES',
 }
 ```
 
@@ -74,17 +74,17 @@ Roles are collections of permissions with inheritance:
 ```typescript
 // System roles (platform-wide)
 enum SystemRole {
-  USER = 'USER',           // Basic authenticated user
-  ADMIN = 'ADMIN',         // Platform administrator
-  SUPER_ADMIN = 'SUPER_ADMIN' // Full platform control
+  USER = 'USER', // Basic authenticated user
+  ADMIN = 'ADMIN', // Platform administrator
+  SUPER_ADMIN = 'SUPER_ADMIN', // Full platform control
 }
 
 // Organization roles (per-organization)
 enum OrganizationRole {
-  STAFF = 'STAFF',         // Basic organization access
-  MANAGER = 'MANAGER',     // Manage calendar and bookings
-  ADMIN = 'ADMIN',         // Manage members and settings
-  OWNER = 'OWNER'          // Full organization control
+  STAFF = 'STAFF', // Basic organization access
+  MANAGER = 'MANAGER', // Manage calendar and bookings
+  ADMIN = 'ADMIN', // Manage members and settings
+  OWNER = 'OWNER', // Full organization control
 }
 ```
 
@@ -94,9 +94,9 @@ Permissions can be scoped to specific contexts:
 
 ```typescript
 interface PermissionContext {
-  organizationId?: string;  // Organization-scoped permission
-  providerId?: string;      // Provider-scoped permission
-  userId?: string;          // User-scoped permission
+  organizationId?: string; // Organization-scoped permission
+  providerId?: string; // Provider-scoped permission
+  userId?: string; // User-scoped permission
 }
 ```
 
@@ -120,10 +120,7 @@ Permissions scoped to specific organizations:
 
 ```typescript
 // Check organization-specific permission
-const canManageOrg = hasPermission(
-  Permission.MANAGE_ORGANIZATION,
-  { organizationId: 'org-123' }
-);
+const canManageOrg = hasPermission(Permission.MANAGE_ORGANIZATION, { organizationId: 'org-123' });
 
 // Check organization role
 const { getOrganizationRole } = usePermissions();
@@ -139,10 +136,9 @@ Permissions related to provider capabilities:
 const { isProvider } = usePermissions();
 
 // Check provider-specific permission
-const canManageAvailability = hasPermission(
-  Permission.MANAGE_AVAILABILITY,
-  { providerId: 'provider-456' }
-);
+const canManageAvailability = hasPermission(Permission.MANAGE_AVAILABILITY, {
+  providerId: 'provider-456',
+});
 ```
 
 ## Role Hierarchy
@@ -176,7 +172,7 @@ OWNER
 const adminPermissions = [
   ...getUserPermissions(SystemRole.USER),
   Permission.APPROVE_PROVIDERS,
-  Permission.APPROVE_ORGANIZATIONS
+  Permission.APPROVE_ORGANIZATIONS,
 ];
 ```
 
@@ -215,7 +211,7 @@ Use permission checking in API routes:
 export async function POST(request: Request) {
   const currentUser = await getCurrentUser();
   requirePermission(currentUser.permissions, Permission.CREATE_AVAILABILITY);
-  
+
   // Process request...
 }
 ```
@@ -242,11 +238,9 @@ Use permission-based form components:
 Check if user has a specific permission:
 
 ```typescript
-const canEdit = hasPermission(
-  userPermissions,
-  Permission.MANAGE_ORGANIZATION,
-  { organizationId: 'org-123' }
-);
+const canEdit = hasPermission(userPermissions, Permission.MANAGE_ORGANIZATION, {
+  organizationId: 'org-123',
+});
 ```
 
 #### `requirePermission(permissions, permission, context?)`
@@ -254,10 +248,7 @@ const canEdit = hasPermission(
 Throw error if user lacks permission (for API routes):
 
 ```typescript
-requirePermission(
-  currentUser.permissions,
-  Permission.APPROVE_PROVIDERS
-);
+requirePermission(currentUser.permissions, Permission.APPROVE_PROVIDERS);
 ```
 
 #### `canManageUser(managerPerms, targetPerms, organizationId?)`
@@ -265,11 +256,7 @@ requirePermission(
 Check if one user can manage another:
 
 ```typescript
-const canManage = canManageUser(
-  adminPermissions,
-  userPermissions,
-  'org-123'
-);
+const canManage = canManageUser(adminPermissions, userPermissions, 'org-123');
 ```
 
 ### React Hooks
@@ -279,13 +266,8 @@ const canManage = canManageUser(
 Main hook for permission checking in components:
 
 ```typescript
-const {
-  hasPermission,
-  isSystemAdmin,
-  isProvider,
-  getOrganizationRole,
-  permissions
-} = usePermissions({ organizationId: 'org-123' });
+const { hasPermission, isSystemAdmin, isProvider, getOrganizationRole, permissions } =
+  usePermissions({ organizationId: 'org-123' });
 ```
 
 #### `useOrganizationPermissions(organizationId)`
@@ -293,11 +275,8 @@ const {
 Specialized hook for organization context:
 
 ```typescript
-const {
-  organizationRole,
-  isAdmin,
-  hasOrganizationPermission
-} = useOrganizationPermissions('org-123');
+const { organizationRole, isAdmin, hasOrganizationPermission } =
+  useOrganizationPermissions('org-123');
 ```
 
 ### Session Management
@@ -336,7 +315,7 @@ Basic usage:
 Multiple permissions (require all):
 
 ```tsx
-<PermissionGate 
+<PermissionGate
   permissions={[Permission.MANAGE_ORGANIZATION, Permission.MANAGE_BILLING]}
   requireAll={true}
 >
@@ -355,9 +334,7 @@ Role-based access:
 Custom permission check:
 
 ```tsx
-<PermissionGate 
-  custom={(permissions) => permissions.providerId === currentProviderId}
->
+<PermissionGate custom={(permissions) => permissions.providerId === currentProviderId}>
   <ProviderSettings />
 </PermissionGate>
 ```
@@ -372,11 +349,8 @@ Custom permission check:
     label="Organization Name"
     permission={Permission.MANAGE_ORGANIZATION}
   />
-  
-  <PermissionSection
-    title="Admin Settings"
-    permission={Permission.MANAGE_PLATFORM}
-  >
+
+  <PermissionSection title="Admin Settings" permission={Permission.MANAGE_PLATFORM}>
     <PermissionSelect
       form={form}
       name="status"
@@ -395,22 +369,22 @@ const navigationItems: NavigationItem[] = [
   {
     href: '/dashboard',
     label: 'Dashboard',
-    icon: <Home />
+    icon: <Home />,
   },
   {
     href: '/admin',
     label: 'Admin',
     icon: <Shield />,
-    systemRole: [SystemRole.ADMIN, SystemRole.SUPER_ADMIN]
+    systemRole: [SystemRole.ADMIN, SystemRole.SUPER_ADMIN],
   },
   {
     href: '/organizations/new',
     label: 'Create Organization',
-    permission: Permission.MANAGE_ORGANIZATION
-  }
+    permission: Permission.MANAGE_ORGANIZATION,
+  },
 ];
 
-<PermissionNavigation items={navigationItems} />
+<PermissionNavigation items={navigationItems} />;
 ```
 
 ## Testing Permissions
@@ -426,9 +400,9 @@ describe('Permission System', () => {
     const permissions = {
       systemRole: SystemRole.ADMIN,
       organizationRoles: [],
-      providerRole: undefined
+      providerRole: undefined,
     };
-    
+
     const result = hasPermission(permissions, Permission.APPROVE_PROVIDERS);
     expect(result).toBe(true);
   });
@@ -440,7 +414,7 @@ describe('Permission System', () => {
 ```typescript
 // Test API route protection
 const response = await fetch('/api/admin/providers', {
-  headers: { Authorization: `Bearer ${userToken}` }
+  headers: { Authorization: `Bearer ${userToken}` },
 });
 
 expect(response.status).toBe(403); // Forbidden for non-admin
@@ -450,6 +424,7 @@ expect(response.status).toBe(403); // Forbidden for non-admin
 
 ```tsx
 import { render, screen } from '@testing-library/react';
+
 import { PermissionGate } from '@/components/auth/permission-gate';
 
 test('renders content for authorized user', () => {
@@ -460,7 +435,7 @@ test('renders content for authorized user', () => {
       </PermissionGate>
     </MockPermissionProvider>
   );
-  
+
   expect(screen.getByText('Admin Content')).toBeInTheDocument();
 });
 ```
@@ -508,7 +483,7 @@ await logSecurityEvent({
   userId: currentUser.id,
   permission: Permission.APPROVE_PROVIDERS,
   result: hasAccess,
-  context: { organizationId }
+  context: { organizationId },
 });
 ```
 
@@ -520,7 +495,7 @@ await logSecurityEvent({
 // Invalidate cache when roles change
 await prisma.organizationMembership.update({
   where: { id: membershipId },
-  data: { role: newRole }
+  data: { role: newRole },
 });
 
 await invalidateUserPermissions(user.email);
@@ -531,15 +506,17 @@ await invalidateUserPermissions(user.email);
 ### Adding New Permissions
 
 1. **Define the permission:**
+
 ```typescript
 // types/permissions.ts
 enum Permission {
   // ... existing permissions
-  NEW_FEATURE_ACCESS = 'NEW_FEATURE_ACCESS'
+  NEW_FEATURE_ACCESS = 'NEW_FEATURE_ACCESS',
 }
 ```
 
 2. **Add to role hierarchy:**
+
 ```typescript
 // lib/auth/roles.ts
 [SystemRole.ADMIN]: {
@@ -551,6 +528,7 @@ enum Permission {
 ```
 
 3. **Implement checks:**
+
 ```tsx
 <PermissionGate permission={Permission.NEW_FEATURE_ACCESS}>
   <NewFeature />
@@ -560,14 +538,16 @@ enum Permission {
 ### Adding New Roles
 
 1. **Define the role:**
+
 ```typescript
 enum OrganizationRole {
   // ... existing roles
-  SPECIALIST = 'SPECIALIST'
+  SPECIALIST = 'SPECIALIST',
 }
 ```
 
 2. **Define permissions:**
+
 ```typescript
 [OrganizationRole.SPECIALIST]: {
   role: OrganizationRole.SPECIALIST,
@@ -577,6 +557,7 @@ enum OrganizationRole {
 ```
 
 3. **Update UI:**
+
 ```tsx
 <PermissionGate organizationRole={OrganizationRole.SPECIALIST}>
   <SpecialistPanel />
@@ -601,8 +582,8 @@ When adding new roles or permissions:
 ALTER TYPE "OrganizationRole" ADD VALUE 'SPECIALIST';
 
 -- Update existing users if needed
-UPDATE "OrganizationMembership" 
-SET role = 'SPECIALIST' 
+UPDATE "OrganizationMembership"
+SET role = 'SPECIALIST'
 WHERE conditions...;
 ```
 
@@ -627,7 +608,7 @@ if (cached && !isExpired(cached)) {
 // Instead of multiple individual checks
 const checks = [
   { permission: Permission.READ_ORGANIZATION, context: { organizationId } },
-  { permission: Permission.WRITE_ORGANIZATION, context: { organizationId } }
+  { permission: Permission.WRITE_ORGANIZATION, context: { organizationId } },
 ];
 
 const results = hasPermissions(userPermissions, checks);
@@ -641,10 +622,10 @@ const user = await prisma.user.findUnique({
   where: { id: userId },
   include: {
     organizationMemberships: {
-      include: { organization: true }
+      include: { organization: true },
     },
-    serviceProvider: true
-  }
+    serviceProvider: true,
+  },
 });
 ```
 

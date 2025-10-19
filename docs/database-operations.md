@@ -8,10 +8,10 @@ Database operations in staging/production are controlled via Amplify environment
 
 Configure these in **Amplify Console → App Settings → Environment Variables**:
 
-| Variable | Values | Purpose | When to Use |
-|----------|--------|---------|-------------|
-| `RESET_DATABASE` | `true`/unset | **DANGER**: Drops all data and recreates schema | Initial setup or complete reset |
-| `RUN_SEED` | `true`/unset | Populates database with seed data | After reset or initial deployment |
+| Variable         | Values       | Purpose                                         | When to Use                       |
+| ---------------- | ------------ | ----------------------------------------------- | --------------------------------- |
+| `RESET_DATABASE` | `true`/unset | **DANGER**: Drops all data and recreates schema | Initial setup or complete reset   |
+| `RUN_SEED`       | `true`/unset | Populates database with seed data               | After reset or initial deployment |
 
 ## Build Flow
 
@@ -42,6 +42,7 @@ npm run build
 **Goal**: Set up fresh database with schema and seed data
 
 **Steps**:
+
 1. Go to Amplify Console → Environment Variables
 2. Add: `RUN_SEED` = `true`
 3. Trigger deployment (commit & push)
@@ -57,6 +58,7 @@ npm run build
 **Goal**: Deploy new migrations
 
 **Steps**:
+
 1. Create migration locally: `npx prisma migrate dev --name my-change`
 2. Commit migration files in `prisma/migrations/`
 3. Push to staging branch
@@ -73,6 +75,7 @@ npm run build
 **Goal**: Wipe everything and start fresh
 
 **Steps**:
+
 1. Go to Amplify Console → Environment Variables
 2. Add: `RESET_DATABASE` = `true`
 3. Add: `RUN_SEED` = `true` (if you want seed data after reset)
@@ -93,6 +96,7 @@ npm run build
 **Prerequisites**: Seed script must be idempotent (check if data exists first)
 
 **Steps**:
+
 1. Update `prisma/seed.ts` with idempotency checks
 2. Go to Amplify Console → Environment Variables
 3. Add: `RUN_SEED` = `true`
@@ -106,11 +110,13 @@ npm run build
 ## Safety Checks
 
 ### Migration Safety
+
 - ✅ `prisma migrate deploy` is **always safe** - only applies new migrations
 - ✅ Runs automatically on every build
 - ✅ Idempotent (safe to run multiple times)
 
 ### Seed Safety
+
 - ⚠️ **Depends on your seed script implementation**
 - Recommend adding checks like:
   ```typescript
@@ -122,6 +128,7 @@ npm run build
   ```
 
 ### Reset Safety
+
 - ❌ `prisma migrate reset` is **DESTRUCTIVE**
 - Only use for development/testing or complete rebuilds
 - Always behind `RESET_DATABASE=true` flag
@@ -130,19 +137,23 @@ npm run build
 ## Troubleshooting
 
 ### Build fails with "Can't reach database server"
+
 - Check RDS security group allows traffic from Amplify
 - Verify `DATABASE_URL` environment variable is correct
 - Check RDS instance is running
 
 ### Migrations fail with "Migration already applied"
+
 - This is normal - Prisma tracks applied migrations
 - Migration will be skipped automatically
 
 ### Seed fails with duplicate key errors
+
 - Seed script is not idempotent
 - Add checks to skip if data exists (see Seed Safety above)
 
 ### "RESET_DATABASE is true but I didn't set it"
+
 - Check Amplify environment variables - someone may have left it set
 - Remove immediately to prevent data loss on next build
 

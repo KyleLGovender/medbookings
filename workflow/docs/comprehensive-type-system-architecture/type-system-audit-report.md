@@ -18,9 +18,10 @@ The MedBookings codebase follows a dual-source type safety approach:
 ## Feature-by-Feature Compliance Status
 
 ### ✅ Admin Feature (`/src/features/admin/types/`)
+
 - **Files**: `types.ts`, `schemas.ts`, `guards.ts`
 - **Status**: Fully compliant
-- **Contents**: 
+- **Contents**:
   - Domain enums (AdminAction, ApprovalEntityType, AdminApprovalStatus)
   - Form schemas and validation
   - Type guards for runtime validation
@@ -28,6 +29,7 @@ The MedBookings codebase follows a dual-source type safety approach:
 - **Migration Notes**: Clearly documented, server data types removed
 
 ### ✅ Billing Feature (`/src/features/billing/types/`)
+
 - **Files**: `interfaces.ts`, `enums.ts`, `types.ts`, `schemas.ts`, `guards.ts`
 - **Status**: Fully compliant
 - **Contents**:
@@ -38,6 +40,7 @@ The MedBookings codebase follows a dual-source type safety approach:
 - **Migration Notes**: Server interfaces removed, Decimal types converted to number
 
 ### ✅ Calendar Feature (`/src/features/calendar/types/`)
+
 - **Files**: `types.ts`, `schemas.ts`, `guards.ts`
 - **Status**: Fully compliant
 - **Contents**:
@@ -48,6 +51,7 @@ The MedBookings codebase follows a dual-source type safety approach:
 - **Migration Notes**: Extensive documentation, Prisma imports removed
 
 ### ✅ Communications Feature (`/src/features/communications/types/`)
+
 - **Files**: `interfaces.ts`, `enums.ts`, `types.ts`, `schemas.ts`
 - **Status**: Fully compliant
 - **Contents**:
@@ -56,6 +60,7 @@ The MedBookings codebase follows a dual-source type safety approach:
   - Notification preferences
 
 ### ✅ Invitations Feature (`/src/features/invitations/types/`)
+
 - **Files**: `types.ts`, `schemas.ts`, `guards.ts`
 - **Status**: Fully compliant
 - **Contents**:
@@ -64,6 +69,7 @@ The MedBookings codebase follows a dual-source type safety approach:
   - Type guards for validation
 
 ### ✅ Organizations Feature (`/src/features/organizations/types/`)
+
 - **Files**: `types.ts`, `schemas.ts`, `guards.ts`
 - **Status**: Fully compliant
 - **Contents**:
@@ -73,6 +79,7 @@ The MedBookings codebase follows a dual-source type safety approach:
 - **Migration Notes**: Prisma types removed, clear documentation
 
 ### ✅ Profile Feature (`/src/features/profile/types/`)
+
 - **Files**: `interfaces.ts`, `enums.ts`, `types.ts`, `schemas.ts`
 - **Status**: Fully compliant
 - **Contents**:
@@ -81,6 +88,7 @@ The MedBookings codebase follows a dual-source type safety approach:
   - Form validation types
 
 ### ✅ Providers Feature (`/src/features/providers/types/`)
+
 - **Files**: `types.ts`, `schemas.ts`, `guards.ts`
 - **Status**: Fully compliant
 - **Contents**:
@@ -91,6 +99,7 @@ The MedBookings codebase follows a dual-source type safety approach:
 - **Migration Notes**: Detailed removal of Prisma-derived types
 
 ### ✅ Reviews Feature (`/src/features/reviews/types/`)
+
 - **Files**: `interfaces.ts`, `enums.ts`, `types.ts`, `schemas.ts`
 - **Status**: Fully compliant
 - **Contents**:
@@ -103,30 +112,36 @@ The MedBookings codebase follows a dual-source type safety approach:
 While the type files are compliant, the following areas may still have violations:
 
 ### 1. **Hook Files** (`/src/features/*/hooks/`)
+
 - May still export types that should be component-level
 - May have direct Prisma imports (forbidden pattern)
 - Need to verify they're thin tRPC wrappers only
 
 ### 2. **Component Files** (`/src/features/*/components/`)
+
 - May still use manual type imports instead of RouterOutputs
 - Need to verify proper type extraction patterns
 
 ### 3. **Server Actions** (`/src/features/*/lib/actions.ts`)
+
 - May have manual type definitions that should use tRPC inference
 - May have orphaned database functions not exposed through tRPC
 
 ### 4. **tRPC Routers** (`/src/server/api/routers/`)
+
 - Need to verify direct Prisma returns
 - Check for manual type definitions at procedure level
 
 ## Recommendations
 
 1. **Immediate Actions**:
+
    - Since type files are compliant, mark Tasks 1.3-1.11 as complete
    - Focus on Task 2.0 (Server-Side Library Integration) as critical next step
    - Prioritize finding orphaned database functions
 
 2. **Migration Strategy**:
+
    - Start with server-side integration (Task 2.0) to ensure all DB operations flow through tRPC
    - Then migrate hooks (Task 4.0) to ensure they're thin wrappers
    - Finally update components (Task 5.0) for proper type extraction

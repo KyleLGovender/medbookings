@@ -5,14 +5,16 @@ This document provides comprehensive documentation for the MedBookings applicati
 ## ⚠️ **IMPORTANT: tRPC Migration Status**
 
 **✅ Migrated to tRPC:**
+
 - Provider APIs
-- Organization APIs  
+- Organization APIs
 - Admin APIs
 - User/Profile APIs
 - Calendar APIs
 - Most business logic endpoints
 
 **🔄 Remaining as REST:**
+
 - File upload APIs (`/api/upload/*`)
 - Webhook endpoints
 - Third-party integrations
@@ -21,6 +23,7 @@ This document provides comprehensive documentation for the MedBookings applicati
 ## API Architecture Overview
 
 ### tRPC APIs (Primary)
+
 - **Type Safety**: Full end-to-end type safety
 - **Location**: `/lib/trpc/routers/`
 - **Client Usage**: Via `api.router.procedure.useQuery()` or `api.router.procedure.useMutation()`
@@ -28,6 +31,7 @@ This document provides comprehensive documentation for the MedBookings applicati
 - **Error Handling**: Type-safe error handling with `TRPCError`
 
 ### REST APIs (Legacy/Specific Use Cases)
+
 - **Location**: `/app/api/`
 - **Usage**: Traditional HTTP endpoints
 - **Format**: JSON request/response
@@ -68,7 +72,7 @@ const { data } = api.providers.getById.useQuery({ id: 'provider-id' })
 // Query with options
 const { data } = api.providers.search.useQuery(
   { search: 'doctor', limit: 10 },
-  { 
+  {
     enabled: !!searchTerm, // Only run when searchTerm exists
     staleTime: 5 * 60 * 1000, // 5 minutes
   }
@@ -82,18 +86,18 @@ const { data } = api.providers.search.useQuery(
 const createProvider = api.providers.create.useMutation({
   onSuccess: (data) => {
     // Handle success - data is fully typed
-    router.push(`/providers/${data.id}`)
+    router.push(`/providers/${data.id}`);
   },
   onError: (error) => {
     // Handle error - error is typed TRPCError
-    toast.error(error.message)
+    toast.error(error.message);
   },
-})
+});
 
 // Using the mutation
 const handleSubmit = async (formData) => {
-  await createProvider.mutateAsync(formData)
-}
+  await createProvider.mutateAsync(formData);
+};
 ```
 
 #### Optimistic Updates
@@ -102,33 +106,30 @@ const handleSubmit = async (formData) => {
 const updateProvider = api.providers.update.useMutation({
   onMutate: async (updatedProvider) => {
     // Cancel outgoing refetches
-    await utils.providers.getById.cancel({ id: updatedProvider.id })
-    
+    await utils.providers.getById.cancel({ id: updatedProvider.id });
+
     // Snapshot previous value
-    const previousProvider = utils.providers.getById.getData({ id: updatedProvider.id })
-    
+    const previousProvider = utils.providers.getById.getData({ id: updatedProvider.id });
+
     // Optimistically update
     utils.providers.getById.setData({ id: updatedProvider.id }, (old) => ({
       ...old,
       ...updatedProvider,
-    }))
-    
-    return { previousProvider }
+    }));
+
+    return { previousProvider };
   },
   onError: (err, variables, context) => {
     // Rollback on error
     if (context?.previousProvider) {
-      utils.providers.getById.setData(
-        { id: variables.id }, 
-        context.previousProvider
-      )
+      utils.providers.getById.setData({ id: variables.id }, context.previousProvider);
     }
   },
   onSettled: (data, error, variables) => {
     // Always refetch after error or success
-    utils.providers.getById.invalidate({ id: variables.id })
+    utils.providers.getById.invalidate({ id: variables.id });
   },
-})
+});
 ```
 
 ### Server-Side Usage (tRPC Procedures)
@@ -137,70 +138,74 @@ const updateProvider = api.providers.update.useMutation({
 
 ```typescript
 // /lib/trpc/routers/providers.ts
-import { z } from 'zod'
-import { router, publicProcedure, protectedProcedure } from '../trpc'
-import { getProviders, createProvider } from '@/features/providers/lib/actions'
+import { z } from 'zod';
+
+import { createProvider, getProviders } from '@/features/providers/lib/actions';
+
+import { protectedProcedure, publicProcedure, router } from '../trpc';
 
 export const providersRouter = router({
   // Query procedure
   getAll: publicProcedure
-    .input(z.object({
-      search: z.string().optional(),
-      limit: z.number().min(1).max(100).default(50),
-      offset: z.number().min(0).default(0),
-    }))
+    .input(
+      z.object({
+        search: z.string().optional(),
+        limit: z.number().min(1).max(100).default(50),
+        offset: z.number().min(0).default(0),
+      })
+    )
     .query(async ({ input }) => {
-      return await getProviders(input)
+      return await getProviders(input);
     }),
 
   // Mutation procedure
   create: protectedProcedure
-    .input(z.object({
-      name: z.string().min(1),
-      email: z.string().email(),
-      bio: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        bio: z.string().optional(),
+      })
+    )
     .mutation(async ({ input, ctx }) => {
       return await createProvider({
         ...input,
         userId: ctx.user.id, // From authenticated context
-      })
+      });
     }),
-})
+});
 ```
 
 #### Error Handling in Procedures
 
 ```typescript
-import { TRPCError } from '@trpc/server'
+import { TRPCError } from '@trpc/server';
 
 export const providersRouter = router({
-  getById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ input }) => {
-      const provider = await getProviderById(input.id)
-      
-      if (!provider) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Provider not found',
-        })
-      }
-      
-      return provider
-    }),
-})
+  getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+    const provider = await getProviderById(input.id);
+
+    if (!provider) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Provider not found',
+      });
+    }
+
+    return provider;
+  }),
+});
 ```
 
 ### Type Safety Benefits
 
 ```typescript
 // Client gets full type inference
-const { data } = api.providers.getAll.useQuery()
+const { data } = api.providers.getAll.useQuery();
 // data is automatically typed as Provider[] | undefined
 
 // Input validation is automatic
-api.providers.create.useMutation()
+api.providers.create.useMutation();
 // TypeScript will enforce the correct input schema
 
 // Errors are typed
@@ -210,7 +215,7 @@ const mutation = api.providers.create.useMutation({
     // error.message is string
     // error.data contains additional context
   },
-})
+});
 ```
 
 ---
@@ -335,12 +340,12 @@ These APIs have been migrated to tRPC for full type safety and better developer 
 ```typescript
 const createProvider = api.providers.create.useMutation({
   onSuccess: (data) => {
-    router.push(`/providers/${data.id}`)
+    router.push(`/providers/${data.id}`);
   },
   onError: (error) => {
-    toast.error(error.message)
+    toast.error(error.message);
   },
-})
+});
 
 const handleSubmit = async (formData) => {
   await createProvider.mutateAsync({
@@ -361,13 +366,14 @@ const handleSubmit = async (formData) => {
         },
       },
     },
-  })
-}
+  });
+};
 ```
 
 **Error Handling:**
 
 tRPC automatically handles and types errors. Common error codes:
+
 - `UNAUTHORIZED`: No valid session
 - `BAD_REQUEST`: Invalid input data
 - `NOT_FOUND`: User not found
@@ -425,7 +431,7 @@ tRPC automatically handles and types errors. Common error codes:
     limit: number;
     offset: number;
     hasMore: boolean;
-  };
+  }
 }
 ```
 
@@ -436,8 +442,8 @@ tRPC automatically handles and types errors. Common error codes:
 const { data } = api.providers.search.useQuery({ search: 'Dr', limit: 10 })
 
 // Filter by provider types
-const { data } = api.providers.search.useQuery({ 
-  typeIds: ['gp-type-id', 'psych-type-id'] 
+const { data } = api.providers.search.useQuery({
+  typeIds: ['gp-type-id', 'psych-type-id']
 })
 
 // Complex search with loading state
@@ -452,6 +458,7 @@ const { data, isLoading, error } = api.providers.search.useQuery(
 The following APIs have been migrated to tRPC with similar patterns:
 
 #### Organization APIs (`api.organizations.*`)
+
 - `getAll.useQuery()` - List organizations
 - `getById.useQuery({ id })` - Get organization details
 - `create.useMutation()` - Create organization
@@ -460,6 +467,7 @@ The following APIs have been migrated to tRPC with similar patterns:
 - `getUserOrganization.useQuery()` - Get current user's organization
 
 #### Admin APIs (`api.admin.*`)
+
 - `getDashboard.useQuery()` - Admin dashboard stats
 - `providers.getAll.useQuery()` - All providers (admin view)
 - `providers.updateStatus.useMutation()` - Update provider status
@@ -467,12 +475,14 @@ The following APIs have been migrated to tRPC with similar patterns:
 - `users.getAll.useQuery()` - All users (admin view)
 
 #### User APIs (`api.users.*`)
+
 - `getProfile.useQuery()` - Current user profile
 - `updateProfile.useMutation()` - Update user profile
 - `getPreferences.useQuery()` - User preferences
 - `updatePreferences.useMutation()` - Update preferences
 
 #### Calendar APIs (`api.calendar.*`)
+
 - `getEvents.useQuery()` - Get calendar events
 - `createEvent.useMutation()` - Create calendar event
 - `updateEvent.useMutation()` - Update calendar event

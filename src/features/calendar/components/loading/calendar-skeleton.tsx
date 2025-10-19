@@ -93,7 +93,6 @@ export function CalendarSkeleton() {
           </div>
         </CardContent>
       </Card>
-
     </div>
   );
 }

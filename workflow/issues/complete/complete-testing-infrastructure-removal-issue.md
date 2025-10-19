@@ -7,6 +7,7 @@ Remove all testing infrastructure, configuration, dependencies, and test files f
 ## Problem Description
 
 The current codebase contains a comprehensive testing setup that is not providing value and creating maintenance overhead. The testing infrastructure includes:
+
 - 15 test files across unit, component, API, and middleware testing
 - Jest and Vitest testing frameworks (creating confusion with mixed frameworks)
 - Complex mocking setups that are difficult to maintain
@@ -44,6 +45,7 @@ This testing infrastructure needs to be completely removed to clean up the codeb
 ### Test Files to Remove (15 files)
 
 #### Unit Test Files (7 files)
+
 ```
 src/lib/utils/responsive.test.ts
 src/features/calendar/lib/slot-generation.test.ts
@@ -55,6 +57,7 @@ src/features/calendar/lib/workflow-integration.test.ts
 ```
 
 #### Component Test Files (5 files)
+
 ```
 src/features/auth/components/auth-button.test.tsx
 src/components/layout/dashboard-layout.test.tsx
@@ -64,12 +67,14 @@ src/features/calendar/components/views/three-day-view.test.tsx
 ```
 
 #### API/Integration Test Files (2 files)
+
 ```
 src/app/api/subscriptions/route.test.ts
 src/app/api/subscriptions/[id]/route.test.ts
 ```
 
 #### Middleware Test Files (1 file)
+
 ```
 src/middleware.test.ts
 ```
@@ -99,6 +104,7 @@ scripts/                                       # Remove entire directory
 ### package.json Changes
 
 #### Dependencies to Remove
+
 ```json
 "devDependencies": {
   "@testing-library/jest-dom": "^6.6.3",
@@ -113,6 +119,7 @@ scripts/                                       # Remove entire directory
 ```
 
 #### Scripts to Remove/Modify
+
 ```json
 "scripts": {
   "test": "npx jest"  // Remove this line entirely
@@ -122,19 +129,23 @@ scripts/                                       # Remove entire directory
 ### Potential Additional Cleanup
 
 #### ESLint Configuration
+
 - Remove any Jest-specific ESLint rules if present in `.eslintrc` files
 - Remove any testing-related ESLint plugins if they're not used elsewhere
 
 #### TypeScript Configuration
+
 - Remove any Jest-specific type definitions from `tsconfig.json` if present
 - Clean up any test-specific path mappings
 
 #### Next.js Configuration
+
 - Verify no testing-related configurations in `next.config.js`
 
 ## Root Cause Analysis
 
 The testing infrastructure was set up with good intentions but:
+
 - Mixed frameworks (Jest + Vitest) created confusion
 - Heavy mocking made tests brittle and hard to maintain
 - No clear testing strategy led to ad-hoc test coverage
@@ -145,22 +156,27 @@ The testing infrastructure was set up with good intentions but:
 ### Implementation Steps
 
 1. **Remove All Test Files**
+
    - Delete all 15 test files listed above
    - Verify no remaining `.test.*` or `.spec.*` files
 
 2. **Remove Configuration Files**
+
    - Delete `jest.config.js`
    - Delete `jest.setup.ts`
 
 3. **Remove Scripts Directory**
+
    - Delete entire `scripts/` directory and all contents
    - Remove all 7 files including testing scripts and utilities
 
 4. **Clean Up package.json**
+
    - Remove all testing dependencies from `devDependencies`
    - Remove `test` script from `scripts` section
 
 5. **Verify Build Process**
+
    - Run `npm run build` to ensure no build errors
    - Run `npm run lint` to ensure no linting errors
    - Verify `npm install` works correctly
