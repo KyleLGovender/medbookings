@@ -77,11 +77,19 @@ export class ProductionStack extends cdk.Stack {
       allowAllOutbound: false,
     });
 
-    // Allow PostgreSQL access from within VPC (Amplify/Lambda will use this)
+    // Allow PostgreSQL access from within VPC (Amplify runtime will use this)
     dbSecurityGroup.addIngressRule(
       ec2.Peer.ipv4(vpc.vpcCidrBlock),
       ec2.Port.tcp(5432),
       'Allow PostgreSQL access from VPC'
+    );
+
+    // Allow PostgreSQL access from Amplify build environment
+    // Note: Amplify builds run outside VPC, so we need to allow internet access
+    dbSecurityGroup.addIngressRule(
+      ec2.Peer.anyIpv4(),
+      ec2.Port.tcp(5432),
+      'Allow PostgreSQL access from Amplify build environment'
     );
 
     // =========================================================================
@@ -120,7 +128,7 @@ export class ProductionStack extends cdk.Stack {
       maxAllocatedStorage: 100, // Enable storage auto-scaling
       storageEncrypted: true,
       multiAz: false, // Single-AZ for free tier eligibility
-      publiclyAccessible: false,
+      publiclyAccessible: true, // Required for Amplify build to run migrations
       backupRetention: cdk.Duration.days(7),
       preferredBackupWindow: '00:00-02:00', // 2-4 AM SAST (00:00-02:00 UTC)
       deleteAutomatedBackups: false,

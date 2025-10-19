@@ -22,13 +22,21 @@ export default function DiagnosticsPage() {
 
   useEffect(() => {
     fetch('/api/auth/diagnostics')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          return res.json().then((errorData) => {
+            throw new Error(errorData.message || `HTTP ${res.status}: ${res.statusText}`);
+          });
+        }
+        return res.json();
+      })
       .then((data) => {
         setData(data);
         setLoading(false);
       })
       .catch((err) => {
-        setError(err.message);
+        console.error('Failed to load diagnostics:', err);
+        setError(err.message || 'Failed to load diagnostics');
         setLoading(false);
       });
   }, []);
@@ -43,9 +51,45 @@ export default function DiagnosticsPage() {
 
   if (error) {
     return (
-      <div style={{ padding: '40px', fontFamily: 'system-ui' }}>
-        <h1 style={{ color: '#DC2626' }}>Error loading diagnostics</h1>
-        <p>{error}</p>
+      <div
+        style={{ padding: '40px', fontFamily: 'system-ui', maxWidth: '800px', margin: '0 auto' }}
+      >
+        <h1 style={{ color: '#DC2626', marginBottom: '20px' }}>❌ Error loading diagnostics</h1>
+        <div
+          style={{
+            backgroundColor: '#FEE2E2',
+            border: '1px solid #FCA5A5',
+            borderRadius: '8px',
+            padding: '20px',
+            marginBottom: '20px',
+          }}
+        >
+          <p style={{ margin: 0, fontSize: '16px', color: '#991B1B' }}>{error}</p>
+        </div>
+        <div style={{ backgroundColor: '#F9FAFB', padding: '20px', borderRadius: '8px' }}>
+          <h3 style={{ marginTop: 0 }}>Possible causes:</h3>
+          <ul style={{ lineHeight: '1.8' }}>
+            <li>Environment variables are not configured in AWS Amplify</li>
+            <li>The application failed to start due to missing configuration</li>
+            <li>Network error connecting to the API</li>
+          </ul>
+          <h3>Next steps:</h3>
+          <ol style={{ lineHeight: '1.8' }}>
+            <li>Check AWS Amplify Console → Environment Variables</li>
+            <li>View application logs in Amplify Console</li>
+            <li>
+              Try accessing the API directly:{' '}
+              <a
+                href="/api/auth/diagnostics"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#4285F4' }}
+              >
+                /api/auth/diagnostics
+              </a>
+            </li>
+          </ol>
+        </div>
       </div>
     );
   }
