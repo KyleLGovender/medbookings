@@ -9,11 +9,18 @@ const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string(),
     AUTH_SECRET: z.string(),
     NEXTAUTH_URL: z.string(),
-    BLOB_READ_WRITE_TOKEN: z.string(),
+    // AWS S3 Configuration
+    AWS_S3_BUCKET_NAME: z.string(),
+    AWS_REGION: z.string().default('eu-west-1'),
+    // AWS credentials are optional - automatically provided by IAM role in AWS Amplify
+    AWS_ACCESS_KEY_ID: z.string().optional(),
+    AWS_SECRET_ACCESS_KEY: z.string().optional(),
+    // Twilio Configuration
     TWILIO_ACCOUNT_SID: z.string(),
     TWILIO_AUTH_TOKEN: z.string(),
     TWILIO_PHONE_NUMBER: z.string(),
     TWILIO_WHATSAPP_NUMBER: z.string(),
+    // SendGrid Configuration
     SENDGRID_API_KEY: z.string(),
     SENDGRID_FROM_EMAIL: z.string(),
   },

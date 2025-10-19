@@ -45,5 +45,9 @@ docker_data
 /logs/
 logs/
 
-
-
+# AWS CDK
+infrastructure/cdk.out/
+infrastructure/node_modules/
+infrastructure/*.js
+infrastructure/*.d.ts
+!infrastructure/jest.config.js

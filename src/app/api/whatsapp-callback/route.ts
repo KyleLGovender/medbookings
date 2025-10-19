@@ -1,7 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import twilio from 'twilio';
-
 import env from '@/config/env/server';
 import { sendGuestVCardToProvider } from '@/features/communications/lib/server-helper';
 import { prisma } from '@/lib/prisma';
@@ -41,6 +39,9 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const paramsObject = Object.fromEntries(formData.entries());
+
+    // Lazy load twilio only when the route is actually called
+    const { default: twilio } = await import('twilio');
 
     const isValidRequest = twilio.validateRequest(
       authToken,
