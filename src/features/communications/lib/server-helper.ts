@@ -1,9 +1,9 @@
 import sgMail from '@sendgrid/mail';
-import { put } from '@vercel/blob';
 import twilio from 'twilio';
 import vCardsJS from 'vcards-js';
 
 import env from '@/config/env/server';
+import { uploadTextToS3 } from '@/lib/storage/s3';
 import { type RouterOutputs } from '@/utils/api';
 
 // OPTION C: Use tRPC-inferred type for booking data from calendar router
@@ -169,11 +169,18 @@ export async function sendGuestVCardToProvider(booking: BookingWithDetails) {
       vCard.workPhone = booking.guestWhatsapp;
     }
 
-    // Upload to Vercel Blob
-    const { url } = await put(`vcards/guest-${booking.id}.vcf`, vCard.getFormattedString(), {
-      access: 'public',
-      contentType: 'text/vcard',
-    });
+    // Upload to S3
+    const result = await uploadTextToS3(
+      vCard.getFormattedString(),
+      `vcards/guest-${booking.id}.vcf`,
+      'text/vcard'
+    );
+
+    if (!result.success || !result.url) {
+      throw new Error('Failed to upload vCard to S3');
+    }
+
+    const { url } = result;
 
     // Send the vCard via WhatsApp using Twilio
     try {

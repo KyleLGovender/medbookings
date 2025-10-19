@@ -40,6 +40,19 @@
 - **SNS Alert Topic ARN**: `arn:aws:sns:eu-west-1:455315867736:medbookings-staging-critical-alerts`
 - **Log Group**: `/medbookings/staging/application`
 
+### Production Stack Outputs (Deployed)
+
+- **RDS Endpoint**: `medbookingsinfrastack-production-databaseb269d8bb-gexaxiwsid6a.c9ccmo2uic7g.eu-west-1.rds.amazonaws.com:5432`
+- **Database Name**: `medbookings`
+- **Database Credentials ARN**: `arn:aws:secretsmanager:eu-west-1:455315867736:secret:medbookings-production-db-credentials-aNXZ60`
+- **S3 Bucket**: `medbookings-uploads-production`
+- **S3 Bucket ARN**: `arn:aws:s3:::medbookings-uploads-production`
+- **Amplify Service Role ARN**: `arn:aws:iam::455315867736:role/MedBookingsInfraStack-Pro-AmplifyServiceRole1EB3E93-1MoqvEM6BNHG`
+- **SNS Alert Topic ARN**: `arn:aws:sns:eu-west-1:455315867736:medbookings-production-critical-alerts`
+- **Log Group**: `/medbookings/production/application`
+- **Database Connection String**: `postgresql://${SecretValue}@medbookingsinfrastack-production-databaseb269d8bb-gexaxiwsid6a.c9ccmo2uic7g.eu-west-1.rds.amazonaws.com:5432/medbookings?sslmode=require`
+- **Stack ARN**: `arn:aws:cloudformation:eu-west-1:455315867736:stack/MedBookingsInfraStack-Production/f5fe6a80-ac5e-11f0-a0ec-0217e7571ac1`
+
 ## Tasks
 
 - [x] 1.0 Repository and Branch Setup
@@ -87,7 +100,7 @@
   - [x] 4.10 Create database credentials in Secrets Manager (via CDK)
   - [x] 4.11 Output RDS endpoint hostname as CDK stack output
 
-- [ ] 5.0 S3 Storage Infrastructure (via CDK) and Code Migration
+- [x] 5.0 S3 Storage Infrastructure (via CDK) and Code Migration
 
   - [x] 5.1 Define S3 bucket for staging: `medbookings-uploads-staging`
   - [x] 5.2 Define S3 bucket for production: `medbookings-uploads-production`
@@ -97,11 +110,11 @@
   - [x] 5.6 Create IAM policy for S3 bucket access (read/write permissions)
   - [x] 5.7 Create IAM role for Amplify/Lambda to access S3 buckets
   - [x] 5.8 Output S3 bucket names as CDK stack outputs
-  - [ ] 5.9 Install AWS SDK v3 in main application: `npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner`
-  - [ ] 5.10 Create `src/lib/storage/s3.ts` utility for S3 operations (upload, download, delete, generate presigned URLs)
-  - [ ] 5.11 Update file upload logic in `src/lib/storage/upload.ts` to use S3 instead of Vercel Blob
-  - [ ] 5.12 Search codebase for Vercel Blob usage and replace with S3 calls
-  - [ ] 5.13 Remove `BLOB_READ_WRITE_TOKEN` from environment variables
+  - [x] 5.9 Install AWS SDK v3 in main application: `npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner`
+  - [x] 5.10 Create `src/lib/storage/s3.ts` utility for S3 operations (upload, download, delete, generate presigned URLs)
+  - [x] 5.11 Update file upload logic in `src/lib/utils/utils-upload-to-blob.ts` to use S3 instead of Vercel Blob
+  - [x] 5.12 Search codebase for Vercel Blob usage and replace with S3 calls (updated server-helper.ts vCard upload)
+  - [x] 5.13 Remove `BLOB_READ_WRITE_TOKEN` from environment variables (updated src/config/env/server.ts)
 
 - [x] 6.0 AWS Secrets Manager and Security Configuration (via CDK)
 
@@ -126,16 +139,16 @@
   - [x] 7.9 Create CloudWatch alarm for high error rate (>5% errors in 5 minutes) - configure after Amplify deployment
   - [x] 7.10 Output SNS topic ARN as CDK stack output
 
-- [ ] 8.0 Deploy CDK Stacks (Staging and Production)
+- [x] 8.0 Deploy CDK Stacks (Staging and Production)
 
   - [x] 8.1 Review CDK synthesized CloudFormation template: `cdk synth MedBookingsInfraStack-Staging`
   - [x] 8.2 Deploy staging infrastructure stack: `cdk deploy MedBookingsInfraStack-Staging`
   - [ ] 8.3 Verify staging resources in AWS Console (RDS, S3, Secrets Manager, SNS, CloudWatch)
   - [x] 8.4 Capture CDK stack outputs (RDS endpoint, S3 bucket names, Secrets Manager ARNs)
-  - [ ] 8.5 Review CDK synthesized CloudFormation template: `cdk synth MedBookingsInfraStack-Production`
-  - [ ] 8.6 Deploy production infrastructure stack: `cdk deploy MedBookingsInfraStack-Production`
+  - [x] 8.5 Review CDK synthesized CloudFormation template: `cdk synth MedBookingsInfraStack-Production`
+  - [x] 8.6 Deploy production infrastructure stack: `cdk deploy MedBookingsInfraStack-Production`
   - [ ] 8.7 Verify production resources in AWS Console (RDS, S3, Secrets Manager, SNS, CloudWatch)
-  - [ ] 8.8 Capture CDK stack outputs for production environment
+  - [x] 8.8 Capture CDK stack outputs for production environment
   - [ ] 8.9 Document CDK deployment process in `docs/deployment/aws-cdk-setup.md`
 
 - [ ] 9.0 AWS Amplify Hosting Setup (Manual Console Configuration)

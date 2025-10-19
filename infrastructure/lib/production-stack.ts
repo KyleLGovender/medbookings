@@ -27,7 +27,13 @@ export class ProductionStack extends cdk.Stack {
     const uploadsBucket = new s3.Bucket(this, 'UploadsBucket', {
       bucketName: 'medbookings-uploads-production',
       encryption: s3.BucketEncryption.S3_MANAGED,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      blockPublicAccess: new s3.BlockPublicAccess({
+        blockPublicAcls: false,
+        blockPublicPolicy: false,
+        ignorePublicAcls: false,
+        restrictPublicBuckets: false,
+      }),
+      publicReadAccess: true, // Allow public read access for profile images, logos, etc.
       removalPolicy: cdk.RemovalPolicy.RETAIN, // Prevent accidental deletion
       versioned: true, // Enable versioning for production
       cors: [
