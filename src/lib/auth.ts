@@ -152,7 +152,18 @@ export const authOptions: NextAuthOptions = {
       });
     },
   },
-  debug: process.env.NODE_ENV === 'development', // Enable debug logs in development
+  debug: true, // Enable debug logs to troubleshoot staging
+  logger: {
+    error(code, metadata) {
+      console.error('[NextAuth Error]', code, JSON.stringify(metadata, null, 2));
+    },
+    warn(code) {
+      console.warn('[NextAuth Warning]', code);
+    },
+    debug(code, metadata) {
+      console.log('[NextAuth Debug]', code, JSON.stringify(metadata, null, 2));
+    },
+  },
 };
 
 export async function getCurrentUser() {
