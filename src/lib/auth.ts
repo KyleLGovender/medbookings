@@ -34,6 +34,19 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt', // Make sure this is set
   },
+  // Ensure cookies work correctly across environments
+  useSecureCookies: process.env.NODE_ENV === 'production',
+  cookies: {
+    sessionToken: {
+      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
   providers: [
     GoogleProvider({
       clientId: env.GOOGLE_CLIENT_ID!,
@@ -45,31 +58,110 @@ export const authOptions: NextAuthOptions = {
           prompt: 'consent',
         },
       },
+      profile(profile) {
+        console.log('Google profile received:', {
+          id: profile.sub,
+          email: profile.email,
+          name: profile.name,
+        });
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+          role: 'USER' as any,
+        };
+      },
     }),
   ],
+  pages: {
+    signIn: '/login',
+    error: '/error', // Custom error page
+  },
   callbacks: {
-    async jwt({ token, user, account }) {
-      if (user) {
-        token.accessToken = account?.access_token;
-        token.refreshToken = account?.refresh_token;
-        return {
-          ...token,
-          id: user.id,
-          role: user.role,
-        };
+    async signIn({ user, account, profile, email, credentials }) {
+      // Log sign-in attempts for monitoring
+      console.log('Sign-in callback started:', {
+        userId: user?.id,
+        email: user?.email,
+        provider: account?.provider,
+        timestamp: new Date().toISOString(),
+      });
+
+      try {
+        // Allow sign-in by default
+        // You can add custom logic here to deny sign-in for specific cases
+        console.log('Sign-in callback successful');
+        return true;
+      } catch (error) {
+        console.error('Sign-in callback error:', error);
+        return false;
       }
-      return token;
+    },
+    async jwt({ token, user, account }) {
+      try {
+        if (user) {
+          console.log('JWT callback - creating token for user:', user.email);
+          token.accessToken = account?.access_token;
+          token.refreshToken = account?.refresh_token;
+          return {
+            ...token,
+            id: user.id,
+            role: user.role,
+          };
+        }
+        return token;
+      } catch (error) {
+        console.error('JWT callback error:', error);
+        throw error;
+      }
     },
     async session({ session, token }: { session: Session; token: JWT }) {
-      session.accessToken = token.accessToken;
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          id: token.id,
-          role: token.role,
-        },
-      };
+      try {
+        session.accessToken = token.accessToken;
+        return {
+          ...session,
+          user: {
+            ...session.user,
+            id: token.id,
+            role: token.role,
+          },
+        };
+      } catch (error) {
+        console.error('Session callback error:', error);
+        throw error;
+      }
+    },
+  },
+  events: {
+    async signIn({ user, account, profile, isNewUser }) {
+      // Log successful sign-ins
+      console.log('Successful sign-in:', {
+        userId: user.id,
+        email: user.email,
+        provider: account?.provider,
+        isNewUser,
+        timestamp: new Date().toISOString(),
+      });
+    },
+    async signOut({ session, token }) {
+      // Log sign-outs
+      console.log('Sign-out:', {
+        userId: token?.sub,
+        timestamp: new Date().toISOString(),
+      });
+    },
+  },
+  debug: true, // Enable debug logs to troubleshoot staging
+  logger: {
+    error(code, metadata) {
+      console.error('[NextAuth Error]', code, JSON.stringify(metadata, null, 2));
+    },
+    warn(code) {
+      console.warn('[NextAuth Warning]', code);
+    },
+    debug(code, metadata) {
+      console.log('[NextAuth Debug]', code, JSON.stringify(metadata, null, 2));
     },
   },
 };
