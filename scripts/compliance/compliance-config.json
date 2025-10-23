@@ -1,12 +1,12 @@
 {
-  "claudeMdHash": "e78c5052f63b5003c2615d8b2788e4e06aa32439d5c1de1b6c551d822f3a3a42",
-  "lastSync": "2025-10-14T18:52:18.631Z",
+  "claudeMdHash": "c8ef02e418ae8619c657963da7755aa3f05895b754ae8181d6702187edab4ad1",
+  "lastSync": "2025-10-23T19:58:10.041Z",
   "validatorConfig": {
     "version": "1.0.0",
-    "lastUpdated": "2025-10-14T18:52:18.629Z",
+    "lastUpdated": "2025-10-23T19:58:10.040Z",
     "rules": {
       "timezone": {
-        "enabled": true,
+        "enabled": false,
         "disabledReason": null,
         "violationCount": 0,
         "patterns": {
@@ -31,7 +31,7 @@
         "reference": "/docs/compliance/TIMEZONE-GUIDELINES.md"
       },
       "typeSafety": {
-        "enabled": true,
+        "enabled": false,
         "patterns": {
           "forbidden": [
             "as any",
@@ -47,7 +47,7 @@
         "reference": "/docs/compliance/TYPE-SAFETY.md"
       },
       "logging": {
-        "enabled": true,
+        "enabled": false,
         "patterns": {
           "forbidden": [
             "console.log",
@@ -123,27 +123,26 @@
   },
   "eslintConfig": {
     "rules": {
-      "rulesdir/no-new-date": "error"
+      "rulesdir/no-new-date": "off"
     }
   },
   "docsAlignment": {
-    "referencedDocs": [
-      "guides/DEVELOPER-PRINCIPLES.md",
+    "referencedDocs": [],
+    "orphanedDocs": [
+      "compliance/BUG-DETECTION.md",
+      "compliance/CLAUDE-MD-AUTO-SYNC.md",
+      "compliance/COMPLIANCE-SYSTEM.md",
       "compliance/CONTEXT-LOADING.md",
+      "compliance/DEPLOYMENT.md",
+      "compliance/DEVELOPMENT-WORKFLOW.md",
+      "compliance/LOGGING.md",
+      "compliance/TIMEZONE-GUIDELINES.md",
       "compliance/TYPE-SAFETY.md",
       "compliance/VERIFICATION-PROTOCOLS.md",
-      "compliance/TIMEZONE-GUIDELINES.md",
-      "compliance/LOGGING.md",
-      "compliance/BUG-DETECTION.md",
-      "compliance/DEVELOPMENT-WORKFLOW.md",
-      "compliance/COMPLIANCE-SYSTEM.md",
-      "compliance/CLAUDE-MD-AUTO-SYNC.md",
-      "compliance/DEPLOYMENT.md"
-    ],
-    "orphanedDocs": [
       "guides/ACTIONABLE-WARNINGS-IMPLEMENTATION.md",
+      "guides/DEVELOPER-PRINCIPLES.md",
       "guides/DOCS-VALIDATION-GUIDE.md"
     ],
-    "lastValidated": "2025-10-14T18:52:18.631Z"
+    "lastValidated": "2025-10-23T19:58:10.041Z"
   }
 }

@@ -38,13 +38,13 @@ This migration fixes the issue where provider service default values (price and 
 
 ## Migration Files
 
-### SQL Migration (`scripts/archive/migrations/migrate-service-configs.sql`)
+### SQL Migration (`scripts/migrate-service-configs.sql`)
 
 - Comprehensive SQL script with identification, migration, and verification queries
 - Includes rollback instructions
 - Safe for production use with proper constraints
 
-### TypeScript Migration (`scripts/archive/migrations/migrate-service-configs.ts`)
+### TypeScript Migration (`scripts/migrate-service-configs.ts`)
 
 - Node.js script using Prisma for type-safe migration
 - Detailed logging and error handling
@@ -71,7 +71,7 @@ This migration fixes the issue where provider service default values (price and 
 psql $DATABASE_URL
 
 # Run the migration section of the SQL script
-\i scripts/archive/migrations/migrate-service-configs.sql
+\i scripts/migrate-service-configs.sql
 ```
 
 ### Option 2: TypeScript Script
@@ -79,7 +79,7 @@ psql $DATABASE_URL
 ```bash
 # Ensure production environment variables are set
 DATABASE_URL=your_production_url
-npx ts-node scripts/archive/migrations/migrate-service-configs.ts
+npx ts-node scripts/migrate-service-configs.ts
 ```
 
 ## Post-Migration Verification

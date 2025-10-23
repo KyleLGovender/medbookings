@@ -1,225 +1,167 @@
 # E2E Testing with Playwright
 
-This document provides a comprehensive guide for running and maintaining E2E tests for the MedBookings application using our professional Playwright testing setup.
+This document provides a comprehensive guide for running and maintaining E2E tests for the MedBookings application.
 
 ## 🚀 Quick Start
 
 ### Initial Setup
 
 ```bash
-# Run the automated setup script (recommended)
-./scripts/testing/setup-e2e.sh
+# Run the setup script to configure everything
+npm run test:setup
 
 # Or manually:
 npm install
-npm run test:install          # Install Playwright browsers
-npm run test:db:setup         # Start test database
-npm run test:db:migrate       # Run migrations
+npx playwright install
+docker compose -f docker-compose.test.yml up -d postgres-test
 ```
 
 ### Running Tests
 
 ```bash
 # Run all E2E tests
-npm run test
+npm run test:e2e
 
-# Run with browser UI visible (helpful for debugging)
-npm run test:headed
+# Run with browser UI (helpful for debugging)
+npm run test:e2e:headed
 
-# Run with Playwright test explorer
-npm run test:ui
+# Run with Playwright UI (test explorer)
+npm run test:e2e:ui
 
 # Run in debug mode (step through tests)
-npm run test:debug
+npm run test:e2e:debug
 
-# Run specific test categories
-npm run test:auth             # Authentication tests
-npm run test:booking          # Booking flow tests
-npm run test:provider         # Provider functionality tests
-npm run test:calendar         # Calendar management tests
-
-# Legacy tests (old structure)
-npm run test:legacy           # Run old test files
+# Run specific test suites
+npm run test:e2e:auth        # Authentication & user onboarding
+npm run test:e2e:provider    # Provider management workflows
+npm run test:e2e:cleanup     # Deletion and cleanup journeys
 
 # View test report
-npm run test:report
+npm run test:e2e:report
 ```
 
-## 📁 Modern Test Structure
+## 📁 Test Structure
 
 ```
 e2e/
-├── global-setup.ts             # Global test environment setup
-├── global-teardown.ts          # Global cleanup
 ├── fixtures/
-│   ├── auth.setup.ts           # Authentication setup with storage state
-│   ├── test-data.ts            # Legacy test data (calendar-specific)
-│   ├── test-data-new.ts        # Modern test data fixtures
-│   └── pages/                  # Page Object Models
-│       ├── base-page.ts        # Common page functionality
-│       ├── booking-page.ts     # Guest booking flow
-│       ├── login-page.ts       # Authentication and OAuth
-│       └── calendar-page.ts    # Provider calendar management
+│   ├── auth.setup.ts          # Authentication setup for different user types
+│   ├── test-data.ts           # Test data fixtures and constants
+│   └── files/                 # Test files (PDFs, images, etc.)
 ├── tests/
 │   ├── auth/
-│   │   └── login.spec.ts       # Authentication and access control
-│   ├── booking/
-│   │   └── guest-booking.spec.ts # Complete booking flow
+│   │   ├── login.spec.ts      # Google OAuth login flow
+│   │   └── registration.spec.ts # Provider/org registration & invitations
 │   ├── provider/
-│   │   └── availability.spec.ts  # Provider availability management
-│   ├── calendar/               # Legacy calendar tests
-│   ├── guest-booking-flow.spec.ts # Legacy booking test
-│   ├── provider-search.spec.ts    # Legacy search test
-│   ├── error-scenarios.spec.ts    # Legacy error handling
-│   └── data-cleanup.spec.ts       # Legacy cleanup test
+│   │   ├── approval-workflow.spec.ts    # Admin approval/rejection
+│   │   ├── profile-editing.spec.ts      # Provider profile management
+│   │   └── calendar-management.spec.ts  # Availability creation/editing
+│   └── cleanup/
+│       └── deletion-journeys.spec.ts    # Deletion workflows & cleanup
 ├── utils/
-│   ├── database.ts             # Database utilities and seeding
-│   └── mock-data.ts            # Dynamic test data generation
-└── playwright.config.ts        # Playwright configuration with projects
+│   ├── database.ts            # Database utilities and seeding
+│   └── test-helpers.ts        # Reusable test helper functions
+└── playwright.config.ts       # Playwright configuration
 ```
 
 ## 🧪 Test Coverage
 
-### 1. Authentication & Access Control (`auth/`)
+### 1. Authentication & User Onboarding
 
-- ✅ Public access to provider search (no login required)
-- ✅ Login page accessibility and Google OAuth flow
-- ✅ Protected route access control (redirects to login)
-- ✅ Authenticated user access to protected areas
-- ✅ Logout functionality and session clearing
+- ✅ Google OAuth login flow (`/login` → OAuth → `/profile`)
+- ✅ Provider registration journey (`/providers/new` → form completion → approval workflow)
+- ✅ Organization registration (`/organizations/new` → setup → approval)
+- ✅ Invitation acceptance (`/invitation/[token]` → registration/login → connection)
 
-### 2. Guest Booking Flow (`booking/`)
+### 2. Provider Management Workflows
 
-- ✅ Provider search functionality with location/service filters
-- ✅ Provider search page display and empty results handling
-- ✅ Booking form validation and error handling
-- ✅ Guest information collection and form filling
-- ✅ Booking confirmation flow and network error handling
+- ✅ Provider approval workflow (Admin: pending → approve/reject → notifications)
+- ✅ Provider profile editing (`/providers/[id]/edit/*` → basic info, services, requirements)
+- ✅ Calendar availability setup (`/calendar/availability` → create/edit availability slots)
 
-### 3. Provider Management (`provider/`)
+### 3. Deletion & Cleanup Journeys
 
-- ✅ Calendar page access for authenticated providers
-- ✅ Availability creation page navigation and form display
-- ✅ Availability form filling and validation
-- ✅ Calendar navigation and existing availability viewing
-- ✅ Online/offline toggle functionality
-- ✅ API error handling for availability creation
-
-### 4. Legacy Tests (Compatibility)
-
-- ✅ Original calendar availability tests
-- ✅ Original guest booking flow
-- ✅ Original provider search functionality
-- ✅ Original error scenarios and cleanup procedures
+- ✅ Delete availability slots (single, recurring, bulk operations)
+- ✅ Delete provider profiles (with data export and confirmation)
+- ✅ Delete organizations (with ownership transfer and member cleanup)
+- ✅ Cascade deletion verification (ensure related data is cleaned up)
 
 ## 🔧 Configuration
 
 ### Environment Variables
 
-The test environment uses `.env.test` with the following key settings:
+Create `.env.test.local` from the `.env.test` template:
 
 ```bash
-# Test Database (separate from development)
-DATABASE_URL="postgresql://medbookings_test:test_password@localhost:5433/medbookings_test"
+# Test Database - should be separate from development
+TEST_DATABASE_URL="postgresql://medbookings_test:test_password@localhost:5433/medbookings_test"
 
-# Authentication
+# NextAuth Configuration
 NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="test-secret-key-for-playwright-testing"
+NEXTAUTH_SECRET="test-secret-key"
 
-# Mock OAuth (no real external calls)
-GOOGLE_CLIENT_ID="mock-google-client-id"
-GOOGLE_CLIENT_SECRET="mock-google-client-secret"
-
-# Disable external services
+# Disable external services in tests
 DISABLE_EMAILS="true"
 DISABLE_SMS="true"
-DISABLE_WHATSAPP="true"
 DISABLE_GOOGLE_CALENDAR="true"
-
-# Test environment flags
-NODE_ENV="test"
-PLAYWRIGHT_TEST="true"
 ```
 
-### Test Database Setup
+### Test Database
 
-Tests use an isolated PostgreSQL database via Docker:
+The tests use a separate PostgreSQL database to avoid interfering with development data:
 
 ```bash
 # Start test database
-npm run test:db:setup
+docker compose -f docker-compose.test.yml up -d postgres-test
 
-# Run migrations
-npm run test:db:migrate
-
-# Seed test data (if needed)
-npm run test:db:seed
-
-# Full setup (all of the above)
-npm run test:full
+# Run migrations on test database
+DATABASE_URL="$TEST_DATABASE_URL" npx prisma migrate deploy
 ```
 
-## 🎭 Modern Test Patterns
-
-### Page Object Model
-
-Tests use Page Object Models for maintainable, reusable code:
-
-```typescript
-import { BookingPage } from '../../fixtures/pages/booking-page';
-
-test('complete booking flow', async ({ page }) => {
-  const bookingPage = new BookingPage(page);
-
-  await bookingPage.navigateToProviderSearch();
-  await bookingPage.searchProviders('Cape Town', 'General Practitioner');
-  await bookingPage.selectProvider('Dr. Smith');
-  await bookingPage.selectTimeSlot('2024-12-31', '10:00');
-  await bookingPage.fillBookingForm({
-    name: 'John Doe',
-    email: 'john@example.com',
-    phone: '+27123456789'
-  });
-  await bookingPage.confirmBooking();
-  await bookingPage.verifyBookingSuccess();
-});
-```
+## 🎭 Test Patterns
 
 ### Authentication Mocking
 
-Robust OAuth mocking without external dependencies:
+Tests mock Google OAuth to avoid dependencies on external services:
 
 ```typescript
-const testUser = {
-  id: 'test-user-123',
-  email: 'test@example.com',
-  name: 'Test User'
-};
-
-await loginPage.performTestLogin(testUser);
-// User is now authenticated for the test
+// Mock NextAuth session
+await page.route('**/api/auth/session', async (route) => {
+  const json = {
+    user: {
+      name: 'Test User',
+      email: 'user@test.com',
+      image: 'https://via.placeholder.com/40',
+    },
+    expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+  };
+  await route.fulfill({ json });
+});
 ```
 
-### Robust Element Selection
+### Database State Management
 
-Multiple fallback selectors for reliable element detection:
+Each test suite starts with a clean database state:
 
 ```typescript
-// Automatically tries multiple selector strategies
-private selectors = {
-  searchButton: '[data-testid="search-button"], button[type="submit"], button:has-text("Search")',
-  locationInput: '[data-testid="location-input"], input[name="location"], input[placeholder*="location" i]',
-};
+test.beforeEach(async ({ page }) => {
+  // Setup clean test environment with fresh data
+  await setupTestEnvironment();
+  testUsers = await createTestUsers();
+  testProvider = await createTestProvider(testUsers.provider.id);
+});
 ```
 
-### Global Setup/Teardown
+### Page Object Patterns
 
-Automatic database management and authentication state:
+Reusable helper functions encapsulate common user actions:
 
 ```typescript
-// Global setup creates test data and authenticated state
-// Global teardown cleans up test data
-// Individual tests start with clean, predictable state
+// Helper function for filling registration forms
+await fillProviderRegistrationForm(page, TEST_PROVIDER_DATA);
+
+// Helper function for creating availability slots
+await createAvailabilitySlot(page, TEST_AVAILABILITY_DATA);
 ```
 
 ## 🔍 Debugging Tests
@@ -227,201 +169,120 @@ Automatic database management and authentication state:
 ### Visual Debugging
 
 ```bash
-# Watch tests run in browser
-npm run test:headed
+# Run with browser UI visible
+npm run test:e2e:headed
 
-# Interactive test explorer
-npm run test:ui
-
-# Step-by-step debugging
-npm run test:debug
+# Run with Playwright's test UI
+npm run test:e2e:ui
 ```
 
-### Debug Tools
+### Debug Screenshots
+
+Tests automatically take screenshots on failure. Manual screenshots can be taken:
 
 ```typescript
-// Built-in screenshot capability
-await bookingPage.takeScreenshot('booking-form-filled');
-
-// Page state inspection
-const isLoggedIn = await loginPage.isLoggedIn();
-
-// Element waiting with timeout
-await bookingPage.waitForElement('[data-testid="success"]', 10000);
+await takeDebugScreenshot(page, 'after-form-submission');
 ```
 
-### Troubleshooting
+### Console Logs
 
-**Test Database Issues:**
+Check browser console messages:
+
 ```bash
-# Restart test database
-docker-compose -f docker-compose.test.yml down
-npm run test:db:setup
-
-# Check database status
-docker-compose -f docker-compose.test.yml ps
-```
-
-**Authentication Problems:**
-```bash
-# Clear authentication state
-rm -rf e2e/.auth/
-
-# Re-run setup
-npm run test:auth
-```
-
-**Element Selection Issues:**
-```bash
-# Run in headed mode to see what's happening
-npm run test:headed
-
-# Use debug mode to inspect selectors
-npm run test:debug
+# Console messages are captured and shown in test output
+npx playwright test --reporter=line
 ```
 
 ## 🚦 CI/CD Integration
 
 ### GitHub Actions
 
-Tests run automatically on:
+The `.github/workflows/e2e-tests.yml` workflow runs tests on:
+
 - Push to `main` or `develop` branches
 - Pull requests to `main` or `develop`
 
-```yaml
-# .github/workflows/e2e-tests.yml includes:
-- npm run test:ci          # Complete CI setup and test run
-```
-
 ### Test Artifacts
 
-- **HTML Reports**: Comprehensive test results with screenshots
-- **JSON Results**: Machine-readable test data
-- **JUnit XML**: CI/CD integration format
-- **Screenshots**: Automatic capture on failures
-- **Videos**: Recording of failed test runs
+- Test reports are uploaded as artifacts
+- Screenshots from failed tests are preserved
+- Videos of failed test runs are available
 
 ## 📊 Test Data Management
 
-### Modern Fixtures
+### Fixtures and Test Data
 
-```typescript
-// Structured test data with helpers
-import { TEST_PROVIDERS, TEST_BOOKINGS, generateTestUser } from '../fixtures/test-data-new';
+- Test data is defined in `e2e/fixtures/test-data.ts`
+- Mock files (PDFs, images) are stored in `e2e/fixtures/files/`
+- Database seeding functions create consistent test data
 
-const testUser = generateTestUser({
-  email: 'custom@test.com',
-  name: 'Custom Test User'
-});
-```
+### Data Isolation
 
-### Database Utilities
-
-```typescript
-// Clean test data by pattern
-await cleanupTestDataByEmail('test.com');
-
-// Setup complete scenario
-const scenario = await setupCompleteTestScenario();
-// Returns: { user, provider, service, location, availability, slots }
-```
-
-### Isolation Strategy
-
-- **Global Setup**: Creates base test environment
-- **Test-specific Data**: Each test creates its own data
-- **Automatic Cleanup**: Global teardown removes all test data
-- **No Cross-test Dependencies**: Tests can run in any order
+- Each test starts with a clean database state
+- Tests don't depend on external services
+- Deterministic test data ensures reliable results
 
 ## 🛠️ Maintenance
 
 ### Adding New Tests
 
-1. **Choose appropriate category** (`auth/`, `booking/`, `provider/`)
-2. **Use existing Page Objects** or extend them
-3. **Follow established patterns**:
+1. Create test file in appropriate directory (`auth/`, `provider/`, `cleanup/`)
+2. Follow existing patterns for authentication and data setup
+3. Use helper functions for common actions
+4. Add data cleanup if needed
 
-```typescript
-import { test, expect } from '@playwright/test';
-import { SomePageObject } from '../../fixtures/pages/some-page';
+### Updating Test Data
 
-test.describe('Feature Name', () => {
-  let pageObject: SomePageObject;
-
-  test.beforeEach(async ({ page }) => {
-    pageObject = new SomePageObject(page);
-  });
-
-  test('should do something', async ({ page }) => {
-    // Test implementation using page object
-  });
-});
-```
-
-### Extending Page Objects
-
-```typescript
-// Add new methods to existing page objects
-export class BookingPage extends BasePage {
-  async newFeatureMethod() {
-    await this.clickElement('[data-testid="new-feature"]');
-    await this.waitForElement('[data-testid="result"]');
-  }
-}
-```
+1. Modify fixtures in `e2e/fixtures/test-data.ts`
+2. Update database seeding functions in `e2e/utils/database.ts`
+3. Regenerate test files if needed
 
 ### Performance Optimization
 
-- **Parallel Execution**: Tests run concurrently by default
-- **Efficient Selectors**: Multiple fallback strategies
-- **Minimal Setup**: Only create necessary test data
-- **Smart Cleanup**: Bulk deletion with proper ordering
+- Tests run in parallel by default
+- Database operations are optimized for speed
+- Use `fullyParallel: true` in test configuration
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Database Connection Errors:**
+
+```bash
+# Ensure test database is running
+docker compose -f docker-compose.test.yml up -d postgres-test
+
+# Check database connection
+DATABASE_URL="$TEST_DATABASE_URL" npx prisma db push
+```
+
+**Authentication Issues:**
+
+```bash
+# Verify mock authentication is properly set up
+# Check that NextAuth routes are being mocked correctly
+```
+
+**Test Timeouts:**
+
+```bash
+# Increase timeout in playwright.config.ts
+# Check for slow network requests or database queries
+```
+
+### Getting Help
+
+- Review test logs and screenshots from failed tests
+- Use `--debug` flag to step through tests interactively
+- Check browser console for JavaScript errors
+- Verify database state after failed tests
 
 ## 📈 Best Practices
 
-### Test Design
-
-1. **Test Independence**: Each test works standalone
-2. **Clear Intent**: Test names describe what they verify
-3. **Robust Selectors**: Multiple fallback strategies
-4. **Appropriate Scope**: Test one feature per test file
-
-### Code Quality
-
-1. **Page Objects**: Encapsulate UI interactions
-2. **Helper Functions**: Reuse common operations
-3. **Type Safety**: Full TypeScript usage
-4. **Error Handling**: Graceful failure scenarios
-
-### Data Management
-
-1. **Isolated Data**: Each test creates what it needs
-2. **Realistic Scenarios**: Use production-like data
-3. **Predictable State**: Consistent setup between runs
-4. **Efficient Cleanup**: Bulk operations with proper ordering
-
-## 🆕 Migration from Legacy Tests
-
-### Script Updates
-
-**Old commands → New commands:**
-- `npm run test:e2e` → `npm run test`
-- `npm run test:e2e:headed` → `npm run test:headed`
-- `npm run test:e2e:auth` → `npm run test:auth`
-- `npm run test:e2e:provider` → `npm run test:provider`
-
-### Structure Changes
-
-**Legacy tests** remain available via `npm run test:legacy` while new tests follow the modern structure in categorized directories.
-
-### New Capabilities
-
-- **Page Object Models** for maintainable test code
-- **Global setup/teardown** for reliable test environments
-- **Robust selectors** with multiple fallback strategies
-- **Comprehensive debugging** tools and reporting
-- **Professional CI/CD** integration
-
----
-
-**For questions or issues:** Review test logs, check database status, or run tests in debug mode for detailed investigation.
+1. **Test Isolation**: Each test should be independent and not rely on other tests
+2. **Clean State**: Always start with a clean database and authentication state
+3. **Realistic Data**: Use realistic test data that matches production scenarios
+4. **Error Handling**: Test both success and failure paths
+5. **Performance**: Keep tests fast by mocking external services
+6. **Maintainability**: Use helper functions and page objects for reusable code

@@ -1,319 +1,259 @@
-# MedBookings - Healthcare Appointment Management Platform
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-A comprehensive healthcare appointment booking and management system built with Next.js 14, tRPC, and PostgreSQL.
+## Getting Started
 
-## 🚀 Tech Stack
+First, run the development server:
 
-- **Framework**: Next.js 14 (App Router)
-- **API**: tRPC for type-safe APIs
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: NextAuth.js with Google OAuth & Credentials
-- **Styling**: Tailwind CSS + Radix UI + shadcn/ui
-- **State Management**: tRPC + TanStack Query
-- **Validation**: Zod schemas
-- **Testing**: Playwright E2E tests
-- **Deployment**: Vercel with PostgreSQL
-
-## 📋 Features
-
-### Core Modules
-- **Authentication & Authorization**: Google OAuth, credentials login, role-based access (ADMIN, PROVIDER, USER)
-- **Provider Management**: Profile creation, service offerings, availability scheduling
-- **Calendar System**: Availability management, slot generation, booking conflicts prevention
-- **Booking System**: Guest bookings, user bookings, provider-initiated bookings
-- **Organizations**: Multi-provider practices, team management, shared resources
-- **Communications**: Email (SendGrid), SMS/WhatsApp (Twilio), automated notifications
-- **Admin Dashboard**: Provider approval, user management, system monitoring
-- **Billing & Subscriptions**: Tiered plans, usage tracking (prepared, not fully implemented)
-- **Reviews & Ratings**: Patient feedback system (module present)
-
-## 🏗️ Project Structure
-
-```
-src/
-├── app/                    # Next.js App Router pages
-├── features/              # Feature-based modules
-│   ├── admin/            # Admin dashboard
-│   ├── auth/             # Authentication
-│   ├── billing/          # Subscription management
-│   ├── calendar/         # Scheduling system
-│   ├── communications/   # Notifications
-│   ├── invitations/      # User and provider invitations
-│   ├── organizations/    # Multi-provider support
-│   ├── profile/          # User profile management
-│   ├── providers/        # Provider management
-│   ├── reviews/          # Rating and review system
-│   └── settings/         # User settings
-├── server/
-│   ├── api/
-│   │   ├── root.ts      # tRPC router aggregation
-│   │   └── routers/     # tRPC procedure definitions
-│   └── trpc.ts          # tRPC configuration
-├── lib/                   # Shared utilities
-├── components/            # Reusable UI components
-└── types/                # TypeScript type definitions
-```
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- Docker (for local PostgreSQL)
-- npm or yarn
-
-### Environment Setup
-
-1. **Clone and install dependencies:**
 ```bash
-git clone <repository>
-cd medbookings
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+### Starting docker
+
+There is a docker-compose.yaml file that defines the services to run locally on Docker
+First make sure docker is running on the system then execute this command
+
+```bash
+docker compose up
+```
+
+This will start a postgres database for local development
+
+### Prisma
+
+To reset the database and delete all migrations
+
+Delete the migrations folder
+
+```bash
+rd /s /q prisma\migrations
+```
+
+Delete the generated Prisma client
+
+```bash
+rd /s /q node_modules\.prisma
+```
+
+Delete the generated client from node_modules
+
+```bash
+rd /s /q node_modules\@prisma
+```
+
+Delete the Prisma generated types
+
+```bash
+del /f /q prisma\zod\*
+```
+
+NPM Install
+
+```bash
 npm install
 ```
 
-2. **Copy environment variables:**
+Push the schema directly to the database (skips migrations)
+
 ```bash
-cp .env.example .env
+npx prisma db push
 ```
 
-3. **Configure required environment variables:**
-```env
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/medbookings"
+Generate the prisma client
 
-# Authentication
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="generate-secure-secret"
-
-# Google OAuth (optional)
-GOOGLE_CLIENT_ID=""
-GOOGLE_CLIENT_SECRET=""
-
-# Google Maps (for location services)
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=""
-
-# Communications (optional)
-SENDGRID_API_KEY=""
-TWILIO_ACCOUNT_SID=""
-TWILIO_AUTH_TOKEN=""
-```
-
-### Database Setup
-
-1. **Start PostgreSQL with Docker:**
-```bash
-docker compose up -d
-```
-
-2. **Run migrations:**
-```bash
-npx prisma migrate dev
-```
-
-3. **Generate Prisma client:**
 ```bash
 npx prisma generate
 ```
 
-4. **Seed database (optional):**
+Seed the database
+
 ```bash
-npm run seed:production
+npx prisma db seed
 ```
 
-5. **View database:**
+To see the database run the following command
+
 ```bash
 npx prisma studio
 ```
 
-### Development
+## Learn More
 
-```bash
-npm run dev
-# Open http://localhost:3000
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Booking System
+
+### Use Cases
+
+The booking system supports the following scenarios:
+
+1. Service Provider booking for guest
+2. Service Provider booking for user
+3. Guest booking for themselves
+4. User booking for themselves
+5. User booking for a guest (e.g., booking for a friend)
+6. Admin/staff making bookings (non-service provider staff)
+
+### Implementation Details
+
+#### Form Components
+
+The booking system uses the following components:
+
+```mermaid
+graph TD
+A[@prisma/zod/index.ts] --> |Exports| B[AvailabilitySchema]
+A --> |Exports| C[BookingSchema]
+
+B --> |z.infer| D[Availability type]
+C --> |z.infer| E[Booking type]
+
+B --> |z.extend| F[availabilityFormSchema]
+C --> |z.extend| G[BookingFormSchema]
+
+F --> |z.infer| H[AvailabilityFormValues]
+G --> |z.infer| I[BookingFormValues]
+
+style A fill:#f9f,stroke:#333
+style B fill:#bbf,stroke:#333
+style C fill:#bbf,stroke:#333
+style D fill:#dfd,stroke:#333
+style E fill:#dfd,stroke:#333
+style F fill:#fdb,stroke:#333
+style G fill:#fdb,stroke:#333
+style H fill:#dfd,stroke:#333
+style I fill:#dfd,stroke:#333
 ```
-
-## 📦 Available Scripts
-
-### Development
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint with auto-fix
-- `npm run format` - Format code with Prettier
-
-### Code Quality & Compliance
-- `npm run prepare` - Install git hooks (runs automatically on `npm install`)
-- `npm run compliance:setup` - Setup CLAUDE.md compliance system
-- `npm run compliance:sync` - Sync compliance rules with CLAUDE.md changes
-- `npm run compliance:check` - Verify CLAUDE.md compliance
-- `npm run compliance:status` - Show compliance system status
-- `npm run compliance:validate` - Validate specific files for compliance
-
-### Database Management
-- `npm run db:migrate` - Apply migrations
-- `npm run db:migrate:dev` - Create and apply dev migrations
-- `npm run seed:production` - Seed database with production data
-
-### Testing
-- `npm run test` - Run all E2E tests
-- `npm run test:headed` - Run tests with visible browser
-- `npm run test:ui` - Open Playwright test explorer
-- `npm run test:debug` - Debug tests interactively
-- `npm run test:auth` - Test authentication flows
-- `npm run test:booking` - Test booking system
-- `npm run test:provider` - Test provider features
-- `npm run test:calendar` - Test calendar functionality
-- `npm run test:legacy` - Run legacy test suite
-- `npm run test:full` - Full test setup and run
-- `npm run test:ci` - CI-specific test run with installation
-- `npm run test:report` - Show test report
-See [README-E2E-TESTING.md](./README-E2E-TESTING.md) for detailed testing documentation.
-
-### Vercel Production
-- `npm run verceldb:migrate` - Deploy migrations to Vercel
-- `npm run verceldb:studio` - Open Vercel database studio
-- `npm run verceldb:seed` - Seed Vercel database
-
-### Architecture Validation
-- `npm run architecture:check` - Validate architecture compliance
-
-## 🔐 Authentication
-
-The system supports two authentication methods:
-
-### Google OAuth
-- Automatic user creation on first login
-- Profile information synced from Google
-
-### Credentials (Email/Password)
-- Manual registration required
-- Email verification flow
-- Password reset functionality
-
-### User Roles
-- **ADMIN**: Full system access, provider approval
-- **PROVIDER**: Service provider with calendar management
-- **USER**: Standard user, can book appointments
-- **Guest**: No login required for basic booking
-
-## 📊 API Architecture (tRPC)
-
-The application uses tRPC for type-safe API communication:
 
 ```typescript
-// Example: Fetching providers
-import { api } from '@/utils/api';
-
-const { data: providers } = api.providers.getAll.useQuery();
+// components/booking/booking-form.tsx
+- BookingForm: Main form component with dynamic fields based on booking type
+- UserSelector: Autocomplete component for selecting registered users
+- GuestForm: Form for guest details when booking for non-registered users
+- ServiceSelector: Component for selecting available services
+- DateTimePicker: Component for selecting booking date and time
 ```
 
-### Available tRPC Routers
-- `admin` - Admin operations
-- `auth` - Authentication procedures
-- `calendar` - Availability and booking management
-- `communications` - Notification handling
-- `organizations` - Multi-provider practice management
-- `profile` - User profile operations
-- `providers` - Provider search and management
-- `settings` - User preferences
+#### Validation Schemas
 
-## 🏥 Healthcare Compliance
-
-### POPIA Compliance (South African Privacy Law)
-- Audit trails for data access
-- Consent tracking mechanisms
-- Data encryption in transit and at rest
-- Session timeout (30 minutes)
-
-### Data Security
-- PHI (Protected Health Information) isolation
-- Role-based access control
-- Secure communication channels
-- Regular security audits
-
-## 🚢 Deployment
-
-### Vercel Deployment
-
-1. **Push to GitHub**
-2. **Connect to Vercel**
-3. **Configure environment variables** in Vercel dashboard
-4. **Set up PostgreSQL database** in Vercel Storage
-5. **Deploy**
-
-### Production Environment Variables
-
-Required for production:
-- `DATABASE_URL` - Production PostgreSQL URL
-- `NEXTAUTH_URL` - Production domain
-- `NEXTAUTH_SECRET` - Secure random string
-- `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET` - For OAuth
-- Communication service keys (SendGrid, Twilio) as needed
-
-### Database Migrations in Production
-
-```bash
-# Pull production environment
-vercel env pull .env.vercel.production.local
-
-# Run migrations
-npm run verceldb:migrate
+```typescript
+// lib/validations/booking.ts
+export const bookingSchema = z.object({
+  bookingType: z.enum(['SELF', 'OTHER_USER', 'GUEST']),
+  userId: z.string().optional(),
+  guestDetails: z
+    .object({
+      firstName: z.string().min(2),
+      lastName: z.string().min(2),
+      email: z.string().email(),
+      phone: z.string().optional(),
+    })
+    .optional(),
+  serviceId: z.string(),
+  dateTime: z.date(),
+  notes: z.string().optional(),
+});
 ```
 
-## 🧪 Testing
+#### Server Actions
 
-Comprehensive E2E testing with Playwright. See [README-E2E-TESTING.md](./README-E2E-TESTING.md) for detailed documentation.
-
-Quick test commands:
-```bash
-npm run test          # Run all tests
-npm run test:headed   # Watch tests run
-npm run test:debug    # Debug mode
+```typescript
+// app/actions/booking.ts
+- createBooking: Handles all booking creation scenarios
+- validateBookingAccess: Checks authorization for booking operations
+- handleGuestBooking: Processes guest bookings
+- handleUserBooking: Processes user bookings
 ```
 
-## 📚 Documentation
+#### Authorization
 
-- [E2E Testing Guide](./README-E2E-TESTING.md) - Complete testing documentation
-- [CLAUDE.md](./CLAUDE.md) - Development guidelines, patterns, and compliance rules
+The following checks are implemented:
 
-## 🛠️ Troubleshooting
+- Service providers can book for anyone
+- Users can book for themselves
+- Admin staff have full booking privileges
+- Guests can only book for themselves
 
-### Common Issues
+For detailed implementation and usage examples, refer to the documentation in each component and utility file.
 
-**Database Connection Issues:**
-```bash
-# Restart Docker
-docker compose down
-docker compose up -d
+## Deployment to Vercel
 
-# Verify connection
-npx prisma db push
-```
+This project is configured for deployment to Vercel with PostgreSQL.
 
-**Build Errors:**
-```bash
-# Clear cache and rebuild
-rm -rf .next node_modules
-npm install
-npm run build
-```
+### Prerequisites
 
-**Authentication Issues:**
-- Verify `NEXTAUTH_URL` matches your domain
-- Check `NEXTAUTH_SECRET` is set
-- Ensure Google OAuth credentials are correct
+1. A Vercel account
+2. A Vercel PostgreSQL database (or another PostgreSQL provider)
 
-## 🤝 Contributing
+### Deployment Steps
 
-1. Follow development guidelines in [CLAUDE.md](./CLAUDE.md)
-2. Ensure all tests pass (`npm run test`)
-3. Run architecture checks before PRs (`npm run architecture:check`)
-4. Follow TypeScript strict mode
-5. Adhere to established patterns and compliance rules
+1. Install the Vercel CLI:
 
-## 📄 License
+   ```bash
+   npm install -g vercel
+   ```
 
-Private repository - All rights reserved
+2. Login to Vercel:
 
----
+   ```bash
+   vercel login
+   ```
 
+3. Deploy the project:
+
+   ```bash
+   vercel
+   ```
+
+4. During deployment, Vercel will ask you to configure environment variables. Make sure to set up:
+
+   - `DATABASE_URL`: Your PostgreSQL connection string
+   - `AUTH_SECRET`: A secure random string for NextAuth.js
+   - Other environment variables as needed (Google OAuth, Twilio, SendGrid, etc.)
+
+5. Connect your Vercel PostgreSQL database:
+
+   - Go to your Vercel project dashboard
+   - Navigate to Storage
+   - Create a new PostgreSQL database
+   - Vercel will automatically set up the `DATABASE_URL` environment variable
+
+6. Run database migrations:
+
+   ```bash
+   vercel env pull .env.production.local
+   npx prisma migrate deploy
+   ```
+
+7. Your application should now be deployed and connected to the database!
+
+### Production Considerations
+
+- Make sure to set `NEXTAUTH_URL` to your production URL
+- Configure proper CORS settings if needed
+- Set up proper authentication providers for production
+
+//Testing changes to Branch vs Master.
+Changed by Shei 20250416 16:59
+Changed by Kyle 20250416 17:40
+Changed by Shei 20250419 14:13
+Changed by Kyle 20250825 15:52
