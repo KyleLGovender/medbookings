@@ -1,35 +1,39 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './e2e',
-  /* Run tests in files in parallel */
+  testDir: './e2e/tests',
   fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
-  use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:3000',
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
+  reporter: [
+    ['html', { outputFolder: 'e2e/test-results/html-report' }],
+    ['json', { outputFile: 'e2e/test-results/results.json' }],
+    ['junit', { outputFile: 'e2e/test-results/junit.xml' }],
+  ],
+
+  globalSetup: './e2e/global-setup.ts',
+  globalTeardown: './e2e/global-teardown.ts',
+
+  use: {
+    baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+    actionTimeout: 10_000,
+    navigationTimeout: 30_000,
   },
 
-  /* Configure projects for major browsers */
   projects: [
-    // Setup
+    // Auth setup
     {
       name: 'setup',
       testMatch: /auth\.setup\.ts/,
+      teardown: 'cleanup',
     },
 
-    // Desktop testing
+    // Main test suite
     {
       name: 'chromium',
       use: {
@@ -37,18 +41,20 @@ export default defineConfig({
         storageState: 'e2e/.auth/user.json',
       },
       dependencies: ['setup'],
-      testMatch: [
-        '**/calendar/**', // Calendar tests
-        '**/availability/**', // Availability tests
-        '**/booking/**', // Booking tests
-      ],
+      testIgnore: ['**/auth.setup.ts', '**/global-teardown.ts'],
+    },
+
+    // Cleanup
+    {
+      name: 'cleanup',
+      testMatch: /global-teardown\.ts/,
     },
   ],
 
-  /* Run your local dev server before starting the tests */
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
   },
 });

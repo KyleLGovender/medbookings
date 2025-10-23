@@ -81,6 +81,13 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
 export const createTRPCRouter = t.router;
 
 /**
+ * Create a server-side caller
+ *
+ * @see https://trpc.io/docs/server/server-side-calls
+ */
+export const createCallerFactory = t.createCallerFactory;
+
+/**
  * Public (unauthenticated) procedure
  *
  * This is the base piece you use to build new queries and mutations on your tRPC API. It does not
@@ -114,8 +121,7 @@ const enforceUserHasRole = (allowedRoles: string[]) => {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
 
-    const user = ctx.session.user as any;
-    if (!allowedRoles.includes(user.role)) {
+    if (!allowedRoles.includes(ctx.session.user.role)) {
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: 'You do not have permission to perform this action',

@@ -59,11 +59,11 @@ export function ProviderTypeSection({
                   <div key={type.id} className="flex items-start space-x-3">
                     <Checkbox
                       id={type.id}
-                      checked={field.value?.includes(type.id) || false}
+                      checked={(field.value as string[] | undefined)?.includes(type.id) || false}
                       onCheckedChange={(checked) => {
-                        const currentValues = field.value || [];
+                        const currentValues: string[] = (field.value as string[] | undefined) || [];
                         if (checked) {
-                          field.onChange([...currentValues, type.id]);
+                          field.onChange([...currentValues, type.id] as string[]);
                         } else {
                           field.onChange(currentValues.filter((id: string) => id !== type.id));
                         }
@@ -94,7 +94,10 @@ export function ProviderTypeSection({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Provider Type *</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select
+                onValueChange={field.onChange}
+                value={(field.value as string | undefined) || ''}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a provider type" />

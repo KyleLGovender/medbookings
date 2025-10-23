@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useDeleteProvider } from '@/features/providers/hooks/use-provider-delete';
 import { useNavigation } from '@/hooks/use-navigation';
+import { logger } from '@/lib/logger';
 
 interface DeleteProviderButtonProps {
   providerId: string;
@@ -31,7 +32,10 @@ export function DeleteProviderButton({ providerId }: DeleteProviderButtonProps) 
       await deleteProviderMutation.mutateAsync({ id: providerId });
       await navigate('/profile');
     } catch (error) {
-      console.error('Error deleting provider:', error);
+      logger.error('Error deleting provider', {
+        providerId,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   };
 
@@ -58,7 +62,7 @@ export function DeleteProviderButton({ providerId }: DeleteProviderButtonProps) 
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>OK</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={deleteProviderMutation.isPending}

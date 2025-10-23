@@ -1,11 +1,27 @@
 'use server';
 
-import { type RouterOutputs } from '@/utils/api';
+import { Prisma } from '@prisma/client';
+
+import { logger } from '@/lib/logger';
 
 import { sendGuestVCardToProvider } from './server-helper';
 
-// OPTION C: Use tRPC-inferred type for booking data from calendar router
-type BookingWithDetails = RouterOutputs['calendar']['getBookingWithDetails'];
+// Use Prisma type matching getBookingWithDetails from calendar router
+type BookingWithDetails = Prisma.BookingGetPayload<{
+  include: {
+    slot: {
+      include: {
+        service: true;
+        serviceConfig: true;
+        availability: {
+          include: {
+            provider: true;
+          };
+        };
+      };
+    };
+  };
+}>;
 
 export async function sendProviderPatientsDetailsByWhatsapp(
   booking: BookingWithDetails
@@ -13,12 +29,16 @@ export async function sendProviderPatientsDetailsByWhatsapp(
   try {
     // OPTION C: Server action now only handles business logic, no database queries
     await sendGuestVCardToProvider(booking);
-    console.log('[Action] sendGuestVCardToProvider completed.');
+    logger.info('sendGuestVCardToProvider completed', {
+      bookingId: booking.id,
+    });
 
     // Return minimal metadata
     return { success: true, message: 'Patient details sent successfully via WhatsApp!' };
   } catch (error) {
-    console.error('[Action] Error sending details:', error);
+    logger.error('Error sending details', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     // Return error metadata
     return { error: 'Failed to send patient details' };
   }

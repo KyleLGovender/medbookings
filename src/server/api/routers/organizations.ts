@@ -1,4 +1,4 @@
-import { OrganizationBillingModel, OrganizationRole } from '@prisma/client';
+import { OrganizationBillingModel, OrganizationRole, Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import { logEmail } from '@/features/communications/lib/helper';
@@ -18,6 +18,7 @@ import {
 } from '@/features/organizations/lib/actions';
 import { organizationRegistrationSchema } from '@/features/organizations/types/schemas';
 import { getCurrentUser } from '@/lib/auth';
+import { addMilliseconds, nowUTC } from '@/lib/timezone';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
 export const organizationsRouter = createTRPCRouter({
@@ -128,11 +129,11 @@ export const organizationsRouter = createTRPCRouter({
             await tx.location.create({
               data: {
                 name: location.name,
-                googlePlaceId: location.googlePlaceId || `temp-${Date.now()}`,
+                googlePlaceId: location.googlePlaceId || `temp-${nowUTC().getTime()}`,
                 formattedAddress: location.formattedAddress || '',
                 coordinates: {
-                  lat: location.coordinates.lat,
-                  lng: location.coordinates.lng,
+                  lat: location.coordinates?.lat ?? 0,
+                  lng: location.coordinates?.lng ?? 0,
                 },
                 searchTerms: location.searchTerms || [],
                 phone: location.phone || '',
@@ -207,7 +208,7 @@ export const organizationsRouter = createTRPCRouter({
 
       const updatedOrganization = await ctx.prisma.organization.update({
         where: { id },
-        data: data as any,
+        data: data as Prisma.OrganizationUpdateInput,
         include: {
           locations: true,
           memberships: true,
@@ -354,7 +355,7 @@ export const organizationsRouter = createTRPCRouter({
         data: {
           ...locationData,
           organizationId,
-        } as any,
+        } as unknown as Prisma.LocationCreateInput,
       });
 
       return location;
@@ -563,7 +564,7 @@ export const organizationsRouter = createTRPCRouter({
         },
         data: {
           status: input.status,
-          ...(input.status === 'SUSPENDED' && { suspendedAt: new Date() }),
+          ...(input.status === 'SUSPENDED' && { suspendedAt: nowUTC() }),
           ...(input.status === 'ACCEPTED' && { suspendedAt: null }),
         },
         include: {
@@ -647,7 +648,7 @@ export const organizationsRouter = createTRPCRouter({
           providerId: existingConnection.providerId,
           organizationId: input.organizationId,
           endTime: {
-            gte: new Date(),
+            gte: nowUTC(),
           },
         },
       });
@@ -765,7 +766,7 @@ export const organizationsRouter = createTRPCRouter({
           customMessage,
           invitedById: ctx.session.user.id,
           token: crypto.randomUUID(),
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+          expiresAt: addMilliseconds(nowUTC(), 7 * 24 * 60 * 60 * 1000), // 7 days
         },
         include: {
           organization: true,
@@ -841,7 +842,7 @@ export const organizationsRouter = createTRPCRouter({
         where: { id: input.invitationId },
         data: {
           status: 'CANCELLED',
-          cancelledAt: new Date(),
+          cancelledAt: nowUTC(),
         },
       });
 
@@ -930,7 +931,7 @@ export const organizationsRouter = createTRPCRouter({
       }
 
       // Check rate limiting (no more than 1 resend per hour)
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      const oneHourAgo = addMilliseconds(nowUTC(), -60 * 60 * 1000);
       if (invitation.lastEmailSentAt && invitation.lastEmailSentAt > oneHourAgo) {
         throw new Error('Invitation can only be resent once per hour');
       }
@@ -952,7 +953,7 @@ export const organizationsRouter = createTRPCRouter({
           token: newToken,
           expiresAt: newExpiresAt,
           emailAttempts: { increment: 1 },
-          lastEmailSentAt: new Date(),
+          lastEmailSentAt: nowUTC(),
           emailDeliveryStatus: 'PENDING',
         },
       });
@@ -1158,7 +1159,7 @@ export const organizationsRouter = createTRPCRouter({
           role: input.role,
           token: validation.invitationToken!,
           expiresAt: validation.expiresAt!,
-          invitedById: validation.data.currentUserId,
+          invitedById: validation.data!.currentUserId!,
           status: 'PENDING',
         },
         include: {
@@ -1206,11 +1207,11 @@ export const organizationsRouter = createTRPCRouter({
         throw new Error(`Invitation has already been ${invitation.status.toLowerCase()}`);
       }
 
-      if (invitation.expiresAt < new Date()) {
+      if (invitation.expiresAt < nowUTC()) {
         throw new Error('Invitation has expired');
       }
 
-      if (invitation.email.toLowerCase() !== validation.data.currentUserEmail.toLowerCase()) {
+      if (invitation.email.toLowerCase() !== validation.data!.currentUserEmail!.toLowerCase()) {
         throw new Error('This invitation is not for your email address');
       }
 
@@ -1219,7 +1220,7 @@ export const organizationsRouter = createTRPCRouter({
         where: {
           organizationId_userId: {
             organizationId: invitation.organizationId,
-            userId: validation.data.currentUserId,
+            userId: validation.data!.currentUserId!,
           },
         },
       });
@@ -1233,7 +1234,7 @@ export const organizationsRouter = createTRPCRouter({
         // Create membership
         const membership = await tx.organizationMembership.create({
           data: {
-            userId: validation.data.currentUserId,
+            userId: validation.data!.currentUserId!,
             organizationId: invitation.organizationId,
             role: invitation.role,
             status: 'ACTIVE',
@@ -1260,7 +1261,7 @@ export const organizationsRouter = createTRPCRouter({
           where: { id: invitation.id },
           data: {
             status: 'ACCEPTED',
-            acceptedAt: new Date(),
+            acceptedAt: nowUTC(),
           },
         });
 
@@ -1362,7 +1363,7 @@ export const organizationsRouter = createTRPCRouter({
       }
 
       // Cannot change own role
-      if (targetMembership.userId === validation.data.currentUserId) {
+      if (targetMembership.userId === validation.data!.currentUserId!) {
         throw new Error('Cannot change your own role');
       }
 
@@ -1427,7 +1428,7 @@ export const organizationsRouter = createTRPCRouter({
       }
 
       // Cannot remove yourself
-      if (targetMembership.userId === validation.data.currentUserId) {
+      if (targetMembership.userId === validation.data!.currentUserId!) {
         throw new Error('Cannot remove yourself from the organization');
       }
 

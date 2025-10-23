@@ -1,7 +1,9 @@
+import { Prisma } from '@prisma/client';
 import { addDays, addMonths, differenceInMinutes, endOfMonth, startOfMonth } from 'date-fns';
 
 import { AvailabilityValidationOptions, ValidationResult } from '@/features/calendar/types/types';
 import { prisma } from '@/lib/prisma';
+import { nowUTC } from '@/lib/timezone';
 
 /**
  * Comprehensive availability validation
@@ -23,7 +25,7 @@ export async function validateAvailability(
   }
 
   // Past date validation (max 30 days back)
-  const now = new Date();
+  const now = nowUTC();
   const thirtyDaysAgo = addDays(now, -30);
   if (options.startTime < thirtyDaysAgo) {
     errors.push('Cannot create availability more than 30 days in the past');
@@ -53,7 +55,7 @@ async function validateOverlaps(options: AvailabilityValidationOptions): Promise
   const errors: string[] = [];
 
   // Get all existing availabilities for this provider
-  const whereClause: any = {
+  const whereClause: Prisma.AvailabilityWhereInput = {
     providerId: options.providerId,
     // Only check against accepted/pending availabilities (not cancelled/rejected)
     status: { in: ['ACCEPTED', 'PENDING'] },

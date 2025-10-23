@@ -26,6 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useOrganizationProviderConnections } from '@/features/organizations/hooks/use-provider-connections';
 import { useProviderInvitations } from '@/features/organizations/hooks/use-provider-invitations';
+import { nowUTC } from '@/lib/timezone';
 
 import { ProviderConnectionCard } from './provider-connection-card';
 import { ProviderInvitationForm } from './provider-invitation-form';
@@ -54,13 +55,13 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
   const invitations = invitationsData || [];
 
   // Filter data based on search query
-  const filteredConnections = connections.filter((connection: any) => {
+  const filteredConnections = connections.filter((connection) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
       connection.provider.name.toLowerCase().includes(query) ||
       connection.provider.email.toLowerCase().includes(query) ||
-      connection.provider.providerType?.name.toLowerCase().includes(query)
+      connection.provider.serviceProviderType?.name.toLowerCase().includes(query)
     );
   });
 
@@ -75,7 +76,7 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
 
   // Count pending invitations for tab badge
   const pendingInvitationsCount = invitations.filter(
-    (inv) => inv.status === 'PENDING' && new Date(inv.expiresAt) > new Date()
+    (inv) => inv.status === 'PENDING' && inv.expiresAt > nowUTC()
   ).length;
 
   const handleInvitationSuccess = () => {
@@ -84,7 +85,7 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
 
   const LoadingCards = () => (
     <div className="space-y-4">
-      {[...Array(3)].map((_, i) => (
+      {([...Array(3)] as unknown[]).map((_, i) => (
         <Card key={i}>
           <CardContent className="p-6">
             <div className="flex items-start gap-3">
@@ -110,7 +111,7 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
     title,
     description,
   }: {
-    icon: any;
+    icon: React.ComponentType<{ className?: string }>;
     title: string;
     description: string;
   }) => (
@@ -267,7 +268,7 @@ export function ProviderNetworkManager({ organizationId }: ProviderNetworkManage
           ) : (
             <ProviderInvitationList
               organizationId={organizationId}
-              invitations={filteredInvitations as any}
+              invitations={filteredInvitations}
             />
           )}
         </TabsContent>

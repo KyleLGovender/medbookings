@@ -7,6 +7,7 @@ import {
   getAvailabilityStyle,
   getWorkingTimeRange,
 } from '@/features/calendar/lib/calendar-utils';
+import { parseUTC } from '@/lib/timezone';
 
 import { AvailabilityData, AvailabilityDayViewProps } from './types';
 
@@ -18,6 +19,8 @@ export function AvailabilityDayView({
   onEventClick,
   onTimeSlotClick,
   onDateClick,
+  onEditEvent,
+  onDeleteEvent,
   getAvailabilityStyle,
 }: AvailabilityDayViewProps) {
   const dayEvents = getAvailabilityForDay(events, currentDate);
@@ -30,8 +33,8 @@ export function AvailabilityDayView({
   );
 
   const calculateAvailabilityGridPosition = (availability: AvailabilityData) => {
-    const startTime = new Date(availability.startTime);
-    const endTime = new Date(availability.endTime);
+    const startTime = availability.startTime;
+    const endTime = availability.endTime;
 
     // Convert to hour-based grid slots, accounting for display range offset
     // The events grid has hours.length * 2 rows, so we need to multiply by 2
@@ -98,12 +101,35 @@ export function AvailabilityDayView({
                     <li key={availability.id} className="relative mt-px flex" style={{ gridRow }}>
                       <a
                         href="#"
-                        className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getAvailabilityStyle(availability)} shadow-sm hover:opacity-80`}
+                        className={`group absolute inset-1 flex flex-col overflow-y-auto rounded-lg p-2 text-xs/5 ${getAvailabilityStyle(availability)} shadow-sm hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
+                        tabIndex={0}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           onEventClick?.(availability, e);
                         }}
+                        onDoubleClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onEditEvent?.(availability);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Delete' || e.key === 'Backspace') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onDeleteEvent?.(availability);
+                          } else if (e.key === 'Enter') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onEditEvent?.(availability);
+                          }
+                        }}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onEditEvent?.(availability);
+                        }}
+                        title="Double-click to edit, Delete key to delete, Right-click for options"
                       >
                         <p className="order-1 flex items-center gap-1 font-semibold">
                           {availability.provider?.user?.name || 'Provider'}
@@ -111,7 +137,7 @@ export function AvailabilityDayView({
                         </p>
                         <p className="text-xs opacity-75">
                           <time dateTime={availability.startTime.toString()}>
-                            {new Date(availability.startTime).toLocaleTimeString([], {
+                            {availability.startTime.toLocaleTimeString([], {
                               hour: '2-digit',
                               minute: '2-digit',
                             })}
@@ -119,7 +145,7 @@ export function AvailabilityDayView({
                           <span>
                             {' - '}
                             <time dateTime={availability.endTime.toString()}>
-                              {new Date(availability.endTime).toLocaleTimeString([], {
+                              {availability.endTime.toLocaleTimeString([], {
                                 hour: '2-digit',
                                 minute: '2-digit',
                               })}

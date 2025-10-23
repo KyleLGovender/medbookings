@@ -14,6 +14,8 @@ import {
 } from '@prisma/client';
 import { z } from 'zod';
 
+import { parseUTC } from '@/lib/timezone';
+
 // =============================================================================
 // ENUM SCHEMAS
 // =============================================================================
@@ -78,10 +80,10 @@ export const createSubscriptionRequestSchema = z
     // Subscription details
     type: subscriptionTypeSchema.default('BASE'),
     status: subscriptionStatusSchema,
-    startDate: z.string().transform((val) => new Date(val)),
+    startDate: z.string().transform((val) => parseUTC(val)),
     endDate: z
       .string()
-      .transform((val) => new Date(val))
+      .transform((val) => parseUTC(val))
       .optional(),
     // Stripe integration
     stripeCustomerId: z.string().optional(),
@@ -113,15 +115,15 @@ export const updateSubscriptionRequestSchema = z
     status: subscriptionStatusSchema.optional(),
     startDate: z
       .string()
-      .transform((val) => new Date(val))
+      .transform((val) => parseUTC(val))
       .optional(),
     endDate: z
       .string()
-      .transform((val) => new Date(val))
+      .transform((val) => parseUTC(val))
       .optional(),
     cancelledAt: z
       .string()
-      .transform((val) => new Date(val))
+      .transform((val) => parseUTC(val))
       .optional(),
     cancelReason: z.string().optional(),
     // Stripe integration

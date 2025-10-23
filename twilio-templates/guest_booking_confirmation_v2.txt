@@ -1,0 +1,30 @@
+Template Name: guest_booking_confirmation_v2
+Variables: 8
+Language: English
+
+🎉 *Booking Confirmed!*
+
+Hi {{1}},
+
+Your appointment has been successfully booked:
+
+📅 *Date:* {{3}}
+🕐 *Time:* {{4}}
+👨‍⚕️ *Provider:* {{2}}
+🏥 *Service:* {{5}}
+📍 *Location:* {{6}}
+⏱️ *Duration:* {{8}}
+📧 *Reference:* {{7}}
+
+✅ *What's Next?*
+• Save this confirmation
+• Add to your calendar
+• Arrive 5-10 minutes early
+• Bring relevant documents
+
+Questions? Reply to this message.
+
+Thank you for choosing MedBookings! 🏥
+
+---
+*MedBookings - Making healthcare appointments simple*

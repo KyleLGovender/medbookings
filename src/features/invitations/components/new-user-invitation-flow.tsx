@@ -21,6 +21,7 @@ import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { logger } from '@/lib/logger';
 import { type RouterOutputs } from '@/utils/api';
 
 // Extract type from tRPC response
@@ -54,7 +55,9 @@ export function NewUserInvitationFlow({ invitation, token }: NewUserInvitationFl
         redirect: true,
       });
     } catch (error) {
-      console.error('Error starting registration:', error);
+      logger.error('Error starting registration', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       setIsLoading(false);
     }
   };
@@ -235,9 +238,9 @@ export function NewUserInvitationFlow({ invitation, token }: NewUserInvitationFl
                       <span className="text-sm font-medium">Expires:</span>
                     </div>
                     <p className="ml-6 text-sm text-muted-foreground">
-                      {format(new Date(invitation.expiresAt), 'MMM d, yyyy')}
+                      {format(invitation.expiresAt, 'MMM d, yyyy')}
                       <span className="ml-2 text-xs">
-                        ({formatDistanceToNow(new Date(invitation.expiresAt), { addSuffix: true })})
+                        ({formatDistanceToNow(invitation.expiresAt, { addSuffix: true })})
                       </span>
                     </p>
                   </div>

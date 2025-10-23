@@ -54,9 +54,11 @@ export function ProviderInvitationForm({ organizationId, onSuccess }: ProviderIn
       onSuccess?.();
     },
     onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : 'Failed to send invitation. Please try again.';
       toast({
         title: 'Failed to Send Invitation',
-        description: error.message,
+        description: message,
         variant: 'destructive',
       });
       setIsSubmitting(false);

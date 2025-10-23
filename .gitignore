@@ -10,6 +10,7 @@
 /coverage
 /test-results
 /playwright-report
+e2e/.auth/user.json
 
 # next.js
 /.next/
@@ -30,10 +31,7 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
-.env.vercel.production.local
 
-# vercel
-.vercel
 
 # typescript
 *.tsbuildinfo
@@ -45,9 +43,9 @@ docker_data
 /logs/
 logs/
 
-# AWS CDK
-infrastructure/cdk.out/
-infrastructure/node_modules/
-infrastructure/*.js
-infrastructure/*.d.ts
-!infrastructure/jest.config.js
+# Personal workflow system
+/workflow/
+.claude/
+.workflow-enabled
+package.json.local
+run-local.js

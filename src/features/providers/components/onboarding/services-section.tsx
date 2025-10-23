@@ -34,7 +34,8 @@ export function ServicesSection({
   const initializedRef = useRef(false);
 
   // Get the selected services from the form state
-  const watchedServices = watch('services.availableServices') || [];
+  const watchedServices: string[] =
+    (watch('services.availableServices') as string[] | undefined) || [];
 
   // Force clear services when component mounts and when available services change
   useEffect(() => {
@@ -85,7 +86,7 @@ export function ServicesSection({
               <FormItem>
                 <FormLabel>Select services you provide *</FormLabel>
                 <div className="space-y-4">
-                  {availableServices.map((service: any) => {
+                  {availableServices.map((service) => {
                     const isChecked = fieldValue.includes(service.id);
                     return (
                       <div key={service.id} className="rounded-md border p-4">
@@ -96,18 +97,27 @@ export function ServicesSection({
                               onCheckedChange={(checked) => {
                                 // When checking the service, initialize its configuration
                                 if (checked) {
-                                  const currentConfigs = getValues('services.serviceConfigs') || {};
+                                  const currentConfigs: Record<
+                                    string,
+                                    { duration: number; price: number }
+                                  > =
+                                    (getValues('services.serviceConfigs') as
+                                      | Record<string, { duration: number; price: number }>
+                                      | undefined) || {};
                                   if (!currentConfigs[service.id]) {
-                                    const updatedConfigs = {
+                                    const updatedConfigs: Record<
+                                      string,
+                                      { duration: number; price: number }
+                                    > = {
                                       ...currentConfigs,
                                       [service.id]: {
                                         duration: service.defaultDuration,
-                                        price: service.defaultPrice,
+                                        price: Number(service.defaultPrice),
                                       },
                                     };
                                     setValue('services.serviceConfigs', updatedConfigs);
                                   }
-                                  field.onChange([...fieldValue, service.id]);
+                                  field.onChange([...fieldValue, service.id] as string[]);
                                 } else {
                                   field.onChange(
                                     fieldValue.filter((value: string) => value !== service.id)
@@ -139,7 +149,7 @@ export function ServicesSection({
                                         <Input
                                           type="number"
                                           className="h-8"
-                                          value={field.value}
+                                          value={(field.value as number | undefined) || 0}
                                           min="1"
                                           onChange={(e) => {
                                             // Ensure we're getting a number
@@ -167,20 +177,59 @@ export function ServicesSection({
                                             R
                                           </span>
                                           <Input
-                                            type="number"
+                                            type="text"
                                             className="h-8 pl-6"
-                                            step="5"
-                                            value={field.value}
+                                            inputMode="numeric"
+                                            pattern="[0-9]*"
+                                            value={
+                                              (field.value as number | undefined) === 0
+                                                ? ''
+                                                : (field.value as number | undefined)?.toString() ||
+                                                  ''
+                                            }
                                             onChange={(e) => {
-                                              // Convert to number first
-                                              const rawValue =
-                                                e.target.value === '' ? 0 : Number(e.target.value);
-                                              // Then round to nearest 5
-                                              const roundedValue = Math.round(rawValue / 5) * 5;
-                                              // Ensure we're passing a number, not a string
-                                              field.onChange(roundedValue);
+                                              const rawValue = e.target.value;
+
+                                              // Allow empty string for better UX
+                                              if (rawValue === '') {
+                                                field.onChange(0);
+                                                return;
+                                              }
+
+                                              // Only allow digits
+                                              if (!/^\d+$/.test(rawValue)) {
+                                                return; // Don't update if contains non-digits
+                                              }
+
+                                              const numValue = parseInt(rawValue, 10);
+                                              if (!isNaN(numValue) && numValue >= 0) {
+                                                field.onChange(numValue);
+                                              }
                                             }}
-                                            onBlur={field.onBlur}
+                                            onKeyPress={(e) => {
+                                              // Only allow digits
+                                              if (
+                                                !/[0-9]/.test(e.key) &&
+                                                ![
+                                                  'Backspace',
+                                                  'Delete',
+                                                  'Tab',
+                                                  'Enter',
+                                                  'ArrowLeft',
+                                                  'ArrowRight',
+                                                ].includes(e.key)
+                                              ) {
+                                                e.preventDefault();
+                                              }
+                                            }}
+                                            onBlur={(e) => {
+                                              // Ensure we have a valid number on blur
+                                              const value = e.target.value;
+                                              if (value === '' || isNaN(parseInt(value, 10))) {
+                                                field.onChange(0);
+                                              }
+                                              field.onBlur();
+                                            }}
                                           />
                                         </div>
                                       </FormControl>

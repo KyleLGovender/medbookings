@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { logger } from '@/lib/logger';
 import { uploadToBlob } from '@/lib/utils/utils-upload-to-blob';
 
 export async function POST(request: NextRequest) {
@@ -33,7 +34,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, url: result.url });
   } catch (error) {
-    console.error('Upload error:', error);
+    logger.error('Upload error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ success: false, error: 'Failed to upload file' }, { status: 500 });
   }
 }

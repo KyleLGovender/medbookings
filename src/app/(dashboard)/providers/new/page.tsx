@@ -1,4 +1,7 @@
-import { PostRegistrationInvitationHandler } from '@/features/invitations/components/post-registration-invitation-handler';
+import { Suspense } from 'react';
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Spinner } from '@/components/ui/spinner';
 import { ProviderOnboardingForm } from '@/features/providers/components/onboarding/provider-onboarding-form';
 
 export default function NewProviderPage() {
@@ -10,13 +13,29 @@ export default function NewProviderPage() {
           Complete your registration to start offering services on MedBookings
         </p>
       </div>
-
-      {/* Handle pending invitations after registration */}
-      <div className="mb-6">
-        <PostRegistrationInvitationHandler />
-      </div>
-
-      <ProviderOnboardingForm />
+      <Card>
+        <CardHeader>
+          <CardTitle>Provider Setup</CardTitle>
+          <CardDescription>
+            Complete the following steps to register as a healthcare provider and get started with
+            MedBookings.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Suspense
+            fallback={
+              <div className="flex flex-col items-center justify-center space-y-4 py-8">
+                <Spinner className="h-8 w-8" />
+                <p className="text-sm text-muted-foreground">
+                  Loading provider registration form...
+                </p>
+              </div>
+            }
+          >
+            <ProviderOnboardingForm />
+          </Suspense>
+        </CardContent>
+      </Card>
     </>
   );
 }

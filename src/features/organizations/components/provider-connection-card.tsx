@@ -84,12 +84,13 @@ export function ProviderConnectionCard({
 
   const manageConnectionMutation = useManageOrganizationProviderConnection(organizationId, {
     onSuccess: (data, variables) => {
+      const vars = variables as { action: 'update' | 'delete'; data?: { status?: string } };
       let message = '';
-      switch (variables.action) {
+      switch (vars.action) {
         case 'update':
-          if (variables.data?.status === 'SUSPENDED') {
+          if (vars.data?.status === 'SUSPENDED') {
             message = 'Provider connection suspended successfully';
-          } else if (variables.data?.status === 'ACCEPTED') {
+          } else if (vars.data?.status === 'ACCEPTED') {
             message = 'Provider connection reactivated successfully';
           }
           break;
@@ -107,9 +108,11 @@ export function ProviderConnectionCard({
       setPendingAction(null);
     },
     onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update connection. Please try again.';
       toast({
         title: 'Failed to update connection',
-        description: error.message,
+        description: message,
         variant: 'destructive',
       });
     },
@@ -304,7 +307,7 @@ export function ProviderConnectionCard({
                 <User className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">Connected:</span>
                 <span className="text-muted-foreground">
-                  {format(new Date(connection.acceptedAt), 'MMM d, yyyy')}
+                  {format(connection.acceptedAt, 'MMM d, yyyy')}
                 </span>
               </div>
             )}

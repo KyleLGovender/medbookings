@@ -8,6 +8,7 @@ import { Languages } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { FormProvider, useForm } from 'react-hook-form';
+import { type z } from 'zod';
 
 import CalendarLoader from '@/components/calendar-loader';
 import { Badge } from '@/components/ui/badge';
@@ -69,13 +70,13 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
   const { data: providerTypes, isLoading: isLoadingProviderTypes } = useProviderTypes();
 
   // Set up form with default values from provider
-  const methods = useForm({
+  const methods = useForm<z.infer<typeof basicInfoSchema>>({
     resolver: zodResolver(basicInfoSchema),
     defaultValues: {
       name: '',
       bio: '',
       image: 'placeholder', // Use a placeholder to pass validation
-      languages: [] as string[], // Explicitly type as string[] to match schema
+      languages: [] as Languages[], // Must match schema type
       website: '',
       email: '',
       whatsapp: '',
@@ -92,7 +93,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
       // Get provider type IDs from the typeAssignments array
       const providerTypeIds =
         provider.typeAssignments?.length > 0
-          ? provider.typeAssignments.map((assignment: any) => assignment.providerType.id)
+          ? provider.typeAssignments.map((assignment) => assignment.providerType.id)
           : [];
 
       // Set form values including provider type IDs
@@ -140,7 +141,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
     methods.setValue('languages', newLanguages);
   };
 
-  const onSubmit = async (data: Record<string, any>) => {
+  const onSubmit = async (data: z.infer<typeof basicInfoSchema>) => {
     if (!provider) {
       return;
     }
@@ -292,7 +293,7 @@ export function EditBasicInfo({ providerId, userId }: EditBasicInfoProps) {
               <h3 className="mb-2 font-medium">Current Types</h3>
               <div className="mb-4 flex flex-wrap gap-2">
                 {provider?.typeAssignments && provider.typeAssignments.length > 0 ? (
-                  provider.typeAssignments.map((assignment: any) => (
+                  provider.typeAssignments.map((assignment) => (
                     <Badge key={assignment.id} variant="secondary">
                       {assignment.providerType.name}
                     </Badge>

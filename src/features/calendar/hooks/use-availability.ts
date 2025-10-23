@@ -205,7 +205,7 @@ export function useDeleteAvailability(options?: {
 }
 
 export function useAcceptAvailabilityProposal(options?: {
-  onSuccess?: (data: any, variables: { id: string }) => void;
+  onSuccess?: (data: unknown, variables: { id: string }) => void;
 }) {
   const utils = api.useUtils();
 

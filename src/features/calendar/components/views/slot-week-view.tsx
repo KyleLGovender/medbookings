@@ -1,6 +1,7 @@
 import { BookingStatus } from '@prisma/client';
 
 import { calculateSlotTimeRange, getSlotsForDay } from '@/features/calendar/lib/calendar-utils';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
 
 import { SlotData, SlotWeekViewProps } from './types';
@@ -16,13 +17,15 @@ export function SlotWeekView({
   getSlotStyle,
 }: SlotWeekViewProps) {
   // Start week on Monday
-  const startOfWeek = new Date(currentDate);
+  const startOfWeek = nowUTC();
+  startOfWeek.setTime(currentDate.getTime());
   const dayOfWeek = currentDate.getDay();
   const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   startOfWeek.setDate(currentDate.getDate() - daysFromMonday);
 
   const days = Array.from({ length: 7 }, (_, i) => {
-    const day = new Date(startOfWeek);
+    const day = nowUTC();
+    day.setTime(startOfWeek.getTime());
     day.setDate(startOfWeek.getDate() + i);
     return day;
   });
@@ -39,8 +42,8 @@ export function SlotWeekView({
 
   // Calculate slot position and height based on time
   const calculateSlotPosition = (slot: SlotData) => {
-    const startTime = new Date(slot.startTime);
-    const endTime = new Date(slot.endTime);
+    const startTime = slot.startTime;
+    const endTime = slot.endTime;
 
     // Calculate position from top (in minutes from start of time range)
     const minutesFromStart = (startTime.getHours() - timeRange.start) * 60 + startTime.getMinutes();
@@ -200,7 +203,7 @@ export function SlotWeekView({
                             <div className="flex h-full flex-col justify-center">
                               <div className="flex items-center justify-between">
                                 <span className="text-xs font-semibold">
-                                  {formatTime(new Date(slot.startTime))}
+                                  {formatTime(slot.startTime)}
                                 </span>
                                 {price && !isBooked && height > 25 && hasMediumSpace && (
                                   <span className="text-xs font-bold">R{price}</span>

@@ -26,7 +26,7 @@ interface ProviderCalendarData {
     isLoading: boolean;
     isSuccess: boolean;
     isError: boolean;
-    error: any;
+    error: unknown; // tRPC error type (TRPCClientErrorLike) doesn't exactly match Error
     refetch: () => void;
   };
   availability: {
@@ -34,7 +34,7 @@ interface ProviderCalendarData {
     isLoading: boolean;
     isSuccess: boolean;
     isError: boolean;
-    error: any;
+    error: unknown; // tRPC error type (TRPCClientErrorLike) doesn't exactly match Error
     refetch: () => void;
   };
 }
@@ -60,8 +60,24 @@ interface CalendarDataResult {
 export function useCalendarData(params: CalendarDataParams): CalendarDataResult {
   const { providerIds, dateRange, statusFilter = 'ALL' } = params;
 
+  // Create stable string representations of dates to prevent constant re-queries
+  // CRITICAL FIX: Memoize the date strings based on the date objects themselves
+  // Since Date objects are stable within a render, we can use them directly
+  const startDateString = useMemo(() => dateRange.start.toISOString(), [dateRange.start]);
+  const endDateString = useMemo(() => dateRange.end.toISOString(), [dateRange.end]);
+
+  // Create stable search parameters to prevent constant re-queries
+  const stableSearchParams = useMemo(() => {
+    return providerIds.map((providerId) => ({
+      providerId,
+      startDate: startDateString,
+      endDate: endDateString,
+      ...(statusFilter !== 'ALL' && { status: statusFilter }),
+    }));
+  }, [providerIds, startDateString, endDateString, statusFilter]);
+
   // Create queries for each provider
-  const providerQueries = providerIds.map((providerId) => {
+  const providerQueries = providerIds.map((providerId, index) => {
     // Fetch provider data using tRPC
     const providerQuery = api.providers.getById.useQuery(
       { id: providerId },
@@ -71,18 +87,18 @@ export function useCalendarData(params: CalendarDataParams): CalendarDataResult 
       }
     );
 
-    // Build search parameters for availability
-    const searchParams: AvailabilitySearchParams = {
-      providerId,
-      startDate: dateRange.start.toISOString(),
-      endDate: dateRange.end.toISOString(),
-      ...(statusFilter !== 'ALL' && { status: statusFilter }),
-    };
+    // Use stable search parameters
+    const searchParams = stableSearchParams[index] as AvailabilitySearchParams;
 
-    // Fetch availability data using tRPC
+    // Fetch availability data using tRPC with optimized caching
     const availabilityQuery = api.calendar.searchAvailability.useQuery(searchParams, {
       enabled: !!providerId,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh
+      gcTime: 30 * 60 * 1000, // 30 minutes - keep in cache longer
+      refetchOnWindowFocus: false, // Prevent unnecessary refetches on focus
+      refetchOnMount: false, // Don't refetch on component mount if data exists
+      refetchOnReconnect: false, // Don't refetch on network reconnect
+      retry: 2, // Limit retry attempts
     });
 
     return {

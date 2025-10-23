@@ -25,12 +25,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { AdminFilterStatus } from '@/features/admin/types/types';
+import { useAdminOrganizations } from '@/features/admin/hooks/use-admin-organizations';
 import {
   useApproveOrganization,
   useRejectOrganization,
-} from '@/features/organizations/hooks/use-admin-organization-approval';
-import { useAdminOrganizations } from '@/features/organizations/hooks/use-admin-organizations';
+} from '@/features/admin/hooks/use-organization-approval';
+import type { AdminFilterStatus } from '@/features/admin/types/types';
 import { type RouterOutputs } from '@/utils/api';
 
 import { StatusBadge } from '../../../../components/status-badge';
@@ -154,7 +154,7 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
           {/* Organization Table */}
           {isLoading ? (
             <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
+              {([...Array(5)] as unknown[]).map((_, i) => (
                 <div key={i} className="flex items-center space-x-4">
                   <Skeleton className="h-12 w-12 rounded-lg" />
                   <div className="space-y-2">
@@ -236,7 +236,7 @@ export function OrganizationList({ initialStatus }: OrganizationListProps) {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm text-muted-foreground">
-                            {new Date(organization.createdAt).toLocaleDateString()}
+                            {organization.createdAt.toLocaleDateString()}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">

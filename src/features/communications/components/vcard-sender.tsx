@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { logger } from '@/lib/logger';
+
 interface ContactInfo {
   name: string;
   phone: string;
@@ -35,7 +37,9 @@ export function VCardSender() {
 
       setStatus('success');
     } catch (error) {
-      console.error('Error:', error);
+      logger.error('Error sending vCard', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       setStatus('error');
     }
   };

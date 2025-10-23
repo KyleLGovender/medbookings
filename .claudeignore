@@ -1,0 +1,107 @@
+# Backup and archive directories
+backup/
+project-planning/bugs/complete
+old_files/
+archive/
+
+# Next.js
+.next/
+.next/**
+out/
+build/
+
+# Dependencies  
+node_modules/
+node_modules/**
+
+# Docker volumes 
+docker_data/
+docker_data/**
+
+# Git 
+.git/
+.git/**
+
+# Public uploads only (keep images accessible)
+public/uploads/
+
+# Specific Prisma generated files (keep migrations visible)
+prisma/generated/
+
+# Sensitive environment files only
+.env
+.env.local
+.env.production
+# Keep .env.example visible
+
+# Logs
+*.log
+
+# Cache and temp
+.cache/
+tmp/
+temp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup file patterns
+*.backup
+*.old
+
+# IDE (but NOT .claude)
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Keep .claude/commands/ accessible for workflow
+
+# Testing - Keep test files visible, hide reports
+# Ignore test reports and coverage data
+playwright-report/
+playwright-report/**
+coverage/
+!coverage/coverage-summary.json
+test-results/
+.nyc_output/
+
+# Keep all test specification files accessible
+!**/*.test.ts
+!**/*.test.tsx
+!**/*.test.js
+!**/*.test.jsx
+!**/*.spec.ts
+!**/*.spec.tsx
+!**/*.spec.js
+!**/*.spec.jsx
+
+# Ensure test directories remain accessible
+!tests/
+!tests/**/*.ts
+!tests/**/*.tsx
+!__tests__/
+!__tests__/**/*.ts
+!__tests__/**/*.tsx
+
+# Keep test utilities and fixtures
+!tests/fixtures/
+!tests/utils/
+!tests/mocks/
+!tests/helpers/
+!tests/setup/
+
+# Keep test configuration files
+!jest.config.*
+!playwright.config.*
+!vitest.config.*
+!.testing/
+
+# Analysis optimization - Skip implementation details on initial scan
+# Claude reads these files on-demand when needed for specific tasks
+# This reduces token usage during "analyze the codebase" requests
+**/components/**/*.stories.tsx
+**/components/**/*.stories.ts
+**/*.spec.tsx
+**/*.spec.ts

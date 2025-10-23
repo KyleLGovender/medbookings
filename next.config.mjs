@@ -51,8 +51,9 @@ const nextConfig = {
     return config;
   },
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
+    // ESLint warnings allowed during builds - remaining warnings are documented as acceptable
+    // (API response.json(), form type inference, Google Maps external types)
+    // NOTE: Errors will still block builds - only warnings are allowed
     ignoreDuringBuilds: true,
   },
 };

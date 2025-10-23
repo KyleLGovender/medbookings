@@ -80,7 +80,7 @@ test.describe('Calendar Availability Creation', () => {
     await expect(page.locator('[data-testid="recurring-availability-success"]')).toBeVisible();
 
     // Verify multiple slots were created
-    await expect(page.locator('[data-testid^="availability-slot-"]')).toHaveCount({ min: 5 }); // At least 5 weekdays
+    await expect(page.locator('[data-testid^="availability-slot-"]')).toHaveCount(5); // At least 5 weekdays
   });
 
   test('should display available time slots correctly', async ({ page }) => {

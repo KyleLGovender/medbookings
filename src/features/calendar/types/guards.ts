@@ -68,7 +68,7 @@ export function isValidAvailabilityCreationData(value: unknown): value is {
     isValidUUID((value as any).providerId) &&
     Array.isArray((value as any).services) &&
     (value as any).services.every(
-      (service: any) =>
+      (service: unknown) =>
         typeof service === 'object' &&
         service !== null &&
         'serviceId' in service &&

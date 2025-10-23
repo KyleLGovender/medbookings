@@ -1,5 +1,7 @@
 import { randomBytes } from 'crypto';
 
+import { nowUTC } from '@/lib/timezone';
+
 /**
  * Generate a secure token for invitation links
  * @returns A URL-safe random token
@@ -13,7 +15,7 @@ export function generateInvitationToken(): string {
  * @returns Date 30 days in the future
  */
 export function getInvitationExpiryDate(): Date {
-  const expiryDate = new Date();
+  const expiryDate = nowUTC();
   expiryDate.setDate(expiryDate.getDate() + 30);
   return expiryDate;
 }

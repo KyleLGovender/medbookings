@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
 
+import { nowUTC } from '../../src/lib/timezone';
+
 // Load environment variables (prioritize dev environment)
 dotenv.config({ path: '.env.local' });
 dotenv.config(); // fallback to .env
@@ -109,7 +111,7 @@ export async function setupTestData() {
       email: 'e2e-calendar-provider@example.com',
       name: 'E2E_CALENDAR_Provider',
       role: 'USER',
-      emailVerified: new Date(),
+      emailVerified: nowUTC(),
     },
   });
 
@@ -121,7 +123,7 @@ export async function setupTestData() {
       email: 'e2e-calendar-client@example.com',
       name: 'E2E_CALENDAR_Client',
       role: 'USER',
-      emailVerified: new Date(),
+      emailVerified: nowUTC(),
     },
   });
 
@@ -147,7 +149,7 @@ export async function setupTestData() {
       image: 'https://via.placeholder.com/150',
       languages: ['English'],
       status: 'APPROVED', // Skip approval process for calendar testing
-      approvedAt: new Date(),
+      approvedAt: nowUTC(),
     },
   });
 
@@ -168,11 +170,11 @@ export async function setupTestData() {
 
   // 6. Get existing service
   const service = await prisma.service.findFirst({
-    where: { name: 'General Consultation' },
+    where: { name: 'General GP Consult' },
   });
 
   if (!service) {
-    throw new Error('Service "General Consultation" not found. Please seed basic data first.');
+    throw new Error('Service "General GP Consult" not found. Please seed basic data first.');
   }
 
   // 7. Create service availability config for the provider

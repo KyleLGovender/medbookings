@@ -29,7 +29,10 @@ import { SlotWeekView } from '@/features/calendar/components/views/slot-week-vie
 import { useCreateBooking } from '@/features/calendar/hooks/use-create-booking';
 import { useProviderSlots } from '@/features/calendar/hooks/use-provider-slots';
 import { calculateDateRange, navigateCalendarDate } from '@/features/calendar/lib/calendar-utils';
+import { type BookingSlot } from '@/features/calendar/types/types';
 import { CalendarViewMode } from '@/features/calendar/types/types';
+import { logger } from '@/lib/logger';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 import type { RouterOutputs } from '@/utils/api';
 
 // Extract proper types for strong typing
@@ -37,10 +40,14 @@ type ProviderSlotsResult = RouterOutputs['calendar']['getProviderSlots'];
 type SlotData = ProviderSlotsResult[number];
 
 // Performance monitoring functions removed - using simplified approach
-const measureCalendarDataProcessing = (fn: () => any) => fn();
-const measureCalendarRendering = (fn: () => any) => fn();
-const recordCalendarCyclePerformance = (eventCount: number, viewMode: string, dateRange: any) => {};
-const usePerformanceMonitor = (name: string, deps: any[]) => ({
+const measureCalendarDataProcessing = (fn: () => unknown) => fn();
+const measureCalendarRendering = (fn: () => unknown) => fn();
+const recordCalendarCyclePerformance = (
+  eventCount: number,
+  viewMode: string,
+  dateRange: unknown
+) => {};
+const usePerformanceMonitor = (name: string, deps: unknown[]) => ({
   startMeasurement: () => {},
   endMeasurement: () => {},
 });
@@ -55,7 +62,7 @@ export interface ProviderCalendarSlotViewProps {
 export function ProviderCalendarSlotView({
   providerId,
   viewMode: initialViewMode = 'week',
-  initialDate = new Date(),
+  initialDate = nowUTC(),
   searchParams,
 }: ProviderCalendarSlotViewProps) {
   const router = useRouter();
@@ -65,7 +72,7 @@ export function ProviderCalendarSlotView({
   const [currentDate, setCurrentDate] = useState(() => {
     const dateParam = searchParams?.date;
     if (typeof dateParam === 'string') {
-      const parsedDate = new Date(dateParam);
+      const parsedDate = parseUTC(dateParam);
       return isNaN(parsedDate.getTime()) ? initialDate : parsedDate;
     }
     return initialDate;
@@ -86,7 +93,7 @@ export function ProviderCalendarSlotView({
 
   const [isMobile, setIsMobile] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<any>(null);
+  const [selectedSlot, setSelectedSlot] = useState<SlotData | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [lastBookingDetails, setLastBookingDetails] = useState<{
@@ -170,7 +177,9 @@ export function ProviderCalendarSlotView({
       }
     },
     onError: (error) => {
-      console.error('Booking failed:', error);
+      logger.error('Booking failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       // Keep modal open to show error
     },
   });
@@ -190,7 +199,7 @@ export function ProviderCalendarSlotView({
     const slots: ProviderSlotsResult = slotsData || [];
     if (!Array.isArray(slots)) return [];
 
-    const serviceMap = new Map();
+    const serviceMap = new Map<string, { id: string; name: string }>();
 
     slots.forEach((slot: SlotData) => {
       if (slot.service && !serviceMap.has(slot.service.id)) {
@@ -201,7 +210,7 @@ export function ProviderCalendarSlotView({
       }
     });
 
-    return Array.from(serviceMap.values());
+    return Array.from(serviceMap.values()) as Array<{ id: string; name: string }>;
   }, [slotsData]);
 
   // Helper functions to convert between service names and IDs for URL readability
@@ -312,8 +321,8 @@ export function ProviderCalendarSlotView({
     let latestHour = 0;
 
     slots.forEach((slot) => {
-      const startTime = new Date(slot.startTime);
-      const endTime = new Date(slot.endTime);
+      const startTime = slot.startTime;
+      const endTime = slot.endTime;
 
       const startHour = startTime.getHours();
       const startMinutes = startTime.getMinutes();
@@ -402,9 +411,7 @@ export function ProviderCalendarSlotView({
     if (!slots.length) return [];
 
     // Sort slots by start time for consistent display
-    const sorted = [...slots].sort(
-      (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-    );
+    const sorted = [...slots].sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
     return sorted;
   }, [filteredSlots]);
@@ -518,7 +525,7 @@ export function ProviderCalendarSlotView({
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      const today = new Date();
+                      const today = nowUTC();
                       setCurrentDate(today);
                       updateSearchParams({ date: today });
                     }}
@@ -641,7 +648,7 @@ export function ProviderCalendarSlotView({
 
         {/* Booking Modal */}
         <BookingSlotModal
-          slot={selectedSlot}
+          slot={selectedSlot as BookingSlot | null}
           open={isBookingModalOpen}
           onOpenChange={setIsBookingModalOpen}
           onBookingConfirm={handleBookingConfirm}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import {
@@ -20,6 +21,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
 export default function LandingBookingQuery() {
+  const router = useRouter();
   const [bookingStep, setBookingStep] = useState(1);
   const [selectedService, setSelectedService] = useState('');
   const [consultationType, setConsultationType] = useState('');
@@ -95,6 +97,22 @@ export default function LandingBookingQuery() {
     setUseCurrentLocation(false);
   };
 
+  const handleSearchProviders = () => {
+    const searchParams = new URLSearchParams();
+
+    if (selectedService) {
+      searchParams.set('serviceType', selectedService);
+    }
+
+    if (consultationType !== 'online' && location) {
+      searchParams.set('location', location);
+    }
+
+    searchParams.set('consultationType', consultationType || 'both');
+
+    router.push(`/providers?${searchParams.toString()}`);
+  };
+
   const renderBookingStep = () => {
     switch (bookingStep) {
       case 1:
@@ -103,7 +121,7 @@ export default function LandingBookingQuery() {
             <div className={`grid gap-3 ${getGridCols()}`}>
               {[
                 {
-                  name: 'Doctor',
+                  name: 'General Practitioner',
                   icon: (
                     <Stethoscope
                       strokeWidth={1}
@@ -318,7 +336,7 @@ export default function LandingBookingQuery() {
                 {consultationType === 'in-person' && location && ` • ${location}`}
               </p>
             </div>
-            <Button size="lg" className="w-full">
+            <Button size="lg" className="w-full" onClick={handleSearchProviders}>
               Search for {selectedService}s
             </Button>
           </div>

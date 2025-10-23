@@ -73,7 +73,7 @@ export const providerDebug = {
   log(
     component: keyof typeof debugConfig.components | 'api' | 'action',
     message: string,
-    ...data: any[]
+    ...data: unknown[]
   ): void {
     const isApi = component === 'api';
     const isAction = component === 'action';
@@ -83,7 +83,9 @@ export const providerDebug = {
 
     if (
       (isServer && this.isServerEnabled(serverType) && this.isLevelEnabled('debug')) ||
-      (!isServer && this.isEnabled(component as any) && this.isLevelEnabled('debug'))
+      (!isServer &&
+        this.isEnabled(component as keyof typeof debugConfig.components) &&
+        this.isLevelEnabled('debug'))
     ) {
       console.log(`[DEBUG][${component.toUpperCase()}] ${message}`, ...data);
     }
@@ -95,7 +97,7 @@ export const providerDebug = {
   error(
     component: keyof typeof debugConfig.components | 'api' | 'action',
     message: string,
-    ...data: any[]
+    ...data: unknown[]
   ): void {
     if (this.isLevelEnabled('error')) {
       console.error(`[ERROR][${component.toUpperCase()}] ${message}`, ...data);
@@ -116,6 +118,12 @@ export const providerDebug = {
 };
 
 // Make debug controls available in browser console
+declare global {
+  interface Window {
+    providerDebug: typeof providerDebug;
+  }
+}
+
 if (typeof window !== 'undefined') {
-  (window as any).providerDebug = providerDebug;
+  window.providerDebug = providerDebug;
 }

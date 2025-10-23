@@ -21,9 +21,9 @@
  *
  * if (isApiResponse(data)) {
  *   if (data.success) {
- *     console.log('Success:', data.data);
+ *     logger.info('Success', { data: data.data });
  *   } else {
- *     console.error('Error:', data.error);
+ *     logger.error('Error', { error: data.error });
  *   }
  * }
  * ```

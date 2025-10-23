@@ -97,9 +97,10 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
       setPendingAction(null);
     },
     onError: (error) => {
+      const err = error as Error;
       toast({
         title: 'Failed to update connection',
-        description: error.message,
+        description: err.message,
         variant: 'destructive',
       });
       setIsActionDialogOpen(false);
@@ -118,9 +119,10 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
       setPendingAction(null);
     },
     onError: (error) => {
+      const err = error as Error;
       toast({
         title: 'Failed to delete connection',
-        description: error.message,
+        description: err.message,
         variant: 'destructive',
       });
       setIsActionDialogOpen(false);
@@ -215,7 +217,7 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
                   <StatusBadge status={connection.status} />
                   {connection.acceptedAt && (
                     <span className="text-xs text-muted-foreground">
-                      Connected {format(new Date(connection.acceptedAt), 'MMM d, yyyy')}
+                      Connected {format(connection.acceptedAt, 'MMM d, yyyy')}
                     </span>
                   )}
                 </CardDescription>
@@ -329,7 +331,7 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
                   {connection.invitation.invitedBy?.name || 'Unknown'}
                   {connection.invitation.createdAt && (
                     <span className="ml-2 text-xs">
-                      on {format(new Date(connection.invitation.createdAt), 'MMM d, yyyy')}
+                      on {format(connection.invitation.createdAt, 'MMM d, yyyy')}
                     </span>
                   )}
                 </p>

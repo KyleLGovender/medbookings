@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DatePickerWithInput } from '@/components/ui/date-picker-with-input';
 import {
   Form,
   FormControl,
@@ -35,25 +35,26 @@ import { Textarea } from '@/components/ui/textarea';
 import { TimePicker } from '@/components/ui/time-picker';
 import { CustomRecurrenceModal } from '@/features/calendar/components/availability/custom-recurrence-modal';
 import { ServiceSelectionSection } from '@/features/calendar/components/availability/service-selection-section';
+import { useAssociatedServices } from '@/features/calendar/hooks/use-associated-services';
 import { useCreateAvailability } from '@/features/calendar/hooks/use-availability';
+import { useCurrentProvider } from '@/features/calendar/hooks/use-current-provider';
+import { useOrganizationLocations } from '@/features/calendar/hooks/use-organization-locations';
+import { useUserOrganizations } from '@/features/calendar/hooks/use-user-organizations';
 import {
   createRecurrencePattern,
   getRecurrenceOptions,
 } from '@/features/calendar/lib/recurrence-utils';
 import { createAvailabilityDataSchema } from '@/features/calendar/types/schemas';
 import { CustomRecurrenceData, RecurrenceOption } from '@/features/calendar/types/types';
-import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
-import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
-import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
-import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
+import { addMilliseconds, cloneDate, nowUTC, parseUTC } from '@/lib/timezone';
 import { type RouterInputs } from '@/utils/api';
 import { type RouterOutputs } from '@/utils/api';
 
 // Helper function to ensure we have a Date object
 const ensureDate = (value: string | Date | undefined): Date | undefined => {
   if (!value) return undefined;
-  return typeof value === 'string' ? new Date(value) : value;
+  return typeof value === 'string' ? parseUTC(value) : value;
 };
 
 // Extract input type from tRPC procedure for zero type drift
@@ -125,18 +126,18 @@ export function AvailabilityProposalForm({
   const { toast } = useToast();
 
   // Fetch user data for profile selection
-  const { data: currentUserProvider } = useCurrentUserProvider();
-  const { data: userOrganizations = [] } = useCurrentUserOrganizations();
+  const { data: currentUserProvider } = useCurrentProvider();
+  const { data: userOrganizations = [] } = useUserOrganizations();
 
   // Fetch provider's services
   const {
     data: availableServices,
     isLoading: isServicesLoading,
     error: servicesError,
-  } = useProviderAssociatedServices(providerId);
+  } = useAssociatedServices(providerId);
 
   // Fetch organization locations
-  const organizationIds = userOrganizations.map((org: any) => org.id);
+  const organizationIds = userOrganizations.map((org) => org.id);
   const { data: availableLocations = [], isLoading: isLocationsLoading } =
     useOrganizationLocations(organizationIds);
 
@@ -153,8 +154,8 @@ export function AvailabilityProposalForm({
       organizationId,
       locationId: locationId || undefined,
       connectionId,
-      startTime: new Date(),
-      endTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
+      startTime: nowUTC(),
+      endTime: addMilliseconds(nowUTC(), 2 * 60 * 60 * 1000), // 2 hours from now
       isRecurring: false,
       schedulingRule: SchedulingRule.CONTINUOUS,
       isOnlineAvailable: true,
@@ -184,8 +185,7 @@ export function AvailabilityProposalForm({
   const selectedLocation = useMemo(() => {
     if (!watchLocationId) return null;
     return (
-      availableLocations.filter((loc) => loc.id).find((loc: any) => loc.id === watchLocationId) ||
-      null
+      availableLocations.filter((loc) => loc.id).find((loc) => loc.id === watchLocationId) || null
     );
   }, [watchLocationId, availableLocations]);
 
@@ -209,7 +209,7 @@ export function AvailabilityProposalForm({
 
   const handleCustomRecurrenceSave = (data: CustomRecurrenceData) => {
     const startTime = form.watch('startTime');
-    const startTimeDate = typeof startTime === 'string' ? new Date(startTime) : startTime;
+    const startTimeDate = typeof startTime === 'string' ? parseUTC(startTime) : startTime;
     const pattern = createRecurrencePattern(
       RecurrenceOption.CUSTOM,
       startTimeDate,
@@ -295,7 +295,7 @@ export function AvailabilityProposalForm({
                   <FormItem>
                     <FormLabel>Date</FormLabel>
                     <FormControl>
-                      <DatePicker
+                      <DatePickerWithInput
                         date={ensureDate(field.value)}
                         onChange={(date) => {
                           if (date) {
@@ -303,18 +303,23 @@ export function AvailabilityProposalForm({
                             const currentStartTime = form.getValues('startTime');
                             const currentEndTime = form.getValues('endTime');
 
-                            const newStartTime = new Date(currentStartTime);
-                            newStartTime.setFullYear(date.getFullYear());
-                            newStartTime.setMonth(date.getMonth());
-                            newStartTime.setDate(date.getDate());
+                            const currentStartTimeDate = ensureDate(currentStartTime);
+                            const currentEndTimeDate = ensureDate(currentEndTime);
 
-                            const newEndTime = new Date(currentEndTime);
-                            newEndTime.setFullYear(date.getFullYear());
-                            newEndTime.setMonth(date.getMonth());
-                            newEndTime.setDate(date.getDate());
+                            if (currentStartTimeDate && currentEndTimeDate) {
+                              const newStartTime = cloneDate(currentStartTimeDate);
+                              newStartTime.setFullYear(date.getFullYear());
+                              newStartTime.setMonth(date.getMonth());
+                              newStartTime.setDate(date.getDate());
 
-                            form.setValue('startTime', newStartTime);
-                            form.setValue('endTime', newEndTime);
+                              const newEndTime = cloneDate(currentEndTimeDate);
+                              newEndTime.setFullYear(date.getFullYear());
+                              newEndTime.setMonth(date.getMonth());
+                              newEndTime.setDate(date.getDate());
+
+                              form.setValue('startTime', newStartTime);
+                              form.setValue('endTime', newEndTime);
+                            }
                           }
                         }}
                       />
@@ -392,7 +397,10 @@ export function AvailabilityProposalForm({
                             form.setValue('isRecurring', option !== RecurrenceOption.NONE);
                           }
                         }}
-                        defaultValue={field.value?.option || RecurrenceOption.NONE}
+                        defaultValue={
+                          (field.value as { option?: string } | undefined)?.option ||
+                          RecurrenceOption.NONE
+                        }
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -535,7 +543,7 @@ export function AvailabilityProposalForm({
                         <SelectContent>
                           {availableLocations
                             .filter((location) => location.id)
-                            .map((location: any) => (
+                            .map((location) => (
                               <SelectItem key={location.id} value={location.id!}>
                                 {location.name}
                               </SelectItem>
@@ -579,6 +587,8 @@ export function AvailabilityProposalForm({
                 availableServices={(availableServices || []).map((s) => ({
                   ...s,
                   description: s.description ?? undefined,
+                  price: Number(s.defaultPrice),
+                  duration: s.defaultDuration,
                 }))}
               />
             )}

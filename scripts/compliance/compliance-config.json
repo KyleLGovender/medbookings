@@ -1,0 +1,148 @@
+{
+  "claudeMdHash": "c8ef02e418ae8619c657963da7755aa3f05895b754ae8181d6702187edab4ad1",
+  "lastSync": "2025-10-23T19:58:10.041Z",
+  "validatorConfig": {
+    "version": "1.0.0",
+    "lastUpdated": "2025-10-23T19:58:10.040Z",
+    "rules": {
+      "timezone": {
+        "enabled": false,
+        "disabledReason": null,
+        "violationCount": 0,
+        "patterns": {
+          "forbidden": [
+            "new Date()",
+            "Date.now()"
+          ],
+          "allowed": [
+            "nowUTC()",
+            "nowSAST()",
+            "parseUTC()",
+            "startOfDaySAST()",
+            "endOfDaySAST()",
+            "formatSAST()"
+          ]
+        },
+        "allowedFiles": [
+          "timezone.ts",
+          "env/server.ts"
+        ],
+        "severity": "ERROR",
+        "reference": "/docs/compliance/TIMEZONE-GUIDELINES.md"
+      },
+      "typeSafety": {
+        "enabled": false,
+        "patterns": {
+          "forbidden": [
+            "as any",
+            "@ts-ignore"
+          ]
+        },
+        "allowedFiles": [
+          "src/lib/auth.ts",
+          "src/server/trpc.ts",
+          "src/types/guards.ts"
+        ],
+        "severity": "ERROR",
+        "reference": "/docs/compliance/TYPE-SAFETY.md"
+      },
+      "logging": {
+        "enabled": false,
+        "patterns": {
+          "forbidden": [
+            "console.log",
+            "console.error",
+            "console.warn"
+          ]
+        },
+        "phiSanitization": {
+          "email": "sanitizeEmail",
+          "phone": "sanitizePhone",
+          "name": "sanitizeName",
+          "userId": "sanitizeUserId",
+          "providerId": "sanitizeProviderId"
+        },
+        "allowedFiles": [
+          "logger.ts",
+          "env/server.ts",
+          "audit.ts",
+          "debug.ts"
+        ],
+        "severity": "ERROR",
+        "reference": "/docs/compliance/LOGGING.md"
+      },
+      "architecture": [
+        {
+          "name": "HOOKS_EXPORT_TYPES",
+          "pattern": {},
+          "message": "Hooks MUST NOT export types. Move types to api-types.ts",
+          "applies": "/hooks/",
+          "severity": "ERROR"
+        },
+        {
+          "name": "DB_QUERY_OUTSIDE_TRPC",
+          "pattern": {},
+          "message": "Database queries ONLY allowed in tRPC procedures",
+          "applies": "!/routers/",
+          "severity": "ERROR"
+        },
+        {
+          "name": "CROSS_FEATURE_IMPORT",
+          "pattern": {},
+          "message": "Cross-feature imports are FORBIDDEN",
+          "applies": "/features/",
+          "severity": "ERROR"
+        },
+        {
+          "name": "MISSING_ZOD_VALIDATION",
+          "pattern": {},
+          "message": "tRPC procedures should have .input() Zod commit_gate",
+          "applies": "/routers/",
+          "severity": "WARNING"
+        }
+      ],
+      "business": [
+        {
+          "name": "BOOKING_WITHOUT_TRANSACTION",
+          "pattern": {},
+          "requiresPattern": {},
+          "message": "Booking operations should use transactions to prevent double-booking",
+          "applies": "/routers/",
+          "severity": "WARNING"
+        },
+        {
+          "name": "UNBOUNDED_QUERY",
+          "pattern": {},
+          "requiresPattern": {},
+          "message": "findMany() must have take: limit for pagination",
+          "applies": "/routers/",
+          "severity": "ERROR"
+        }
+      ]
+    }
+  },
+  "eslintConfig": {
+    "rules": {
+      "rulesdir/no-new-date": "off"
+    }
+  },
+  "docsAlignment": {
+    "referencedDocs": [],
+    "orphanedDocs": [
+      "compliance/BUG-DETECTION.md",
+      "compliance/CLAUDE-MD-AUTO-SYNC.md",
+      "compliance/COMPLIANCE-SYSTEM.md",
+      "compliance/CONTEXT-LOADING.md",
+      "compliance/DEPLOYMENT.md",
+      "compliance/DEVELOPMENT-WORKFLOW.md",
+      "compliance/LOGGING.md",
+      "compliance/TIMEZONE-GUIDELINES.md",
+      "compliance/TYPE-SAFETY.md",
+      "compliance/VERIFICATION-PROTOCOLS.md",
+      "guides/ACTIONABLE-WARNINGS-IMPLEMENTATION.md",
+      "guides/DEVELOPER-PRINCIPLES.md",
+      "guides/DOCS-VALIDATION-GUIDE.md"
+    ],
+    "lastValidated": "2025-10-23T19:58:10.041Z"
+  }
+}

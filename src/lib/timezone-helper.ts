@@ -1,10 +1,12 @@
 import { formatInTimeZone, toDate, toZonedTime } from 'date-fns-tz';
 
+import { cloneDate, parseUTC } from '@/lib/timezone';
+
 // Set default timezone to Pretoria (GMT+2)
 const DEFAULT_TIMEZONE = 'Africa/Johannesburg';
 
 export function convertUTCToLocal(utcDate: string | Date, timezone = DEFAULT_TIMEZONE): Date {
-  return toZonedTime(new Date(utcDate), timezone);
+  return toZonedTime(typeof utcDate === 'string' ? parseUTC(utcDate) : utcDate, timezone);
 }
 
 export function convertLocalToUTC(localDate: Date, timezone = DEFAULT_TIMEZONE): Date {
@@ -12,11 +14,19 @@ export function convertLocalToUTC(localDate: Date, timezone = DEFAULT_TIMEZONE):
 }
 
 export function formatLocalTime(utcDate: string | Date, timezone = DEFAULT_TIMEZONE): string {
-  return formatInTimeZone(new Date(utcDate), timezone, 'HH:mm');
+  return formatInTimeZone(
+    typeof utcDate === 'string' ? parseUTC(utcDate) : utcDate,
+    timezone,
+    'HH:mm'
+  );
 }
 
 export function formatLocalDate(utcDate: string | Date, timezone = DEFAULT_TIMEZONE): string {
-  return formatInTimeZone(new Date(utcDate), timezone, 'yyyy-MM-dd');
+  return formatInTimeZone(
+    typeof utcDate === 'string' ? parseUTC(utcDate) : utcDate,
+    timezone,
+    'yyyy-MM-dd'
+  );
 }
 
 /**
@@ -30,18 +40,22 @@ export function formatLocalDateWeekdayMonthDay(
   utcDate: string | Date,
   timezone = DEFAULT_TIMEZONE
 ): string {
-  return formatInTimeZone(new Date(utcDate), timezone, 'EEE, MMM dd');
+  return formatInTimeZone(
+    typeof utcDate === 'string' ? parseUTC(utcDate) : utcDate,
+    timezone,
+    'EEE, MMM dd'
+  );
 }
 
 export function getLocalDayBounds(utcDate: string | Date, timezone = DEFAULT_TIMEZONE) {
   const localDate = convertUTCToLocal(utcDate, timezone);
 
   // Start of day in local timezone
-  const startOfDay = new Date(localDate);
+  const startOfDay = cloneDate(localDate);
   startOfDay.setHours(0, 0, 0, 0);
 
   // End of day in local timezone
-  const endOfDay = new Date(localDate);
+  const endOfDay = cloneDate(localDate);
   endOfDay.setHours(23, 59, 59, 999);
 
   return {

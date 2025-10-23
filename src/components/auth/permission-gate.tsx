@@ -3,12 +3,14 @@
 import { ReactNode } from 'react';
 
 import { usePermissions } from '@/hooks/use-permissions';
+import { logger } from '@/lib/logger';
 import {
   OrganizationRole,
   Permission,
   PermissionCheck,
   PermissionContext,
   SystemRole,
+  UserPermissions,
 } from '@/types/permissions';
 
 /**
@@ -38,7 +40,7 @@ interface PermissionGateProps {
   checks?: PermissionCheck[];
 
   // Custom permission function
-  custom?: (permissions: any) => boolean;
+  custom?: (permissions: UserPermissions) => boolean;
 
   // Fallback content when access is denied
   fallback?: ReactNode;
@@ -85,13 +87,13 @@ export function PermissionGate({
 
   // Debug mode - show permission information
   if (debug) {
-    console.log('PermissionGate Debug:', {
-      userPermissions,
+    logger.info('PermissionGate Debug', {
+      hasUserPermissions: !!userPermissions,
       requestedPermission: permission,
       requestedPermissions: permissions,
       systemRole,
       organizationRole,
-      context,
+      hasContext: !!context,
       checks,
     });
   }
@@ -144,7 +146,7 @@ export function PermissionGate({
   }
 
   // Check custom permission function
-  if (custom) {
+  if (custom && userPermissions) {
     hasAccess = hasAccess && custom(userPermissions);
   }
 

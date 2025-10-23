@@ -2,7 +2,7 @@
 
 import { HTMLInputTypeAttribute, ReactNode } from 'react';
 
-import { FieldPath, FieldValues, UseFormReturn } from 'react-hook-form';
+import { FieldPath, FieldValues, PathValue, UseFormReturn } from 'react-hook-form';
 
 import { PermissionGate } from '@/components/auth/permission-gate';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,13 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { usePermissions } from '@/hooks/use-permissions';
-import { OrganizationRole, Permission, PermissionContext, SystemRole } from '@/types/permissions';
+import {
+  OrganizationRole,
+  Permission,
+  PermissionContext,
+  SystemRole,
+  UserPermissions,
+} from '@/types/permissions';
 
 /**
  * Role-based form field visibility controls and permission-based form components
@@ -40,7 +46,7 @@ interface PermissionFieldProps {
   systemRole?: SystemRole | SystemRole[];
   organizationRole?: OrganizationRole | OrganizationRole[];
   context?: PermissionContext;
-  customCheck?: (permissions: any) => boolean;
+  customCheck?: (permissions: UserPermissions) => boolean;
 
   // Field configuration
   name: string;
@@ -159,7 +165,9 @@ export function PermissionSelect<T extends FieldValues>({
   return (
     <PermissionField form={form} {...props}>
       <Select
-        onValueChange={(value) => form.setValue(props.name as FieldPath<T>, value as any)}
+        onValueChange={(value) =>
+          form.setValue(props.name as FieldPath<T>, value as PathValue<T, FieldPath<T>>)
+        }
         defaultValue={form.getValues(props.name as FieldPath<T>)}
         disabled={props.disabled}
       >
@@ -193,7 +201,9 @@ export function PermissionCheckbox<T extends FieldValues>({
         <Checkbox
           id={props.name}
           checked={form.watch(props.name as FieldPath<T>)}
-          onCheckedChange={(checked) => form.setValue(props.name as FieldPath<T>, checked as any)}
+          onCheckedChange={(checked) =>
+            form.setValue(props.name as FieldPath<T>, checked as PathValue<T, FieldPath<T>>)
+          }
           disabled={props.disabled}
         />
         {props.label && (
@@ -218,7 +228,7 @@ interface PermissionButtonProps {
   systemRole?: SystemRole | SystemRole[];
   organizationRole?: OrganizationRole | OrganizationRole[];
   context?: PermissionContext;
-  customCheck?: (permissions: any) => boolean;
+  customCheck?: (permissions: UserPermissions) => boolean;
 
   // Button properties
   children: ReactNode;
@@ -318,7 +328,7 @@ interface PermissionSectionProps {
   systemRole?: SystemRole | SystemRole[];
   organizationRole?: OrganizationRole | OrganizationRole[];
   context?: PermissionContext;
-  customCheck?: (permissions: any) => boolean;
+  customCheck?: (permissions: UserPermissions) => boolean;
 
   // Styling
   className?: string;

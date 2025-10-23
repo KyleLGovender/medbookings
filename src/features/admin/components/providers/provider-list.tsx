@@ -26,12 +26,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { AdminFilterStatus } from '@/features/admin/types/types';
+import { useAdminProviders } from '@/features/admin/hooks/use-admin-providers';
 import {
   useApproveProvider,
   useRejectProvider,
-} from '@/features/providers/hooks/use-admin-provider-approval';
-import { useAdminProviders } from '@/features/providers/hooks/use-admin-providers';
+} from '@/features/admin/hooks/use-provider-approval';
+import type { AdminFilterStatus } from '@/features/admin/types/types';
 import { type RouterOutputs } from '@/utils/api';
 
 import { StatusBadge } from '../../../../components/status-badge';
@@ -152,7 +152,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
           {/* Provider Table */}
           {isLoading ? (
             <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
+              {([...Array(5)] as unknown[]).map((_, i) => (
                 <div key={i} className="flex items-center space-x-4">
                   <Skeleton className="h-12 w-12 rounded-full" />
                   <div className="space-y-2">
@@ -230,7 +230,7 @@ export function ProviderList({ initialStatus }: ProviderListProps) {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm text-muted-foreground">
-                            {new Date(provider.createdAt).toLocaleDateString()}
+                            {provider.createdAt.toLocaleDateString()}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">

@@ -30,7 +30,8 @@ import type {
   AvailabilityAction,
   AvailabilityPermissions,
   SeriesActionScope,
-} from '@/features/calendar/types/modal';
+} from '@/features/calendar/types/types';
+import { parseUTC } from '@/lib/timezone';
 import type { RouterOutputs } from '@/utils/api';
 
 type AvailabilityData = RouterOutputs['calendar']['searchAvailability'][number];
@@ -237,7 +238,7 @@ export function AvailabilityModal({
             <div className="flex-1">
               <div className="text-lg font-medium">{event.provider?.user?.name || 'Provider'}</div>
               <div className="text-sm text-gray-600">
-                {new Date(event.startTime).toLocaleString([], {
+                {event.startTime.toLocaleString([], {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
@@ -246,7 +247,7 @@ export function AvailabilityModal({
                   minute: '2-digit',
                 })}{' '}
                 -{' '}
-                {new Date(event.endTime).toLocaleTimeString([], {
+                {event.endTime.toLocaleTimeString([], {
                   hour: '2-digit',
                   minute: '2-digit',
                 })}
@@ -269,7 +270,7 @@ export function AvailabilityModal({
             {event.createdById && (
               <>
                 <div className="mb-1 text-xs text-gray-600">Created by</div>
-                <div className="text-sm font-medium">{event.provider?.user?.name || 'User'}</div>
+                <div className="text-sm font-medium">User ID: {event.createdById}</div>
               </>
             )}
           </div>
@@ -281,7 +282,7 @@ export function AvailabilityModal({
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm font-medium">
-                  {new Date(event.startTime).toLocaleDateString([], {
+                  {event.startTime.toLocaleDateString([], {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
@@ -289,18 +290,17 @@ export function AvailabilityModal({
                   })}
                 </div>
                 <div className="text-xs text-gray-600">
-                  {new Date(event.startTime).toLocaleTimeString([], {
+                  {event.startTime.toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}{' '}
                   -
-                  {new Date(event.endTime).toLocaleTimeString([], {
+                  {event.endTime.toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
                   {(() => {
-                    const diffMs =
-                      new Date(event.endTime).getTime() - new Date(event.startTime).getTime();
+                    const diffMs = event.endTime.getTime() - event.startTime.getTime();
                     const diffMins = Math.round(diffMs / (1000 * 60));
                     const hours = Math.floor(diffMins / 60);
                     const minutes = diffMins % 60;
@@ -486,7 +486,7 @@ export function AvailabilityModal({
   );
 
   const getScopeDescription = (scope: SeriesActionScope): string => {
-    const eventDate = new Date(event.startTime).toLocaleDateString('en-US', {
+    const eventDate = event.startTime.toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'short',
       day: 'numeric',
@@ -524,7 +524,7 @@ export function AvailabilityModal({
             <div>
               <div className="font-medium">{event.provider?.user?.name || 'Provider'}</div>
               <div className="text-sm text-gray-600">
-                {new Date(event.startTime).toLocaleString([], {
+                {event.startTime.toLocaleString([], {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
@@ -533,7 +533,7 @@ export function AvailabilityModal({
                   minute: '2-digit',
                 })}{' '}
                 -{' '}
-                {new Date(event.endTime).toLocaleTimeString([], {
+                {event.endTime.toLocaleTimeString([], {
                   hour: '2-digit',
                   minute: '2-digit',
                 })}

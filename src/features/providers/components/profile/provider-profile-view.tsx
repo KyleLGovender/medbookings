@@ -1,9 +1,11 @@
 'use client';
 
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 import { PenSquare } from 'lucide-react';
 
+import { RequirementSubmissionCard } from '@/components/requirement-submission-card';
 import { ProviderProfileSkeleton } from '@/components/skeletons/provider-profile-skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,7 +13,6 @@ import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { Separator } from '@/components/ui/separator';
 import { DeleteProviderButton } from '@/features/providers/components/delete-provider-button';
 import { OrganizationConnectionsManager } from '@/features/providers/components/organization-connections-manager';
-import { RequirementSubmissionCard } from '@/features/providers/components/requirement-submission-card';
 // Remove server-side import - will use inline logic
 import { useProvider } from '@/features/providers/hooks/use-provider';
 
@@ -100,7 +101,7 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
           <h3 className="font-medium">Provider Type{hasMultipleTypes ? 's' : ''}</h3>
           {providerTypes.length > 0 ? (
             <div className="mt-2 flex flex-wrap gap-2">
-              {providerTypes.map((type: any) => (
+              {providerTypes.map((type) => (
                 <div key={type.id} className="rounded-md bg-muted px-3 py-1">
                   <p className="font-medium">{type.name}</p>
                   {type.description && (
@@ -124,10 +125,13 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
 
           {provider.image && (
             <div className="flex justify-start">
-              <img
+              <Image
                 src={provider.image}
                 alt={provider.name}
-                className="h-40 w-40 rounded-full object-cover"
+                width={160}
+                height={160}
+                className="rounded-full object-cover"
+                priority={false}
               />
             </div>
           )}
@@ -206,15 +210,16 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
         {provider.services && provider.services.length > 0 ? (
           <div className="space-y-4">
             {provider.services
-              .sort((a: any, b: any) => (a.displayPriority ?? 999) - (b.displayPriority ?? 999))
-              .map((service: any) => {
+              .sort((a, b) => (a.displayPriority ?? 999) - (b.displayPriority ?? 999))
+              .map((service) => {
                 // Get service configuration with fallback to defaults (client-side logic)
                 const customConfig = provider.availabilityConfigs?.find(
-                  (config: any) => config.serviceId === service.id
+                  (config) => config.serviceId === service.id
                 );
                 const isCustomConfig = !!customConfig;
 
                 const effectivePrice = customConfig?.price ?? service.defaultPrice;
+                const priceDisplay = effectivePrice ? Number(effectivePrice) : null;
                 const effectiveDuration = customConfig?.duration ?? service.defaultDuration;
                 const isOnlineAvailable = customConfig?.isOnlineAvailable ?? true;
                 const isInPerson = customConfig?.isInPerson ?? false;
@@ -237,7 +242,7 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
                         <div className="flex items-center">
                           <span className="w-16 text-xs text-muted-foreground">Price:</span>
                           <span className="text-sm font-semibold text-primary">
-                            R{effectivePrice || 'Varies'}
+                            R{priceDisplay || 'Varies'}
                           </span>
                         </div>
                         <div className="flex items-center">
@@ -298,14 +303,21 @@ export function ProviderProfileView({ providerId, userId }: ProviderProfileViewP
           <div className="space-y-4">
             {provider.requirementSubmissions
               .slice()
-              .sort((a: any, b: any) => {
+              .sort((a, b) => {
                 // Sort by requirementType displayPriority to maintain consistent order
                 const priorityA = a.requirementType?.displayPriority ?? 999;
                 const priorityB = b.requirementType?.displayPriority ?? 999;
                 return priorityA - priorityB;
               })
-              .map((submission: any) => (
-                <RequirementSubmissionCard key={submission.id} submission={submission} />
+              .map((submission) => (
+                <RequirementSubmissionCard
+                  key={submission.id}
+                  submission={{
+                    ...submission,
+                    notes: submission.notes ?? undefined,
+                    documentMetadata: submission.documentMetadata as Record<string, unknown> | null,
+                  }}
+                />
               ))}
           </div>
         ) : (

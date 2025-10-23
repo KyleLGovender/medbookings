@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import {
@@ -11,6 +12,8 @@ import {
   rejectRequirementRequestSchema,
 } from '@/features/admin/types/schemas';
 import { validateProviderRequirementsBusinessLogic } from '@/features/providers/lib/actions';
+import { logger, sanitizeEmail } from '@/lib/logger';
+import { nowUTC } from '@/lib/timezone';
 import { adminProcedure, createTRPCRouter } from '@/server/trpc';
 
 export const adminRouter = createTRPCRouter({
@@ -129,7 +132,7 @@ export const adminRouter = createTRPCRouter({
    */
   getProviders: adminProcedure.input(adminSearchParamsSchema).query(async ({ ctx, input }) => {
     // Build where clause with optional status and search filters
-    const whereClause: any = {};
+    const whereClause: Prisma.ProviderWhereInput = {};
 
     if (input.status) {
       whereClause.status = input.status;
@@ -297,20 +300,95 @@ export const adminRouter = createTRPCRouter({
         data: {
           status: 'APPROVED',
           approvedById: ctx.session.user.id,
-          approvedAt: new Date(),
+          approvedAt: nowUTC(),
           rejectedAt: null,
           rejectionReason: null,
         },
+        include: {
+          user: true,
+        },
       });
 
+      // Send approval notification email
+      if (updatedProvider.user?.email || updatedProvider.email) {
+        try {
+          const { sendEmail } = await import('@/lib/communications/email');
+          const recipientEmail = updatedProvider.user?.email || updatedProvider.email || '';
+
+          await sendEmail({
+            to: recipientEmail,
+            subject: 'Your MedBookings Provider Profile Has Been Approved!',
+            html: `
+              <!DOCTYPE html>
+              <html>
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <title>Provider Profile Approved</title>
+                </head>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                    <h1 style="color: white; margin: 0;">Congratulations!</h1>
+                  </div>
+
+                  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
+                    <h2 style="color: #333; margin-bottom: 20px;">Your Provider Profile is Approved</h2>
+
+                    <p>Dear ${updatedProvider.name},</p>
+
+                    <p>Great news! Your provider profile on MedBookings has been reviewed and approved by our admin team.</p>
+
+                    <p><strong>What's next?</strong></p>
+                    <ul>
+                      <li>Subscribe to one of our plans to activate your profile and start accepting bookings</li>
+                      <li>Set up your availability calendar</li>
+                      <li>Configure your services and pricing</li>
+                      <li>Complete your profile with professional information</li>
+                    </ul>
+
+                    <p>Your approved profile status confirms that all your regulatory requirements have been verified. To start receiving patient bookings, you'll need to activate your profile by subscribing to one of our service plans.</p>
+
+                    <div style="text-align: center; margin-top: 30px;">
+                      <a href="${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}/provider-profile" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Go to Your Provider Profile</a>
+                    </div>
+
+                    <p style="margin-top: 20px;">If you have any questions, please don't hesitate to contact our support team.</p>
+                  </div>
+
+                  <div style="margin-top: 20px; padding: 20px; text-align: center; color: #666; font-size: 14px;">
+                    <p>© 2024 MedBookings. All rights reserved.</p>
+                    <p>Cape Town, South Africa</p>
+                  </div>
+                </body>
+              </html>
+            `,
+            text: `Congratulations! Your Provider Profile is Approved\n\nDear ${updatedProvider.name},\n\nGreat news! Your provider profile on MedBookings has been reviewed and approved by our admin team.\n\nWhat's next?\n- Subscribe to one of our plans to activate your profile\n- Set up your availability calendar\n- Configure your services and pricing\n- Complete your profile information\n\nVisit your provider profile: ${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}/provider-profile\n\nBest regards,\nThe MedBookings Team`,
+          });
+
+          logger.info('Provider approval email sent', {
+            recipientEmail: sanitizeEmail(
+              updatedProvider.user?.email || updatedProvider.email || ''
+            ),
+          });
+        } catch (error) {
+          logger.error('Failed to send provider approval email', {
+            recipientEmail: sanitizeEmail(
+              updatedProvider.user?.email || updatedProvider.email || ''
+            ),
+            error: error instanceof Error ? error.message : String(error),
+          });
+          // Don't fail the approval if email fails
+        }
+      }
+
       // Log admin action
-      console.log('ADMIN_ACTION: Provider approved', {
+      logger.audit('ADMIN_ACTION: Provider approved', {
         providerId: updatedProvider.id,
         providerName: updatedProvider.name,
-        providerEmail: updatedProvider.email,
+        providerEmail: sanitizeEmail(updatedProvider.email || ''),
         adminId: ctx.session.user.id,
-        adminEmail: ctx.session.user.email,
-        timestamp: new Date().toISOString(),
+        adminEmail: sanitizeEmail(ctx.session.user.email || ''),
+        timestamp: nowUTC().toISOString(),
         action: 'PROVIDER_APPROVED',
         requirementsValidation: {
           totalRequired: validationResult.totalRequired,
@@ -341,7 +419,7 @@ export const adminRouter = createTRPCRouter({
         where: { id: input.id },
         data: {
           status: 'REJECTED',
-          rejectedAt: new Date(),
+          rejectedAt: nowUTC(),
           rejectionReason: input.reason,
           approvedAt: null,
           approvedById: null,
@@ -349,14 +427,14 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Log admin action
-      console.log('ADMIN_ACTION: Provider rejected', {
+      logger.audit('ADMIN_ACTION: Provider rejected', {
         providerId: provider.id,
         providerName: provider.name,
-        providerEmail: provider.email,
+        providerEmail: sanitizeEmail(provider.email || ''),
         adminId: ctx.session.user.id,
-        adminEmail: ctx.session.user.email,
+        adminEmail: sanitizeEmail(ctx.session.user.email || ''),
         reason: input.reason,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         action: 'PROVIDER_REJECTED',
       });
 
@@ -399,15 +477,15 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Log admin action
-      console.log('ADMIN_ACTION: Provider status reset to pending', {
+      logger.audit('ADMIN_ACTION: Provider status reset to pending', {
         providerId: provider.id,
         providerName: provider.name,
-        providerEmail: provider.email,
+        providerEmail: sanitizeEmail(provider.email || ''),
         previousStatus: provider.status,
         newStatus: 'PENDING_APPROVAL',
         adminId: ctx.session.user.id,
-        adminEmail: ctx.session.user.email,
-        timestamp: new Date().toISOString(),
+        adminEmail: sanitizeEmail(ctx.session.user.email || ''),
+        timestamp: nowUTC().toISOString(),
         action: 'PROVIDER_STATUS_RESET',
       });
 
@@ -455,20 +533,20 @@ export const adminRouter = createTRPCRouter({
         where: { id: input.requirementId },
         data: {
           status: 'APPROVED',
-          validatedAt: new Date(),
+          validatedAt: nowUTC(),
           validatedById: ctx.session.user.id,
         },
       });
 
       // Log admin action
-      console.log('ADMIN_ACTION: Requirement approved', {
+      logger.audit('ADMIN_ACTION: Requirement approved', {
         requirementId: submission.id,
         requirementName: submission.requirementType.name,
         providerId: submission.provider.id,
         providerName: submission.provider.name,
         adminId: ctx.session.user.id,
         adminEmail: ctx.session.user.email,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         action: 'REQUIREMENT_APPROVED',
       });
 
@@ -514,7 +592,7 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Log admin action
-      console.log('ADMIN_ACTION: Requirement rejected', {
+      logger.audit('ADMIN_ACTION: Requirement rejected', {
         requirementId: submission.id,
         requirementName: submission.requirementType.name,
         providerId: submission.provider.id,
@@ -522,7 +600,7 @@ export const adminRouter = createTRPCRouter({
         adminId: ctx.session.user.id,
         adminEmail: ctx.session.user.email,
         reason: input.reason,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         action: 'REQUIREMENT_REJECTED',
       });
 
@@ -542,7 +620,7 @@ export const adminRouter = createTRPCRouter({
    */
   getOrganizations: adminProcedure.input(adminSearchParamsSchema).query(async ({ ctx, input }) => {
     // Build where clause with optional status and search filters
-    const whereClause: any = {};
+    const whereClause: Prisma.OrganizationWhereInput = {};
 
     if (input.status) {
       whereClause.status = input.status;
@@ -633,19 +711,19 @@ export const adminRouter = createTRPCRouter({
         data: {
           status: 'APPROVED',
           approvedById: ctx.session.user.id,
-          approvedAt: new Date(),
+          approvedAt: nowUTC(),
           rejectedAt: null,
           rejectionReason: null,
         },
       });
 
       // Log admin action
-      console.log('ADMIN_ACTION: Organization approved', {
+      logger.audit('ADMIN_ACTION: Organization approved', {
         organizationId: organization.id,
         organizationName: organization.name,
         adminId: ctx.session.user.id,
         adminEmail: ctx.session.user.email,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         action: 'ORGANIZATION_APPROVED',
       });
 
@@ -672,7 +750,7 @@ export const adminRouter = createTRPCRouter({
         where: { id: input.id },
         data: {
           status: 'REJECTED',
-          rejectedAt: new Date(),
+          rejectedAt: nowUTC(),
           rejectionReason: input.reason,
           approvedAt: null,
           approvedById: null,
@@ -680,13 +758,13 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Log admin action
-      console.log('ADMIN_ACTION: Organization rejected', {
+      logger.audit('ADMIN_ACTION: Organization rejected', {
         organizationId: organization.id,
         organizationName: organization.name,
         adminId: ctx.session.user.id,
         adminEmail: ctx.session.user.email,
         reason: input.reason,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         action: 'ORGANIZATION_REJECTED',
       });
 
@@ -729,15 +807,15 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Log admin action
-      console.log('ADMIN_ACTION: Organization status reset to pending', {
+      logger.audit('ADMIN_ACTION: Organization status reset to pending', {
         organizationId: organization.id,
         organizationName: organization.name,
-        organizationEmail: organization.email,
+        organizationEmail: sanitizeEmail(organization.email || ''),
         previousStatus: organization.status,
         newStatus: 'PENDING_APPROVAL',
         adminId: ctx.session.user.id,
         adminEmail: ctx.session.user.email,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         action: 'ORGANIZATION_STATUS_RESET',
       });
 
@@ -767,12 +845,12 @@ export const adminRouter = createTRPCRouter({
       }
 
       // Log admin override action
-      console.log('ADMIN_ACTION: Admin override login', {
+      logger.audit('ADMIN_ACTION: Admin override login', {
         adminId: ctx.session.user.id,
-        adminEmail: ctx.session.user.email,
+        adminEmail: sanitizeEmail(ctx.session.user.email || ''),
         targetUserId: targetUser.id,
         targetUserEmail: targetUser.email,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         action: 'ADMIN_OVERRIDE_LOGIN',
       });
 

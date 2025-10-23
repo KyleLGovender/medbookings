@@ -1,9 +1,9 @@
-// =============================================================================
-// CALENDAR AVAILABILITY TYPES
-// =============================================================================
-
 /**
- * @fileoverview Comprehensive type definitions for the calendar availability feature.
+ * =============================================================================
+ * CALENDAR AVAILABILITY TYPES
+ * =============================================================================
+ *
+ * Comprehensive type definitions for the calendar availability feature.
  *
  * This module contains all type definitions related to calendar functionality including:
  * - Availability management and scheduling
@@ -24,10 +24,12 @@ import {
   AvailabilityStatus,
   BillingEntity,
   BookingStatus,
+  ProviderStatus,
   SchedulingRule,
   SlotStatus,
 } from '@prisma/client';
 
+import { nowUTC } from '@/lib/timezone';
 // Import tRPC types for server data
 import type { RouterOutputs } from '@/utils/api';
 
@@ -88,7 +90,21 @@ export enum SlotGenerationStatus {
 // BASE INTERFACES (Client-safe versions of Prisma types)
 // =============================================================================
 
-// Slot creation data for database operations (matches CalculatedAvailabilitySlot schema)
+/**
+ * Slot creation data for database operations
+ * Matches CalculatedAvailabilitySlot schema structure for slot generation
+ *
+ * @property {string} availabilityId - Reference to parent availability block
+ * @property {string} serviceId - Service being offered in this slot
+ * @property {string} serviceConfigId - Service configuration with pricing and duration
+ * @property {Date} startTime - Slot start time in UTC
+ * @property {Date} endTime - Slot end time in UTC
+ * @property {SlotStatus} status - Current slot status (AVAILABLE, BOOKED, BLOCKED, etc.)
+ * @property {Date} lastCalculated - Timestamp of last slot calculation
+ * @property {number} version - Optimistic locking version number
+ * @property {string} [billedToSubscriptionId] - Subscription being billed for this slot
+ * @property {string} [blockedByEventId] - External calendar event blocking this slot
+ */
 export interface SlotCreateData {
   availabilityId: string;
   serviceId: string;
@@ -102,6 +118,23 @@ export interface SlotCreateData {
   blockedByEventId?: string;
 }
 
+/**
+ * Provider information for organization calendar views
+ * Contains provider details, working hours, utilization metrics, and associated events
+ *
+ * @property {string} id - Unique provider identifier
+ * @property {string} name - Provider display name
+ * @property {string} type - Provider type (doctor, nurse, specialist, etc.)
+ * @property {string} [specialization] - Provider medical specialization
+ * @property {boolean} isActive - Whether provider is currently active
+ * @property {object} workingHours - Standard working hours configuration
+ * @property {string} workingHours.start - Working day start time (HH:MM format)
+ * @property {string} workingHours.end - Working day end time (HH:MM format)
+ * @property {number} utilizationRate - Provider utilization percentage (0-100)
+ * @property {number} totalBookings - Total number of bookings for this provider
+ * @property {number} pendingBookings - Number of pending/unconfirmed bookings
+ * @property {AvailabilityData[]} events - Associated availability events and bookings
+ */
 export interface OrganizationProvider {
   id: string;
   name: string;
@@ -115,6 +148,23 @@ export interface OrganizationProvider {
   events: AvailabilityData[];
 }
 
+/**
+ * Complete organization calendar data for multi-provider views
+ * Aggregates all providers, locations, and scheduling statistics for an organization
+ *
+ * @property {string} organizationId - Unique organization identifier
+ * @property {string} organizationName - Organization display name
+ * @property {OrganizationProvider[]} providers - All providers in the organization
+ * @property {Array} locations - Organization physical locations
+ * @property {object} stats - Aggregated scheduling statistics
+ * @property {number} stats.totalProviders - Total number of providers
+ * @property {number} stats.activeProviders - Number of currently active providers
+ * @property {number} stats.totalAvailableHours - Total available hours across all providers
+ * @property {number} stats.totalBookedHours - Total booked hours across all providers
+ * @property {number} stats.averageUtilization - Average utilization percentage across providers
+ * @property {number} stats.totalPendingBookings - Total pending bookings requiring confirmation
+ * @property {number} stats.coverageGaps - Number of identified coverage gaps
+ */
 export interface OrganizationCalendarData {
   organizationId: string;
   organizationName: string;
@@ -173,6 +223,22 @@ export interface TimeRange {
   latestTime: number; // 24-hour format (e.g., 17 for 17:00)
 }
 
+/**
+ * Props for organization calendar view component
+ * Provides callbacks for user interactions and calendar display configuration
+ *
+ * @property {string} organizationId - Organization whose calendar is being displayed
+ * @property {Function} [onProviderClick] - Callback when a provider is clicked
+ * @property {Function} [onEventClick] - Callback when an availability event is clicked
+ * @property {Function} [onTimeSlotClick] - Callback when an empty time slot is clicked
+ * @property {Function} [onCreateAvailability] - Callback to create new availability
+ * @property {Function} [onManageProvider] - Callback to manage provider settings
+ * @property {Function} [onGapClick] - Callback when a coverage gap is clicked
+ * @property {Function} [onRecommendationClick] - Callback when a scheduling recommendation is clicked
+ * @property {CalendarViewMode} [viewMode] - Calendar view mode (day, 3-day, week, month)
+ * @property {Date} [initialDate] - Initial date to display in calendar
+ * @property {boolean} [showCoverageGaps] - Whether to highlight coverage gaps
+ */
 export interface OrganizationCalendarViewProps {
   organizationId: string;
   onProviderClick?: (provider: OrganizationProvider) => void;
@@ -187,6 +253,17 @@ export interface OrganizationCalendarViewProps {
   showCoverageGaps?: boolean;
 }
 
+/**
+ * Props for organization week view component
+ * Displays weekly calendar grid for multiple providers with availability styling
+ *
+ * @property {Date} currentDate - The current week being displayed
+ * @property {OrganizationProvider[]} providers - Providers to show in the week view
+ * @property {Function} [onEventClick] - Callback when an availability event is clicked
+ * @property {Function} [onTimeSlotClick] - Callback when an empty time slot is clicked
+ * @property {Function} getAvailabilityStyle - Function to determine CSS classes for availability styling
+ * @property {boolean} showUtilizationOnly - Whether to show only utilization metrics vs full availability
+ */
 export interface OrganizationWeekViewProps {
   currentDate: Date;
   providers: OrganizationProvider[];
@@ -196,6 +273,10 @@ export interface OrganizationWeekViewProps {
   showUtilizationOnly: boolean;
 }
 
+/**
+ * Props for organization month view component
+ * Displays monthly calendar overview for multiple providers
+ */
 export interface OrganizationMonthViewProps {
   currentDate: Date;
   providers: OrganizationProvider[];
@@ -203,6 +284,19 @@ export interface OrganizationMonthViewProps {
   getAvailabilityStyle: (availability: AvailabilityData) => string;
 }
 
+/**
+ * Physical location information for in-person appointments
+ * Contains location details and contact information
+ *
+ * @property {string} id - Unique location identifier
+ * @property {string} name - Location display name
+ * @property {string} formattedAddress - Full formatted address string
+ * @property {object} [coordinates] - Geographic coordinates for mapping
+ * @property {number} [coordinates.lat] - Latitude coordinate
+ * @property {number} [coordinates.lng] - Longitude coordinate
+ * @property {string} [phone] - Location contact phone number
+ * @property {string} [email] - Location contact email address
+ */
 export interface Location {
   id: string;
   name: string;
@@ -230,9 +324,337 @@ export interface Booking {
 }
 
 // =============================================================================
+// BOOKING TYPES (User-facing booking functionality)
+// =============================================================================
+
+/**
+ * Booking slot information for user-facing booking interfaces
+ * Contains availability window, pricing, and associated service/provider details
+ *
+ * @property {string} id - Unique slot identifier
+ * @property {string} availabilityId - Parent availability block reference
+ * @property {Date} startTime - Slot start time
+ * @property {Date} endTime - Slot end time
+ * @property {number} durationMinutes - Slot duration in minutes
+ * @property {boolean} isAvailable - Whether the slot is available for booking
+ * @property {number} [price] - Slot price if pricing is enabled
+ * @property {object} [service] - Associated service information
+ * @property {string} [service.id] - Service unique identifier
+ * @property {string} [service.name] - Service display name
+ * @property {string} [service.description] - Service description
+ * @property {object} provider - Provider offering this slot
+ * @property {string} provider.id - Provider unique identifier
+ * @property {string} provider.name - Provider display name
+ * @property {string} [provider.image] - Provider profile image URL
+ * @property {object} [location] - Location information for in-person appointments
+ * @property {string} [location.id] - Location unique identifier
+ * @property {string} [location.name] - Location display name
+ * @property {boolean} [location.isOnline] - Whether this is an online appointment
+ */
+export interface BookingSlot {
+  id: string;
+  availabilityId: string;
+  startTime: Date;
+  endTime: Date;
+  durationMinutes: number;
+  isAvailable: boolean;
+  price?: number;
+  service?: {
+    id: string;
+    name: string;
+    description?: string;
+  };
+  provider: {
+    id: string;
+    name: string;
+    image?: string;
+  };
+  location?: {
+    id: string;
+    name: string;
+    isOnline: boolean;
+  };
+}
+
+/**
+ * Filter criteria for searching and filtering booking slots
+ * Supports filtering by date range, time, location type, services, duration, and price
+ *
+ * @property {object} [dateRange] - Filter by date range
+ * @property {Date} [dateRange.start] - Start date for filtering
+ * @property {Date} [dateRange.end] - End date for filtering
+ * @property {object} [timeRange] - Filter by time of day
+ * @property {string} [timeRange.startTime] - Start time in HH:MM format
+ * @property {string} [timeRange.endTime] - End time in HH:MM format
+ * @property {string} [location] - Location type filter (online, in-person, or all)
+ * @property {string[]} [providerTypes] - Filter by provider types
+ * @property {string[]} [services] - Filter by service IDs
+ * @property {object} [duration] - Filter by appointment duration
+ * @property {number} [duration.min] - Minimum duration in minutes
+ * @property {number} [duration.max] - Maximum duration in minutes
+ * @property {object} [priceRange] - Filter by price range
+ * @property {number} [priceRange.min] - Minimum price
+ * @property {number} [priceRange.max] - Maximum price
+ */
+export interface BookingFilters {
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+  timeRange?: {
+    startTime: string; // HH:MM format
+    endTime: string; // HH:MM format
+  };
+  location?: 'online' | 'in-person' | 'all';
+  providerTypes?: string[];
+  services?: string[];
+  duration?: {
+    min?: number;
+    max?: number;
+  };
+  priceRange?: {
+    min?: number;
+    max?: number;
+  };
+}
+
+/**
+ * Public provider information for booking interfaces
+ * Contains provider profile details visible to users when booking
+ *
+ * @property {string} id - Unique provider identifier
+ * @property {object} [user] - Associated user account information
+ * @property {string} [user.id] - User account identifier
+ * @property {string} [user.name] - User display name
+ * @property {string} [user.email] - User email address
+ * @property {string} [user.image] - User profile image URL
+ * @property {ProviderStatus} status - Provider account status
+ * @property {string[]} [specialties] - Provider medical specialties
+ * @property {string} [bio] - Provider biography/description
+ * @property {string[]} [languages] - Languages spoken by provider
+ * @property {number} [yearsOfExperience] - Years of professional experience
+ */
+export interface ProviderPublicData {
+  id: string;
+  user?: {
+    id: string;
+    name?: string;
+    email?: string;
+    image?: string;
+  };
+  status: ProviderStatus;
+  specialties?: string[];
+  bio?: string;
+  languages?: string[];
+  yearsOfExperience?: number;
+}
+
+export interface SlotClickEvent {
+  slot: BookingSlot;
+  clickEvent: React.MouseEvent;
+}
+
+/**
+ * Props for calendar grid component
+ * Displays booking slots in a grid layout with loading and error states
+ *
+ * @property {string} providerId - Provider whose slots are being displayed
+ * @property {Date} currentDate - Current date being viewed
+ * @property {CalendarViewMode} viewMode - Calendar view mode (day, 3-day, week, month)
+ * @property {BookingSlot[]} slots - Available booking slots to display
+ * @property {boolean} isLoading - Whether slot data is currently loading
+ * @property {Error} [error] - Error object if slot loading failed
+ * @property {Function} onSlotClick - Callback when a slot is clicked
+ * @property {BookingSlot} [selectedSlot] - Currently selected slot
+ */
+export interface CalendarGridProps {
+  providerId: string;
+  currentDate: Date;
+  viewMode: CalendarViewMode;
+  slots: BookingSlot[];
+  isLoading: boolean;
+  error?: Error | null;
+  onSlotClick: (slot: BookingSlot) => void;
+  selectedSlot?: BookingSlot | null;
+}
+
+/**
+ * Props for filter bar component
+ * Provides filter controls and state management for booking slot filtering
+ *
+ * @property {object} filters - Filter state and control functions
+ * @property {BookingFilters} filters.activeFilters - Currently active filter values
+ * @property {Function} filters.updateFilter - Function to update a single filter
+ * @property {Function} filters.clearAllFilters - Function to clear all active filters
+ * @property {boolean} filters.hasActiveFilters - Whether any filters are currently active
+ * @property {ProviderPublicData} provider - Provider information for context
+ */
+export interface FilterBarProps {
+  filters: {
+    activeFilters: BookingFilters;
+    updateFilter: (
+      key: keyof BookingFilters,
+      value:
+        | { start: Date; end: Date }
+        | { startTime: string; endTime: string }
+        | 'online'
+        | 'in-person'
+        | 'all'
+        | string[]
+        | { min?: number; max?: number }
+    ) => void;
+    clearAllFilters: () => void;
+    hasActiveFilters: boolean;
+  };
+  provider: ProviderPublicData;
+}
+
+/**
+ * Props for calendar header component
+ * Provides calendar navigation controls and view mode selection
+ *
+ * @property {Date} currentDate - Currently displayed date
+ * @property {CalendarViewMode} viewMode - Current calendar view mode
+ * @property {Function} onDateChange - Callback when date is changed
+ * @property {Function} onViewModeChange - Callback when view mode is changed
+ * @property {Function} onNavigate - Callback for prev/next navigation
+ */
+export interface CalendarHeaderProps {
+  currentDate: Date;
+  viewMode: CalendarViewMode;
+  onDateChange: (date: Date) => void;
+  onViewModeChange: (mode: CalendarViewMode) => void;
+  onNavigate: (direction: 'prev' | 'next') => void;
+}
+
+/**
+ * User booking information for booking management
+ * Contains complete booking details including slot, service, and provider information
+ *
+ * @property {string} id - Unique booking identifier
+ * @property {string} status - Booking status (PENDING, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW)
+ * @property {string} guestName - Guest name for non-registered bookings
+ * @property {string} guestEmail - Guest email for non-registered bookings
+ * @property {string} guestPhone - Guest phone for non-registered bookings
+ * @property {string} notes - Additional booking notes or special requests
+ * @property {Date} createdAt - Booking creation timestamp
+ * @property {Date} updatedAt - Last booking update timestamp
+ * @property {object} slot - Booked time slot details
+ * @property {string} slot.id - Slot unique identifier
+ * @property {Date} slot.startTime - Slot start time
+ * @property {Date} slot.endTime - Slot end time
+ * @property {string} slot.status - Slot status
+ * @property {object} [slot.service] - Service information
+ * @property {object} [slot.serviceConfig] - Service configuration with pricing
+ * @property {object} slot.availability - Availability and provider information
+ */
+export interface UserBooking {
+  id: string;
+  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+  guestName: string | null;
+  guestEmail: string | null;
+  guestPhone: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  slot: {
+    id: string;
+    startTime: Date;
+    endTime: Date;
+    status: string;
+    service?: {
+      id: string;
+      name: string;
+      description?: string;
+    };
+    serviceConfig?: {
+      id: string;
+      duration: number;
+      price: number;
+    };
+    availability: {
+      id: string;
+      provider: {
+        id: string;
+        user: {
+          id: string;
+          name?: string;
+          email?: string;
+          image?: string;
+        };
+      };
+    };
+  };
+}
+
+export interface BookingUpdateData {
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
+  notes: string;
+}
+
+// =============================================================================
+// MODAL TYPES (Availability modal actions and permissions)
+// =============================================================================
+
+export type AvailabilityAction = 'view' | 'edit' | 'delete' | 'accept' | 'reject';
+
+export type SeriesActionScope = 'single' | 'all' | 'future';
+
+/**
+ * Availability permission flags for user actions
+ * Controls which availability actions a user can perform based on their role and context
+ *
+ * @property {boolean} canView - Whether user can view availability details
+ * @property {boolean} canEdit - Whether user can edit availability blocks
+ * @property {boolean} canDelete - Whether user can delete availability blocks
+ * @property {boolean} canAccept - Whether user can accept proposed availabilities
+ * @property {boolean} canReject - Whether user can reject proposed availabilities
+ * @property {boolean} canCreate - Whether user can create new availability blocks
+ */
+export interface AvailabilityPermissions {
+  canView: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  canAccept: boolean;
+  canReject: boolean;
+  canCreate: boolean;
+}
+
+// =============================================================================
 // AVAILABILITY INTERFACES
 // =============================================================================
 
+/**
+ * Availability time block configuration
+ * Core availability entity with scheduling rules, recurrence patterns, and billing settings
+ *
+ * @property {string} id - Unique availability identifier
+ * @property {string} providerId - Provider offering this availability
+ * @property {string} [organizationId] - Organization if created by organization
+ * @property {string} [locationId] - Physical location for in-person availability
+ * @property {string} [connectionId] - External calendar connection reference
+ * @property {Date} startTime - Availability start time in UTC
+ * @property {Date} endTime - Availability end time in UTC
+ * @property {boolean} isRecurring - Whether this availability repeats
+ * @property {RecurrencePattern} [recurrencePattern] - Recurrence configuration (JSON field)
+ * @property {string} [seriesId] - Series identifier for recurring availabilities
+ * @property {AvailabilityStatus} status - Current status (PENDING, ACCEPTED, REJECTED, etc.)
+ * @property {SchedulingRule} schedulingRule - Slot generation rule (OPEN, FIXED_INTERVALS, etc.)
+ * @property {number} [schedulingInterval] - Interval in minutes for fixed scheduling
+ * @property {boolean} isOnlineAvailable - Whether online appointments are available
+ * @property {boolean} requiresConfirmation - Whether bookings require provider confirmation
+ * @property {BillingEntity} [billingEntity] - Who is billed for generated slots
+ * @property {string} [defaultSubscriptionId] - Default subscription for billing
+ * @property {string} createdById - User who created this availability
+ * @property {string} [createdByMembershipId] - Organization membership if org-created
+ * @property {string} [acceptedById] - User who accepted/approved this availability
+ * @property {Date} [acceptedAt] - Timestamp of acceptance/approval
+ * @property {boolean} [isProviderCreated] - Whether created by provider vs organization
+ * @property {Date} createdAt - Creation timestamp
+ * @property {Date} updatedAt - Last update timestamp
+ */
 export interface Availability {
   id: string;
   providerId: string;
@@ -272,6 +694,21 @@ export interface Availability {
 // Components will extract server data types from tRPC RouterOutputs in Task 4.0
 // using patterns like: RouterOutputs['calendar']['getAvailabilityWithRelations']
 
+/**
+ * Service availability configuration
+ * Defines service-specific pricing, duration, and location settings for availability blocks
+ *
+ * @property {string} id - Unique configuration identifier
+ * @property {string} serviceId - Service being configured
+ * @property {string} providerId - Provider offering this service
+ * @property {string} [locationId] - Location for in-person service delivery
+ * @property {number} duration - Service duration in minutes
+ * @property {number} price - Service price (converted from Decimal for client-side)
+ * @property {boolean} isOnlineAvailable - Whether service is available online
+ * @property {boolean} isInPerson - Whether service is available in-person
+ * @property {Date} createdAt - Configuration creation timestamp
+ * @property {Date} updatedAt - Last configuration update timestamp
+ */
 export interface ServiceAvailabilityConfig {
   id: string;
   serviceId: string;
@@ -285,6 +722,23 @@ export interface ServiceAvailabilityConfig {
   updatedAt: Date;
 }
 
+/**
+ * Calculated availability slot
+ * Generated time slots based on availability blocks and service configurations
+ *
+ * @property {string} id - Unique slot identifier
+ * @property {string} availabilityId - Parent availability block
+ * @property {string} serviceId - Service offered in this slot
+ * @property {string} serviceConfigId - Service configuration with pricing
+ * @property {Date} startTime - Slot start time in UTC
+ * @property {Date} endTime - Slot end time in UTC
+ * @property {SlotStatus} status - Current slot status (AVAILABLE, BOOKED, BLOCKED, etc.)
+ * @property {string} [bookingId] - Associated booking if slot is booked
+ * @property {string} [billedToSubscriptionId] - Subscription being billed for this slot
+ * @property {string} [blockedByCalendarEventId] - External calendar event blocking this slot
+ * @property {Date} createdAt - Slot creation timestamp
+ * @property {Date} updatedAt - Last slot update timestamp
+ */
 export interface CalculatedAvailabilitySlot {
   id: string;
   availabilityId: string;
@@ -355,6 +809,19 @@ export interface DayOfWeekOption {
   shortLabel: string;
 }
 
+/**
+ * Availability series for recurring availabilities
+ * Manages multiple availability instances created from a single recurrence pattern
+ *
+ * @property {string} seriesId - Unique series identifier shared by all instances
+ * @property {string} masterAvailabilityId - Original availability that created the series
+ * @property {RecurrencePattern} recurrencePattern - Recurrence configuration for the series
+ * @property {Availability[]} instances - All availability instances in this series
+ * @property {number} totalInstances - Total number of instances (including cancelled)
+ * @property {number} activeInstances - Number of currently active instances
+ * @property {Date} createdAt - Series creation timestamp
+ * @property {Date} lastModified - Last modification timestamp for any instance
+ */
 export interface AvailabilitySeries {
   seriesId: string;
   masterAvailabilityId: string;
@@ -370,6 +837,22 @@ export interface AvailabilitySeries {
 // COVERAGE ANALYSIS TYPES
 // =============================================================================
 
+/**
+ * Coverage gap in organization scheduling
+ * Identifies periods with insufficient provider coverage and suggests improvements
+ *
+ * @property {string} id - Unique gap identifier
+ * @property {string} type - Type of coverage gap (no_coverage, insufficient_coverage, skill_gap, location_gap)
+ * @property {Date} startTime - Gap start time
+ * @property {Date} endTime - Gap end time
+ * @property {string} severity - Gap severity level (critical, high, medium, low)
+ * @property {string} description - Human-readable gap description
+ * @property {string[]} affectedLocations - Locations affected by this gap
+ * @property {string[]} requiredSkills - Skills needed to fill this gap
+ * @property {string[]} suggestedActions - Recommended actions to resolve gap
+ * @property {number} impactScore - Calculated impact score (0-100)
+ * @property {number} coveragePercentage - Current coverage percentage for this period
+ */
 export interface CoverageGap {
   id: string;
   type: 'no_coverage' | 'insufficient_coverage' | 'skill_gap' | 'location_gap';
@@ -384,6 +867,18 @@ export interface CoverageGap {
   coveragePercentage: number;
 }
 
+/**
+ * Complete coverage analysis for organization scheduling
+ * Aggregates coverage gaps, recommendations, and hourly coverage metrics
+ *
+ * @property {number} totalGaps - Total number of coverage gaps identified
+ * @property {number} criticalGaps - Number of critical severity gaps
+ * @property {number} highPriorityGaps - Number of high priority gaps
+ * @property {number} averageCoveragePercentage - Average coverage across analyzed period
+ * @property {CoverageGap[]} gaps - All identified coverage gaps
+ * @property {string[]} recommendations - System-generated scheduling recommendations
+ * @property {Array} coverageByHour - Hourly breakdown of coverage metrics
+ */
 export interface CoverageAnalysis {
   totalGaps: number;
   criticalGaps: number;
@@ -400,6 +895,18 @@ export interface CoverageAnalysis {
   }>;
 }
 
+/**
+ * Coverage requirements configuration for organization scheduling
+ * Defines minimum staffing and skill requirements for coverage analysis
+ *
+ * @property {number} minProvidersPerHour - Minimum providers required per hour
+ * @property {string[]} requiredSkills - Essential skills that must be covered
+ * @property {object} businessHours - Standard business operating hours
+ * @property {number} businessHours.start - Business day start hour (0-23)
+ * @property {number} businessHours.end - Business day end hour (0-23)
+ * @property {number[]} workingDays - Working days (0-6, Sunday-Saturday)
+ * @property {Array} locationRequirements - Location-specific coverage requirements
+ */
 export interface CoverageRequirements {
   minProvidersPerHour: number;
   requiredSkills: string[];
@@ -416,6 +923,33 @@ export interface CoverageRequirements {
 // EXPORT FUNCTIONALITY TYPES
 // =============================================================================
 
+/**
+ * Configuration for calendar data export operations
+ * Controls export format, date range, fields, filters, and formatting options
+ *
+ * @property {string} format - Export file format (ical, csv, json, pdf)
+ * @property {object} dateRange - Date range for export
+ * @property {Date} dateRange.start - Export start date
+ * @property {Date} dateRange.end - Export end date
+ * @property {object} includeFields - Fields to include in export
+ * @property {boolean} includeFields.eventDetails - Include event details
+ * @property {boolean} includeFields.customerInfo - Include customer information
+ * @property {boolean} includeFields.serviceInfo - Include service details
+ * @property {boolean} includeFields.locationInfo - Include location information
+ * @property {boolean} includeFields.notes - Include notes and comments
+ * @property {boolean} includeFields.recurringInfo - Include recurrence information
+ * @property {object} filters - Filter criteria for export
+ * @property {Array} filters.eventTypes - Event types to include
+ * @property {string[]} filters.statuses - Statuses to include
+ * @property {string[]} filters.providers - Provider IDs to include
+ * @property {string[]} filters.locations - Location IDs to include
+ * @property {object} customization - Export formatting options
+ * @property {string} customization.timezone - Timezone for date/time formatting
+ * @property {string} customization.dateFormat - Date format string
+ * @property {string} customization.timeFormat - Time format (12h or 24h)
+ * @property {boolean} customization.includePrivateEvents - Whether to include private events
+ * @property {boolean} customization.anonymizeCustomerData - Whether to anonymize customer data
+ */
 export interface ExportConfig {
   format: 'ical' | 'csv' | 'json' | 'pdf';
   dateRange: {
@@ -445,6 +979,23 @@ export interface ExportConfig {
   };
 }
 
+/**
+ * Calendar export operation result
+ * Contains exported data, metadata, and error information for calendar exports
+ *
+ * @property {boolean} success - Whether export completed successfully
+ * @property {string} format - Export format used
+ * @property {string} filename - Generated filename for download
+ * @property {string|Blob} [data] - Exported data (string or binary blob)
+ * @property {string} [downloadUrl] - URL for downloading exported file
+ * @property {number} eventCount - Number of events exported
+ * @property {string[]} [errors] - Any errors encountered during export
+ * @property {object} metadata - Export metadata
+ * @property {Date} metadata.exportedAt - Export timestamp
+ * @property {string} metadata.timezone - Timezone used for export
+ * @property {number} metadata.totalEvents - Total events before filtering
+ * @property {number} metadata.filteredEvents - Events after applying filters
+ */
 export interface ExportResult {
   success: boolean;
   format: string;
@@ -461,6 +1012,16 @@ export interface ExportResult {
   };
 }
 
+/**
+ * Google Calendar integration configuration
+ * Manages bidirectional sync settings and status for Google Calendar integration
+ *
+ * @property {boolean} enabled - Whether Google Calendar integration is enabled
+ * @property {string} [calendarId] - Google Calendar ID for sync
+ * @property {string} syncDirection - Sync direction (import, export, or bidirectional)
+ * @property {Date} [lastSync] - Timestamp of last successful sync
+ * @property {string} syncStatus - Current sync status (idle, syncing, error, success)
+ */
 export interface GoogleCalendarIntegration {
   enabled: boolean;
   calendarId?: string;
@@ -473,7 +1034,23 @@ export interface GoogleCalendarIntegration {
 // SERVICE LAYER TYPES (moved from lib files)
 // =============================================================================
 
-// Location Search Service Types
+/**
+ * Location-based search parameters for finding nearby providers
+ * Supports filtering by distance, service types, date/time preferences, and pricing
+ *
+ * @property {object} coordinates - Search origin coordinates
+ * @property {number} coordinates.lat - Latitude coordinate
+ * @property {number} coordinates.lng - Longitude coordinate
+ * @property {number} maxDistance - Maximum search radius in kilometers
+ * @property {string[]} [serviceTypes] - Filter by service type IDs
+ * @property {Date} [preferredDate] - Preferred appointment date
+ * @property {string} [preferredTime] - Preferred time in HH:MM format
+ * @property {number} [duration] - Required appointment duration in minutes
+ * @property {boolean} [isOnlineAvailable] - Include online-only providers
+ * @property {object} [priceRange] - Price range filter
+ * @property {number} [priceRange.min] - Minimum price
+ * @property {number} [priceRange.max] - Maximum price
+ */
 export interface LocationSearchParams {
   coordinates: {
     lat: number;
@@ -491,6 +1068,27 @@ export interface LocationSearchParams {
   };
 }
 
+/**
+ * Provider search result with location and availability information
+ * Contains provider details, distance, available services, and nearest slot
+ *
+ * @property {string} providerId - Unique provider identifier
+ * @property {string} providerName - Provider display name
+ * @property {string} providerType - Provider type classification
+ * @property {number} distance - Distance from search origin in kilometers
+ * @property {object} coordinates - Provider location coordinates
+ * @property {number} coordinates.lat - Latitude
+ * @property {number} coordinates.lng - Longitude
+ * @property {object} [location] - Physical location details
+ * @property {Array} availableServices - Services offered by this provider
+ * @property {object} [nearestAvailableSlot] - Next available booking slot
+ * @property {string} [nearestAvailableSlot.slotId] - Slot identifier
+ * @property {Date} [nearestAvailableSlot.startTime] - Slot start time
+ * @property {Date} [nearestAvailableSlot.endTime] - Slot end time
+ * @property {boolean} [nearestAvailableSlot.isOnlineAvailable] - Online availability
+ * @property {number} [nearestAvailableSlot.price] - Slot price
+ * @property {number} totalAvailableSlots - Total number of available slots
+ */
 export interface ProviderLocationResult {
   providerId: string;
   providerName: string;
@@ -526,7 +1124,25 @@ export interface ProviderLocationResult {
   totalAvailableSlots: number;
 }
 
-// Time Search Service Types
+/**
+ * Time-based search parameters for finding available slots
+ * Supports filtering by date ranges, time windows, day of week, and duration
+ *
+ * @property {object} [dateRange] - Date range for search
+ * @property {Date} [dateRange.startDate] - Search start date
+ * @property {Date} [dateRange.endDate] - Search end date
+ * @property {Date} [specificDate] - Search for specific date only
+ * @property {object} [timeRange] - Time of day range
+ * @property {string} [timeRange.startTime] - Start time in HH:MM 24-hour format
+ * @property {string} [timeRange.endTime] - End time in HH:MM 24-hour format
+ * @property {string[]} [preferredTimes] - Preferred times (e.g., ["09:00", "14:30"])
+ * @property {number} [timeFlexibility] - Minutes of flexibility around preferred times
+ * @property {number[]} [dayOfWeek] - Days of week filter (0-6, Sunday-Saturday)
+ * @property {boolean} [excludeWeekends] - Exclude Saturday and Sunday
+ * @property {boolean} [excludeHolidays] - Exclude public holidays
+ * @property {number} [minDuration] - Minimum appointment duration in minutes
+ * @property {number} [maxDuration] - Maximum appointment duration in minutes
+ */
 export interface TimeSearchParams {
   dateRange?: {
     startDate: Date;
@@ -546,6 +1162,24 @@ export interface TimeSearchParams {
   maxDuration?: number; // Maximum appointment duration in minutes
 }
 
+/**
+ * Time-filtered slot result
+ * Slot information filtered by time-based search criteria with metadata
+ *
+ * @property {string} slotId - Unique slot identifier
+ * @property {Date} startTime - Slot start time
+ * @property {Date} endTime - Slot end time
+ * @property {number} duration - Slot duration in minutes
+ * @property {number} dayOfWeek - Day of week (0-6, Sunday-Saturday)
+ * @property {string} timeOfDay - Time in HH:MM format
+ * @property {boolean} isWeekend - Whether slot is on weekend
+ * @property {string} providerId - Provider offering this slot
+ * @property {string} serviceId - Service for this slot
+ * @property {string} [locationId] - Physical location if in-person
+ * @property {number} price - Slot price
+ * @property {boolean} isOnlineAvailable - Whether available online
+ * @property {string} status - Slot status
+ */
 export interface TimeFilteredSlot {
   slotId: string;
   startTime: Date;
@@ -589,12 +1223,27 @@ export interface AvailabilityValidationOptions {
   instances?: Array<{ startTime: Date; endTime: Date }>; // For recurring validation
 }
 
+/**
+ * Validation result for availability operations
+ * Contains validation status and error messages if validation fails
+ */
 export interface ValidationResult {
   isValid: boolean;
   errors: string[];
 }
 
 // Slot Generation Types (moved from slot-generation.ts)
+/**
+ * Configuration options for availability slot generation
+ * Defines time range, scheduling rules, and service configurations for generating bookable slots
+ *
+ * @property {string} availabilityId - Parent availability block for slot generation
+ * @property {Date} startTime - Generation window start time in UTC
+ * @property {Date} endTime - Generation window end time in UTC
+ * @property {SchedulingRule} schedulingRule - Slot generation rule (OPEN, FIXED_INTERVALS, etc.)
+ * @property {number} [schedulingInterval] - Interval in minutes for fixed scheduling (deprecated)
+ * @property {Array} services - Services offered with pricing and duration configurations
+ */
 export interface SlotGenerationOptions {
   availabilityId: string;
   startTime: Date;
@@ -619,7 +1268,7 @@ export interface SlotGenerationResult {
 export interface WorkflowResult {
   success: boolean;
   // availability will be typed using tRPC RouterOutputs in Task 4.0
-  availability?: any; // Temporary - will use RouterOutputs['calendar']['createAvailability']
+  availability?: Record<string, unknown>; // Generic object type for workflow results
   slotsGenerated?: number;
   error?: string;
   notifications?: {
@@ -628,7 +1277,20 @@ export interface WorkflowResult {
   };
 }
 
-// Booking Integration Types
+/**
+ * Booking validation result for slot booking operations
+ * Checks slot availability, conflicts, scheduling rules, and pricing before booking
+ *
+ * @property {boolean} isValid - Whether the booking request is valid
+ * @property {CalculatedAvailabilitySlot} [slot] - Slot being booked if valid
+ * @property {Availability} [availability] - Parent availability configuration
+ * @property {string[]} conflicts - List of booking conflicts found
+ * @property {string[]} warnings - Non-blocking warnings about the booking
+ * @property {boolean} schedulingRuleCompliant - Whether booking follows scheduling rules
+ * @property {boolean} requiresConfirmation - Whether provider confirmation is required
+ * @property {number} estimatedDuration - Estimated appointment duration in minutes
+ * @property {number} price - Total booking price
+ */
 export interface BookingValidationResult {
   isValid: boolean;
   slot?: CalculatedAvailabilitySlot;
@@ -641,6 +1303,18 @@ export interface BookingValidationResult {
   price: number;
 }
 
+/**
+ * Slot booking request payload
+ * Contains customer information and booking preferences for creating a booking
+ *
+ * @property {string} slotId - Slot to be booked
+ * @property {string} [customerId] - Registered user ID if not guest
+ * @property {string} customerName - Customer full name
+ * @property {string} customerEmail - Customer email address
+ * @property {string} [customerPhone] - Customer phone number
+ * @property {string} [notes] - Additional booking notes or requests
+ * @property {Date} [preferredStartTime] - Preferred start time if flexible booking
+ */
 export interface SlotBookingRequest {
   slotId: string;
   customerId?: string;
@@ -651,6 +1325,20 @@ export interface SlotBookingRequest {
   preferredStartTime?: Date;
 }
 
+/**
+ * Booking compatibility check result
+ * Validates if requested booking time is compatible with scheduling rules and slot configuration
+ *
+ * @property {string} slotId - Slot being checked
+ * @property {Date} [requestedStartTime] - Customer's preferred start time
+ * @property {number} [requestedDuration] - Customer's preferred duration in minutes
+ * @property {SchedulingRule} schedulingRule - Slot's scheduling rule
+ * @property {number} [schedulingInterval] - Scheduling interval if applicable
+ * @property {boolean} isCompatible - Whether request is compatible with rules
+ * @property {Date} [adjustedStartTime] - Suggested adjusted start time if needed
+ * @property {Date} [adjustedEndTime] - Suggested adjusted end time if needed
+ * @property {string} [reason] - Explanation if not compatible
+ */
 export interface BookingCompatibilityCheck {
   slotId: string;
   requestedStartTime?: Date;
@@ -671,6 +1359,19 @@ export interface CleanupOptions {
   cleanupOrphanedSlots?: boolean;
 }
 
+/**
+ * Results of slot cleanup operation
+ * Contains statistics and errors from cleaning up availability slots
+ *
+ * @property {number} totalSlotsProcessed - Total slots evaluated during cleanup
+ * @property {number} slotsDeleted - Number of slots removed from database
+ * @property {number} slotsMarkedUnavailable - Number of slots marked as unavailable
+ * @property {number} bookingsAffected - Number of bookings impacted by cleanup
+ * @property {number} customersNotified - Number of customers notified of changes
+ * @property {string[]} errors - Error messages encountered during cleanup
+ * @property {string[]} warnings - Warning messages from cleanup process
+ * @property {number} processingTimeMs - Total cleanup processing time in milliseconds
+ */
 export interface CleanupResult {
   totalSlotsProcessed: number;
   slotsDeleted: number;
@@ -688,7 +1389,26 @@ export interface SeriesCleanupResult extends CleanupResult {
   seriesId: string;
 }
 
-// Communication Service Type (moved from types.ts)
+/**
+ * Booking view for communication services
+ * Complete booking information for sending notifications and confirmations
+ *
+ * @property {string} id - Unique booking identifier
+ * @property {BookingStatus} status - Current booking status
+ * @property {object} notificationPreferences - User's notification preferences
+ * @property {boolean} notificationPreferences.whatsapp - WhatsApp notifications enabled
+ * @property {object} guestInfo - Guest customer information
+ * @property {string} guestInfo.name - Guest name
+ * @property {string} [guestInfo.whatsapp] - Guest WhatsApp number
+ * @property {object} slot - Booked slot information
+ * @property {string} slot.id - Slot identifier
+ * @property {Date} slot.startTime - Appointment start time
+ * @property {Date} slot.endTime - Appointment end time
+ * @property {string} slot.status - Slot status
+ * @property {object} slot.service - Service details
+ * @property {object} slot.serviceConfig - Service configuration and pricing
+ * @property {object} slot.provider - Provider details
+ */
 export interface BookingView {
   id: string;
   status: BookingStatus;
@@ -727,7 +1447,19 @@ export interface BookingView {
   };
 }
 
-// Notification Service Types (moved from notification-service.ts)
+/**
+ * Notification payload for sending notifications
+ * Contains recipient information, message content, and notification metadata
+ *
+ * @property {string} recipientId - Unique recipient identifier
+ * @property {string} recipientEmail - Recipient email address
+ * @property {string} recipientName - Recipient display name
+ * @property {string} type - Notification delivery method (email, sms, in_app)
+ * @property {string} subject - Notification subject line
+ * @property {string} message - Notification message body
+ * @property {string} [actionUrl] - Optional action URL for buttons/links
+ * @property {Record<string, unknown>} [metadata] - Additional notification metadata
+ */
 export interface NotificationPayload {
   recipientId: string;
   recipientEmail: string;
@@ -741,7 +1473,7 @@ export interface NotificationPayload {
 
 export interface AvailabilityNotificationContext {
   // availability will be typed using tRPC RouterOutputs in Task 4.0
-  availability: any; // Temporary - will use RouterOutputs['calendar']['getAvailabilityDetail']
+  availability: Record<string, unknown>; // Generic object type for notification context
   previousStatus?: AvailabilityStatus;
   newStatus: AvailabilityStatus;
   actionBy: {
@@ -752,7 +1484,25 @@ export interface AvailabilityNotificationContext {
   rejectionReason?: string;
 }
 
-// Service Filter Types (moved from service-filter-service.ts)
+/**
+ * Service filter parameters for availability searches
+ * Supports filtering by service types, categories, providers, pricing, and duration
+ *
+ * @property {string[]} [serviceTypeIds] - Service type IDs (e.g., "consultation", "imaging")
+ * @property {string[]} [serviceIds] - Specific service IDs to include
+ * @property {string[]} [serviceNames] - Service names for text-based filtering
+ * @property {string[]} [serviceCategories] - Service category filters
+ * @property {string[]} [providerTypeIds] - Healthcare provider type filters
+ * @property {string[]} [specializations] - Provider specialization filters
+ * @property {object} [priceRange] - Price range filter
+ * @property {number} [priceRange.min] - Minimum price
+ * @property {number} [priceRange.max] - Maximum price
+ * @property {object} [durationRange] - Duration range filter in minutes
+ * @property {number} [durationRange.min] - Minimum duration in minutes
+ * @property {number} [durationRange.max] - Maximum duration in minutes
+ * @property {string[]} [excludeServices] - Service IDs to exclude from results
+ * @property {boolean} [includeInactive] - Include inactive services (default: false)
+ */
 export interface ServiceFilterParams {
   serviceTypeIds?: string[]; // Service type IDs (e.g., "consultation", "imaging")
   serviceIds?: string[]; // Specific service IDs
@@ -772,6 +1522,37 @@ export interface ServiceFilterParams {
   includeInactive?: boolean; // Include inactive services (default: false)
 }
 
+/**
+ * Service search result
+ * Complete service information including provider, pricing, availability, and ratings
+ *
+ * @property {string} serviceId - Unique service identifier
+ * @property {string} serviceName - Service display name
+ * @property {string} [serviceDescription] - Service description
+ * @property {string} [serviceCategory] - Service category
+ * @property {object} serviceType - Service type classification
+ * @property {string} serviceType.id - Service type identifier
+ * @property {string} serviceType.name - Service type name
+ * @property {string} [serviceType.category] - Service type category
+ * @property {object} provider - Provider offering this service
+ * @property {string} provider.id - Provider identifier
+ * @property {string} provider.name - Provider name
+ * @property {string} provider.type - Provider type
+ * @property {string} [provider.specialization] - Provider specialization
+ * @property {object} pricing - Service pricing information
+ * @property {number} pricing.price - Service price
+ * @property {boolean} pricing.showPrice - Whether to display price publicly
+ * @property {number} pricing.defaultDuration - Default service duration in minutes
+ * @property {number} [pricing.minDuration] - Minimum duration in minutes
+ * @property {number} [pricing.maxDuration] - Maximum duration in minutes
+ * @property {object} availability - Service availability information
+ * @property {boolean} availability.hasSlots - Whether slots are available
+ * @property {Date} [availability.nextAvailableSlot] - Next available slot date/time
+ * @property {number} availability.totalSlots - Total available slots
+ * @property {Array} availability.locations - Available locations for this service
+ * @property {number} [rating] - Average service rating (0-5)
+ * @property {number} [reviewCount] - Number of reviews
+ */
 export interface ServiceResult {
   serviceId: string;
   serviceName: string;
@@ -809,6 +1590,24 @@ export interface ServiceResult {
   reviewCount?: number;
 }
 
+/**
+ * Service filter aggregated results
+ * Contains filtered services and aggregation data for faceted search (types, providers, price ranges)
+ *
+ * @property {ServiceResult[]} services - Filtered service results
+ * @property {number} totalCount - Total number of matching services
+ * @property {Array} serviceTypes - Available service types with counts
+ * @property {Array} providerTypes - Available provider types with counts
+ * @property {object} priceRange - Price range statistics
+ * @property {number} priceRange.min - Minimum price across results
+ * @property {number} priceRange.max - Maximum price across results
+ * @property {number} priceRange.average - Average price across results
+ * @property {object} durationRange - Duration range statistics in minutes
+ * @property {number} durationRange.min - Minimum duration in minutes
+ * @property {number} durationRange.max - Maximum duration in minutes
+ * @property {number} durationRange.average - Average duration in minutes
+ * @property {Array} categories - Service categories with counts
+ */
 export interface ServiceFilterResult {
   services: ServiceResult[];
   totalCount: number;
@@ -840,7 +1639,17 @@ export interface ServiceFilterResult {
   }>;
 }
 
-// Conflict Management Types (moved from conflict-management.ts)
+/**
+ * Conflict detection options for slot generation
+ * Configures which types of conflicts to check when generating availability slots
+ *
+ * @property {boolean} [checkOverlappingSlots] - Check for overlapping time slots
+ * @property {boolean} [checkCalendarEvents] - Check against external calendar events
+ * @property {boolean} [checkSchedulingRules] - Validate against scheduling rules
+ * @property {boolean} [checkLocationConflicts] - Check for location double-booking
+ * @property {boolean} [checkProviderAvailability] - Verify provider availability
+ * @property {number} [bufferTimeMinutes] - Buffer time between appointments in minutes
+ */
 export interface ConflictDetectionOptions {
   checkOverlappingSlots?: boolean;
   checkCalendarEvents?: boolean;
@@ -850,6 +1659,18 @@ export interface ConflictDetectionOptions {
   bufferTimeMinutes?: number; // Buffer time between appointments
 }
 
+/**
+ * Conflict resolution result for slot generation
+ * Contains conflict statistics and separated lists of valid vs conflicted slots
+ *
+ * @property {number} originalSlotsCount - Number of slots before conflict checking
+ * @property {number} validSlotsCount - Number of valid slots after conflict checking
+ * @property {number} conflictedSlotsCount - Number of conflicted slots found
+ * @property {number} resolvedConflictsCount - Number of conflicts automatically resolved
+ * @property {AvailabilityConflict[]} conflicts - List of all detected conflicts
+ * @property {CalculatedAvailabilitySlot[]} validSlots - Slots with no conflicts
+ * @property {CalculatedAvailabilitySlot[]} conflictedSlots - Slots with unresolved conflicts
+ */
 export interface ConflictResolutionResult {
   originalSlotsCount: number;
   validSlotsCount: number;
@@ -860,6 +1681,21 @@ export interface ConflictResolutionResult {
   conflictedSlots: CalculatedAvailabilitySlot[];
 }
 
+/**
+ * Detailed slot conflict information
+ * Describes the nature, severity, and resolution options for scheduling conflicts
+ *
+ * @property {string} [slotId] - Conflicted slot identifier
+ * @property {Date} startTime - Conflict period start time
+ * @property {Date} endTime - Conflict period end time
+ * @property {string} conflictType - Type of conflict detected
+ * @property {string} [conflictingEntityId] - ID of conflicting entity
+ * @property {string} [conflictingEntityType] - Type of conflicting entity (slot, event, availability, location)
+ * @property {string} description - Human-readable conflict description
+ * @property {string} severity - Conflict severity level (low, medium, high, critical)
+ * @property {boolean} canAutoResolve - Whether conflict can be automatically resolved
+ * @property {string} [suggestedResolution] - Suggested resolution action
+ */
 export interface SlotConflictDetails {
   slotId?: string;
   startTime: Date;
@@ -879,6 +1715,17 @@ export interface SlotConflictDetails {
 }
 
 // Search Performance Types (moved from search-performance-service.ts)
+/**
+ * Search performance optimization options
+ * Controls caching, indexing, query parallelization, and result limiting for provider searches
+ *
+ * @property {boolean} [enableCaching] - Whether to cache search results
+ * @property {boolean} [useIndexHints] - Whether to use database index hints
+ * @property {number} [limitResults] - Maximum number of results to return
+ * @property {boolean} [enableParallelQueries] - Whether to run queries in parallel
+ * @property {boolean} [optimizeForDistance] - Whether to optimize for geographic distance
+ * @property {boolean} [prefetchRelations] - Whether to prefetch related data
+ */
 export interface SearchPerformanceOptions {
   enableCaching?: boolean;
   useIndexHints?: boolean;
@@ -888,6 +1735,17 @@ export interface SearchPerformanceOptions {
   prefetchRelations?: boolean;
 }
 
+/**
+ * Performance metrics for search operations
+ * Contains execution statistics, index usage, caching data, and optimization suggestions
+ *
+ * @property {number} queryExecutionTime - Query execution time in milliseconds
+ * @property {number} totalResults - Total number of results found
+ * @property {string[]} indexesUsed - Database indexes used during query
+ * @property {number} [cacheHitRatio] - Cache hit ratio (0-1)
+ * @property {number} [memoryUsage] - Memory usage in bytes
+ * @property {string[]} optimizationSuggestions - Suggested performance improvements
+ */
 export interface PerformanceMetrics {
   queryExecutionTime: number;
   totalResults: number;
@@ -901,6 +1759,10 @@ export interface PerformanceMetrics {
 // SEARCH AND FILTERING TYPES
 // =============================================================================
 
+/**
+ * Availability search parameters
+ * Filters availability blocks by provider, organization, location, service, dates, and status
+ */
 export interface AvailabilitySearchParams {
   providerId?: string;
   organizationId?: string;
@@ -914,6 +1776,10 @@ export interface AvailabilitySearchParams {
   seriesId?: string;
 }
 
+/**
+ * Slot search parameters
+ * Filters calculated slots by provider, service, location, dates, duration, and proximity
+ */
 export interface SlotSearchParams {
   providerId?: string;
   organizationId?: string;
@@ -943,7 +1809,10 @@ export interface TimeSlot {
   duration: number; // in minutes
 }
 
-// Comprehensive time slot for UI and business logic
+/**
+ * Comprehensive time slot for UI and business logic
+ * Includes availability status, pricing, and service information for display
+ */
 export interface TimeSlotWithDetails {
   startTime: Date;
   endTime: Date;
@@ -955,7 +1824,22 @@ export interface TimeSlotWithDetails {
   slotId?: string; // If slot exists in database
 }
 
-// Internal slot representation for generation
+/**
+ * Internal slot representation for generation
+ * Temporary slot data structure used during slot generation process before database persistence
+ *
+ * @property {string} availabilityId - Parent availability block
+ * @property {string} serviceId - Service offered in slot
+ * @property {string} serviceConfigId - Service configuration reference
+ * @property {Date} startTime - Slot start time
+ * @property {Date} endTime - Slot end time
+ * @property {number} duration - Duration in minutes
+ * @property {number} price - Slot price
+ * @property {boolean} isOnlineAvailable - Whether online appointments available
+ * @property {SlotStatus} status - Slot status
+ * @property {string} [billedToSubscriptionId] - Subscription being billed
+ * @property {string} [locationId] - Physical location if in-person
+ */
 export interface GeneratedSlot {
   availabilityId: string;
   serviceId: string;
@@ -979,7 +1863,10 @@ export interface SchedulingOptions {
   schedulingInterval?: number; // in minutes (deprecated)
 }
 
-// Result from time slot generation
+/**
+ * Time slot generation result
+ * Contains generated time slots and any errors encountered during generation
+ */
 export interface TimeSlotGenerationResult {
   slots: TimeSlot[];
   totalSlots: number;
@@ -990,6 +1877,27 @@ export interface TimeSlotGenerationResult {
 // CRUD OPERATION TYPES
 // =============================================================================
 
+/**
+ * Data for creating a new availability block
+ * Contains all required fields for creating availability with services and scheduling rules
+ *
+ * @property {string} providerId - Provider creating the availability
+ * @property {string} [organizationId] - Organization context if applicable
+ * @property {string} [locationId] - Physical location for in-person availability
+ * @property {string} [connectionId] - External calendar connection reference
+ * @property {Date} startTime - Availability start time in UTC
+ * @property {Date} endTime - Availability end time in UTC
+ * @property {boolean} isRecurring - Whether this availability repeats
+ * @property {RecurrencePattern} [recurrencePattern] - Recurrence configuration (JSON field)
+ * @property {string} [seriesId] - Series identifier for recurring instances
+ * @property {SchedulingRule} schedulingRule - Slot generation rule
+ * @property {number} [schedulingInterval] - Interval in minutes for fixed scheduling
+ * @property {boolean} isOnlineAvailable - Whether online appointments are available
+ * @property {boolean} requiresConfirmation - Whether bookings require confirmation
+ * @property {BillingEntity} [billingEntity] - Who gets billed for generated slots
+ * @property {string} [defaultSubscriptionId] - Default subscription for billing
+ * @property {Array} services - Services offered during this availability
+ */
 export interface CreateAvailabilityData {
   providerId: string;
   organizationId?: string;
@@ -1039,6 +1947,17 @@ export interface SlotGenerationResultDetailed {
   duration: number; // generation time in ms
 }
 
+/**
+ * Availability conflict information for slot scheduling
+ * Describes scheduling conflicts detected when creating or updating availability blocks
+ *
+ * @property {string} conflictType - Type of scheduling conflict detected (overlapping availability, unavailable provider/location, or calendar conflict)
+ * @property {string} [conflictingAvailabilityId] - ID of the conflicting availability block if applicable
+ * @property {string} [conflictingEventId] - ID of the conflicting external calendar event if applicable
+ * @property {string} message - Human-readable description of the conflict
+ * @property {Date} startTime - Start time of the conflict period
+ * @property {Date} endTime - End time of the conflict period
+ */
 export interface AvailabilityConflict {
   conflictType:
     | 'OVERLAPPING_AVAILABILITY'
@@ -1056,6 +1975,18 @@ export interface AvailabilityConflict {
 // BILLING AND CONTEXT TYPES
 // =============================================================================
 
+/**
+ * Availability billing context for slot generation
+ * Contains billing entity information and cost estimates for generating availability slots
+ *
+ * @property {BillingEntity} billingEntity - Entity responsible for billing (PROVIDER or ORGANIZATION)
+ * @property {string} [subscriptionId] - Subscription being billed
+ * @property {string} [organizationId] - Organization context if applicable
+ * @property {string} [locationId] - Location context if applicable
+ * @property {string} providerId - Provider creating availability
+ * @property {number} estimatedSlots - Estimated number of slots to generate
+ * @property {number} estimatedCost - Estimated billing cost
+ */
 export interface AvailabilityBillingContext {
   billingEntity: BillingEntity;
   subscriptionId?: string;
@@ -1089,8 +2020,12 @@ export type AvailabilityContextType = AvailabilityContext;
 export const getDefaultExportConfig = (): ExportConfig => ({
   format: 'ical',
   dateRange: {
-    start: new Date(),
-    end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+    start: nowUTC(),
+    end: (() => {
+      const d = nowUTC();
+      d.setDate(d.getDate() + 30);
+      return d;
+    })(), // 30 days from now
   },
   includeFields: {
     eventDetails: true,

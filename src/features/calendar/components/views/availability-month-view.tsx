@@ -6,6 +6,7 @@ import {
   getAvailabilityStyle,
   getWorkingTimeRange,
 } from '@/features/calendar/lib/calendar-utils';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 
 import { AvailabilityData, AvailabilityMonthViewProps } from './types';
 
@@ -16,10 +17,13 @@ export function AvailabilityMonthView({
   onEventClick,
   onDateClick,
   onEditEvent,
+  onDeleteEvent,
   getAvailabilityStyle,
 }: AvailabilityMonthViewProps) {
-  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const firstDayOfCalendar = new Date(firstDayOfMonth);
+  const firstDayOfMonth = nowUTC();
+  firstDayOfMonth.setFullYear(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const firstDayOfCalendar = nowUTC();
+  firstDayOfCalendar.setTime(firstDayOfMonth.getTime());
 
   // Adjust to start on Monday (matching original pattern)
   const dayOfWeek = firstDayOfMonth.getDay();
@@ -27,7 +31,8 @@ export function AvailabilityMonthView({
   firstDayOfCalendar.setDate(firstDayOfMonth.getDate() - daysFromMonday);
 
   const days = Array.from({ length: 42 }, (_, i) => {
-    const day = new Date(firstDayOfCalendar);
+    const day = nowUTC();
+    day.setTime(firstDayOfCalendar.getTime());
     day.setDate(firstDayOfCalendar.getDate() + i);
     return day;
   });
@@ -51,8 +56,14 @@ export function AvailabilityMonthView({
     }
   };
 
+  const handleDeleteEvent = (availability: AvailabilityData) => {
+    if (onDeleteEvent) {
+      onDeleteEvent(availability);
+    }
+  };
+
   const isToday = (date: Date) => {
-    const today = new Date();
+    const today = nowUTC();
     return date.toDateString() === today.toDateString();
   };
 
@@ -132,15 +143,34 @@ export function AvailabilityMonthView({
                 {/* Availability Events */}
                 <div className="space-y-1">
                   {dayEvents.slice(0, 3).map((availability) => {
-                    const startTime = new Date(availability.startTime);
-                    const endTime = new Date(availability.endTime);
+                    const startTime = availability.startTime;
+                    const endTime = availability.endTime;
 
                     return (
                       <div
                         key={availability.id}
-                        className={`truncate rounded px-2 py-1 text-xs ${getAvailabilityStyle(availability)}`}
+                        className={`cursor-pointer truncate rounded px-2 py-1 text-xs ${getAvailabilityStyle(availability)} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
+                        tabIndex={0}
                         onClick={(e) => handleEventClick(availability, e)}
                         onDoubleClick={() => handleEditEvent(availability)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Delete' || e.key === 'Backspace') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDeleteEvent(availability);
+                          } else if (e.key === 'Enter') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleEditEvent(availability);
+                          }
+                        }}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          // For now, open edit on right-click. Could add context menu later.
+                          handleEditEvent(availability);
+                        }}
+                        title="Double-click to edit, Delete key to delete, Right-click for options"
                       >
                         <div className="flex items-center space-x-1">
                           {availability.isRecurring && <Repeat className="h-3 w-3 flex-shrink-0" />}

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { NavigationOutlineButton } from '@/components/ui/navigation-button';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Organization {
   id: string;
@@ -34,7 +35,24 @@ export default function OrganizationsClient({ userId }: OrganizationsClientProps
   });
 
   if (isLoading) {
-    return <p>Loading organizations...</p>;
+    return (
+      <div className="space-y-6">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Organizations</h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">Loading your organizations...</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="py-8 text-center">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <Spinner className="h-8 w-8" />
+              <p className="text-sm text-muted-foreground">Loading your organizations...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (error) {

@@ -9,6 +9,7 @@ import {
   SchedulingRule,
   ServiceAvailabilityConfig,
 } from '@prisma/client';
+import { addDays } from 'date-fns';
 import { z } from 'zod';
 
 import {
@@ -23,6 +24,21 @@ import {
   availabilitySearchParamsSchema,
   updateAvailabilityDataSchema,
 } from '@/features/calendar/types/schemas';
+import { RecurrencePattern } from '@/features/calendar/types/types';
+import {
+  getGuestBookingConfirmationTemplate,
+  getProviderBookingNotificationTemplate,
+} from '@/features/communications/lib/email-templates';
+import {
+  sendGuestBookingWhatsApp,
+  sendProviderBookingWhatsApp,
+} from '@/features/communications/lib/whatsapp-templates';
+import {
+  sendBookingConfirmationEmail,
+  sendProviderNotificationEmail,
+} from '@/lib/communications/email';
+import { logger } from '@/lib/logger';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
 export const calendarRouter = createTRPCRouter({
@@ -103,6 +119,13 @@ export const calendarRouter = createTRPCRouter({
    * OPTION C: Complete database operations in tRPC procedure for automatic type inference
    */
   create: protectedProcedure.input(availabilityCreateSchema).mutation(async ({ ctx, input }) => {
+    // Check if user's email is verified
+    if (!ctx.session.user.emailVerified) {
+      throw new Error(
+        'Email verification required. Please verify your email address before managing calendar availability.'
+      );
+    }
+
     // 1. Call business logic validation
     const validation = await validateAvailabilityCreation(input);
 
@@ -132,7 +155,7 @@ export const calendarRouter = createTRPCRouter({
                 endTime: instance.endTime,
                 isRecurring: validatedData.isRecurring,
                 recurrencePattern: validatedData.recurrencePattern
-                  ? (validatedData.recurrencePattern as any)
+                  ? (validatedData.recurrencePattern as unknown as Prisma.InputJsonValue)
                   : Prisma.JsonNull,
                 seriesId: validatedData.seriesId || null,
                 schedulingRule: validatedData.schedulingRule,
@@ -202,10 +225,10 @@ export const calendarRouter = createTRPCRouter({
               });
 
               if (slotData.errors.length > 0) {
-                console.warn(
-                  `Slot generation failed for availability ${availability.id}:`,
-                  slotData.errors.join(', ')
-                );
+                logger.warn('Slot generation failed for availability', {
+                  availabilityId: availability.id,
+                  errors: slotData.errors,
+                });
               } else if (slotData.slotRecords.length > 0) {
                 // Create slots in database (Option C: database operations in tRPC)
                 await tx.calculatedAvailabilitySlot.createMany({
@@ -214,7 +237,10 @@ export const calendarRouter = createTRPCRouter({
                 totalSlotsGenerated += slotData.totalSlots;
               }
             } catch (slotError) {
-              console.error('Slot generation error during availability creation:', slotError);
+              logger.error('Slot generation error during availability creation', {
+                availabilityId: availability.id,
+                error: slotError instanceof Error ? slotError.message : String(slotError),
+              });
             }
           }
         }
@@ -229,9 +255,9 @@ export const calendarRouter = createTRPCRouter({
 
     // 3. Handle notifications and cache revalidation
     if (validation.notificationNeeded) {
-      console.log(
-        `📧 Availability proposal notification would be sent for availability ${result.availabilities[0]?.id}`
-      );
+      logger.info('Availability proposal notification would be sent', {
+        availabilityId: result.availabilities[0]?.id,
+      });
     }
 
     // Revalidate relevant paths
@@ -260,6 +286,13 @@ export const calendarRouter = createTRPCRouter({
   update: protectedProcedure
     .input(updateAvailabilityDataSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if user's email is verified
+      if (!ctx.session.user.emailVerified) {
+        throw new Error(
+          'Email verification required. Please verify your email address before managing calendar availability.'
+        );
+      }
+
       // 1. Call business logic validation
       const validation = await validateAvailabilityUpdate(input);
 
@@ -271,6 +304,9 @@ export const calendarRouter = createTRPCRouter({
       if (!validatedData) {
         throw new Error('Validation data is missing');
       }
+      if (!validatedData.existingAvailability) {
+        throw new Error('Existing availability data is missing');
+      }
 
       // 2. Perform all database operations in single transaction with timeout
       let result;
@@ -278,7 +314,7 @@ export const calendarRouter = createTRPCRouter({
         result = await ctx.prisma.$transaction(
           async (tx) => {
             // Prepare update data
-            const updateData: any = {};
+            const updateData: Prisma.AvailabilityUpdateInput = {};
             if (validatedData.startTime !== undefined)
               updateData.startTime = validatedData.startTime;
             if (validatedData.endTime !== undefined) updateData.endTime = validatedData.endTime;
@@ -286,7 +322,7 @@ export const calendarRouter = createTRPCRouter({
               updateData.isRecurring = validatedData.isRecurring;
             if (validatedData.recurrencePattern !== undefined) {
               updateData.recurrencePattern = validatedData.recurrencePattern
-                ? (validatedData.recurrencePattern as any)
+                ? (validatedData.recurrencePattern as unknown as Prisma.InputJsonValue)
                 : Prisma.JsonNull;
             }
             if (validatedData.schedulingRule !== undefined)
@@ -353,7 +389,7 @@ export const calendarRouter = createTRPCRouter({
                   tx,
                   updatedAvailabilities,
                   validatedData.services,
-                  validatedData.existingAvailability.providerId,
+                  validatedData.existingAvailability!.providerId,
                   validatedData.isOnlineAvailable,
                   validatedData.locationId
                 );
@@ -367,6 +403,9 @@ export const calendarRouter = createTRPCRouter({
             // Series updates (future/all) - delete and recreate approach
             if (validatedData.updateStrategy !== 'single') {
               const { existingAvailability } = validatedData;
+              if (!existingAvailability) {
+                throw new Error('Existing availability is required for series updates');
+              }
 
               // Step 1: Clean up existing data
               await tx.calculatedAvailabilitySlot.deleteMany({
@@ -403,7 +442,7 @@ export const calendarRouter = createTRPCRouter({
                 existingAvailability,
                 newStartTime,
                 newEndTime,
-                newRecurrencePattern
+                newRecurrencePattern as Record<string, unknown> | null
               );
 
               // Step 4: Create new availabilities
@@ -422,7 +461,7 @@ export const calendarRouter = createTRPCRouter({
                           ? validatedData.isRecurring
                           : existingAvailability.isRecurring,
                       recurrencePattern: newRecurrencePattern
-                        ? (newRecurrencePattern as any)
+                        ? (newRecurrencePattern as Prisma.InputJsonValue)
                         : Prisma.JsonNull,
                       seriesId: existingAvailability.seriesId,
                       schedulingRule:
@@ -485,7 +524,7 @@ export const calendarRouter = createTRPCRouter({
                   tx,
                   updatedAvailabilities,
                   validatedData.services,
-                  validatedData.existingAvailability.providerId,
+                  validatedData.existingAvailability!.providerId,
                   validatedData.isOnlineAvailable,
                   validatedData.locationId
                 );
@@ -497,6 +536,11 @@ export const calendarRouter = createTRPCRouter({
                 );
               }
             } // End of series update block
+
+            // Ensure updatedAvailabilities is defined
+            if (!updatedAvailabilities) {
+              throw new Error('Failed to update availabilities');
+            }
 
             // Handle slot regeneration if needed
             let totalSlotsRegenerated = 0;
@@ -554,16 +598,17 @@ export const calendarRouter = createTRPCRouter({
                     });
 
                     if (slotData.errors.length > 0) {
-                      console.warn(
-                        `Slot regeneration failed for availability ${availability.id}:`,
-                        slotData.errors.join(', ')
-                      );
+                      logger.warn('Slot regeneration failed for availability', {
+                        availabilityId: availability.id,
+                        errors: slotData.errors,
+                      });
                     } else if (slotData.slotRecords.length > 0) {
                       // Create new slots in database with chunking to prevent timeout
                       const CHUNK_SIZE = 100; // Process slots in chunks of 100
-                      console.log(
-                        `Creating ${slotData.slotRecords.length} slots for availability ${availability.id}`
-                      );
+                      logger.info('Creating slots for availability', {
+                        availabilityId: availability.id,
+                        totalSlots: slotData.slotRecords.length,
+                      });
 
                       for (let i = 0; i < slotData.slotRecords.length; i += CHUNK_SIZE) {
                         const chunk = slotData.slotRecords.slice(i, i + CHUNK_SIZE);
@@ -574,10 +619,11 @@ export const calendarRouter = createTRPCRouter({
                       totalSlotsRegenerated += slotData.totalSlots;
                     }
                   } catch (slotGenError) {
-                    console.error(
-                      'Slot regeneration error during availability update:',
-                      slotGenError
-                    );
+                    logger.error('Slot regeneration error during availability update', {
+                      availabilityId: availability.id,
+                      error:
+                        slotGenError instanceof Error ? slotGenError.message : String(slotGenError),
+                    });
                   }
                 }
               }
@@ -590,31 +636,48 @@ export const calendarRouter = createTRPCRouter({
             timeout: 30000, // 30 seconds timeout
           }
         );
-      } catch (transactionError: any) {
-        console.error('Transaction failed during availability update:', transactionError);
+      } catch (transactionError: unknown) {
+        logger.error('Transaction failed during availability update', {
+          error:
+            transactionError instanceof Error ? transactionError.message : String(transactionError),
+          code:
+            transactionError && typeof transactionError === 'object' && 'code' in transactionError
+              ? String(transactionError.code)
+              : undefined,
+        });
 
         // Provide specific error messages for different transaction failures
-        if (transactionError.code === 'P2028') {
+        const errorCode =
+          transactionError && typeof transactionError === 'object' && 'code' in transactionError
+            ? String(transactionError.code)
+            : undefined;
+        const errorMessage =
+          transactionError instanceof Error ? transactionError.message : String(transactionError);
+
+        if (errorCode === 'P2028') {
           throw new Error(
             'Database transaction timed out. This may be due to high server load. Please try again in a moment.'
           );
-        } else if (transactionError.code === 'P2034') {
+        } else if (errorCode === 'P2034') {
           throw new Error(
             'Database transaction failed due to a conflict. Please refresh and try again.'
           );
-        } else if (transactionError.message?.includes('timeout')) {
+        } else if (errorMessage.includes('timeout')) {
           throw new Error(
             'Operation timed out. Please try updating with fewer changes or try again later.'
           );
         } else {
           throw new Error(
-            `Failed to update availability: ${transactionError.message || 'Unknown database error'}`
+            `Failed to update availability: ${errorMessage || 'Unknown database error'}`
           );
         }
       }
 
       // 3. Handle cache revalidation
       const { existingAvailability } = validatedData;
+      if (!existingAvailability) {
+        throw new Error('Existing availability is required for cache revalidation');
+      }
 
       revalidatePath('/dashboard/availability');
       revalidatePath('/dashboard/calendar');
@@ -654,6 +717,13 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Check if user's email is verified
+      if (!ctx.session.user.emailVerified) {
+        throw new Error(
+          'Email verification required. Please verify your email address before managing calendar availability.'
+        );
+      }
+
       // Handle single availability deletion with scope
       if (input.ids.length === 1 && input.scope) {
         return deleteSingleAvailability(ctx, input.ids[0], input.scope);
@@ -683,7 +753,7 @@ export const calendarRouter = createTRPCRouter({
         throw new Error('Authentication required');
       }
 
-      const where: any = {};
+      const where: Prisma.AvailabilityWhereInput = {};
 
       if (input.providerId) {
         where.providerId = input.providerId;
@@ -709,13 +779,18 @@ export const calendarRouter = createTRPCRouter({
 
         if (input.startDate) {
           where.AND.push({
-            endTime: { gte: new Date(input.startDate) },
+            endTime: {
+              gte:
+                typeof input.startDate === 'string' ? parseUTC(input.startDate) : input.startDate,
+            },
           });
         }
 
         if (input.endDate) {
           where.AND.push({
-            startTime: { lte: new Date(input.endDate) },
+            startTime: {
+              lte: typeof input.endDate === 'string' ? parseUTC(input.endDate) : input.endDate,
+            },
           });
         }
       }
@@ -797,7 +872,7 @@ export const calendarRouter = createTRPCRouter({
         throw new Error('Authentication required');
       }
 
-      const where: any = { providerId: input.providerId };
+      const where: Prisma.AvailabilityWhereInput = { providerId: input.providerId };
 
       // Add permission filters for non-admin users
       if (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
@@ -867,7 +942,7 @@ export const calendarRouter = createTRPCRouter({
         throw new Error('Authentication required');
       }
 
-      const where: any = { organizationId: input.organizationId };
+      const where: Prisma.AvailabilityWhereInput = { organizationId: input.organizationId };
 
       // Add permission filters for non-admin users
       if (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
@@ -937,7 +1012,7 @@ export const calendarRouter = createTRPCRouter({
         throw new Error('Authentication required');
       }
 
-      const where: any = { seriesId: input.seriesId };
+      const where: Prisma.AvailabilityWhereInput = { seriesId: input.seriesId };
 
       // Add permission filters for non-admin users
       if (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
@@ -1037,7 +1112,7 @@ export const calendarRouter = createTRPCRouter({
         data: {
           status: AvailabilityStatus.ACCEPTED,
           acceptedById: ctx.session.user.id,
-          acceptedAt: new Date(),
+          acceptedAt: nowUTC(),
         },
         include: {
           availableServices: true,
@@ -1062,10 +1137,10 @@ export const calendarRouter = createTRPCRouter({
 
         let slotsGenerated = 0;
         if (slotData.errors.length > 0) {
-          console.warn(
-            `Slot generation failed for accepted availability ${updatedAvailability.id}:`,
-            slotData.errors.join(', ')
-          );
+          logger.warn('Slot generation failed for accepted availability', {
+            availabilityId: updatedAvailability.id,
+            errors: slotData.errors,
+          });
         } else if (slotData.slotRecords.length > 0) {
           // Create slots in database (Option C: database operations in tRPC)
           await ctx.prisma.calculatedAvailabilitySlot.createMany({
@@ -1074,9 +1149,9 @@ export const calendarRouter = createTRPCRouter({
           slotsGenerated = slotData.totalSlots;
         }
 
-        console.log(
-          `📧 Availability accepted notification would be sent for availability ${input.id}`
-        );
+        logger.info('Availability accepted notification would be sent', {
+          availabilityId: input.id,
+        });
 
         return {
           success: true,
@@ -1084,7 +1159,10 @@ export const calendarRouter = createTRPCRouter({
           slotsGenerated,
         };
       } catch (slotGenError) {
-        console.warn(`Slot generation error for accepted availability ${input.id}:`, slotGenError);
+        logger.warn('Slot generation error for accepted availability', {
+          availabilityId: input.id,
+          error: slotGenError instanceof Error ? slotGenError.message : String(slotGenError),
+        });
         return {
           success: true,
           id: input.id,
@@ -1127,11 +1205,15 @@ export const calendarRouter = createTRPCRouter({
         },
       });
 
-      console.log(
-        `📧 Availability rejected notification would be sent for availability ${input.id}`
-      );
+      logger.info('Availability rejected notification would be sent', {
+        availabilityId: input.id,
+        hasReason: !!input.reason,
+      });
       if (input.reason) {
-        console.log(`📝 Rejection reason: ${input.reason}`);
+        logger.debug('calendar', 'Rejection reason provided', {
+          availabilityId: input.id,
+          reason: input.reason,
+        });
       }
 
       return {
@@ -1162,8 +1244,8 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const startDate = new Date(input.startDate);
-      const endDate = new Date(input.endDate);
+      const startDate = parseUTC(input.startDate);
+      const endDate = parseUTC(input.endDate);
 
       const providers = await ctx.prisma.provider.findMany({
         where: {
@@ -1223,13 +1305,195 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const startDate = new Date(input.startDate);
-      const endDate = new Date(input.endDate);
+      const startDate = parseUTC(input.startDate);
+      const endDate = parseUTC(input.endDate);
 
       // Find all services
       const services = await ctx.prisma.service.findMany({});
 
       return services;
+    }),
+
+  /**
+   * Search providers by location and service type for landing page
+   * Optimized for guest booking flow with available slots count
+   */
+  searchProvidersByLocation: publicProcedure
+    .input(
+      z.object({
+        serviceType: z.string().optional(), // Provider type name (e.g., "Dentist", "General Practitioner")
+        location: z.string().optional(), // Search term for location matching
+        consultationType: z.enum(['online', 'in-person', 'both']).default('both'),
+        startDate: z.string().optional(), // ISO date string for availability check
+        endDate: z.string().optional(), // ISO date string for availability check
+        limit: z.number().optional().default(20),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { serviceType, location, consultationType, startDate, endDate, limit } = input;
+
+      // Parse dates if provided
+      const dateStart = startDate ? parseUTC(startDate) : nowUTC();
+      const dateEnd = endDate ? parseUTC(endDate) : addDays(nowUTC(), 30); // 30 days ahead
+
+      // Build where clause for provider search
+      const whereClause: Prisma.ProviderWhereInput = {
+        status: 'APPROVED', // Only show approved providers
+        availabilities: {
+          some: {
+            status: AvailabilityStatus.ACCEPTED,
+            startTime: { gte: dateStart },
+            endTime: { lte: dateEnd },
+            ...(consultationType === 'online' && { isOnlineAvailable: true }),
+            ...(consultationType === 'in-person' && { isOnlineAvailable: false }),
+          },
+        },
+      };
+
+      // Add service type filtering if specified
+      if (serviceType) {
+        whereClause.typeAssignments = {
+          some: {
+            providerType: {
+              name: {
+                contains: serviceType,
+                mode: 'insensitive',
+              },
+            },
+          },
+        };
+      }
+
+      // Add location filtering if specified
+      if (location) {
+        whereClause.OR = [
+          // Search in organization locations
+          {
+            providerConnections: {
+              some: {
+                organization: {
+                  locations: {
+                    some: {
+                      OR: [
+                        { name: { contains: location, mode: 'insensitive' } },
+                        { formattedAddress: { contains: location, mode: 'insensitive' } },
+                        { searchTerms: { has: location.toLowerCase() } },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+          // Search in availability locations
+          {
+            availabilities: {
+              some: {
+                location: {
+                  OR: [
+                    { name: { contains: location, mode: 'insensitive' } },
+                    { formattedAddress: { contains: location, mode: 'insensitive' } },
+                    { searchTerms: { has: location.toLowerCase() } },
+                  ],
+                },
+              },
+            },
+          },
+        ];
+      }
+
+      const providers = await ctx.prisma.provider.findMany({
+        where: whereClause,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+          typeAssignments: {
+            include: {
+              providerType: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                },
+              },
+            },
+          },
+          availabilities: {
+            where: {
+              status: AvailabilityStatus.ACCEPTED,
+              startTime: { gte: dateStart },
+              endTime: { lte: dateEnd },
+              ...(consultationType === 'online' && { isOnlineAvailable: true }),
+              ...(consultationType === 'in-person' && { isOnlineAvailable: false }),
+            },
+            include: {
+              location: {
+                select: {
+                  id: true,
+                  name: true,
+                  formattedAddress: true,
+                },
+              },
+              calculatedSlots: {
+                where: {
+                  status: 'AVAILABLE',
+                  startTime: { gte: dateStart },
+                  endTime: { lte: dateEnd },
+                },
+                select: {
+                  id: true,
+                  startTime: true,
+                  endTime: true,
+                },
+                take: 5, // Limit slots for performance
+              },
+            },
+            take: 3, // Limit availabilities for performance
+          },
+        },
+        take: limit,
+        orderBy: [
+          { status: 'asc' }, // Approved first
+          { createdAt: 'desc' }, // Newer providers first
+        ],
+      });
+
+      // Transform results for frontend consumption
+      return providers.map((provider) => ({
+        id: provider.id,
+        name: provider.user?.name || provider.name,
+        image: provider.user?.image || provider.image,
+        bio: provider.bio,
+        specialties: provider.typeAssignments.map((ta) => ta.providerType.name),
+        languages: provider.languages,
+        averageRating: provider.averageRating,
+        totalReviews: provider.totalReviews,
+        showPrice: provider.showPrice,
+        availableSlots: provider.availabilities.reduce(
+          (total, availability) => total + availability.calculatedSlots.length,
+          0
+        ),
+        locations: provider.availabilities
+          .map((a) => a.location)
+          .filter((location): location is NonNullable<typeof location> => location !== null)
+          .reduce((unique: Array<{ id: string; name: string }>, location) => {
+            if (location && !unique.find((l) => l.id === location.id)) {
+              unique.push(location);
+            }
+            return unique;
+          }, []),
+        supportsOnline: provider.availabilities.some((a) => a.isOnlineAvailable),
+        supportsInPerson: provider.availabilities.some((a) => !a.isOnlineAvailable),
+        nextAvailableSlot:
+          provider.availabilities
+            .flatMap((a) => a.calculatedSlots)
+            .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())[0] || null,
+      }));
     }),
 
   /**
@@ -1380,88 +1644,163 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify slot exists and is available
-      const slot = await ctx.prisma.calculatedAvailabilitySlot.findUnique({
-        where: { id: input.slotId },
-        include: {
-          booking: true,
-          availability: {
-            include: {
-              provider: {
-                include: {
-                  user: {
-                    select: {
-                      id: true,
-                      name: true,
-                      email: true,
-                    },
-                  },
-                },
-              },
-              organization: true,
-              location: true,
-            },
-          },
-          service: true,
-          serviceConfig: true, // Include serviceConfig for price information
-        },
-      });
-
-      if (!slot) {
-        throw new Error('Slot not found');
-      }
-
-      if (slot.booking) {
-        throw new Error('Slot is already booked');
-      }
-
-      if (slot.startTime <= new Date()) {
-        throw new Error('Cannot book past slots');
-      }
-
-      // Create booking
-      const booking = await ctx.prisma.booking.create({
-        data: {
-          slotId: input.slotId,
-          guestName: input.clientName,
-          guestEmail: input.clientEmail,
-          guestPhone: input.clientPhone,
-          isGuestBooking: true,
-          isGuestSelfBooking: true,
-          notes: input.notes || '',
-          status: 'PENDING', // Default status, may require provider confirmation
-          price: slot.serviceConfig?.price || slot.service?.defaultPrice || 0,
-          isOnline: slot.availability?.isOnlineAvailable || false,
-          isInPerson: !slot.availability?.isOnlineAvailable || false,
-        },
-        include: {
-          slot: {
-            include: {
-              service: true,
-              availability: {
-                include: {
-                  provider: {
-                    include: {
-                      user: {
-                        select: {
-                          id: true,
-                          name: true,
-                          email: true,
-                        },
+      // Use a transaction to ensure atomic booking creation and prevent concurrent bookings
+      const booking = await ctx.prisma.$transaction(async (tx) => {
+        // First, verify slot exists and lock it for update to prevent concurrent access
+        const slot = await tx.calculatedAvailabilitySlot.findUnique({
+          where: { id: input.slotId },
+          include: {
+            booking: true,
+            availability: {
+              include: {
+                provider: {
+                  include: {
+                    user: {
+                      select: {
+                        id: true,
+                        name: true,
+                        email: true,
                       },
                     },
                   },
-                  location: true,
+                },
+                organization: true,
+                location: true,
+              },
+            },
+            service: true,
+            serviceConfig: true,
+          },
+        });
+
+        if (!slot) {
+          throw new Error('Slot not found');
+        }
+
+        // Check if slot is already booked (double-check within transaction)
+        if (slot.booking) {
+          throw new Error('Slot is already booked');
+        }
+
+        if (slot.startTime <= nowUTC()) {
+          throw new Error('Cannot book past slots');
+        }
+
+        // Verify slot status is still available
+        if (slot.status !== 'AVAILABLE') {
+          throw new Error('Slot is no longer available');
+        }
+
+        // Create booking atomically
+        const newBooking = await tx.booking.create({
+          data: {
+            slotId: input.slotId,
+            guestName: input.clientName,
+            guestEmail: input.clientEmail,
+            guestPhone: input.clientPhone,
+            isGuestBooking: true,
+            isGuestSelfBooking: true,
+            notes: input.notes || '',
+            status: 'PENDING', // Default status, may require provider confirmation
+            price: slot.serviceConfig?.price || slot.service?.defaultPrice || 0,
+            isOnline: slot.availability?.isOnlineAvailable || false,
+            isInPerson: !slot.availability?.isOnlineAvailable || false,
+          },
+          include: {
+            slot: {
+              include: {
+                service: true,
+                serviceConfig: true,
+                availability: {
+                  include: {
+                    provider: {
+                      include: {
+                        user: {
+                          select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                          },
+                        },
+                      },
+                    },
+                    location: true,
+                  },
                 },
               },
             },
           },
-        },
+        });
+
+        // Update slot status to BOOKED atomically
+        await tx.calculatedAvailabilitySlot.update({
+          where: { id: input.slotId },
+          data: { status: 'BOOKED' },
+        });
+
+        return newBooking;
       });
 
-      // TODO: Send confirmation emails to both client and provider
-      // TODO: Send calendar invites if applicable
-      // TODO: Trigger notification workflows
+      // Send notifications (email and WhatsApp)
+      try {
+        const bookingDetails = {
+          bookingId: booking.id,
+          providerName: booking.slot?.availability?.provider?.user?.name || 'Healthcare Provider',
+          startTime: booking.slot?.startTime?.toISOString() || nowUTC().toISOString(),
+          endTime: booking.slot?.endTime?.toISOString() || nowUTC().toISOString(),
+          serviceType: booking.slot?.service?.name || 'Healthcare Service',
+          location: booking.slot?.availability?.location?.name || undefined,
+          guestName: booking.guestName || '',
+          guestEmail: booking.guestEmail || '',
+          guestPhone: booking.guestPhone || undefined,
+          notes: booking.notes || undefined,
+          duration: booking.slot?.serviceConfig?.duration || 30,
+          price: booking.price ? `R${booking.price}` : undefined,
+        };
+
+        // Send email notifications
+        const guestEmailTemplate = getGuestBookingConfirmationTemplate(bookingDetails);
+        const providerEmailTemplate = getProviderBookingNotificationTemplate(bookingDetails);
+
+        const emailPromises = [];
+
+        if (booking.guestEmail) {
+          emailPromises.push(sendBookingConfirmationEmail(booking.guestEmail, guestEmailTemplate));
+        }
+
+        if (booking.slot?.availability?.provider?.user?.email) {
+          emailPromises.push(
+            sendProviderNotificationEmail(
+              booking.slot.availability.provider.user.email,
+              providerEmailTemplate
+            )
+          );
+        }
+
+        // Send WhatsApp notifications
+        const whatsappPromises = [];
+
+        if (booking.guestPhone) {
+          whatsappPromises.push(sendGuestBookingWhatsApp(booking.guestPhone, bookingDetails));
+        }
+
+        if (booking.slot?.availability?.provider?.whatsapp) {
+          whatsappPromises.push(
+            sendProviderBookingWhatsApp(booking.slot.availability.provider.whatsapp, bookingDetails)
+          );
+        }
+
+        // Send all notifications in parallel
+        await Promise.allSettled([...emailPromises, ...whatsappPromises]);
+
+        logger.info('Booking notifications sent successfully', { bookingId: booking.id });
+      } catch (error) {
+        logger.error('Error sending booking notifications', {
+          bookingId: booking.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        // Don't fail the booking if notifications fail
+      }
 
       return {
         success: true,
@@ -1505,6 +1844,274 @@ export const calendarRouter = createTRPCRouter({
 
       return booking;
     }),
+
+  /*
+   * ====================================
+   * USER BOOKING MANAGEMENT
+   * ====================================
+   * Endpoints for users to manage their own bookings
+   */
+
+  getUserBookings: protectedProcedure
+    .input(
+      z.object({
+        status: z.enum(['upcoming', 'past', 'cancelled', 'all']).default('all'),
+        limit: z.number().min(1).max(100).default(50),
+        offset: z.number().min(0).default(0),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { status, limit, offset } = input;
+      const userId = ctx.session.user.id;
+
+      // Build status filter
+      let statusFilter: Prisma.BookingWhereInput = {};
+      const now = nowUTC();
+
+      if (status === 'upcoming') {
+        statusFilter = {
+          slot: {
+            startTime: { gte: now },
+          },
+          status: { notIn: ['CANCELLED'] },
+        };
+      } else if (status === 'past') {
+        statusFilter = {
+          slot: {
+            startTime: { lt: now },
+          },
+          status: { notIn: ['CANCELLED'] },
+        };
+      } else if (status === 'cancelled') {
+        statusFilter = {
+          status: 'CANCELLED',
+        };
+      }
+
+      const bookings = await ctx.prisma.booking.findMany({
+        where: {
+          createdById: userId,
+          ...statusFilter,
+        },
+        include: {
+          slot: {
+            include: {
+              service: true,
+              serviceConfig: true,
+              availability: {
+                include: {
+                  provider: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          slot: {
+            startTime: 'desc',
+          },
+        },
+        take: limit,
+        skip: offset,
+      });
+
+      return bookings;
+    }),
+
+  updateUserBooking: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        guestName: z.string().optional(),
+        guestEmail: z.string().email().optional(),
+        guestPhone: z.string().optional(),
+        notes: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...updateData } = input;
+      const userId = ctx.session.user.id;
+
+      // Verify the booking belongs to the current user
+      const existingBooking = await ctx.prisma.booking.findFirst({
+        where: {
+          id,
+          createdById: userId,
+        },
+      });
+
+      if (!existingBooking) {
+        throw new Error('Booking not found or you do not have permission to update it');
+      }
+
+      const updatedBooking = await ctx.prisma.booking.update({
+        where: { id },
+        data: updateData,
+        include: {
+          slot: {
+            include: {
+              service: true,
+              serviceConfig: true,
+              availability: {
+                include: {
+                  provider: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return updatedBooking;
+    }),
+
+  cancelUserBooking: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      // Verify the booking belongs to the current user
+      const existingBooking = await ctx.prisma.booking.findFirst({
+        where: {
+          id: input.id,
+          createdById: userId,
+        },
+      });
+
+      if (!existingBooking) {
+        throw new Error('Booking not found or you do not have permission to cancel it');
+      }
+
+      // Cancel the booking
+      const cancelledBooking = await ctx.prisma.booking.update({
+        where: { id: input.id },
+        data: { status: 'CANCELLED' },
+        include: {
+          slot: {
+            include: {
+              service: true,
+              serviceConfig: true,
+              availability: {
+                include: {
+                  provider: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return cancelledBooking;
+    }),
+
+  rescheduleUserBooking: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        newSlotId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      // Verify the booking belongs to the current user
+      const existingBooking = await ctx.prisma.booking.findFirst({
+        where: {
+          id: input.id,
+          createdById: userId,
+        },
+      });
+
+      if (!existingBooking) {
+        throw new Error('Booking not found or you do not have permission to reschedule it');
+      }
+
+      // Verify the new slot exists and is available
+      const newSlot = await ctx.prisma.calculatedAvailabilitySlot.findUnique({
+        where: { id: input.newSlotId },
+      });
+
+      if (!newSlot || newSlot.status !== 'AVAILABLE') {
+        throw new Error('Selected slot is not available');
+      }
+
+      // Update the booking with the new slot
+      const rescheduledBooking = await ctx.prisma.booking.update({
+        where: { id: input.id },
+        data: { slotId: input.newSlotId },
+        include: {
+          slot: {
+            include: {
+              service: true,
+              serviceConfig: true,
+              availability: {
+                include: {
+                  provider: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return rescheduledBooking;
+    }),
+
+  /**
+   * Get provider's availabilities for the provider profile page
+   * Shows upcoming availability slots for a specific provider
+   */
+  getProviderAvailabilities: publicProcedure
+    .input(
+      z.object({
+        providerId: z.string(),
+        limit: z.number().min(1).max(50).optional().default(10),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const availabilities = await ctx.prisma.availability.findMany({
+        where: {
+          providerId: input.providerId,
+          startTime: {
+            gte: nowUTC(),
+          },
+        },
+        orderBy: {
+          startTime: 'asc',
+        },
+        take: input.limit,
+        include: {
+          availableServices: {
+            include: {
+              service: true,
+            },
+          },
+          organization: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+
+      return availabilities;
+    }),
 });
 
 /**
@@ -1512,18 +2119,21 @@ export const calendarRouter = createTRPCRouter({
  */
 function generateInstancesForStrategy(
   strategy: 'future' | 'all',
-  existingAvailability: any,
+  existingAvailability: { startTime: Date; isRecurring: boolean },
   newStartTime: Date,
   newEndTime: Date,
-  newRecurrencePattern: any
+  newRecurrencePattern: Record<string, unknown> | null
 ): Array<{ startTime: Date; endTime: Date }> {
   if (strategy === 'future') {
-    const currentDate = new Date(existingAvailability.startTime);
+    const currentDate = parseUTC(existingAvailability.startTime.toISOString());
 
     if (newRecurrencePattern && existingAvailability.isRecurring) {
-      return generateRecurringInstances(newRecurrencePattern, newStartTime, newEndTime, 365).filter(
-        (instance) => instance.startTime >= currentDate
-      );
+      return generateRecurringInstances(
+        newRecurrencePattern as unknown as RecurrencePattern,
+        newStartTime,
+        newEndTime,
+        365
+      ).filter((instance) => instance.startTime >= currentDate);
     }
 
     return [{ startTime: newStartTime, endTime: newEndTime }];
@@ -1531,7 +2141,12 @@ function generateInstancesForStrategy(
 
   // 'all' strategy
   if (newRecurrencePattern && existingAvailability.isRecurring) {
-    return generateRecurringInstances(newRecurrencePattern, newStartTime, newEndTime, 365);
+    return generateRecurringInstances(
+      newRecurrencePattern as unknown as RecurrencePattern,
+      newStartTime,
+      newEndTime,
+      365
+    );
   }
 
   return [{ startTime: newStartTime, endTime: newEndTime }];
@@ -1541,9 +2156,9 @@ function generateInstancesForStrategy(
  * Create service configurations for availabilities
  */
 async function createServiceConfigsForAvailabilities(
-  tx: any,
-  availabilities: any[],
-  services: any[],
+  tx: Prisma.TransactionClient,
+  availabilities: Array<{ id: string }>,
+  services: Array<{ serviceId: string; duration: number; price: number }>,
   providerId: string,
   isOnlineAvailable?: boolean,
   locationId?: string
@@ -1571,7 +2186,10 @@ async function createServiceConfigsForAvailabilities(
 /**
  * Fetch availabilities with all relations
  */
-async function fetchAvailabilitiesWithRelations(tx: any, availabilityIds: string[]) {
+async function fetchAvailabilitiesWithRelations(
+  tx: Prisma.TransactionClient,
+  availabilityIds: string[]
+) {
   return tx.availability.findMany({
     where: { id: { in: availabilityIds } },
     include: {
@@ -1621,6 +2239,9 @@ async function deleteSingleAvailability(
   const { validatedData } = validation;
   if (!validatedData) {
     throw new Error('Validation data is missing');
+  }
+  if (!validatedData.existingAvailability) {
+    throw new Error('Existing availability data is missing');
   }
 
   // 2. Perform all database operations in single transaction

@@ -4,35 +4,35 @@ import { StatusBadge } from '@/components/status-badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { NavigationOutlineButton } from '@/components/ui/navigation-button';
 import { UserAvatar } from '@/components/user-avatar';
-import { useOrganizationByUserId } from '@/features/organizations/hooks/use-organization-by-user-id';
 import { type RouterOutputs } from '@/utils/api';
 
 import { DeleteAccountButton } from './delete-account-button';
 
 type UserProfile = RouterOutputs['profile']['get'];
 type Provider = NonNullable<RouterOutputs['providers']['getByUserId']>;
+type Organization = RouterOutputs['organizations']['getByUserId'][number];
 
 interface ProfileClientProps {
   profile: UserProfile;
   provider?: Provider | null;
+  organizations?: Organization[] | null;
   isProfileLoading: boolean;
+  isOrganizationsLoading: boolean;
   profileError: Error | null;
+  organizationsError: Error | null;
   hasServiceProvider: boolean;
 }
 
 export function ProfileClient({
   profile,
   provider,
+  organizations,
   isProfileLoading,
+  isOrganizationsLoading,
   profileError,
+  organizationsError,
   hasServiceProvider,
 }: ProfileClientProps) {
-  const {
-    data: organizations,
-    isLoading: isOrganizationsLoading,
-    error: organizationsError,
-  } = useOrganizationByUserId(profile.id);
-
   return (
     <div className="space-y-6">
       <div className="mb-6 flex items-center justify-between">
@@ -114,17 +114,13 @@ export function ProfileClient({
                     'Not Registered'
                   )}
                 </div>
-                <div>
-                  {hasServiceProvider ? (
-                    <NavigationOutlineButton href={`/providers/${provider?.id}`}>
-                      Provider View
-                    </NavigationOutlineButton>
-                  ) : (
+                {!hasServiceProvider && (
+                  <div>
                     <NavigationOutlineButton href="/providers/new">
                       Register Provider
                     </NavigationOutlineButton>
-                  )}
-                </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -138,7 +134,7 @@ export function ProfileClient({
               <CardContent className="flex flex-col items-center space-y-4">
                 {organizations && organizations.length > 0 ? (
                   <div className="w-full space-y-4">
-                    {organizations.map((org: any) => (
+                    {organizations.map((org) => (
                       <div
                         key={org.id}
                         className="flex flex-col items-center space-y-3 rounded-lg border p-4"

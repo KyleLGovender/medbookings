@@ -1,6 +1,7 @@
 'use server';
 
 import { getCurrentUser } from '@/lib/auth';
+import { logger, sanitizeEmail } from '@/lib/logger';
 
 /**
  * Validate profile update and handle business logic
@@ -47,7 +48,10 @@ export async function validateProfileUpdate(data: {
     }
 
     // TODO: Send profile update notification
-    console.log(`📧 Profile update notification would be sent to: ${currentUser.email}`);
+    logger.info('Profile update notification would be sent', {
+      to: sanitizeEmail(currentUser.email || ''),
+      userId: currentUser.id,
+    });
 
     return {
       success: true,
@@ -57,7 +61,9 @@ export async function validateProfileUpdate(data: {
       },
     };
   } catch (error) {
-    console.error('Profile update validation error:', error);
+    logger.error('Profile update validation error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to validate profile update',
@@ -91,7 +97,10 @@ export async function validateAccountDeletion(): Promise<{
     // For example: check for active subscriptions, pending obligations, etc.
 
     // TODO: Send account deletion notification
-    console.log(`📧 Account deletion notification would be sent to: ${currentUser.email}`);
+    logger.info('Account deletion notification would be sent', {
+      to: sanitizeEmail(currentUser.email),
+      userId: currentUser.id,
+    });
 
     return {
       success: true,
@@ -101,7 +110,9 @@ export async function validateAccountDeletion(): Promise<{
       },
     };
   } catch (error) {
-    console.error('Account deletion validation error:', error);
+    logger.error('Account deletion validation error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to validate account deletion',

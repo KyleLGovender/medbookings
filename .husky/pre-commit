@@ -1,0 +1,163 @@
+#!/usr/bin/env sh
+
+# ============================================================================
+# CLAUDE.md Compliance System - Commit Gate
+# ============================================================================
+# Validates code changes against CLAUDE.md rules before allowing commit
+# Blocks commits with ERROR severity violations
+# Allows commits with WARNING severity violations (but displays them)
+#
+# BYPASS: git commit --no-verify (use with caution!)
+# ============================================================================
+
+echo "🔍 Running CLAUDE.md compliance checks..."
+
+# =============================================================================
+# ARCHITECTURE IMPACT CHECK (NON-BLOCKING WARNINGS - STAGED FILES ONLY)
+# =============================================================================
+echo "🏗️  Checking architectural impact..."
+node scripts/architecture/check-core-files.js --staged || true  # Always succeed, just show warnings
+echo ""
+
+# Get list of staged files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -z "$STAGED_FILES" ]; then
+  echo "✅ No files to validate"
+  exit 0
+fi
+
+# ============================================================================
+# CHECK IF CLAUDE.md WAS MODIFIED - AUTO-SYNC COMPLIANCE RULES
+# ============================================================================
+if echo "$STAGED_FILES" | grep -q "^CLAUDE.md$"; then
+  echo "⚠️  CLAUDE.md has been modified - syncing compliance rules..."
+
+  if node scripts/compliance/sync-compliance-rules.js sync; then
+    echo "✅ Compliance rules synced with CLAUDE.md"
+
+    # Stage the updated compliance config
+    git add scripts/compliance/compliance-config.json
+
+    echo "📝 Auto-staged: scripts/compliance/compliance-config.json"
+    echo ""
+  else
+    echo "❌ Failed to sync compliance rules"
+    echo "🚫 Commit blocked. Please fix sync errors."
+    exit 1
+  fi
+fi
+
+# Track validation results
+HAS_ERRORS=0
+VALIDATION_OUTPUT=""
+
+# Validate each staged file
+for FILE in $STAGED_FILES; do
+  # Skip non-TypeScript/JavaScript files
+  if [[ ! "$FILE" =~ \.(ts|tsx|js|jsx)$ ]]; then
+    continue
+  fi
+
+  # Skip files that don't exist (deleted files)
+  if [ ! -f "$FILE" ]; then
+    continue
+  fi
+
+  # Skip config files, test files, and special files from CLAUDE.md validation
+  # (they can use console.log, Date, etc. since they run at build/test time or are logging utilities)
+  if [[ "$FILE" =~ (\.eslintrc\.|next\.config\.|tailwind\.config\.|postcss\.config\.) ]] || \
+     [[ "$FILE" =~ ^e2e/ ]] || \
+     [[ "$FILE" =~ ^scripts/ ]] || \
+     [[ "$FILE" =~ ^eslint-rules/ ]] || \
+     [[ "$FILE" == "src/lib/logger.ts" ]] || \
+     [[ "$FILE" == "src/lib/debug.ts" ]]; then
+    continue
+  fi
+
+  # Get old content (from git HEAD)
+  OLD_CONTENT=$(git show HEAD:"$FILE" 2>/dev/null || echo "")
+
+  # Create temp file for old content
+  OLD_TEMP=$(mktemp)
+  echo "$OLD_CONTENT" > "$OLD_TEMP"
+
+  # Validate the file
+  RESULT=$(node scripts/commit-gate/compliance-validator.js validate-change "$FILE" "$OLD_TEMP" "$FILE" 2>&1)
+  EXIT_CODE=$?
+
+  # Clean up temp file
+  rm "$OLD_TEMP"
+
+  # If validation failed, collect output
+  if [ $EXIT_CODE -ne 0 ]; then
+    HAS_ERRORS=1
+    VALIDATION_OUTPUT="$VALIDATION_OUTPUT\n$RESULT"
+  fi
+done
+
+# Display validation results
+if [ $HAS_ERRORS -eq 1 ]; then
+  echo ""
+  echo "❌ CLAUDE.md Compliance Violations Detected"
+  echo "=========================================="
+  echo -e "$VALIDATION_OUTPUT"
+  echo ""
+  echo "🚫 Commit blocked. Please fix the violations above."
+  echo "💡 To bypass (not recommended): git commit --no-verify"
+  echo ""
+  exit 1
+fi
+
+# Run ESLint on staged files (only TypeScript/JavaScript files)
+echo "🔍 Running ESLint..."
+
+# Filter staged files to only include lintable files (exclude config files and ignored dirs)
+LINTABLE_FILES=""
+for FILE in $STAGED_FILES; do
+  if [[ "$FILE" =~ \.(ts|tsx|js|jsx)$ ]] && [ -f "$FILE" ]; then
+    # Skip ESLint config files and directories in ignorePatterns (.eslintrc.json line 100)
+    if [[ ! "$FILE" =~ \.eslintrc\.(js|cjs|mjs)$ ]] && \
+       [[ ! "$FILE" =~ ^scripts/ ]] && \
+       [[ ! "$FILE" =~ ^eslint-rules/ ]] && \
+       [[ ! "$FILE" =~ ^e2e/ ]]; then
+      LINTABLE_FILES="$LINTABLE_FILES $FILE"
+    fi
+  fi
+done
+
+# Only run ESLint if there are lintable files
+if [ -n "$LINTABLE_FILES" ]; then
+  # Allow warnings (max-warnings=150) since 'warn' level rules are intentionally non-blocking
+  # Only errors will block commits
+  # Use increased memory for large codebases
+  NODE_OPTIONS="--max-old-space-size=8192" npx eslint $LINTABLE_FILES --max-warnings=150
+  ESLINT_EXIT=$?
+
+  if [ $ESLINT_EXIT -ne 0 ]; then
+    echo ""
+    echo "❌ ESLint violations detected"
+    echo "🚫 Commit blocked. Please fix linting errors."
+    echo ""
+    exit 1
+  fi
+  echo "✅ ESLint passed (warnings displayed above are non-blocking)"
+else
+  echo "ℹ️  No TypeScript/JavaScript files to lint"
+fi
+
+# Run TypeScript type check
+echo "🔍 Running TypeScript type check..."
+npx tsc --noEmit
+TSC_EXIT=$?
+
+if [ $TSC_EXIT -ne 0 ]; then
+  echo ""
+  echo "❌ TypeScript type errors detected"
+  echo "🚫 Commit blocked. Please fix type errors."
+  echo ""
+  exit 1
+fi
+
+echo "✅ All pre-commit checks passed"
+exit 0

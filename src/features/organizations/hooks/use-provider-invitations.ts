@@ -6,8 +6,8 @@ import { api } from '@/utils/api';
  * @returns Mutation object for sending provider invitations
  */
 export function useSendProviderInvitation(options?: {
-  onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onSuccess?: (data: unknown) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -19,7 +19,7 @@ export function useSendProviderInvitation(options?: {
       });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }
 
@@ -43,8 +43,8 @@ export function useProviderInvitations(organizationId: string) {
  * @returns Mutation object for canceling invitations
  */
 export function useCancelProviderInvitation(options?: {
-  onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onSuccess?: (data: unknown) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -56,7 +56,7 @@ export function useCancelProviderInvitation(options?: {
       });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }
 
@@ -66,8 +66,8 @@ export function useCancelProviderInvitation(options?: {
  * @returns Mutation object for resending invitations
  */
 export function useResendProviderInvitation(options?: {
-  onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onSuccess?: (data: unknown) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -79,6 +79,6 @@ export function useResendProviderInvitation(options?: {
       });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }

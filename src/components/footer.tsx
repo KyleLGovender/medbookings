@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import Logo from '@/components/logo';
 import { ModeToggle } from '@/components/mode-toggle';
+import { nowUTC } from '@/lib/timezone';
 
 export default function Footer() {
   return (
@@ -99,7 +100,7 @@ export default function Footer() {
           </div>
           <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t pt-8 md:flex-row">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Medbookings. All rights reserved.
+              © {nowUTC().getFullYear()} Medbookings. All rights reserved.
             </p>
             <div className="flex items-center gap-4">
               <Link href="#" className="text-muted-foreground hover:text-foreground">

@@ -4,6 +4,7 @@
 // Runtime type validation for billing-specific types and API responses
 import { BillingEntity, BillingInterval, PaymentStatus, SubscriptionStatus } from '@prisma/client';
 
+import { nowUTC } from '@/lib/timezone';
 import { isValidDateString, isValidUUID } from '@/types/guards';
 
 // =============================================================================
@@ -155,7 +156,7 @@ export function isValidPaymentMethodData(value: unknown): value is {
         typeof (value as any).cardDetails.expYear === 'number' &&
         (value as any).cardDetails.expMonth >= 1 &&
         (value as any).cardDetails.expMonth <= 12 &&
-        (value as any).cardDetails.expYear >= new Date().getFullYear()))
+        (value as any).cardDetails.expYear >= nowUTC().getFullYear()))
   );
 }
 

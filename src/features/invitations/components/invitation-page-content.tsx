@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 import { type RouterOutputs, api } from '@/utils/api';
 
 import { ExistingUserInvitationFlow } from './existing-user-invitation-flow';
@@ -80,8 +81,8 @@ export function InvitationPageContent({ token }: InvitationPageContentProps) {
 
   // Check if invitation is expired
   const expiresAt =
-    invitation.expiresAt instanceof Date ? invitation.expiresAt : new Date(invitation.expiresAt);
-  const isExpired = expiresAt < new Date();
+    invitation.expiresAt instanceof Date ? invitation.expiresAt : parseUTC(invitation.expiresAt);
+  const isExpired = expiresAt < nowUTC();
   if (isExpired) {
     return (
       <InvitationErrorState error="This invitation has expired" token={token} isExpired={true} />

@@ -1,8 +1,10 @@
-// =============================================================================
-// REVIEWS FEATURE TYPES
-// =============================================================================
-// All type definitions for the reviews feature in one place
-// Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
+/**
+ * =============================================================================
+ * REVIEWS FEATURE TYPES
+ * =============================================================================
+ * All type definitions for the reviews feature in one place
+ * Organized by: Enums -> Base Interfaces -> Complex Interfaces -> Utility Types
+ */
 
 // =============================================================================
 // ENUMS

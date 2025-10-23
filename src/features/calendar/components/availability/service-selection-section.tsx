@@ -159,11 +159,53 @@ export function ServiceSelectionSection({
                         <FormLabel className="flex items-center gap-1">Price (R)</FormLabel>
                         <FormControl>
                           <Input
-                            type="number"
-                            min="0"
-                            step="10"
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={field.value === 0 ? '' : field.value?.toString() || ''}
+                            onChange={(e) => {
+                              const rawValue = e.target.value;
+
+                              // Allow empty string for better UX
+                              if (rawValue === '') {
+                                field.onChange(0);
+                                return;
+                              }
+
+                              // Only allow digits
+                              if (!/^\d+$/.test(rawValue)) {
+                                return; // Don't update if contains non-digits
+                              }
+
+                              const numValue = parseInt(rawValue, 10);
+                              if (!isNaN(numValue) && numValue >= 0) {
+                                field.onChange(numValue);
+                              }
+                            }}
+                            onKeyPress={(e) => {
+                              // Only allow digits
+                              if (
+                                !/[0-9]/.test(e.key) &&
+                                ![
+                                  'Backspace',
+                                  'Delete',
+                                  'Tab',
+                                  'Enter',
+                                  'ArrowLeft',
+                                  'ArrowRight',
+                                ].includes(e.key)
+                              ) {
+                                e.preventDefault();
+                              }
+                            }}
+                            onBlur={(e) => {
+                              // Ensure we have a valid number on blur
+                              const value = e.target.value;
+                              if (value === '' || isNaN(parseInt(value, 10))) {
+                                field.onChange(0);
+                              }
+                              field.onBlur();
+                            }}
                           />
                         </FormControl>
                         <FormMessage />

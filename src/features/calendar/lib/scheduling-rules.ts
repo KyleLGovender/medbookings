@@ -1,5 +1,12 @@
 import { SchedulingRule } from '@prisma/client';
-import { addMinutes, setMinutes, startOfDay, startOfHour } from 'date-fns';
+import {
+  addMinutes,
+  setMilliseconds,
+  setMinutes,
+  setSeconds,
+  startOfDay,
+  startOfHour,
+} from 'date-fns';
 
 import {
   SchedulingOptions,
@@ -64,8 +71,7 @@ export function generateTimeSlots(options: SchedulingOptions): TimeSlotGeneratio
 function generateContinuousSlots(options: SchedulingOptions): TimeSlot[] {
   const slots: TimeSlot[] = [];
   // Round start time to clean minutes (zero seconds and milliseconds)
-  let currentStart = new Date(options.availabilityStart);
-  currentStart.setSeconds(0, 0);
+  let currentStart = setMilliseconds(setSeconds(options.availabilityStart, 0), 0);
 
   while (currentStart < options.availabilityEnd) {
     const currentEnd = addMinutes(currentStart, options.serviceDuration);
@@ -76,13 +82,13 @@ function generateContinuousSlots(options: SchedulingOptions): TimeSlot[] {
     }
 
     slots.push({
-      startTime: new Date(currentStart),
-      endTime: new Date(currentEnd),
+      startTime: currentStart,
+      endTime: currentEnd,
       duration: options.serviceDuration,
     });
 
     // Next slot starts immediately after this one ends
-    currentStart = new Date(currentEnd);
+    currentStart = currentEnd;
   }
 
   return slots;
@@ -98,8 +104,7 @@ function generateOnTheHourSlots(options: SchedulingOptions): TimeSlot[] {
   const intervalMinutes = 60;
 
   // Round availability start to clean minutes first
-  const cleanStart = new Date(options.availabilityStart);
-  cleanStart.setSeconds(0, 0);
+  const cleanStart = setMilliseconds(setSeconds(options.availabilityStart, 0), 0);
 
   // Find the first hour start time at or after availability start
   let currentStart = getNextAlignedTime(cleanStart, intervalMinutes);
@@ -118,8 +123,8 @@ function generateOnTheHourSlots(options: SchedulingOptions): TimeSlot[] {
     }
 
     slots.push({
-      startTime: new Date(currentStart),
-      endTime: new Date(currentEnd),
+      startTime: currentStart,
+      endTime: currentEnd,
       duration: options.serviceDuration,
     });
 
@@ -140,8 +145,7 @@ function generateOnTheHalfHourSlots(options: SchedulingOptions): TimeSlot[] {
   const intervalMinutes = 30;
 
   // Round availability start to clean minutes first
-  const cleanStart = new Date(options.availabilityStart);
-  cleanStart.setSeconds(0, 0);
+  const cleanStart = setMilliseconds(setSeconds(options.availabilityStart, 0), 0);
 
   // Find the first half-hour start time at or after availability start
   let currentStart = getNextAlignedTime(cleanStart, intervalMinutes);
@@ -160,8 +164,8 @@ function generateOnTheHalfHourSlots(options: SchedulingOptions): TimeSlot[] {
     }
 
     slots.push({
-      startTime: new Date(currentStart),
-      endTime: new Date(currentEnd),
+      startTime: currentStart,
+      endTime: currentEnd,
       duration: options.serviceDuration,
     });
 
@@ -322,7 +326,7 @@ export function getNextValidSlotTime(
   switch (rule) {
     case SchedulingRule.CONTINUOUS:
       // For continuous scheduling, any time is valid
-      return new Date(fromTime);
+      return fromTime;
 
     case SchedulingRule.ON_THE_HOUR:
       let intervalMinutes = 15; // Default
@@ -343,10 +347,10 @@ export function getNextValidSlotTime(
           Math.ceil(minutesFromStart / ruleConfig.interval) * ruleConfig.interval;
         return addMinutes(startOfDayTime, nextInterval);
       }
-      return new Date(fromTime);
+      return fromTime;
 
     default:
-      return new Date(fromTime);
+      return fromTime;
   }
 }
 

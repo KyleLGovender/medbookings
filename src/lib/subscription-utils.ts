@@ -1,6 +1,7 @@
 import { Subscription, SubscriptionStatus, SubscriptionType } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
+import { addMilliseconds, nowUTC } from '@/lib/timezone';
 
 /**
  * Subscription utility functions that handle the polymorphic constraint properly
@@ -14,12 +15,12 @@ export type SubscriptionEntity =
   | { type: 'provider'; id: string };
 
 export interface SubscriptionWithRelations extends Subscription {
-  plan?: any;
-  organization?: any;
-  location?: any;
-  provider?: any;
-  payments?: any[];
-  usageRecords?: any[];
+  plan?: { id: string; name: string; description: string | null } | null;
+  organization?: { id: string; name: string } | null;
+  location?: { id: string; name: string } | null;
+  provider?: { id: string; name: string } | null;
+  payments?: Array<{ id: string; amount: unknown; status: string }>;
+  usageRecords?: Array<{ id: string; slotDate: Date; slotStatus: string }>;
 }
 
 /**
@@ -36,7 +37,13 @@ export async function getSubscriptionsForEntity(
   const includeRelations = options?.includeRelations ?? false;
 
   // Build where clause based on entity type
-  const whereClause: any = {};
+  const whereClause: {
+    organizationId?: string | null;
+    locationId?: string | null;
+    providerId?: string | null;
+    status?: SubscriptionStatus;
+    type?: SubscriptionType;
+  } = {};
 
   switch (entity.type) {
     case 'organization':
@@ -121,7 +128,21 @@ export async function createSubscriptionForEntity(
   }
 ): Promise<SubscriptionWithRelations> {
   // Ensure only one entity field is set
-  const subscriptionData: any = {
+  const subscriptionData: {
+    planId: string;
+    type: SubscriptionType;
+    status: SubscriptionStatus;
+    startDate: Date;
+    endDate?: Date;
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+    billingCycleStart: Date;
+    billingCycleEnd: Date;
+    currentMonthSlots: number;
+    organizationId: string | null;
+    locationId: string | null;
+    providerId: string | null;
+  } = {
     planId: data.planId,
     type: data.type || 'BASE',
     status: data.status,
@@ -130,7 +151,7 @@ export async function createSubscriptionForEntity(
     stripeCustomerId: data.stripeCustomerId,
     stripeSubscriptionId: data.stripeSubscriptionId,
     billingCycleStart: data.startDate,
-    billingCycleEnd: new Date(data.startDate.getTime() + 30 * 24 * 60 * 60 * 1000), // 30 days
+    billingCycleEnd: addMilliseconds(data.startDate, 30 * 24 * 60 * 60 * 1000), // 30 days
     currentMonthSlots: 0,
     // Initialize all polymorphic fields to null
     organizationId: null,
@@ -170,7 +191,11 @@ export async function updateSubscriptionEntity(
   newEntity: SubscriptionEntity
 ): Promise<SubscriptionWithRelations> {
   // Prepare update data with all polymorphic fields cleared first
-  const updateData: any = {
+  const updateData: {
+    organizationId: string | null;
+    locationId: string | null;
+    providerId: string | null;
+  } = {
     organizationId: null,
     locationId: null,
     providerId: null,
@@ -244,7 +269,10 @@ export async function getAllSubscriptions(options?: {
   limit?: number;
   offset?: number;
 }): Promise<SubscriptionWithRelations[]> {
-  const whereClause: any = {};
+  const whereClause: {
+    status?: SubscriptionStatus;
+    type?: SubscriptionType;
+  } = {};
 
   if (options?.status) {
     whereClause.status = options.status;
@@ -284,7 +312,7 @@ export async function cancelSubscription(
     where: { id: subscriptionId },
     data: {
       status: 'CANCELLED',
-      cancelledAt: new Date(),
+      cancelledAt: nowUTC(),
       cancelReason: reason || 'Cancelled via API',
     },
     include: {
@@ -307,7 +335,11 @@ export async function getSubscriptionStats(entity: SubscriptionEntity): Promise<
   pastDue: number;
   trialing: number;
 }> {
-  const whereClause: any = {};
+  const whereClause: {
+    organizationId?: string;
+    locationId?: string;
+    providerId?: string;
+  } = {};
 
   switch (entity.type) {
     case 'organization':

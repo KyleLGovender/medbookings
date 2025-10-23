@@ -14,6 +14,7 @@ import { useRegisterOrganization } from '@/features/organizations/hooks/use-regi
 import { organizationRegistrationSchema } from '@/features/organizations/types/schemas';
 import { OrganizationRegistrationData } from '@/features/organizations/types/types';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 import { BillingConfigurationStep } from './billing-configuration-step';
 import { LocationSetupStep } from './location-setup-step';
@@ -73,17 +74,19 @@ export function OrganizationRegistrationForm() {
           `locations.${i}.formattedAddress`,
         ]);
         if (!isLocationValid) {
-          console.log(
-            `Location ${i} validation failed:`,
-            (form.formState.errors.locations as any)?.[i]
-          );
+          logger.debug('forms', 'Location validation failed', {
+            locationIndex: i,
+            hasErrors: !!(
+              Array.isArray(form.formState.errors.locations) && form.formState.errors.locations[i]
+            ),
+          });
           return false;
         }
       }
       return true;
     }
 
-    return await form.trigger(fieldsToValidate as any);
+    return await form.trigger(fieldsToValidate as ('organization' | 'locations')[]);
   };
 
   const goToStep = async (stepNumber: number) => {
@@ -111,12 +114,13 @@ export function OrganizationRegistrationForm() {
   };
 
   const nextStep = async () => {
-    console.log('Attempting to go to next step from:', currentStep);
-    console.log('Current form values:', form.getValues());
-    console.log('Current form errors:', form.formState.errors);
+    logger.debug('forms', 'Attempting to go to next step', {
+      currentStep,
+      hasErrors: !!Object.keys(form.formState.errors).length,
+    });
 
     const isValid = await validateStep(currentStep);
-    console.log('Step validation result:', isValid);
+    logger.debug('forms', 'Step validation result', { currentStep, isValid });
 
     if (isValid) {
       setCompletedSteps((prev) => {
@@ -128,7 +132,7 @@ export function OrganizationRegistrationForm() {
         setCurrentStep(currentStep + 1);
       }
     } else {
-      console.log('Validation failed, staying on current step');
+      logger.debug('forms', 'Validation failed, staying on current step', { currentStep });
       // Force form to show errors
       await form.trigger();
     }
@@ -141,10 +145,15 @@ export function OrganizationRegistrationForm() {
   };
 
   const onSubmit = async (data: OrganizationRegistrationData) => {
-    console.log('onSubmit called with data:', data); // Add this line
+    logger.info('Organization registration submission started', {
+      hasLocations: !!(data.locations && data.locations.length > 0),
+      locationCount: data.locations?.length || 0,
+    });
     try {
       const organization = await registerOrganizationMutation.mutateAsync(data);
-      console.log('Mutation successful:', organization); // Add this line
+      logger.info('Organization registration successful', {
+        organizationId: organization.id,
+      });
       toast({
         title: 'Organization registered successfully',
         description: 'Your organization has been created.',
@@ -153,7 +162,9 @@ export function OrganizationRegistrationForm() {
       // Redirect to profile page after successful registration
       router.push('/profile');
     } catch (error) {
-      console.error('Registration failed:', error);
+      logger.error('Organization registration failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       toast({
         title: 'Registration failed',
         description: error instanceof Error ? error.message : 'An unexpected error occurred',

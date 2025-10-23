@@ -1,20 +1,73 @@
 import { BookingFormData } from '@/features/calendar/components/booking-slot-modal';
+import { logger } from '@/lib/logger';
 import { api } from '@/utils/api';
 
 interface UseCreateBookingOptions {
-  onSuccess?: (data: any, variables: BookingFormData) => void;
-  onError?: (error: Error) => void;
+  onSuccess?: (data: unknown, variables: BookingFormData) => void;
+  onError?: (error: unknown) => void;
+  providerId?: string;
 }
 
 export function useCreateBooking(options?: UseCreateBookingOptions) {
-  return api.calendar.createPublicBooking.useMutation({
-    onSuccess: (data, variables) => {
-      // Invalidate related queries to refresh the data
-      // This will update the slot availability immediately
+  const utils = api.useUtils();
 
-      console.log('Booking created successfully:', data);
-      options?.onSuccess?.(data, variables);
+  return api.calendar.createPublicBooking.useMutation({
+    onSuccess: async (data, variables) => {
+      // Invalidate and refetch related queries to refresh the data
+      // This will update the slot availability immediately across all components
+
+      try {
+        // Invalidate provider availability if we know the provider ID
+        if (options?.providerId) {
+          await utils.calendar.getByProviderId.invalidate({
+            providerId: options.providerId,
+          });
+
+          // Also invalidate any provider search results
+          await utils.calendar.searchProvidersByLocation.invalidate();
+        }
+
+        // Invalidate general availability queries
+        await utils.calendar.getById.invalidate();
+
+        logger.info('Booking created successfully', {
+          bookingId: data.booking?.id,
+          bookingReference: data.booking?.id?.substring(0, 8).toUpperCase(),
+          guestName: data.booking?.guestName,
+          providerName: data.booking?.slot?.availability?.provider?.user?.name,
+          startTime: data.booking?.slot?.startTime,
+        });
+
+        // Call user-provided success handler
+        options?.onSuccess?.(data, variables);
+      } catch (error) {
+        logger.error('Error invalidating queries after successful booking', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        // Still call success handler even if query invalidation fails
+        options?.onSuccess?.(data, variables);
+      }
     },
-    onError: options?.onError as any,
+    onError: (error, variables) => {
+      logger.error('Booking creation failed', {
+        error: error.message,
+        slotId: variables.slotId,
+        guestName: variables.clientName,
+      });
+
+      options?.onError?.(new Error(error.message));
+    },
+    // Add optimistic updates for better UX
+    onMutate: async (variables) => {
+      // Cancel outgoing refetches so they don't overwrite our optimistic update
+      if (options?.providerId) {
+        await utils.calendar.getByProviderId.cancel({
+          providerId: options.providerId,
+        });
+      }
+
+      // Optionally, you could implement optimistic updates here
+      // For now, we'll rely on the success handler to update the cache
+    },
   });
 }

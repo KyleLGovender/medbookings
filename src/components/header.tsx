@@ -81,14 +81,19 @@ export default function Header() {
   // Fetch organization data for the current user
   const { data: organization } = useOrganizationByUserId(session?.user?.id);
 
+  // Check if user has calendar access (approved providers, admins, or super admins)
+  // Only providers with approved status can access calendar functionality
+  const hasCalendarAccess =
+    (provider && ['APPROVED', 'TRIAL', 'ACTIVE'].includes(provider.status)) || isAdmin;
+
   const profileMenuItems = [
     ...(isAdmin ? [{ label: 'Admin', href: '/admin' }] : []),
+    { label: 'Dashboard', href: '/dashboard' },
     { label: 'Profile', href: '/profile' },
-    ...(provider?.id ? [{ label: 'Provider', href: `/providers/${provider.id}` }] : []),
     ...(organization && organization.length > 0
       ? [{ label: 'Organizations', href: '/organizations/' }]
       : []),
-    { label: 'Calendar', href: '/calendar' },
+    ...(hasCalendarAccess ? [{ label: 'Calendar', href: '/calendar' }] : []),
     { label: 'Settings', href: '/settings' },
   ];
 

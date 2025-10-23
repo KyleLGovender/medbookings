@@ -55,9 +55,10 @@ export function DeleteProviderButton({
       }
     },
     onError: (error) => {
+      const message = error instanceof Error ? error.message : 'Failed to delete provider';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to delete provider',
+        description: message,
         variant: 'destructive',
       });
     },

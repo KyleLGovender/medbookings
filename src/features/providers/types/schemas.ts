@@ -68,7 +68,8 @@ export const providerSearchParamsSchema = z.object({
   status: providerStatusSchema.optional(),
   providerTypeId: z.string().uuid().optional(),
   serviceId: z.string().uuid().optional(),
-  search: z.string().optional(),
+  search: z.string().optional(), // General search (name, email, bio)
+  nameSearch: z.string().optional(), // Name-only search (more precise)
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
 });
@@ -89,6 +90,8 @@ export const basicInfoSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   whatsapp: z.string().min(10, 'Please enter a valid WhatsApp number'),
   showPrice: z.boolean().default(true),
+  providerTypeIds: z.array(z.string()).optional(), // Provider types for edit form
+  providerTypeId: z.string().optional(), // Legacy single provider type for backward compatibility
 });
 
 export const providerTypeSchema = z.object({});

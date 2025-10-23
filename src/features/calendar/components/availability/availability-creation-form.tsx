@@ -5,6 +5,16 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SchedulingRule } from '@prisma/client';
+import {
+  addHours,
+  setDate as setDateFns,
+  setHours,
+  setMilliseconds,
+  setMinutes,
+  setMonth,
+  setSeconds,
+  setYear,
+} from 'date-fns';
 import { Calendar, Clock, Loader2, Repeat } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
 
@@ -12,7 +22,7 @@ import CalendarLoader from '@/components/calendar-loader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DatePickerWithInput } from '@/components/ui/date-picker-with-input';
 import {
   Form,
   FormControl,
@@ -33,16 +43,18 @@ import { Separator } from '@/components/ui/separator';
 import { TimePicker } from '@/components/ui/time-picker';
 import { CustomRecurrenceModal } from '@/features/calendar/components/availability/custom-recurrence-modal';
 import { ServiceSelectionSection } from '@/features/calendar/components/availability/service-selection-section';
+import { useAssociatedServices } from '@/features/calendar/hooks/use-associated-services';
 import { useCreateAvailability } from '@/features/calendar/hooks/use-availability';
+import { useCurrentProvider } from '@/features/calendar/hooks/use-current-provider';
 import {
   createRecurrencePattern,
   getRecurrenceOptions,
 } from '@/features/calendar/lib/recurrence-utils';
 import { createAvailabilityDataSchema } from '@/features/calendar/types/schemas';
 import { CustomRecurrenceData, DayOfWeek, RecurrenceOption } from '@/features/calendar/types/types';
-import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
-import { useProviderAssociatedServices } from '@/features/providers/hooks/use-provider-associated-services';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
+import { nowUTC, parseUTC } from '@/lib/timezone';
 import { type RouterInputs, type RouterOutputs } from '@/utils/api';
 
 // Extract input type from tRPC procedure for zero type drift
@@ -64,10 +76,9 @@ type FormValues = CreateAvailabilityInput;
  * Helper function to update date while preserving time
  */
 const updateDatePreservingTime = (currentTime: Date, newDate: Date): Date => {
-  const updatedTime = new Date(currentTime);
-  updatedTime.setFullYear(newDate.getFullYear());
-  updatedTime.setMonth(newDate.getMonth());
-  updatedTime.setDate(newDate.getDate());
+  let updatedTime = setYear(currentTime, newDate.getFullYear());
+  updatedTime = setMonth(updatedTime, newDate.getMonth());
+  updatedTime = setDateFns(updatedTime, newDate.getDate());
   return updatedTime;
 };
 
@@ -97,21 +108,21 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
   const router = useRouter();
 
   // Fetch current provider data - required for this form
-  const { data: currentUserProvider, isLoading: isProviderLoading } = useCurrentUserProvider();
+  const { data: currentUserProvider, isLoading: isProviderLoading } = useCurrentProvider();
 
   // Fetch provider's services - must call hook unconditionally
   const {
     data: availableServices,
     isLoading: isServicesLoading,
     error: servicesError,
-  } = useProviderAssociatedServices(currentUserProvider?.id || '');
+  } = useAssociatedServices(currentUserProvider?.id || '');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(createAvailabilityDataSchema),
     defaultValues: {
       providerId: currentUserProvider?.id || '',
-      startTime: new Date(),
-      endTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
+      startTime: nowUTC(),
+      endTime: addHours(nowUTC(), 2), // 2 hours from now
       isRecurring: false,
       schedulingRule: SchedulingRule.CONTINUOUS,
       isOnlineAvailable: true,
@@ -148,7 +159,7 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
 
   // Memoize expensive recurrence options computation
   const recurrenceOptions = useMemo(() => {
-    const startTime = watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime);
+    const startTime = watchStartTime instanceof Date ? watchStartTime : parseUTC(watchStartTime);
     return getRecurrenceOptions(startTime);
   }, [watchStartTime]);
 
@@ -185,8 +196,8 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
     setIsSubmitting(true);
     try {
       // Ensure all Date fields are properly converted and enforce online-only for provider self-scheduling
-      const startTime = data.startTime instanceof Date ? data.startTime : new Date(data.startTime);
-      const endTime = data.endTime instanceof Date ? data.endTime : new Date(data.endTime);
+      const startTime = data.startTime instanceof Date ? data.startTime : parseUTC(data.startTime);
+      const endTime = data.endTime instanceof Date ? data.endTime : parseUTC(data.endTime);
 
       // Round times to clean minutes (zero seconds and milliseconds)
       startTime.setSeconds(0, 0);
@@ -202,7 +213,9 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
 
       await createMutation.mutateAsync(submitData);
     } catch (error) {
-      console.error('Failed to create availability:', error);
+      logger.error('Failed to create availability', {
+        error: error instanceof Error ? error.message : String(error),
+      });
 
       // Show user-friendly error message
       const errorMessage =
@@ -225,7 +238,7 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
    * Converts the selected days and end date into a recurrence pattern
    */
   const handleCustomRecurrenceSave = (data: CustomRecurrenceData) => {
-    const startTime = watchStartTime instanceof Date ? watchStartTime : new Date(watchStartTime);
+    const startTime = watchStartTime instanceof Date ? watchStartTime : parseUTC(watchStartTime);
     const pattern = createRecurrencePattern(
       RecurrenceOption.CUSTOM,
       startTime,
@@ -273,12 +286,12 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
                   <FormItem>
                     <FormLabel>Date</FormLabel>
                     <FormControl>
-                      <DatePicker
+                      <DatePickerWithInput
                         date={
                           field.value instanceof Date
                             ? field.value
                             : field.value
-                              ? new Date(field.value)
+                              ? parseUTC(field.value)
                               : undefined
                         }
                         onChange={(date) => {
@@ -290,11 +303,11 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
                             const startTimeDate =
                               currentStartTime instanceof Date
                                 ? currentStartTime
-                                : new Date(currentStartTime);
+                                : parseUTC(currentStartTime);
                             const endTimeDate =
                               currentEndTime instanceof Date
                                 ? currentEndTime
-                                : new Date(currentEndTime);
+                                : parseUTC(currentEndTime);
 
                             form.setValue(
                               'startTime',
@@ -321,7 +334,7 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
                       <FormLabel>Start Time</FormLabel>
                       <FormControl>
                         <TimePicker
-                          date={field.value instanceof Date ? field.value : new Date(field.value)}
+                          date={field.value instanceof Date ? field.value : parseUTC(field.value)}
                           onChange={field.onChange}
                         />
                       </FormControl>
@@ -338,18 +351,20 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
                       <FormLabel>End Time</FormLabel>
                       <FormControl>
                         <TimePicker
-                          date={field.value instanceof Date ? field.value : new Date(field.value)}
+                          date={field.value instanceof Date ? field.value : parseUTC(field.value)}
                           onChange={(newTime) => {
                             // Get the current date from the start time (which is updated by DatePicker)
                             const currentStartTime = form.getValues('startTime');
                             const baseDate =
                               currentStartTime instanceof Date
                                 ? currentStartTime
-                                : new Date(currentStartTime);
+                                : parseUTC(currentStartTime);
 
                             // Create new end time using the base date but with the selected time
-                            const updatedEndTime = new Date(baseDate);
-                            updatedEndTime.setHours(newTime.getHours(), newTime.getMinutes(), 0, 0);
+                            let updatedEndTime = setHours(baseDate, newTime.getHours());
+                            updatedEndTime = setMinutes(updatedEndTime, newTime.getMinutes());
+                            updatedEndTime = setSeconds(updatedEndTime, 0);
+                            updatedEndTime = setMilliseconds(updatedEndTime, 0);
 
                             field.onChange(updatedEndTime);
                           }}
@@ -388,13 +403,16 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
                             const startTime =
                               watchStartTime instanceof Date
                                 ? watchStartTime
-                                : new Date(watchStartTime);
+                                : parseUTC(watchStartTime);
                             const pattern = createRecurrencePattern(option, startTime);
                             field.onChange(pattern);
                             form.setValue('isRecurring', option !== RecurrenceOption.NONE);
                           }
                         }}
-                        defaultValue={field.value?.option || RecurrenceOption.NONE}
+                        defaultValue={
+                          (field.value as { option?: string } | undefined)?.option ||
+                          RecurrenceOption.NONE
+                        }
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -581,6 +599,8 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
                 availableServices={(availableServices || []).map((s) => ({
                   ...s,
                   description: s.description ?? undefined,
+                  price: Number(s.defaultPrice),
+                  duration: s.defaultDuration,
                 }))}
               />
             )}
@@ -602,7 +622,9 @@ export function AvailabilityCreationForm({ onSuccess, onCancel }: AvailabilityCr
                     <div className="space-y-1 leading-none">
                       <FormLabel>Requires Confirmation</FormLabel>
                       <FormDescription>
-                        Manually approve bookings for this availability
+                        When enabled, bookings for this availability will require manual approval
+                        from the provider before confirmation. When disabled, bookings are
+                        automatically confirmed.
                       </FormDescription>
                     </div>
                   </FormItem>

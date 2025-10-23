@@ -4,6 +4,7 @@ import { google } from 'googleapis';
 
 import env from '@/config/env/server';
 import { prisma } from '@/lib/prisma';
+import { fromTimestamp } from '@/lib/timezone';
 
 const defaultMeetSettings = {
   requireAuthentication: true,
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest) {
     update: {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
-      expiresAt: new Date(tokens.expiry_date!),
+      expiresAt: fromTimestamp(tokens.expiry_date!),
       calendarProvider: 'GOOGLE',
       googleEmail: userProfile.data.emailAddresses?.[0].value,
       calendarId: calendarList.data.items?.[0].id,
@@ -58,7 +59,7 @@ export async function GET(req: NextRequest) {
       providerId,
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
-      expiresAt: new Date(tokens.expiry_date!),
+      expiresAt: fromTimestamp(tokens.expiry_date!),
       calendarProvider: 'GOOGLE',
       googleEmail: userProfile.data.emailAddresses?.[0].value,
       calendarId: calendarList.data.items?.[0].id,

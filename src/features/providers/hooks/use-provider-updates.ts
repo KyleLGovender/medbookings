@@ -6,8 +6,8 @@ import { api } from '@/utils/api';
  * @returns Mutation object for updating provider basic info
  */
 export function useUpdateProviderBasicInfo(options?: {
-  onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onSuccess?: (data: unknown) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -17,7 +17,7 @@ export function useUpdateProviderBasicInfo(options?: {
       utils.providers.getById.invalidate({ id: variables.id });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }
 
@@ -27,8 +27,8 @@ export function useUpdateProviderBasicInfo(options?: {
  * @returns Mutation object for updating provider services
  */
 export function useUpdateProviderServices(options?: {
-  onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onSuccess?: (data: unknown) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -36,10 +36,10 @@ export function useUpdateProviderServices(options?: {
     onSuccess: (data, variables) => {
       // Invalidate provider and services queries
       utils.providers.getById.invalidate({ id: variables.id });
-      utils.providers.getProviderServices.invalidate({ id: variables.id });
+      utils.providers.getProviderAllServices.invalidate({ providerId: variables.id });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }
 
@@ -49,8 +49,8 @@ export function useUpdateProviderServices(options?: {
  * @returns Mutation object for updating provider requirements
  */
 export function useUpdateProviderRequirements(options?: {
-  onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onSuccess?: (data: unknown) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -60,6 +60,6 @@ export function useUpdateProviderRequirements(options?: {
       utils.providers.getById.invalidate({ id: variables.id });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }

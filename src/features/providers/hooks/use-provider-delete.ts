@@ -8,8 +8,8 @@ import { api } from '@/utils/api';
  * @returns Mutation object for deleting a provider
  */
 export function useDeleteProvider(options?: {
-  onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onSuccess?: (data: unknown) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -19,9 +19,16 @@ export function useDeleteProvider(options?: {
       utils.providers.getById.invalidate({ id: variables.id });
       utils.providers.search.invalidate();
 
+      // Invalidate getByUserId queries - this ensures Settings page updates reactively
+      utils.providers.getByUserId.invalidate();
+
+      // Also invalidate profile and settings queries as they may depend on provider status
+      utils.profile.invalidate();
+      utils.settings.invalidate();
+
       // Call the user-provided onSuccess callback if it exists
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }

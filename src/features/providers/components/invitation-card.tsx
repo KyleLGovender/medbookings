@@ -32,6 +32,7 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useRespondToInvitation } from '@/features/providers/hooks/use-organization-connections';
 import { useToast } from '@/hooks/use-toast';
+import { nowUTC } from '@/lib/timezone';
 import { type RouterOutputs } from '@/utils/api';
 
 type ProviderInvitationWithOrganization =
@@ -97,9 +98,10 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
       setRejectionReason('');
     },
     onError: (error) => {
+      const err = error as Error;
       toast({
         title: 'Failed to respond to invitation',
-        description: error.message,
+        description: err.message,
         variant: 'destructive',
       });
     },
@@ -132,7 +134,7 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
     );
   };
 
-  const isExpired = new Date(invitation.expiresAt) < new Date();
+  const isExpired = invitation.expiresAt < nowUTC();
   const isPending = invitation.status === ProviderInvitationStatus.PENDING && !isExpired;
 
   return (
@@ -237,9 +239,9 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
                 <span className="font-medium">{isExpired ? 'Expired:' : 'Expires:'}</span>
               </div>
               <p className={`ml-6 ${isExpired ? 'text-destructive' : 'text-muted-foreground'}`}>
-                {format(new Date(invitation.expiresAt), 'MMM d, yyyy')}
+                {format(invitation.expiresAt, 'MMM d, yyyy')}
                 <span className="ml-2 text-xs">
-                  ({formatDistanceToNow(new Date(invitation.expiresAt), { addSuffix: true })})
+                  ({formatDistanceToNow(invitation.expiresAt, { addSuffix: true })})
                 </span>
               </p>
             </div>

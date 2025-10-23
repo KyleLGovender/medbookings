@@ -4,20 +4,46 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { UserRole } from '@prisma/client';
 import { DefaultSession, NextAuthOptions, Session, getServerSession } from 'next-auth';
 import { JWT, getToken } from 'next-auth/jwt';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 
 import env from '@/config/env/server';
+import { logger, sanitizeEmail } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
+import { addMilliseconds, nowUTC } from '@/lib/timezone';
+
+// Simple password hashing utility (will add bcryptjs as dependency)
+async function hashPassword(password: string): Promise<string> {
+  const crypto = await import('crypto');
+  return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+  const hashedInput = await hashPassword(password);
+  return hashedInput === hashedPassword;
+}
 
 declare module 'next-auth' {
   interface Session extends DefaultSession {
     accessToken?: string;
+    user: {
+      id: string;
+      role: UserRole;
+      emailVerified: Date | null;
+    } & DefaultSession['user'];
+  }
+
+  interface User {
+    role: UserRole;
   }
 }
 
 declare module 'next-auth/jwt' {
   interface JWT {
     accessToken?: string;
+    id?: string;
+    role?: UserRole;
+    emailVerified?: Date | null;
   }
 }
 
@@ -34,18 +60,9 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt', // Make sure this is set
   },
-  // Ensure cookies work correctly across environments
-  useSecureCookies: process.env.NODE_ENV === 'production',
-  cookies: {
-    sessionToken: {
-      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
+  pages: {
+    signIn: '/login',
+    newUser: '/', // Redirect new users to home page
   },
   providers: [
     GoogleProvider({
@@ -58,110 +75,380 @@ export const authOptions: NextAuthOptions = {
           prompt: 'consent',
         },
       },
-      profile(profile) {
-        console.log('Google profile received:', {
-          id: profile.sub,
-          email: profile.email,
-          name: profile.name,
-        });
-        return {
-          id: profile.sub,
-          name: profile.name,
-          email: profile.email,
-          image: profile.picture,
-          role: 'USER' as any,
-        };
+    }),
+    CredentialsProvider({
+      name: 'credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('CredentialsRequired');
+        }
+
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              password: true,
+              role: true,
+              emailVerified: true,
+            },
+          });
+
+          // User doesn't exist at all
+          if (!user) {
+            logger.warn('Credentials sign-in blocked - user not found', {
+              email: sanitizeEmail(credentials.email),
+            });
+            throw new Error('UserNotFound');
+          }
+
+          // User exists but has no password (OAuth user trying to sign in with credentials)
+          if (!user.password) {
+            logger.warn('Credentials sign-in blocked - OAuth user attempting credentials login', {
+              email: sanitizeEmail(credentials.email),
+            });
+            throw new Error('OAuthUserAttemptingCredentials');
+          }
+
+          const isPasswordValid = await verifyPassword(credentials.password, user.password);
+          if (!isPasswordValid) {
+            logger.warn('Credentials sign-in blocked - invalid password', {
+              email: sanitizeEmail(credentials.email),
+            });
+            throw new Error('InvalidPassword');
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          };
+        } catch (error) {
+          logger.error('Auth error', {
+            error: error instanceof Error ? error.message : String(error),
+          });
+          // Re-throw our custom errors, or wrap unknown errors
+          if (
+            error instanceof Error &&
+            [
+              'CredentialsRequired',
+              'UserNotFound',
+              'OAuthUserAttemptingCredentials',
+              'InvalidPassword',
+            ].includes(error.message)
+          ) {
+            throw error;
+          }
+          throw new Error('AuthenticationFailed');
+        }
       },
     }),
   ],
-  pages: {
-    signIn: '/login',
-    error: '/error', // Custom error page
-  },
   callbacks: {
-    async signIn({ user, account, profile, email, credentials }) {
-      // Log sign-in attempts for monitoring
-      console.log('Sign-in callback started:', {
-        userId: user?.id,
-        email: user?.email,
-        provider: account?.provider,
-        timestamp: new Date().toISOString(),
-      });
+    async signIn({ user, account, profile }) {
+      // For Google OAuth, always allow account creation
+      if (account?.provider === 'google' && user.email) {
+        try {
+          // Check if user already exists
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email },
+            select: { id: true, role: true, email: true, emailVerified: true },
+          });
 
-      try {
-        // Allow sign-in by default
-        // You can add custom logic here to deny sign-in for specific cases
-        console.log('Sign-in callback successful');
-        return true;
-      } catch (error) {
-        console.error('Sign-in callback error:', error);
-        return false;
-      }
-    },
-    async jwt({ token, user, account }) {
-      try {
-        if (user) {
-          console.log('JWT callback - creating token for user:', user.email);
-          token.accessToken = account?.access_token;
-          token.refreshToken = account?.refresh_token;
-          return {
-            ...token,
-            id: user.id,
-            role: user.role,
-          };
+          // Auto-promote configured admin emails to ADMIN role on sign-in
+          const adminEmails =
+            process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || [];
+
+          if (user.email && adminEmails.includes(user.email)) {
+            if (existingUser && existingUser.role !== 'ADMIN') {
+              await prisma.user.update({
+                where: { email: user.email },
+                data: { role: 'ADMIN' },
+              });
+              user.role = 'ADMIN';
+            } else if (existingUser && existingUser.role === 'ADMIN') {
+              user.role = 'ADMIN';
+            } else if (!existingUser) {
+              // For new users, set the role property so it gets saved correctly
+              user.role = 'ADMIN';
+            }
+          }
+
+          // For existing Google OAuth users, automatically set emailVerified to true if not already set
+          if (existingUser && !existingUser.emailVerified) {
+            await prisma.user.update({
+              where: { id: existingUser.id },
+              data: { emailVerified: nowUTC() },
+            });
+          }
+
+          logger.info('Google OAuth sign-in allowed', {
+            email: sanitizeEmail(user.email || ''),
+            isExistingUser: !!existingUser,
+          });
+          return true; // Always allow Google OAuth
+        } catch (error) {
+          logger.error('Error during Google OAuth sign-in check', {
+            error: error instanceof Error ? error.message : String(error),
+          });
+          return '/login?error=OAuthCallback';
         }
-        return token;
-      } catch (error) {
-        console.error('JWT callback error:', error);
-        throw error;
       }
+
+      // For non-Google OAuth providers or credentials, use original logic
+      const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || [];
+
+      if (user.email && adminEmails.includes(user.email)) {
+        try {
+          // First, check if user exists and get their current role
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email },
+            select: { id: true, role: true, email: true },
+          });
+
+          if (existingUser && existingUser.role !== 'ADMIN') {
+            await prisma.user.update({
+              where: { email: user.email },
+              data: { role: 'ADMIN' },
+            });
+
+            // Update the user object to reflect the new role
+            user.role = 'ADMIN';
+          } else if (existingUser && existingUser.role === 'ADMIN') {
+            user.role = 'ADMIN';
+          } else if (!existingUser) {
+            // For new users, set the role property so it gets saved correctly
+            user.role = 'ADMIN';
+          }
+        } catch (error) {
+          // Silent fail - user will still be able to sign in with default role
+        }
+      }
+
+      return true; // Allow sign-in
+    },
+    async redirect({ url, baseUrl }) {
+      // If we're coming from a login page, redirect to home page
+      if (url.startsWith(`${baseUrl}/login`) || url === baseUrl) {
+        return `${baseUrl}/`;
+      }
+      // If it's a relative URL, prepend baseUrl
+      if (url.startsWith('/')) {
+        return baseUrl + url;
+      }
+      // If URL is on the same origin, allow it
+      if (new URL(url).origin === baseUrl) {
+        return url;
+      }
+      // Otherwise, redirect to home page
+      return `${baseUrl}/`;
+    },
+    async jwt({ token, user, account, trigger }) {
+      // When user signs in for the first time
+      if (user) {
+        // Fetch the latest user data from database to get the correct role and email verification status
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { id: true, role: true, email: true, emailVerified: true },
+        });
+
+        token.accessToken = account?.access_token;
+        token.refreshToken = account?.refresh_token;
+        return {
+          ...token,
+          id: user.id,
+          role: dbUser?.role || user.role || 'USER', // Use database role, fallback to user object role, then default to USER
+          emailVerified: dbUser?.emailVerified || null,
+        };
+      }
+
+      // On subsequent requests, refresh data from database if:
+      // 1. Missing role or emailVerified data, OR
+      // 2. Session update is triggered (e.g., after email verification)
+      if (
+        token &&
+        (!token.role || token.emailVerified === undefined || trigger === 'update') &&
+        token.id
+      ) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true, emailVerified: true },
+        });
+
+        if (dbUser) {
+          token.role = dbUser.role;
+          token.emailVerified = dbUser.emailVerified;
+        }
+      }
+
+      return token;
     },
     async session({ session, token }: { session: Session; token: JWT }) {
-      try {
-        session.accessToken = token.accessToken;
-        return {
-          ...session,
-          user: {
-            ...session.user,
-            id: token.id,
-            role: token.role,
-          },
-        };
-      } catch (error) {
-        console.error('Session callback error:', error);
-        throw error;
-      }
+      session.accessToken = token.accessToken;
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id,
+          role: token.role,
+          emailVerified: token.emailVerified,
+        },
+      };
     },
   },
   events: {
-    async signIn({ user, account, profile, isNewUser }) {
-      // Log successful sign-ins
-      console.log('Successful sign-in:', {
-        userId: user.id,
-        email: user.email,
-        provider: account?.provider,
-        isNewUser,
-        timestamp: new Date().toISOString(),
+    async createUser({ user }) {
+      logger.info('NextAuth createUser event triggered', {
+        email: sanitizeEmail(user.email || ''),
       });
-    },
-    async signOut({ session, token }) {
-      // Log sign-outs
-      console.log('Sign-out:', {
-        userId: token?.sub,
-        timestamp: new Date().toISOString(),
+
+      // For Google OAuth users, set emailVerified to true immediately
+      // Google has already verified the email address
+      const isGoogleUser = user.image?.includes('googleusercontent.com') || false;
+
+      logger.info('User creation details', {
+        email: sanitizeEmail(user.email || ''),
+        isGoogleUser,
+        hasImage: !!user.image,
       });
-    },
-  },
-  debug: true, // Enable debug logs to troubleshoot staging
-  logger: {
-    error(code, metadata) {
-      console.error('[NextAuth Error]', code, JSON.stringify(metadata, null, 2));
-    },
-    warn(code) {
-      console.warn('[NextAuth Warning]', code);
-    },
-    debug(code, metadata) {
-      console.log('[NextAuth Debug]', code, JSON.stringify(metadata, null, 2));
+
+      if (isGoogleUser) {
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { emailVerified: nowUTC() },
+          });
+          logger.info('Set emailVerified=true for Google user', {
+            email: sanitizeEmail(user.email || ''),
+          });
+        } catch (error) {
+          logger.error('Failed to set emailVerified for Google user', {
+            email: sanitizeEmail(user.email || ''),
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+
+      // Check if this new user should be an admin
+      const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || [];
+
+      if (user.email && adminEmails.includes(user.email)) {
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { role: 'ADMIN' },
+          });
+        } catch (error) {
+          // Silent fail - user will have default role
+        }
+      }
+
+      // Send appropriate email based on verification status
+      if (user.email) {
+        try {
+          const { sendEmailVerification, sendEmail } = await import('@/lib/communications/email');
+
+          // Re-check verification status after potential update above
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { emailVerified: true },
+          });
+
+          logger.info('Final user email verification status', {
+            email: sanitizeEmail(user.email),
+            emailVerified: !!dbUser?.emailVerified,
+            willSendVerification: !dbUser?.emailVerified,
+          });
+
+          if (!dbUser?.emailVerified) {
+            // Generate and send verification email for unverified users
+            const crypto = await import('crypto');
+            const token = crypto.randomBytes(32).toString('hex');
+            const expires = addMilliseconds(nowUTC(), 24 * 60 * 60 * 1000); // 24 hours from now
+
+            // Store verification token in database
+            await prisma.emailVerificationToken.create({
+              data: {
+                identifier: user.email,
+                token,
+                expires,
+              },
+            });
+
+            // Send verification email
+            await sendEmailVerification(user.email, token, user.name || undefined);
+            logger.info('Verification email sent to new user', {
+              email: sanitizeEmail(user.email),
+            });
+          } else {
+            // Send regular welcome email for verified users
+            await sendEmail({
+              to: user.email,
+              subject: 'Welcome to MedBookings!',
+              html: `
+              <!DOCTYPE html>
+              <html>
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <title>Welcome to MedBookings</title>
+                </head>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                    <h1 style="color: white; margin: 0;">Welcome to MedBookings</h1>
+                  </div>
+
+                  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
+                    <h2 style="color: #333; margin-bottom: 20px;">Thank you for joining us!</h2>
+
+                    <p>Hi ${user.name || 'there'},</p>
+
+                    <p>Welcome to MedBookings! Your account has been successfully created.</p>
+
+                    <p>You can now:</p>
+                    <ul>
+                      <li>Browse and book appointments with healthcare providers</li>
+                      <li>Manage your bookings and medical history</li>
+                      <li>Join organizations and access their services</li>
+                      <li>Become a healthcare provider (subject to approval)</li>
+                    </ul>
+
+                    <p style="margin-top: 20px;">If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
+
+                    <div style="text-align: center; margin-top: 30px;">
+                      <a href="${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Visit MedBookings</a>
+                    </div>
+                  </div>
+
+                  <div style="margin-top: 20px; padding: 20px; text-align: center; color: #666; font-size: 14px;">
+                    <p>© 2024 MedBookings. All rights reserved.</p>
+                    <p>Cape Town, South Africa</p>
+                  </div>
+                </body>
+              </html>
+            `,
+              text: `Welcome to MedBookings!\n\nHi ${user.name || 'there'},\n\nYour account has been successfully created. You can now browse and book appointments with healthcare providers.\n\nVisit: ${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}`,
+            });
+
+            logger.info('Welcome email sent to verified user', {
+              email: sanitizeEmail(user.email),
+            });
+          }
+        } catch (error) {
+          logger.error('Failed to send email', {
+            email: sanitizeEmail(user.email || ''),
+            error: error instanceof Error ? error.message : String(error),
+          });
+          // Don't fail the sign-up process if email fails
+        }
+      }
     },
   },
 };
@@ -195,7 +482,7 @@ export async function GET(req: NextRequest) {
         update: {
           accessToken: token.accessToken as string,
           refreshToken: token.refreshToken as string,
-          expiresAt: new Date(Date.now() + 3600 * 1000), // 1 hour from now
+          expiresAt: addMilliseconds(nowUTC(), 3600 * 1000), // 1 hour from now
           calendarProvider: 'GOOGLE',
           googleEmail: token.email as string,
         },
@@ -203,7 +490,7 @@ export async function GET(req: NextRequest) {
           providerId: provider.id,
           accessToken: token.accessToken as string,
           refreshToken: token.refreshToken as string,
-          expiresAt: new Date(Date.now() + 3600 * 1000),
+          expiresAt: addMilliseconds(nowUTC(), 3600 * 1000),
           calendarProvider: 'GOOGLE',
           googleEmail: token.email as string,
         },

@@ -20,6 +20,7 @@ import {
   useOrganizationConnections,
   useProviderInvitations,
 } from '@/features/providers/hooks/use-organization-connections';
+import { nowUTC } from '@/lib/timezone';
 
 import { ConnectionCard } from './connection-card';
 import { InvitationCard } from './invitation-card';
@@ -74,12 +75,12 @@ export function OrganizationConnectionsManager() {
 
   // Count pending invitations for tab badge
   const pendingInvitationsCount = invitations.filter(
-    (inv) => inv.status === ProviderInvitationStatus.PENDING && new Date(inv.expiresAt) > new Date()
+    (inv) => inv.status === ProviderInvitationStatus.PENDING && inv.expiresAt > nowUTC()
   ).length;
 
   const LoadingCards = () => (
     <div className="space-y-4">
-      {[...Array(3)].map((_, i) => (
+      {([...Array(3)] as unknown[]).map((_, i) => (
         <Card key={i}>
           <CardHeader>
             <div className="flex items-start gap-3">
@@ -110,7 +111,7 @@ export function OrganizationConnectionsManager() {
     title,
     description,
   }: {
-    icon: any;
+    icon: React.ComponentType<{ className?: string }>;
     title: string;
     description: string;
   }) => (
@@ -258,7 +259,7 @@ export function OrganizationConnectionsManager() {
                   invitation={invitation}
                   showActions={
                     invitation.status === ProviderInvitationStatus.PENDING &&
-                    new Date(invitation.expiresAt) > new Date()
+                    invitation.expiresAt > nowUTC()
                   }
                 />
               ))}

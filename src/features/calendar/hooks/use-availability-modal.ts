@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import type { AvailabilityAction, SeriesActionScope } from '@/features/calendar/types/modal';
+import type { AvailabilityAction, SeriesActionScope } from '@/features/calendar/types/types';
 import type { RouterOutputs } from '@/utils/api';
 
 type AvailabilityData = RouterOutputs['calendar']['searchAvailability'][number];

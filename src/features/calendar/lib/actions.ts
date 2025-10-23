@@ -1,6 +1,12 @@
 'use server';
 
-import { AvailabilityStatus, BillingEntity, OrganizationRole, UserRole } from '@prisma/client';
+import {
+  AvailabilityStatus,
+  BillingEntity,
+  OrganizationRole,
+  Prisma,
+  UserRole,
+} from '@prisma/client';
 
 import {
   createAvailabilityDataSchema,
@@ -9,9 +15,21 @@ import {
 import { CreateAvailabilityData, UpdateAvailabilityData } from '@/features/calendar/types/types';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { parseUTC } from '@/lib/timezone';
 
 import { validateAvailability, validateRecurringAvailability } from './availability-validation';
 import { generateRecurringInstances } from './recurrence-utils';
+
+// Use Prisma type matching the actual availability query structure used in validation functions
+type AvailabilityWithSlots = Prisma.AvailabilityGetPayload<{
+  include: {
+    calculatedSlots: {
+      include: {
+        booking: true;
+      };
+    };
+  };
+}>;
 
 /**
  * Validate availability creation and prepare data for database operations
@@ -102,7 +120,7 @@ export async function validateAvailabilityCreation(data: CreateAvailabilityData)
     if (validatedData.isRecurring && validatedData.recurrencePattern) {
       // Validate end date is after start date
       if (validatedData.recurrencePattern.endDate) {
-        const endDate = new Date(validatedData.recurrencePattern.endDate);
+        const endDate = parseUTC(validatedData.recurrencePattern.endDate);
         if (endDate <= validatedData.startTime) {
           return { success: false, error: 'Recurrence end date must be after start date' };
         }
@@ -204,7 +222,7 @@ export async function validateAvailabilityUpdate(data: UpdateAvailabilityData): 
     updateStrategy: 'single' | 'future' | 'all';
     needsSlotRegeneration: boolean;
     affectedAvailabilityIds?: string[];
-    existingAvailability?: any;
+    existingAvailability?: AvailabilityWithSlots;
   };
   error?: string;
 }> {
@@ -329,7 +347,7 @@ export async function validateAvailabilityUpdate(data: UpdateAvailabilityData): 
     let affectedAvailabilityIds: string[] = [validatedData.id];
 
     if (validatedData.scope && existingAvailability.isRecurring && existingAvailability.seriesId) {
-      const currentDate = new Date(existingAvailability.startTime);
+      const currentDate = existingAvailability.startTime;
 
       if (validatedData.scope === 'future') {
         const futureAvailabilities = await prisma.availability.findMany({
@@ -381,7 +399,7 @@ export async function validateAvailabilityDeletion(
     targetAvailabilityId: string;
     deleteStrategy: 'single' | 'future' | 'all';
     affectedAvailabilityIds: string[];
-    existingAvailability: any;
+    existingAvailability: AvailabilityWithSlots;
     canDelete: boolean;
   };
   error?: string;
@@ -443,7 +461,7 @@ export async function validateAvailabilityDeletion(
     let affectedAvailabilityIds: string[] = [id];
 
     if (scope && existingAvailability.seriesId) {
-      const currentDate = new Date(existingAvailability.startTime);
+      const currentDate = existingAvailability.startTime;
 
       if (scope === 'future') {
         const futureAvailabilities = await prisma.availability.findMany({

@@ -30,7 +30,7 @@ export default async function AdminOrganizationsPage({
     OrganizationStatus.REJECTED,
   ] as const;
   const initialStatus =
-    status && validStatuses.includes(status as any)
+    status && (validStatuses as readonly string[]).includes(status)
       ? (status as (typeof validStatuses)[number])
       : undefined;
 

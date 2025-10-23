@@ -15,12 +15,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAdminOrganization } from '@/features/admin/hooks/use-admin-organizations';
 import {
   useApproveOrganization,
   useRejectOrganization,
   useResetOrganizationStatus,
-} from '@/features/organizations/hooks/use-admin-organization-approval';
-import { useAdminOrganization } from '@/features/organizations/hooks/use-admin-organizations';
+} from '@/features/admin/hooks/use-organization-approval';
+import { logger } from '@/lib/logger';
+import { nowUTC } from '@/lib/timezone';
 import { type RouterOutputs } from '@/utils/api';
 
 import { StatusBadge } from '../../../../components/status-badge';
@@ -88,15 +90,20 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
   };
 
   const handleResetOrganizationStatus = async () => {
-    console.log('Resetting organization status:', {
+    logger.debug('admin', 'Resetting organization status', {
       organizationId,
       currentStatus: organization?.status,
     });
     try {
       await resetOrganizationStatusMutation.mutateAsync({ id: organizationId });
-      console.log('Organization status reset successful');
+      logger.info('Organization status reset successful', {
+        organizationId,
+      });
     } catch (error) {
-      console.error('Organization status reset failed:', error);
+      logger.error('Organization status reset failed', {
+        organizationId,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   };
 
@@ -250,17 +257,13 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Submitted</label>
                   <p className="text-sm">
-                    {organization?.createdAt
-                      ? new Date(organization.createdAt).toLocaleString()
-                      : 'N/A'}
+                    {organization?.createdAt ? organization.createdAt.toLocaleString() : 'N/A'}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
                   <p className="text-sm">
-                    {organization?.updatedAt
-                      ? new Date(organization.updatedAt).toLocaleString()
-                      : 'N/A'}
+                    {organization?.updatedAt ? organization.updatedAt.toLocaleString() : 'N/A'}
                   </p>
                 </div>
               </div>
@@ -350,7 +353,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                 <div className="text-2xl font-bold">
                   {organization?.createdAt
                     ? Math.floor(
-                        (Date.now() - new Date(organization.createdAt).getTime()) /
+                        (nowUTC().getTime() - organization.createdAt.getTime()) /
                           (1000 * 60 * 60 * 24)
                       )
                     : 0}
@@ -411,7 +414,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                           </TableCell>
                           <TableCell>
                             <div className="text-sm text-muted-foreground">
-                              {new Date(membership.createdAt).toLocaleDateString()}
+                              {membership.createdAt.toLocaleDateString()}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -455,7 +458,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                           )}
                         </div>
                         <div className="text-right text-sm text-muted-foreground">
-                          <div>Added {new Date(location.createdAt).toLocaleDateString()}</div>
+                          <div>Added {location.createdAt.toLocaleDateString()}</div>
                           {location.googlePlaceId && (
                             <Badge variant="outline" className="mt-1 text-xs">
                               Verified
@@ -523,7 +526,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                           </TableCell>
                           <TableCell>
                             <div className="text-sm text-muted-foreground">
-                              {new Date(connection.createdAt).toLocaleDateString()}
+                              {connection.createdAt.toLocaleDateString()}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -551,7 +554,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                         Organization Approved
                       </p>
                       <p className="text-sm text-green-600 dark:text-green-400">
-                        {new Date(organization.approvedAt).toLocaleString()}
+                        {organization.approvedAt.toLocaleString()}
                         {organization.approvedById && ' by Admin'}
                       </p>
                     </div>
@@ -566,7 +569,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                         Organization Rejected
                       </p>
                       <p className="text-sm text-red-600 dark:text-red-400">
-                        {new Date(organization.rejectedAt).toLocaleString()}
+                        {organization.rejectedAt.toLocaleString()}
                       </p>
                       {organization.rejectionReason && (
                         <p className="mt-1 text-sm text-red-600 dark:text-red-400">
@@ -585,7 +588,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                     </p>
                     <p className="text-sm text-blue-600 dark:text-blue-400">
                       {organization?.createdAt
-                        ? new Date(organization.createdAt).toLocaleString()
+                        ? organization.createdAt.toLocaleString()
                         : 'Unknown'}
                     </p>
                   </div>

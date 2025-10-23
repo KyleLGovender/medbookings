@@ -1,6 +1,7 @@
 import {
   ConnectionStatus,
   Languages,
+  Prisma,
   ProviderInvitationStatus,
   ProviderStatus,
 } from '@prisma/client';
@@ -15,7 +16,14 @@ import {
   regulatoryRequirementsSchema,
   servicesSchema,
 } from '@/features/providers/types/schemas';
-import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
+import { logger, sanitizeEmail } from '@/lib/logger';
+import { nowUTC } from '@/lib/timezone';
+import {
+  adminProcedure,
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+} from '@/server/trpc';
 
 export const providersRouter = createTRPCRouter({
   // ============================================================================
@@ -104,6 +112,7 @@ export const providersRouter = createTRPCRouter({
               email: true,
               name: true,
               image: true,
+              phone: true,
             },
           },
           typeAssignments: {
@@ -242,6 +251,7 @@ export const providersRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const {
         search,
+        nameSearch,
         typeIds = [],
         status = 'APPROVED',
         page = 1,
@@ -254,12 +264,19 @@ export const providersRouter = createTRPCRouter({
       const offset = (page - 1) * limit;
 
       // Build optimized where clause
-      const where: any = {
-        status: status as any,
+      const where: Prisma.ProviderWhereInput = {
+        status,
       };
 
-      // Add search filter with optimized text search
-      if (search) {
+      // Add search filter - prioritize nameSearch for precise name matching
+      if (nameSearch) {
+        // Name-specific search: only search in provider name field
+        where.name = {
+          contains: nameSearch,
+          mode: 'insensitive',
+        };
+      } else if (search) {
+        // General search: search across name, email, and bio
         where.OR = [
           {
             name: {
@@ -296,7 +313,7 @@ export const providersRouter = createTRPCRouter({
       }
 
       // Build optimized include clause based on requirements
-      const include: any = {
+      const include: Prisma.ProviderInclude = {
         user: {
           select: {
             email: true,
@@ -328,6 +345,24 @@ export const providersRouter = createTRPCRouter({
           },
         };
       }
+
+      // Include availabilities for service type filtering (virtual/in-person)
+      include.availabilities = {
+        where: {
+          status: 'ACCEPTED',
+          endTime: { gte: nowUTC() }, // Only future/current availabilities
+        },
+        select: {
+          id: true,
+          isOnlineAvailable: true,
+          location: {
+            select: {
+              name: true,
+              formattedAddress: true,
+            },
+          },
+        },
+      };
 
       // Execute optimized query with pagination
       const [providers, total] = await Promise.all([
@@ -382,6 +417,13 @@ export const providersRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       if (!ctx.session?.user?.id) {
         throw new Error('Unauthorized');
+      }
+
+      // Check if user's email is verified
+      if (!ctx.session.user.emailVerified) {
+        throw new Error(
+          'Email verification required. Please verify your email address before registering as a healthcare provider.'
+        );
       }
 
       const userId = ctx.session.user.id;
@@ -454,7 +496,9 @@ export const providersRouter = createTRPCRouter({
       //     input.basicInfo.whatsapp || ''
       //   );
       // } catch (error) {
-      //   console.error('Failed to send WhatsApp confirmation:', error);
+      //   logger.error('Failed to send WhatsApp confirmation', {
+      //     error: error instanceof Error ? error.message : String(error),
+      //   });
       //   // Don't fail registration if WhatsApp fails
       // }
 
@@ -529,7 +573,9 @@ export const providersRouter = createTRPCRouter({
                 data: serviceAvailabilityConfigs,
               });
             } catch (configError) {
-              console.error('Failed to create ServiceAvailabilityConfig records:', configError);
+              logger.error('Failed to create ServiceAvailabilityConfig records', {
+                error: configError instanceof Error ? configError.message : String(configError),
+              });
               // Don't fail the entire registration if ServiceAvailabilityConfig creation fails
             }
           }
@@ -542,7 +588,7 @@ export const providersRouter = createTRPCRouter({
         }
       );
 
-      return { success: true, data: provider, redirect: '/profile' };
+      return { success: true, data: provider, redirect: '/' };
     }),
 
   /**
@@ -581,7 +627,7 @@ export const providersRouter = createTRPCRouter({
       }
 
       // Build update data object only with changed fields
-      const updateData: any = {};
+      const updateData: Prisma.ProviderUpdateInput = {};
 
       // Only include fields that were actually changed and provided
       if (input.name && input.name !== currentProvider.name) updateData.name = input.name;
@@ -630,7 +676,9 @@ export const providersRouter = createTRPCRouter({
             input.whatsapp
           );
         } catch (error) {
-          console.error('Failed to send WhatsApp confirmation:', error);
+          logger.error('Failed to send WhatsApp confirmation', {
+            error: error instanceof Error ? error.message : String(error),
+          });
           // Don't fail update if WhatsApp fails
         }
       }
@@ -840,7 +888,7 @@ export const providersRouter = createTRPCRouter({
         id: string;
         serviceId: string;
         duration: number;
-        price: any;
+        price: Prisma.Decimal | number;
         isOnlineAvailable: boolean;
         isInPerson: boolean;
         locationId: string | null;
@@ -959,7 +1007,7 @@ export const providersRouter = createTRPCRouter({
         id: string;
         serviceId: string;
         duration: number;
-        price: any;
+        price: Prisma.Decimal | number;
         isOnlineAvailable: boolean;
         isInPerson: boolean;
         locationId: string | null;
@@ -1251,7 +1299,7 @@ export const providersRouter = createTRPCRouter({
       });
 
       // Flatten requirements and add provider type info
-      const allRequirements: any[] = [];
+      const allRequirements: Array<Record<string, unknown>> = [];
       const seenRequirementIds = new Set<string>();
 
       providerTypesWithRequirements.forEach((providerType) => {
@@ -1445,7 +1493,7 @@ export const providersRouter = createTRPCRouter({
       }
 
       // Build where clause
-      const whereClause: any = {
+      const whereClause: Prisma.OrganizationProviderConnectionWhereInput = {
         providerId: provider.id,
       };
 
@@ -1532,7 +1580,7 @@ export const providersRouter = createTRPCRouter({
         where: { id: input.connectionId },
         data: {
           status: input.status,
-          ...(input.status === 'ACCEPTED' && { acceptedAt: new Date() }),
+          ...(input.status === 'ACCEPTED' && { acceptedAt: nowUTC() }),
         },
         include: {
           organization: {
@@ -1601,7 +1649,7 @@ export const providersRouter = createTRPCRouter({
       const activeAvailabilities = await ctx.prisma.availability.count({
         where: {
           connectionId: input.connectionId,
-          endTime: { gte: new Date() }, // Future availabilities
+          endTime: { gte: nowUTC() }, // Future availabilities
         },
       });
 
@@ -1641,7 +1689,7 @@ export const providersRouter = createTRPCRouter({
       }
 
       // Build where clause
-      const whereClause: any = {
+      const whereClause: Prisma.ProviderInvitationWhereInput = {
         email: ctx.session.user.email,
       };
 
@@ -1673,7 +1721,7 @@ export const providersRouter = createTRPCRouter({
 
       // Check for expired invitations and update them
       const expiredInvitations = invitations.filter(
-        (invitation) => invitation.status === 'PENDING' && new Date() > invitation.expiresAt
+        (invitation) => invitation.status === 'PENDING' && nowUTC() > invitation.expiresAt
       );
 
       if (expiredInvitations.length > 0) {
@@ -1771,7 +1819,7 @@ export const providersRouter = createTRPCRouter({
       }
 
       // Check if invitation has expired
-      if (new Date() > invitation.expiresAt) {
+      if (nowUTC() > invitation.expiresAt) {
         await ctx.prisma.providerInvitation.update({
           where: { id: invitation.id },
           data: { status: 'EXPIRED' },
@@ -1807,7 +1855,7 @@ export const providersRouter = createTRPCRouter({
           where: { id: invitation.id },
           data: {
             status: 'REJECTED',
-            rejectedAt: new Date(),
+            rejectedAt: nowUTC(),
             rejectionReason: input.rejectionReason || null,
           },
         });
@@ -1845,7 +1893,7 @@ export const providersRouter = createTRPCRouter({
               organizationId: invitation.organizationId,
               providerId: provider.id,
               status: 'ACCEPTED',
-              acceptedAt: new Date(),
+              acceptedAt: nowUTC(),
             },
             include: {
               organization: {
@@ -1859,7 +1907,7 @@ export const providersRouter = createTRPCRouter({
             where: { id: invitation.id },
             data: {
               status: 'ACCEPTED',
-              acceptedAt: new Date(),
+              acceptedAt: nowUTC(),
               connectionId: connection.id,
             },
           });
@@ -2019,4 +2067,727 @@ export const providersRouter = createTRPCRouter({
       services: servicesByProviderType,
     };
   }),
+
+  // ============================================================================
+  // PROVIDER PROFILE MANAGEMENT
+  // ============================================================================
+
+  /**
+   * Update provider business settings (bio, website, languages, etc.)
+   * For use in the provider profile page
+   */
+  updateBusinessSettings: protectedProcedure
+    .input(
+      z.object({
+        providerId: z.string(),
+        bio: z.string().max(1000).nullable(),
+        website: z.string().url().nullable().or(z.literal('')),
+        showPrice: z.boolean(),
+        languages: z.array(z.nativeEnum(Languages)),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify the provider belongs to the current user
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { id: input.providerId },
+        select: { userId: true },
+      });
+
+      if (!provider || provider.userId !== ctx.session.user.id) {
+        throw new Error('Unauthorized');
+      }
+
+      // Update provider business settings
+      const updatedProvider = await ctx.prisma.provider.update({
+        where: { id: input.providerId },
+        data: {
+          bio: input.bio,
+          website: input.website === '' ? null : input.website,
+          showPrice: input.showPrice,
+          languages: input.languages,
+        },
+      });
+
+      return updatedProvider;
+    }),
+
+  /**
+   * Get all services for a specific provider
+   * Used in the provider profile page
+   */
+  getProviderAllServices: protectedProcedure
+    .input(z.object({ providerId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Get provider with their services
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { id: input.providerId },
+        include: {
+          services: {
+            orderBy: {
+              displayPriority: 'asc',
+            },
+          },
+        },
+      });
+
+      if (!provider) {
+        return [];
+      }
+
+      return provider.services;
+    }),
+
+  /**
+   * Get provider requirements with their submission status
+   */
+  getRequirements: protectedProcedure
+    .input(z.object({ providerId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Get provider with their type assignments
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { id: input.providerId },
+        include: {
+          typeAssignments: {
+            include: {
+              providerType: {
+                include: {
+                  requirements: true,
+                },
+              },
+            },
+          },
+          requirementSubmissions: {
+            include: {
+              requirementType: true,
+            },
+          },
+        },
+      });
+
+      if (!provider) {
+        throw new Error('Provider not found');
+      }
+
+      // Collect all unique requirement types from all provider types
+      const allRequirements = new Map();
+      provider.typeAssignments.forEach((assignment) => {
+        assignment.providerType.requirements.forEach((req) => {
+          if (!allRequirements.has(req.id)) {
+            // Find the submission for this requirement
+            const submission = provider.requirementSubmissions.find(
+              (sub) => sub.requirementTypeId === req.id
+            );
+
+            allRequirements.set(req.id, {
+              id: submission?.id || `req-${req.id}`,
+              requirementType: req,
+              status: submission?.status || 'NOT_SUBMITTED',
+              rejectionReason: submission?.notes || null,
+              documentMetadata: submission?.documentMetadata || null,
+            });
+          }
+        });
+      });
+
+      return Array.from(allRequirements.values());
+    }),
+
+  // ============================================================================
+  // PROVIDER PROFILE EDIT ENDPOINTS
+  // ============================================================================
+
+  /**
+   * Update provider basic information
+   */
+  updateBasicInfo: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(2),
+        bio: z.string().optional(),
+        phone: z.string().optional(),
+        whatsapp: z.string().optional(),
+        email: z.string().email(),
+        website: z.string().optional(),
+        languages: z.array(z.nativeEnum(Languages)),
+        showPrice: z.boolean(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { userId: ctx.session.user.id },
+      });
+
+      if (!provider) {
+        throw new Error('Provider not found');
+      }
+
+      // Update provider information
+      const updated = await ctx.prisma.provider.update({
+        where: { id: provider.id },
+        data: {
+          name: input.name,
+          bio: input.bio,
+          email: input.email,
+          whatsapp: input.whatsapp,
+          website: input.website,
+          languages: input.languages,
+          showPrice: input.showPrice,
+        },
+      });
+
+      // Update user phone if provided
+      if (input.phone !== undefined) {
+        await ctx.prisma.user.update({
+          where: { id: ctx.session.user.id },
+          data: { phone: input.phone },
+        });
+      }
+
+      return updated;
+    }),
+
+  /**
+   * Update provider reminder settings
+   */
+  updateReminderSettings: protectedProcedure
+    .input(
+      z.object({
+        reminderEnabled: z.boolean(),
+        reminderHours: z.number().min(1).max(72),
+        reminderChannels: z.object({
+          email: z.boolean(),
+          sms: z.boolean(),
+          whatsapp: z.boolean(),
+        }),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { userId: ctx.session.user.id },
+      });
+
+      if (!provider) {
+        throw new Error('Provider not found');
+      }
+
+      // Convert the channels object to an array of enabled channels
+      const enabledChannels = Object.entries(input.reminderChannels)
+        .filter(([_, enabled]) => enabled)
+        .map(([channel]) => channel);
+
+      // Update the provider with reminder settings
+      const updated = await ctx.prisma.provider.update({
+        where: { id: provider.id },
+        data: {
+          reminderEnabled: input.reminderEnabled,
+          reminderHours: input.reminderHours,
+          reminderChannels: enabledChannels,
+        },
+      });
+
+      return {
+        success: true,
+        message: 'Reminder settings updated',
+        data: {
+          reminderEnabled: updated.reminderEnabled,
+          reminderHours: updated.reminderHours,
+          reminderChannels: updated.reminderChannels,
+        },
+      };
+    }),
+
+  /**
+   * Suspend provider profile (by provider themselves or admin)
+   */
+  suspend: protectedProcedure
+    .input(z.object({ id: z.string().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session?.user?.id;
+      const isAdmin = ctx.session.user.role === 'ADMIN' || ctx.session.user.role === 'SUPER_ADMIN';
+
+      // If admin provided an ID, use it; otherwise use provider's own profile
+      let provider;
+      if (isAdmin && input.id) {
+        provider = await ctx.prisma.provider.findUnique({
+          where: { id: input.id },
+        });
+      } else {
+        provider = await ctx.prisma.provider.findUnique({
+          where: { userId: userId },
+        });
+      }
+
+      if (!provider) {
+        throw new Error('Provider not found');
+      }
+
+      // Check authorization
+      const isAuthorized = provider.userId === userId || isAdmin;
+      if (!isAuthorized) {
+        throw new Error('You are not authorized to suspend this provider');
+      }
+
+      if (provider.status !== 'ACTIVE' && provider.status !== 'APPROVED') {
+        throw new Error('Only active or approved providers can be suspended');
+      }
+
+      const updated = await ctx.prisma.provider.update({
+        where: { id: provider.id },
+        data: { status: 'SUSPENDED' },
+      });
+
+      if (isAdmin && input.id) {
+        logger.audit('ADMIN_ACTION: Provider suspended', {
+          providerId: updated.id,
+          providerName: updated.name,
+          adminId: ctx.session.user.id,
+          adminEmail: sanitizeEmail(ctx.session.user.email || ''),
+        });
+      }
+
+      return updated;
+    }),
+
+  /**
+   * Unsuspend (reactivate) provider profile (by provider themselves or admin)
+   * Providers cannot unsuspend if they have pending regulatory requirement updates
+   */
+  unsuspend: protectedProcedure
+    .input(z.object({ id: z.string().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session?.user?.id;
+      const isAdmin = ctx.session.user.role === 'ADMIN' || ctx.session.user.role === 'SUPER_ADMIN';
+
+      // If admin provided an ID, use it; otherwise use provider's own profile
+      let provider;
+      if (isAdmin && input.id) {
+        provider = await ctx.prisma.provider.findUnique({
+          where: { id: input.id },
+          include: {
+            requirementSubmissions: true,
+          },
+        });
+      } else {
+        provider = await ctx.prisma.provider.findUnique({
+          where: { userId: userId },
+          include: {
+            requirementSubmissions: true,
+          },
+        });
+      }
+
+      if (!provider) {
+        throw new Error('Provider not found');
+      }
+
+      // Check authorization
+      const isAuthorized = provider.userId === userId || isAdmin;
+      if (!isAuthorized) {
+        throw new Error('You are not authorized to unsuspend this provider');
+      }
+
+      if (provider.status !== 'SUSPENDED') {
+        throw new Error('Only suspended providers can be reactivated');
+      }
+
+      // Check if provider has pending regulatory requirement updates (only applies to self-unsuspend)
+      if (!isAdmin && provider.userId === userId) {
+        const hasPendingRequirements = provider.requirementSubmissions?.some(
+          (submission) => submission.status === 'PENDING'
+        );
+
+        if (hasPendingRequirements) {
+          throw new Error(
+            'You cannot unsuspend your account while you have pending regulatory requirement updates. Please wait for admin approval or contact support.'
+          );
+        }
+      }
+
+      const updated = await ctx.prisma.provider.update({
+        where: { id: provider.id },
+        data: { status: 'ACTIVE' },
+      });
+
+      if (isAdmin && input.id) {
+        logger.audit('ADMIN_ACTION: Provider unsuspended', {
+          providerId: updated.id,
+          providerName: updated.name,
+          adminId: ctx.session.user.id,
+          adminEmail: sanitizeEmail(ctx.session.user.email || ''),
+        });
+      }
+
+      return updated;
+    }),
+
+  /**
+   * Update requirement with admin notification
+   */
+  updateRequirement: protectedProcedure
+    .input(
+      z.object({
+        requirementId: z.string(),
+        documentUrl: z.string().url().optional(),
+        value: z.any().optional(), // For non-document requirements (text, boolean, date)
+        documentMetadata: z.any().optional(),
+        notes: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { userId: ctx.session.user.id },
+        include: {
+          user: true,
+          requirementSubmissions: {
+            where: { id: input.requirementId },
+            include: { requirementType: true },
+          },
+        },
+      });
+
+      if (!provider) {
+        throw new Error('Provider not found');
+      }
+
+      // Check if this is an existing submission or new one
+      const existingSubmission = provider.requirementSubmissions[0];
+
+      let submission;
+      let requirementTypeName: string;
+      let action: 'created' | 'updated';
+
+      if (existingSubmission) {
+        // Update existing submission
+        // Handle different requirement types - documentUrl for documents, value for others
+        let metadata;
+        if (input.documentUrl) {
+          metadata = input.documentMetadata || { url: input.documentUrl };
+        } else if (input.value !== undefined) {
+          metadata = input.documentMetadata || { value: input.value };
+        } else {
+          metadata = input.documentMetadata || {};
+        }
+
+        submission = await ctx.prisma.requirementSubmission.update({
+          where: { id: existingSubmission.id },
+          data: {
+            documentMetadata: metadata,
+            notes: input.notes,
+            status: 'PENDING', // Reset to pending for review
+            updatedAt: nowUTC(),
+          },
+          include: { requirementType: true },
+        });
+        requirementTypeName = submission.requirementType.name;
+        action = 'updated';
+
+        // Suspend provider status when updating requirements
+        await ctx.prisma.provider.update({
+          where: { id: provider.id },
+          data: { status: 'SUSPENDED' },
+        });
+      } else {
+        // Extract requirementTypeId from the prefixed ID
+        const requirementTypeId = input.requirementId.replace('req-', '');
+
+        // Get the requirement type details
+        const requirementType = await ctx.prisma.requirementType.findUnique({
+          where: { id: requirementTypeId },
+        });
+
+        if (!requirementType) {
+          throw new Error('Requirement type not found');
+        }
+
+        // Create new submission
+        // Handle different requirement types - documentUrl for documents, value for others
+        let metadata;
+        if (input.documentUrl) {
+          metadata = input.documentMetadata || { url: input.documentUrl };
+        } else if (input.value !== undefined) {
+          metadata = input.documentMetadata || { value: input.value };
+        } else {
+          metadata = input.documentMetadata || {};
+        }
+
+        submission = await ctx.prisma.requirementSubmission.create({
+          data: {
+            providerId: provider.id,
+            requirementTypeId,
+            documentMetadata: metadata,
+            notes: input.notes,
+            status: 'PENDING',
+          },
+          include: { requirementType: true },
+        });
+        requirementTypeName = submission.requirementType.name;
+        action = 'created';
+
+        // Suspend provider status when submitting new requirements
+        await ctx.prisma.provider.update({
+          where: { id: provider.id },
+          data: { status: 'SUSPENDED' },
+        });
+      }
+
+      // Import email functions and template
+      const { sendAdminNotificationEmail } = await import('@/lib/communications/email');
+      const { getRequirementUpdateNotificationTemplate } = await import(
+        '@/features/communications/lib/email-templates'
+      );
+
+      // Prepare and send admin notification
+      try {
+        const emailTemplate = getRequirementUpdateNotificationTemplate({
+          providerName: provider.name,
+          providerEmail: provider.user.email || provider.email || 'no-email@medbookings.com',
+          providerId: provider.id,
+          requirementType: requirementTypeName,
+          documentUrl: input.documentUrl || '',
+          notes: input.notes,
+          action,
+        });
+
+        await sendAdminNotificationEmail(emailTemplate);
+
+        logger.info('Admin notification sent successfully for requirement update', {
+          providerName: provider.name,
+          requirementType: requirementTypeName,
+          action,
+        });
+      } catch (error) {
+        // Log error but don't fail the mutation
+        logger.error('Failed to send admin notification', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+
+      return submission;
+    }),
+
+  /**
+   * Create a new service
+   */
+  createService: protectedProcedure
+    .input(
+      z.object({
+        providerId: z.string(),
+        name: z.string().min(2),
+        description: z.string().optional(),
+        duration: z.number().min(5).max(480),
+        price: z.number().min(0),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify provider owns this profile
+      const provider = await ctx.prisma.provider.findUnique({
+        where: {
+          id: input.providerId,
+          userId: ctx.session.user.id,
+        },
+        include: {
+          typeAssignments: true,
+        },
+      });
+
+      if (!provider) {
+        throw new Error('Provider not found or unauthorized');
+      }
+
+      // Get the first provider type (for now)
+      const providerTypeId = provider.typeAssignments[0]?.providerTypeId;
+      if (!providerTypeId) {
+        throw new Error('Provider must have a type assignment');
+      }
+
+      const service = await ctx.prisma.service.create({
+        data: {
+          name: input.name,
+          description: input.description,
+          defaultDuration: input.duration,
+          defaultPrice: input.price,
+          providerTypeId,
+          providers: {
+            connect: { id: input.providerId },
+          },
+        },
+      });
+
+      return service;
+    }),
+
+  /**
+   * Update a service
+   */
+  updateService: protectedProcedure
+    .input(
+      z.object({
+        serviceId: z.string(),
+        name: z.string().min(2),
+        description: z.string().optional(),
+        duration: z.number().min(5).max(480),
+        price: z.number().min(0),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify provider owns this service
+      const service = await ctx.prisma.service.findFirst({
+        where: {
+          id: input.serviceId,
+          providers: {
+            some: {
+              userId: ctx.session.user.id,
+            },
+          },
+        },
+      });
+
+      if (!service) {
+        throw new Error('Service not found or unauthorized');
+      }
+
+      const updated = await ctx.prisma.service.update({
+        where: { id: input.serviceId },
+        data: {
+          name: input.name,
+          description: input.description,
+          defaultDuration: input.duration,
+          defaultPrice: input.price,
+        },
+      });
+
+      return updated;
+    }),
+
+  /**
+   * Delete a service
+   */
+  deleteService: protectedProcedure
+    .input(z.object({ serviceId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // Verify provider owns this service
+      const service = await ctx.prisma.service.findFirst({
+        where: {
+          id: input.serviceId,
+          providers: {
+            some: {
+              userId: ctx.session.user.id,
+            },
+          },
+        },
+      });
+
+      if (!service) {
+        throw new Error('Service not found or unauthorized');
+      }
+
+      await ctx.prisma.service.delete({
+        where: { id: input.serviceId },
+      });
+
+      return { success: true };
+    }),
+
+  /**
+   * Get services for current provider (edit mode)
+   */
+  getMyServices: protectedProcedure
+    .input(z.object({ providerId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const services = await ctx.prisma.service.findMany({
+        where: {
+          providers: {
+            some: {
+              id: input.providerId,
+              userId: ctx.session.user.id,
+            },
+          },
+        },
+        orderBy: { name: 'asc' },
+      });
+
+      return services;
+    }),
+
+  /**
+   * Get provider statistics
+   */
+  getProviderStats: protectedProcedure
+    .input(z.object({ providerId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Verify the user owns this provider profile or is admin
+      const provider = await ctx.prisma.provider.findUnique({
+        where: { id: input.providerId },
+        select: { userId: true },
+      });
+
+      if (!provider) {
+        throw new Error('Provider not found');
+      }
+
+      const isAuthorized =
+        provider.userId === ctx.session.user.id ||
+        ctx.session.user.role === 'ADMIN' ||
+        ctx.session.user.role === 'SUPER_ADMIN';
+
+      if (!isAuthorized) {
+        throw new Error('Not authorized to view provider stats');
+      }
+
+      // Get total bookings count
+      const totalBookings = await ctx.prisma.booking.count({
+        where: {
+          slot: {
+            serviceConfig: {
+              providerId: input.providerId,
+            },
+          },
+        },
+      });
+
+      // Get completed bookings count
+      const completedBookings = await ctx.prisma.booking.count({
+        where: {
+          slot: {
+            serviceConfig: {
+              providerId: input.providerId,
+            },
+          },
+          status: 'COMPLETED',
+        },
+      });
+
+      // Get upcoming bookings count
+      const upcomingBookings = await ctx.prisma.booking.count({
+        where: {
+          slot: {
+            serviceConfig: {
+              providerId: input.providerId,
+            },
+            startTime: {
+              gt: nowUTC(),
+            },
+          },
+          status: 'CONFIRMED',
+        },
+      });
+
+      // Profile views would need to be tracked separately
+      // For now, return null as this feature isn't implemented
+      const profileViews = null;
+
+      // Rating system would need reviews/ratings table
+      // For now, return null as this feature isn't implemented
+      const rating = null;
+      const reviewCount = 0;
+
+      return {
+        totalBookings,
+        completedBookings,
+        upcomingBookings,
+        profileViews,
+        rating,
+        reviewCount,
+      };
+    }),
 });

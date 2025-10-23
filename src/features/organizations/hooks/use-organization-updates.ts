@@ -6,8 +6,8 @@ import { type RouterInputs, api } from '@/utils/api';
  * @returns Mutation object for updating organization basic info
  */
 export function useUpdateOrganizationBasicInfo(options?: {
-  onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onSuccess?: (data: unknown) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -17,7 +17,7 @@ export function useUpdateOrganizationBasicInfo(options?: {
       utils.organizations.getById.invalidate({ id: variables.id });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }
 
@@ -30,8 +30,8 @@ type OrganizationUpdateInput = RouterInputs['organizations']['update'];
  * @returns Mutation object for updating organization billing model
  */
 export function useUpdateOrganizationBilling(options?: {
-  onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onSuccess?: (data: unknown) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -41,7 +41,7 @@ export function useUpdateOrganizationBilling(options?: {
       utils.organizations.getById.invalidate({ id: variables.id });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }
 
@@ -53,8 +53,8 @@ type UpdateOrganizationLocationsInput = RouterInputs['organizations']['updateLoc
  * @returns Mutation object for updating organization locations
  */
 export function useUpdateOrganizationLocations(options?: {
-  onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onSuccess?: (data: unknown) => void;
+  onError?: (error: unknown) => void;
 }) {
   const utils = api.useUtils();
 
@@ -64,6 +64,6 @@ export function useUpdateOrganizationLocations(options?: {
       utils.organizations.getById.invalidate({ id: variables.organizationId });
       options?.onSuccess?.(data);
     },
-    onError: options?.onError as any,
+    onError: options?.onError,
   });
 }

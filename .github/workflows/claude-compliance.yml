@@ -1,0 +1,216 @@
+name: CLAUDE.md Compliance
+
+on:
+  push:
+    branches: [main, master, develop, kyle-dev-branch]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  claude-validation:
+    name: CLAUDE.md Rule Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for accurate diff
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Git Hooks Installation
+        run: |
+          echo "🔍 Verifying git hooks are properly installed..."
+
+          # Check if hooks path is configured
+          HOOKS_PATH=$(git config core.hooksPath)
+          if [ "$HOOKS_PATH" != ".husky/_" ]; then
+            echo "❌ Git hooks path not configured correctly"
+            echo "Expected: .husky/_"
+            echo "Got: $HOOKS_PATH"
+            exit 1
+          fi
+
+          # Check if pre-commit hook exists and is executable
+          if [ ! -f ".husky/pre-commit" ]; then
+            echo "❌ Pre-commit hook file not found at .husky/pre-commit"
+            exit 1
+          fi
+
+          if [ ! -x ".husky/pre-commit" ]; then
+            echo "❌ Pre-commit hook is not executable"
+            exit 1
+          fi
+
+          # Check if husky is installed
+          if ! npm list husky --depth=0 > /dev/null 2>&1; then
+            echo "❌ Husky is not installed in package.json"
+            exit 1
+          fi
+
+          # Check if prepare script exists
+          if ! grep -q '"prepare".*"husky"' package.json; then
+            echo "⚠️  Warning: 'prepare' script not found in package.json"
+            echo "    New developers may not get hooks auto-installed"
+            echo "    Add: \"prepare\": \"husky\" to package.json scripts"
+          fi
+
+          echo "✅ Git hooks are properly configured"
+
+      - name: Run CLAUDE.md Validator
+        id: claude-validator
+        run: |
+          echo "🔍 Running CLAUDE.md compliance validation..."
+
+          # Get list of changed files
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            CHANGED_FILES=$(git diff --name-only --diff-filter=ACM origin/${{ github.base_ref }}...${{ github.sha }})
+          else
+            CHANGED_FILES=$(git diff --name-only --diff-filter=ACM ${{ github.event.before }}...${{ github.sha }})
+          fi
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Validate each changed file
+          EXIT_CODE=0
+          for FILE in $CHANGED_FILES; do
+            # Skip non-TypeScript/JavaScript files
+            if [[ ! "$FILE" =~ \.(ts|tsx|js|jsx)$ ]]; then
+              continue
+            fi
+
+            # Skip files that don't exist (deleted files)
+            if [ ! -f "$FILE" ]; then
+              continue
+            fi
+
+            # Skip config files, test files, and special files from CLAUDE.md validation
+            # (they can use console.log, Date, etc. since they run at build/test time or are logging utilities)
+            if [[ "$FILE" =~ (\.eslintrc\.|next\.config\.|tailwind\.config\.|postcss\.config\.) ]] || \
+               [[ "$FILE" =~ ^e2e/ ]] || \
+               [[ "$FILE" =~ ^scripts/ ]] || \
+               [[ "$FILE" =~ ^eslint-rules/ ]] || \
+               [[ "$FILE" == "src/lib/logger.ts" ]] || \
+               [[ "$FILE" == "src/lib/debug.ts" ]]; then
+              echo "Skipping (infrastructure file): $FILE"
+              continue
+            fi
+
+            echo "Validating: $FILE"
+
+            # Get old version of file (use correct baseline for PR vs push)
+            if [ "${{ github.event_name }}" == "pull_request" ]; then
+              OLD_CONTENT=$(git show origin/${{ github.base_ref }}:"$FILE" 2>/dev/null || echo "")
+            else
+              OLD_CONTENT=$(git show ${{ github.event.before }}:"$FILE" 2>/dev/null || echo "")
+            fi
+            OLD_TEMP=$(mktemp)
+            echo "$OLD_CONTENT" > "$OLD_TEMP"
+
+            # Run validator
+            if ! node scripts/commit-gate/compliance-validator.js validate-change "$FILE" "$OLD_TEMP" "$FILE"; then
+              EXIT_CODE=1
+            fi
+
+            rm "$OLD_TEMP"
+          done
+
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "❌ CLAUDE.md compliance violations detected"
+            exit 1
+          fi
+
+          echo "✅ CLAUDE.md compliance validated"
+
+      - name: Run ESLint
+        run: |
+          echo "🔍 Running ESLint with CLAUDE.md custom rules..."
+          NODE_OPTIONS="--max-old-space-size=8192" npm run lint
+
+      - name: Run TypeScript Type Check
+        run: |
+          echo "🔍 Running TypeScript type check..."
+          npx tsc --noEmit
+
+      - name: Check for backup files
+        run: |
+          echo "🔍 Checking for backup files..."
+
+          BACKUP_FILES=$(find . -type f \( -name "*.backup" -o -name "*.bak" -o -name "*.old" \) \
+            -not -path "./node_modules/*" \
+            -not -path "./.next/*" \
+            -not -path "./.git/*")
+
+          if [ -n "$BACKUP_FILES" ]; then
+            echo "❌ Backup files found (should be removed or added to .gitignore):"
+            echo "$BACKUP_FILES"
+            exit 1
+          fi
+
+          echo "✅ No backup files found"
+
+      - name: Check for console statements
+        run: |
+          echo "🔍 Checking for console statements..."
+
+          # Check for console usage outside allowed files
+          CONSOLE_VIOLATIONS=$(grep -r "console\." \
+            --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" \
+            --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=e2e --exclude-dir=scripts \
+            --exclude="logger.ts" --exclude="debug.ts" --exclude="audit.ts" --exclude="server.ts" \
+            src/ || true)
+
+          if [ -n "$CONSOLE_VIOLATIONS" ]; then
+            echo "❌ Console statements found (use logger system instead):"
+            echo "$CONSOLE_VIOLATIONS"
+            exit 1
+          fi
+
+          echo "✅ No console statements found"
+
+      - name: Check for timezone violations
+        run: |
+          echo "🔍 Checking for timezone violations..."
+
+          # Check for new Date() usage outside allowed files
+          TIMEZONE_VIOLATIONS=$(grep -r "new Date()" \
+            --include="*.ts" --include="*.tsx" \
+            --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=e2e --exclude-dir=scripts \
+            --exclude="timezone.ts" --exclude="timezone-helper.ts" --exclude="timezone-schemas.ts" --exclude="server.ts" \
+            src/ || true)
+
+          if [ -n "$TIMEZONE_VIOLATIONS" ]; then
+            echo "❌ Timezone violations found (use timezone utilities from @/lib/timezone):"
+            echo "$TIMEZONE_VIOLATIONS"
+            exit 1
+          fi
+
+          echo "✅ No timezone violations found"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo ""
+          echo "============================================"
+          echo "CLAUDE.md Compliance Check Summary"
+          echo "============================================"
+          echo "✅ All compliance checks completed"
+          echo ""
+          echo "Checks performed:"
+          echo "  - Git hooks installation verification"
+          echo "  - CLAUDE.md rule validation"
+          echo "  - ESLint (with custom CLAUDE.md rules)"
+          echo "  - TypeScript type checking"
+          echo "  - Backup file detection"
+          echo "  - Console statement detection"
+          echo "  - Timezone violation detection"
+          echo ""

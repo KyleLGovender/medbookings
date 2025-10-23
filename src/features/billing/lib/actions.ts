@@ -1,7 +1,9 @@
 'use server';
 
 import { getCurrentUser } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
+import { addMilliseconds, nowUTC } from '@/lib/timezone';
 
 /**
  * Validate subscription creation and handle business logic
@@ -54,10 +56,13 @@ export async function validateSubscriptionCreation(data: {
     }
 
     // TODO: Send subscription creation notification
-    console.log(`=� Subscription creation notification would be sent for plan: ${data.planId}`);
+    logger.info('Subscription creation notification would be sent', {
+      planId: data.planId,
+      userId: currentUser.id,
+    });
 
     // Calculate billing cycle end (30 days from start)
-    const billingCycleEnd = new Date(data.startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const billingCycleEnd = addMilliseconds(data.startDate, 30 * 24 * 60 * 60 * 1000);
 
     return {
       success: true,
@@ -69,7 +74,9 @@ export async function validateSubscriptionCreation(data: {
       },
     };
   } catch (error) {
-    console.error('Subscription creation validation error:', error);
+    logger.error('Subscription creation validation error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to validate subscription creation',
@@ -95,7 +102,11 @@ export async function validateSubscriptionUpdate(data: {
   success: boolean;
   validatedData?: typeof data & {
     userId: string;
-    polymorphicUpdateData: any;
+    polymorphicUpdateData: {
+      organizationId?: string | null;
+      locationId?: string | null;
+      providerId?: string | null;
+    };
   };
   error?: string;
 }> {
@@ -111,7 +122,11 @@ export async function validateSubscriptionUpdate(data: {
     }
 
     // Handle polymorphic relationship updates
-    let polymorphicUpdateData: any = {};
+    let polymorphicUpdateData: {
+      organizationId?: string | null;
+      locationId?: string | null;
+      providerId?: string | null;
+    } = {};
 
     if (
       data.organizationId !== undefined ||
@@ -143,7 +158,10 @@ export async function validateSubscriptionUpdate(data: {
     }
 
     // TODO: Send subscription update notification
-    console.log(`=� Subscription update notification would be sent for: ${data.id}`);
+    logger.info('Subscription update notification would be sent', {
+      subscriptionId: data.id,
+      userId: currentUser.id,
+    });
 
     return {
       success: true,
@@ -154,7 +172,9 @@ export async function validateSubscriptionUpdate(data: {
       },
     };
   } catch (error) {
-    console.error('Subscription update validation error:', error);
+    logger.error('Subscription update validation error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to validate subscription update',
@@ -190,19 +210,24 @@ export async function validateSubscriptionCancellation(data: {
     }
 
     // TODO: Send subscription cancellation notification
-    console.log(`=� Subscription cancellation notification would be sent for: ${data.id}`);
+    logger.info('Subscription cancellation notification would be sent', {
+      subscriptionId: data.id,
+      userId: currentUser.id,
+    });
 
     return {
       success: true,
       validatedData: {
         ...data,
         userId: currentUser.id,
-        cancelledAt: new Date(),
+        cancelledAt: nowUTC(),
         status: 'CANCELLED' as const,
       },
     };
   } catch (error) {
-    console.error('Subscription cancellation validation error:', error);
+    logger.error('Subscription cancellation validation error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return {
       success: false,
       error:
