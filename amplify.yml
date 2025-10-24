@@ -6,6 +6,9 @@ frontend:
         - npm ci
     build:
       commands:
+        # Increase Node.js memory limit for large TypeScript builds
+        - export NODE_OPTIONS="--max-old-space-size=6144"
+
         # Database operations
         # 1. RESET (DANGER - only when RESET_DATABASE=true)
         - |
