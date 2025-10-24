@@ -158,6 +158,6 @@
     "zod-prisma-types": "^3.2.4"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.mts"
+    "seed": "npx tsx prisma/seed.mts"
   }
 }
