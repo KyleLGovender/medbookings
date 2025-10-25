@@ -14,7 +14,7 @@ import { nowUTC } from '@/lib/timezone';
 // When running in AWS Amplify, credentials are automatically provided by the IAM role
 // For local development, credentials come from environment variables
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'eu-west-1',
+  region: process.env.S3_REGION || 'eu-west-1',
   // Credentials are automatically picked up from:
   // 1. Environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) for local dev
   // 2. IAM role when running in AWS Amplify (no credentials needed)
@@ -78,7 +78,7 @@ export async function uploadToS3(
     await s3Client.send(command);
 
     // Generate public URL (CloudFront or S3 direct URL)
-    const url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'eu-west-1'}.amazonaws.com/${key}`;
+    const url = `https://${BUCKET_NAME}.s3.${process.env.S3_REGION || 'eu-west-1'}.amazonaws.com/${key}`;
 
     return { url, success: true };
   } catch (error) {
@@ -114,7 +114,7 @@ export async function uploadTextToS3(
     await s3Client.send(command);
 
     // Generate public URL
-    const url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'eu-west-1'}.amazonaws.com/${key}`;
+    const url = `https://${BUCKET_NAME}.s3.${process.env.S3_REGION || 'eu-west-1'}.amazonaws.com/${key}`;
 
     return { url, success: true };
   } catch (error) {

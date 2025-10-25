@@ -218,7 +218,7 @@ This project uses AWS Amplify for hosting with AWS RDS PostgreSQL database.
    AUTH_SECRET=your-secure-secret-min-32-chars
    NEXTAUTH_URL=https://your-domain.com
    S3_BUCKET_NAME=your-s3-bucket
-   AWS_REGION=eu-west-1
+   S3_REGION=eu-west-1
    # Add all other env vars from .env.example
    ```
 

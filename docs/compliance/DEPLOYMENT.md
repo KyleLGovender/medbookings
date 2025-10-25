@@ -40,7 +40,7 @@ UPSTASH_REDIS_REST_TOKEN="your-upstash-token"
 
 # AWS S3 File Storage
 S3_BUCKET_NAME="your-s3-bucket-name"
-AWS_REGION="eu-west-1"
+S3_REGION="eu-west-1"
 # AWS credentials are automatically provided by IAM role in AWS Amplify
 # For local development only:
 AWS_ACCESS_KEY_ID="your-access-key-id"
