@@ -6,7 +6,7 @@
     "lastUpdated": "2025-10-23T19:58:10.040Z",
     "rules": {
       "timezone": {
-        "enabled": false,
+        "enabled": true,
         "disabledReason": null,
         "violationCount": 0,
         "patterns": {

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+import { nowUTC } from '@/lib/timezone';
+
 /**
  * Authentication Diagnostics API Endpoint
  *
@@ -24,7 +26,7 @@ export async function GET() {
     const databaseUrl = process.env.DATABASE_URL;
 
     const checks = {
-      timestamp: new Date().toISOString(),
+      timestamp: nowUTC().toISOString(),
       environment: process.env.NODE_ENV,
       checks: {
         environmentVariables: {
@@ -136,11 +138,12 @@ export async function GET() {
     });
   } catch (error: any) {
     // If env validation fails, return error details
+    // eslint-disable-next-line no-console
     console.error('Diagnostics endpoint error:', error);
 
     return NextResponse.json(
       {
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         environment: process.env.NODE_ENV,
         status: 'error',
         error: 'Failed to load environment configuration',

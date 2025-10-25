@@ -6,13 +6,13 @@ This guide covers deploying MedBookings to production with all security features
 
 ## Prerequisites
 
-- ✅ Vercel account (or other Next.js hosting)
-- ✅ PostgreSQL database (production-ready)
+- ✅ AWS account with Amplify access
+- ✅ AWS RDS PostgreSQL database (production-ready)
+- ✅ AWS S3 bucket for file storage
 - ✅ Upstash Redis account (for rate limiting)
 - ✅ Google OAuth credentials (production)
 - ✅ SendGrid account (email)
 - ✅ Twilio account (SMS/WhatsApp)
-- ✅ Vercel Blob storage
 
 ---
 
@@ -38,8 +38,13 @@ GOOGLE_CLIENT_SECRET="your-google-client-secret"
 UPSTASH_REDIS_REST_URL="https://your-redis-instance.upstash.io"
 UPSTASH_REDIS_REST_TOKEN="your-upstash-token"
 
-# File Storage
-BLOB_READ_WRITE_TOKEN="vercel_blob_rw_xxxxxxxx"
+# AWS S3 File Storage
+S3_BUCKET_NAME="your-s3-bucket-name"
+AWS_REGION="eu-west-1"
+# AWS credentials are automatically provided by IAM role in AWS Amplify
+# For local development only:
+AWS_ACCESS_KEY_ID="your-access-key-id"
+AWS_SECRET_ACCESS_KEY="your-secret-access-key"
 
 # Email (SendGrid)
 SENDGRID_API_KEY="SG.xxxxxxxxxxxxxxxxxxxxxxxx"
@@ -77,10 +82,10 @@ Rate limiting requires Upstash Redis in production. Without it, the system falls
 
 ### Step 3: Add to Environment Variables
 
-Add both values to your production environment variables in Vercel:
+Add both values to your production environment variables in AWS Amplify:
 
 ```bash
-# In Vercel dashboard:
+# In AWS Amplify Console → Environment variables:
 Settings → Environment Variables → Add
 
 UPSTASH_REDIS_REST_URL=https://your-instance.upstash.io
@@ -157,7 +162,7 @@ Expected tables:
 - [ ] ✅ Database credentials are secure
 - [ ] ✅ API keys are production keys (not test/development)
 - [ ] ✅ No `.env` file committed to git
-- [ ] ✅ All sensitive values in Vercel environment variables
+- [ ] ✅ All sensitive values in AWS Amplify environment variables
 
 ### POPIA Compliance Checklist
 
@@ -174,29 +179,42 @@ Expected tables:
 
 ## Deployment Steps
 
-### Option A: Vercel Deployment
+### AWS Amplify Deployment
 
-```bash
-# 1. Install Vercel CLI
-npm install -g vercel
+1. **Initial Setup:**
+   ```bash
+   # Configure AWS CLI (for local development)
+   aws configure
 
-# 2. Login to Vercel
-vercel login
+   # Verify amplify.yml configuration
+   cat amplify.yml
+   ```
 
-# 3. Deploy to production
-vercel --prod
+2. **Deploy via Amplify Console:**
+   - Navigate to AWS Amplify Console
+   - Connect GitHub repository
+   - Select branch (e.g., `master`, `staging`)
+   - Configure environment variables (see Environment Variables section above)
+   - Amplify auto-detects Next.js and uses `amplify.yml` for build settings
 
-# 4. Verify deployment
-curl -I https://your-domain.com
-```
+3. **Verify Deployment:**
+   ```bash
+   curl -I https://your-amplify-domain.amplifyapp.com
+   ```
 
-### Option B: Manual Deployment
+4. **Custom Domain Setup:**
+   - Amplify Console → Domain Management
+   - Add custom domain (e.g., medbookings.co.za)
+   - Configure DNS records as provided by Amplify
+   - SSL certificates are automatically provisioned
+
+### Manual Build (for testing)
 
 ```bash
 # 1. Build the application
 npm run build
 
-# 2. Start production server
+# 2. Start production server locally
 npm run start
 ```
 
@@ -287,8 +305,8 @@ Monitor the following:
 If issues occur after deployment:
 
 ```bash
-# 1. Rollback to previous Vercel deployment
-vercel rollback
+# 1. Rollback to previous AWS Amplify deployment
+# In Amplify Console → Deployment history → Select previous deployment → Redeploy
 
 # 2. If database migration issues, rollback migrations
 # (Create backup first!)
@@ -403,7 +421,9 @@ psql -U user -d database < backup.sql
 ## Additional Resources
 
 - [Next.js Deployment](https://nextjs.org/docs/deployment)
-- [Vercel Documentation](https://vercel.com/docs)
+- [AWS Amplify Documentation](https://docs.aws.amazon.com/amplify/)
+- [AWS RDS Documentation](https://docs.aws.amazon.com/rds/)
+- [AWS S3 Documentation](https://docs.aws.amazon.com/s3/)
 - [Upstash Documentation](https://docs.upstash.com)
 - [POPIA Compliance Guide](https://popia.co.za/)
 - [OWASP Security Standards](https://owasp.org/)

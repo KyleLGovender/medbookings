@@ -3,19 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { logger, sanitizeEmail } from '@/lib/logger';
+import { hashPassword } from '@/lib/password-hash';
+import { passwordSchema } from '@/lib/password-validation';
 import { prisma } from '@/lib/prisma';
 import { addMilliseconds, nowUTC } from '@/lib/timezone';
-
-// Simple password hashing utility (matches auth.ts)
-async function hashPassword(password: string): Promise<string> {
-  const crypto = await import('crypto');
-  return crypto.createHash('sha256').update(password).digest('hex');
-}
 
 const registerSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: passwordSchema, // Use centralized password complexity validation
 });
 
 export async function POST(request: NextRequest) {
@@ -32,15 +28,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User with this email already exists' }, { status: 400 });
     }
 
-    // Hash password
+    // Hash password using bcrypt (new users automatically get bcrypt hashes)
     const hashedPassword = await hashPassword(password);
 
-    // Create user
+    // Create user with bcrypt password and mark as migrated
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
+        passwordMigratedAt: nowUTC(), // New users are already using bcrypt
         emailVerified: null, // Will be set to true when user verifies email
         role: 'USER',
       },

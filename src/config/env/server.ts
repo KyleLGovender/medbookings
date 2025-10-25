@@ -28,10 +28,14 @@ const env = createEnv({
   // eslint-disable-next-line n/no-process-env
   experimental__runtimeEnv: process.env,
   onValidationError: (error: ZodError) => {
-    // Environment validation failure - log error structure only (no values)
+    // Environment validation failure - show which variables are missing/invalid
     // This runs during app startup, before logger is initialized
     // eslint-disable-next-line no-console
-    console.error('❌ Invalid environment variables - check required env vars');
+    console.error('❌ Invalid environment variables:\n');
+    // eslint-disable-next-line no-console
+    console.error(error.errors.map((e) => `  - ${e.path.join('.')}: ${e.message}`).join('\n'));
+    // eslint-disable-next-line no-console
+    console.error('\n💡 Check your .env file and compare with .env.example\n');
     process.exit(1);
   },
 });

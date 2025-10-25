@@ -1,11 +1,11 @@
 import { Prisma } from '@prisma/client';
 import sgMail from '@sendgrid/mail';
-import { put } from '@vercel/blob';
 import twilio from 'twilio';
 import vCardsJS from 'vcards-js';
 
 import env from '@/config/env/server';
 import { logger, sanitizeName, sanitizePhone } from '@/lib/logger';
+import { uploadTextToS3 } from '@/lib/storage/s3';
 
 // Use Prisma type matching getBookingWithDetails from calendar router
 type BookingWithDetails = Prisma.BookingGetPayload<{
@@ -200,11 +200,22 @@ export async function sendGuestVCardToProvider(booking: BookingWithDetails) {
       vCard.workPhone = booking.guestWhatsapp;
     }
 
-    // Upload to Vercel Blob
-    const { url } = await put(`vcards/guest-${booking.id}.vcf`, vCard.getFormattedString(), {
-      access: 'public',
-      contentType: 'text/vcard',
-    });
+    // Upload vCard to S3
+    const result = await uploadTextToS3(
+      vCard.getFormattedString(),
+      `vcards/guest-${booking.id}.vcf`,
+      'text/vcard'
+    );
+
+    if (!result.success || !result.url) {
+      logger.error('Failed to upload vCard to S3', {
+        bookingId: booking.id,
+        error: result.error,
+      });
+      return;
+    }
+
+    const url = result.url;
 
     // Send the vCard via WhatsApp using Twilio
     try {

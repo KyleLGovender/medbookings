@@ -94,11 +94,9 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deploy on AWS Amplify
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is deployed on AWS Amplify. See [DEPLOYMENT.md](./docs/compliance/DEPLOYMENT.md) for complete deployment instructions.
 
 ## Booking System
 
@@ -195,56 +193,46 @@ The following checks are implemented:
 
 For detailed implementation and usage examples, refer to the documentation in each component and utility file.
 
-## Deployment to Vercel
+## Deployment to AWS Amplify
 
-This project is configured for deployment to Vercel with PostgreSQL.
+This project uses AWS Amplify for hosting with AWS RDS PostgreSQL database.
 
 ### Prerequisites
 
-1. A Vercel account
-2. A Vercel PostgreSQL database (or another PostgreSQL provider)
+1. AWS account with Amplify access
+2. AWS RDS PostgreSQL database
+3. AWS S3 bucket for file storage
+4. AWS IAM role for Amplify (with RDS and S3 permissions)
 
 ### Deployment Steps
 
-1. Install the Vercel CLI:
+1. **Configure AWS Amplify:**
+   - Connect your GitHub repository
+   - Select the branch (e.g., `master`, `staging`)
+   - Amplify auto-detects Next.js configuration from `amplify.yml`
 
+2. **Set Environment Variables:**
+   Configure in Amplify Console under "Environment variables":
    ```bash
-   npm install -g vercel
+   DATABASE_URL=postgresql://user:pass@rds-endpoint:5432/db?sslmode=require
+   AUTH_SECRET=your-secure-secret-min-32-chars
+   NEXTAUTH_URL=https://your-domain.com
+   S3_BUCKET_NAME=your-s3-bucket
+   AWS_REGION=eu-west-1
+   # Add all other env vars from .env.example
    ```
 
-2. Login to Vercel:
-
+3. **Database Migrations:**
+   Migrations run automatically during build (see `amplify.yml`)
    ```bash
-   vercel login
-   ```
-
-3. Deploy the project:
-
-   ```bash
-   vercel
-   ```
-
-4. During deployment, Vercel will ask you to configure environment variables. Make sure to set up:
-
-   - `DATABASE_URL`: Your PostgreSQL connection string
-   - `AUTH_SECRET`: A secure random string for NextAuth.js
-   - Other environment variables as needed (Google OAuth, Twilio, SendGrid, etc.)
-
-5. Connect your Vercel PostgreSQL database:
-
-   - Go to your Vercel project dashboard
-   - Navigate to Storage
-   - Create a new PostgreSQL database
-   - Vercel will automatically set up the `DATABASE_URL` environment variable
-
-6. Run database migrations:
-
-   ```bash
-   vercel env pull .env.production.local
    npx prisma migrate deploy
    ```
 
-7. Your application should now be deployed and connected to the database!
+4. **Deployment Triggers:**
+   - Automatic: Push to connected branch
+   - Manual: Amplify Console → "Deploy" button
+
+For detailed AWS setup, see [DEPLOYMENT.md](./docs/compliance/DEPLOYMENT.md)
 
 ### Production Considerations
 

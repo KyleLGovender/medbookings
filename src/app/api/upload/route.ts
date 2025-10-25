@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { logger } from '@/lib/logger';
-import { uploadToBlob } from '@/lib/utils/utils-upload-to-blob';
+import { uploadToS3 } from '@/lib/storage/s3';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await uploadToBlob(file, userId, directory, purpose);
+    const result = await uploadToS3(file, userId, directory, purpose);
 
     if (!result.success) {
       return NextResponse.json({ success: false, error: result.error }, { status: 500 });

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { nowUTC } from '@/lib/timezone';
+
 /**
  * NextAuth error handler API route
  *
@@ -11,10 +13,11 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get('error') || 'Configuration';
 
   // Log the error for monitoring
+  // eslint-disable-next-line no-console
   console.error('NextAuth Error Captured:', {
     error,
     allParams: Object.fromEntries(searchParams.entries()),
-    timestamp: new Date().toISOString(),
+    timestamp: nowUTC().toISOString(),
     url: request.url,
     headers: {
       host: request.headers.get('host'),

@@ -3,6 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect } from 'react';
 
+import { nowUTC } from '@/lib/timezone';
+
 // Simple button matching the login page design
 const Button = ({
   onClick,
@@ -61,9 +63,10 @@ export default function AuthErrorPage() {
   useEffect(() => {
     if (error) {
       // Log to console in development
+      // eslint-disable-next-line no-console
       console.error('NextAuth Error:', {
         error,
-        timestamp: new Date().toISOString(),
+        timestamp: nowUTC().toISOString(),
         url: window.location.href,
       });
 

@@ -9,19 +9,9 @@ import GoogleProvider from 'next-auth/providers/google';
 
 import env from '@/config/env/server';
 import { logger, sanitizeEmail } from '@/lib/logger';
+import { hashPassword, verifyPasswordWithMigration } from '@/lib/password-hash';
 import { prisma } from '@/lib/prisma';
 import { addMilliseconds, nowUTC } from '@/lib/timezone';
-
-// Simple password hashing utility (will add bcryptjs as dependency)
-async function hashPassword(password: string): Promise<string> {
-  const crypto = await import('crypto');
-  return crypto.createHash('sha256').update(password).digest('hex');
-}
-
-async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  const hashedInput = await hashPassword(password);
-  return hashedInput === hashedPassword;
-}
 
 declare module 'next-auth' {
   interface Session extends DefaultSession {
@@ -116,12 +106,43 @@ export const authOptions: NextAuthOptions = {
             throw new Error('OAuthUserAttemptingCredentials');
           }
 
-          const isPasswordValid = await verifyPassword(credentials.password, user.password);
-          if (!isPasswordValid) {
+          // Verify password with automatic migration from SHA-256 to bcrypt
+          const { isValid, needsMigration } = await verifyPasswordWithMigration(
+            credentials.password,
+            user.password
+          );
+
+          if (!isValid) {
             logger.warn('Credentials sign-in blocked - invalid password', {
               email: sanitizeEmail(credentials.email),
             });
             throw new Error('InvalidPassword');
+          }
+
+          // Auto-migrate legacy SHA-256 passwords to bcrypt
+          if (needsMigration) {
+            try {
+              const newHash = await hashPassword(credentials.password);
+              await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                  password: newHash,
+                  passwordMigratedAt: nowUTC(),
+                },
+              });
+              logger.info('Password successfully migrated from SHA-256 to bcrypt', {
+                userId: user.id,
+                email: sanitizeEmail(credentials.email),
+              });
+            } catch (migrationError) {
+              // Log but don't fail the login if migration fails
+              logger.error('Password migration failed (login still successful)', {
+                userId: user.id,
+                email: sanitizeEmail(credentials.email),
+                error:
+                  migrationError instanceof Error ? migrationError.message : String(migrationError),
+              });
+            }
           }
 
           return {

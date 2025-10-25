@@ -8,6 +8,8 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
+import { nowUTC } from '@/lib/timezone';
+
 // Initialize S3 client
 // When running in AWS Amplify, credentials are automatically provided by the IAM role
 // For local development, credentials come from environment variables
@@ -43,7 +45,7 @@ export async function uploadToS3(
     const uuid = crypto.randomUUID();
 
     // Format datetime as YYYYMMDD-HHMMSS
-    const now = new Date();
+    const now = nowUTC();
     const datetime = now.toISOString().replace(/[-:]/g, '').replace(/\..+/, '').replace('T', '-');
 
     // Sanitize purpose string (only remove problematic characters for URLs)
@@ -52,7 +54,7 @@ export async function uploadToS3(
     // Sanitize original filename (only remove problematic characters for URLs)
     const originalFilename = file.name.replace(/[<>:"/\\|?*]/g, '-');
 
-    // Create the unique filename with the same convention as Vercel Blob
+    // Create the unique filename with structured separators for parsing
     const uniqueFilename = `${uuid}-|-${sanitizedPurpose}-|-${datetime}-|-${originalFilename}`;
     const key = `${directory}/${uniqueFilename}`;
 
@@ -80,6 +82,7 @@ export async function uploadToS3(
 
     return { url, success: true };
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Failed to upload file to S3:', error);
     return {
       success: false,
@@ -115,6 +118,7 @@ export async function uploadTextToS3(
 
     return { url, success: true };
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Failed to upload text to S3:', error);
     return {
       success: false,
@@ -154,6 +158,7 @@ export async function deleteFromS3(key: string): Promise<{ success: boolean; err
 
     return { success: true };
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Failed to delete file from S3:', error);
     return {
       success: false,

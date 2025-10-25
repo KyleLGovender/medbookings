@@ -9,7 +9,7 @@
       "command": "npx",
       "args": [
         "@modelcontextprotocol/server-postgres",
-        "postgres://default:4eVbPXHul5SL@ep-little-salad-a2w15sf9-pooler.eu-central-1.aws.neon.tech/verceldb?sslmode=require"
+        "postgresql://medbookings_admin:ptzvm0CML6a44DL1WhfGLQkQJPNFYGje@medbookingsinfrastack-production-databaseb269d8bb-gexaxiwsid6a.c9ccmo2uic7g.eu-west-1.rds.amazonaws.com:5432/medbookings?sslmode=require"
       ]
     },
     "playwright": {
