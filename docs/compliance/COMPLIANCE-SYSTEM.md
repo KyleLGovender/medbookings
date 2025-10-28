@@ -41,13 +41,13 @@ The compliance system uses a **three-layer quality gate strategy**:
 
 ### Components
 
-| Component | Purpose | Location |
-|-----------|---------|----------|
-| **Core Validator** | Pattern-based code analysis engine | `scripts/commit-gate/compliance-validator.js` |
-| **ESLint Rules** | Real-time IDE feedback | `eslint-rules/` (no-new-date.js, type-organization.js) |
-| **Pre-Commit Hook** | Commit gate validation | `.husky/pre-commit` |
-| **CI/CD Workflow** | GitHub Actions validation | `.github/workflows/claude-compliance.yml` |
-| **Rule Sync** | Config management and synchronization | `scripts/compliance/sync-compliance-rules.js` |
+| Component           | Purpose                               | Location                                               |
+| ------------------- | ------------------------------------- | ------------------------------------------------------ |
+| **Core Validator**  | Pattern-based code analysis engine    | `scripts/commit-gate/compliance-validator.js`          |
+| **ESLint Rules**    | Real-time IDE feedback                | `eslint-rules/` (no-new-date.js, type-organization.js) |
+| **Pre-Commit Hook** | Commit gate validation                | `.husky/pre-commit`                                    |
+| **CI/CD Workflow**  | GitHub Actions validation             | `.github/workflows/claude-compliance.yml`              |
+| **Rule Sync**       | Config management and synchronization | `scripts/compliance/sync-compliance-rules.js`          |
 
 ---
 
@@ -61,16 +61,16 @@ The compliance system uses a **three-layer quality gate strategy**:
 
 **Configured Rules:**
 
-| Rule | Severity | Description |
-|------|----------|-------------|
-| `no-new-date` | Error | Prevents `new Date()` and `Date.now()` usage |
-| `restrict-as-any` | Error | Prevents `as any` type assertions |
-| `sanitize-phi-logging` | Warning | Requires PHI sanitization in logger calls |
-| `no-cross-feature-imports` | Error | Prevents cross-feature imports |
-| `hooks-no-type-exports` | Error | Prevents type exports from hooks |
-| `require-zod-validation` | Warning | Requires `.input()` validation in tRPC |
-| `require-transaction-for-bookings` | Warning | Requires transactions for bookings |
-| `require-take-for-findMany` | Error | Requires pagination for `findMany()` |
+| Rule                               | Severity | Description                                  |
+| ---------------------------------- | -------- | -------------------------------------------- |
+| `no-new-date`                      | Error    | Prevents `new Date()` and `Date.now()` usage |
+| `restrict-as-any`                  | Error    | Prevents `as any` type assertions            |
+| `sanitize-phi-logging`             | Warning  | Requires PHI sanitization in logger calls    |
+| `no-cross-feature-imports`         | Error    | Prevents cross-feature imports               |
+| `hooks-no-type-exports`            | Error    | Prevents type exports from hooks             |
+| `require-zod-validation`           | Warning  | Requires `.input()` validation in tRPC       |
+| `require-transaction-for-bookings` | Warning  | Requires transactions for bookings           |
+| `require-take-for-findMany`        | Error    | Requires pagination for `findMany()`         |
 
 **Bypass:** Cannot bypass (design intentional)
 **Configuration:** `.eslintrc.js`
@@ -90,6 +90,7 @@ The compliance system uses a **three-layer quality gate strategy**:
 3. **TypeScript Check** - Runs `tsc --noEmit`
 
 **Bypass:**
+
 ```bash
 # Use with caution - only for emergencies
 git commit --no-verify
@@ -98,6 +99,7 @@ git commit --no-verify
 **Configuration:** `.husky/pre-commit`
 
 **Example Output:**
+
 ```bash
 🔍 Running CLAUDE.md compliance validation...
 
@@ -136,6 +138,7 @@ git commit --no-verify
 **Configuration:** `.github/workflows/claude-compliance.yml`
 
 **Triggered On:**
+
 - Push to: `main`, `master`, `develop`, `kyle-dev-branch`
 - Pull requests to: `main`, `master`, `develop`
 
@@ -146,11 +149,13 @@ git commit --no-verify
 ### Critical Rules (ERROR severity - blocks commit)
 
 #### 1. Timezone Compliance
+
 **Rule:** `TIMEZONE_VIOLATION`
 **Pattern:** Detects `new Date()` and `Date.now()`
 **Fix:** Use timezone utilities from `@/lib/timezone`
 
 **Allowed:**
+
 ```typescript
 import { nowUTC, parseUTC, startOfDaySAST } from '@/lib/timezone';
 
@@ -160,6 +165,7 @@ const dayStart = startOfDaySAST(new Date());
 ```
 
 **Forbidden:**
+
 ```typescript
 ❌ const now = new Date();
 ❌ const timestamp = Date.now();
@@ -171,6 +177,7 @@ const dayStart = startOfDaySAST(new Date());
 ---
 
 #### 2. Type Safety
+
 **Rule:** `TYPE_SAFETY_VIOLATION`
 **Pattern:** Detects `as any` type assertions
 **Fix:** Use proper type guards or type narrowing
@@ -178,6 +185,7 @@ const dayStart = startOfDaySAST(new Date());
 **Allowed Files:** `src/lib/auth.ts`, `src/server/trpc.ts`, `src/types/guards.ts`
 
 **Allowed:**
+
 ```typescript
 // Type guard approach
 function isUser(value: unknown): value is User {
@@ -190,6 +198,7 @@ if (isUser(data)) {
 ```
 
 **Forbidden:**
+
 ```typescript
 ❌ const user = data as any;
 ❌ return response.data as any;
@@ -200,17 +209,20 @@ if (isUser(data)) {
 ---
 
 #### 3. Architecture - Cross-Feature Imports
+
 **Rule:** `CROSS_FEATURE_IMPORT`
 **Pattern:** Detects imports from other feature folders
 **Fix:** Use shared types or refactor to feature-specific code
 
 **Forbidden:**
+
 ```typescript
 // In /src/features/admin/components/admin-panel.tsx
 ❌ import { ProviderCard } from '@/features/providers/components/provider-card';
 ```
 
 **Allowed:**
+
 ```typescript
 ✅ import { ProviderCard } from '@/components/shared/provider-card'; // Shared component
 ✅ import type { Provider } from '@/features/providers/types/api-types'; // Type import OK
@@ -221,11 +233,13 @@ if (isUser(data)) {
 ---
 
 #### 4. Architecture - Hooks Type Exports
+
 **Rule:** `HOOKS_EXPORT_TYPES`
 **Pattern:** Detects type exports from hook files
 **Fix:** Move types to `/types/api-types.ts`
 
 **Forbidden:**
+
 ```typescript
 // In /src/features/admin/hooks/use-admin-provider.ts
 ❌ export type AdminProvider = RouterOutputs['admin']['getProviderById'];
@@ -236,6 +250,7 @@ export function useAdminProvider(id: string) {
 ```
 
 **Allowed:**
+
 ```typescript
 // In /src/features/admin/types/api-types.ts
 ✅ export type AdminProvider = RouterOutputs['admin']['getProviderById'];
@@ -251,11 +266,13 @@ export function useAdminProvider(id: string) {
 ---
 
 #### 5. Database Queries Outside tRPC
+
 **Rule:** `DB_QUERY_OUTSIDE_TRPC`
 **Pattern:** Detects Prisma queries outside `/routers/`
 **Fix:** Move query to appropriate tRPC router
 
 **Forbidden:**
+
 ```typescript
 // In /src/features/providers/lib/actions.ts
 ❌ export async function getProviders() {
@@ -264,6 +281,7 @@ export function useAdminProvider(id: string) {
 ```
 
 **Allowed:**
+
 ```typescript
 // In /src/server/api/routers/providers.ts
 ✅ export const providersRouter = createTRPCRouter({
@@ -278,11 +296,13 @@ export function useAdminProvider(id: string) {
 ---
 
 #### 6. Unbounded Queries
+
 **Rule:** `UNBOUNDED_QUERY`
 **Pattern:** Detects `findMany()` without `take:` limit
 **Fix:** Add pagination limit
 
 **Forbidden:**
+
 ```typescript
 ❌ const providers = await ctx.prisma.provider.findMany();
 ❌ const bookings = await ctx.prisma.booking.findMany({
@@ -291,6 +311,7 @@ export function useAdminProvider(id: string) {
 ```
 
 **Allowed:**
+
 ```typescript
 ✅ const providers = await ctx.prisma.provider.findMany({
   take: input.take || 50,
@@ -305,11 +326,13 @@ export function useAdminProvider(id: string) {
 ### Warning Rules (WARNING severity - allows commit)
 
 #### 7. PHI Sanitization in Logging
+
 **Rule:** `POTENTIAL_PHI_LEAK`
 **Pattern:** Detects potential unsanitized PHI in logger calls
 **Fix:** Use sanitization helpers from `@/lib/logger`
 
 **Allowed:**
+
 ```typescript
 import { logger, sanitizeEmail, sanitizePhone, sanitizeName } from '@/lib/logger';
 
@@ -325,6 +348,7 @@ import { logger, sanitizeEmail, sanitizePhone, sanitizeName } from '@/lib/logger
 ```
 
 **Forbidden:**
+
 ```typescript
 ❌ logger.info('User registered', { email: user.email }); // Raw email
 ❌ logger.error('Booking failed', { phone: user.phone }); // Raw phone
@@ -335,11 +359,13 @@ import { logger, sanitizeEmail, sanitizePhone, sanitizeName } from '@/lib/logger
 ---
 
 #### 8. Zod Validation in tRPC
+
 **Rule:** `MISSING_ZOD_VALIDATION`
 **Pattern:** Detects tRPC procedures without `.input()` validation
 **Fix:** Add Zod schema validation
 
 **Allowed:**
+
 ```typescript
 ✅ export const providersRouter = createTRPCRouter({
   getById: publicProcedure
@@ -351,6 +377,7 @@ import { logger, sanitizeEmail, sanitizePhone, sanitizeName } from '@/lib/logger
 ```
 
 **Forbidden:**
+
 ```typescript
 ❌ export const providersRouter = createTRPCRouter({
   getById: publicProcedure
@@ -365,11 +392,13 @@ import { logger, sanitizeEmail, sanitizePhone, sanitizeName } from '@/lib/logger
 ---
 
 #### 9. Booking Transactions
+
 **Rule:** `BOOKING_WITHOUT_TRANSACTION`
 **Pattern:** Detects booking operations without transactions
 **Fix:** Wrap in `prisma.$transaction()`
 
 **Allowed:**
+
 ```typescript
 ✅ await ctx.prisma.$transaction(async (tx) => {
   const slot = await tx.slot.findUnique({ where: { id } });
@@ -381,6 +410,7 @@ import { logger, sanitizeEmail, sanitizePhone, sanitizeName } from '@/lib/logger
 ```
 
 **Forbidden:**
+
 ```typescript
 ❌ const slot = await ctx.prisma.slot.findUnique({ where: { id } });
 if (slot.status !== 'AVAILABLE') throw new Error('Slot unavailable');
@@ -394,17 +424,20 @@ await ctx.prisma.booking.create({ data: bookingData });
 ### New Validators (Option C - 85% Automation)
 
 #### 10. Image Component Usage (Phase 1 - Quick Win)
+
 **Rule:** `USE_NEXT_IMAGE`
 **Pattern:** Detects `<img>` tags in TSX files
 **Fix:** Use Next.js Image component for performance optimization
 
 **Forbidden:**
+
 ```typescript
 ❌ <img src="/logo.png" alt="Logo" />
 ❌ <img src={user.avatar} alt={user.name} />
 ```
 
 **Allowed:**
+
 ```typescript
 ✅ import Image from 'next/image';
    <Image src="/logo.png" alt="Logo" width={100} height={100} />
@@ -417,11 +450,13 @@ await ctx.prisma.booking.create({ data: bookingData });
 ---
 
 #### 11. State Management (Phase 1 - Quick Win)
+
 **Rule:** `FORBIDDEN_STATE_LIBRARY`
 **Pattern:** Detects Redux, Zustand, Recoil, Jotai, Context in features
 **Fix:** Use TanStack Query via tRPC for all state management
 
 **Forbidden:**
+
 ```typescript
 ❌ import { create } from 'zustand';
 ❌ import { createContext, useContext } from 'react';
@@ -430,6 +465,7 @@ await ctx.prisma.booking.create({ data: bookingData });
 ```
 
 **Allowed:**
+
 ```typescript
 ✅ import { api } from '@/utils/api';
 
@@ -445,11 +481,13 @@ await ctx.prisma.booking.create({ data: bookingData });
 ---
 
 #### 12. Procedure Type Validation (Phase 1 - Quick Win)
+
 **Rule:** `WRONG_PROCEDURE_TYPE`
 **Pattern:** Detects sensitive operations using wrong procedure type
 **Fix:** Use appropriate procedure type for authorization level
 
 **Forbidden:**
+
 ```typescript
 ❌ export const adminRouter = createTRPCRouter({
      approveProvider: publicProcedure  // Wrong - should be adminProcedure
@@ -462,6 +500,7 @@ await ctx.prisma.booking.create({ data: bookingData });
 ```
 
 **Allowed:**
+
 ```typescript
 ✅ export const adminRouter = createTRPCRouter({
      approveProvider: adminProcedure
@@ -479,11 +518,13 @@ await ctx.prisma.booking.create({ data: bookingData });
 ---
 
 #### 13. Multiple Queries Per Endpoint (Phase 2 - Medium)
+
 **Rule:** `MULTIPLE_QUERIES_PER_ENDPOINT`
 **Pattern:** Detects multiple database queries in single tRPC endpoint
 **Fix:** Combine queries with include or use transactions
 
 **Forbidden:**
+
 ```typescript
 ❌ getData: publicProcedure.query(async ({ ctx }) => {
      const user = await ctx.prisma.user.findUnique({ where: { id } });
@@ -494,6 +535,7 @@ await ctx.prisma.booking.create({ data: bookingData });
 ```
 
 **Allowed:**
+
 ```typescript
 ✅ getData: publicProcedure.query(async ({ ctx }) => {
      return ctx.prisma.user.findUnique({
@@ -519,11 +561,13 @@ await ctx.prisma.booking.create({ data: bookingData });
 ---
 
 #### 14. Authorization Order (Phase 2 - Medium)
+
 **Rule:** `AUTH_CHECK_ORDER`
 **Pattern:** Detects business logic before authorization checks
 **Fix:** Move authorization checks to beginning of procedure
 
 **Forbidden:**
+
 ```typescript
 ❌ updateProvider: protectedProcedure
      .mutation(async ({ ctx, input }) => {
@@ -538,6 +582,7 @@ await ctx.prisma.booking.create({ data: bookingData });
 ```
 
 **Allowed:**
+
 ```typescript
 ✅ updateProvider: protectedProcedure
      .mutation(async ({ ctx, input }) => {
@@ -557,11 +602,13 @@ await ctx.prisma.booking.create({ data: bookingData });
 ---
 
 #### 15. Input Sanitization (Phase 3 - Advanced)
+
 **Rule:** `UNSAFE_INPUT_HANDLING`
 **Pattern:** Detects dangerous patterns like dangerouslySetInnerHTML, eval()
 **Fix:** Use safe alternatives or sanitize with DOMPurify
 
 **Forbidden:**
+
 ```typescript
 ❌ <div dangerouslySetInnerHTML={{ __html: userContent }} />
 ❌ element.innerHTML = userInput;
@@ -569,6 +616,7 @@ await ctx.prisma.booking.create({ data: bookingData });
 ```
 
 **Allowed:**
+
 ```typescript
 ✅ import DOMPurify from 'dompurify';
    <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(userContent) }} />
@@ -584,11 +632,13 @@ await ctx.prisma.booking.create({ data: bookingData });
 ---
 
 #### 16. Performance Patterns (Phase 3 - Advanced)
+
 **Rules:** `API_CALL_IN_LOOP`, `MISSING_MEMOIZATION`, `MISSING_CACHE_CONFIG`
 **Pattern:** Detects performance anti-patterns
 **Fix:** Batch operations, add memoization, configure caching
 
 **Forbidden:**
+
 ```typescript
 ❌ // API calls in loops
    for (const id of providerIds) {
@@ -607,6 +657,7 @@ await ctx.prisma.booking.create({ data: bookingData });
 ```
 
 **Allowed:**
+
 ```typescript
 ✅ // Batch fetch
    const { data } = api.providers.getBatch.useQuery({ ids: providerIds });
@@ -631,11 +682,13 @@ await ctx.prisma.booking.create({ data: bookingData });
 ---
 
 #### 17. Form Patterns (Phase 3 - Advanced)
+
 **Rules:** `MISSING_REACT_HOOK_FORM`, `MISSING_ZOD_RESOLVER`, `USE_NATIVE_ENUM`
 **Pattern:** Detects forms without React Hook Form + Zod
 **Fix:** Use React Hook Form with zodResolver
 
 **Forbidden:**
+
 ```typescript
 ❌ // Manual form state
    function LoginForm() {
@@ -654,6 +707,7 @@ await ctx.prisma.booking.create({ data: bookingData });
 ```
 
 **Allowed:**
+
 ```typescript
 ✅ // React Hook Form + Zod
    import { useForm } from 'react-hook-form';
@@ -687,6 +741,7 @@ npm run setup-compliance
 ```
 
 This runs `scripts/compliance/setup-compliance.sh` which:
+
 1. Installs dependencies (husky, eslint-plugin-rulesdir)
 2. Initializes git hooks
 3. Makes scripts executable
@@ -796,6 +851,7 @@ The compliance system automatically intercepts Claude Code's file modifications.
 **Cause:** Git hooks not installed or not executable
 
 **Fix:**
+
 ```bash
 npx husky init
 chmod +x .husky/pre-commit
@@ -808,6 +864,7 @@ chmod +x .husky/pre-commit
 **Cause:** `eslint-plugin-rulesdir` not installed or misconfigured
 
 **Fix:**
+
 ```bash
 npm install --save-dev eslint-plugin-rulesdir
 
@@ -822,11 +879,13 @@ npx eslint --print-config src/lib/auth.ts | grep rulesdir
 **Cause:** Validation pattern too broad
 
 **Fix:**
+
 1. Check if file should be whitelisted (e.g., `auth.ts` for `as any`)
 2. Update validator whitelist in `scripts/commit-gate/compliance-validator.js`
 3. Update ESLint rule in appropriate file in `eslint-rules/` directory
 
 **Example:**
+
 ```javascript
 // In scripts/commit-gate/compliance-validator.js
 validateTypeSafety(addedLines, filePath) {
@@ -847,6 +906,7 @@ validateTypeSafety(addedLines, filePath) {
 **When:** Critical hotfix needed, violations will be fixed in follow-up PR
 
 **How:**
+
 ```bash
 git commit --no-verify -m "hotfix: critical production issue"
 ```
@@ -860,6 +920,7 @@ git commit --no-verify -m "hotfix: critical production issue"
 **Cause:** Changed files have violations
 
 **Fix:**
+
 1. Run locally to see exact violations:
    ```bash
    npm run lint
@@ -904,16 +965,17 @@ try {
 
 **Fail-Safe Behavior:**
 
-| Scenario | ESLint Rule State | Rationale |
-|----------|------------------|-----------|
-| Config file exists and valid | Rules loaded from config | Normal operation |
-| Config file missing | **Rules enabled (strict)** | Safety: Prevent violations from slipping through |
-| Config file corrupted | **Rules enabled (strict)** | Safety: Better to block than allow violations |
-| Config read error | **Rules enabled (strict)** | Safety: Filesystem issue shouldn't disable enforcement |
+| Scenario                     | ESLint Rule State          | Rationale                                              |
+| ---------------------------- | -------------------------- | ------------------------------------------------------ |
+| Config file exists and valid | Rules loaded from config   | Normal operation                                       |
+| Config file missing          | **Rules enabled (strict)** | Safety: Prevent violations from slipping through       |
+| Config file corrupted        | **Rules enabled (strict)** | Safety: Better to block than allow violations          |
+| Config read error            | **Rules enabled (strict)** | Safety: Filesystem issue shouldn't disable enforcement |
 
 **Why Fail-Safe Matters:**
 
 This design ensures that **enforcement is never accidentally disabled** due to:
+
 - File permissions issues
 - Corrupted JSON
 - Missing dependencies
@@ -922,11 +984,13 @@ This design ensures that **enforcement is never accidentally disabled** due to:
 **Fix:**
 
 1. **Regenerate compliance-config.json:**
+
    ```bash
    node scripts/compliance/sync-compliance-rules.js sync
    ```
 
 2. **Verify file integrity:**
+
    ```bash
    # Check if file exists
    ls -la scripts/compliance/compliance-config.json
@@ -936,6 +1000,7 @@ This design ensures that **enforcement is never accidentally disabled** due to:
    ```
 
 3. **Check file permissions:**
+
    ```bash
    # Ensure file is readable
    chmod 644 scripts/compliance/compliance-config.json
@@ -1037,6 +1102,7 @@ node scripts/compliance/sync-compliance-rules.js status
 **What Gets Updated:**
 
 When you sync, the system regenerates:
+
 1. Rule enabled/disabled states
 2. Pattern definitions
 3. Severity levels (ERROR/WARNING)
@@ -1113,9 +1179,9 @@ Then register it in `eslint-rules/index.js`.
 ```javascript
 module.exports = {
   rules: {
-    'rulesdir/my-new-rule': 'error'
-  }
-}
+    'rulesdir/my-new-rule': 'error',
+  },
+};
 ```
 
 **4. Test the rule:**
@@ -1160,17 +1226,19 @@ Edit the appropriate rule file in `eslint-rules/` (e.g., `eslint-rules/no-new-da
 
 ```javascript
 module.exports = {
-  meta: { /* ... */ },
+  meta: {
+    /* ... */
+  },
   create(context) {
     const filename = context.getFilename();
     const allowedFiles = [
       'timezone.ts',
       'env/server.ts',
       '.test.',
-      'your-new-file.ts' // Add here
+      'your-new-file.ts', // Add here
     ];
     // ... rest of rule
-  }
+  },
 };
 ```
 
@@ -1181,6 +1249,7 @@ module.exports = {
 ### Automated Enforcement (~85%)
 
 ✅ **Fully Automated:**
+
 - Timezone compliance (`new Date()`, `Date.now()`)
 - Type safety (`as any`, `@ts-ignore`)
 - Console usage (all `console.*`)
@@ -1205,6 +1274,7 @@ module.exports = {
 ### Manual Review Required (~10%)
 
 ⚠️ **Guided (warnings, reminders):**
+
 - Zod validation completeness
 - Transaction usage for bookings
 - PHI exposure in API responses
@@ -1215,6 +1285,7 @@ module.exports = {
 ### Cannot Automate (~5%)
 
 ❌ **Requires Human Judgment:**
+
 - Architecture decisions
 - Feature decomposition
 - UX/UI patterns
@@ -1228,16 +1299,19 @@ module.exports = {
 ### Regular Tasks
 
 **Weekly:**
+
 - Review false positives
 - Update whitelists if needed
 - Check CI/CD workflow success rate
 
 **Monthly:**
+
 - Review new CLAUDE.md rules
 - Add validators for new patterns
 - Update documentation
 
 **Per Sprint:**
+
 - Validate compliance coverage for new features
 - Add feature-specific rules if needed
 

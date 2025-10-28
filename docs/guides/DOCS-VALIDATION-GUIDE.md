@@ -24,6 +24,7 @@ node scripts/compliance/sync-compliance-rules.js validate-docs
 ```
 
 **Output**:
+
 ```
 📋 Validating CLAUDE.md ↔ /docs/ alignment...
 
@@ -42,6 +43,7 @@ node scripts/compliance/sync-compliance-rules.js status
 ```
 
 **Output includes**:
+
 - Last sync timestamp
 - CLAUDE.md hash
 - Documentation alignment stats
@@ -54,6 +56,7 @@ node scripts/compliance/sync-compliance-rules.js sync
 ```
 
 **This command**:
+
 1. Validates docs alignment first
 2. Blocks if errors exist
 3. Warns if orphaned docs found
@@ -72,13 +75,16 @@ node scripts/compliance/sync-compliance-rules.js sync
 ### Examples
 
 **Simple**:
+
 ```markdown
 📄 **Complete Workflow Guide**: See `/docs/compliance/DEVELOPMENT-WORKFLOW.md` for detailed task execution flow, development standards, and command execution policy.
 ```
 
 **With Bullets**:
+
 ```markdown
 📄 **Type Safety Patterns**: See `/docs/compliance/TYPE-SAFETY.md` for:
+
 - Prisma JSON field handling with Zod schemas
 - Type guard implementation patterns
 - tRPC type extraction examples
@@ -96,6 +102,7 @@ vim docs/NEW-TOPIC.md
 ```
 
 **Template**:
+
 ```markdown
 # [Topic Name]
 
@@ -178,6 +185,7 @@ git commit -m "docs: add NEW-TOPIC documentation with CLAUDE.md reference"
 ```
 
 **Action Required**: Either:
+
 1. Add reference to CLAUDE.md, OR
 2. Delete the orphaned doc if no longer needed
 
@@ -191,6 +199,7 @@ git commit -m "docs: add NEW-TOPIC documentation with CLAUDE.md reference"
 ```
 
 **Action Required**: Either:
+
 1. Create the missing doc file, OR
 2. Remove the reference from CLAUDE.md
 
@@ -203,6 +212,7 @@ git commit -m "docs: add NEW-TOPIC documentation with CLAUDE.md reference"
 **Cause**: Doc file exists but isn't referenced in CLAUDE.md
 
 **Fix**:
+
 ```bash
 # Option 1: Add reference
 vim CLAUDE.md
@@ -217,6 +227,7 @@ rm docs/ORPHANED.md
 **Cause**: CLAUDE.md references a file that doesn't exist
 
 **Fix**:
+
 ```bash
 # Option 1: Create the missing doc
 vim docs/MISSING.md
@@ -231,6 +242,7 @@ vim CLAUDE.md
 **Cause**: Critical errors in docs alignment
 
 **Fix**:
+
 ```bash
 # 1. Run validation to see errors
 node scripts/compliance/sync-compliance-rules.js validate-docs
@@ -263,6 +275,7 @@ git commit -m "docs: update references"
 ```
 
 **If alignment errors exist**:
+
 ```
 ❌ Documentation alignment errors detected
 🚫 Commit blocked. Please fix the violations above.
@@ -297,6 +310,7 @@ scripts/compliance/sync-compliance-rules.js
 ```
 
 **Checks performed**:
+
 1. Extract all `/docs/*.md` references from CLAUDE.md
 2. Verify each referenced file exists
 3. Find docs that exist but aren't referenced
@@ -304,6 +318,7 @@ scripts/compliance/sync-compliance-rules.js
 5. Validate reference format consistency
 
 **Configuration stored in**:
+
 ```
 scripts/compliance/compliance-config.json
 └── docsAlignment: {
@@ -332,6 +347,7 @@ The GitHub Actions workflow validates docs alignment:
 ```
 
 **Runs on**:
+
 - Push to protected branches
 - Pull requests to main/master
 

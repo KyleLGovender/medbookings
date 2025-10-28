@@ -10,10 +10,7 @@
         "disabledReason": null,
         "violationCount": 0,
         "patterns": {
-          "forbidden": [
-            "new Date()",
-            "Date.now()"
-          ],
+          "forbidden": ["new Date()", "Date.now()"],
           "allowed": [
             "nowUTC()",
             "nowSAST()",
@@ -23,37 +20,23 @@
             "formatSAST()"
           ]
         },
-        "allowedFiles": [
-          "timezone.ts",
-          "env/server.ts"
-        ],
+        "allowedFiles": ["timezone.ts", "env/server.ts"],
         "severity": "ERROR",
         "reference": "/docs/compliance/TIMEZONE-GUIDELINES.md"
       },
       "typeSafety": {
         "enabled": false,
         "patterns": {
-          "forbidden": [
-            "as any",
-            "@ts-ignore"
-          ]
+          "forbidden": ["as any", "@ts-ignore"]
         },
-        "allowedFiles": [
-          "src/lib/auth.ts",
-          "src/server/trpc.ts",
-          "src/types/guards.ts"
-        ],
+        "allowedFiles": ["src/lib/auth.ts", "src/server/trpc.ts", "src/types/guards.ts"],
         "severity": "ERROR",
         "reference": "/docs/compliance/TYPE-SAFETY.md"
       },
       "logging": {
         "enabled": false,
         "patterns": {
-          "forbidden": [
-            "console.log",
-            "console.error",
-            "console.warn"
-          ]
+          "forbidden": ["console.log", "console.error", "console.warn"]
         },
         "phiSanitization": {
           "email": "sanitizeEmail",
@@ -62,12 +45,7 @@
           "userId": "sanitizeUserId",
           "providerId": "sanitizeProviderId"
         },
-        "allowedFiles": [
-          "logger.ts",
-          "env/server.ts",
-          "audit.ts",
-          "debug.ts"
-        ],
+        "allowedFiles": ["logger.ts", "env/server.ts", "audit.ts", "debug.ts"],
         "severity": "ERROR",
         "reference": "/docs/compliance/LOGGING.md"
       },

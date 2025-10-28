@@ -289,36 +289,46 @@ class EnhancedPHIValidator {
     }
 
     if (conf === 'HIGH') {
-      return `✅ RECOMMENDED: FIX\n` +
-             `   import { ${field.sanitizer} } from '@/lib/logger';\n` +
-             `   ${field.field}: ${field.sanitizer}(${detection.context.variable || 'value'}.${field.field})`;
+      return (
+        `✅ RECOMMENDED: FIX\n` +
+        `   import { ${field.sanitizer} } from '@/lib/logger';\n` +
+        `   ${field.field}: ${field.sanitizer}(${detection.context.variable || 'value'}.${field.field})`
+      );
     }
 
     if (conf === 'MEDIUM') {
-      return `⚠️  RECOMMENDED: REVIEW & DECIDE\n` +
-             `   If this IS PHI: Use ${field.sanitizer}()\n` +
-             `   If this is NOT PHI: Add suppression comment`;
+      return (
+        `⚠️  RECOMMENDED: REVIEW & DECIDE\n` +
+        `   If this IS PHI: Use ${field.sanitizer}()\n` +
+        `   If this is NOT PHI: Add suppression comment`
+      );
     }
 
-    return `⚠️  RECOMMENDED: REVIEW\n` +
-           `   1. If this IS PHI → Use ${field.sanitizer}()\n` +
-           `   2. If this is NOT PHI → Add suppression comment\n` +
-           `   3. If unsure → Ask in code review`;
+    return (
+      `⚠️  RECOMMENDED: REVIEW\n` +
+      `   1. If this IS PHI → Use ${field.sanitizer}()\n` +
+      `   2. If this is NOT PHI → Add suppression comment\n` +
+      `   3. If unsure → Ask in code review`
+    );
   }
 
   buildSuppressionGuidance(detection) {
     const conf = detection.confidence;
 
     if (conf === 'HIGH') {
-      return 'Suppress only if certain this is NOT PHI:\n' +
-             '     // phi-safe: [explain why this is not PHI]\n' +
-             '     logger.info(...)';
+      return (
+        'Suppress only if certain this is NOT PHI:\n' +
+        '     // phi-safe: [explain why this is not PHI]\n' +
+        '     logger.info(...)'
+      );
     }
 
-    return 'To suppress:\n' +
-           '     // phi-safe: [explain why this is not PHI]\n' +
-           '     logger.info(...)\n' +
-           '   Valid reasons: field already sanitized, system config, emailVerified (boolean)';
+    return (
+      'To suppress:\n' +
+      '     // phi-safe: [explain why this is not PHI]\n' +
+      '     logger.info(...)\n' +
+      '   Valid reasons: field already sanitized, system config, emailVerified (boolean)'
+    );
   }
 }
 
@@ -450,10 +460,10 @@ class EnhancedTransactionValidator {
   }
 
   evaluateTransactionNeed(operations) {
-    const criticalOps = operations.filter(op => op.critical);
+    const criticalOps = operations.filter((op) => op.critical);
     if (criticalOps.length > 0) return true;
 
-    if (operations.every(op => op.type === 'READ_ONLY')) return false;
+    if (operations.every((op) => op.type === 'READ_ONLY')) return false;
 
     if (operations.length === 1 && operations[0].type === 'SINGLE_WRITE') return false;
 
@@ -461,23 +471,23 @@ class EnhancedTransactionValidator {
   }
 
   assessRiskLevel(operations) {
-    if (operations.some(op => op.type === 'CHECK_THEN_ACT')) {
+    if (operations.some((op) => op.type === 'CHECK_THEN_ACT')) {
       return 'CRITICAL';
     }
 
     if (
-      operations.some(op => op.type === 'BOOKING_CREATE') &&
-      operations.some(op => op.type === 'SLOT_UPDATE')
+      operations.some((op) => op.type === 'BOOKING_CREATE') &&
+      operations.some((op) => op.type === 'SLOT_UPDATE')
     ) {
       return 'CRITICAL';
     }
 
-    const multiWrite = operations.find(op => op.type === 'MULTIPLE_WRITES');
+    const multiWrite = operations.find((op) => op.type === 'MULTIPLE_WRITES');
     if (multiWrite && multiWrite.count >= 3) {
       return 'HIGH';
     }
 
-    if (operations.every(op => op.type === 'READ_ONLY')) {
+    if (operations.every((op) => op.type === 'READ_ONLY')) {
       return 'LOW';
     }
 
@@ -485,23 +495,23 @@ class EnhancedTransactionValidator {
   }
 
   determineReason(operations) {
-    if (operations.some(op => op.type === 'CHECK_THEN_ACT')) {
+    if (operations.some((op) => op.type === 'CHECK_THEN_ACT')) {
       return 'Race condition: Another request could modify data between check and action';
     }
 
     if (
-      operations.some(op => op.type === 'BOOKING_CREATE') &&
-      operations.some(op => op.type === 'SLOT_UPDATE')
+      operations.some((op) => op.type === 'BOOKING_CREATE') &&
+      operations.some((op) => op.type === 'SLOT_UPDATE')
     ) {
       return 'Double-booking prevention: Booking and slot must update atomically';
     }
 
-    const multiWrite = operations.find(op => op.type === 'MULTIPLE_WRITES');
+    const multiWrite = operations.find((op) => op.type === 'MULTIPLE_WRITES');
     if (multiWrite) {
       return `Data consistency: ${multiWrite.count} writes should be atomic`;
     }
 
-    if (operations.every(op => op.type === 'READ_ONLY')) {
+    if (operations.every((op) => op.type === 'READ_ONLY')) {
       return 'Read-only operation - transaction not needed';
     }
 
@@ -518,35 +528,45 @@ class EnhancedTransactionValidator {
     }
 
     if (context.riskLevel === 'CRITICAL' || context.riskLevel === 'HIGH') {
-      return '❌ RECOMMENDED: FIX IMMEDIATELY\n' +
-             '   await ctx.prisma.$transaction(async (tx) => {\n' +
-             '     const slot = await tx.slot.findUnique({ where: { id } });\n' +
-             '     if (slot.status !== "AVAILABLE") throw new TRPCError(...);\n' +
-             '     await tx.booking.create({ data });\n' +
-             '     await tx.slot.update({ where: { id }, data: { status: "BOOKED" } });\n' +
-             '   }, { maxWait: 10000, timeout: 20000 });';
+      return (
+        '❌ RECOMMENDED: FIX IMMEDIATELY\n' +
+        '   await ctx.prisma.$transaction(async (tx) => {\n' +
+        '     const slot = await tx.slot.findUnique({ where: { id } });\n' +
+        '     if (slot.status !== "AVAILABLE") throw new TRPCError(...);\n' +
+        '     await tx.booking.create({ data });\n' +
+        '     await tx.slot.update({ where: { id }, data: { status: "BOOKED" } });\n' +
+        '   }, { maxWait: 10000, timeout: 20000 });'
+      );
     }
 
-    return '⚠️  RECOMMENDED: REVIEW & DECIDE\n' +
-           '   If race condition possible → Wrap in transaction\n' +
-           '   If operations independent → Add suppression comment';
+    return (
+      '⚠️  RECOMMENDED: REVIEW & DECIDE\n' +
+      '   If race condition possible → Wrap in transaction\n' +
+      '   If operations independent → Add suppression comment'
+    );
   }
 
   buildSuppressionGuidance(context) {
     if (context.riskLevel === 'LOW') {
-      return 'Safe to suppress:\n' +
-             '     // tx-safe: read-only operation\n' +
-             '     const data = await ctx.prisma.model.findMany();';
+      return (
+        'Safe to suppress:\n' +
+        '     // tx-safe: read-only operation\n' +
+        '     const data = await ctx.prisma.model.findMany();'
+      );
     }
 
     if (context.riskLevel === 'MEDIUM') {
-      return 'Suppress ONLY if certain no race condition exists:\n' +
-             '     // tx-safe: single write, no concurrent access risk\n' +
-             '     await ctx.prisma.log.create({ data });';
+      return (
+        'Suppress ONLY if certain no race condition exists:\n' +
+        '     // tx-safe: single write, no concurrent access risk\n' +
+        '     await ctx.prisma.log.create({ data });'
+      );
     }
 
-    return '⚠️  DO NOT suppress CRITICAL/HIGH risk operations\n' +
-           '   Valid reasons: idempotent operation, external transaction, team-reviewed';
+    return (
+      '⚠️  DO NOT suppress CRITICAL/HIGH risk operations\n' +
+      '   Valid reasons: idempotent operation, external transaction, team-reviewed'
+    );
   }
 }
 
@@ -642,18 +662,18 @@ class CodeValidator {
 
     // NEW VALIDATORS (Option C - 85% Automation)
     // Phase 1: Quick Wins
-    this.validateImageUsage(filePath, newContent);              // Validator 6
-    this.validateStateManagement(filePath, newContent);         // Validator 7
-    this.validateProcedureType(filePath, newContent);           // Validator 8
+    this.validateImageUsage(filePath, newContent); // Validator 6
+    this.validateStateManagement(filePath, newContent); // Validator 7
+    this.validateProcedureType(filePath, newContent); // Validator 8
 
     // Phase 2: Medium Complexity
-    this.validateSingleQueryPerEndpoint(filePath, newContent);  // Validator 9
-    this.validateAuthorizationOrder(filePath, newContent);      // Validator 10
+    this.validateSingleQueryPerEndpoint(filePath, newContent); // Validator 9
+    this.validateAuthorizationOrder(filePath, newContent); // Validator 10
 
     // Phase 3: Advanced
-    this.validateInputSanitization(filePath, newContent);       // Validator 11
-    this.validatePerformancePatterns(filePath, newContent);     // Validator 12
-    this.validateFormPatterns(filePath, newContent);            // Validator 13
+    this.validateInputSanitization(filePath, newContent); // Validator 11
+    this.validatePerformancePatterns(filePath, newContent); // Validator 12
+    this.validateFormPatterns(filePath, newContent); // Validator 13
 
     return {
       valid: this.violations.length === 0,
@@ -670,7 +690,7 @@ class CodeValidator {
   getAddedLines(oldContent, newContent) {
     const oldLines = oldContent.split('\n');
     const newLines = newContent.split('\n');
-    return newLines.filter(line => !oldLines.includes(line));
+    return newLines.filter((line) => !oldLines.includes(line));
   }
 
   // -------------------------------------------------------------------------
@@ -719,7 +739,7 @@ class CodeValidator {
       'src/types/guards.ts',
       'src/app/api/trpc/[trpc]/route.ts', // tRPC App Router adapter - type mismatch between Web API and Node API
     ];
-    if (whitelist.some(allowed => filePath.includes(allowed))) {
+    if (whitelist.some((allowed) => filePath.includes(allowed))) {
       return;
     }
 
@@ -762,7 +782,7 @@ class CodeValidator {
     addedLines.forEach((line, idx) => {
       if (/console\.(log|error|warn|info)/.test(line)) {
         const allowedFiles = ['logger.ts', 'env/server.ts', 'audit.ts', 'debug.ts'];
-        if (!allowedFiles.some(file => filePath.includes(file))) {
+        if (!allowedFiles.some((file) => filePath.includes(file))) {
           this.violations.push({
             severity: 'ERROR',
             rule: 'CONSOLE_USAGE',
@@ -863,7 +883,7 @@ class CodeValidator {
     if (filePath.includes('/routers/')) {
       const findManyMatches = fullContent.match(/\.findMany\(\{[^}]*\}\)/gs);
       if (findManyMatches) {
-        findManyMatches.forEach(match => {
+        findManyMatches.forEach((match) => {
           if (!/take:/.test(match)) {
             this.violations.push({
               severity: 'ERROR',
@@ -894,8 +914,8 @@ class CodeValidator {
 
     if (matches) {
       const lines = fullContent.split('\n');
-      matches.forEach(match => {
-        const lineIdx = lines.findIndex(line => line.includes(match));
+      matches.forEach((match) => {
+        const lineIdx = lines.findIndex((line) => line.includes(match));
 
         this.violations.push({
           severity: 'ERROR',
@@ -904,9 +924,10 @@ class CodeValidator {
           line: lineIdx + 1,
           content: match.substring(0, 80) + '...',
           message: 'Use Next.js Image component instead of <img> tag',
-          fix: 'Replace <img> with <Image> from "next/image"\n' +
-               '   import Image from "next/image";\n' +
-               '   <Image src="/path" alt="..." width={X} height={Y} />',
+          fix:
+            'Replace <img> with <Image> from "next/image"\n' +
+            '   import Image from "next/image";\n' +
+            '   <Image src="/path" alt="..." width={X} height={Y} />',
           reference: 'DEVELOPER-PRINCIPLES.md Section 15 - Component Development',
         });
       });
@@ -931,10 +952,10 @@ class CodeValidator {
       { pattern: /from ['"]recoil['"]/, name: 'Recoil' },
     ];
 
-    forbiddenLibraries.forEach(lib => {
+    forbiddenLibraries.forEach((lib) => {
       if (lib.pattern.test(fullContent)) {
         const lines = fullContent.split('\n');
-        const lineIdx = lines.findIndex(line => lib.pattern.test(line));
+        const lineIdx = lines.findIndex((line) => lib.pattern.test(line));
 
         this.violations.push({
           severity: 'ERROR',
@@ -943,9 +964,10 @@ class CodeValidator {
           line: lineIdx + 1,
           content: lines[lineIdx]?.trim(),
           message: `${lib.name} is forbidden in features. Use TanStack Query via tRPC for state management`,
-          fix: 'Replace with tRPC hooks:\n' +
-               '   import { api } from "@/utils/api";\n' +
-               '   const { data } = api.router.procedure.useQuery();',
+          fix:
+            'Replace with tRPC hooks:\n' +
+            '   import { api } from "@/utils/api";\n' +
+            '   const { data } = api.router.procedure.useQuery();',
           reference: 'DEVELOPER-PRINCIPLES.md Section 16 - State Management',
         });
       }
@@ -983,14 +1005,14 @@ class CodeValidator {
     ];
 
     lines.forEach((line, idx) => {
-      sensitivePatterns.forEach(pattern => {
+      sensitivePatterns.forEach((pattern) => {
         if (pattern.operation.test(line)) {
           // Look back up to 20 lines for procedure definition
           const contextStart = Math.max(0, idx - 20);
           const context = lines.slice(contextStart, idx + 1).join('\n');
 
           // Check if using wrong procedure type
-          pattern.wrongProcedures.forEach(wrongProc => {
+          pattern.wrongProcedures.forEach((wrongProc) => {
             if (new RegExp(wrongProc).test(context)) {
               this.violations.push({
                 severity: 'ERROR',
@@ -999,8 +1021,7 @@ class CodeValidator {
                 line: idx + 1,
                 content: line.trim(),
                 message: `Sensitive operation requires ${pattern.requires}, not ${wrongProc}`,
-                fix: `Change procedure type:\n` +
-                     `   ${wrongProc} → ${pattern.requires}`,
+                fix: `Change procedure type:\n` + `   ${wrongProc} → ${pattern.requires}`,
                 reference: 'DEVELOPER-PRINCIPLES.md Section 13 - Authentication & Authorization',
               });
             }
@@ -1020,7 +1041,8 @@ class CodeValidator {
     }
 
     // Find all tRPC procedures
-    const procedurePattern = /(\w+):\s*(publicProcedure|protectedProcedure|adminProcedure|superAdminProcedure)[^}]+?\.(?:query|mutation)\(async[^}]+?\{([^}]+?)\}\)/gs;
+    const procedurePattern =
+      /(\w+):\s*(publicProcedure|protectedProcedure|adminProcedure|superAdminProcedure)[^}]+?\.(?:query|mutation)\(async[^}]+?\{([^}]+?)\}\)/gs;
 
     let match;
     while ((match = procedurePattern.exec(fullContent)) !== null) {
@@ -1033,7 +1055,8 @@ class CodeValidator {
       }
 
       // Count prisma queries
-      const queryPattern = /(?:ctx\.)?prisma\.\w+\.(findMany|findUnique|findFirst|create|update|delete|upsert)\(/g;
+      const queryPattern =
+        /(?:ctx\.)?prisma\.\w+\.(findMany|findUnique|findFirst|create|update|delete|upsert)\(/g;
       const queries = procedureBody.match(queryPattern) || [];
 
       if (queries.length > 1) {
@@ -1048,9 +1071,10 @@ class CodeValidator {
           line: lineNumber,
           content: `${procedureName}: ${queries.length} queries detected`,
           message: `Found ${queries.length} database queries in single endpoint. Use single query with include or transaction`,
-          fix: 'Combine queries:\n' +
-               '   ✅ Single query: await ctx.prisma.model.findUnique({ include: { related: true } })\n' +
-               '   ✅ Transaction: await ctx.prisma.$transaction(async (tx) => { ... })',
+          fix:
+            'Combine queries:\n' +
+            '   ✅ Single query: await ctx.prisma.model.findUnique({ include: { related: true } })\n' +
+            '   ✅ Transaction: await ctx.prisma.$transaction(async (tx) => { ... })',
           reference: 'DEVELOPER-PRINCIPLES.md Section 14 - API Development',
         });
       }
@@ -1066,7 +1090,8 @@ class CodeValidator {
       return;
     }
 
-    const procedurePattern = /(protectedProcedure|adminProcedure|superAdminProcedure)[^}]+?\.(?:query|mutation)\(async[^}]+?\{([^}]+?)\}\)/gs;
+    const procedurePattern =
+      /(protectedProcedure|adminProcedure|superAdminProcedure)[^}]+?\.(?:query|mutation)\(async[^}]+?\{([^}]+?)\}\)/gs;
 
     let match;
     while ((match = procedurePattern.exec(fullContent)) !== null) {
@@ -1086,7 +1111,11 @@ class CodeValidator {
         }
 
         // Detect auth checks
-        if (/if\s*\(.*?(session|user|role|permission)|throw new TRPCError.*FORBIDDEN|UNAUTHORIZED/.test(line)) {
+        if (
+          /if\s*\(.*?(session|user|role|permission)|throw new TRPCError.*FORBIDDEN|UNAUTHORIZED/.test(
+            line
+          )
+        ) {
           hasAuthCheck = true;
           authCheckLine = idx;
         }
@@ -1103,10 +1132,11 @@ class CodeValidator {
           file: filePath,
           line: lineNumber,
           message: 'Authorization checks should come BEFORE business logic',
-          fix: 'Move authorization checks to the beginning of the procedure:\n' +
-               '   1. Authorization check (if/throw)\n' +
-               '   2. Business logic (DB queries)\n' +
-               '   3. Return data',
+          fix:
+            'Move authorization checks to the beginning of the procedure:\n' +
+            '   1. Authorization check (if/throw)\n' +
+            '   2. Business logic (DB queries)\n' +
+            '   3. Return data',
           reference: 'DEVELOPER-PRINCIPLES.md Section 14 - API Development',
         });
       }
@@ -1118,7 +1148,11 @@ class CodeValidator {
   // -------------------------------------------------------------------------
   validateInputSanitization(filePath, fullContent) {
     // Check both routers and components
-    if (!filePath.includes('/routers/') && !filePath.includes('/components/') && !filePath.includes('/features/')) {
+    if (
+      !filePath.includes('/routers/') &&
+      !filePath.includes('/components/') &&
+      !filePath.includes('/features/')
+    ) {
       return;
     }
 
@@ -1147,7 +1181,7 @@ class CodeValidator {
     ];
 
     lines.forEach((line, idx) => {
-      dangerousPatterns.forEach(danger => {
+      dangerousPatterns.forEach((danger) => {
         if (danger.pattern.test(line)) {
           this.violations.push({
             severity: danger.severity,
@@ -1167,9 +1201,10 @@ class CodeValidator {
     if (filePath.endsWith('.tsx')) {
       lines.forEach((line, idx) => {
         // Detect {userInput} in JSX without sanitization
-        if (/\{.*?(input|params|searchParams|query)\.\w+\}/.test(line) &&
-            !/sanitize|escape|encode/.test(line)) {
-
+        if (
+          /\{.*?(input|params|searchParams|query)\.\w+\}/.test(line) &&
+          !/sanitize|escape|encode/.test(line)
+        ) {
           this.violations.push({
             severity: 'WARNING',
             rule: 'UNVALIDATED_USER_INPUT',
@@ -1177,10 +1212,11 @@ class CodeValidator {
             line: idx + 1,
             content: line.trim(),
             message: 'User input should be validated before rendering',
-            fix: 'Add validation:\n' +
-                 '   1. Validate with Zod schema\n' +
-                 '   2. Escape special characters\n' +
-                 '   3. Use textContent instead of innerHTML',
+            fix:
+              'Add validation:\n' +
+              '   1. Validate with Zod schema\n' +
+              '   2. Escape special characters\n' +
+              '   3. Use textContent instead of innerHTML',
             reference: 'DEVELOPER-PRINCIPLES.md Section 19 - Security Standards',
           });
         }
@@ -1213,9 +1249,10 @@ class CodeValidator {
             line: idx + 1,
             content: line.trim(),
             message: 'API calls inside loops are forbidden (performance issue)',
-            fix: 'Batch fetch instead:\n' +
-                 '   ❌ for (id of ids) { await api.get({ id }) }\n' +
-                 '   ✅ await api.getBatch({ ids })',
+            fix:
+              'Batch fetch instead:\n' +
+              '   ❌ for (id of ids) { await api.get({ id }) }\n' +
+              '   ✅ await api.getBatch({ ids })',
             reference: 'DEVELOPER-PRINCIPLES.md Section 18 - Performance Standards',
           });
         }
@@ -1233,10 +1270,11 @@ class CodeValidator {
         rule: 'MISSING_MEMOIZATION',
         file: filePath,
         message: 'Large component with expensive operations should use memoization',
-        fix: 'Consider adding:\n' +
-             '   - useMemo() for expensive calculations\n' +
-             '   - useCallback() for event handlers\n' +
-             '   - memo() for component itself',
+        fix:
+          'Consider adding:\n' +
+          '   - useMemo() for expensive calculations\n' +
+          '   - useCallback() for event handlers\n' +
+          '   - memo() for component itself',
         reference: 'DEVELOPER-PRINCIPLES.md Section 18 - Performance Standards',
       });
     }
@@ -1258,11 +1296,12 @@ class CodeValidator {
           file: filePath,
           line: lineNumber,
           message: 'GET requests should have cache configuration (min 5 seconds)',
-          fix: 'Add cache config:\n' +
-               '   api.router.get.useQuery(input, {\n' +
-               '     staleTime: 5000,  // 5 seconds\n' +
-               '     cacheTime: 300000 // 5 minutes\n' +
-               '   })',
+          fix:
+            'Add cache config:\n' +
+            '   api.router.get.useQuery(input, {\n' +
+            '     staleTime: 5000,  // 5 seconds\n' +
+            '     cacheTime: 300000 // 5 minutes\n' +
+            '   })',
           reference: 'DEVELOPER-PRINCIPLES.md Section 18 - Performance Standards',
         });
       }
@@ -1287,7 +1326,8 @@ class CodeValidator {
     // Updated regex to handle TypeScript generics: useForm() or useForm<Type>()
     const hasUseForm = /useForm[<(]/.test(fullContent);
     const hasZodResolver = /zodResolver/.test(fullContent);
-    const hasZodSchema = /z\.object\(/.test(fullContent) || /import.*Schema.*from/.test(fullContent);
+    const hasZodSchema =
+      /z\.object\(/.test(fullContent) || /import.*Schema.*from/.test(fullContent);
 
     if (!hasUseForm) {
       this.violations.push({
@@ -1295,9 +1335,10 @@ class CodeValidator {
         rule: 'MISSING_REACT_HOOK_FORM',
         file: filePath,
         message: 'Forms must use React Hook Form (not manual state)',
-        fix: 'Add React Hook Form:\n' +
-             '   import { useForm } from "react-hook-form";\n' +
-             '   const { register, handleSubmit } = useForm();',
+        fix:
+          'Add React Hook Form:\n' +
+          '   import { useForm } from "react-hook-form";\n' +
+          '   const { register, handleSubmit } = useForm();',
         reference: 'DEVELOPER-PRINCIPLES.md Section 17 - Form Handling',
       });
     }
@@ -1308,9 +1349,10 @@ class CodeValidator {
         rule: 'MISSING_ZOD_RESOLVER',
         file: filePath,
         message: 'React Hook Form must use zodResolver for validation',
-        fix: 'Add Zod resolver:\n' +
-             '   import { zodResolver } from "@hookform/resolvers/zod";\n' +
-             '   const form = useForm({ resolver: zodResolver(schema) });',
+        fix:
+          'Add Zod resolver:\n' +
+          '   import { zodResolver } from "@hookform/resolvers/zod";\n' +
+          '   const form = useForm({ resolver: zodResolver(schema) });',
         reference: 'DEVELOPER-PRINCIPLES.md Section 17 - Form Handling',
       });
     }
@@ -1321,8 +1363,7 @@ class CodeValidator {
         rule: 'MISSING_ZOD_SCHEMA',
         file: filePath,
         message: 'Form should have Zod schema for validation',
-        fix: 'Create Zod schema:\n' +
-             '   const schema = z.object({ field: z.string() });',
+        fix: 'Create Zod schema:\n' + '   const schema = z.object({ field: z.string() });',
         reference: 'DEVELOPER-PRINCIPLES.md Section 17 - Form Handling',
       });
     }
@@ -1339,9 +1380,10 @@ class CodeValidator {
             line: idx + 1,
             content: line.trim(),
             message: 'Use z.nativeEnum(PrismaEnum) instead of z.enum()',
-            fix: 'Replace with Prisma enum:\n' +
-                 '   import { Status } from "@prisma/client";\n' +
-                 '   z.nativeEnum(Status)',
+            fix:
+              'Replace with Prisma enum:\n' +
+              '   import { Status } from "@prisma/client";\n' +
+              '   z.nativeEnum(Status)',
             reference: 'DEVELOPER-PRINCIPLES.md Section 17 - Form Handling',
           });
         }
@@ -1363,7 +1405,9 @@ function main() {
     const oldContentPath = args[2];
     const newContentPath = args[3];
 
-    const oldContent = fs.existsSync(oldContentPath) ? fs.readFileSync(oldContentPath, 'utf-8') : '';
+    const oldContent = fs.existsSync(oldContentPath)
+      ? fs.readFileSync(oldContentPath, 'utf-8')
+      : '';
     const newContent = fs.readFileSync(newContentPath, 'utf-8');
 
     const claudeMdPath = path.join(__dirname, '..', '..', 'CLAUDE.md');
@@ -1381,14 +1425,18 @@ function main() {
 
         // Enhanced: Show confidence/risk level
         if (v.confidence) {
-          const emoji = v.confidence === 'HIGH' ? '🔴' :
-                        v.confidence === 'MEDIUM' ? '🟡' : '🟢';
+          const emoji = v.confidence === 'HIGH' ? '🔴' : v.confidence === 'MEDIUM' ? '🟡' : '🟢';
           console.log(`   ${emoji} CONFIDENCE: ${v.confidence}\n`);
         }
         if (v.riskLevel) {
-          const emoji = v.riskLevel === 'CRITICAL' ? '🔴' :
-                        v.riskLevel === 'HIGH' ? '🔴' :
-                        v.riskLevel === 'MEDIUM' ? '🟡' : '🟢';
+          const emoji =
+            v.riskLevel === 'CRITICAL'
+              ? '🔴'
+              : v.riskLevel === 'HIGH'
+                ? '🔴'
+                : v.riskLevel === 'MEDIUM'
+                  ? '🟡'
+                  : '🟢';
           console.log(`   ${emoji} RISK LEVEL: ${v.riskLevel}\n`);
         }
 
@@ -1409,10 +1457,10 @@ function main() {
       });
 
       // Enhanced: Summary with actionable breakdown
-      const errors = result.violations.filter(v => v.severity === 'ERROR').length;
-      const warnings = result.violations.filter(v => v.severity === 'WARNING').length;
-      const critical = result.violations.filter(v =>
-        v.confidence === 'HIGH' || v.riskLevel === 'CRITICAL' || v.riskLevel === 'HIGH'
+      const errors = result.violations.filter((v) => v.severity === 'ERROR').length;
+      const warnings = result.violations.filter((v) => v.severity === 'WARNING').length;
+      const critical = result.violations.filter(
+        (v) => v.confidence === 'HIGH' || v.riskLevel === 'CRITICAL' || v.riskLevel === 'HIGH'
       ).length;
 
       console.log('\n' + '━'.repeat(80));
@@ -1439,7 +1487,7 @@ function main() {
       console.log('\n' + '━'.repeat(80) + '\n');
 
       // Only exit with error for ERROR severity, not WARNING
-      const hasErrors = result.violations.some(v => v.severity === 'ERROR');
+      const hasErrors = result.violations.some((v) => v.severity === 'ERROR');
       if (hasErrors) {
         console.log('🚫 Commit blocked due to ERROR violations\n');
       } else {

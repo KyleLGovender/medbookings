@@ -51,14 +51,13 @@ async function checkSendGridConfig() {
     // Note: This might not work with all API key permissions
     console.log('✅ API key appears to be valid');
     console.log('   (Full validation requires sending a test email)');
-
   } catch (error) {
     console.log('❌ API key validation failed:', error.message);
 
     if (error.code === 401) {
       console.log('   Issue: API key is invalid or expired');
     } else if (error.code === 403) {
-      console.log('   Issue: API key doesn\'t have required permissions');
+      console.log("   Issue: API key doesn't have required permissions");
     }
   }
 

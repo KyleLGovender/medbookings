@@ -56,7 +56,11 @@ module.exports = {
 
           // If no comments found and parent is an export declaration,
           // check for comments before the export declaration
-          if (comments.length === 0 && node.parent && node.parent.type === 'ExportNamedDeclaration') {
+          if (
+            comments.length === 0 &&
+            node.parent &&
+            node.parent.type === 'ExportNamedDeclaration'
+          ) {
             comments = sourceCode.getCommentsBefore(node.parent);
           }
 

@@ -4,10 +4,11 @@
  * CRITICAL: This logger is designed to prevent PHI (Protected Health Information) leakage.
  * All PHI must be sanitized before logging using the sanitization utilities.
  *
- * CloudWatch Integration: Logs are automatically captured by AWS Amplify and sent to CloudWatch.
+ * CloudWatch Integration: Logs are sent directly to CloudWatch using AWS SDK.
  * - JSON format in production for structured log parsing
  * - Human-readable format in development for easier debugging
  * - Automatic metadata (environment, service, branch) for filtering
+ * - Batched log delivery for efficiency
  *
  * Usage:
  * - logger.info() - General information (development only)
@@ -15,6 +16,13 @@
  * - logger.error() - Errors that need investigation
  * - logger.audit() - Security/compliance events (always logged)
  */
+import {
+  CloudWatchLogsClient,
+  CreateLogStreamCommand,
+  DescribeLogStreamsCommand,
+  PutLogEventsCommand,
+} from '@aws-sdk/client-cloudwatch-logs';
+
 import { nowUTC } from '@/lib/timezone';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'audit';
@@ -53,9 +61,173 @@ interface LogEntry {
   branch?: string;
 }
 
+/**
+ * CloudWatch Transport for batched log delivery
+ * Handles sending logs to AWS CloudWatch Logs with batching and error handling
+ */
+class CloudWatchTransport {
+  private client: CloudWatchLogsClient | null = null;
+  private logGroupName: string | null = null;
+  private logStreamName: string = '';
+  private sequenceToken: string | undefined;
+  private buffer: Array<{ timestamp: number; message: string }> = [];
+  private flushInterval: NodeJS.Timeout | null = null;
+  private isInitialized = false;
+  private initializationPromise: Promise<void> | null = null;
+
+  constructor() {
+    // Only initialize in production if log group is configured
+    if (process.env.NODE_ENV === 'production' && process.env['CLOUDWATCH_LOG_GROUP_NAME']) {
+      this.logGroupName = process.env['CLOUDWATCH_LOG_GROUP_NAME'];
+      this.logStreamName = `app-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      try {
+        this.client = new CloudWatchLogsClient({
+          // Region is automatically detected from AWS environment
+          // or defaults to eu-west-1
+          region: 'eu-west-1',
+        });
+
+        // Initialize async (non-blocking)
+        this.initializationPromise = this.initialize();
+
+        // Flush logs every 5 seconds
+        this.flushInterval = setInterval(() => this.flush(), 5000);
+      } catch (error) {
+        console.error('[CloudWatch] Failed to initialize client:', error);
+        this.client = null;
+      }
+    }
+  }
+
+  /**
+   * Initialize log stream
+   */
+  private async initialize(): Promise<void> {
+    if (!this.client || !this.logGroupName) return;
+
+    try {
+      // Try to create log stream
+      await this.client.send(
+        new CreateLogStreamCommand({
+          logGroupName: this.logGroupName,
+          logStreamName: this.logStreamName,
+        })
+      );
+
+      this.isInitialized = true;
+    } catch (error: any) {
+      // Stream might already exist or log group doesn't exist
+      if (error.name === 'ResourceAlreadyExistsException') {
+        this.isInitialized = true;
+      } else {
+        console.error('[CloudWatch] Failed to create log stream:', error.message);
+        // Don't crash - just disable CloudWatch logging
+        this.client = null;
+      }
+    }
+  }
+
+  /**
+   * Add log entry to buffer
+   */
+  public log(message: string): void {
+    if (!this.client || !this.logGroupName) return;
+
+    this.buffer.push({
+      timestamp: Date.now(),
+      message,
+    });
+
+    // Flush if buffer is getting large
+    if (this.buffer.length >= 100) {
+      this.flush();
+    }
+  }
+
+  /**
+   * Flush buffered logs to CloudWatch
+   */
+  private async flush(): Promise<void> {
+    if (!this.client || !this.logGroupName || this.buffer.length === 0) return;
+
+    // Wait for initialization if not ready
+    if (!this.isInitialized && this.initializationPromise) {
+      try {
+        await this.initializationPromise;
+      } catch (error) {
+        return; // Initialization failed, skip flush
+      }
+    }
+
+    if (!this.isInitialized) return;
+
+    const events = this.buffer.splice(0, 100); // Take up to 100 events
+
+    try {
+      const command = new PutLogEventsCommand({
+        logGroupName: this.logGroupName,
+        logStreamName: this.logStreamName,
+        logEvents: events.map((event) => ({
+          timestamp: event.timestamp,
+          message: event.message,
+        })),
+        sequenceToken: this.sequenceToken,
+      });
+
+      const response = await this.client.send(command);
+      this.sequenceToken = response.nextSequenceToken;
+    } catch (error: any) {
+      console.error('[CloudWatch] Failed to send logs:', error.message);
+
+      // If sequence token is invalid, fetch the latest one
+      if (
+        error.name === 'InvalidSequenceTokenException' ||
+        error.name === 'DataAlreadyAcceptedException'
+      ) {
+        try {
+          const describeResponse = await this.client.send(
+            new DescribeLogStreamsCommand({
+              logGroupName: this.logGroupName,
+              logStreamNamePrefix: this.logStreamName,
+            })
+          );
+
+          if (describeResponse.logStreams && describeResponse.logStreams[0]) {
+            this.sequenceToken = describeResponse.logStreams[0].uploadSequenceToken;
+            // Retry with new token
+            this.buffer.unshift(...events);
+          }
+        } catch (describeError) {
+          console.error('[CloudWatch] Failed to get sequence token:', describeError);
+        }
+      }
+    }
+  }
+
+  /**
+   * Cleanup on shutdown
+   */
+  public async destroy(): Promise<void> {
+    if (this.flushInterval) {
+      clearInterval(this.flushInterval);
+      this.flushInterval = null;
+    }
+
+    // Final flush
+    await this.flush();
+  }
+}
+
 class Logger {
   private isDevelopment = process.env.NODE_ENV === 'development';
   private isProduction = process.env.NODE_ENV === 'production';
+  private cloudwatch: CloudWatchTransport;
+
+  constructor() {
+    // Initialize CloudWatch transport
+    this.cloudwatch = new CloudWatchTransport();
+  }
 
   /**
    * Check if debug logging is enabled for a specific feature
@@ -98,8 +270,8 @@ class Logger {
       service: 'medbookings',
       environment: process.env.NODE_ENV || 'development',
       branch: process.env.AWS_BRANCH || 'local',
-      ...entry.context && { context: entry.context },
-      ...feature && { feature },
+      ...(entry.context && { context: entry.context }),
+      ...(feature && { feature }),
     };
     return JSON.stringify(logObject);
   }
@@ -110,6 +282,7 @@ class Logger {
   private output(entry: LogEntry): void {
     const formatted = this.formatLog(entry);
 
+    // Always log to console
     switch (entry.level) {
       case 'debug':
         // Debug logs controlled by feature flags
@@ -133,6 +306,16 @@ class Logger {
         }
         // In production, suppress info logs unless explicitly enabled
         break;
+    }
+
+    // Also send to CloudWatch in production (non-blocking)
+    if (this.isProduction) {
+      try {
+        this.cloudwatch.log(formatted);
+      } catch (error) {
+        // Don't crash if CloudWatch fails
+        console.error('[CloudWatch] Failed to buffer log:', error);
+      }
     }
   }
 

@@ -72,6 +72,7 @@ SETUP_STAGING=true                        # Set to false to skip staging
 ```
 
 **Finding your Amplify App ID:**
+
 1. Open [AWS Amplify Console](https://console.aws.amazon.com/amplify/)
 2. Click on your MedBookings app
 3. Copy the App ID from the URL: `https://console.aws.amazon.com/amplify/home?region=eu-west-1#/d123abc456xyz`
@@ -86,6 +87,7 @@ Run the full automated setup:
 ```
 
 The script will:
+
 1. Validate prerequisites and configuration
 2. Show what will be created
 3. Ask for confirmation
@@ -128,12 +130,14 @@ The script will:
 ## 📊 The 7 Phases
 
 ### Phase 1: Log Retention Policies
+
 - Sets retention to 30 days for production (compliance)
 - Sets retention to 7 days for staging (cost optimization)
 - **Time**: 2-3 minutes
 - **Cost**: ~$0.06/GB/month (production), ~$0.02/GB/month (staging)
 
 ### Phase 2: Metric Filters
+
 - Creates `ServerErrors` filter (all error-level logs)
 - Creates `AuthenticationFailures` filter (failed sign-ins)
 - Creates `TRPCErrors` filter (failed API requests)
@@ -141,6 +145,7 @@ The script will:
 - **Cost**: Free (no additional charges)
 
 ### Phase 3: SNS Topics & Subscriptions
+
 - Creates SNS topics for alerts
 - Subscribes email addresses
 - **Requires**: Email confirmation (check inbox)
@@ -148,6 +153,7 @@ The script will:
 - **Cost**: Free for email (first 1,000 notifications)
 
 ### Phase 4: CloudWatch Alarms
+
 - High Server Error Rate (>10 errors in 5 minutes)
 - Authentication Failures (>5 failures in 5 minutes)
 - Sustained Errors (>3 errors across 3 consecutive periods)
@@ -155,6 +161,7 @@ The script will:
 - **Cost**: $0.10/alarm/month (~$0.30-0.60/month total)
 
 ### Phase 5: Monitoring Dashboards
+
 - Server error trends (line graph)
 - Authentication activity (line graph)
 - Latest errors (log table)
@@ -163,6 +170,7 @@ The script will:
 - **Cost**: Free (first 3 dashboards)
 
 ### Phase 6: Log Insights Queries
+
 - Generates markdown file with 15 useful queries
 - Top errors, slow requests, auth events, etc.
 - **Manual Step**: Copy-paste queries into CloudWatch console and save
@@ -170,6 +178,7 @@ The script will:
 - **Cost**: $0.005/GB scanned (only when running queries)
 
 ### Phase 7: Amplify Environment Variables
+
 - Sets `LOG_LEVEL=info` (production) or `debug` (staging)
 - Sets `NODE_ENV=production` or `staging`
 - Optionally triggers redeployment
@@ -216,6 +225,7 @@ AUTO_REDEPLOY=false               # Set to true to auto-deploy after env var cha
 ### Issue: "AWS CLI is not authenticated"
 
 **Solution:**
+
 ```bash
 aws configure
 # Or set environment variables:
@@ -229,6 +239,7 @@ export AWS_DEFAULT_REGION="eu-west-1"
 **Cause**: Server-side logging not enabled in AWS Amplify.
 
 **Solution:**
+
 1. Open [AWS Amplify Console](https://console.aws.amazon.com/amplify/)
 2. Select your MedBookings app
 3. Go to **App settings** → **Monitoring**
@@ -270,6 +281,7 @@ export AWS_DEFAULT_REGION="eu-west-1"
 ### Issue: "jq: command not found"
 
 **Solution:**
+
 ```bash
 # macOS
 brew install jq
@@ -286,6 +298,7 @@ sudo yum install jq
 **Cause**: Email confirmation link not clicked.
 
 **Solution:**
+
 1. Check the email inbox for PRODUCTION_ALERT_EMAIL
 2. Look for email from "AWS Notifications"
 3. Click "Confirm subscription" link
@@ -298,11 +311,13 @@ sudo yum install jq
 **Causes & Solutions:**
 
 1. **Logs not flowing**
+
    - Check if server-side logging is enabled in Amplify
    - Verify application is logging with enhanced logger
    - Check CloudWatch log groups have recent entries
 
 2. **Filter pattern mismatch**
+
    - Logs must be in JSON format (production)
    - Check log structure matches filter patterns
    - Test filter in CloudWatch console
@@ -315,6 +330,7 @@ sudo yum install jq
 ### Issue: Dashboard shows no data
 
 **Solution:**
+
 1. Check metric filters are creating data (CloudWatch → Metrics)
 2. Adjust dashboard time range (top right in dashboard)
 3. Verify log group has recent entries
@@ -357,6 +373,7 @@ aws logs describe-log-groups \
 ### 2. Trigger Test Errors
 
 Visit your application and trigger some errors to test:
+
 - Try signing in with invalid credentials (test auth failures)
 - Access a non-existent page (test server errors)
 - Call an invalid API endpoint (test tRPC errors)
@@ -378,6 +395,7 @@ aws cloudwatch get-metric-statistics \
 ### 4. Test Alarms
 
 Trigger enough errors to exceed threshold and verify:
+
 1. Alarm state changes to "In Alarm"
 2. Email notification received
 3. Dashboard shows the spike
@@ -385,6 +403,7 @@ Trigger enough errors to exceed threshold and verify:
 ### 5. View Dashboard
 
 Open the dashboard URL provided after setup:
+
 ```
 https://console.aws.amazon.com/cloudwatch/home?region=eu-west-1#dashboards:name=MedBookings-Production
 ```
@@ -411,16 +430,16 @@ https://console.aws.amazon.com/cloudwatch/home?region=eu-west-1#dashboards:name=
 
 ## 💰 Cost Breakdown
 
-| Service | Usage | Cost |
-|---------|-------|------|
-| CloudWatch Logs | First 5 GB/month | Free |
-| CloudWatch Logs | $0.50/GB after 5 GB | Variable |
-| Log Retention | $0.03/GB/month | ~$0.06-0.15/month |
-| CloudWatch Metrics | 10 custom metrics | Free (< 10,000) |
-| CloudWatch Alarms | 3 alarms per environment | $0.30-0.60/month |
-| CloudWatch Dashboards | 2 dashboards | Free (first 3) |
-| SNS Email | 1,000 notifications/month | Free |
-| Logs Insights Queries | $0.005/GB scanned | On-demand |
+| Service               | Usage                     | Cost              |
+| --------------------- | ------------------------- | ----------------- |
+| CloudWatch Logs       | First 5 GB/month          | Free              |
+| CloudWatch Logs       | $0.50/GB after 5 GB       | Variable          |
+| Log Retention         | $0.03/GB/month            | ~$0.06-0.15/month |
+| CloudWatch Metrics    | 10 custom metrics         | Free (< 10,000)   |
+| CloudWatch Alarms     | 3 alarms per environment  | $0.30-0.60/month  |
+| CloudWatch Dashboards | 2 dashboards              | Free (first 3)    |
+| SNS Email             | 1,000 notifications/month | Free              |
+| Logs Insights Queries | $0.005/GB scanned         | On-demand         |
 
 **Estimated Total**: $2-3/month for both production and staging
 
@@ -456,6 +475,7 @@ Edit `config.sh` and re-run Phase 4:
 1. Edit `phases/02-metric-filters.sh`
 2. Add new filter using `create_metric_filter` function
 3. Re-run Phase 2:
+
 ```bash
 ./setup-cloudwatch.sh --phase 02-metric-filters --force
 ```
@@ -464,6 +484,7 @@ Edit `config.sh` and re-run Phase 4:
 
 1. Modify dashboard JSON in `phases/05-dashboard.sh`
 2. Re-run Phase 5:
+
 ```bash
 ./setup-cloudwatch.sh --phase 05-dashboard --force
 ```

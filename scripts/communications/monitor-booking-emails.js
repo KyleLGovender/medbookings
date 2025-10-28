@@ -32,12 +32,12 @@ const patterns = [
   'Error sending email',
   'Booking notifications',
   'sendBookingConfirmationEmail',
-  'sendProviderNotificationEmail'
+  'sendProviderNotificationEmail',
 ];
 
 console.log('🔍 Email Log Monitor Active');
 console.log('📝 Patterns being watched:');
-patterns.forEach(pattern => console.log(`   - ${pattern}`));
+patterns.forEach((pattern) => console.log(`   - ${pattern}`));
 console.log('\n⏳ Waiting for email activity...');
 console.log('   (Make a booking in your app to see email logs)');
 
@@ -47,7 +47,9 @@ console.log('   (Make a booking in your app to see email logs)');
 const startTime = new Date();
 setInterval(() => {
   const elapsed = Math.floor((new Date() - startTime) / 1000);
-  process.stdout.write(`\r⏱️  Monitoring for ${elapsed}s... (Make a booking to see email activity)`);
+  process.stdout.write(
+    `\r⏱️  Monitoring for ${elapsed}s... (Make a booking to see email activity)`
+  );
 }, 1000);
 
 // Graceful shutdown

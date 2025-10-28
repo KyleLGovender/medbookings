@@ -41,8 +41,8 @@ export default function Error({
           <h1 className="text-4xl font-bold text-red-600">Oops!</h1>
           <h2 className="text-2xl font-semibold">Something went wrong</h2>
           <p className="text-muted-foreground">
-            We apologize for the inconvenience. Our team has been notified and will investigate
-            this issue.
+            We apologize for the inconvenience. Our team has been notified and will investigate this
+            issue.
           </p>
         </div>
 
@@ -59,11 +59,7 @@ export default function Error({
         )}
 
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <Button
-            onClick={() => reset()}
-            className="w-full sm:w-auto"
-            variant="default"
-          >
+          <Button onClick={() => reset()} className="w-full sm:w-auto" variant="default">
             Try again
           </Button>
           <Button

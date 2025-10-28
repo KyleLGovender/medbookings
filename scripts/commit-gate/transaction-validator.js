@@ -144,13 +144,13 @@ class EnhancedTransactionValidator {
 
   evaluateTransactionNeed(operations) {
     // CRITICAL: Always needs transaction
-    const criticalOps = operations.filter(op => op.critical);
+    const criticalOps = operations.filter((op) => op.critical);
     if (criticalOps.length > 0) {
       return true;
     }
 
     // Read-only: Never needs transaction
-    if (operations.every(op => op.type === 'READ_ONLY')) {
+    if (operations.every((op) => op.type === 'READ_ONLY')) {
       return false;
     }
 
@@ -164,26 +164,26 @@ class EnhancedTransactionValidator {
 
   assessRiskLevel(operations) {
     // Check-then-act = CRITICAL (race condition)
-    if (operations.some(op => op.type === 'CHECK_THEN_ACT')) {
+    if (operations.some((op) => op.type === 'CHECK_THEN_ACT')) {
       return 'CRITICAL';
     }
 
     // Booking + Slot = CRITICAL (double-booking risk)
     if (
-      operations.some(op => op.type === 'BOOKING_CREATE') &&
-      operations.some(op => op.type === 'SLOT_UPDATE')
+      operations.some((op) => op.type === 'BOOKING_CREATE') &&
+      operations.some((op) => op.type === 'SLOT_UPDATE')
     ) {
       return 'CRITICAL';
     }
 
     // Multiple writes = HIGH
-    const multiWrite = operations.find(op => op.type === 'MULTIPLE_WRITES');
+    const multiWrite = operations.find((op) => op.type === 'MULTIPLE_WRITES');
     if (multiWrite && multiWrite.count >= 3) {
       return 'HIGH';
     }
 
     // Read-only = LOW
-    if (operations.every(op => op.type === 'READ_ONLY')) {
+    if (operations.every((op) => op.type === 'READ_ONLY')) {
       return 'LOW';
     }
 
@@ -191,21 +191,23 @@ class EnhancedTransactionValidator {
   }
 
   determineReason(operations) {
-    if (operations.some(op => op.type === 'CHECK_THEN_ACT')) {
+    if (operations.some((op) => op.type === 'CHECK_THEN_ACT')) {
       return 'Race condition: Another request could modify data between check and action';
     }
 
-    if (operations.some(op => op.type === 'BOOKING_CREATE') &&
-        operations.some(op => op.type === 'SLOT_UPDATE')) {
+    if (
+      operations.some((op) => op.type === 'BOOKING_CREATE') &&
+      operations.some((op) => op.type === 'SLOT_UPDATE')
+    ) {
       return 'Double-booking prevention: Booking and slot must update atomically';
     }
 
-    const multiWrite = operations.find(op => op.type === 'MULTIPLE_WRITES');
+    const multiWrite = operations.find((op) => op.type === 'MULTIPLE_WRITES');
     if (multiWrite) {
       return `Data consistency: ${multiWrite.count} writes should be atomic`;
     }
 
-    if (operations.every(op => op.type === 'READ_ONLY')) {
+    if (operations.every((op) => op.type === 'READ_ONLY')) {
       return 'Read-only operation - transaction not needed';
     }
 
@@ -213,8 +215,10 @@ class EnhancedTransactionValidator {
   }
 
   buildMessage(context) {
-    return `[${context.riskLevel} RISK] ${context.reason}\n` +
-           `   Operations detected: ${context.operations.map(op => op.type).join(', ')}`;
+    return (
+      `[${context.riskLevel} RISK] ${context.reason}\n` +
+      `   Operations detected: ${context.operations.map((op) => op.type).join(', ')}`
+    );
   }
 
   buildFix(context) {
@@ -223,53 +227,63 @@ class EnhancedTransactionValidator {
     }
 
     if (context.riskLevel === 'CRITICAL' || context.riskLevel === 'HIGH') {
-      return '❌ TRANSACTION REQUIRED for data integrity:\n\n' +
-             '   await ctx.prisma.$transaction(async (tx) => {\n' +
-             '     // 1. Read data with tx (not ctx.prisma)\n' +
-             '     const slot = await tx.slot.findUnique({ where: { id } });\n' +
-             '     \n' +
-             '     // 2. Validate\n' +
-             '     if (slot.status !== "AVAILABLE") {\n' +
-             '       throw new TRPCError({ code: "CONFLICT", message: "Slot unavailable" });\n' +
-             '     }\n' +
-             '     \n' +
-             '     // 3. Write atomically\n' +
-             '     await tx.booking.create({ data: bookingData });\n' +
-             '     await tx.slot.update({ where: { id }, data: { status: "BOOKED" } });\n' +
-             '   }, {\n' +
-             '     maxWait: 10000,\n' +
-             '     timeout: 20000,\n' +
-             '   });';
+      return (
+        '❌ TRANSACTION REQUIRED for data integrity:\n\n' +
+        '   await ctx.prisma.$transaction(async (tx) => {\n' +
+        '     // 1. Read data with tx (not ctx.prisma)\n' +
+        '     const slot = await tx.slot.findUnique({ where: { id } });\n' +
+        '     \n' +
+        '     // 2. Validate\n' +
+        '     if (slot.status !== "AVAILABLE") {\n' +
+        '       throw new TRPCError({ code: "CONFLICT", message: "Slot unavailable" });\n' +
+        '     }\n' +
+        '     \n' +
+        '     // 3. Write atomically\n' +
+        '     await tx.booking.create({ data: bookingData });\n' +
+        '     await tx.slot.update({ where: { id }, data: { status: "BOOKED" } });\n' +
+        '   }, {\n' +
+        '     maxWait: 10000,\n' +
+        '     timeout: 20000,\n' +
+        '   });'
+      );
     }
 
-    return '⚠️  REVIEW NEEDED - Transaction may be required:\n' +
-           '   - Multiple database writes?\n' +
-           '   - Check-then-act pattern?\n' +
-           '   - If yes → Wrap in transaction\n' +
-           '   - If no → Add suppression comment';
+    return (
+      '⚠️  REVIEW NEEDED - Transaction may be required:\n' +
+      '   - Multiple database writes?\n' +
+      '   - Check-then-act pattern?\n' +
+      '   - If yes → Wrap in transaction\n' +
+      '   - If no → Add suppression comment'
+    );
   }
 
   buildSuppressionGuidance(context) {
     if (context.riskLevel === 'LOW') {
-      return 'Safe to suppress:\n' +
-             '   // tx-safe: read-only operation\n' +
-             '   const data = await ctx.prisma.model.findMany();';
+      return (
+        'Safe to suppress:\n' +
+        '   // tx-safe: read-only operation\n' +
+        '   const data = await ctx.prisma.model.findMany();'
+      );
     }
 
     if (context.riskLevel === 'MEDIUM') {
-      return 'Suppress ONLY if you\'re certain no race condition exists:\n' +
-             '   // tx-safe: single write, no check-then-act, no concurrent access risk\n' +
-             '   await ctx.prisma.log.create({ data: logData });';
+      return (
+        "Suppress ONLY if you're certain no race condition exists:\n" +
+        '   // tx-safe: single write, no check-then-act, no concurrent access risk\n' +
+        '   await ctx.prisma.log.create({ data: logData });'
+      );
     }
 
-    return '⚠️  DO NOT suppress CRITICAL/HIGH risk operations without team review\n\n' +
-           'Valid suppression reasons:\n' +
-           '   - Idempotent operation (safe to retry)\n' +
-           '   - External transaction handling\n' +
-           '   - Reviewed and accepted race condition\n\n' +
-           'Example:\n' +
-           '   // tx-safe: operation is idempotent, handled by external system\n' +
-           '   await ctx.prisma.auditLog.create({ data });';
+    return (
+      '⚠️  DO NOT suppress CRITICAL/HIGH risk operations without team review\n\n' +
+      'Valid suppression reasons:\n' +
+      '   - Idempotent operation (safe to retry)\n' +
+      '   - External transaction handling\n' +
+      '   - Reviewed and accepted race condition\n\n' +
+      'Example:\n' +
+      '   // tx-safe: operation is idempotent, handled by external system\n' +
+      '   await ctx.prisma.auditLog.create({ data });'
+    );
   }
 }
 

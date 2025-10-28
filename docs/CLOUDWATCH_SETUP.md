@@ -56,6 +56,7 @@ For each log group:
 4. Click **Save**
 
 **Cost Impact**:
+
 - Production: ~$0.06/GB/month for storage
 - Staging: ~$0.02/GB/month for storage
 
@@ -72,6 +73,7 @@ Metric filters extract specific patterns from logs and convert them to CloudWatc
 3. Click **Actions** → **Create metric filter**
 
 **Filter pattern**:
+
 ```
 { $.level = "error" }
 ```
@@ -79,6 +81,7 @@ Metric filters extract specific patterns from logs and convert them to CloudWatc
 **Test pattern**: Click "Test pattern" and paste a sample log entry to verify it matches
 
 **Metric details**:
+
 - Click **Next**
 - **Filter name**: `ServerErrors`
 - **Metric namespace**: `MedBookings/Production`
@@ -96,11 +99,13 @@ Metric filters extract specific patterns from logs and convert them to CloudWatc
 2. Click **Actions** → **Create metric filter**
 
 **Filter pattern**:
+
 ```
 { $.message = "*Sign-in failed*" || $.message = "*Authentication error*" || $.message = "*sign-in blocked*" }
 ```
 
 **Metric details**:
+
 - **Filter name**: `AuthenticationFailures`
 - **Metric namespace**: `MedBookings/Production`
 - **Metric name**: `AuthenticationFailures`
@@ -114,11 +119,13 @@ Metric filters extract specific patterns from logs and convert them to CloudWatc
 2. Click **Actions** → **Create metric filter**
 
 **Filter pattern**:
+
 ```
 { $.message = "tRPC request failed" }
 ```
 
 **Metric details**:
+
 - **Filter name**: `TRPCErrors`
 - **Metric namespace**: `MedBookings/Production`
 - **Metric name**: `TRPCErrors`
@@ -162,6 +169,7 @@ CloudWatch Alarms notify you when specific conditions are met (e.g., too many er
 4. Select **ServerErrors** metric → Click **Select metric**
 
 **Configure alarm**:
+
 - **Statistic**: Sum
 - **Period**: 5 minutes
 - **Threshold type**: Static
@@ -169,11 +177,13 @@ CloudWatch Alarms notify you when specific conditions are met (e.g., too many er
 - Click **Next**
 
 **Configure actions**:
+
 - **Alarm state trigger**: In alarm
 - **Send notification to**: medbookings-production-alerts (select from dropdown)
 - Click **Next**
 
 **Name and description**:
+
 - **Alarm name**: `MedBookings-Production-HighServerErrors`
 - **Alarm description**: Triggers when more than 10 server errors occur in 5 minutes
 - Click **Next** → **Create alarm**
@@ -181,6 +191,7 @@ CloudWatch Alarms notify you when specific conditions are met (e.g., too many er
 ### Step 4: Create Alarm - Authentication Failures
 
 Follow the same process as above, but:
+
 - **Metric**: `AuthenticationFailures`
 - **Threshold**: Greater than `5`
 - **Alarm name**: `MedBookings-Production-AuthFailures`
@@ -189,6 +200,7 @@ Follow the same process as above, but:
 ### Step 5: Create Alarm - Sustained Error Rate
 
 For detecting persistent issues:
+
 - **Metric**: `ServerErrors`
 - **Threshold**: Greater than `3`
 - **Period**: 5 minutes
@@ -212,6 +224,7 @@ Dashboards provide a visual overview of your application's health.
 Click **Add widget** and add the following:
 
 #### Widget 1: Server Errors (Line Graph)
+
 - **Widget type**: Line
 - **Data sources**: CloudWatch
 - **Metric**: `MedBookings/Production` → `ServerErrors`
@@ -221,27 +234,32 @@ Click **Add widget** and add the following:
 - Click **Create widget**
 
 #### Widget 2: Error Rate Percentage (Number)
+
 - **Widget type**: Number
 - **Metric math expression**: `(m1/m2)*100`
   - m1: `ServerErrors` (Sum, 5 min)
-  - m2: `TRPCRequests` (Sum, 5 min) - *Note: You'll need to create this metric filter first*
+  - m2: `TRPCRequests` (Sum, 5 min) - _Note: You'll need to create this metric filter first_
 - **Widget title**: Error Rate %
 - Click **Create widget**
 
 #### Widget 3: Latest Errors (Logs)
+
 - **Widget type**: Logs table
 - **Log groups**: Select your production log group
 - **Query**:
+
 ```
 fields @timestamp, level, message, context.error.message, context.path
 | filter level = "error"
 | sort @timestamp desc
 | limit 20
 ```
+
 - **Widget title**: Latest Errors
 - Click **Create widget**
 
 #### Widget 4: Authentication Activity (Line Graph)
+
 - **Widget type**: Line
 - Add two metrics:
   - `MedBookings/Production` → `AuthenticationFailures`
@@ -282,6 +300,7 @@ fields @timestamp, message, context.error.message, context.path, context.userId
 ```
 
 **To save**:
+
 1. Run the query
 2. Click **Actions** → **Save query**
 3. **Name**: Top Errors Last Hour
@@ -339,12 +358,14 @@ Add logging configuration to your Amplify environment variables.
 2. Add the following for both production and staging:
 
 **Production**:
+
 ```
 LOG_LEVEL=info
 NODE_ENV=production
 ```
 
 **Staging**:
+
 ```
 LOG_LEVEL=debug
 NODE_ENV=staging
@@ -363,6 +384,7 @@ DEBUG_ALL=false
 2. Select your production log group
 3. Click on the most recent **log stream** (sorted by "Last Event Time")
 4. Verify you see structured JSON logs like:
+
 ```json
 {
   "timestamp": "2025-10-25T12:00:00.000Z",
@@ -407,6 +429,7 @@ DEBUG_ALL=false
 ### Issue: Logs Not Appearing in CloudWatch
 
 **Solution:**
+
 1. Verify "Server-side logging" is enabled in Amplify settings
 2. Check that application is logging using the enhanced logger (check code was deployed)
 3. Wait 5-10 minutes - there can be a delay
@@ -415,6 +438,7 @@ DEBUG_ALL=false
 ### Issue: Metric Filters Not Creating Metrics
 
 **Solution:**
+
 1. Test the filter pattern with a sample log entry
 2. Ensure the JSON structure matches your log format
 3. Verify logs are in JSON format in production (not human-readable)
@@ -423,6 +447,7 @@ DEBUG_ALL=false
 ### Issue: Alarms Not Triggering
 
 **Solution:**
+
 1. Verify SNS subscription is confirmed (check email)
 2. Test alarm by setting threshold very low (e.g., > 0)
 3. Check metric has data points (CloudWatch → Metrics)
@@ -431,6 +456,7 @@ DEBUG_ALL=false
 ### Issue: IAM Permissions Error
 
 **Required Policy** (attach to Amplify service role):
+
 ```json
 {
   "Version": "2012-10-17",
@@ -496,6 +522,7 @@ After completing this guide, you will have:
 **Need Help?**
 
 If you encounter issues not covered in this guide:
+
 1. Check CloudWatch Logs for error messages
 2. Verify all environment variables are set correctly
 3. Ensure the latest code (with logging enhancements) is deployed

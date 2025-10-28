@@ -15,7 +15,7 @@ try {
     green: noColor,
     blue: noColor,
     white: noColor,
-    cyan: noColor
+    cyan: noColor,
   };
   chalk = {
     red: noColor,
@@ -25,7 +25,7 @@ try {
     cyan: noColor,
     gray: noColor,
     white: noColor,
-    bold: noBold
+    bold: noBold,
   };
   console.warn('[!] chalk package not installed - running without colors');
 }
@@ -36,37 +36,37 @@ const CRITICAL_FILES = [
     pattern: 'prisma/schema.prisma',
     claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
     rule: 'ADDITIVE ONLY - Ask approval before removing/renaming',
-    validations: ['npm run db:integrity', 'Verify migrations', 'Check Prisma client generation']
+    validations: ['npm run db:integrity', 'Verify migrations', 'Check Prisma client generation'],
   },
   {
     pattern: 'src/server/trpc.ts',
     claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
     rule: 'tRPC configuration - affects ALL API endpoints',
-    validations: ['npm run build', 'npx tsc --noEmit', 'Check API functionality']
+    validations: ['npm run build', 'npx tsc --noEmit', 'Check API functionality'],
   },
   {
     pattern: 'src/lib/auth.ts',
     claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
     rule: 'Authentication core - security critical',
-    validations: ['Test login flows', 'Verify session handling', 'Check role permissions']
+    validations: ['Test login flows', 'Verify session handling', 'Check role permissions'],
   },
   {
     pattern: 'src/lib/prisma.ts',
     claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
     rule: 'Database client - affects all DB operations',
-    validations: ['npm run db:integrity', 'Test connection pooling', 'Verify transactions']
+    validations: ['npm run db:integrity', 'Test connection pooling', 'Verify transactions'],
   },
   {
     pattern: 'src/middleware.ts',
     claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
     rule: 'Route protection - security critical',
-    validations: ['Test protected routes', 'Verify redirects', 'Check auth flows']
+    validations: ['Test protected routes', 'Verify redirects', 'Check auth flows'],
   },
   {
     pattern: 'src/utils/api.ts',
     claudeSection: 'SECTION 3: ARCHITECTURE & TECH STACK',
     rule: 'tRPC client setup - affects type exports',
-    validations: ['npx tsc --noEmit', 'Check type inference', 'Verify API hooks']
+    validations: ['npx tsc --noEmit', 'Check type inference', 'Verify API hooks'],
   },
 ];
 
@@ -75,55 +75,55 @@ const HIGH_RISK_FILES = [
     pattern: 'src/server/api/root.ts',
     claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
     rule: 'API root - all router registrations',
-    validations: ['npm run build', 'Check router exports', 'Verify endpoint access']
+    validations: ['npm run build', 'Check router exports', 'Verify endpoint access'],
   },
   {
     pattern: 'src/server/api/routers/',
     claudeSection: 'SECTION 3: ARCHITECTURE & TECH STACK',
     rule: 'Database access ONLY here - tRPC procedures',
-    validations: ['Check authorization', 'Verify input validation', 'Test error handling']
+    validations: ['Check authorization', 'Verify input validation', 'Test error handling'],
   },
   {
     pattern: 'src/app/layout.tsx',
     claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
     rule: 'App shell - affects all pages',
-    validations: ['Test page rendering', 'Check provider hierarchy', 'Verify metadata']
+    validations: ['Test page rendering', 'Check provider hierarchy', 'Verify metadata'],
   },
   {
     pattern: 'src/app/api/auth/',
     claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
     rule: 'Auth routes - security critical',
-    validations: ['Test OAuth flows', 'Verify callbacks', 'Check error handling']
+    validations: ['Test OAuth flows', 'Verify callbacks', 'Check error handling'],
   },
   {
     pattern: 'src/components/ui/*',
     claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
     rule: 'UI library - affects all components',
-    validations: ['Test component rendering', 'Check accessibility', 'Verify variants']
+    validations: ['Test component rendering', 'Check accessibility', 'Verify variants'],
   },
   {
     pattern: 'package.json',
     claudeSection: 'SECTION 11: FILE HIERARCHY & PROTECTION',
     rule: 'Dependencies - affects entire project',
-    validations: ['npm install', 'npm run build', 'Check for breaking changes']
+    validations: ['npm install', 'npm run build', 'Check for breaking changes'],
   },
   {
     pattern: 'src/lib/permissions/',
     claudeSection: 'SECTION 8: SECURITY CHECKLIST',
     rule: 'Authorization logic - security critical',
-    validations: ['Test role checks', 'Verify permissions', 'Check edge cases']
+    validations: ['Test role checks', 'Verify permissions', 'Check edge cases'],
   },
   {
     pattern: 'src/lib/communications/',
     claudeSection: 'SECTION 4: BUSINESS RULES',
     rule: 'Email/SMS/WhatsApp - affects notifications',
-    validations: ['Test message sending', 'Verify templates', 'Check error handling']
+    validations: ['Test message sending', 'Verify templates', 'Check error handling'],
   },
   {
     pattern: 'next.config.',
     claudeSection: 'SECTION 3: ARCHITECTURE & TECH STACK',
     rule: 'Next.js configuration - affects build and runtime',
-    validations: ['npm run build', 'Check environment variables', 'Verify redirects']
+    validations: ['npm run build', 'Check environment variables', 'Verify redirects'],
   },
 ];
 
@@ -132,25 +132,25 @@ const MODERATE_FILES = [
     pattern: 'tsconfig.json',
     claudeSection: 'SECTION 3: ARCHITECTURE & TECH STACK',
     rule: 'TypeScript configuration',
-    validations: ['npx tsc --noEmit', 'Check strict mode', 'Verify path mappings']
+    validations: ['npx tsc --noEmit', 'Check strict mode', 'Verify path mappings'],
   },
   {
     pattern: '.github/workflows/',
     claudeSection: 'SECTION 5: BUILD & QUALITY GATES',
     rule: 'CI/CD pipelines',
-    validations: ['Test workflow locally', 'Verify secrets', 'Check triggers']
+    validations: ['Test workflow locally', 'Verify secrets', 'Check triggers'],
   },
   {
     pattern: 'src/features/*/types/schemas.ts',
     claudeSection: 'SECTION 3: ARCHITECTURE & TECH STACK',
     rule: 'Zod validation schemas',
-    validations: ['Test schema validation', 'Check error messages', 'Verify edge cases']
+    validations: ['Test schema validation', 'Check error messages', 'Verify edge cases'],
   },
   {
     pattern: 'src/features/*/lib/actions.ts',
     claudeSection: 'SECTION 3: ARCHITECTURE & TECH STACK',
     rule: 'Server actions - business logic only, NO database',
-    validations: ['Verify no DB queries', 'Test business logic', 'Check error handling']
+    validations: ['Verify no DB queries', 'Test business logic', 'Check error handling'],
   },
 ];
 
@@ -186,7 +186,9 @@ function getChangedFiles(stagedOnly = false) {
     const files = output.split('\n').filter(Boolean);
 
     if (files.length === 0) {
-      console.log(chalk.gray(stagedOnly ? '[+] No staged files' : '[+] No differences found from base branch'));
+      console.log(
+        chalk.gray(stagedOnly ? '[+] No staged files' : '[+] No differences found from base branch')
+      );
     } else {
       console.log(chalk.gray(`[+] Found ${files.length} changed file(s)`));
     }
@@ -216,9 +218,11 @@ function matchesPattern(file, pattern) {
   }
 
   // For non-wildcard patterns, check exact match or path contains pattern
-  return normalizedFile === normalizedPattern ||
-         normalizedFile.includes('/' + normalizedPattern) ||
-         normalizedFile.startsWith(normalizedPattern + '/');
+  return (
+    normalizedFile === normalizedPattern ||
+    normalizedFile.includes('/' + normalizedPattern) ||
+    normalizedFile.startsWith(normalizedPattern + '/')
+  );
 }
 
 function categorizeFiles(files) {
@@ -254,11 +258,11 @@ function generateValidationChecklist(categorizedFiles) {
   const allFiles = [
     ...categorizedFiles.critical,
     ...categorizedFiles.highRisk,
-    ...categorizedFiles.moderate
+    ...categorizedFiles.moderate,
   ];
 
-  allFiles.forEach(item => {
-    item.validations.forEach(validation => checklist.add(validation));
+  allFiles.forEach((item) => {
+    item.validations.forEach((validation) => checklist.add(validation));
   });
 
   return Array.from(checklist);
@@ -279,7 +283,9 @@ function validateFileDefinitions() {
       throw new Error(`[VALIDATION ERROR] Missing rule for pattern: ${def.pattern}`);
     }
     if (!Array.isArray(def.validations) || def.validations.length === 0) {
-      throw new Error(`[VALIDATION ERROR] Invalid or empty validations array for pattern: ${def.pattern}`);
+      throw new Error(
+        `[VALIDATION ERROR] Invalid or empty validations array for pattern: ${def.pattern}`
+      );
     }
   });
 }
@@ -325,7 +331,7 @@ function main() {
       console.log(chalk.gray(`      Reference: CLAUDE.md ${item.claudeSection}`));
       console.log(chalk.yellow(`      Rule: ${item.rule}`));
       console.log(chalk.white(`      Required validations:`));
-      item.validations.forEach(v => console.log(chalk.cyan(`         - ${v}`)));
+      item.validations.forEach((v) => console.log(chalk.cyan(`         - ${v}`)));
     });
   }
 
@@ -337,21 +343,19 @@ function main() {
       console.log(chalk.gray(`      Reference: CLAUDE.md ${item.claudeSection}`));
       console.log(chalk.yellow(`      Rule: ${item.rule}`));
       console.log(chalk.white(`      Required validations:`));
-      item.validations.forEach(v => console.log(chalk.cyan(`         - ${v}`)));
+      item.validations.forEach((v) => console.log(chalk.cyan(`         - ${v}`)));
     });
   }
 
   // MODERATE FILES - Enhanced with CLAUDE.md references
   if (moderate.length > 0) {
-    console.log(
-      chalk.cyan.bold(`\n[MODERATE] Configuration files modified [${moderate.length}]`)
-    );
+    console.log(chalk.cyan.bold(`\n[MODERATE] Configuration files modified [${moderate.length}]`));
     moderate.forEach((item) => {
       console.log(chalk.cyan(`\n   File: ${item.file}`));
       console.log(chalk.gray(`      Reference: CLAUDE.md ${item.claudeSection}`));
       console.log(chalk.yellow(`      Rule: ${item.rule}`));
       console.log(chalk.white(`      Required validations:`));
-      item.validations.forEach(v => console.log(chalk.cyan(`         - ${v}`)));
+      item.validations.forEach((v) => console.log(chalk.cyan(`         - ${v}`)));
     });
   }
 
@@ -375,13 +379,15 @@ function main() {
   // CLAUDE.md REMINDER
   console.log(chalk.blue.bold('\n[DOCS] CLAUDE.md Sections to Review:'));
   const sections = new Set();
-  [...critical, ...highRisk, ...moderate].forEach(item => sections.add(item.claudeSection));
-  Array.from(sections).forEach(section => {
+  [...critical, ...highRisk, ...moderate].forEach((item) => sections.add(item.claudeSection));
+  Array.from(sections).forEach((section) => {
     console.log(chalk.blue(`   - ${section}`));
   });
 
   // INFORMATIONAL STATUS - Always success
-  console.log(chalk.green('\n[OK] Architecture check complete - follow validation checklist above'));
+  console.log(
+    chalk.green('\n[OK] Architecture check complete - follow validation checklist above')
+  );
 
   // Always return 0 for non-blocking behavior
   return 0;

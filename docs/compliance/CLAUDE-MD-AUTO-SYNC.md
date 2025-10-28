@@ -38,15 +38,15 @@ Enforcement System Blocks Violations
 
 ### Key Components
 
-| Component | Purpose | Location |
-|-----------|---------|----------|
-| **Condensed CLAUDE.md** | Main rules (17k chars) | `/CLAUDE.md` |
-| **Full CLAUDE.md Backup** | Original version (40k chars) | `/CLAUDE.md.full-backup` |
-| **Extracted Documentation** | Verbose sections | `/docs/*` |
-| **Sync Script** | Parses CLAUDE.md and generates config | `scripts/compliance/sync-compliance-rules.js` |
-| **Enforcement Config** | Auto-generated rule definitions | `scripts/compliance/compliance-config.json` |
-| **Validator** | Validates code against config | `scripts/commit-gate/compliance-validator.js` |
-| **Pre-Commit Hook** | Detects CLAUDE.md changes | `.husky/pre-commit` |
+| Component                   | Purpose                               | Location                                      |
+| --------------------------- | ------------------------------------- | --------------------------------------------- |
+| **Condensed CLAUDE.md**     | Main rules (17k chars)                | `/CLAUDE.md`                                  |
+| **Full CLAUDE.md Backup**   | Original version (40k chars)          | `/CLAUDE.md.full-backup`                      |
+| **Extracted Documentation** | Verbose sections                      | `/docs/*`                                     |
+| **Sync Script**             | Parses CLAUDE.md and generates config | `scripts/compliance/sync-compliance-rules.js` |
+| **Enforcement Config**      | Auto-generated rule definitions       | `scripts/compliance/compliance-config.json`   |
+| **Validator**               | Validates code against config         | `scripts/commit-gate/compliance-validator.js` |
+| **Pre-Commit Hook**         | Detects CLAUDE.md changes             | `.husky/pre-commit`                           |
 
 ---
 
@@ -156,17 +156,17 @@ Pre-commit hook validates all code changes:
 
 CLAUDE.md now references these extracted docs for verbose details:
 
-| Reference | Description | Size | Location |
-|-----------|-------------|------|----------|
-| **Context Loading** | Initial context, task-specific context, context management | 900+ lines | `/docs/compliance/CONTEXT-LOADING.md` |
-| **Type Safety** | Type system architecture, Prisma JSON fields | 530+ lines | `/docs/compliance/TYPE-SAFETY.md` |
-| **Timezone Guidelines** | UTC storage, SAST display, utilities | 450+ lines | `/docs/compliance/TIMEZONE-GUIDELINES.md` |
-| **Logging** | Logger API, PHI sanitization, POPIA compliance | 925+ lines | `/docs/compliance/LOGGING.md` |
-| **Deployment** | Production requirements, pre-deployment checklist | 416+ lines | `/docs/compliance/DEPLOYMENT.md` |
-| **Enforcement** | Three-layer compliance system, rule documentation | 500+ lines | `/docs/compliance/COMPLIANCE-SYSTEM.md` |
-| **Verification Protocols** | Route validation, data source checks, build protocol | 150+ lines | `/docs/compliance/VERIFICATION-PROTOCOLS.md` |
-| **Bug Detection** | React issues, database issues, debugging protocol | 200+ lines | `/docs/compliance/BUG-DETECTION.md` |
-| **Development Workflow** | Task execution flow, development standards | 150+ lines | `/docs/compliance/DEVELOPMENT-WORKFLOW.md` |
+| Reference                  | Description                                                | Size       | Location                                     |
+| -------------------------- | ---------------------------------------------------------- | ---------- | -------------------------------------------- |
+| **Context Loading**        | Initial context, task-specific context, context management | 900+ lines | `/docs/compliance/CONTEXT-LOADING.md`        |
+| **Type Safety**            | Type system architecture, Prisma JSON fields               | 530+ lines | `/docs/compliance/TYPE-SAFETY.md`            |
+| **Timezone Guidelines**    | UTC storage, SAST display, utilities                       | 450+ lines | `/docs/compliance/TIMEZONE-GUIDELINES.md`    |
+| **Logging**                | Logger API, PHI sanitization, POPIA compliance             | 925+ lines | `/docs/compliance/LOGGING.md`                |
+| **Deployment**             | Production requirements, pre-deployment checklist          | 416+ lines | `/docs/compliance/DEPLOYMENT.md`             |
+| **Enforcement**            | Three-layer compliance system, rule documentation          | 500+ lines | `/docs/compliance/COMPLIANCE-SYSTEM.md`      |
+| **Verification Protocols** | Route validation, data source checks, build protocol       | 150+ lines | `/docs/compliance/VERIFICATION-PROTOCOLS.md` |
+| **Bug Detection**          | React issues, database issues, debugging protocol          | 200+ lines | `/docs/compliance/BUG-DETECTION.md`          |
+| **Development Workflow**   | Task execution flow, development standards                 | 150+ lines | `/docs/compliance/DEVELOPMENT-WORKFLOW.md`   |
 
 ---
 
@@ -221,9 +221,7 @@ The sync script uses **SHA-256 hashing** to detect CLAUDE.md changes:
 ```javascript
 class ClaudeMdParser {
   calculateHash() {
-    return crypto.createHash('sha256')
-      .update(this.content)
-      .digest('hex');
+    return crypto.createHash('sha256').update(this.content).digest('hex');
   }
 }
 ```
@@ -242,12 +240,14 @@ The sync script extracts rules using pattern matching:
 ### Timezone Rules
 
 **Pattern Searched:**
+
 ```markdown
 FORBIDDEN Timezone Patterns (NEVER USE):
 ❌ const now = new Date();
 ```
 
 **Extracted:**
+
 ```json
 {
   "timezone": {
@@ -260,12 +260,15 @@ FORBIDDEN Timezone Patterns (NEVER USE):
 ### Type Safety Rules
 
 **Pattern Searched:**
+
 ```markdown
 Type Safety Rules (Zero Tolerance):
+
 - ❌ NEVER use `as any`
 ```
 
 **Extracted:**
+
 ```json
 {
   "typeSafety": {
@@ -278,13 +281,16 @@ Type Safety Rules (Zero Tolerance):
 ### Architecture Rules
 
 **Pattern Searched:**
+
 ```markdown
 CRITICAL RULES:
+
 - Hooks MUST NOT export types
 - Database queries ONLY in tRPC procedures
 ```
 
 **Extracted:**
+
 ```json
 {
   "architecture": [
@@ -322,6 +328,7 @@ The GitHub Actions workflow also checks sync status:
 ### When Adding New Rules to CLAUDE.md
 
 1. **Add the rule to CLAUDE.md** using standard format:
+
    ```markdown
    FORBIDDEN Patterns:
    ❌ Pattern to forbid
@@ -331,6 +338,7 @@ The GitHub Actions workflow also checks sync status:
    ```
 
 2. **Commit CLAUDE.md:**
+
    ```bash
    git add CLAUDE.md
    git commit -m "docs: add new rule for X"
@@ -350,11 +358,13 @@ If a section becomes too verbose in CLAUDE.md:
 1. **Create new doc:** `/docs/NEW-TOPIC.md`
 2. **Move verbose content** to new doc
 3. **Replace in CLAUDE.md** with:
+
    ```markdown
    **Full Details:** `/docs/NEW-TOPIC.md`
 
    Brief summary here (key rules only)
    ```
+
 4. **Commit both files:**
    ```bash
    git add CLAUDE.md docs/NEW-TOPIC.md
@@ -400,6 +410,7 @@ If you need to extract new rule types:
 **Cause:** Parsing error in sync-compliance-rules.js
 
 **Fix:**
+
 ```bash
 # Run sync manually to see detailed error
 node scripts/compliance/sync-compliance-rules.js sync
@@ -413,6 +424,7 @@ cat CLAUDE.md | grep "🔴\|📂\|🏗️"  # Verify sections
 **Cause:** CLAUDE.md changed but not committed yet
 
 **Fix:**
+
 ```bash
 # Check status
 npm run check-enforcement-sync
@@ -429,6 +441,7 @@ git diff scripts/compliance/compliance-config.json
 **Cause:** Pre-commit hook didn't detect CLAUDE.md change
 
 **Fix:**
+
 ```bash
 # Manually sync and stage
 npm run sync-enforcement
@@ -443,18 +456,21 @@ cat .husky/pre-commit | grep "CLAUDE.md"
 ## Performance Impact
 
 ### Before Optimization
+
 - **CLAUDE.md Size:** 40,676 characters
 - **Claude Code Warning:** ⚠️ Large CLAUDE.md (40.4k > 40.0k)
 - **Token Usage:** ~10k tokens per session
 - **Performance:** Degraded
 
 ### After Optimization
+
 - **CLAUDE.md Size:** 17,151 characters (58% reduction)
 - **Claude Code Warning:** ✅ None
 - **Token Usage:** ~4k tokens per session
 - **Performance:** Optimal
 
 ### Extracted Docs Impact
+
 - **Total Documentation:** 4,000+ lines across 9 docs
 - **Referenced On-Demand:** Only loaded when explicitly needed
 - **No Performance Impact:** Docs not loaded unless referenced

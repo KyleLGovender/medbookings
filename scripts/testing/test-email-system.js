@@ -19,7 +19,9 @@ async function testEmailSystem() {
   // Check environment variables
   console.log('🔍 Checking Environment Variables:');
   console.log(`SENDGRID_API_KEY: ${process.env.SENDGRID_API_KEY ? '✅ Set' : '❌ Missing'}`);
-  console.log(`SENDGRID_FROM_EMAIL: ${process.env.SENDGRID_FROM_EMAIL ? '✅ Set (' + process.env.SENDGRID_FROM_EMAIL + ')' : '❌ Missing'}`);
+  console.log(
+    `SENDGRID_FROM_EMAIL: ${process.env.SENDGRID_FROM_EMAIL ? '✅ Set (' + process.env.SENDGRID_FROM_EMAIL + ')' : '❌ Missing'}`
+  );
 
   if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
     console.log('\n❌ SendGrid not configured. Please add to your .env file:');
@@ -66,7 +68,7 @@ async function testEmailSystem() {
       location: 'Cape Town Medical Center',
       guestName: 'Test Patient',
       guestEmail: testEmail,
-      notes: 'This is a test booking for email verification'
+      notes: 'This is a test booking for email verification',
     };
 
     const emailTemplate = getGuestBookingConfirmationTemplate(testBooking);
@@ -103,7 +105,7 @@ async function testEmailSystem() {
       guestName: 'Test Patient',
       guestEmail: testEmail,
       guestPhone: '+27821234567',
-      notes: 'This is a test booking for email verification'
+      notes: 'This is a test booking for email verification',
     };
 
     const emailTemplate = getProviderBookingNotificationTemplate(testBooking);

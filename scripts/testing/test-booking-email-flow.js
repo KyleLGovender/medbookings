@@ -42,7 +42,7 @@ async function testBookingEmailFlow() {
       guestName: 'Test Patient',
       guestEmail: testEmail,
       guestPhone: '+27821234567',
-      notes: 'Testing the complete booking email flow'
+      notes: 'Testing the complete booking email flow',
     };
 
     console.log('📋 Test Booking Details:');
@@ -68,7 +68,7 @@ async function testBookingEmailFlow() {
     console.log('✅ Guest confirmation email sent successfully!');
 
     // Wait a moment between emails
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Test provider notification email
     console.log('\n📧 Sending Provider Booking Notification...');
@@ -91,7 +91,6 @@ async function testBookingEmailFlow() {
     console.log('2. Provider booking notification (should look like a business alert)');
 
     console.log('\n💡 If emails arrived successfully, your booking system is ready!');
-
   } catch (error) {
     console.log('❌ Booking email flow test failed:', error.message);
 

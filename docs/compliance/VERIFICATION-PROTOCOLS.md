@@ -52,6 +52,7 @@ grep -r "useQuery.*{" -A 5 | grep -E "(refetch|poll|interval)"
 7. Never proceed with errors still present
 
 Build verification is mandatory before:
+
 - User creates PRs
 - Marking tasks complete
 - Moving to next implementation phase

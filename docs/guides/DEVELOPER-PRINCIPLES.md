@@ -96,7 +96,15 @@ const timestamp = Date.now();
 **Import from** `/src/lib/timezone.ts`
 
 ```typescript
-import { nowUTC, nowSAST, toUTC, fromUTC, formatSAST, startOfDaySAST, endOfDaySAST } from '@/lib/timezone';
+import {
+  endOfDaySAST,
+  formatSAST,
+  fromUTC,
+  nowSAST,
+  nowUTC,
+  startOfDaySAST,
+  toUTC,
+} from '@/lib/timezone';
 
 // ✅ Current time in UTC
 const now = nowUTC();
@@ -116,23 +124,24 @@ const formatted = formatSAST(date, {
   month: 'long',
   day: 'numeric',
   hour: '2-digit',
-  minute: '2-digit'
+  minute: '2-digit',
 });
 
 // ✅ Date range queries (CRITICAL for bookings)
-const start = startOfDaySAST(selectedDate);  // Returns UTC
-const end = endOfDaySAST(selectedDate);      // Returns UTC
+const start = startOfDaySAST(selectedDate); // Returns UTC
+const end = endOfDaySAST(selectedDate); // Returns UTC
 
 const bookings = await prisma.booking.findMany({
   where: {
-    startTime: { gte: start, lte: end }
-  }
+    startTime: { gte: start, lte: end },
+  },
 });
 ```
 
 ### Common Patterns
 
 #### Token Expiry
+
 ```typescript
 // ❌ WRONG
 const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -143,6 +152,7 @@ const expires = addMilliseconds(nowUTC(), 24 * 60 * 60 * 1000);
 ```
 
 #### Booking Creation
+
 ```typescript
 // ❌ WRONG
 const booking = await prisma.booking.create({
@@ -218,20 +228,20 @@ function ProviderList() {
 **ALWAYS use generated Prisma enums, NEVER create manual enums.**
 
 ```typescript
+// ✅ CORRECT - Use Prisma enum
+import { BookingStatus } from '@prisma/client';
+// ✅ With Zod validation
+import { z } from 'zod';
+
 // ❌ FORBIDDEN - Manual enum
 enum BookingStatus {
   PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED'
+  CANCELLED = 'CANCELLED',
 }
 
-// ✅ CORRECT - Use Prisma enum
-import { BookingStatus } from '@prisma/client';
-
-// ✅ With Zod validation
-import { z } from 'zod';
 const bookingSchema = z.object({
-  status: z.nativeEnum(BookingStatus)
+  status: z.nativeEnum(BookingStatus),
 });
 ```
 
@@ -249,6 +259,7 @@ feature/
 ```
 
 **Rules:**
+
 - ❌ NO `index.ts` files in type directories (barrel exports forbidden)
 - ✅ Direct imports only: `import { User } from '@/features/auth/types/types'`
 - ✅ File headers with JSDoc comments (enforced, warnings for now)
@@ -269,7 +280,7 @@ console.log('User email:', user.email);
 console.error('Error for user:', user.name);
 
 // ❌ PHI in logs
-logger.info('User logged in', { email: user.email });  // RAW EMAIL!
+logger.info('User logged in', { email: user.email }); // RAW EMAIL!
 ```
 
 ### ✅ REQUIRED - Use Logger with PHI Sanitization
@@ -284,39 +295,39 @@ logger.debug('forms', 'Form validation started', { formName: 'registration' });
 
 // ✅ Info logs (development only)
 logger.info('User logged in', {
-  email: sanitizeEmail(user.email),  // "jo***@example.com"
-  name: sanitizeName(user.name)      // "Jo** Do*"
+  email: sanitizeEmail(user.email), // "jo***@example.com"
+  name: sanitizeName(user.name), // "Jo** Do*"
 });
 
 // ✅ Warnings
 logger.warn('Rate limit approaching', {
   userId: sanitizeUserId(user.id),
-  requestCount: 95
+  requestCount: 95,
 });
 
 // ✅ Errors
 logger.error('Database query failed', error, {
   operation: 'findProvider',
-  providerId: sanitizeProviderId(id)
+  providerId: sanitizeProviderId(id),
 });
 
 // ✅ Audit logs (ALWAYS logged for compliance)
 logger.audit('Provider approved', {
   adminId: sanitizeUserId(ctx.session.user.id),
   providerId: sanitizeProviderId(provider.id),
-  action: 'APPROVE_PROVIDER'
+  action: 'APPROVE_PROVIDER',
 });
 ```
 
 ### PHI Sanitization Functions
 
 ```typescript
-sanitizeEmail(email)     // "john@example.com" → "jo***@example.com"
-sanitizePhone(phone)     // "+27821234567" → "+2782***4567"
-sanitizeName(name)       // "John Doe" → "Jo** Do*"
-sanitizeToken(token)     // "abc123...xyz789" → "abc123def4..."
-sanitizeUserId(id)       // "cuid123" → "[USER:cuid123]"
-sanitizeContext(obj)     // Auto-sanitizes all PHI fields in object
+sanitizeEmail(email); // "john@example.com" → "jo***@example.com"
+sanitizePhone(phone); // "+27821234567" → "+2782***4567"
+sanitizeName(name); // "John Doe" → "Jo** Do*"
+sanitizeToken(token); // "abc123...xyz789" → "abc123def4..."
+sanitizeUserId(id); // "cuid123" → "[USER:cuid123]"
+sanitizeContext(obj); // Auto-sanitizes all PHI fields in object
 ```
 
 ### Feature Debug Flags
@@ -333,6 +344,7 @@ DEBUG_BOOKINGS=true         # Booking operations
 ```
 
 Usage:
+
 ```typescript
 logger.debug('forms', 'Form submitted', { values: sanitizedData });
 // Only logs if DEBUG_FORMS=true or DEBUG_ALL=true
@@ -357,12 +369,13 @@ await createAuditLog({
   userAgent: getUserAgentFromRequest(req),
   metadata: {
     previousStatus: provider.status,
-    newStatus: 'APPROVED'
-  }
+    newStatus: 'APPROVED',
+  },
 });
 ```
 
 **Audit Categories:**
+
 - `AUTHENTICATION` - Login attempts, sessions
 - `AUTHORIZATION` - Access control decisions
 - `PHI_ACCESS` - Viewing/accessing PHI data
@@ -387,37 +400,40 @@ if (slot.status !== 'AVAILABLE') throw new Error('Slot unavailable');
 await prisma.booking.create({ data: { slotId: id, ...bookingData } });
 await prisma.calculatedAvailabilitySlot.update({
   where: { id },
-  data: { status: 'BOOKED' }
+  data: { status: 'BOOKED' },
 });
 
 // ✅ CORRECT - Use transaction with timeouts
-await prisma.$transaction(async (tx) => {
-  // 1. Lock the slot
-  const slot = await tx.calculatedAvailabilitySlot.findUnique({
-    where: { id: slotId }
-  });
+await prisma.$transaction(
+  async (tx) => {
+    // 1. Lock the slot
+    const slot = await tx.calculatedAvailabilitySlot.findUnique({
+      where: { id: slotId },
+    });
 
-  // 2. Verify availability
-  if (!slot || slot.status !== 'AVAILABLE') {
-    throw new Error('Slot unavailable');
+    // 2. Verify availability
+    if (!slot || slot.status !== 'AVAILABLE') {
+      throw new Error('Slot unavailable');
+    }
+
+    // 3. Create booking
+    const booking = await tx.booking.create({
+      data: { slotId: id, ...bookingData },
+    });
+
+    // 4. Update slot
+    await tx.calculatedAvailabilitySlot.update({
+      where: { id },
+      data: { status: 'BOOKED' },
+    });
+
+    return booking;
+  },
+  {
+    maxWait: 10000, // Max time to wait for transaction to start
+    timeout: 20000, // Max time for transaction to complete
   }
-
-  // 3. Create booking
-  const booking = await tx.booking.create({
-    data: { slotId: id, ...bookingData }
-  });
-
-  // 4. Update slot
-  await tx.calculatedAvailabilitySlot.update({
-    where: { id },
-    data: { status: 'BOOKED' }
-  });
-
-  return booking;
-}, {
-  maxWait: 10000,   // Max time to wait for transaction to start
-  timeout: 20000    // Max time for transaction to complete
-});
+);
 ```
 
 ### Pagination - REQUIRED for All Queries
@@ -530,7 +546,13 @@ export async function createProvider(data) {
 **Use the correct procedure based on authorization requirements:**
 
 ```typescript
-import { createTRPCRouter, publicProcedure, protectedProcedure, adminProcedure, superAdminProcedure } from '@/server/trpc';
+import {
+  adminProcedure,
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  superAdminProcedure,
+} from '@/server/trpc';
 
 export const exampleRouter = createTRPCRouter({
   // ✅ Public - No auth required
@@ -542,7 +564,7 @@ export const exampleRouter = createTRPCRouter({
   getMyBookings: protectedProcedure.query(async ({ ctx }) => {
     return ctx.prisma.booking.findMany({
       where: { clientId: ctx.session.user.id },
-      take: 50
+      take: 50,
     });
   }),
 
@@ -552,7 +574,7 @@ export const exampleRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.provider.update({
         where: { id: input.providerId },
-        data: { status: 'APPROVED' }
+        data: { status: 'APPROVED' },
       });
     }),
 
@@ -561,9 +583,9 @@ export const exampleRouter = createTRPCRouter({
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.user.delete({
-        where: { id: input.userId }
+        where: { id: input.userId },
       });
-    })
+    }),
 });
 ```
 
@@ -572,12 +594,14 @@ export const exampleRouter = createTRPCRouter({
 Routes are automatically protected by `/src/middleware.ts`. Understanding the rules:
 
 **Role Hierarchy:**
+
 - `USER` - Basic authenticated user (profile, settings, dashboard)
 - `VERIFIED_USER` - Email verified (calendar, bookings, providers)
 - `ADMIN` - Admin user (organizations, admin dashboard)
 - `SUPER_ADMIN` - Super admin (all permissions)
 
 **Protected Route Examples:**
+
 - `/calendar/*` → Requires VERIFIED_USER
 - `/bookings/*` → Requires VERIFIED_USER
 - `/organizations/*` → Requires ADMIN
@@ -594,10 +618,13 @@ Routes are automatically protected by `/src/middleware.ts`. Understanding the ru
 ```typescript
 export const featureRouter = createTRPCRouter({
   procedureName: protectedProcedure
-    .input(z.object({              // 1. Zod validation REQUIRED
-      id: z.string(),
-      name: z.string().min(1).max(100)
-    }))
+    .input(
+      z.object({
+        // 1. Zod validation REQUIRED
+        id: z.string(),
+        name: z.string().min(1).max(100),
+      })
+    )
     .query(async ({ ctx, input }) => {
       // 2. Authorization check FIRST
       if (input.id !== ctx.session.user.id) {
@@ -608,7 +635,7 @@ export const featureRouter = createTRPCRouter({
       const result = await ctx.prisma.model.findUnique({
         where: { id: input.id },
         include: { relations: true },
-        take: 50  // Pagination if returning list
+        take: 50, // Pagination if returning list
       });
 
       // 4. Error handling
@@ -618,7 +645,7 @@ export const featureRouter = createTRPCRouter({
 
       // 5. Return data
       return result;
-    })
+    }),
 });
 ```
 
@@ -649,15 +676,15 @@ import { TRPCError } from '@trpc/server';
 
 // ✅ Use tRPC error codes
 throw new TRPCError({
-  code: 'BAD_REQUEST',  // Or: UNAUTHORIZED, FORBIDDEN, NOT_FOUND, etc.
-  message: 'Invalid provider ID'
+  code: 'BAD_REQUEST', // Or: UNAUTHORIZED, FORBIDDEN, NOT_FOUND, etc.
+  message: 'Invalid provider ID',
 });
 
 // ✅ With cause for logging
 throw new TRPCError({
   code: 'INTERNAL_SERVER_ERROR',
   message: 'Failed to create booking',
-  cause: originalError
+  cause: originalError,
 });
 ```
 
@@ -684,6 +711,7 @@ export function InteractiveForm() {
 ```
 
 **Use Client Components when:**
+
 - Using React hooks (useState, useEffect, etc.)
 - Event handlers (onClick, onChange, etc.)
 - Browser APIs (localStorage, window, etc.)
@@ -763,7 +791,7 @@ const { mutate } = api.providers.update.useMutation({
 
     // Optimistically update
     utils.providers.getAll.setData(undefined, (old) =>
-      old?.map((p) => p.id === variables.id ? { ...p, ...variables } : p)
+      old?.map((p) => (p.id === variables.id ? { ...p, ...variables } : p))
     );
 
     return { previous };
@@ -775,7 +803,7 @@ const { mutate } = api.providers.update.useMutation({
   onSettled: () => {
     // Refetch to ensure sync
     utils.providers.getAll.invalidate();
-  }
+  },
 });
 ```
 
@@ -832,6 +860,7 @@ export function ProviderForm() {
 ### Zod Everywhere
 
 **REQUIRED:**
+
 - All tRPC inputs
 - All forms
 - All API endpoints
@@ -907,14 +936,14 @@ const debouncedSearch = useDebouncedValue(searchTerm, 300);
 // ✅ Cache GET requests (minimum 5 seconds)
 export function useProviders() {
   return api.providers.getAll.useQuery(undefined, {
-    staleTime: 5000,      // Consider data fresh for 5 seconds
-    cacheTime: 300000     // Keep in cache for 5 minutes
+    staleTime: 5000, // Consider data fresh for 5 seconds
+    cacheTime: 300000, // Keep in cache for 5 minutes
   });
 }
 
 // ❌ No API calls in loops
 for (const id of ids) {
-  const provider = await api.providers.getById.query({ id });  // BAD
+  const provider = await api.providers.getById.query({ id }); // BAD
 }
 
 // ✅ Batch fetch instead
@@ -929,14 +958,16 @@ const providers = await api.providers.getByIds.query({ ids });
 
 ```typescript
 // ✅ All user inputs validated with Zod
-const input = z.object({
-  name: z.string().trim().max(100),
-  email: z.string().email()
-}).parse(userInput);
+const input = z
+  .object({
+    name: z.string().trim().max(100),
+    email: z.string().email(),
+  })
+  .parse(userInput);
 
 // ✅ No raw SQL
 const providers = await prisma.provider.findMany({
-  where: { name: { contains: sanitizedSearch } }
+  where: { name: { contains: sanitizedSearch } },
 });
 ```
 
@@ -963,9 +994,7 @@ import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
   // Check rate limit
-  const { success } = await rateLimit.limit(
-    req.headers.get('x-forwarded-for') ?? 'anonymous'
-  );
+  const { success } = await rateLimit.limit(req.headers.get('x-forwarded-for') ?? 'anonymous');
 
   if (!success) {
     return new Response('Rate limit exceeded', { status: 429 });
@@ -1043,6 +1072,9 @@ export function validateBooking() { ... }
 ### Enforced by ESLint & Prettier
 
 ```typescript
+// ✅ Direct imports (no barrel exports)
+import { Provider } from '@/features/providers/types/types';
+
 // ✅ Single quotes
 const message = 'Hello';
 
@@ -1063,11 +1095,8 @@ function example() {
 }
 
 // ✅ 100 character line limit
-const longLine =
-  'This is a very long line that exceeds 100 characters so we break it';
+const longLine = 'This is a very long line that exceeds 100 characters so we break it';
 
-// ✅ Direct imports (no barrel exports)
-import { Provider } from '@/features/providers/types/types';
 // NOT: import { Provider } from '@/features/providers/types';
 ```
 
@@ -1108,6 +1137,7 @@ git push --force origin main  # FORBIDDEN
 ```
 
 If hooks fail:
+
 1. Read the error message
 2. Fix the violation (see relevant section in this doc)
 3. Try committing again
@@ -1122,7 +1152,7 @@ If hooks fail:
 
 ```typescript
 // File: e2e/tests/booking/create-booking.spec.ts
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Booking Creation', () => {
   test('should create a booking successfully', async ({ page }) => {
@@ -1141,12 +1171,14 @@ test.describe('Booking Creation', () => {
 ```
 
 **Test Categories:**
+
 - `e2e/tests/auth/` - Authentication flows
 - `e2e/tests/booking/` - Booking operations
 - `e2e/tests/provider/` - Provider management
 - `e2e/tests/calendar/` - Calendar functionality
 
 **Commands:**
+
 ```bash
 npm run test              # Run all tests
 npm run test:headed       # Visual mode
@@ -1174,6 +1206,7 @@ npm run lint
 ```
 
 **ALL must pass before:**
+
 - Marking tasks complete
 - Creating pull requests
 - Moving to next implementation phase
@@ -1193,72 +1226,73 @@ npm run lint
 
 ### Timezone ⏰
 
-| ❌ FORBIDDEN | ✅ REQUIRED |
-|-------------|------------|
-| `new Date()` | `nowUTC()` |
-| `Date.now()` | `nowUTC()` |
+| ❌ FORBIDDEN          | ✅ REQUIRED                |
+| --------------------- | -------------------------- |
+| `new Date()`          | `nowUTC()`                 |
+| `Date.now()`          | `nowUTC()`                 |
 | `new Date(timestamp)` | `fromTimestamp(timestamp)` |
 
 ### Logging 📝
 
-| ❌ FORBIDDEN | ✅ REQUIRED |
-|-------------|------------|
-| `console.log()` | `logger.info()` |
-| `console.error()` | `logger.error()` |
-| Raw PHI in logs | `sanitizeEmail()`, `sanitizeName()`, etc. |
+| ❌ FORBIDDEN      | ✅ REQUIRED                               |
+| ----------------- | ----------------------------------------- |
+| `console.log()`   | `logger.info()`                           |
+| `console.error()` | `logger.error()`                          |
+| Raw PHI in logs   | `sanitizeEmail()`, `sanitizeName()`, etc. |
 
 ### Type Safety 🔐
 
-| ❌ FORBIDDEN | ✅ REQUIRED |
-|-------------|------------|
-| `any` types | Proper type extraction |
+| ❌ FORBIDDEN            | ✅ REQUIRED                                  |
+| ----------------------- | -------------------------------------------- |
+| `any` types             | Proper type extraction                       |
 | Type exports from hooks | Extract in component: `RouterOutputs['...']` |
-| Manual enums | `import { Enum } from '@prisma/client'` |
-| Barrel exports in types | Direct imports |
+| Manual enums            | `import { Enum } from '@prisma/client'`      |
+| Barrel exports in types | Direct imports                               |
 
 ### Database 🗄️
 
-| ❌ FORBIDDEN | ✅ REQUIRED |
-|-------------|------------|
-| Unbounded queries | `take: 50` (pagination) |
-| N+1 queries | Eager loading with `include` |
-| No transactions | `prisma.$transaction()` for multi-table |
-| Prisma in client code | Prisma ONLY in tRPC procedures |
+| ❌ FORBIDDEN          | ✅ REQUIRED                             |
+| --------------------- | --------------------------------------- |
+| Unbounded queries     | `take: 50` (pagination)                 |
+| N+1 queries           | Eager loading with `include`            |
+| No transactions       | `prisma.$transaction()` for multi-table |
+| Prisma in client code | Prisma ONLY in tRPC procedures          |
 
 ### Architecture 🏗️
 
-| ❌ FORBIDDEN | ✅ REQUIRED |
-|-------------|------------|
-| Cross-feature imports | Feature isolation |
-| `fetch('/api/...')` | tRPC hooks |
-| Multiple DB queries per endpoint | Single query with `include` |
-| Redux/Zustand in features | TanStack Query via tRPC |
-| Business logic in `/src/lib` | Business logic in `/features/.../lib` |
+| ❌ FORBIDDEN                     | ✅ REQUIRED                           |
+| -------------------------------- | ------------------------------------- |
+| Cross-feature imports            | Feature isolation                     |
+| `fetch('/api/...')`              | tRPC hooks                            |
+| Multiple DB queries per endpoint | Single query with `include`           |
+| Redux/Zustand in features        | TanStack Query via tRPC               |
+| Business logic in `/src/lib`     | Business logic in `/features/.../lib` |
 
 ### Code Style 🎨
 
-| ❌ FORBIDDEN | ✅ REQUIRED |
-|-------------|------------|
-| Double quotes | Single quotes |
-| No semicolons | Semicolons |
-| `function` declarations | Arrow functions |
-| PascalCase files | kebab-case files |
-| snake_case folders | kebab-case folders |
+| ❌ FORBIDDEN            | ✅ REQUIRED        |
+| ----------------------- | ------------------ |
+| Double quotes           | Single quotes      |
+| No semicolons           | Semicolons         |
+| `function` declarations | Arrow functions    |
+| PascalCase files        | kebab-case files   |
+| snake_case folders      | kebab-case folders |
 
 ### Git 🔄
 
-| ❌ FORBIDDEN | ✅ REQUIRED |
-|-------------|------------|
-| Commit without approval | Explicit user request |
-| Push without confirmation | User confirmation |
-| `--no-verify` (bypass hooks) | Hooks must pass |
-| `--force` push to main | Never force push main |
+| ❌ FORBIDDEN                 | ✅ REQUIRED           |
+| ---------------------------- | --------------------- |
+| Commit without approval      | Explicit user request |
+| Push without confirmation    | User confirmation     |
+| `--no-verify` (bypass hooks) | Hooks must pass       |
+| `--force` push to main       | Never force push main |
 
 ---
 
 ## Summary
 
 These principles ensure:
+
 - ✅ **POPIA compliance** for healthcare data
 - ✅ **Type safety** to prevent runtime errors
 - ✅ **Performance** through proper patterns

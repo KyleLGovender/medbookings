@@ -21,9 +21,11 @@ scripts/
 Scripts for validating architectural integrity and core file structure.
 
 ### Files
+
 - **`check-core-files.js`** - Validates that critical infrastructure files exist and are properly configured
 
 ### Usage
+
 ```bash
 node scripts/architecture/check-core-files.js
 ```
@@ -35,6 +37,7 @@ node scripts/architecture/check-core-files.js
 Email, SMS, and WhatsApp template management and testing utilities.
 
 ### Files
+
 - **`check-sendgrid-config.js`** - Validates SendGrid configuration
 - **`check-specific-templates.js`** - Checks specific email templates
 - **`check-twilio-templates.js`** - Validates Twilio SMS templates
@@ -44,6 +47,7 @@ Email, SMS, and WhatsApp template management and testing utilities.
 - **`monitor-booking-emails.js`** - Monitors booking email delivery
 
 ### Usage
+
 ```bash
 # Check SendGrid configuration
 node scripts/communications/check-sendgrid-config.js
@@ -59,6 +63,7 @@ node scripts/communications/create-or-update-templates.js
 CLAUDE.md compliance system management (Rule Sync component) - handles configuration and synchronization.
 
 ### Files
+
 - **`setup-compliance.sh`** - One-command setup for entire compliance system
 - **`sync-compliance-rules.js`** - Syncs CLAUDE.md changes with compliance rules
 - **`compliance-config.json`** - Compliance configuration and rule severity
@@ -68,6 +73,7 @@ CLAUDE.md compliance system management (Rule Sync component) - handles configura
 - **`verify-file.sh`** - Verifies a file has no violations and passes all checks
 
 ### Usage
+
 ```bash
 # Initial setup (run once)
 bash scripts/compliance/setup-compliance.sh
@@ -95,6 +101,7 @@ bash scripts/compliance/verify-file.sh src/path/to/file.ts
 Pre-commit validation scripts (Commit Gate component) - validates changes before commits.
 
 ### Files
+
 - **`compliance-validator.js`** - Main compliance validator engine
 - **`pre-write-gate.sh`** - Pre-write validation wrapper
 - **`post-write-gate.sh`** - Post-write validation wrapper
@@ -102,6 +109,7 @@ Pre-commit validation scripts (Commit Gate component) - validates changes before
 - **`transaction-validator.js`** - Database transaction validator
 
 ### Usage
+
 ```bash
 # Validate a specific file
 node scripts/commit-gate/compliance-validator.js validate-file src/path/to/file.ts
@@ -119,6 +127,7 @@ node scripts/commit-gate/compliance-validator.js validate-change src/path/to/fil
 Test utilities, E2E test setup, and testing helper scripts.
 
 ### Files
+
 - **`setup-e2e.sh`** - Sets up Playwright E2E testing environment
 - **`test-setup.sh`** - General test setup script
 - **`create-test-booking.js`** - Creates test bookings for testing
@@ -129,6 +138,7 @@ Test utilities, E2E test setup, and testing helper scripts.
 - **`test-enhanced-warnings.js`** - Tests enhanced warning system
 
 ### Usage
+
 ```bash
 # Setup E2E tests
 bash scripts/testing/setup-e2e.sh
@@ -148,7 +158,9 @@ node scripts/testing/test-enhanced-warnings.js
 ## 🔄 **Workflow Integration**
 
 ### Pre-commit Hook (`.husky/pre-commit`)
+
 The pre-commit hook automatically runs validation scripts before each commit:
+
 ```bash
 # Validation order:
 1. compliance-validator.js - CLAUDE.md compliance
@@ -158,7 +170,9 @@ The pre-commit hook automatically runs validation scripts before each commit:
 ```
 
 ### CI/CD Pipeline (`.github/workflows/claude-compliance.yml`)
+
 GitHub Actions runs comprehensive validation on every push:
+
 ```yaml
 - CLAUDE.md Rule Validation
 - ESLint with custom rules
@@ -169,6 +183,7 @@ GitHub Actions runs comprehensive validation on every push:
 ```
 
 ### Package.json Scripts
+
 ```json
 {
   "scripts": {
@@ -184,6 +199,7 @@ GitHub Actions runs comprehensive validation on every push:
 ## 📋 **Common Tasks**
 
 ### Initial Setup (New Developer)
+
 ```bash
 # 1. Install dependencies
 npm install
@@ -196,6 +212,7 @@ npm run validate-claude src/lib/auth.ts
 ```
 
 ### Fixing Violations
+
 ```bash
 # 1. Scan for violations
 bash scripts/compliance/scan-violations.sh
@@ -208,6 +225,7 @@ bash scripts/compliance/verify-file.sh src/path/to/file.ts
 ```
 
 ### After CLAUDE.md Changes
+
 ```bash
 # Sync enforcement rules with CLAUDE.md
 npm run sync:compliance
@@ -220,27 +238,30 @@ npm run lint
 
 ## 🔍 **Script Categories**
 
-| Category | Purpose | When to Use |
-|----------|---------|-------------|
-| **Commit Gate** | Pre-commit validation | Automatic on commit, manual validation |
-| **Compliance** | Setup and maintain rules | Initial setup, after CLAUDE.md changes |
-| **Testing** | Test features and flows | Development, CI/CD |
-| **Communications** | Manage templates | Template updates, testing emails/SMS |
-| **Architecture** | Validate structure | After major changes, CI/CD |
+| Category           | Purpose                  | When to Use                            |
+| ------------------ | ------------------------ | -------------------------------------- |
+| **Commit Gate**    | Pre-commit validation    | Automatic on commit, manual validation |
+| **Compliance**     | Setup and maintain rules | Initial setup, after CLAUDE.md changes |
+| **Testing**        | Test features and flows  | Development, CI/CD                     |
+| **Communications** | Manage templates         | Template updates, testing emails/SMS   |
+| **Architecture**   | Validate structure       | After major changes, CI/CD             |
 
 ---
 
 ## ⚠️ **Important Notes**
 
 1. **Commit Gate vs Compliance Setup**
+
    - `commit-gate/` - Validates code changes before commits
    - `compliance/` - Sets up and maintains the rule system
 
 2. **Execution Order**
+
    - Commit Gate validation runs first (fast feedback)
    - Compliance setup runs once or after rule changes
 
 3. **File Permissions**
+
    - All `.sh` scripts should be executable: `chmod +x scripts/**/*.sh`
    - Node scripts don't need execute permission (run with `node`)
 
@@ -254,18 +275,21 @@ npm run lint
 ## 🆘 **Troubleshooting**
 
 ### "Command not found: node"
+
 ```bash
 # Install Node.js first
 brew install node  # macOS
 ```
 
 ### "Permission denied" errors
+
 ```bash
 # Make script executable
 chmod +x scripts/compliance/setup-compliance.sh
 ```
 
 ### "Config file not found"
+
 ```bash
 # Verify you're in project root
 pwd  # Should show: .../medbookings
@@ -275,6 +299,7 @@ ls -la scripts/compliance/compliance-config.json
 ```
 
 ### Validation fails after moving files
+
 ```bash
 # Re-sync enforcement rules
 npm run sync:compliance
@@ -299,6 +324,7 @@ npm run build
 When adding new scripts:
 
 1. **Choose the correct category**
+
    - Commit Gate: Pre-commit validation and code checking
    - Compliance: Rule setup/maintenance and configuration
    - Testing: Test utilities
@@ -306,11 +332,13 @@ When adding new scripts:
    - Architecture: Structure validation
 
 2. **Follow naming conventions**
+
    - kebab-case: `check-something.js`
    - Descriptive: `validate-timezone-usage.sh`
    - Purpose-focused: `setup-compliance.sh`
 
 3. **Add to README**
+
    - List under appropriate category
    - Document usage with examples
    - Explain what it does

@@ -207,12 +207,14 @@ This project uses AWS Amplify for hosting with AWS RDS PostgreSQL database.
 ### Deployment Steps
 
 1. **Configure AWS Amplify:**
+
    - Connect your GitHub repository
    - Select the branch (e.g., `master`, `staging`)
    - Amplify auto-detects Next.js configuration from `amplify.yml`
 
 2. **Set Environment Variables:**
    Configure in Amplify Console under "Environment variables":
+
    ```bash
    DATABASE_URL=postgresql://user:pass@rds-endpoint:5432/db?sslmode=require
    AUTH_SECRET=your-secure-secret-min-32-chars
@@ -224,6 +226,7 @@ This project uses AWS Amplify for hosting with AWS RDS PostgreSQL database.
 
 3. **Database Migrations:**
    Migrations run automatically during build (see `amplify.yml`)
+
    ```bash
    npx prisma migrate deploy
    ```
