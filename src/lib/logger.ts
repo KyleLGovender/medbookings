@@ -4,6 +4,11 @@
  * CRITICAL: This logger is designed to prevent PHI (Protected Health Information) leakage.
  * All PHI must be sanitized before logging using the sanitization utilities.
  *
+ * CloudWatch Integration: Logs are automatically captured by AWS Amplify and sent to CloudWatch.
+ * - JSON format in production for structured log parsing
+ * - Human-readable format in development for easier debugging
+ * - Automatic metadata (environment, service, branch) for filtering
+ *
  * Usage:
  * - logger.info() - General information (development only)
  * - logger.warn() - Warnings that need attention
@@ -42,6 +47,10 @@ interface LogEntry {
   timestamp: string;
   context?: Record<string, any>;
   feature?: DebugFeature;
+  // CloudWatch metadata
+  environment?: string;
+  service?: string;
+  branch?: string;
 }
 
 class Logger {
@@ -81,8 +90,18 @@ class Logger {
       return `[${timestamp}] ${level.toUpperCase()}${featureTag}: ${message}${contextStr}`;
     }
 
-    // JSON format for production (easier to parse)
-    return JSON.stringify(entry);
+    // JSON format for production (CloudWatch structured logging)
+    const logObject = {
+      timestamp,
+      level,
+      message,
+      service: 'medbookings',
+      environment: process.env.NODE_ENV || 'development',
+      branch: process.env.AWS_BRANCH || 'local',
+      ...entry.context && { context: entry.context },
+      ...feature && { feature },
+    };
+    return JSON.stringify(logObject);
   }
 
   /**
@@ -173,16 +192,24 @@ class Logger {
 
   /**
    * Log error message
+   *
+   * Enhanced for CloudWatch:
+   * - Always includes error name and message
+   * - Stack trace included in production for debugging
+   * - Structured error object for CloudWatch filtering
    */
   error(message: string, error?: Error | unknown, context?: Record<string, any>): void {
     const errorContext =
       error instanceof Error
         ? {
-            errorMessage: error.message,
-            errorStack: this.isDevelopment ? error.stack : undefined,
+            error: {
+              name: error.name,
+              message: error.message,
+              stack: error.stack, // Include stack in production for CloudWatch
+            },
             ...context,
           }
-        : context;
+        : { error: String(error), ...context };
 
     this.output({
       level: 'error',

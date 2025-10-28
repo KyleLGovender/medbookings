@@ -5,6 +5,7 @@ import superjson from 'superjson';
 import { ZodError } from 'zod';
 
 import { getCurrentUser } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 
 type CreateContextOptions = {
@@ -88,13 +89,57 @@ export const createTRPCRouter = t.router;
 export const createCallerFactory = t.createCallerFactory;
 
 /**
+ * Logging middleware for all tRPC requests
+ *
+ * Logs all tRPC procedure calls with timing and error information.
+ * Logs are automatically sent to CloudWatch for monitoring and alerting.
+ */
+const loggingMiddleware = t.middleware(async ({ path, type, next, ctx }) => {
+  const start = Date.now();
+  const userId = ctx.session?.user?.id;
+
+  try {
+    const result = await next();
+    const durationMs = Date.now() - start;
+
+    // Log successful requests at info level
+    logger.info('tRPC request completed', {
+      path,
+      type,
+      durationMs,
+      userId,
+      success: true,
+    });
+
+    return result;
+  } catch (error) {
+    const durationMs = Date.now() - start;
+
+    // Log failed requests at error level
+    logger.error('tRPC request failed', error as Error, {
+      path,
+      type,
+      durationMs,
+      userId,
+      success: false,
+      errorCode: error instanceof TRPCError ? error.code : 'UNKNOWN',
+    });
+
+    // Re-throw the error so tRPC can handle it properly
+    throw error;
+  }
+});
+
+/**
  * Public (unauthenticated) procedure
  *
  * This is the base piece you use to build new queries and mutations on your tRPC API. It does not
  * guarantee that a user querying is authorized, but you can still access user session data if they
  * are logged in.
+ *
+ * Enhanced with automatic logging for CloudWatch monitoring.
  */
-export const publicProcedure = t.procedure;
+export const publicProcedure = t.procedure.use(loggingMiddleware);
 
 /**
  * Middleware for enforcing user authentication
@@ -143,22 +188,32 @@ const enforceUserHasRole = (allowedRoles: string[]) => {
  * If you want a query or mutation to ONLY be accessible to logged in users, use this. It verifies
  * the session is valid and guarantees `ctx.session.user` is not null.
  *
+ * Enhanced with automatic logging for CloudWatch monitoring.
+ *
  * @see https://trpc.io/docs/procedures
  */
-export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
+export const protectedProcedure = t.procedure.use(loggingMiddleware).use(enforceUserIsAuthed);
 
 /**
  * Admin procedure
  *
  * If you want a query or mutation to ONLY be accessible to users with ADMIN or SUPER_ADMIN role,
  * use this. It verifies the session is valid and the user has the required role.
+ *
+ * Enhanced with automatic logging for CloudWatch monitoring.
  */
-export const adminProcedure = t.procedure.use(enforceUserHasRole(['ADMIN', 'SUPER_ADMIN']));
+export const adminProcedure = t.procedure
+  .use(loggingMiddleware)
+  .use(enforceUserHasRole(['ADMIN', 'SUPER_ADMIN']));
 
 /**
  * Super Admin procedure
  *
  * If you want a query or mutation to ONLY be accessible to users with SUPER_ADMIN role,
  * use this. It verifies the session is valid and the user has the required role.
+ *
+ * Enhanced with automatic logging for CloudWatch monitoring.
  */
-export const superAdminProcedure = t.procedure.use(enforceUserHasRole(['SUPER_ADMIN']));
+export const superAdminProcedure = t.procedure
+  .use(loggingMiddleware)
+  .use(enforceUserHasRole(['SUPER_ADMIN']));
