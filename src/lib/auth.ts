@@ -70,7 +70,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login',
-    error: '/login', // Redirect errors to login page to prevent redirect loops
+    error: '/error', // Redirect to dedicated error page (prevents redirect loops)
     newUser: '/', // Redirect new users to home page
   },
   providers: [
