@@ -1,4 +1,3 @@
-import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { UserRole } from '@prisma/client';
 import { DefaultSession, NextAuthOptions, Session, getServerSession } from 'next-auth';
 import { JWT } from 'next-auth/jwt';
@@ -9,7 +8,7 @@ import env from '@/config/env/server';
 import { logger, sanitizeEmail } from '@/lib/logger';
 import { hashPassword, verifyPasswordWithMigration } from '@/lib/password-hash';
 import { ensurePrismaConnected, prisma } from '@/lib/prisma';
-import { addMilliseconds, nowUTC } from '@/lib/timezone';
+import { nowUTC } from '@/lib/timezone';
 
 declare module 'next-auth' {
   interface Session extends DefaultSession {
@@ -59,7 +58,8 @@ console.log('[NextAuth] GOOGLE_CLIENT_ID exists:', !!process.env.GOOGLE_CLIENT_I
 console.log('[NextAuth] DATABASE_URL exists:', !!process.env.DATABASE_URL);
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  // JWT-only strategy for serverless compatibility
+  // No database adapter - users are created manually in signIn callback
   // NextAuth v4 secret for session encryption and JWT signing
   secret: env.NEXTAUTH_SECRET,
   // Enable debug logging in production to diagnose configuration issues
@@ -192,55 +192,84 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
-      // For Google OAuth, always allow account creation
+    async signIn({ user, account }) {
+      // For Google OAuth, manually create/update user and account
+      // (No adapter in JWT-only mode)
       if (account?.provider === 'google' && user.email) {
         try {
           // CRITICAL: Ensure Prisma is connected before any queries
           // This prevents race conditions in AWS Lambda cold starts
           await ensurePrismaConnected();
 
-          // Check if user already exists
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email },
-            select: { id: true, role: true, email: true, emailVerified: true },
-          });
-
-          // Auto-promote configured admin emails to ADMIN role on sign-in
+          // Determine if user should be admin
           const adminEmails =
             process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || [];
+          const shouldBeAdmin = adminEmails.includes(user.email);
 
-          if (user.email && adminEmails.includes(user.email)) {
-            if (existingUser && existingUser.role !== 'ADMIN') {
-              await prisma.user.update({
-                where: { email: user.email },
-                data: { role: 'ADMIN' },
-              });
-              user.role = 'ADMIN';
-            } else if (existingUser && existingUser.role === 'ADMIN') {
-              user.role = 'ADMIN';
-            } else if (!existingUser) {
-              // For new users, set the role property so it gets saved correctly
-              user.role = 'ADMIN';
-            }
-          }
-
-          // For existing Google OAuth users, automatically set emailVerified to true if not already set
-          if (existingUser && !existingUser.emailVerified) {
-            await prisma.user.update({
-              where: { id: existingUser.id },
-              data: { emailVerified: nowUTC() },
-            });
-          }
-
-          logger.info('Google OAuth sign-in allowed', {
-            email: sanitizeEmail(user.email || ''),
-            isExistingUser: !!existingUser,
+          // Create or update user in a single upsert operation
+          // Google OAuth users always have verified emails
+          const dbUser = await prisma.user.upsert({
+            where: { email: user.email },
+            update: {
+              name: user.name,
+              image: user.image,
+              emailVerified: nowUTC(),
+              ...(shouldBeAdmin && { role: 'ADMIN' }),
+            },
+            create: {
+              email: user.email,
+              name: user.name,
+              image: user.image,
+              emailVerified: nowUTC(),
+              role: shouldBeAdmin ? 'ADMIN' : 'USER',
+            },
           });
-          return true; // Always allow Google OAuth
+
+          // Update user object with database values for JWT
+          user.id = dbUser.id;
+          user.role = dbUser.role;
+
+          // Create or update OAuth account link
+          await prisma.account.upsert({
+            where: {
+              provider_providerAccountId: {
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+              },
+            },
+            update: {
+              access_token: account.access_token,
+              expires_at: account.expires_at,
+              id_token: account.id_token,
+              refresh_token: account.refresh_token,
+              scope: account.scope,
+              token_type: account.token_type,
+            },
+            create: {
+              userId: dbUser.id,
+              type: account.type,
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+              access_token: account.access_token,
+              expires_at: account.expires_at,
+              id_token: account.id_token,
+              refresh_token: account.refresh_token,
+              scope: account.scope,
+              token_type: account.token_type,
+            },
+          });
+
+          logger.info('Google OAuth sign-in completed', {
+            email: sanitizeEmail(user.email),
+            role: dbUser.role,
+            isNewUser: dbUser.emailVerified ? 'existing' : 'new',
+          });
+
+          return true;
         } catch (error) {
-          logger.error('Error during Google OAuth sign-in check', {
+          logger.error('Error during Google OAuth sign-in', {
             error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
           });
           return '/login?error=OAuthCallback';
         }
@@ -352,156 +381,8 @@ export const authOptions: NextAuthOptions = {
       };
     },
   },
-  events: {
-    async createUser({ user }) {
-      logger.info('NextAuth createUser event triggered', {
-        email: sanitizeEmail(user.email || ''),
-      });
-
-      // For Google OAuth users, set emailVerified to true immediately
-      // Google has already verified the email address
-      const isGoogleUser = user.image?.includes('googleusercontent.com') || false;
-
-      logger.info('User creation details', {
-        email: sanitizeEmail(user.email || ''),
-        isGoogleUser,
-        hasImage: !!user.image,
-      });
-
-      if (isGoogleUser) {
-        try {
-          await ensurePrismaConnected();
-
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { emailVerified: nowUTC() },
-          });
-          logger.info('Set emailVerified=true for Google user', {
-            email: sanitizeEmail(user.email || ''),
-          });
-        } catch (error) {
-          logger.error('Failed to set emailVerified for Google user', {
-            email: sanitizeEmail(user.email || ''),
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-      }
-
-      // Check if this new user should be an admin
-      const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || [];
-
-      if (user.email && adminEmails.includes(user.email)) {
-        try {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { role: 'ADMIN' },
-          });
-        } catch (error) {
-          // Silent fail - user will have default role
-        }
-      }
-
-      // Send appropriate email based on verification status
-      if (user.email) {
-        try {
-          const { sendEmailVerification, sendEmail } = await import('@/lib/communications/email');
-
-          // Re-check verification status after potential update above
-          const dbUser = await prisma.user.findUnique({
-            where: { id: user.id },
-            select: { emailVerified: true },
-          });
-
-          logger.info('Final user email verification status', {
-            email: sanitizeEmail(user.email),
-            emailVerified: !!dbUser?.emailVerified,
-            willSendVerification: !dbUser?.emailVerified,
-          });
-
-          if (!dbUser?.emailVerified) {
-            // Generate and send verification email for unverified users
-            const crypto = await import('crypto');
-            const token = crypto.randomBytes(32).toString('hex');
-            const expires = addMilliseconds(nowUTC(), 24 * 60 * 60 * 1000); // 24 hours from now
-
-            // Store verification token in database
-            await prisma.emailVerificationToken.create({
-              data: {
-                identifier: user.email,
-                token,
-                expires,
-              },
-            });
-
-            // Send verification email
-            await sendEmailVerification(user.email, token, user.name || undefined);
-            logger.info('Verification email sent to new user', {
-              email: sanitizeEmail(user.email),
-            });
-          } else {
-            // Send regular welcome email for verified users
-            await sendEmail({
-              to: user.email,
-              subject: 'Welcome to MedBookings!',
-              html: `
-              <!DOCTYPE html>
-              <html>
-                <head>
-                  <meta charset="utf-8">
-                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                  <title>Welcome to MedBookings</title>
-                </head>
-                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-                  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-                    <h1 style="color: white; margin: 0;">Welcome to MedBookings</h1>
-                  </div>
-
-                  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
-                    <h2 style="color: #333; margin-bottom: 20px;">Thank you for joining us!</h2>
-
-                    <p>Hi ${user.name || 'there'},</p>
-
-                    <p>Welcome to MedBookings! Your account has been successfully created.</p>
-
-                    <p>You can now:</p>
-                    <ul>
-                      <li>Browse and book appointments with healthcare providers</li>
-                      <li>Manage your bookings and medical history</li>
-                      <li>Join organizations and access their services</li>
-                      <li>Become a healthcare provider (subject to approval)</li>
-                    </ul>
-
-                    <p style="margin-top: 20px;">If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
-
-                    <div style="text-align: center; margin-top: 30px;">
-                      <a href="${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Visit MedBookings</a>
-                    </div>
-                  </div>
-
-                  <div style="margin-top: 20px; padding: 20px; text-align: center; color: #666; font-size: 14px;">
-                    <p>© 2024 MedBookings. All rights reserved.</p>
-                    <p>Cape Town, South Africa</p>
-                  </div>
-                </body>
-              </html>
-            `,
-              text: `Welcome to MedBookings!\n\nHi ${user.name || 'there'},\n\nYour account has been successfully created. You can now browse and book appointments with healthcare providers.\n\nVisit: ${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}`,
-            });
-
-            logger.info('Welcome email sent to verified user', {
-              email: sanitizeEmail(user.email),
-            });
-          }
-        } catch (error) {
-          logger.error('Failed to send email', {
-            email: sanitizeEmail(user.email || ''),
-            error: error instanceof Error ? error.message : String(error),
-          });
-          // Don't fail the sign-up process if email fails
-        }
-      }
-    },
-  },
+  // Note: No events needed in JWT-only mode (no adapter)
+  // User creation is handled manually in the signIn callback above
 };
 
 export async function getCurrentUser() {
