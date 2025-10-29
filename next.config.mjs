@@ -49,8 +49,7 @@ const nextConfig = {
     S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
     S3_REGION: process.env.S3_REGION,
 
-    // Environment
-    NODE_ENV: process.env.NODE_ENV,
+    // Logging (NOTE: NODE_ENV is automatically set by Next.js and cannot be in env{})
     LOG_LEVEL: process.env.LOG_LEVEL,
     CLOUDWATCH_LOG_GROUP_NAME: process.env.CLOUDWATCH_LOG_GROUP_NAME,
   },
