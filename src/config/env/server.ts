@@ -1,7 +1,8 @@
 import { createEnv } from '@t3-oss/env-nextjs';
 import { ZodError, z } from 'zod';
 
-const env = createEnv({
+// Environment schema definition
+const envSchema = {
   server: {
     NODE_ENV: z.enum(['development', 'production', 'test']),
     DATABASE_URL: z.string().url(),
@@ -39,20 +40,39 @@ const env = createEnv({
     // eslint-disable-next-line no-console
     console.error('\n💡 Check your .env file and compare with .env.example\n');
 
-    // CRITICAL FIX: Don't kill the process in production/serverless environments
-    // process.exit() causes Lambda/Amplify to return generic 500 errors
-    // Instead, throw an error that can be caught and handled gracefully
-    if (process.env.NODE_ENV === 'production') {
-      // eslint-disable-next-line no-console
-      console.error('⚠️  WARNING: Continuing despite invalid environment variables in production');
-      // eslint-disable-next-line no-console
-      console.error('⚠️  This may cause runtime errors. Fix environment variables ASAP.');
-      // Don't exit - let the app try to continue
-    } else {
-      // In development, it's safe to exit
+    // In development, exit immediately for fast feedback
+    if (process.env.NODE_ENV !== 'production') {
       process.exit(1);
     }
+
+    // In production, throw error to be caught by try-catch below
+    // This prevents process.exit() from killing Lambda/Amplify processes
+    throw error;
   },
-});
+};
+
+// CRITICAL FIX: Wrap env creation in try-catch for production environments
+// This prevents validation errors from killing Lambda/Amplify processes
+let env: any;
+
+try {
+  env = createEnv(envSchema);
+} catch (error) {
+  if (process.env.NODE_ENV === 'production') {
+    // eslint-disable-next-line no-console
+    console.error('⚠️  WARNING: Environment validation failed in production');
+    // eslint-disable-next-line no-console
+    console.error('⚠️  Using process.env directly as fallback. This may cause runtime errors.');
+    // eslint-disable-next-line no-console
+    console.error('⚠️  Fix environment variables ASAP!');
+
+    // Fallback: use process.env directly
+    // This allows the app to start but will likely cause runtime errors
+    env = process.env;
+  } else {
+    // In development, re-throw to fail fast
+    throw error;
+  }
+}
 
 export default env;
