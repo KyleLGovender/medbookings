@@ -148,8 +148,15 @@ async function checkRoutePermissions(pathname: string, token: JWT): Promise<bool
 
 export default withAuth(
   async (req: NextRequest) => {
-    const token = await getToken({ req });
     const { pathname } = req.nextUrl;
+
+    // CRITICAL: Skip middleware for all auth routes to prevent circular dependency
+    // NextAuth routes must not be intercepted by auth middleware
+    if (pathname.startsWith('/api/auth')) {
+      return NextResponse.next();
+    }
+
+    const token = await getToken({ req });
 
     // Allow public access to provider search page
     if (pathname === '/providers') {
@@ -202,8 +209,16 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
+        const pathname = req.nextUrl.pathname;
+
+        // CRITICAL: Always allow auth routes to prevent circular dependency
+        // withAuth must not try to validate NextAuth's own routes
+        if (pathname.startsWith('/api/auth')) {
+          return true;
+        }
+
         // Allow public access to provider search page
-        if (req.nextUrl.pathname === '/providers') {
+        if (pathname === '/providers') {
           return true;
         }
 
@@ -211,7 +226,7 @@ export default withAuth(
         if (!token) return false;
 
         // Special handling for admin routes
-        if (req.nextUrl.pathname.startsWith('/admin')) {
+        if (pathname.startsWith('/admin')) {
           return token.role === 'ADMIN' || token.role === 'SUPER_ADMIN';
         }
 
@@ -223,6 +238,15 @@ export default withAuth(
 
 export const config = {
   matcher: [
+    /*
+     * Match all request paths except for:
+     * - api/auth (NextAuth routes - CRITICAL to exclude)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api/auth|_next/static|_next/image|favicon.ico).*)',
+
     // Protected dashboard routes
     '/dashboard/:path*',
 
