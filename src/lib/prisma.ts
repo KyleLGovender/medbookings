@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
+// NOTE: Import env for validation, but use process.env directly for Prisma initialization
+// This avoids validation issues when Prisma module loads before env values are injected
 import env from '@/config/env/server';
 
 const globalForPrisma = globalThis as unknown as {
@@ -7,20 +9,21 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Serverless-optimized Prisma configuration for AWS Lambda
+// CRITICAL: Use process.env directly (not env Proxy) to avoid initialization issues
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    log: env.NODE_ENV === 'production' ? ['error', 'warn'] : ['query', 'error', 'warn'],
+    log: process.env.NODE_ENV === 'production' ? ['error', 'warn'] : ['query', 'error', 'warn'],
     datasources: {
       db: {
-        url: env.DATABASE_URL,
+        url: process.env.DATABASE_URL,
       },
     },
   });
 
 // In production (serverless), always use a fresh instance per Lambda container
 // In development, reuse the instance to avoid connection exhaustion
-if (env.NODE_ENV !== 'production' && typeof window === 'undefined') {
+if (process.env.NODE_ENV !== 'production' && typeof window === 'undefined') {
   globalForPrisma.prisma = prisma;
 }
 
@@ -56,6 +59,6 @@ export async function ensurePrismaConnected(): Promise<void> {
 
 // In production (serverless), eagerly start the connection process
 // but don't block module initialization
-if (env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'production') {
   ensurePrismaConnected();
 }
