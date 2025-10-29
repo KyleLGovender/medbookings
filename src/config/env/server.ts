@@ -7,7 +7,13 @@ const env = createEnv({
     DATABASE_URL: z.string().url(),
     GOOGLE_CLIENT_ID: z.string(),
     GOOGLE_CLIENT_SECRET: z.string(),
-    AUTH_SECRET: z.string(),
+    // NextAuth Secret - supports both v4 (NEXTAUTH_SECRET) and v5 (AUTH_SECRET)
+    // At least one must be provided, with minimum 32 characters for security
+    AUTH_SECRET: z.string().min(32, 'AUTH_SECRET must be at least 32 characters'),
+    NEXTAUTH_SECRET: z
+      .string()
+      .min(32, 'NEXTAUTH_SECRET must be at least 32 characters')
+      .optional(),
     NEXTAUTH_URL: z.string().url(),
     // AWS S3 Configuration
     S3_BUCKET_NAME: z.string(),
