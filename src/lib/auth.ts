@@ -65,12 +65,29 @@ export const authOptions: NextAuthOptions = {
   // Enable debug logging in production to diagnose configuration issues
   // Logs will appear in AWS CloudWatch
   debug: true,
+  // Use secure cookies in production (required for HTTPS)
+  useSecureCookies: env.NODE_ENV === 'production',
+  // Explicit cookie configuration for serverless/Lambda environments
+  cookies: {
+    sessionToken: {
+      name:
+        env.NODE_ENV === 'production'
+          ? '__Secure-next-auth.session-token'
+          : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: env.NODE_ENV === 'production',
+      },
+    },
+  },
   session: {
     strategy: 'jwt', // Make sure this is set
   },
   pages: {
     signIn: '/login',
-    error: '/error', // Redirect to dedicated error page (prevents redirect loops)
+    // Let NextAuth handle errors with default error page
     newUser: '/', // Redirect new users to home page
   },
   providers: [
@@ -271,7 +288,8 @@ export const authOptions: NextAuthOptions = {
             error: error instanceof Error ? error.message : String(error),
             stack: error instanceof Error ? error.stack : undefined,
           });
-          return '/login?error=OAuthCallback';
+          // Return false to properly deny sign-in (NextAuth v4 expects boolean)
+          return false;
         }
       }
 
