@@ -2,11 +2,22 @@
 
 import { useEffect, useState } from 'react';
 
+import { logger } from '@/lib/logger';
+
+interface EnvironmentVariableCheck {
+  exists: boolean;
+  value?: string;
+  valid?: boolean;
+  length?: number;
+  startsWithExpectedFormat?: boolean;
+  protocol?: string | null;
+}
+
 interface DiagnosticsData {
   timestamp: string;
   environment: string;
   checks: {
-    environmentVariables: Record<string, any>;
+    environmentVariables: Record<string, EnvironmentVariableCheck>;
     expectedCallbackUrls: Record<string, string>;
     configurationFiles: Record<string, string>;
   };
@@ -35,7 +46,7 @@ export default function DiagnosticsPage() {
         setLoading(false);
       })
       .catch((err) => {
-        console.error('Failed to load diagnostics:', err);
+        logger.error('Failed to load diagnostics', err);
         setError(err.message || 'Failed to load diagnostics');
         setLoading(false);
       });
@@ -184,23 +195,25 @@ export default function DiagnosticsPage() {
             </tr>
           </thead>
           <tbody>
-            {Object.entries(data.checks.environmentVariables).map(([key, value]: [string, any]) => (
-              <tr key={key} style={{ borderBottom: '1px solid #E5E7EB' }}>
-                <td style={{ padding: '12px', fontFamily: 'monospace', fontWeight: 'bold' }}>
-                  {key}
-                </td>
-                <td style={{ padding: '12px' }}>{value.exists ? '✅' : '❌'}</td>
-                <td style={{ padding: '12px', fontSize: '14px' }}>
-                  {Object.entries(value)
-                    .filter(([k]) => k !== 'exists')
-                    .map(([k, v]) => (
-                      <div key={k}>
-                        {k}: {typeof v === 'boolean' ? (v ? '✅' : '❌') : String(v)}
-                      </div>
-                    ))}
-                </td>
-              </tr>
-            ))}
+            {Object.entries(data.checks.environmentVariables).map(
+              ([key, value]: [string, EnvironmentVariableCheck]) => (
+                <tr key={key} style={{ borderBottom: '1px solid #E5E7EB' }}>
+                  <td style={{ padding: '12px', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                    {key}
+                  </td>
+                  <td style={{ padding: '12px' }}>{value.exists ? '✅' : '❌'}</td>
+                  <td style={{ padding: '12px', fontSize: '14px' }}>
+                    {Object.entries(value)
+                      .filter(([k]) => k !== 'exists')
+                      .map(([k, v]) => (
+                        <div key={k}>
+                          {k}: {typeof v === 'boolean' ? (v ? '✅' : '❌') : String(v)}
+                        </div>
+                      ))}
+                  </td>
+                </tr>
+              )
+            )}
           </tbody>
         </table>
       </div>

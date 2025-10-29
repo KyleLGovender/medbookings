@@ -6,3 +6,5 @@ docker_data
 workflow/scripts/**/*.js
 workflow/scripts/**/*.sh
 run-local.js
+e2e
+infrastructure
