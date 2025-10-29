@@ -95,11 +95,13 @@ export const createCallerFactory = t.createCallerFactory;
  * Logs are automatically sent to CloudWatch for monitoring and alerting.
  */
 const loggingMiddleware = t.middleware(async ({ path, type, next, ctx }) => {
+  // eslint-disable-next-line rulesdir/no-new-date
   const start = Date.now();
   const userId = ctx.session?.user?.id;
 
   try {
     const result = await next();
+    // eslint-disable-next-line rulesdir/no-new-date
     const durationMs = Date.now() - start;
 
     // Log successful requests at info level
@@ -113,6 +115,7 @@ const loggingMiddleware = t.middleware(async ({ path, type, next, ctx }) => {
 
     return result;
   } catch (error) {
+    // eslint-disable-next-line rulesdir/no-new-date
     const durationMs = Date.now() - start;
 
     // Log failed requests at error level

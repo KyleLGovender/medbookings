@@ -8,7 +8,7 @@ import GoogleProvider from 'next-auth/providers/google';
 import env from '@/config/env/server';
 import { logger, sanitizeEmail } from '@/lib/logger';
 import { hashPassword, verifyPasswordWithMigration } from '@/lib/password-hash';
-import { prisma } from '@/lib/prisma';
+import { ensurePrismaConnected, prisma } from '@/lib/prisma';
 import { addMilliseconds, nowUTC } from '@/lib/timezone';
 
 declare module 'next-auth' {
@@ -196,6 +196,10 @@ export const authOptions: NextAuthOptions = {
       // For Google OAuth, always allow account creation
       if (account?.provider === 'google' && user.email) {
         try {
+          // CRITICAL: Ensure Prisma is connected before any queries
+          // This prevents race conditions in AWS Lambda cold starts
+          await ensurePrismaConnected();
+
           // Check if user already exists
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email },
@@ -293,6 +297,9 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account, trigger }) {
       // When user signs in for the first time
       if (user) {
+        // Ensure Prisma is connected before database queries
+        await ensurePrismaConnected();
+
         // Fetch the latest user data from database to get the correct role and email verification status
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
@@ -317,6 +324,8 @@ export const authOptions: NextAuthOptions = {
         (!token.role || token.emailVerified === undefined || trigger === 'update') &&
         token.id
       ) {
+        await ensurePrismaConnected();
+
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
           select: { role: true, emailVerified: true },
@@ -361,6 +370,8 @@ export const authOptions: NextAuthOptions = {
 
       if (isGoogleUser) {
         try {
+          await ensurePrismaConnected();
+
           await prisma.user.update({
             where: { id: user.id },
             data: { emailVerified: nowUTC() },

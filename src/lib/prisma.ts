@@ -24,18 +24,38 @@ if (env.NODE_ENV !== 'production' && typeof window === 'undefined') {
   globalForPrisma.prisma = prisma;
 }
 
-// Graceful connection handling for serverless environments
-// Ensure Prisma connects explicitly with timeout and error logging
+// Track connection state for serverless environments
+let connectionPromise: Promise<void> | null = null;
+
+/**
+ * Ensures Prisma is connected before executing queries.
+ * This is critical in serverless environments (AWS Lambda) where the connection
+ * might not be established when the first query is attempted.
+ *
+ * @returns Promise that resolves when Prisma is connected
+ * @throws Error if connection fails
+ */
+export async function ensurePrismaConnected(): Promise<void> {
+  if (!connectionPromise) {
+    connectionPromise = prisma
+      .$connect()
+      .then(() => {
+        // eslint-disable-next-line no-console
+        console.log('[Prisma] Database connected successfully');
+      })
+      .catch((error) => {
+        // eslint-disable-next-line no-console
+        console.error('[Prisma] Database connection failed:', error);
+        // Reset promise so next call retries
+        connectionPromise = null;
+        throw error;
+      });
+  }
+  return connectionPromise;
+}
+
+// In production (serverless), eagerly start the connection process
+// but don't block module initialization
 if (env.NODE_ENV === 'production') {
-  prisma
-    .$connect()
-    .then(() => {
-      // eslint-disable-next-line no-console
-      console.log('[Prisma] Database connected successfully');
-    })
-    .catch((error) => {
-      // eslint-disable-next-line no-console
-      console.error('[Prisma] Database connection failed:', error);
-      // Don't exit process - let Lambda retry on next invocation
-    });
+  ensurePrismaConnected();
 }
