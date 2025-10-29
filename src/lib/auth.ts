@@ -43,15 +43,34 @@ interface User {
   image?: string | null;
 }
 
+// Debug logging for production environment variable verification
+// These logs will appear in AWS CloudWatch Logs
+// eslint-disable-next-line no-console
+console.log('[NextAuth] Configuration loading...');
+// eslint-disable-next-line no-console
+console.log('[NextAuth] NEXTAUTH_URL:', process.env.NEXTAUTH_URL || 'NOT SET');
+// eslint-disable-next-line no-console
+console.log('[NextAuth] NEXTAUTH_SECRET exists:', !!process.env.NEXTAUTH_SECRET);
+// eslint-disable-next-line no-console
+console.log('[NextAuth] NEXTAUTH_SECRET length:', process.env.NEXTAUTH_SECRET?.length || 0);
+// eslint-disable-next-line no-console
+console.log('[NextAuth] GOOGLE_CLIENT_ID exists:', !!process.env.GOOGLE_CLIENT_ID);
+// eslint-disable-next-line no-console
+console.log('[NextAuth] DATABASE_URL exists:', !!process.env.DATABASE_URL);
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   // NextAuth v4 secret for session encryption and JWT signing
   secret: env.NEXTAUTH_SECRET,
+  // Enable debug logging in production to diagnose configuration issues
+  // Logs will appear in AWS CloudWatch
+  debug: true,
   session: {
     strategy: 'jwt', // Make sure this is set
   },
   pages: {
     signIn: '/login',
+    error: '/login', // Redirect errors to login page to prevent redirect loops
     newUser: '/', // Redirect new users to home page
   },
   providers: [

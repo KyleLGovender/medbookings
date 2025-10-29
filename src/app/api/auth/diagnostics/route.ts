@@ -20,7 +20,7 @@ export async function GET() {
   try {
     // Read directly from process.env to avoid validation errors
     const nextAuthUrl = process.env.NEXTAUTH_URL;
-    const authSecret = process.env.AUTH_SECRET;
+    const nextAuthSecret = process.env.NEXTAUTH_SECRET;
     const googleClientId = process.env.GOOGLE_CLIENT_ID;
     const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
     const databaseUrl = process.env.DATABASE_URL;
@@ -35,10 +35,10 @@ export async function GET() {
             value: nextAuthUrl || 'NOT SET',
             valid: isValidUrl(nextAuthUrl),
           },
-          AUTH_SECRET: {
-            exists: !!authSecret,
-            length: authSecret?.length || 0,
-            valid: (authSecret?.length || 0) >= 32,
+          NEXTAUTH_SECRET: {
+            exists: !!nextAuthSecret,
+            length: nextAuthSecret?.length || 0,
+            valid: (nextAuthSecret?.length || 0) >= 32,
           },
           GOOGLE_CLIENT_ID: {
             exists: !!googleClientId,
@@ -80,12 +80,14 @@ export async function GET() {
       checks.recommendations.push('Ensure NEXTAUTH_URL starts with https:// and is a valid URL');
     }
 
-    if (!checks.checks.environmentVariables.AUTH_SECRET.exists) {
-      checks.issues.push('AUTH_SECRET is not set');
-      checks.recommendations.push('Generate and set AUTH_SECRET using: openssl rand -base64 32');
-    } else if (!checks.checks.environmentVariables.AUTH_SECRET.valid) {
-      checks.issues.push('AUTH_SECRET is too short (should be at least 32 characters)');
-      checks.recommendations.push('Generate a new AUTH_SECRET using: openssl rand -base64 32');
+    if (!checks.checks.environmentVariables.NEXTAUTH_SECRET.exists) {
+      checks.issues.push('NEXTAUTH_SECRET is not set');
+      checks.recommendations.push(
+        'Generate and set NEXTAUTH_SECRET using: openssl rand -base64 32'
+      );
+    } else if (!checks.checks.environmentVariables.NEXTAUTH_SECRET.valid) {
+      checks.issues.push('NEXTAUTH_SECRET is too short (should be at least 32 characters)');
+      checks.recommendations.push('Generate a new NEXTAUTH_SECRET using: openssl rand -base64 32');
     }
 
     if (!checks.checks.environmentVariables.GOOGLE_CLIENT_ID.exists) {
@@ -152,7 +154,7 @@ export async function GET() {
         recommendations: [
           'Verify all required environment variables are set in Amplify',
           'Check server logs for specific missing variables',
-          'Required: NEXTAUTH_URL, AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, DATABASE_URL',
+          'Required: NEXTAUTH_URL, NEXTAUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, DATABASE_URL',
         ],
       },
       {
