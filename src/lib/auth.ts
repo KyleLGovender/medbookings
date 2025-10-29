@@ -1,9 +1,7 @@
-import { NextRequest } from 'next/server';
-
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { UserRole } from '@prisma/client';
 import { DefaultSession, NextAuthOptions, Session, getServerSession } from 'next-auth';
-import { JWT, getToken } from 'next-auth/jwt';
+import { JWT } from 'next-auth/jwt';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 
@@ -486,37 +484,4 @@ export async function checkRole(allowedRoles: UserRole[]) {
     throw new Error('Not authorized');
   }
   return user;
-}
-
-export async function GET(req: NextRequest) {
-  const token = await getToken({ req });
-
-  if (token && token.sub) {
-    // Find the provider for this user
-    const provider = await prisma.provider.findFirst({
-      where: { userId: token.sub },
-    });
-
-    if (provider) {
-      // Store or update calendar integration
-      await prisma.calendarIntegration.upsert({
-        where: { providerId: provider.id },
-        update: {
-          accessToken: token.accessToken as string,
-          refreshToken: token.refreshToken as string,
-          expiresAt: addMilliseconds(nowUTC(), 3600 * 1000), // 1 hour from now
-          calendarProvider: 'GOOGLE',
-          googleEmail: token.email as string,
-        },
-        create: {
-          providerId: provider.id,
-          accessToken: token.accessToken as string,
-          refreshToken: token.refreshToken as string,
-          expiresAt: addMilliseconds(nowUTC(), 3600 * 1000),
-          calendarProvider: 'GOOGLE',
-          googleEmail: token.email as string,
-        },
-      });
-    }
-  }
 }
