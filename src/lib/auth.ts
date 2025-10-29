@@ -59,7 +59,7 @@ console.log('[NextAuth] GOOGLE_CLIENT_ID exists:', !!process.env.GOOGLE_CLIENT_I
 console.log('[NextAuth] DATABASE_URL exists:', !!process.env.DATABASE_URL);
 
 export const authOptions: NextAuthOptions = {
-  // adapter: PrismaAdapter(prisma), // Disabled: Not needed for JWT sessions, causes initialization timing issues in AWS Lambda
+  adapter: PrismaAdapter(prisma),
   // NextAuth v4 secret for session encryption and JWT signing
   secret: env.NEXTAUTH_SECRET,
   // Enable debug logging in production to diagnose configuration issues
