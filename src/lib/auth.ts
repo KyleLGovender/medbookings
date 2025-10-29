@@ -47,6 +47,7 @@ interface User {
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
+  secret: env.AUTH_SECRET,
   session: {
     strategy: 'jwt', // Make sure this is set
   },
