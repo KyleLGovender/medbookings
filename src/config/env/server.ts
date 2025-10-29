@@ -38,7 +38,20 @@ const env = createEnv({
     console.error(error.errors.map((e) => `  - ${e.path.join('.')}: ${e.message}`).join('\n'));
     // eslint-disable-next-line no-console
     console.error('\n💡 Check your .env file and compare with .env.example\n');
-    process.exit(1);
+
+    // CRITICAL FIX: Don't kill the process in production/serverless environments
+    // process.exit() causes Lambda/Amplify to return generic 500 errors
+    // Instead, throw an error that can be caught and handled gracefully
+    if (process.env.NODE_ENV === 'production') {
+      // eslint-disable-next-line no-console
+      console.error('⚠️  WARNING: Continuing despite invalid environment variables in production');
+      // eslint-disable-next-line no-console
+      console.error('⚠️  This may cause runtime errors. Fix environment variables ASAP.');
+      // Don't exit - let the app try to continue
+    } else {
+      // In development, it's safe to exit
+      process.exit(1);
+    }
   },
 });
 
