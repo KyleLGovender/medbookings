@@ -8,8 +8,8 @@ const env = createEnv({
     GOOGLE_CLIENT_ID: z.string(),
     GOOGLE_CLIENT_SECRET: z.string(),
     // NextAuth Secret - supports both v4 (NEXTAUTH_SECRET) and v5 (AUTH_SECRET)
-    // At least one must be provided, with minimum 32 characters for security
-    AUTH_SECRET: z.string().min(32, 'AUTH_SECRET must be at least 32 characters'),
+    // Both are optional here, but runtime validation below ensures at least one exists
+    AUTH_SECRET: z.string().min(32, 'AUTH_SECRET must be at least 32 characters').optional(),
     NEXTAUTH_SECRET: z
       .string()
       .min(32, 'NEXTAUTH_SECRET must be at least 32 characters')
@@ -46,5 +46,17 @@ const env = createEnv({
     process.exit(1);
   },
 });
+
+// Runtime validation: Ensure at least one NextAuth secret is provided
+// This runs after the schema validation above, allowing either variable name
+if (!env.AUTH_SECRET && !env.NEXTAUTH_SECRET) {
+  // eslint-disable-next-line no-console
+  console.error(
+    '❌ NextAuth Configuration Error: Either AUTH_SECRET or NEXTAUTH_SECRET must be provided\n'
+  );
+  // eslint-disable-next-line no-console
+  console.error('💡 Set one of these environment variables with at least 32 characters\n');
+  process.exit(1);
+}
 
 export default env;
