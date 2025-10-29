@@ -49,6 +49,3 @@ logs/
 .workflow-enabled
 package.json.local
 run-local.js
-
-# CloudWatch automation config (contains sensitive data)
-scripts/cloudwatch/config.sh
