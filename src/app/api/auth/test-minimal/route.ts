@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
+
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 
 import env from '@/config/env/server';
+import { nowUTC } from '@/lib/timezone';
 
 /**
  * Progressive NextAuth configuration testing
@@ -12,7 +14,7 @@ import env from '@/config/env/server';
  */
 export async function GET() {
   const results: any = {
-    timestamp: new Date().toISOString(),
+    timestamp: nowUTC().toISOString(),
     tests: [],
   };
 

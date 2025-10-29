@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { nowUTC } from '@/lib/timezone';
+
 /**
  * Custom NextAuth error handler
  * This overrides the default error page to show detailed diagnostic information
@@ -12,7 +14,7 @@ export async function GET(req: NextRequest) {
   const error = searchParams.get('error');
 
   const diagnostics: any = {
-    timestamp: new Date().toISOString(),
+    timestamp: nowUTC().toISOString(),
     error: error || 'Unknown',
     url: req.url,
     details: {},
@@ -36,7 +38,8 @@ export async function GET(req: NextRequest) {
     SessionRequired: 'The content of this page requires you to be signed in',
   };
 
-  diagnostics.details.description = errorDescriptions[error || 'Default'] || errorDescriptions.Default;
+  diagnostics.details.description =
+    errorDescriptions[error || 'Default'] || errorDescriptions.Default;
 
   // Provide specific diagnostics for Configuration errors
   if (error === 'Configuration') {
@@ -54,7 +57,7 @@ export async function GET(req: NextRequest) {
         exists: !!process.env.NEXTAUTH_URL,
         length: process.env.NEXTAUTH_URL?.length || 0,
         hasWhitespace: process.env.NEXTAUTH_URL !== process.env.NEXTAUTH_URL?.trim(),
-        preview: process.env.NEXTAUTH_URL?.substring(0, 30) + '...',
+        preview: `${process.env.NEXTAUTH_URL?.substring(0, 30)}...`,
       },
       NEXTAUTH_SECRET: {
         exists: !!process.env.NEXTAUTH_SECRET,
@@ -157,42 +160,64 @@ export async function GET(req: NextRequest) {
     <strong>${diagnostics.details.description}</strong>
   </div>
 
-  ${diagnostics.details.detectedIssues?.length > 0 ? `
+  ${
+    diagnostics.details.detectedIssues?.length > 0
+      ? `
   <h2>Detected Issues:</h2>
   ${diagnostics.details.detectedIssues.map((issue: string) => `<div class="issue">⚠️ ${issue}</div>`).join('')}
-  ` : ''}
+  `
+      : ''
+  }
 
-  ${error === 'Configuration' ? `
+  ${
+    error === 'Configuration'
+      ? `
   <h2>Environment Variables:</h2>
   <div class="env-check">
     <strong>NEXTAUTH_URL:</strong>
-    ${diagnostics.details.environmentCheck.NEXTAUTH_URL.exists ?
-      `<span class="exists">✓ Set</span> (${diagnostics.details.environmentCheck.NEXTAUTH_URL.length} chars)
-       ${diagnostics.details.environmentCheck.NEXTAUTH_URL.hasWhitespace ?
-         '<strong style="color: #d32f2f;"> ⚠️ HAS WHITESPACE!</strong>' : ''}` :
-      '<span class="missing">✗ Not set</span>'}
+    ${
+      diagnostics.details.environmentCheck.NEXTAUTH_URL.exists
+        ? `<span class="exists">✓ Set</span> (${diagnostics.details.environmentCheck.NEXTAUTH_URL.length} chars)
+       ${
+         diagnostics.details.environmentCheck.NEXTAUTH_URL.hasWhitespace
+           ? '<strong style="color: #d32f2f;"> ⚠️ HAS WHITESPACE!</strong>'
+           : ''
+       }`
+        : '<span class="missing">✗ Not set</span>'
+    }
   </div>
   <div class="env-check">
     <strong>NEXTAUTH_SECRET:</strong>
-    ${diagnostics.details.environmentCheck.NEXTAUTH_SECRET.exists ?
-      `<span class="exists">✓ Set</span> (${diagnostics.details.environmentCheck.NEXTAUTH_SECRET.length} chars)
-       ${!diagnostics.details.environmentCheck.NEXTAUTH_SECRET.isLongEnough ?
-         '<strong style="color: #d32f2f;"> ⚠️ TOO SHORT!</strong>' : ''}` :
-      '<span class="missing">✗ Not set</span>'}
+    ${
+      diagnostics.details.environmentCheck.NEXTAUTH_SECRET.exists
+        ? `<span class="exists">✓ Set</span> (${diagnostics.details.environmentCheck.NEXTAUTH_SECRET.length} chars)
+       ${
+         !diagnostics.details.environmentCheck.NEXTAUTH_SECRET.isLongEnough
+           ? '<strong style="color: #d32f2f;"> ⚠️ TOO SHORT!</strong>'
+           : ''
+       }`
+        : '<span class="missing">✗ Not set</span>'
+    }
   </div>
   <div class="env-check">
     <strong>GOOGLE_CLIENT_ID:</strong>
-    ${diagnostics.details.environmentCheck.GOOGLE_CLIENT_ID.exists ?
-      `<span class="exists">✓ Set</span> (${diagnostics.details.environmentCheck.GOOGLE_CLIENT_ID.length} chars)` :
-      '<span class="missing">✗ Not set</span>'}
+    ${
+      diagnostics.details.environmentCheck.GOOGLE_CLIENT_ID.exists
+        ? `<span class="exists">✓ Set</span> (${diagnostics.details.environmentCheck.GOOGLE_CLIENT_ID.length} chars)`
+        : '<span class="missing">✗ Not set</span>'
+    }
   </div>
   <div class="env-check">
     <strong>GOOGLE_CLIENT_SECRET:</strong>
-    ${diagnostics.details.environmentCheck.GOOGLE_CLIENT_SECRET.exists ?
-      `<span class="exists">✓ Set</span> (${diagnostics.details.environmentCheck.GOOGLE_CLIENT_SECRET.length} chars)` :
-      '<span class="missing">✗ Not set</span>'}
+    ${
+      diagnostics.details.environmentCheck.GOOGLE_CLIENT_SECRET.exists
+        ? `<span class="exists">✓ Set</span> (${diagnostics.details.environmentCheck.GOOGLE_CLIENT_SECRET.length} chars)`
+        : '<span class="missing">✗ Not set</span>'
+    }
   </div>
-  ` : ''}
+  `
+      : ''
+  }
 
   <h2>Next Steps:</h2>
   <ol>

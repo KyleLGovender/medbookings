@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
+import { nowUTC } from '@/lib/timezone';
 
 /**
  * Diagnostic endpoint to test NextAuth configuration and environment variables
@@ -8,7 +9,7 @@ import { authOptions } from '@/lib/auth';
  */
 export async function GET() {
   const results: any = {
-    timestamp: new Date().toISOString(),
+    timestamp: nowUTC().toISOString(),
     environment: process.env.NODE_ENV,
     tests: {},
     summary: {
@@ -197,11 +198,7 @@ export async function GET() {
 
   // Final status
   results.overallStatus =
-    results.summary.failed === 0
-      ? results.summary.warnings > 0
-        ? 'WARNING'
-        : 'PASS'
-      : 'FAIL';
+    results.summary.failed === 0 ? (results.summary.warnings > 0 ? 'WARNING' : 'PASS') : 'FAIL';
 
   return NextResponse.json(results, {
     status: 200,
