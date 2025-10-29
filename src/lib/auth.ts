@@ -210,21 +210,51 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
+      // DIAGNOSTIC LOGGING: Track OAuth flow
+      // eslint-disable-next-line no-console
+      console.log('[NextAuth signIn] Callback started', {
+        provider: account?.provider,
+        email: user.email,
+        userId: user.id,
+        // eslint-disable-next-line rulesdir/no-new-date
+        timestamp: new Date().toISOString(),
+      });
+
       // For Google OAuth, manually create/update user and account
       // (No adapter in JWT-only mode)
       if (account?.provider === 'google' && user.email) {
         try {
+          // eslint-disable-next-line no-console
+          console.log('[NextAuth signIn] Google OAuth detected, connecting to Prisma...');
+
           // CRITICAL: Ensure Prisma is connected before any queries
           // This prevents race conditions in AWS Lambda cold starts
+          // eslint-disable-next-line rulesdir/no-new-date
+          const connectStart = Date.now();
           await ensurePrismaConnected();
+          // eslint-disable-next-line rulesdir/no-new-date
+          const connectDuration = Date.now() - connectStart;
+
+          // eslint-disable-next-line no-console
+          console.log('[NextAuth signIn] Prisma connected', {
+            durationMs: connectDuration,
+          });
 
           // Determine if user should be admin
           const adminEmails =
             process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || [];
           const shouldBeAdmin = adminEmails.includes(user.email);
 
+          // eslint-disable-next-line no-console
+          console.log('[NextAuth signIn] Upserting user...', {
+            email: user.email,
+            shouldBeAdmin,
+          });
+
           // Create or update user in a single upsert operation
           // Google OAuth users always have verified emails
+          // eslint-disable-next-line rulesdir/no-new-date
+          const upsertStart = Date.now();
           const dbUser = await prisma.user.upsert({
             where: { email: user.email },
             update: {
@@ -241,12 +271,26 @@ export const authOptions: NextAuthOptions = {
               role: shouldBeAdmin ? 'ADMIN' : 'USER',
             },
           });
+          // eslint-disable-next-line rulesdir/no-new-date
+          const upsertDuration = Date.now() - upsertStart;
+
+          // eslint-disable-next-line no-console
+          console.log('[NextAuth signIn] User upserted successfully', {
+            userId: dbUser.id,
+            role: dbUser.role,
+            durationMs: upsertDuration,
+          });
 
           // Update user object with database values for JWT
           user.id = dbUser.id;
           user.role = dbUser.role;
 
+          // eslint-disable-next-line no-console
+          console.log('[NextAuth signIn] Upserting OAuth account...');
+
           // Create or update OAuth account link
+          // eslint-disable-next-line rulesdir/no-new-date
+          const accountStart = Date.now();
           await prisma.account.upsert({
             where: {
               provider_providerAccountId: {
@@ -275,6 +319,15 @@ export const authOptions: NextAuthOptions = {
               token_type: account.token_type,
             },
           });
+          // eslint-disable-next-line rulesdir/no-new-date
+          const accountDuration = Date.now() - accountStart;
+
+          // eslint-disable-next-line no-console
+          console.log('[NextAuth signIn] OAuth account upserted successfully', {
+            provider: account.provider,
+            providerAccountId: account.providerAccountId,
+            durationMs: accountDuration,
+          });
 
           logger.info('Google OAuth sign-in completed', {
             email: sanitizeEmail(user.email),
@@ -282,16 +335,34 @@ export const authOptions: NextAuthOptions = {
             isNewUser: dbUser.emailVerified ? 'existing' : 'new',
           });
 
+          // eslint-disable-next-line no-console
+          console.log('[NextAuth signIn] Returning true - sign-in successful');
+
           return true;
         } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error('[NextAuth signIn] ERROR OCCURRED', {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+            errorName: error instanceof Error ? error.constructor.name : typeof error,
+            fullError: error,
+          });
+
           logger.error('Error during Google OAuth sign-in', {
             error: error instanceof Error ? error.message : String(error),
             stack: error instanceof Error ? error.stack : undefined,
           });
+
+          // eslint-disable-next-line no-console
+          console.log('[NextAuth signIn] Returning false - sign-in denied due to error');
+
           // Return false to properly deny sign-in (NextAuth v4 expects boolean)
           return false;
         }
       }
+
+      // eslint-disable-next-line no-console
+      console.log('[NextAuth signIn] Not Google OAuth or no email, continuing...');
 
       // For non-Google OAuth providers or credentials, use original logic
       const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || [];
@@ -326,24 +397,61 @@ export const authOptions: NextAuthOptions = {
       return true; // Allow sign-in
     },
     async redirect({ url, baseUrl }) {
+      // DIAGNOSTIC LOGGING: Track redirects
+      // eslint-disable-next-line no-console
+      console.log('[NextAuth redirect] Redirect callback started', {
+        url,
+        baseUrl,
+        NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+        // eslint-disable-next-line rulesdir/no-new-date
+        timestamp: new Date().toISOString(),
+      });
+
+      let finalUrl: string;
+
       // If we're coming from a login page, redirect to home page
       if (url.startsWith(`${baseUrl}/login`) || url === baseUrl) {
-        return `${baseUrl}/`;
+        finalUrl = `${baseUrl}/`;
+        // eslint-disable-next-line no-console
+        console.log('[NextAuth redirect] Redirecting from login to home', { finalUrl });
+        return finalUrl;
       }
       // If it's a relative URL, prepend baseUrl
       if (url.startsWith('/')) {
-        return baseUrl + url;
+        finalUrl = baseUrl + url;
+        // eslint-disable-next-line no-console
+        console.log('[NextAuth redirect] Prepending baseUrl to relative URL', { finalUrl });
+        return finalUrl;
       }
       // If URL is on the same origin, allow it
       if (new URL(url).origin === baseUrl) {
+        // eslint-disable-next-line no-console
+        console.log('[NextAuth redirect] Same origin, allowing', { url });
         return url;
       }
       // Otherwise, redirect to home page
-      return `${baseUrl}/`;
+      finalUrl = `${baseUrl}/`;
+      // eslint-disable-next-line no-console
+      console.log('[NextAuth redirect] Default redirect to home', { finalUrl });
+      return finalUrl;
     },
     async jwt({ token, user, account, trigger }) {
+      // DIAGNOSTIC LOGGING: Track JWT callback
+      // eslint-disable-next-line no-console
+      console.log('[NextAuth jwt] JWT callback started', {
+        hasUser: !!user,
+        userId: user?.id,
+        tokenId: token.id,
+        trigger,
+        // eslint-disable-next-line rulesdir/no-new-date
+        timestamp: new Date().toISOString(),
+      });
+
       // When user signs in for the first time
       if (user) {
+        // eslint-disable-next-line no-console
+        console.log('[NextAuth jwt] First sign-in, fetching user data from database...');
+
         // Ensure Prisma is connected before database queries
         await ensurePrismaConnected();
 
@@ -351,6 +459,13 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: { id: true, role: true, email: true, emailVerified: true },
+        });
+
+        // eslint-disable-next-line no-console
+        console.log('[NextAuth jwt] User data fetched', {
+          userId: dbUser?.id,
+          role: dbUser?.role,
+          hasEmailVerified: !!dbUser?.emailVerified,
         });
 
         token.accessToken = account?.access_token;
