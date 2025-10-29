@@ -16,10 +16,9 @@ const nextConfig = {
   // AWS Amplify environment variables are only available at build time by default
   // This configuration makes them available at runtime for serverless functions
   env: {
-    // NextAuth
+    // NextAuth (NOTE: AUTH_SECRET is not used - only NEXTAUTH_SECRET)
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-    AUTH_SECRET: process.env.AUTH_SECRET,
 
     // OAuth
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
