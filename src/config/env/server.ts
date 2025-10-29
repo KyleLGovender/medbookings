@@ -25,8 +25,9 @@ const env = createEnv({
     SENDGRID_FROM_EMAIL: z.string(),
   },
   emptyStringAsUndefined: true,
-  // eslint-disable-next-line n/no-process-env
-  experimental__runtimeEnv: process.env,
+  // Empty object because we have no client-side (NEXT_PUBLIC_*) variables in this config
+  // experimental__runtimeEnv is required but should be empty for server-only configs
+  experimental__runtimeEnv: {},
   onValidationError: (error: ZodError) => {
     // Environment validation failure - show which variables are missing/invalid
     // This runs during app startup, before logger is initialized
