@@ -66,19 +66,20 @@ export const authOptions: NextAuthOptions = {
   // Logs will appear in AWS CloudWatch
   debug: true,
   // Use secure cookies in production (required for HTTPS)
-  useSecureCookies: env.NODE_ENV === 'production',
+  // NOTE: Use process.env.NODE_ENV directly (not env.NODE_ENV) because Next.js manages NODE_ENV
+  useSecureCookies: process.env.NODE_ENV === 'production',
   // Explicit cookie configuration for serverless/Lambda environments
   cookies: {
     sessionToken: {
       name:
-        env.NODE_ENV === 'production'
+        process.env.NODE_ENV === 'production'
           ? '__Secure-next-auth.session-token'
           : 'next-auth.session-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: env.NODE_ENV === 'production',
+        secure: process.env.NODE_ENV === 'production',
       },
     },
   },
