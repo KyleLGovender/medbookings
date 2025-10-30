@@ -93,11 +93,15 @@ export async function GET() {
 
   // Test 6: Finally, try to import auth
   try {
-    const auth = await import('@/lib/auth');
+    const authModule = await import('@/lib/auth');
     results.imports.push({
       module: '@/lib/auth',
       status: 'SUCCESS',
-      hasAuthOptions: !!auth.authOptions,
+      hasAuthConfig: !!authModule.authConfig,
+      hasHandlers: !!authModule.handlers,
+      hasAuthFunction: !!authModule.auth,
+      hasSignIn: !!authModule.signIn,
+      hasSignOut: !!authModule.signOut,
     });
   } catch (error) {
     results.imports.push({

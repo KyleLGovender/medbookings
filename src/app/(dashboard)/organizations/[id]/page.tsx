@@ -1,11 +1,9 @@
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
-import { getServerSession } from 'next-auth';
-
 import CalendarLoader from '@/components/calendar-loader';
 import { OrganizationProfileView } from '@/features/organizations/components/profile/organization-profile-view';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 
 interface OrganizationDetailsPageProps {
   params: {
@@ -15,7 +13,7 @@ interface OrganizationDetailsPageProps {
 
 export default async function OrganizationDetailsPage({ params }: OrganizationDetailsPageProps) {
   // Get current session to check if user can edit this profile
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const userId = session?.user?.id;
 
   // Ensure ID exists

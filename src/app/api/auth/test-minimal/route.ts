@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import NextAuth, { NextAuthOptions } from 'next-auth';
+import type { NextAuthConfig } from 'next-auth';
+import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 
 import env from '@/config/env/server';
@@ -20,7 +21,7 @@ export async function GET() {
 
   // Test 1: Minimal Configuration (just secret)
   try {
-    const minimalConfig: NextAuthOptions = {
+    const minimalConfig: NextAuthConfig = {
       secret: process.env.NEXTAUTH_SECRET,
       providers: [],
     };
@@ -44,7 +45,7 @@ export async function GET() {
 
   // Test 2: With hardcoded Google provider
   try {
-    const withHardcodedProvider: NextAuthOptions = {
+    const withHardcodedProvider: NextAuthConfig = {
       secret: process.env.NEXTAUTH_SECRET,
       providers: [
         GoogleProvider({
@@ -72,7 +73,7 @@ export async function GET() {
 
   // Test 3: With env-based Google provider
   try {
-    const withEnvProvider: NextAuthOptions = {
+    const withEnvProvider: NextAuthConfig = {
       secret: env.NEXTAUTH_SECRET,
       providers: [
         GoogleProvider({
@@ -110,7 +111,7 @@ export async function GET() {
 
   // Test 4: With session strategy
   try {
-    const withSession: NextAuthOptions = {
+    const withSession: NextAuthConfig = {
       secret: env.NEXTAUTH_SECRET,
       providers: [
         GoogleProvider({
@@ -141,7 +142,7 @@ export async function GET() {
 
   // Test 5: With useSecureCookies
   try {
-    const withSecureCookies: NextAuthOptions = {
+    const withSecureCookies: NextAuthConfig = {
       secret: env.NEXTAUTH_SECRET,
       providers: [
         GoogleProvider({
@@ -173,7 +174,7 @@ export async function GET() {
 
   // Test 6: With cookies configuration
   try {
-    const withCookiesConfig: NextAuthOptions = {
+    const withCookiesConfig: NextAuthConfig = {
       secret: env.NEXTAUTH_SECRET,
       providers: [
         GoogleProvider({
@@ -216,7 +217,7 @@ export async function GET() {
 
   // Test 7: With Google authorization params
   try {
-    const withAuthParams: NextAuthOptions = {
+    const withAuthParams: NextAuthConfig = {
       secret: env.NEXTAUTH_SECRET,
       providers: [
         GoogleProvider({

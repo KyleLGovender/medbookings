@@ -7,8 +7,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-import { type JWT, getToken } from 'next-auth/jwt';
-import { withAuth } from 'next-auth/middleware';
+import type { UserRole } from '@prisma/client';
+import { getToken } from 'next-auth/jwt';
+
+interface ExtendedJWT {
+  id?: string;
+  role?: UserRole;
+  emailVerified?: Date | null;
+  providerRole?: string;
+  sub?: string;
+}
 
 /**
  * Route patterns and their required permissions
@@ -68,7 +76,7 @@ function isEmailVerified(emailVerified: Date | null): boolean {
 /**
  * Check if user meets verification requirements
  */
-function checkVerificationRequirement(requirement: string | string[], token: JWT): boolean {
+function checkVerificationRequirement(requirement: string | string[], token: ExtendedJWT): boolean {
   if (Array.isArray(requirement)) {
     // Standard role check
     return hasRole(token.role as string, requirement);
@@ -103,7 +111,7 @@ function extractRouteParams(pathname: string): Record<string, string> {
 /**
  * Check route-specific permissions
  */
-async function checkRoutePermissions(pathname: string, token: JWT): Promise<boolean> {
+async function checkRoutePermissions(pathname: string, token: ExtendedJWT): Promise<boolean> {
   // Check admin routes
   if (pathname.startsWith('/admin')) {
     return hasRole(token.role as string, ['ADMIN', 'SUPER_ADMIN']);
@@ -146,115 +154,75 @@ async function checkRoutePermissions(pathname: string, token: JWT): Promise<bool
   return true;
 }
 
-export default withAuth(
-  async (req: NextRequest) => {
-    const { pathname } = req.nextUrl;
+/**
+ * NextAuth v5 Middleware
+ *
+ * In NextAuth v5, we no longer use withAuth wrapper.
+ * Instead, we implement standard Next.js middleware with direct token checks.
+ */
+export default async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-    // CRITICAL: Fix NextAuth v4 origin detection on AWS Amplify
-    // NextAuth v4's detectOrigin() relies on x-forwarded-host and x-forwarded-proto headers
-    // AWS Amplify's CloudFront doesn't reliably forward these, causing localhost:3000 fallback
-    // Solution: Force-inject the required headers for NextAuth routes
-    if (pathname.startsWith('/api/auth')) {
-      const host = req.headers.get('host') || 'medbookings.co.za';
-      const proto = host.includes('localhost') ? 'http' : 'https';
-
-      const requestHeaders = new Headers(req.headers);
-      requestHeaders.set('x-forwarded-host', host);
-      requestHeaders.set('x-forwarded-proto', proto);
-
-      // eslint-disable-next-line no-console
-      console.log('[Middleware] Injecting headers for NextAuth:', {
-        path: pathname,
-        'x-forwarded-host': host,
-        'x-forwarded-proto': proto,
-      });
-
-      return NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        },
-      });
-    }
-
-    const token = await getToken({ req });
-
-    // Allow public access to provider search page
-    if (pathname === '/providers') {
-      return NextResponse.next();
-    }
-
-    if (!token) {
-      return NextResponse.redirect(new URL('/login', req.url));
-    }
-
-    // Check route-specific permissions
-    const hasAccess = await checkRoutePermissions(pathname, token);
-
-    if (!hasAccess) {
-      // Check if this is an email verification issue
-      if (
-        !isEmailVerified(token.emailVerified ?? null) &&
-        (pathname.startsWith('/providers') ||
-          pathname.startsWith('/calendar') ||
-          pathname.startsWith('/availability') ||
-          pathname.startsWith('/bookings') ||
-          pathname.startsWith('/my-bookings'))
-      ) {
-        // Redirect to email verification page
-        const verifyUrl = new URL('/verify-email', req.url);
-        verifyUrl.searchParams.set('reason', 'email_verification_required');
-        verifyUrl.searchParams.set('attempted_route', pathname);
-        return NextResponse.redirect(verifyUrl);
-      }
-
-      // Redirect to unauthorized page with context
-      const unauthorizedUrl = new URL('/unauthorized', req.url);
-      unauthorizedUrl.searchParams.set('reason', 'insufficient_permissions');
-      unauthorizedUrl.searchParams.set('attempted_route', pathname);
-      return NextResponse.redirect(unauthorizedUrl);
-    }
-
-    // Add permission context to headers for downstream use
-    const response = NextResponse.next();
-    response.headers.set('x-user-role', String(token.role) || 'USER');
-    response.headers.set('x-user-id', token.sub || '');
-    response.headers.set('x-email-verified', String(isEmailVerified(token.emailVerified ?? null)));
-
-    if (token.providerRole) {
-      response.headers.set('x-provider-role', String(token.providerRole));
-    }
-
-    return response;
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        const pathname = req.nextUrl.pathname;
-
-        // CRITICAL: Always allow auth routes to prevent circular dependency
-        // withAuth must not try to validate NextAuth's own routes
-        if (pathname.startsWith('/api/auth')) {
-          return true;
-        }
-
-        // Allow public access to provider search page
-        if (pathname === '/providers') {
-          return true;
-        }
-
-        // Basic authentication check
-        if (!token) return false;
-
-        // Special handling for admin routes
-        if (pathname.startsWith('/admin')) {
-          return token.role === 'ADMIN' || token.role === 'SUPER_ADMIN';
-        }
-
-        return true;
-      },
-    },
+  // CRITICAL: Always allow auth routes to prevent circular dependency
+  // NextAuth's own routes must not be protected by authentication
+  if (pathname.startsWith('/api/auth')) {
+    // Note: In NextAuth v5, header injection is no longer needed
+    // v5 has native AWS Amplify support with automatic URL detection
+    return NextResponse.next();
   }
-);
+
+  // Allow public access to provider search page
+  if (pathname === '/providers') {
+    return NextResponse.next();
+  }
+
+  // Get JWT token using NextAuth v5 compatible method
+  const token = (await getToken({ req })) as ExtendedJWT | null;
+
+  // Redirect to login if not authenticated
+  if (!token) {
+    return NextResponse.redirect(new URL('/login', req.url));
+  }
+
+  // Check route-specific permissions
+  const hasAccess = await checkRoutePermissions(pathname, token);
+
+  if (!hasAccess) {
+    // Check if this is an email verification issue
+    if (
+      !isEmailVerified(token.emailVerified ?? null) &&
+      (pathname.startsWith('/providers') ||
+        pathname.startsWith('/calendar') ||
+        pathname.startsWith('/availability') ||
+        pathname.startsWith('/bookings') ||
+        pathname.startsWith('/my-bookings'))
+    ) {
+      // Redirect to email verification page
+      const verifyUrl = new URL('/verify-email', req.url);
+      verifyUrl.searchParams.set('reason', 'email_verification_required');
+      verifyUrl.searchParams.set('attempted_route', pathname);
+      return NextResponse.redirect(verifyUrl);
+    }
+
+    // Redirect to unauthorized page with context
+    const unauthorizedUrl = new URL('/unauthorized', req.url);
+    unauthorizedUrl.searchParams.set('reason', 'insufficient_permissions');
+    unauthorizedUrl.searchParams.set('attempted_route', pathname);
+    return NextResponse.redirect(unauthorizedUrl);
+  }
+
+  // Add permission context to headers for downstream use
+  const response = NextResponse.next();
+  response.headers.set('x-user-role', String(token.role) || 'USER');
+  response.headers.set('x-user-id', token.sub || '');
+  response.headers.set('x-email-verified', String(isEmailVerified(token.emailVerified ?? null)));
+
+  if (token.providerRole) {
+    response.headers.set('x-provider-role', String(token.providerRole));
+  }
+
+  return response;
+}
 
 export const config = {
   matcher: [

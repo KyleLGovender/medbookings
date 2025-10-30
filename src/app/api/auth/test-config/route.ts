@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { authOptions } from '@/lib/auth';
+import { authConfig } from '@/lib/auth';
 import { nowUTC } from '@/lib/timezone';
 
 /**
@@ -96,20 +96,20 @@ export async function GET() {
   }
 
   // Test 3: AuthOptions Structure
-  results.tests.authOptions = {};
+  results.tests.authConfig = {};
 
   try {
-    results.tests.authOptions.hasSecret = !!authOptions.secret;
-    results.tests.authOptions.hasProviders = Array.isArray(authOptions.providers);
-    results.tests.authOptions.providerCount = authOptions.providers?.length || 0;
-    results.tests.authOptions.hasSession = !!authOptions.session;
-    results.tests.authOptions.sessionStrategy = authOptions.session?.strategy;
-    results.tests.authOptions.hasCallbacks = !!authOptions.callbacks;
-    results.tests.authOptions.useSecureCookies = authOptions.useSecureCookies;
+    results.tests.authConfig.hasSecret = !!authConfig.secret;
+    results.tests.authConfig.hasProviders = Array.isArray(authConfig.providers);
+    results.tests.authConfig.providerCount = authConfig.providers?.length || 0;
+    results.tests.authConfig.hasSession = !!authConfig.session;
+    results.tests.authConfig.sessionStrategy = authConfig.session?.strategy;
+    results.tests.authConfig.hasCallbacks = !!authConfig.callbacks;
+    results.tests.authConfig.useSecureCookies = authConfig.useSecureCookies;
 
     // Check if we can access provider details
-    if (authOptions.providers && authOptions.providers.length > 0) {
-      results.tests.authOptions.providers = authOptions.providers.map((p: any) => ({
+    if (authConfig.providers && authConfig.providers.length > 0) {
+      results.tests.authConfig.providers = authConfig.providers.map((p: any) => ({
         id: p.id,
         name: p.name,
         type: p.type,
@@ -121,27 +121,27 @@ export async function GET() {
 
     results.summary.passed++;
   } catch (error) {
-    results.tests.authOptions = {
-      error: 'Failed to access authOptions',
+    results.tests.authConfig = {
+      error: 'Failed to access authConfig',
       details: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
     };
     results.summary.failed++;
   }
 
-  // Test 4: NextAuth Handler Creation
+  // Test 4: NextAuth v5 Handler Availability
   results.tests.nextAuthHandler = {};
 
   try {
-    const NextAuth = (await import('next-auth/next')).default;
-
-    // Try to create the handler
-    const testHandler = NextAuth(authOptions);
+    // In NextAuth v5, handlers are pre-initialized and exported from auth config
+    const { handlers, auth } = await import('@/lib/auth');
 
     results.tests.nextAuthHandler = {
       success: true,
-      handlerCreated: !!testHandler,
-      handlerType: typeof testHandler,
+      handlersAvailable: !!handlers,
+      authFunctionAvailable: !!auth,
+      handlersType: typeof handlers,
+      authType: typeof auth,
     };
     results.summary.passed++;
   } catch (error) {
