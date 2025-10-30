@@ -171,8 +171,37 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Allow public access to provider search page
+  // ===== PUBLIC ROUTES - Allow unauthenticated access =====
+  // These routes are accessible to guests without authentication
+
+  // Homepage - public landing page
+  if (pathname === '/') {
+    return NextResponse.next();
+  }
+
+  // Provider search page - public for guests
+  // Note: /providers/new and /providers/[id]/edit remain protected (handled below)
   if (pathname === '/providers') {
+    return NextResponse.next();
+  }
+
+  // Calendar booking pages - public for guests to book appointments
+  if (pathname.startsWith('/calendar/')) {
+    return NextResponse.next();
+  }
+
+  // Join/signup page - public
+  if (pathname === '/join-medbookings') {
+    return NextResponse.next();
+  }
+
+  // Compliance pages - public
+  if (pathname === '/terms-of-use' || pathname === '/privacy-policy') {
+    return NextResponse.next();
+  }
+
+  // Organization invitations - public (token-based access)
+  if (pathname.startsWith('/invitation/')) {
     return NextResponse.next();
   }
 
