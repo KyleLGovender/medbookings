@@ -214,7 +214,12 @@ export default async function middleware(req: NextRequest) {
   }
 
   // Get JWT token using NextAuth v5 compatible method
-  const token = (await getToken({ req })) as ExtendedJWT | null;
+  // CRITICAL: Must pass secret explicitly in AWS Lambda environment
+  // Without secret, getToken returns null even if user has valid session
+  const token = (await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+  })) as ExtendedJWT | null;
 
   // Redirect to login if not authenticated
   if (!token) {
