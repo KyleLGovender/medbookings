@@ -47,6 +47,9 @@ async function getHandler() {
       NEXTAUTH_SECRET_length: process.env.NEXTAUTH_SECRET?.length || 0,
       hasGOOGLE_CLIENT_ID: !!process.env.GOOGLE_CLIENT_ID,
       NODE_ENV: process.env.NODE_ENV,
+      // CRITICAL: Check if AUTH_TRUST_HOST is available during NextAuth initialization
+      AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST || 'NOT_SET',
+      VERCEL: process.env.VERCEL || 'NOT_SET',
     });
 
     // eslint-disable-next-line no-console
@@ -80,6 +83,22 @@ export async function GET(req: NextRequest, context: any) {
     console.log('[NextAuth GET] Request received:', {
       url: req.url,
       method: req.method,
+      // CRITICAL: Log proxy headers that NextAuth needs for detectOrigin
+      headers: {
+        host: req.headers.get('host'),
+        xForwardedHost: req.headers.get('x-forwarded-host'),
+        xForwardedProto: req.headers.get('x-forwarded-proto'),
+      },
+      // Log what detectOrigin should return
+      expectedOrigin: (() => {
+        const trustHost = process.env.VERCEL ?? process.env.AUTH_TRUST_HOST;
+        if (trustHost) {
+          const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+          const proto = req.headers.get('x-forwarded-proto') || 'https';
+          return `${proto}://${host}`;
+        }
+        return process.env.NEXTAUTH_URL || 'http://localhost:3000';
+      })(),
     });
 
     const handler = await getHandler();
