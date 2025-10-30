@@ -18,14 +18,21 @@ import {
 } from '@/features/providers/types/schemas';
 import { logger, sanitizeEmail } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';
-import {
-  adminProcedure,
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-} from '@/server/trpc';
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
 export const providersRouter = createTRPCRouter({
+  // ============================================================================
+  // TEST ENDPOINT - Minimal tRPC test with no dependencies
+  // ============================================================================
+
+  /**
+   * DIAGNOSTIC: Test endpoint with no session, no database, just returns static data
+   * This helps isolate whether tRPC itself is working in AWS Lambda
+   */
+  testEndpoint: publicProcedure.query(() => {
+    return { status: 'ok', message: 'tRPC is working', timestamp: nowUTC().toISOString() };
+  }),
+
   // ============================================================================
   // PROVIDER IDENTITY & BASIC QUERIES
   // ============================================================================
