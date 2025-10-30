@@ -46,13 +46,14 @@ async function testNewTemplates() {
     console.log('✅ Guest template sent successfully!');
     console.log(`   Message SID: ${guestMessage.sid}`);
     console.log(`   Status: ${guestMessage.status}\n`);
+
   } catch (error) {
     console.log('❌ Guest template failed:', error.message);
     console.log('   Error code:', error.code, '\n');
   }
 
   // Wait a moment between messages
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  await new Promise(resolve => setTimeout(resolve, 2000));
 
   // Test provider booking notification template
   console.log('📱 Testing Provider Booking Notification Template');
@@ -82,6 +83,7 @@ async function testNewTemplates() {
     console.log('✅ Provider template sent successfully!');
     console.log(`   Message SID: ${providerMessage.sid}`);
     console.log(`   Status: ${providerMessage.status}\n`);
+
   } catch (error) {
     console.log('❌ Provider template failed:', error.message);
     console.log('   Error code:', error.code, '\n');

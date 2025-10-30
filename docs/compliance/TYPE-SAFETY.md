@@ -45,7 +45,7 @@ This guide establishes **type safety best practices** for the MedBookings TypeSc
 Prisma stores JSON data as `Prisma.JsonValue`, which is too loose for TypeScript:
 
 ```typescript
-type JsonValue = string | number | boolean | JsonObject | JsonArray | null;
+type JsonValue = string | number | boolean | JsonObject | JsonArray | null
 ```
 
 This means you lose type safety when reading/writing JSON fields.
@@ -111,7 +111,9 @@ export function recurrencePatternToJson(
 /**
  * Parse Prisma JsonValue as RecurrencePattern for reading
  */
-export function parseRecurrencePattern(json: Prisma.JsonValue | null): RecurrencePattern | null {
+export function parseRecurrencePattern(
+  json: Prisma.JsonValue | null
+): RecurrencePattern | null {
   if (json === null) return null;
 
   const result = RecurrencePatternSchema.safeParse(json);
@@ -133,7 +135,7 @@ export function isRecurrencePattern(value: unknown): value is RecurrencePattern 
 **Writing to Database** ✅:
 
 ```typescript
-import { type RecurrencePattern, recurrencePatternToJson } from '@/types/prisma-json';
+import { recurrencePatternToJson, type RecurrencePattern } from '@/types/prisma-json';
 
 // ✅ CORRECT - Type-safe conversion
 await prisma.availability.create({
@@ -201,7 +203,6 @@ if (isGooglePlace(unknownData)) {
 ```
 
 **Why `as any` is okay here**:
-
 1. Input is `unknown` - we don't know its type
 2. We're checking each property explicitly
 3. Return type narrows to specific type if checks pass
@@ -368,12 +369,6 @@ if ('propertyName' in data) {
 ### Anti-Pattern 4: Manual Type Definitions for Generated Types
 
 ```typescript
-// ✅ CORRECT - Use Prisma types
-import { User } from '@prisma/client';
-
-// Or for API types:
-import type { UserProfile } from '@/features/profile/types/api-types';
-
 // ❌ WRONG - Duplicating Prisma types
 type User = {
   id: string;
@@ -381,6 +376,11 @@ type User = {
   name: string;
   role: 'ADMIN' | 'USER';
 };
+
+// ✅ CORRECT - Use Prisma types
+import { User } from '@prisma/client';
+// Or for API types:
+import type { UserProfile } from '@/features/profile/types/api-types';
 ```
 
 ---
@@ -390,8 +390,7 @@ type User = {
 ### Compile-Time Type Tests
 
 ```typescript
-import { expectError, expectType } from 'tsd';
-
+import { expectType, expectError } from 'tsd';
 import { RecurrencePattern } from '@/types/prisma-json';
 
 // Test: Type has required fields
@@ -410,8 +409,7 @@ expectError<RecurrencePattern>({
 ### Runtime Validation Tests
 
 ```typescript
-import { describe, expect, it } from 'vitest';
-
+import { describe, it, expect } from 'vitest';
 import { RecurrencePatternSchema } from '@/types/prisma-json';
 
 describe('RecurrencePatternSchema', () => {
@@ -457,7 +455,6 @@ When adding new features with custom types:
 ### Common Type Errors & Solutions
 
 **Error**: `Type 'any' is not assignable to type 'X'`
-
 ```typescript
 // Problem: Using 'any' where specific type expected
 const value: MyType = getSomething() as any; // ❌
@@ -467,7 +464,6 @@ const value: MyType = MyTypeSchema.parse(getSomething()); // ✅
 ```
 
 **Error**: `Property 'X' does not exist on type 'Y'`
-
 ```typescript
 // Problem: Accessing property without checking
 console.log(data.propertyName); // ❌
@@ -479,7 +475,6 @@ if ('propertyName' in data) {
 ```
 
 **Error**: `Argument of type 'X' is not assignable to parameter of type 'Y'`
-
 ```typescript
 // Problem: Wrong type being passed
 myFunction(stringValue); // expects number ❌
@@ -503,13 +498,13 @@ myFunction(Number(stringValue)); // ✅
 
 ### When to Use Each Tool
 
-| Situation             | Tool                       | Example                          |
-| --------------------- | -------------------------- | -------------------------------- |
-| Validating user input | Zod schema                 | `registerSchema.parse(input)`    |
-| Prisma Json field     | Custom schema + helpers    | `recurrencePatternToJson()`      |
-| Unknown API data      | Zod + type guard           | `if (isValidResponse(data))`     |
-| tRPC types            | RouterOutputs/RouterInputs | `type User = RouterOutputs[...]` |
-| Enum validation       | Prisma enum + Zod          | `z.nativeEnum(UserRole)`         |
+| Situation | Tool | Example |
+|-----------|------|---------|
+| Validating user input | Zod schema | `registerSchema.parse(input)` |
+| Prisma Json field | Custom schema + helpers | `recurrencePatternToJson()` |
+| Unknown API data | Zod + type guard | `if (isValidResponse(data))` |
+| tRPC types | RouterOutputs/RouterInputs | `type User = RouterOutputs[...]` |
+| Enum validation | Prisma enum + Zod | `z.nativeEnum(UserRole)` |
 
 **Remember**: Type safety is not just compile-time - validate at runtime too!
 

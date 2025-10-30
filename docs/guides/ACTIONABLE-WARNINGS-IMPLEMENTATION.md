@@ -9,7 +9,6 @@
 ### Current State (Generic Warnings)
 
 **Issues**:
-
 1. ❌ **Vague** - "Potential PHI leak" without context
 2. ❌ **No guidance** - Developers don't know if it's real or false positive
 3. ❌ **No suppression** - Can't document legitimate exceptions
@@ -23,7 +22,6 @@
 ### Desired State (Actionable Warnings)
 
 **Features**:
-
 1. ✅ **Confidence levels** - HIGH/MEDIUM/LOW tells probability
 2. ✅ **Specific guidance** - "Fix this" vs "Review and decide"
 3. ✅ **Suppression system** - Document false positives
@@ -81,7 +79,6 @@ docs/
 **File**: `scripts/commit-gate/phi-validator.js`
 
 **Features**:
-
 - ✅ Confidence levels (HIGH/MEDIUM/LOW)
 - ✅ Specific field detection (email vs emailVerified)
 - ✅ Suppression comment support (`// phi-safe:`)
@@ -89,7 +86,6 @@ docs/
 - ✅ Detailed fix suggestions with code examples
 
 **Suppression Format**:
-
 ```typescript
 // phi-safe: [reason why this is not PHI]
 logger.info('message', { field: value });
@@ -102,7 +98,6 @@ logger.info('message', { field: value });
 **File**: `scripts/commit-gate/transaction-validator.js`
 
 **Features**:
-
 - ✅ Risk levels (CRITICAL/HIGH/MEDIUM/LOW)
 - ✅ Race condition detection (check-then-act pattern)
 - ✅ Operation analysis (booking + slot = CRITICAL)
@@ -111,7 +106,6 @@ logger.info('message', { field: value });
 - ✅ Specific transaction examples
 
 **Suppression Format**:
-
 ```typescript
 // tx-safe: [reason why transaction is not needed]
 await ctx.prisma.model.operation();
@@ -122,11 +116,9 @@ await ctx.prisma.model.operation();
 ### Phase 3: Documentation ✅ (Completed)
 
 **Files Created**:
-
 1. ✅ `/scripts/example-enhanced-warnings.txt` - Before/after examples
 
 **Content**:
-
 - Decision trees for each warning type
 - Real-world examples with fixes
 - Suppression comment patterns
@@ -274,7 +266,7 @@ module.exports = {
         if (node.callee.name === 'Date') {
           // Check for suppression comment
           const comments = context.getCommentsBefore(node);
-          const hasSuppression = comments.some((comment) =>
+          const hasSuppression = comments.some(comment =>
             /phi-safe:|tx-safe:|tz-safe:/.test(comment.value)
           );
 
@@ -285,9 +277,9 @@ module.exports = {
             });
           }
         }
-      },
+      }
     };
-  },
+  }
 };
 ```
 
@@ -328,25 +320,21 @@ Time per Warning: ~2 minutes
 ## 🚀 Rollout Plan
 
 ### Week 1: Integration
-
 - [ ] Integrate enhanced validators into `compliance-validator.js`
 - [ ] Update output formatting
 - [ ] Test with existing violations
 
 ### Week 2: Documentation & Training
-
 - [ ] Share actionable warnings documentation with team
 - [ ] Create video walkthrough (5 minutes)
 - [ ] Add to onboarding docs
 
 ### Week 3: Sprint - Fix HIGH/CRITICAL
-
 - [ ] Team sprint: Fix all HIGH confidence warnings
 - [ ] Team sprint: Fix all CRITICAL risk warnings
 - [ ] Document any suppressions
 
 ### Week 4: Review & Tune
-
 - [ ] Review suppression comments
 - [ ] Tune confidence levels if needed
 - [ ] Add any missing patterns
@@ -358,7 +346,6 @@ Time per Warning: ~2 minutes
 ### 5-Minute Quick Start
 
 **Step 1**: Read warning confidence/risk
-
 ```
 🔴 HIGH = Fix immediately
 🟡 MEDIUM = Review and decide
@@ -366,21 +353,18 @@ Time per Warning: ~2 minutes
 ```
 
 **Step 2**: Follow the recommendation
-
 ```
 "✅ RECOMMENDED ACTION: FIX" → Copy-paste the fix
 "⚠️ RECOMMENDED ACTION: REVIEW" → Check if it's real
 ```
 
 **Step 3**: Suppress if needed
-
 ```typescript
 // phi-safe: [clear reason why this is not PHI]
 // tx-safe: [clear reason why transaction is not needed]
 ```
 
 **Step 4**: Commit
-
 ```bash
 git commit -m "Fix PHI sanitization warnings"
 ```
@@ -392,33 +376,28 @@ git commit -m "Fix PHI sanitization warnings"
 ### Test Scenarios
 
 #### Test 1: HIGH Confidence PHI
-
 ```typescript
 // Should trigger HIGH confidence warning
 logger.info('User', { email: user.email });
 ```
 
 **Expected**:
-
 - Confidence: HIGH
 - Action: FIX
 - Example code provided
 
 #### Test 2: MEDIUM Confidence PHI
-
 ```typescript
 // Should trigger MEDIUM confidence warning
 logger.info('Status', { emailVerified: user.emailVerified });
 ```
 
 **Expected**:
-
 - Confidence: MEDIUM
 - Action: REVIEW & DECIDE
 - Both fix and suppress options shown
 
 #### Test 3: Valid Suppression
-
 ```typescript
 // Should NOT trigger warning
 // phi-safe: emailVerified is a boolean, not the email address
@@ -426,12 +405,10 @@ logger.info('Status', { emailVerified: user.emailVerified });
 ```
 
 **Expected**:
-
 - No warning
 - Suppression documented
 
 #### Test 4: CRITICAL Transaction Risk
-
 ```typescript
 // Should trigger CRITICAL risk warning
 const slot = await ctx.prisma.slot.findUnique({ where: { id } });
@@ -440,7 +417,6 @@ await ctx.prisma.booking.create({ data });
 ```
 
 **Expected**:
-
 - Risk: CRITICAL
 - Action: FIX IMMEDIATELY
 - Transaction example provided
@@ -450,11 +426,9 @@ await ctx.prisma.booking.create({ data });
 ## 📚 Related Documentation
 
 1. **For Developers**:
-
    - [example-enhanced-warnings.txt](/scripts/example-enhanced-warnings.txt) - Warning examples
 
 2. **For Maintainers**:
-
    - [phi-validator.js](/scripts/commit-gate/phi-validator.js) - PHI validator code
    - [transaction-validator.js](/scripts/commit-gate/transaction-validator.js) - Transaction validator code
    - [COMPLIANCE-SYSTEM.md](/docs/compliance/COMPLIANCE-SYSTEM.md) - Overall compliance system
@@ -469,14 +443,12 @@ await ctx.prisma.booking.create({ data });
 ## 🎯 Next Steps
 
 1. **Immediate** (This PR):
-
    - ✅ Enhanced validators created
    - ✅ Documentation written
    - ⏭️ Integration into `compliance-validator.js`
    - ⏭️ Output formatting updated
 
 2. **Follow-up** (Next Sprint):
-
    - Team training session
    - Fix HIGH/CRITICAL warnings sprint
    - Tune confidence levels based on feedback
@@ -492,19 +464,16 @@ await ctx.prisma.booking.create({ data });
 ## 💡 Key Takeaways
 
 **For Developers**:
-
 - Warnings now guide you to the right action
 - HIGH = fix, MEDIUM = review, LOW = suppress
 - Suppression is now documented and trackable
 
 **For Team Leads**:
-
 - Clear metrics on warning resolution
 - All suppressions have documented rationale
 - HIGH/CRITICAL issues get fixed, not ignored
 
 **For System**:
-
 - Higher fix rate (26% → 68%)
 - Zero ignored warnings (64% → 0%)
 - Faster resolution (15min → 2min)

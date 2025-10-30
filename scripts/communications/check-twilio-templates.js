@@ -25,24 +25,20 @@ async function checkTemplates() {
 
     console.log(`📋 Found ${templates.length} content templates:\n`);
 
-    const relevantTemplates = templates.filter((template) => {
+    const relevantTemplates = templates.filter(template => {
       // Look for templates that might be used for bookings
       const name = template.friendlyName?.toLowerCase() || '';
       const types = template.types || {};
 
-      return (
-        name.includes('booking') ||
-        name.includes('appointment') ||
-        name.includes('confirmation') ||
-        name.includes('notification') ||
-        Object.keys(types).some((key) => key.includes('whatsapp'))
-      );
+      return name.includes('booking') ||
+             name.includes('appointment') ||
+             name.includes('confirmation') ||
+             name.includes('notification') ||
+             Object.keys(types).some(key => key.includes('whatsapp'));
     });
 
     if (relevantTemplates.length === 0) {
-      console.log(
-        "⚠️  No booking-related templates found. Let's check specific template IDs used in your code...\n"
-      );
+      console.log('⚠️  No booking-related templates found. Let\'s check specific template IDs used in your code...\n');
 
       // Check the specific template IDs used in the code
       const templateIdsToCheck = [
@@ -50,7 +46,7 @@ async function checkTemplates() {
         'HX7b7542c849bf762b63fc38dcb069f6f1', // Provider notification
         'HXd872a8922fc1bffd95bb57e4c702dc9e', // Patient WhatsApp (from existing code)
         'HXd4581d3971aba1d4c6343c97e5c5cf2e', // Provider WhatsApp (from existing code)
-        'HX4f483e7980984dd42aabf49b2cfdf537', // Provider confirmation (from existing code)
+        'HX4f483e7980984dd42aabf49b2cfdf537'  // Provider confirmation (from existing code)
       ];
 
       for (const templateId of templateIdsToCheck) {
@@ -92,7 +88,8 @@ async function checkTemplates() {
     console.log('\n📋 **Next Steps:**');
     console.log('1. Review the templates above');
     console.log('2. Check if variable counts match your needs (8 for guest, 9 for provider)');
-    console.log("3. If templates need updates, I'll help you create new ones");
+    console.log('3. If templates need updates, I\'ll help you create new ones');
+
   } catch (error) {
     console.error('❌ Error checking templates:', error.message);
 

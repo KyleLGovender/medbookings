@@ -75,32 +75,24 @@ function getGuestBookingConfirmationTemplate(booking) {
             <span class="value">${booking.serviceType}</span>
           </div>
 
-          ${
-            booking.location
-              ? `
+          ${booking.location ? `
           <div class="detail-row">
             <span class="label">Location:</span>
             <span class="value">${booking.location}</span>
           </div>
-          `
-              : ''
-          }
+          ` : ''}
 
           <div class="detail-row">
             <span class="label">Booking Reference:</span>
             <span class="value">#${booking.bookingId.substring(0, 8).toUpperCase()}</span>
           </div>
 
-          ${
-            booking.notes
-              ? `
+          ${booking.notes ? `
           <div class="detail-row">
             <span class="label">Notes:</span>
             <span class="value">${booking.notes}</span>
           </div>
-          `
-              : ''
-          }
+          ` : ''}
         </div>
 
         <h3>📝 What's Next?</h3>
@@ -223,16 +215,12 @@ function getProviderBookingNotificationTemplate(booking) {
             <span class="value">${booking.serviceType}</span>
           </div>
 
-          ${
-            booking.location
-              ? `
+          ${booking.location ? `
           <div class="detail-row">
             <span class="label">Location:</span>
             <span class="value">${booking.location}</span>
           </div>
-          `
-              : ''
-          }
+          ` : ''}
 
           <div class="detail-row">
             <span class="label">Booking Reference:</span>
@@ -253,27 +241,19 @@ function getProviderBookingNotificationTemplate(booking) {
             <span class="value">${booking.guestEmail}</span>
           </div>
 
-          ${
-            booking.guestPhone
-              ? `
+          ${booking.guestPhone ? `
           <div class="detail-row">
             <span class="label">Phone:</span>
             <span class="value">${booking.guestPhone}</span>
           </div>
-          `
-              : ''
-          }
+          ` : ''}
 
-          ${
-            booking.notes
-              ? `
+          ${booking.notes ? `
           <div class="detail-row">
             <span class="label">Notes:</span>
             <span class="value">${booking.notes}</span>
           </div>
-          `
-              : ''
-          }
+          ` : ''}
         </div>
 
         <h3>📝 Next Steps</h3>
@@ -329,5 +309,5 @@ MedBookings Team
 
 module.exports = {
   getGuestBookingConfirmationTemplate,
-  getProviderBookingNotificationTemplate,
+  getProviderBookingNotificationTemplate
 };

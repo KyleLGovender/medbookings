@@ -7,8 +7,8 @@ import { httpBatchLink, loggerLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { SessionProvider } from 'next-auth/react';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import superjson from 'superjson';
 
-import { lambdaTransformer } from '@/lib/trpc-transformer';
 import { type AppRouter } from '@/server/api/root';
 
 const getBaseUrl = () => {
@@ -42,9 +42,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         }),
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
-          // CRITICAL: Use custom transformer for AWS Lambda compatibility
-          // SuperJSON causes serialization failures in serverless environment
-          transformer: lambdaTransformer,
+          transformer: superjson,
         }),
       ],
     })

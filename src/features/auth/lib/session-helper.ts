@@ -4,9 +4,10 @@
  * This module provides utilities for integrating the permission system
  * with NextAuth sessions, including caching and session management.
  */
+import { getServerSession } from 'next-auth';
 import { Session } from 'next-auth';
 
-import { auth } from '@/lib/auth';
+import { authOptions } from '@/lib/auth';
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { addMilliseconds, nowUTC } from '@/lib/timezone';
@@ -35,7 +36,7 @@ const PERMISSION_CACHE_DURATION = 5 * 60 * 1000;
  * Get current user session with permission caching
  */
 export async function getCurrentSession(): Promise<EnhancedSession | null> {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
   if (!session?.user?.email) return null;
 
   // Check if we have cached permissions

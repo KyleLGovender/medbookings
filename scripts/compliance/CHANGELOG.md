@@ -10,19 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0] - 2025-10-05
 
 ### Added
-
 - **GitHub Actions Baseline Fix**: CI validation now correctly compares against PR base branch or push parent commit instead of always using `HEAD~1`
 - **CHANGELOG.md**: Added this changelog for tracking enforcement system changes over time
 - **ESLint Fallback Documentation**: Documented fail-safe behavior when `compliance-config.json` is unreadable
 
 ### Fixed
-
 - **Path Resolution Bug**: Fixed test script (`test-enhanced-warnings.js`) using incorrect path to CLAUDE.md
 - **Transaction Detection**: Increased lookback from 10 to 50 lines to handle larger transaction blocks
 - **Transaction Regex**: Updated regex to support array syntax `$transaction([...])` in addition to `$transaction(...)`
 
 ### Changed
-
 - Improved validator error messages for better developer guidance
 
 ---
@@ -30,7 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2025-10-04
 
 ### Added
-
 - **Email Verification Race Condition Fix**: Enhanced handling for React Strict Mode duplicate requests
 - **Enhanced PHI Validator**: Added confidence levels (HIGH/MEDIUM/LOW) for PHI warnings
 - **Enhanced Transaction Validator**: Added risk assessment (CRITICAL/HIGH/MEDIUM/LOW) for transaction warnings
@@ -39,13 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation Alignment Validation**: Ensures all /docs/ references in CLAUDE.md exist and are properly formatted
 
 ### Fixed
-
 - **CI Exclusions**: Aligned GitHub Actions validation exclusions with pre-commit hook exclusions
 - **Infrastructure File Handling**: Properly exclude timezone utility files and logging infrastructure from timezone checks
 - **Console Check**: Exclude infrastructure files from console statement validation
 
 ### Changed
-
 - Reorganized enforcement scripts into dedicated directory structure
 - Updated enforcement documentation paths for clarity
 - Improved git hooks setup and configuration
@@ -55,7 +49,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.0] - Initial Release (Date: ~2025-09-30)
 
 ### Added
-
 - **Three-Layer Enforcement Architecture**:
   - Layer 1: Real-time IDE feedback via ESLint custom rules
   - Layer 2: Pre-commit hooks via Husky
@@ -90,11 +83,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Overview
 
-| Version   | Release Date | Key Features                                            |
-| --------- | ------------ | ------------------------------------------------------- |
-| **1.1.0** | 2025-10-05   | Baseline fix, improved transaction detection, changelog |
-| **1.0.0** | 2025-10-04   | Enhanced validators, suppression comments, auto-sync    |
-| **0.9.0** | ~2025-09-30  | Initial three-layer enforcement system                  |
+| Version | Release Date | Key Features |
+|---------|--------------|--------------|
+| **1.1.0** | 2025-10-05 | Baseline fix, improved transaction detection, changelog |
+| **1.0.0** | 2025-10-04 | Enhanced validators, suppression comments, auto-sync |
+| **0.9.0** | ~2025-09-30 | Initial three-layer enforcement system |
 
 ---
 
@@ -139,12 +132,10 @@ node scripts/commit-gate/compliance-validator.js validate-file src/lib/auth.ts
 ### compliance-config.json Schema Evolution
 
 #### Version 1.1.0
-
 - No schema changes
 - Version remains at "1.0.0" (config schema unchanged)
 
 #### Version 1.0.0
-
 ```json
 {
   "claudeMdHash": "SHA-256 hash of CLAUDE.md",
@@ -172,7 +163,6 @@ node scripts/commit-gate/compliance-validator.js validate-file src/lib/auth.ts
 ```
 
 #### Version 0.9.0
-
 - Initial schema (no config file - rules hardcoded)
 
 ---
@@ -180,13 +170,11 @@ node scripts/commit-gate/compliance-validator.js validate-file src/lib/auth.ts
 ## Rule Addition History
 
 ### Version 1.0.0
-
 - Enhanced PHI detection with confidence levels
 - Enhanced transaction detection with risk assessment
 - Suppression comment support
 
 ### Version 0.9.0
-
 - All initial rules (timezone, type safety, logging, architecture, business)
 
 ---
@@ -202,14 +190,12 @@ No rules or features are deprecated in the current version.
 ## Future Roadmap
 
 ### Planned for 1.2.0
-
 - [ ] Performance monitoring for pre-commit hook on large commits
 - [ ] Rule severity customization per project
 - [ ] Integration with additional IDE extensions
 - [ ] Automated false positive reporting
 
 ### Planned for 2.0.0
-
 - [ ] ML-based violation detection
 - [ ] Context-aware business logic validation
 - [ ] Performance regression detection

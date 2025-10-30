@@ -1,10 +1,12 @@
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { getServerSession } from 'next-auth';
+
 import CalendarLoader from '@/components/calendar-loader';
 import { CancelButton } from '@/components/cancel-button';
 import { EditOrganizationBasicInfo } from '@/features/organizations/components/profile/edit-organization-basic-info';
-import { auth } from '@/lib/auth';
+import { authOptions } from '@/lib/auth';
 
 interface EditOrganizationPageProps {
   params: {
@@ -14,7 +16,7 @@ interface EditOrganizationPageProps {
 
 export default async function EditOrganizationPage({ params }: EditOrganizationPageProps) {
   // Get current session to check if user can edit this profile
-  const session = await auth();
+  const session = await getServerSession(authOptions);
   if (!session || !session.user?.id) {
     redirect('/login');
   }

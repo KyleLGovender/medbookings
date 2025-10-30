@@ -9,20 +9,6 @@ frontend:
         # Increase Node.js memory limit for large TypeScript builds
         - export NODE_OPTIONS="--max-old-space-size=6144"
 
-        # CRITICAL: Export ALL environment variables for NextAuth v5 Lambda runtime
-        # This MUST come BEFORE npm run build
-        # Without these, OAuth providers get undefined for client credentials
-        # Note: NEXTAUTH_URL is NOT exported - trustHost: true auto-detects URL from headers
-        - |
-          echo "# NextAuth v5 Runtime Configuration" > .env.production
-          echo "NEXTAUTH_SECRET=$NEXTAUTH_SECRET" >> .env.production
-          echo "AUTH_TRUST_HOST=$AUTH_TRUST_HOST" >> .env.production
-          echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env.production
-          echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env.production
-          echo "DATABASE_URL=$DATABASE_URL" >> .env.production
-          echo "ADMIN_EMAILS=$ADMIN_EMAILS" >> .env.production
-          echo "✅ Exported 6 environment variables to .env.production for NextAuth v5"
-
         # Database operations
         # 1. RESET (DANGER - only when RESET_DATABASE=true)
         - |

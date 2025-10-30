@@ -13,9 +13,7 @@ require('dotenv').config();
 async function createTestBooking() {
   console.log('🧪 Test Booking Creation with Email Notifications...\n');
 
-  console.log(
-    'ℹ️  This script shows how to test email notifications during actual booking creation.'
-  );
+  console.log('ℹ️  This script shows how to test email notifications during actual booking creation.');
   console.log('For a real test, you have several options:\n');
 
   console.log('🎯 Option 1: Frontend Booking Test');

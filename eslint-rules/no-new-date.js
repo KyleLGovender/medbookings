@@ -8,8 +8,7 @@ module.exports = {
   meta: {
     type: 'error',
     docs: {
-      description:
-        'Disallow new Date() and Date.now() - use timezone utilities from @/lib/timezone',
+      description: 'Disallow new Date() and Date.now() - use timezone utilities from @/lib/timezone',
       category: 'CLAUDE.md Compliance',
       recommended: true,
     },
@@ -24,9 +23,12 @@ module.exports = {
 
     // STRICT ENFORCEMENT: Only allow in core timezone utility files
     // Test files are NOT excluded - violations must be fixed
-    const allowedFiles = ['timezone.ts', 'env/server.ts'];
+    const allowedFiles = [
+      'timezone.ts',
+      'env/server.ts',
+    ];
 
-    if (allowedFiles.some((allowed) => filename.includes(allowed))) {
+    if (allowedFiles.some(allowed => filename.includes(allowed))) {
       return {};
     }
 
@@ -40,7 +42,10 @@ module.exports = {
         }
       },
       MemberExpression(node) {
-        if (node.object.name === 'Date' && node.property.name === 'now') {
+        if (
+          node.object.name === 'Date' &&
+          node.property.name === 'now'
+        ) {
           context.report({
             node,
             messageId: 'noDateNow',

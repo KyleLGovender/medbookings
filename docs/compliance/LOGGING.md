@@ -29,18 +29,15 @@ MedBookings uses a structured logging system located in `/src/lib/logger.ts` tha
 **Use for:** Verbose debugging information that you want to turn on/off
 
 **Behavior:**
-
 - ✅ **Development**: Enabled by default (unless explicitly disabled)
 - ❌ **Production**: Disabled by default (unless explicitly enabled)
 
 **Parameters:**
-
 - `feature`: The feature category (`'forms'`, `'maps'`, `'admin'`, etc.)
 - `message`: A clear, concise description of what's happening
 - `context?`: Optional object with additional data
 
 **Example:**
-
 ```typescript
 logger.debug('forms', 'Form validation started', {
   formName: 'registration',
@@ -54,12 +51,10 @@ logger.debug('forms', 'Form validation started', {
 **Use for:** General informational messages (e.g., successful operations)
 
 **Behavior:**
-
 - ✅ **Development**: Always shown
 - ❌ **Production**: Suppressed (unless explicitly configured)
 
 **Example:**
-
 ```typescript
 logger.info('Booking created successfully', {
   bookingId: data.booking?.id,
@@ -74,11 +69,9 @@ logger.info('Booking created successfully', {
 **Use for:** Warnings that need attention but aren't errors
 
 **Behavior:**
-
 - ✅ **Always shown** in all environments
 
 **Example:**
-
 ```typescript
 logger.warn('Invalid phone number for WhatsApp', {
   phone: sanitizePhone(phoneNumber),
@@ -90,12 +83,10 @@ logger.warn('Invalid phone number for WhatsApp', {
 **Use for:** Errors that need investigation
 
 **Behavior:**
-
 - ✅ **Always shown** in all environments
 - Automatically extracts error message and stack trace
 
 **Example:**
-
 ```typescript
 logger.error('Booking creation failed', error, {
   slotId: variables.slotId,
@@ -108,12 +99,10 @@ logger.error('Booking creation failed', error, {
 **Use for:** Security-sensitive operations for compliance
 
 **Behavior:**
-
 - ✅ **Always logged** in all environments
 - Includes environment information automatically
 
 **Example:**
-
 ```typescript
 logger.audit('Admin accessed provider PHI', {
   adminId: sanitizeUserId(session.user.id),
@@ -128,15 +117,15 @@ logger.audit('Admin accessed provider PHI', {
 
 Debug logging is organized by feature categories:
 
-| Feature           | Description                    | When to Use                                |
-| ----------------- | ------------------------------ | ------------------------------------------ |
-| `'forms'`         | Form validation and submission | Debugging form issues, validation errors   |
-| `'maps'`          | Google Maps initialization     | Map loading issues, location selection     |
-| `'admin'`         | Admin operations               | Optimistic updates, admin actions          |
-| `'calendar'`      | Calendar operations            | Slot management, availability issues       |
-| `'bookings'`      | Booking operations             | Booking creation, cancellation, reschedule |
-| `'organizations'` | Organization management        | Org registration, approval workflows       |
-| `'providers'`     | Provider management            | Provider registration, updates             |
+| Feature | Description | When to Use |
+|---------|-------------|-------------|
+| `'forms'` | Form validation and submission | Debugging form issues, validation errors |
+| `'maps'` | Google Maps initialization | Map loading issues, location selection |
+| `'admin'` | Admin operations | Optimistic updates, admin actions |
+| `'calendar'` | Calendar operations | Slot management, availability issues |
+| `'bookings'` | Booking operations | Booking creation, cancellation, reschedule |
+| `'organizations'` | Organization management | Org registration, approval workflows |
+| `'providers'` | Provider management | Provider registration, updates |
 
 ### Controlling Debug Logs
 
@@ -226,12 +215,11 @@ export type DebugFeature =
   | 'bookings'
   | 'organizations'
   | 'providers'
-  | 'payments' // ← Add your new feature here
-  | 'notifications'; // ← And here
+  | 'payments'          // ← Add your new feature here
+  | 'notifications';    // ← And here
 ```
 
 **That's it!** The logger automatically:
-
 - ✅ Recognizes the new feature name
 - ✅ Enables it by default in development
 - ✅ Disables it by default in production
@@ -284,7 +272,7 @@ export type DebugFeature =
   | 'bookings'
   | 'organizations'
   | 'providers'
-  | 'payments'; // ← NEW
+  | 'payments';  // ← NEW
 ```
 
 **2. Add to Documentation Comments**
@@ -354,16 +342,14 @@ DEBUG_PAYMENTS=false
 Because we're using TypeScript, you get:
 
 **1. Autocomplete**
-
 ```typescript
-logger.debug('pay|'); // ← TypeScript suggests: 'payments'
+logger.debug('pay|')  // ← TypeScript suggests: 'payments'
 ```
 
 **2. Type Safety**
-
 ```typescript
-logger.debug('paymentss', 'msg'); // ← TypeScript error: 'paymentss' is not a valid feature
-logger.debug('payments', 'msg'); // ← ✅ Valid
+logger.debug('paymentss', 'msg');  // ← TypeScript error: 'paymentss' is not a valid feature
+logger.debug('payments', 'msg');   // ← ✅ Valid
 ```
 
 **3. Refactoring Support**
@@ -390,16 +376,16 @@ Use **singular, lowercase, descriptive** names:
 
 ```typescript
 // ✅ GOOD
-'payments';
-'notifications';
-'analytics';
-'search';
-'auth';
+'payments'
+'notifications'
+'analytics'
+'search'
+'auth'
 
 // ❌ BAD
-'payment-processing'; // No dashes
-'Notifications'; // No capitals
-'notifs'; // Too abbreviated
+'payment-processing'  // No dashes
+'Notifications'       // No capitals
+'notifs'             // Too abbreviated
 ```
 
 #### Feature Granularity
@@ -464,7 +450,6 @@ logger.debug('my-plugin' as any, 'Plugin initialized');
 3. 🎛️ **Control** via `DEBUG_YOUR_FEATURE=true/false` environment variable
 
 **No other configuration needed!** The logger automatically handles:
-
 - Environment detection (dev vs prod)
 - Default behavior (enabled in dev, disabled in prod)
 - Feature flag parsing (`DEBUG_*` environment variables)
@@ -483,14 +468,14 @@ Import from `@/lib/logger`:
 ```typescript
 import {
   logger,
-  sanitizeContext,
-  sanitizeEmail,
   sanitizeName,
-  sanitizeOrgId,
+  sanitizeEmail,
   sanitizePhone,
-  sanitizeProviderId,
-  sanitizeToken,
   sanitizeUserId,
+  sanitizeProviderId,
+  sanitizeOrgId,
+  sanitizeToken,
+  sanitizeContext,
 } from '@/lib/logger';
 ```
 
@@ -519,23 +504,18 @@ logger.audit('Admin action', {
 });
 
 // Entire context objects
-logger.debug(
-  'forms',
-  'Form data',
-  sanitizeContext({
-    email: 'john@example.com', // Will be sanitized
-    phone: '+27821234567', // Will be sanitized
-    name: 'John Doe', // Will be sanitized
-    password: 'secret123', // Will be [REDACTED]
-    token: 'abc123xyz', // Will be [REDACTED]
-  })
-);
+logger.debug('forms', 'Form data', sanitizeContext({
+  email: 'john@example.com',      // Will be sanitized
+  phone: '+27821234567',           // Will be sanitized
+  name: 'John Doe',                // Will be sanitized
+  password: 'secret123',           // Will be [REDACTED]
+  token: 'abc123xyz',              // Will be [REDACTED]
+}));
 ```
 
 ### What Gets Sanitized Automatically
 
 `sanitizeContext()` automatically:
-
 - ✅ **Redacts**: `password`, `token`, `secret`, `key` fields
 - ✅ **Sanitizes**: `email`, `phone`, `name` fields
 - ✅ **Sanitizes**: `userId` fields
@@ -552,12 +532,12 @@ logger.debug(
 
 #### PHI Fields by Model
 
-| Model            | PHI Fields                                        | Sanitization Function                                                        |
-| ---------------- | ------------------------------------------------- | ---------------------------------------------------------------------------- |
-| **User**         | `email`, `name`                                   | `sanitizeEmail()`, `sanitizeName()`                                          |
-| **Provider**     | `contactEmail`, `contactPhone`, `bio`             | `sanitizeEmail()`, `sanitizePhone()`                                         |
-| **Organization** | `name`, `contactEmail`, `contactPhone`, `address` | `sanitizeName()`, `sanitizeEmail()`, `sanitizePhone()`                       |
-| **Booking**      | `guestName`, `guestEmail`, `guestPhone`, `notes`  | `sanitizeName()`, `sanitizeEmail()`, `sanitizePhone()`, **DO NOT LOG** notes |
+| Model | PHI Fields | Sanitization Function |
+|-------|-----------|----------------------|
+| **User** | `email`, `name` | `sanitizeEmail()`, `sanitizeName()` |
+| **Provider** | `contactEmail`, `contactPhone`, `bio` | `sanitizeEmail()`, `sanitizePhone()` |
+| **Organization** | `name`, `contactEmail`, `contactPhone`, `address` | `sanitizeName()`, `sanitizeEmail()`, `sanitizePhone()` |
+| **Booking** | `guestName`, `guestEmail`, `guestPhone`, `notes` | `sanitizeName()`, `sanitizeEmail()`, `sanitizePhone()`, **DO NOT LOG** notes |
 
 #### Critical Rules
 
@@ -572,15 +552,15 @@ logger.debug(
 #### Violation 1: Raw Email in Logs
 
 ```typescript
-// ✅ CORRECT - Sanitized email
-import { sanitizeEmail } from '@/lib/logger';
-
 // ❌ WRONG - Exposes raw email (POPIA violation)
 logger.info('Testing email delivery to:', to);
 logger.warn('Invitation email mismatch', {
   invitationEmail: invitation.email,
   userEmail: ctx.session.user.email,
 });
+
+// ✅ CORRECT - Sanitized email
+import { sanitizeEmail } from '@/lib/logger';
 
 logger.info('Testing email delivery', {
   to: sanitizeEmail(to),
@@ -596,13 +576,13 @@ logger.warn('Invitation email mismatch', {
 #### Violation 2: Names in Error Logs
 
 ```typescript
-// ✅ CORRECT - Sanitized name
-import { sanitizeName } from '@/lib/logger';
-
 // ❌ WRONG - Raw patient name
 logger.error('Booking failed', {
   patientName: booking.guestName,
 });
+
+// ✅ CORRECT - Sanitized name
+import { sanitizeName } from '@/lib/logger';
 
 logger.error('Booking failed', {
   patientName: sanitizeName(booking.guestName),
@@ -612,13 +592,13 @@ logger.error('Booking failed', {
 #### Violation 3: Phone Numbers
 
 ```typescript
-// ✅ CORRECT - Sanitized phone
-import { sanitizePhone } from '@/lib/logger';
-
 // ❌ WRONG - Raw phone number
 logger.warn('Invalid WhatsApp number', {
   phone: user.phone,
 });
+
+// ✅ CORRECT - Sanitized phone
+import { sanitizePhone } from '@/lib/logger';
 
 logger.warn('Invalid WhatsApp number', {
   phone: sanitizePhone(user.phone),
@@ -649,13 +629,13 @@ The following files were updated in Sprint 4 to achieve 100% compliance:
 
 ### PHI Sanitization Format Reference
 
-| Helper Function                     | Input Example      | Output Example     | Use Case                    |
-| ----------------------------------- | ------------------ | ------------------ | --------------------------- |
-| `sanitizeEmail('user@example.com')` | `user@example.com` | `user_***@***.com` | All email fields            |
-| `sanitizeName('John Doe')`          | `John Doe`         | `J*** D***`        | User, provider, guest names |
-| `sanitizePhone('+27123456789')`     | `+27123456789`     | `***6789`          | All phone numbers           |
-| `sanitizeUserId('uuid-123-456')`    | `uuid-123-456`     | `user_***456`      | User IDs in audit logs      |
-| `sanitizeProviderId('uuid-789')`    | `uuid-789-012`     | `provider_***012`  | Provider IDs in audit logs  |
+| Helper Function | Input Example | Output Example | Use Case |
+|----------------|---------------|----------------|----------|
+| `sanitizeEmail('user@example.com')` | `user@example.com` | `user_***@***.com` | All email fields |
+| `sanitizeName('John Doe')` | `John Doe` | `J*** D***` | User, provider, guest names |
+| `sanitizePhone('+27123456789')` | `+27123456789` | `***6789` | All phone numbers |
+| `sanitizeUserId('uuid-123-456')` | `uuid-123-456` | `user_***456` | User IDs in audit logs |
+| `sanitizeProviderId('uuid-789')` | `uuid-789-012` | `provider_***012` | Provider IDs in audit logs |
 
 ---
 
@@ -698,15 +678,11 @@ logger.debug('forms', 'User data', {
 });
 
 // ✅ BETTER: Using sanitizeContext
-logger.debug(
-  'forms',
-  'User data',
-  sanitizeContext({
-    name: user.name,
-    email: user.email,
-    phone: user.phone,
-  })
-);
+logger.debug('forms', 'User data', sanitizeContext({
+  name: user.name,
+  email: user.email,
+  phone: user.phone,
+}));
 ```
 
 ### 3. Provide Useful Context
@@ -806,7 +782,7 @@ const initializeMap = async () => {
   }
 
   logger.debug('maps', 'Creating map instance', {
-    center: defaultCenter,
+    center: defaultCenter
   });
 
   const mapInstance = new window.google.maps.Map(mapRef.current, {
@@ -868,7 +844,7 @@ const mutation = useMutation({
     }
 
     logger.debug('admin', 'Found organization data', {
-      actualKey: ['org', id],
+      actualKey: ['org', id]
     });
 
     // Optimistic update
@@ -917,7 +893,6 @@ DEBUG_FORMS=true
 ### Console.error still being used
 
 Check for:
-
 ```typescript
 // ❌ BAD: Direct console use
 console.error('Invalid coordinates');
@@ -934,16 +909,15 @@ The logger's `console.error` statements (inside logger.ts) are allowed by ESLint
 
 **Quick Reference:**
 
-| Need              | Use This                          | Example                              |
-| ----------------- | --------------------------------- | ------------------------------------ |
-| Verbose debugging | `logger.debug(feature, msg, ctx)` | Form validation, map loading         |
-| Success messages  | `logger.info(msg, ctx)`           | "Booking created", "User registered" |
-| Warnings          | `logger.warn(msg, ctx)`           | Invalid data, deprecated usage       |
-| Errors            | `logger.error(msg, error, ctx)`   | Failed operations, caught exceptions |
-| Compliance        | `logger.audit(msg, ctx)`          | PHI access, admin actions            |
+| Need | Use This | Example |
+|------|----------|---------|
+| Verbose debugging | `logger.debug(feature, msg, ctx)` | Form validation, map loading |
+| Success messages | `logger.info(msg, ctx)` | "Booking created", "User registered" |
+| Warnings | `logger.warn(msg, ctx)` | Invalid data, deprecated usage |
+| Errors | `logger.error(msg, error, ctx)` | Failed operations, caught exceptions |
+| Compliance | `logger.audit(msg, ctx)` | PHI access, admin actions |
 
 **Remember:**
-
 - ✅ Always use `logger.*` instead of `console.*`
 - ✅ Always sanitize PHI with `sanitize*` functions
 - ✅ Use `logger.debug()` with feature flags for verbose debugging

@@ -1,12 +1,11 @@
 import { TRPCError, initTRPC } from '@trpc/server';
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { type Session } from 'next-auth';
+import superjson from 'superjson';
 import { ZodError } from 'zod';
 
 import { getCurrentUser } from '@/lib/auth';
-import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
-import { lambdaTransformer } from '@/lib/trpc-transformer';
 
 type CreateContextOptions = {
   session: Session | null;
@@ -38,25 +37,12 @@ export const createInnerTRPCContext = (opts: CreateContextOptions) => {
 export const createTRPCContext = async (opts: CreateNextContextOptions) => {
   const { req, res } = opts;
 
-  try {
-    // Get user using existing auth pattern (getCurrentUser instead of getServerSession)
-    const user = await getCurrentUser();
+  // Get user using existing auth pattern (getCurrentUser instead of getServerSession)
+  const user = await getCurrentUser();
 
-    return createInnerTRPCContext({
-      session: user ? { user, expires: '' } : null,
-    });
-  } catch (error) {
-    // CRITICAL: Don't let context creation crash the entire tRPC request
-    // This can happen in AWS Lambda if cookie parsing fails or NextAuth has issues
-    // Log the error but return a null session gracefully
-    logger.error('[tRPC Context] Failed to get current user', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-
-    return createInnerTRPCContext({
-      session: null,
-    });
-  }
+  return createInnerTRPCContext({
+    session: user ? { user, expires: '' } : null,
+  });
 };
 
 /**
@@ -68,10 +54,7 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
  */
 
 const t = initTRPC.context<typeof createTRPCContext>().create({
-  // CRITICAL: Use custom transformer for AWS Lambda compatibility
-  // SuperJSON causes serialization failures in serverless environment
-  // Our custom transformer handles Date objects without the complexity
-  transformer: lambdaTransformer,
+  transformer: superjson,
   errorFormatter({ shape, error }) {
     return {
       ...shape,
@@ -105,60 +88,13 @@ export const createTRPCRouter = t.router;
 export const createCallerFactory = t.createCallerFactory;
 
 /**
- * Logging middleware for all tRPC requests
- *
- * Logs all tRPC procedure calls with timing and error information.
- * Logs are automatically sent to CloudWatch for monitoring and alerting.
- */
-const loggingMiddleware = t.middleware(async ({ path, type, next, ctx }) => {
-  // eslint-disable-next-line rulesdir/no-new-date
-  const start = Date.now();
-  const userId = ctx.session?.user?.id;
-
-  try {
-    const result = await next();
-    // eslint-disable-next-line rulesdir/no-new-date
-    const durationMs = Date.now() - start;
-
-    // Log successful requests at info level
-    logger.info('tRPC request completed', {
-      path,
-      type,
-      durationMs,
-      userId,
-      success: true,
-    });
-
-    return result;
-  } catch (error) {
-    // eslint-disable-next-line rulesdir/no-new-date
-    const durationMs = Date.now() - start;
-
-    // Log failed requests at error level
-    logger.error('tRPC request failed', error as Error, {
-      path,
-      type,
-      durationMs,
-      userId,
-      success: false,
-      errorCode: error instanceof TRPCError ? error.code : 'UNKNOWN',
-    });
-
-    // Re-throw the error so tRPC can handle it properly
-    throw error;
-  }
-});
-
-/**
  * Public (unauthenticated) procedure
  *
  * This is the base piece you use to build new queries and mutations on your tRPC API. It does not
  * guarantee that a user querying is authorized, but you can still access user session data if they
  * are logged in.
- *
- * Enhanced with automatic logging for CloudWatch monitoring.
  */
-export const publicProcedure = t.procedure.use(loggingMiddleware);
+export const publicProcedure = t.procedure;
 
 /**
  * Middleware for enforcing user authentication
@@ -207,32 +143,22 @@ const enforceUserHasRole = (allowedRoles: string[]) => {
  * If you want a query or mutation to ONLY be accessible to logged in users, use this. It verifies
  * the session is valid and guarantees `ctx.session.user` is not null.
  *
- * Enhanced with automatic logging for CloudWatch monitoring.
- *
  * @see https://trpc.io/docs/procedures
  */
-export const protectedProcedure = t.procedure.use(loggingMiddleware).use(enforceUserIsAuthed);
+export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
 
 /**
  * Admin procedure
  *
  * If you want a query or mutation to ONLY be accessible to users with ADMIN or SUPER_ADMIN role,
  * use this. It verifies the session is valid and the user has the required role.
- *
- * Enhanced with automatic logging for CloudWatch monitoring.
  */
-export const adminProcedure = t.procedure
-  .use(loggingMiddleware)
-  .use(enforceUserHasRole(['ADMIN', 'SUPER_ADMIN']));
+export const adminProcedure = t.procedure.use(enforceUserHasRole(['ADMIN', 'SUPER_ADMIN']));
 
 /**
  * Super Admin procedure
  *
  * If you want a query or mutation to ONLY be accessible to users with SUPER_ADMIN role,
  * use this. It verifies the session is valid and the user has the required role.
- *
- * Enhanced with automatic logging for CloudWatch monitoring.
  */
-export const superAdminProcedure = t.procedure
-  .use(loggingMiddleware)
-  .use(enforceUserHasRole(['SUPER_ADMIN']));
+export const superAdminProcedure = t.procedure.use(enforceUserHasRole(['SUPER_ADMIN']));

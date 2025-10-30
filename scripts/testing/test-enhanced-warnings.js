@@ -24,7 +24,7 @@ logger.info('User registered', {
   name: user.name
 });
 `,
-    expected: 'HIGH CONFIDENCE warnings for email and name',
+    expected: 'HIGH CONFIDENCE warnings for email and name'
   },
   {
     name: 'MEDIUM Confidence PHI (emailVerified)',
@@ -34,7 +34,7 @@ logger.debug('admin', 'User status', {
   emailVerified: user.emailVerified
 });
 `,
-    expected: 'LOW/MEDIUM CONFIDENCE (false positive)',
+    expected: 'LOW/MEDIUM CONFIDENCE (false positive)'
   },
   {
     name: 'Valid PHI Suppression',
@@ -45,7 +45,7 @@ logger.info('Status', {
   emailVerified: user.emailVerified
 });
 `,
-    expected: 'No warning (suppressed)',
+    expected: 'No warning (suppressed)'
   },
   {
     name: 'CRITICAL Transaction Risk (Double-booking)',
@@ -56,7 +56,7 @@ if (slot.status !== 'AVAILABLE') throw new Error('Unavailable');
 await ctx.prisma.booking.create({ data: bookingData });
 await ctx.prisma.slot.update({ where: { id }, data: { status: 'BOOKED' } });
 `,
-    expected: 'CRITICAL RISK - race condition detected',
+    expected: 'CRITICAL RISK - race condition detected'
   },
   {
     name: 'Valid Transaction Suppression',
@@ -67,8 +67,8 @@ await ctx.prisma.auditLog.create({
   data: { action: 'USER_LOGIN', userId }
 });
 `,
-    expected: 'No warning (suppressed)',
-  },
+    expected: 'No warning (suppressed)'
+  }
 ];
 
 // Run tests
@@ -80,13 +80,17 @@ testCases.forEach((testCase, idx) => {
   console.log(`\nTest ${idx + 1}: ${testCase.name}`);
   console.log('-'.repeat(80));
 
-  const result = validator.validateChanges(testCase.filePath, '', testCase.code);
+  const result = validator.validateChanges(
+    testCase.filePath,
+    '',
+    testCase.code
+  );
 
   console.log(`Expected: ${testCase.expected}`);
   console.log(`Result:   ${result.violations.length} violations`);
 
   if (result.violations.length > 0) {
-    result.violations.forEach((v) => {
+    result.violations.forEach(v => {
       console.log(`\n  [${v.severity}] ${v.rule}`);
       if (v.confidence) console.log(`  Confidence: ${v.confidence}`);
       if (v.riskLevel) console.log(`  Risk Level: ${v.riskLevel}`);

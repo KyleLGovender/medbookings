@@ -7,16 +7,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-import type { UserRole } from '@prisma/client';
-import { getToken } from 'next-auth/jwt';
-
-interface ExtendedJWT {
-  id?: string;
-  role?: UserRole;
-  emailVerified?: Date | null;
-  providerRole?: string;
-  sub?: string;
-}
+import { type JWT, getToken } from 'next-auth/jwt';
+import { withAuth } from 'next-auth/middleware';
 
 /**
  * Route patterns and their required permissions
@@ -76,7 +68,7 @@ function isEmailVerified(emailVerified: Date | null): boolean {
 /**
  * Check if user meets verification requirements
  */
-function checkVerificationRequirement(requirement: string | string[], token: ExtendedJWT): boolean {
+function checkVerificationRequirement(requirement: string | string[], token: JWT): boolean {
   if (Array.isArray(requirement)) {
     // Standard role check
     return hasRole(token.role as string, requirement);
@@ -111,7 +103,7 @@ function extractRouteParams(pathname: string): Record<string, string> {
 /**
  * Check route-specific permissions
  */
-async function checkRoutePermissions(pathname: string, token: ExtendedJWT): Promise<boolean> {
+async function checkRoutePermissions(pathname: string, token: JWT): Promise<boolean> {
   // Check admin routes
   if (pathname.startsWith('/admin')) {
     return hasRole(token.role as string, ['ADMIN', 'SUPER_ADMIN']);
@@ -154,136 +146,107 @@ async function checkRoutePermissions(pathname: string, token: ExtendedJWT): Prom
   return true;
 }
 
-/**
- * NextAuth v5 Middleware
- *
- * In NextAuth v5, we no longer use withAuth wrapper.
- * Instead, we implement standard Next.js middleware with direct token checks.
- */
-export default async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+export default withAuth(
+  async (req: NextRequest) => {
+    const token = await getToken({ req });
+    const { pathname } = req.nextUrl;
 
-  // CRITICAL: Exclude ALL API routes immediately (belt-and-suspenders approach)
-  // API routes handle their own authentication (tRPC protectedProcedure, etc.)
-  // This ensures no API routes are ever processed by page route authentication logic
-  if (pathname.startsWith('/api/')) {
-    return NextResponse.next();
-  }
-
-  // CRITICAL: Always allow auth routes to prevent circular dependency
-  // NextAuth's own routes must not be protected by authentication
-  // Note: This check is now redundant (covered by /api/ above) but kept for clarity
-  if (pathname.startsWith('/api/auth')) {
-    // Note: In NextAuth v5, header injection is no longer needed
-    // v5 has native AWS Amplify support with automatic URL detection
-    return NextResponse.next();
-  }
-
-  // ===== PUBLIC ROUTES - Allow unauthenticated access =====
-  // These routes are accessible to guests without authentication
-
-  // Homepage - public landing page
-  if (pathname === '/') {
-    return NextResponse.next();
-  }
-
-  // Provider search page - public for guests
-  // Note: /providers/new and /providers/[id]/edit remain protected (handled below)
-  if (pathname === '/providers') {
-    return NextResponse.next();
-  }
-
-  // Calendar booking pages - public for guests to book appointments
-  if (pathname.startsWith('/calendar/')) {
-    return NextResponse.next();
-  }
-
-  // Join/signup page - public
-  if (pathname === '/join-medbookings') {
-    return NextResponse.next();
-  }
-
-  // Compliance pages - public
-  if (pathname === '/terms-of-use' || pathname === '/privacy-policy') {
-    return NextResponse.next();
-  }
-
-  // Organization invitations - public (token-based access)
-  if (pathname.startsWith('/invitation/')) {
-    return NextResponse.next();
-  }
-
-  // Get JWT token using NextAuth v5 compatible method
-  // CRITICAL: Must pass secret explicitly in AWS Lambda environment
-  // Without secret, getToken returns null even if user has valid session
-  const token = (await getToken({
-    req,
-    secret: process.env.NEXTAUTH_SECRET,
-  })) as ExtendedJWT | null;
-
-  // Redirect to login if not authenticated
-  if (!token) {
-    return NextResponse.redirect(new URL('/login', req.url));
-  }
-
-  // Check route-specific permissions
-  const hasAccess = await checkRoutePermissions(pathname, token);
-
-  if (!hasAccess) {
-    // Check if this is an email verification issue
-    if (
-      !isEmailVerified(token.emailVerified ?? null) &&
-      (pathname.startsWith('/providers') ||
-        pathname.startsWith('/calendar') ||
-        pathname.startsWith('/availability') ||
-        pathname.startsWith('/bookings') ||
-        pathname.startsWith('/my-bookings'))
-    ) {
-      // Redirect to email verification page
-      const verifyUrl = new URL('/verify-email', req.url);
-      verifyUrl.searchParams.set('reason', 'email_verification_required');
-      verifyUrl.searchParams.set('attempted_route', pathname);
-      return NextResponse.redirect(verifyUrl);
+    // Allow public access to provider search page
+    if (pathname === '/providers') {
+      return NextResponse.next();
     }
 
-    // Redirect to unauthorized page with context
-    const unauthorizedUrl = new URL('/unauthorized', req.url);
-    unauthorizedUrl.searchParams.set('reason', 'insufficient_permissions');
-    unauthorizedUrl.searchParams.set('attempted_route', pathname);
-    return NextResponse.redirect(unauthorizedUrl);
+    if (!token) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
+
+    // Check route-specific permissions
+    const hasAccess = await checkRoutePermissions(pathname, token);
+
+    if (!hasAccess) {
+      // Check if this is an email verification issue
+      if (
+        !isEmailVerified(token.emailVerified ?? null) &&
+        (pathname.startsWith('/providers') ||
+          pathname.startsWith('/calendar') ||
+          pathname.startsWith('/availability') ||
+          pathname.startsWith('/bookings') ||
+          pathname.startsWith('/my-bookings'))
+      ) {
+        // Redirect to email verification page
+        const verifyUrl = new URL('/verify-email', req.url);
+        verifyUrl.searchParams.set('reason', 'email_verification_required');
+        verifyUrl.searchParams.set('attempted_route', pathname);
+        return NextResponse.redirect(verifyUrl);
+      }
+
+      // Redirect to unauthorized page with context
+      const unauthorizedUrl = new URL('/unauthorized', req.url);
+      unauthorizedUrl.searchParams.set('reason', 'insufficient_permissions');
+      unauthorizedUrl.searchParams.set('attempted_route', pathname);
+      return NextResponse.redirect(unauthorizedUrl);
+    }
+
+    // Add permission context to headers for downstream use
+    const response = NextResponse.next();
+    response.headers.set('x-user-role', String(token.role) || 'USER');
+    response.headers.set('x-user-id', token.sub || '');
+    response.headers.set('x-email-verified', String(isEmailVerified(token.emailVerified ?? null)));
+
+    if (token.providerRole) {
+      response.headers.set('x-provider-role', String(token.providerRole));
+    }
+
+    return response;
+  },
+  {
+    callbacks: {
+      authorized: ({ token, req }) => {
+        // Allow public access to provider search page
+        if (req.nextUrl.pathname === '/providers') {
+          return true;
+        }
+
+        // Basic authentication check
+        if (!token) return false;
+
+        // Special handling for admin routes
+        if (req.nextUrl.pathname.startsWith('/admin')) {
+          return token.role === 'ADMIN' || token.role === 'SUPER_ADMIN';
+        }
+
+        return true;
+      },
+    },
   }
-
-  // Add permission context to headers for downstream use
-  const response = NextResponse.next();
-  response.headers.set('x-user-role', String(token.role) || 'USER');
-  response.headers.set('x-user-id', token.sub || '');
-  response.headers.set('x-email-verified', String(isEmailVerified(token.emailVerified ?? null)));
-
-  if (token.providerRole) {
-    response.headers.set('x-provider-role', String(token.providerRole));
-  }
-
-  return response;
-}
+);
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for:
-     * - api/ (ALL API routes - tRPC, webhooks, uploads handle their own auth)
-     * - login (public sign-in page - CRITICAL to exclude to prevent redirect loop)
-     * - verify-email (public email verification pages)
-     * - verify-email-complete (public email verification success page)
-     * - unauthorized (public unauthorized access page)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     *
-     * Note: Specific route patterns like '/dashboard/:path*' are NOT needed here.
-     * The catch-all pattern above already matches all non-excluded routes.
-     * Having specific patterns causes conflicts with API routes (e.g., '/providers/:path*'
-     * would incorrectly match '/api/trpc/providers.getAll').
-     */
-    '/((?!api/|login|verify-email|verify-email-complete|unauthorized|_next/static|_next/image|favicon.ico).*)',
+    // Protected dashboard routes
+    '/dashboard/:path*',
+
+    // Admin routes
+    '/admin/:path*',
+
+    // Profile routes
+    '/profile/:path*',
+
+    // Organization routes
+    '/organizations/:path*',
+
+    // Provider routes
+    '/providers/:path*',
+
+    // Protected calendar routes
+    '/calendar/:path*',
+    '/availability/:path*',
+
+    // Settings routes
+    '/settings/:path*',
+
+    // Booking routes
+    '/bookings/:path*',
+    '/my-bookings/:path*',
   ],
 };

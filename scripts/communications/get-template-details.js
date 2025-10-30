@@ -12,7 +12,7 @@ async function getTemplateDetails() {
 
   const templateIds = [
     'HX8bfd0fc829de1adfe41f2e526d42cabf', // Guest confirmation
-    'HX7b7542c849bf762b63fc38dcb069f6f1', // Provider notification
+    'HX7b7542c849bf762b63fc38dcb069f6f1'  // Provider notification
   ];
 
   for (const templateId of templateIds) {
@@ -40,7 +40,7 @@ async function getTemplateDetails() {
       // Try to get the actual content
       console.log('\n**Available Types:**');
       if (template.types) {
-        Object.keys(template.types).forEach((type) => {
+        Object.keys(template.types).forEach(type => {
           console.log(`- ${type}`);
         });
 
@@ -57,6 +57,7 @@ async function getTemplateDetails() {
       }
 
       console.log('\n' + '='.repeat(80) + '\n');
+
     } catch (error) {
       console.log(`❌ Error: ${error.message}`);
       console.log(`Error code: ${error.code}`);
@@ -66,9 +67,7 @@ async function getTemplateDetails() {
 
   // Also show recommendations
   console.log('💡 **Analysis & Recommendations:**\n');
-  console.log(
-    "Based on your guest booking implementation, here's what your templates should contain:\n"
-  );
+  console.log('Based on your guest booking implementation, here\'s what your templates should contain:\n');
 
   console.log('**Guest Confirmation Template (8 variables):**');
   console.log('{{1}}: Guest name');

@@ -33,7 +33,7 @@ class EnhancedPHIValidator {
             line: idx + 1,
             content: line.trim(),
             confidence: phiDetection.confidence, // NEW: HIGH/MEDIUM/LOW
-            phiFields: phiDetection.fields, // NEW: Specific fields
+            phiFields: phiDetection.fields,      // NEW: Specific fields
             message: this.buildMessage(phiDetection),
             fix: this.buildFix(phiDetection),
             suppressionExample: this.buildSuppressionExample(phiDetection),
@@ -186,27 +186,21 @@ class EnhancedPHIValidator {
     }
 
     if (conf === 'HIGH') {
-      return (
-        `✅ Use ${field.sanitizer}() to protect PHI:\n` +
-        `   import { ${field.sanitizer} } from '@/lib/logger';\n` +
-        `   ${field.field}: ${field.sanitizer}(${detection.context.variable || 'value'}.${field.field})`
-      );
+      return `✅ Use ${field.sanitizer}() to protect PHI:\n` +
+             `   import { ${field.sanitizer} } from '@/lib/logger';\n` +
+             `   ${field.field}: ${field.sanitizer}(${detection.context.variable || 'value'}.${field.field})`;
     }
 
     if (conf === 'MEDIUM') {
-      return (
-        `⚠️  If this IS PHI: Use ${field.sanitizer}()\n` +
-        `   If this is NOT PHI: Add suppression comment (see example below)`
-      );
+      return `⚠️  If this IS PHI: Use ${field.sanitizer}()\n` +
+             `   If this is NOT PHI: Add suppression comment (see example below)`;
     }
 
     if (conf === 'LOW') {
-      return (
-        `⚠️  REVIEW NEEDED:\n` +
-        `   1. If this IS PHI → Use ${field.sanitizer}()\n` +
-        `   2. If this is NOT PHI → Add suppression comment\n` +
-        `   3. If unsure → Ask in code review`
-      );
+      return `⚠️  REVIEW NEEDED:\n` +
+             `   1. If this IS PHI → Use ${field.sanitizer}()\n` +
+             `   2. If this is NOT PHI → Add suppression comment\n` +
+             `   3. If unsure → Ask in code review`;
     }
 
     return 'Review and sanitize if PHI';
@@ -217,23 +211,19 @@ class EnhancedPHIValidator {
     const conf = detection.confidence;
 
     if (conf === 'HIGH') {
-      return (
-        '⚠️  Only suppress if absolutely certain this is not PHI:\n' +
-        '   // phi-safe: email is system notification address, not user PHI\n' +
-        '   logger.info("Notification sent", { email: SYSTEM_EMAIL });'
-      );
+      return '⚠️  Only suppress if absolutely certain this is not PHI:\n' +
+             '   // phi-safe: email is system notification address, not user PHI\n' +
+             '   logger.info("Notification sent", { email: SYSTEM_EMAIL });';
     }
 
-    return (
-      'To suppress this warning:\n' +
-      '   // phi-safe: [explain why this is not PHI]\n' +
-      '   logger.info(...);\n\n' +
-      'Common valid reasons:\n' +
-      '   - Field already sanitized upstream\n' +
-      '   - System/configuration value (not user data)\n' +
-      '   - Debug-only code (will be removed)\n' +
-      '   - emailVerified status (boolean, not email address)'
-    );
+    return 'To suppress this warning:\n' +
+           '   // phi-safe: [explain why this is not PHI]\n' +
+           '   logger.info(...);\n\n' +
+           'Common valid reasons:\n' +
+           '   - Field already sanitized upstream\n' +
+           '   - System/configuration value (not user data)\n' +
+           '   - Debug-only code (will be removed)\n' +
+           '   - emailVerified status (boolean, not email address)';
   }
 }
 

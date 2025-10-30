@@ -27,7 +27,7 @@ Create a `.env.production` file with the following variables:
 DATABASE_URL="postgresql://user:password@host:5432/database?schema=public"
 
 # Authentication
-NEXTAUTH_SECRET="your-super-secret-auth-key-min-32-chars"
+AUTH_SECRET="your-super-secret-auth-key-min-32-chars"
 NEXTAUTH_URL="https://your-domain.com"
 
 # Google OAuth
@@ -119,7 +119,6 @@ npx prisma migrate deploy
 ```
 
 This will:
-
 - Apply all pending migrations
 - Create the `LoginAttempt` table
 - Add `accountLockedUntil` to `User` table
@@ -136,7 +135,6 @@ npx prisma studio
 ```
 
 Expected tables:
-
 - ✅ `LoginAttempt` (new in Sprint 2)
 - ✅ `User` with `accountLockedUntil` field (new in Sprint 2)
 - ✅ All other existing tables
@@ -160,7 +158,7 @@ Expected tables:
 
 ### Environment Variable Security
 
-- [ ] ✅ `NEXTAUTH_SECRET` is strong (min 32 characters, random)
+- [ ] ✅ `AUTH_SECRET` is strong (min 32 characters, random)
 - [ ] ✅ Database credentials are secure
 - [ ] ✅ API keys are production keys (not test/development)
 - [ ] ✅ No `.env` file committed to git
@@ -184,7 +182,6 @@ Expected tables:
 ### AWS Amplify Deployment
 
 1. **Initial Setup:**
-
    ```bash
    # Configure AWS CLI (for local development)
    aws configure
@@ -194,7 +191,6 @@ Expected tables:
    ```
 
 2. **Deploy via Amplify Console:**
-
    - Navigate to AWS Amplify Console
    - Connect GitHub repository
    - Select branch (e.g., `master`, `staging`)
@@ -202,7 +198,6 @@ Expected tables:
    - Amplify auto-detects Next.js and uses `amplify.yml` for build settings
 
 3. **Verify Deployment:**
-
    ```bash
    curl -I https://your-amplify-domain.amplifyapp.com
    ```
@@ -285,7 +280,6 @@ curl -X POST https://your-domain.com/api/auth/register \
 ### Rate Limiting Monitoring
 
 Check Upstash dashboard for:
-
 - Rate limit hits
 - Request patterns
 - Blocked requests
@@ -293,7 +287,6 @@ Check Upstash dashboard for:
 ### Database Monitoring
 
 Monitor the following:
-
 - `LoginAttempt` table growth
 - Failed login patterns
 - Account lockout frequency
@@ -351,7 +344,6 @@ psql -U user -d database < backup.sql
 **Problem**: Users can't register with valid passwords
 **Check**: `src/lib/password-validation.ts`
 **Requirements**:
-
 - 8+ characters
 - 1+ uppercase
 - 1+ lowercase
@@ -372,7 +364,7 @@ psql -U user -d database < backup.sql
 ### If Account Takeover Detected
 
 1. Force password reset for affected accounts
-2. Invalidate all sessions: Update `NEXTAUTH_SECRET` (forces re-login)
+2. Invalidate all sessions: Update `AUTH_SECRET` (forces re-login)
 3. Review `LoginAttempt` table for patterns
 4. Consider reducing `MAX_LOGIN_ATTEMPTS` temporarily
 
@@ -410,20 +402,17 @@ psql -U user -d database < backup.sql
 ### Regular Maintenance Tasks
 
 **Daily**:
-
 - Monitor error logs
 - Check rate limit metrics
 - Review failed login attempts
 
 **Weekly**:
-
 - Review `LoginAttempt` table size
 - Clean up old email verification tokens
 - Check database performance
 
 **Monthly**:
-
-- Review and rotate `NEXTAUTH_SECRET` if needed
+- Review and rotate `AUTH_SECRET` if needed
 - Update dependencies (`npm audit`)
 - Review security headers configuration
 

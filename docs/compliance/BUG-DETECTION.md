@@ -25,8 +25,8 @@ useEffect(() => {
 ```typescript
 // ❌ WRONG - Infinite loop
 useEffect(() => {
-  setState(value); // Causes re-render
-}, [value]); // Dependency causes loop
+  setState(value);  // Causes re-render
+}, [value]);  // Dependency causes loop
 
 // ✅ CORRECT
 useEffect(() => {

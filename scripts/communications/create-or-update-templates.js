@@ -21,7 +21,7 @@ async function createOrUpdateTemplates() {
       contentFile: path.join(__dirname, '../twilio-templates/guest-booking-confirmation.txt'),
       purpose: 'Guest Booking Confirmation',
       existingId: 'HX8bfd0fc829de1adfe41f2e526d42cabf', // Your current template
-      variables: 8,
+      variables: 8
     },
     {
       friendlyName: 'provider_booking_notification_optimized',
@@ -29,8 +29,8 @@ async function createOrUpdateTemplates() {
       contentFile: path.join(__dirname, '../twilio-templates/provider-booking-notification.txt'),
       purpose: 'Provider Booking Notification',
       existingId: 'HX7b7542c849bf762b63fc38dcb069f6f1', // Your current template
-      variables: 9,
-    },
+      variables: 9
+    }
   ];
 
   for (const templateConfig of templates) {
@@ -85,9 +85,9 @@ async function createOrUpdateTemplates() {
         language: templateConfig.language,
         types: {
           'twilio/text': {
-            body: templateContent,
-          },
-        },
+            body: templateContent
+          }
+        }
       };
 
       const newTemplate = await client.content.v1.contents.create(templateData);
@@ -103,6 +103,7 @@ async function createOrUpdateTemplates() {
       console.log('4. Once approved, update your code to use the new template ID');
 
       console.log('\n' + '='.repeat(80) + '\n');
+
     } catch (error) {
       console.log(`❌ Error processing ${templateConfig.purpose}: ${error.message}`);
 

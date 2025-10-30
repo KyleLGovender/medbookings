@@ -45,25 +45,25 @@ This guide establishes **mandatory timezone handling patterns** for the MedBooki
 
 ### Core Functions
 
-| Function                   | Purpose                      | Returns  | Use Case                             |
-| -------------------------- | ---------------------------- | -------- | ------------------------------------ |
-| `nowUTC()`                 | Current UTC time             | `Date`   | Server timestamps, "now" comparisons |
-| `nowSAST()`                | Current SAST time            | `Date`   | Client-side "now" display            |
-| `parseUTC(string)`         | Parse ISO string to UTC Date | `Date`   | Convert client ISO strings           |
-| `startOfDaySAST(date)`     | Get start of SAST day in UTC | `Date`   | Date range query start               |
-| `endOfDaySAST(date)`       | Get end of SAST day in UTC   | `Date`   | Date range query end                 |
-| `formatSAST(date, format)` | Format date in SAST          | `string` | Display dates to users               |
-| `toUTC(date)`              | Convert local Date to UTC    | `Date`   | Manual conversions                   |
-| `fromUTC(date)`            | Convert UTC Date to SAST     | `Date`   | Manual conversions                   |
+| Function | Purpose | Returns | Use Case |
+|----------|---------|---------|----------|
+| `nowUTC()` | Current UTC time | `Date` | Server timestamps, "now" comparisons |
+| `nowSAST()` | Current SAST time | `Date` | Client-side "now" display |
+| `parseUTC(string)` | Parse ISO string to UTC Date | `Date` | Convert client ISO strings |
+| `startOfDaySAST(date)` | Get start of SAST day in UTC | `Date` | Date range query start |
+| `endOfDaySAST(date)` | Get end of SAST day in UTC | `Date` | Date range query end |
+| `formatSAST(date, format)` | Format date in SAST | `string` | Display dates to users |
+| `toUTC(date)` | Convert local Date to UTC | `Date` | Manual conversions |
+| `fromUTC(date)` | Convert UTC Date to SAST | `Date` | Manual conversions |
 
 ### Zod Schemas
 
 **Location**: `/src/lib/timezone-schemas.ts`
 
-| Schema                  | Purpose                             |
-| ----------------------- | ----------------------------------- |
-| `dateStringUTC`         | Auto-convert ISO string to UTC Date |
-| `dateStringOptionalUTC` | Optional date with UTC conversion   |
+| Schema | Purpose |
+|--------|---------|
+| `dateStringUTC` | Auto-convert ISO string to UTC Date |
+| `dateStringOptionalUTC` | Optional date with UTC conversion |
 
 ---
 
@@ -81,9 +81,7 @@ if (slot.startTime <= nowUTC()) {
 
 // ✅ CORRECT - Filter future items
 where: {
-  endTime: {
-    gte: nowUTC();
-  }
+  endTime: { gte: nowUTC() }
 }
 
 // ❌ WRONG - Direct Date constructor
@@ -95,7 +93,7 @@ if (slot.startTime <= new Date()) {
 ### Pattern 2: Date Range Queries
 
 ```typescript
-import { endOfDaySAST, startOfDaySAST } from '@/lib/timezone';
+import { startOfDaySAST, endOfDaySAST } from '@/lib/timezone';
 
 // ✅ CORRECT - Query for all availabilities on a specific SAST day
 const availabilities = await prisma.availability.findMany({
@@ -130,25 +128,18 @@ const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 ### Pattern 4: Client-Side Date Display
 
 ```typescript
-// ✅ BEST - Use date-fns with timezone
-import { format } from 'date-fns';
-
 import { formatSAST } from '@/lib/timezone';
 
 // ✅ CORRECT - Format UTC date for display
-{
-  formatSAST(availability.startTime, 'PPpp');
-}
+{formatSAST(availability.startTime, 'PPpp')}
 // Output: "Jan 1, 2025 at 2:00 PM" (SAST)
 
 // ✅ ACCEPTABLE - Browser locale (may vary)
-{
-  new Date(availability.startTime).toLocaleDateString();
-}
+{new Date(availability.startTime).toLocaleDateString()}
 
-{
-  format(new Date(availability.startTime), 'PPpp');
-}
+// ✅ BEST - Use date-fns with timezone
+import { format } from 'date-fns';
+{format(new Date(availability.startTime), 'PPpp')}
 ```
 
 ### Pattern 5: Client-Side Date Range Construction
@@ -178,7 +169,6 @@ startDate.setHours(0, 0, 0, 0); // Wrong timezone!
 
 ```typescript
 import { z } from 'zod';
-
 import { dateStringUTC } from '@/lib/timezone-schemas';
 
 // ✅ CORRECT - Auto-convert to UTC
@@ -254,9 +244,8 @@ if (slot.startTime > nowUTC()) { ... }
 ### Unit Test Example
 
 ```typescript
-import { describe, expect, it } from 'vitest';
-
-import { endOfDaySAST, startOfDaySAST } from '@/lib/timezone';
+import { describe, it, expect } from 'vitest';
+import { startOfDaySAST, endOfDaySAST } from '@/lib/timezone';
 
 describe('startOfDaySAST', () => {
   it('should return start of day in UTC (22:00 previous day)', () => {
@@ -311,7 +300,6 @@ When adding date/time functionality, verify:
 **Why Critical**: Timezone bugs here cause double-bookings or missed appointments
 
 **Rules**:
-
 - ALL slot time comparisons MUST use `nowUTC()`
 - ALL date range filters MUST use `startOfDaySAST()` / `endOfDaySAST()`
 - ALL booking creation MUST store UTC timestamps
@@ -323,7 +311,6 @@ When adding date/time functionality, verify:
 **Why Critical**: Wrong timezone = availability shown on wrong days
 
 **Rules**:
-
 - Client date pickers MUST convert to UTC before API calls
 - Recurring patterns MUST use UTC for calculations
 - Display MUST convert UTC back to SAST
@@ -335,7 +322,6 @@ When adding date/time functionality, verify:
 **Why Critical**: Tokens may expire early/late by 2 hours
 
 **Rules**:
-
 - ALL token expiry MUST use `nowUTC()` + date-fns
 - ALL expiry checks MUST compare UTC to UTC
 
@@ -346,15 +332,12 @@ When adding date/time functionality, verify:
 ### Symptoms of Timezone Bugs
 
 1. **Availabilities appearing on wrong days**
-
    - Check: Are date range queries using `startOfDaySAST()`?
 
 2. **Bookings rejected as "past slot" when they're future**
-
    - Check: Is slot comparison using `nowUTC()` not `new Date()`?
 
 3. **Tokens expiring 2 hours early/late**
-
    - Check: Is token creation using `nowUTC()`?
 
 4. **Calendar events off by 2 hours**
@@ -364,7 +347,7 @@ When adding date/time functionality, verify:
 
 ```typescript
 // Add this to problematic code
-import { nowSAST, nowUTC } from '@/lib/timezone';
+import { nowUTC, nowSAST } from '@/lib/timezone';
 
 console.log('UTC now:', nowUTC().toISOString());
 console.log('SAST now:', nowSAST().toISOString());

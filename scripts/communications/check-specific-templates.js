@@ -15,33 +15,14 @@ async function checkSpecificTemplates() {
       id: 'HX8bfd0fc829de1adfe41f2e526d42cabf',
       purpose: 'Guest Booking Confirmation',
       expectedVariables: 8,
-      variables: [
-        'Guest name',
-        'Provider name',
-        'Date',
-        'Time',
-        'Service',
-        'Location',
-        'Reference',
-        'Duration',
-      ],
+      variables: ['Guest name', 'Provider name', 'Date', 'Time', 'Service', 'Location', 'Reference', 'Duration']
     },
     {
       id: 'HX7b7542c849bf762b63fc38dcb069f6f1',
       purpose: 'Provider Booking Notification',
       expectedVariables: 9,
-      variables: [
-        'Provider name',
-        'Guest name',
-        'Date',
-        'Time',
-        'Service',
-        'Location',
-        'Reference',
-        'Guest phone',
-        'Duration',
-      ],
-    },
+      variables: ['Provider name', 'Guest name', 'Date', 'Time', 'Service', 'Location', 'Reference', 'Guest phone', 'Duration']
+    }
   ];
 
   for (const templateInfo of templatesInUse) {
@@ -58,9 +39,7 @@ async function checkSpecificTemplates() {
         const textBody = template.types['twilio/text'].body;
         const variableCount = (textBody.match(/\{\{\d+\}\}/g) || []).length;
 
-        console.log(
-          `Variables found: ${variableCount} (expected: ${templateInfo.expectedVariables})`
-        );
+        console.log(`Variables found: ${variableCount} (expected: ${templateInfo.expectedVariables})`);
 
         if (variableCount === templateInfo.expectedVariables) {
           console.log('✅ Variable count matches!');
@@ -78,6 +57,7 @@ async function checkSpecificTemplates() {
       }
 
       console.log('\n' + '='.repeat(60) + '\n');
+
     } catch (error) {
       console.log(`❌ Error fetching template ${templateInfo.id}: ${error.message}\n`);
     }
