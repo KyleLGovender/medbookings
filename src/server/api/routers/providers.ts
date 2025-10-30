@@ -102,6 +102,12 @@ export const providersRouter = createTRPCRouter({
   getByUserId: publicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // CRITICAL: Return null if no session to prevent errors in AWS Lambda
+      // This prevents 500 errors when NextAuth session retrieval fails
+      if (!ctx.session?.user) {
+        return null;
+      }
+
       const provider = await ctx.prisma.provider.findUnique({
         where: { userId: input.userId },
         include: {

@@ -71,7 +71,7 @@ export const authConfig: NextAuthConfig = {
   // CRITICAL: Explicit cookie configuration ensures proper session handling in serverless
   cookies: {
     sessionToken: {
-      name: `__Secure-next-auth.session-token`,
+      name: '__Secure-next-auth.session-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
