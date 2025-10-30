@@ -102,6 +102,8 @@ export const authOptions: NextAuthOptions = {
           scope: 'openid email profile',
           access_type: 'offline',
           prompt: 'consent',
+          // Explicitly set redirect_uri to avoid localhost:3000 fallback
+          redirect_uri: `${env.NEXTAUTH_URL}/api/auth/callback/google`,
         },
       },
     }),
