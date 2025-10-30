@@ -150,10 +150,30 @@ export default withAuth(
   async (req: NextRequest) => {
     const { pathname } = req.nextUrl;
 
-    // CRITICAL: Skip middleware for all auth routes to prevent circular dependency
-    // NextAuth routes must not be intercepted by auth middleware
+    // CRITICAL: Fix NextAuth v4 origin detection on AWS Amplify
+    // NextAuth v4's detectOrigin() relies on x-forwarded-host and x-forwarded-proto headers
+    // AWS Amplify's CloudFront doesn't reliably forward these, causing localhost:3000 fallback
+    // Solution: Force-inject the required headers for NextAuth routes
     if (pathname.startsWith('/api/auth')) {
-      return NextResponse.next();
+      const host = req.headers.get('host') || 'medbookings.co.za';
+      const proto = host.includes('localhost') ? 'http' : 'https';
+
+      const requestHeaders = new Headers(req.headers);
+      requestHeaders.set('x-forwarded-host', host);
+      requestHeaders.set('x-forwarded-proto', proto);
+
+      // eslint-disable-next-line no-console
+      console.log('[Middleware] Injecting headers for NextAuth:', {
+        path: pathname,
+        'x-forwarded-host': host,
+        'x-forwarded-proto': proto,
+      });
+
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
     }
 
     const token = await getToken({ req });
