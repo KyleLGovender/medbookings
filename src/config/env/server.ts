@@ -7,7 +7,7 @@ const env = createEnv({
     DATABASE_URL: z.string().url(),
     GOOGLE_CLIENT_ID: z.string(),
     GOOGLE_CLIENT_SECRET: z.string(),
-    AUTH_SECRET: z.string(),
+    NEXTAUTH_SECRET: z.string(),
     NEXTAUTH_URL: z.string().url(),
     // AWS S3 Configuration
     S3_BUCKET_NAME: z.string(),
