@@ -100,10 +100,6 @@ export const authOptions: NextAuthOptions = {
           scope: 'openid email profile',
           access_type: 'offline',
           prompt: 'consent',
-          // CRITICAL: Explicitly set redirect_uri for CloudFront/proxy deployments
-          // NextAuth v4 sometimes uses localhost when behind proxies
-          // This ensures the correct production URL is used
-          redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback/google`,
         },
       },
     }),
