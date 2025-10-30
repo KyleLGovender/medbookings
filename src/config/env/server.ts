@@ -6,9 +6,10 @@ const serverSchemas = {
   DATABASE_URL: z.string().url(),
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),
-  // NextAuth v4 Secret - required for authentication
+  // NextAuth v5 Configuration - required for authentication
   NEXTAUTH_SECRET: z.string().min(32, 'NEXTAUTH_SECRET must be at least 32 characters'),
   NEXTAUTH_URL: z.string().url(),
+  AUTH_TRUST_HOST: z.string().optional(), // Required for AWS Amplify proxy (CloudFront)
   // AWS S3 Configuration
   S3_BUCKET_NAME: z.string(),
   S3_REGION: z.string().default('eu-west-1'),
