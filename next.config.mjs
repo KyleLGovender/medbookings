@@ -19,9 +19,6 @@ const nextConfig = {
     // NextAuth (NOTE: AUTH_SECRET is not used - only NEXTAUTH_SECRET)
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-    // CRITICAL: AUTH_TRUST_HOST tells NextAuth v4 to trust X-Forwarded headers from CloudFront
-    // Without this, NextAuth falls back to localhost:3000 behind proxies
-    AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST,
 
     // OAuth
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
