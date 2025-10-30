@@ -1,12 +1,12 @@
 import { TRPCError, initTRPC } from '@trpc/server';
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { type Session } from 'next-auth';
-import superjson from 'superjson';
 import { ZodError } from 'zod';
 
 import { getCurrentUser } from '@/lib/auth';
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
+import { lambdaTransformer } from '@/lib/trpc-transformer';
 
 type CreateContextOptions = {
   session: Session | null;
@@ -68,7 +68,10 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
  */
 
 const t = initTRPC.context<typeof createTRPCContext>().create({
-  transformer: superjson,
+  // CRITICAL: Use custom transformer for AWS Lambda compatibility
+  // SuperJSON causes serialization failures in serverless environment
+  // Our custom transformer handles Date objects without the complexity
+  transformer: lambdaTransformer,
   errorFormatter({ shape, error }) {
     return {
       ...shape,
