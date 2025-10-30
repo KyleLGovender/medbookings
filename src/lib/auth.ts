@@ -56,6 +56,8 @@ console.log('[NextAuth] NEXTAUTH_SECRET length:', process.env.NEXTAUTH_SECRET?.l
 console.log('[NextAuth] GOOGLE_CLIENT_ID exists:', !!process.env.GOOGLE_CLIENT_ID);
 // eslint-disable-next-line no-console
 console.log('[NextAuth] DATABASE_URL exists:', !!process.env.DATABASE_URL);
+// eslint-disable-next-line no-console
+console.log('[NextAuth] AUTH_TRUST_HOST:', process.env.AUTH_TRUST_HOST || 'NOT SET');
 
 export const authOptions: NextAuthOptions = {
   // JWT-only strategy for serverless compatibility
