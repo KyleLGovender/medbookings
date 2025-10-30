@@ -217,7 +217,7 @@ This project uses AWS Amplify for hosting with AWS RDS PostgreSQL database.
 
    ```bash
    DATABASE_URL=postgresql://user:pass@rds-endpoint:5432/db?sslmode=require
-   AUTH_SECRET=your-secure-secret-min-32-chars
+   NEXTAUTH_SECRET=your-secure-secret-min-32-chars
    NEXTAUTH_URL=https://your-domain.com
    S3_BUCKET_NAME=your-s3-bucket
    S3_REGION=eu-west-1

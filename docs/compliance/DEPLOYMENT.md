@@ -27,7 +27,7 @@ Create a `.env.production` file with the following variables:
 DATABASE_URL="postgresql://user:password@host:5432/database?schema=public"
 
 # Authentication
-AUTH_SECRET="your-super-secret-auth-key-min-32-chars"
+NEXTAUTH_SECRET="your-super-secret-auth-key-min-32-chars"
 NEXTAUTH_URL="https://your-domain.com"
 
 # Google OAuth
@@ -160,7 +160,7 @@ Expected tables:
 
 ### Environment Variable Security
 
-- [ ] ✅ `AUTH_SECRET` is strong (min 32 characters, random)
+- [ ] ✅ `NEXTAUTH_SECRET` is strong (min 32 characters, random)
 - [ ] ✅ Database credentials are secure
 - [ ] ✅ API keys are production keys (not test/development)
 - [ ] ✅ No `.env` file committed to git
@@ -372,7 +372,7 @@ psql -U user -d database < backup.sql
 ### If Account Takeover Detected
 
 1. Force password reset for affected accounts
-2. Invalidate all sessions: Update `AUTH_SECRET` (forces re-login)
+2. Invalidate all sessions: Update `NEXTAUTH_SECRET` (forces re-login)
 3. Review `LoginAttempt` table for patterns
 4. Consider reducing `MAX_LOGIN_ATTEMPTS` temporarily
 
@@ -423,7 +423,7 @@ psql -U user -d database < backup.sql
 
 **Monthly**:
 
-- Review and rotate `AUTH_SECRET` if needed
+- Review and rotate `NEXTAUTH_SECRET` if needed
 - Update dependencies (`npm audit`)
 - Review security headers configuration
 
