@@ -97,7 +97,7 @@ const env = new Proxy(
         // eslint-disable-next-line no-console
         console.error(`⚠️  WARNING: Using raw value for ${prop} despite validation failure`);
         // eslint-disable-next-line no-console
-        console.error(`⚠️  This may cause runtime errors. Fix environment variable ASAP!`);
+        console.error('⚠️  This may cause runtime errors. Fix environment variable ASAP!');
 
         // Cache the raw value to avoid repeated validation attempts
         validatedCache.set(prop, rawValue);
