@@ -261,6 +261,7 @@ export const config = {
     /*
      * Match all request paths except for:
      * - api/auth (NextAuth routes - CRITICAL to exclude)
+     * - api/debug (Debug/diagnostic endpoints - allow unauthenticated access)
      * - login (public sign-in page - CRITICAL to exclude to prevent redirect loop)
      * - verify-email (public email verification pages)
      * - verify-email-complete (public email verification success page)
@@ -269,7 +270,7 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    '/((?!api/auth|login|verify-email|verify-email-complete|unauthorized|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api/auth|api/debug|login|verify-email|verify-email-complete|unauthorized|_next/static|_next/image|favicon.ico).*)',
 
     // Protected dashboard routes
     '/dashboard/:path*',
