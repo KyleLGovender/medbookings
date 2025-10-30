@@ -163,8 +163,16 @@ async function checkRoutePermissions(pathname: string, token: ExtendedJWT): Prom
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // CRITICAL: Exclude ALL API routes immediately (belt-and-suspenders approach)
+  // API routes handle their own authentication (tRPC protectedProcedure, etc.)
+  // This ensures no API routes are ever processed by page route authentication logic
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
   // CRITICAL: Always allow auth routes to prevent circular dependency
   // NextAuth's own routes must not be protected by authentication
+  // Note: This check is now redundant (covered by /api/ above) but kept for clarity
   if (pathname.startsWith('/api/auth')) {
     // Note: In NextAuth v5, header injection is no longer needed
     // v5 has native AWS Amplify support with automatic URL detection
@@ -265,33 +273,12 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     *
+     * Note: Specific route patterns like '/dashboard/:path*' are NOT needed here.
+     * The catch-all pattern above already matches all non-excluded routes.
+     * Having specific patterns causes conflicts with API routes (e.g., '/providers/:path*'
+     * would incorrectly match '/api/trpc/providers.getAll').
      */
     '/((?!api/|login|verify-email|verify-email-complete|unauthorized|_next/static|_next/image|favicon.ico).*)',
-
-    // Protected dashboard routes
-    '/dashboard/:path*',
-
-    // Admin routes
-    '/admin/:path*',
-
-    // Profile routes
-    '/profile/:path*',
-
-    // Organization routes
-    '/organizations/:path*',
-
-    // Provider routes
-    '/providers/:path*',
-
-    // Protected calendar routes
-    '/calendar/:path*',
-    '/availability/:path*',
-
-    // Settings routes
-    '/settings/:path*',
-
-    // Booking routes
-    '/bookings/:path*',
-    '/my-bookings/:path*',
   ],
 };
