@@ -48,10 +48,15 @@ console.log('[NextAuth v5] NEXTAUTH_SECRET exists:', !!process.env.NEXTAUTH_SECR
 console.log('[NextAuth v5] GOOGLE_CLIENT_ID exists:', !!process.env.GOOGLE_CLIENT_ID);
 // eslint-disable-next-line no-console
 console.log('[NextAuth v5] DATABASE_URL exists:', !!process.env.DATABASE_URL);
+// eslint-disable-next-line no-console
+console.log('[NextAuth v5] AUTH_TRUST_HOST:', process.env.AUTH_TRUST_HOST || 'NOT SET');
 
 export const authConfig: NextAuthConfig = {
-  // NextAuth v5 automatically detects the base URL from the request
-  // No need for AUTH_TRUST_HOST or manual URL detection
+  // CRITICAL for AWS Amplify: Trust CloudFront proxy headers
+  // This tells NextAuth v5 to trust X-Forwarded-Host and X-Forwarded-Proto headers
+  // Without this, NextAuth defaults to localhost:3000 in Lambda environment
+  trustHost: true,
+
   secret: env.NEXTAUTH_SECRET,
 
   // Enable debug logging

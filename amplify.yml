@@ -9,6 +9,11 @@ frontend:
         # Increase Node.js memory limit for large TypeScript builds
         - export NODE_OPTIONS="--max-old-space-size=6144"
 
+        # CRITICAL: Export environment variables for Lambda runtime
+        # NextAuth v5 needs these values available at runtime in AWS Lambda
+        # This MUST come BEFORE npm run build
+        - env | grep -e AUTH_TRUST_HOST -e NEXTAUTH_SECRET >> .env.production
+
         # Database operations
         # 1. RESET (DANGER - only when RESET_DATABASE=true)
         - |
