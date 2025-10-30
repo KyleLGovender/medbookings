@@ -29,15 +29,27 @@ const handler = (req: NextRequest) =>
     req,
     router: appRouter,
     createContext: () => createContext(req),
-    onError:
-      process.env.NODE_ENV === 'development'
-        ? ({ path, error }) => {
-            logger.error('tRPC failed', {
-              path: path ?? '<no-path>',
-              error: error.message,
-            });
-          }
-        : undefined,
+    onError: ({ path, error, type, input }) => {
+      // Log all errors in both development and production
+      // CRITICAL: This ensures errors are logged even in AWS Lambda
+      logger.error('tRPC failed', {
+        path: path ?? '<no-path>',
+        type,
+        error: error.message,
+        code: error.code,
+        // Only log input in development to avoid leaking sensitive data
+        input: process.env.NODE_ENV === 'development' ? input : undefined,
+      });
+    },
+    responseMeta() {
+      // CRITICAL: Ensure all responses have JSON content type
+      // This prevents Next.js error pages from returning HTML
+      return {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+    },
   });
 
 export { handler as GET, handler as POST };

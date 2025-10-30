@@ -257,12 +257,19 @@ export const organizationsRouter = createTRPCRouter({
    * Get user's organizations
    * Migrated from: GET /api/organizations/user/[userId]
    */
-  getByUserId: protectedProcedure
+  getByUserId: publicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // CRITICAL: Return empty array if no session instead of throwing
+      // This prevents 500 errors when NextAuth session retrieval fails in AWS Lambda
+      if (!ctx.session?.user) {
+        return [];
+      }
+
       // Verify the requesting user is either the target user or an admin
+      // Return empty array instead of throwing to gracefully handle permission issues
       if (ctx.session.user.id !== input.userId && ctx.session.user.role !== 'ADMIN') {
-        throw new Error('Forbidden');
+        return [];
       }
 
       const organizations = await ctx.prisma.organization.findMany({

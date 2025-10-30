@@ -67,6 +67,21 @@ export const authConfig: NextAuthConfig = {
     strategy: 'jwt',
   },
 
+  // Cookie configuration for AWS Amplify Lambda environment
+  // CRITICAL: Explicit cookie configuration ensures proper session handling in serverless
+  cookies: {
+    sessionToken: {
+      name: `__Secure-next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        // Use secure cookies in production (HTTPS)
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
+
   // Custom pages
   pages: {
     signIn: '/login',

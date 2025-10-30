@@ -38,12 +38,25 @@ export const createInnerTRPCContext = (opts: CreateContextOptions) => {
 export const createTRPCContext = async (opts: CreateNextContextOptions) => {
   const { req, res } = opts;
 
-  // Get user using existing auth pattern (getCurrentUser instead of getServerSession)
-  const user = await getCurrentUser();
+  try {
+    // Get user using existing auth pattern (getCurrentUser instead of getServerSession)
+    const user = await getCurrentUser();
 
-  return createInnerTRPCContext({
-    session: user ? { user, expires: '' } : null,
-  });
+    return createInnerTRPCContext({
+      session: user ? { user, expires: '' } : null,
+    });
+  } catch (error) {
+    // CRITICAL: Don't let context creation crash the entire tRPC request
+    // This can happen in AWS Lambda if cookie parsing fails or NextAuth has issues
+    // Log the error but return a null session gracefully
+    logger.error('[tRPC Context] Failed to get current user', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    return createInnerTRPCContext({
+      session: null,
+    });
+  }
 };
 
 /**
