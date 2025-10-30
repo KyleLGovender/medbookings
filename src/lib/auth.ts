@@ -67,6 +67,12 @@ export const authOptions: NextAuthOptions = {
   // Enable debug logging in production to diagnose configuration issues
   // Logs will appear in AWS CloudWatch
   debug: true,
+  // CRITICAL: Trust proxy headers (X-Forwarded-Host, X-Forwarded-Proto) from CloudFront
+  // This tells NextAuth v4 to use forwarded headers instead of defaulting to localhost
+  // Without this, OAuth redirects will use localhost:3000 instead of the production domain
+  // Note: TypeScript types don't include this option, but it's supported in NextAuth v4.24+
+  // @ts-expect-error - trustHost is supported in NextAuth v4.24+ but not in type definitions
+  trustHost: true,
   // Use secure cookies in production (required for HTTPS)
   // NOTE: Use process.env.NODE_ENV directly (not env.NODE_ENV) because Next.js manages NODE_ENV
   useSecureCookies: process.env.NODE_ENV === 'production',
