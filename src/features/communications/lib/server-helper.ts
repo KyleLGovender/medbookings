@@ -5,7 +5,7 @@ import vCardsJS from 'vcards-js';
 
 import env from '@/config/env/server';
 import { logger, sanitizeName, sanitizePhone } from '@/lib/logger';
-import { uploadTextToS3 } from '@/lib/storage/s3';
+import { uploadTextToBlob } from '@/lib/storage/blob';
 
 // Use Prisma type matching getBookingWithDetails from calendar router
 type BookingWithDetails = Prisma.BookingGetPayload<{
@@ -200,15 +200,15 @@ export async function sendGuestVCardToProvider(booking: BookingWithDetails) {
       vCard.workPhone = booking.guestWhatsapp;
     }
 
-    // Upload vCard to S3
-    const result = await uploadTextToS3(
+    // Upload vCard to Vercel Blob
+    const result = await uploadTextToBlob(
       vCard.getFormattedString(),
       `vcards/guest-${booking.id}.vcf`,
       'text/vcard'
     );
 
     if (!result.success || !result.url) {
-      logger.error('Failed to upload vCard to S3', {
+      logger.error('Failed to upload vCard to Vercel Blob', {
         bookingId: booking.id,
         error: result.error,
       });
