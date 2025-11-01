@@ -9,9 +9,11 @@ const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string(),
     NEXTAUTH_SECRET: z.string(),
     NEXTAUTH_URL: z.string().url(),
-    // AWS S3 Configuration
-    S3_BUCKET_NAME: z.string(),
-    S3_REGION: z.string().default('eu-west-1'),
+    // Vercel Blob Configuration (for Vercel deployment)
+    BLOB_READ_WRITE_TOKEN: z.string(),
+    // AWS S3 Configuration (optional - for migration period only)
+    S3_BUCKET_NAME: z.string().optional(),
+    S3_REGION: z.string().optional(),
     // AWS credentials are optional - automatically provided by IAM role in AWS Amplify
     AWS_ACCESS_KEY_ID: z.string().optional(),
     AWS_SECRET_ACCESS_KEY: z.string().optional(),
