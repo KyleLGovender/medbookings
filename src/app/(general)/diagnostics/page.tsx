@@ -2,11 +2,16 @@
 
 import { useEffect, useState } from 'react';
 
+interface EnvironmentVariableCheck {
+  exists: boolean;
+  [key: string]: boolean | string | undefined;
+}
+
 interface DiagnosticsData {
   timestamp: string;
   environment: string;
   checks: {
-    environmentVariables: Record<string, any>;
+    environmentVariables: Record<string, EnvironmentVariableCheck>;
     expectedCallbackUrls: Record<string, string>;
     configurationFiles: Record<string, string>;
   };
@@ -35,8 +40,6 @@ export default function DiagnosticsPage() {
         setLoading(false);
       })
       .catch((err) => {
-        // eslint-disable-next-line no-console -- Diagnostics page: console usage appropriate for debugging
-        console.error('Failed to load diagnostics:', err);
         setError(err.message || 'Failed to load diagnostics');
         setLoading(false);
       });
@@ -185,7 +188,7 @@ export default function DiagnosticsPage() {
             </tr>
           </thead>
           <tbody>
-            {Object.entries(data.checks.environmentVariables).map(([key, value]: [string, any]) => (
+            {Object.entries(data.checks.environmentVariables).map(([key, value]) => (
               <tr key={key} style={{ borderBottom: '1px solid #E5E7EB' }}>
                 <td style={{ padding: '12px', fontFamily: 'monospace', fontWeight: 'bold' }}>
                   {key}

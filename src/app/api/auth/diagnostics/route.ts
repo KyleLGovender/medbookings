@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { logger } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';
 
 /**
@@ -138,10 +139,11 @@ export async function GET() {
         'Cache-Control': 'no-store, no-cache, must-revalidate',
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     // If env validation fails, return error details
-    // eslint-disable-next-line no-console -- Diagnostics API route: console logging appropriate for environment validation debugging
-    console.error('Diagnostics endpoint error:', error);
+    logger.error('Diagnostics endpoint error', { error });
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     return NextResponse.json(
       {
@@ -149,7 +151,7 @@ export async function GET() {
         environment: process.env.NODE_ENV,
         status: 'error',
         error: 'Failed to load environment configuration',
-        message: error.message,
+        message: errorMessage,
         issues: ['Environment validation failed - check server logs for details'],
         recommendations: [
           'Verify all required environment variables are set in Amplify',

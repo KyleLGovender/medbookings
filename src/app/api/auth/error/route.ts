@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { logger } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';
 
 /**
@@ -13,8 +14,7 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get('error') || 'Configuration';
 
   // Log the error for monitoring
-  // eslint-disable-next-line no-console -- Auth error API route: console logging for error tracking until monitoring service integrated
-  console.error('NextAuth Error Captured:', {
+  logger.error('NextAuth Error Captured', {
     error,
     allParams: Object.fromEntries(searchParams.entries()),
     timestamp: nowUTC().toISOString(),

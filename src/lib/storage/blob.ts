@@ -2,6 +2,7 @@
 
 import { del, list, put } from '@vercel/blob';
 
+import { logger } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';
 
 /**
@@ -45,8 +46,7 @@ export async function uploadToBlob(
 
     return { url: blob.url, success: true };
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to upload file to Vercel Blob:', error);
+    logger.error('Failed to upload file to Vercel Blob', { error });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to upload file',
@@ -76,8 +76,7 @@ export async function uploadTextToBlob(
 
     return { url: blob.url, success: true };
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to upload text to Vercel Blob:', error);
+    logger.error('Failed to upload text to Vercel Blob', { error });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to upload text',
@@ -98,8 +97,7 @@ export async function deleteFromBlob(url: string): Promise<{ success: boolean; e
 
     return { success: true };
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to delete file from Vercel Blob:', error);
+    logger.error('Failed to delete file from Vercel Blob', { error });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete file',
@@ -125,8 +123,7 @@ export async function listBlobs(prefix?: string): Promise<{
 
     return { blobs: result.blobs, success: true };
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to list Vercel Blob files:', error);
+    logger.error('Failed to list Vercel Blob files', { error });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to list files',

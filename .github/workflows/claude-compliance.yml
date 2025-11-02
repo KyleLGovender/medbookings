@@ -126,25 +126,6 @@ jobs:
 
           echo "✅ No backup files found"
 
-      - name: Check for console statements
-        run: |
-          echo "🔍 Checking for console statements..."
-
-          # Check for console usage outside allowed files
-          CONSOLE_VIOLATIONS=$(grep -r "console\." \
-            --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" \
-            --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=e2e --exclude-dir=scripts \
-            --exclude="logger.ts" --exclude="debug.ts" --exclude="audit.ts" --exclude="server.ts" \
-            src/ || true)
-
-          if [ -n "$CONSOLE_VIOLATIONS" ]; then
-            echo "❌ Console statements found (use logger system instead):"
-            echo "$CONSOLE_VIOLATIONS"
-            exit 1
-          fi
-
-          echo "✅ No console statements found"
-
       - name: Check for timezone violations
         run: |
           echo "🔍 Checking for timezone violations..."

@@ -62,14 +62,7 @@ export default function AuthErrorPage() {
   // Log error for monitoring
   useEffect(() => {
     if (error) {
-      // Log to console in development
-      // eslint-disable-next-line no-console -- Auth error page: console logging for development debugging until Sentry integrated
-      console.error('NextAuth Error:', {
-        error,
-        timestamp: nowUTC().toISOString(),
-        url: window.location.href,
-      });
-
+      // Error is displayed to user via UI below
       // TODO: In production, send to monitoring service (e.g., Sentry, LogRocket, etc.)
       // Example:
       // if (process.env.NODE_ENV === 'production') {
