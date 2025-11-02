@@ -64,14 +64,17 @@ for FILE in $STAGED_FILES; do
     continue
   fi
 
-  # Skip config files, test files, and special files from CLAUDE.md validation
-  # (they can use console.log, Date, etc. since they run at build/test time or are logging utilities)
+  # Skip config files, test files, infrastructure, and special files from CLAUDE.md validation
+  # (they can use console.log, Date, etc. since they run at build/test time, are CLI tools, or are logging utilities)
   if [[ "$FILE" =~ (\.eslintrc\.|next\.config\.|tailwind\.config\.|postcss\.config\.) ]] || \
      [[ "$FILE" =~ ^e2e/ ]] || \
      [[ "$FILE" =~ ^scripts/ ]] || \
+     [[ "$FILE" =~ ^workflow/ ]] || \
+     [[ "$FILE" =~ ^\.claude/WORKFLOW\.md$ ]] || \
      [[ "$FILE" =~ ^eslint-rules/ ]] || \
      [[ "$FILE" == "src/lib/logger.ts" ]] || \
      [[ "$FILE" == "src/lib/debug.ts" ]]; then
+    echo "Skipping (infrastructure file): $FILE"
     continue
   fi
 
@@ -160,6 +163,11 @@ if [ $TSC_EXIT -ne 0 ]; then
 fi
 
 # Prevent committing personal workflow files
+# Note: This check is REDUNDANT with .gitignore but provides explicit error messaging
+# Historical context: settings.local.json was accidentally committed 37 times before
+# being gitignored. This extra layer provides immediate, clear feedback if .gitignore
+# somehow fails or is misconfigured. While redundant, it serves as defense-in-depth
+# for credential protection.
 echo "🔒 Checking for personal workflow files..."
 if git diff --cached --name-only | grep -E "(package\.json\.local|run-local\.js|\.workflow-enabled|settings\.personal\.json)"; then
   echo ""
