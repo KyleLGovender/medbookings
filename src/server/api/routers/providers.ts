@@ -161,6 +161,7 @@ export const providersRouter = createTRPCRouter({
           },
           ...(input.status && { status: input.status }),
         },
+        take: 50, // Pagination: Provider type filtering list
         include: {
           user: {
             select: {
@@ -199,6 +200,7 @@ export const providersRouter = createTRPCRouter({
       where: {
         status: 'APPROVED', // Only fetch approved providers
       },
+      take: 50, // Pagination: Approved providers list
       include: {
         typeAssignments: {
           include: {
@@ -439,6 +441,7 @@ export const providersRouter = createTRPCRouter({
       // Validate that all provider types exist
       const existingProviderTypes = await ctx.prisma.providerType.findMany({
         where: { id: { in: input.providerTypeIds } },
+        take: 20, // Pagination: Provider type validation (providers typically have <20 types)
         select: { id: true },
       });
 
@@ -452,6 +455,7 @@ export const providersRouter = createTRPCRouter({
       if (services.length > 0) {
         const existingServices = await ctx.prisma.service.findMany({
           where: { id: { in: services } },
+          take: 50, // Pagination: Service validation (providers typically have <50 services)
           select: { id: true },
         });
 
@@ -794,6 +798,7 @@ export const providersRouter = createTRPCRouter({
         for (const config of provider.availabilityConfigs) {
           const slots = await tx.calculatedAvailabilitySlot.findMany({
             where: { serviceConfigId: config.id },
+            take: 500, // Pagination: Slot cleanup during provider deletion (transactional)
             select: { id: true },
           });
           slotIds.push(...slots.map((slot) => slot.id));
@@ -839,6 +844,7 @@ export const providersRouter = createTRPCRouter({
    */
   getProviderTypes: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.providerType.findMany({
+      take: 100, // Pagination: Reference data - provider types list
       orderBy: { name: 'asc' },
     });
   }),
@@ -984,6 +990,7 @@ export const providersRouter = createTRPCRouter({
             in: providerTypeIds,
           },
         },
+        take: 100, // Pagination: Services for multiple provider types
         select: {
           id: true,
           name: true,
@@ -1252,6 +1259,7 @@ export const providersRouter = createTRPCRouter({
    */
   getRequirementTypes: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.requirementType.findMany({
+      take: 100, // Pagination: Reference data - requirement types list
       orderBy: { name: 'asc' },
     });
   }),
@@ -1280,6 +1288,7 @@ export const providersRouter = createTRPCRouter({
             in: providerTypeIds,
           },
         },
+        take: 20, // Pagination: Requirements for multiple provider types (providers typically have <20 types)
         select: {
           id: true,
           name: true,
@@ -1504,6 +1513,7 @@ export const providersRouter = createTRPCRouter({
       // Fetch connections
       const connections = await ctx.prisma.organizationProviderConnection.findMany({
         where: whereClause,
+        take: 50, // Pagination: Provider connections list
         include: {
           organization: true,
           invitation: {
@@ -1700,6 +1710,7 @@ export const providersRouter = createTRPCRouter({
       // Fetch invitations for the current user's email
       const invitations = await ctx.prisma.providerInvitation.findMany({
         where: whereClause,
+        take: 50, // Pagination: Provider invitations list
         include: {
           organization: true,
           invitedBy: {
@@ -1996,6 +2007,7 @@ export const providersRouter = createTRPCRouter({
   getOnboardingData: publicProcedure.query(async ({ ctx }) => {
     // Fetch all provider types
     const providerTypes = await ctx.prisma.providerType.findMany({
+      take: 100, // Pagination: Reference data - onboarding provider types
       select: {
         id: true,
         name: true,
@@ -2008,6 +2020,7 @@ export const providersRouter = createTRPCRouter({
 
     // Fetch all requirements grouped by provider type
     const requirementsData = await ctx.prisma.providerType.findMany({
+      take: 100, // Pagination: Reference data - onboarding requirements
       select: {
         id: true,
         requirements: {
@@ -2027,6 +2040,7 @@ export const providersRouter = createTRPCRouter({
 
     // Fetch all services grouped by provider type
     const servicesData = await ctx.prisma.service.findMany({
+      take: 200, // Pagination: Reference data - onboarding services (all provider types)
       select: {
         id: true,
         name: true,
@@ -2703,6 +2717,7 @@ export const providersRouter = createTRPCRouter({
             },
           },
         },
+        take: 50, // Pagination: Provider's own services list
         orderBy: { name: 'asc' },
       });
 

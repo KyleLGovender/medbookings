@@ -55,6 +55,7 @@ export const calendarRouter = createTRPCRouter({
    */
   getServiceTypes: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.service.findMany({
+      take: 100, // Pagination: Reference data - service types list
       include: {
         providerType: {
           select: {
@@ -812,6 +813,7 @@ export const calendarRouter = createTRPCRouter({
 
         const userOrganizations = await ctx.prisma.organizationMembership.findMany({
           where: { userId: currentUser.id },
+          take: 20, // Pagination: User's organization memberships (users typically have <20)
           select: { organizationId: true },
         });
 
@@ -882,6 +884,7 @@ export const calendarRouter = createTRPCRouter({
 
         const userOrganizations = await ctx.prisma.organizationMembership.findMany({
           where: { userId: currentUser.id },
+          take: 20, // Pagination: User's organization memberships (users typically have <20)
           select: { organizationId: true },
         });
 
@@ -952,6 +955,7 @@ export const calendarRouter = createTRPCRouter({
 
         const userOrganizations = await ctx.prisma.organizationMembership.findMany({
           where: { userId: currentUser.id },
+          take: 20, // Pagination: User's organization memberships (users typically have <20)
           select: { organizationId: true },
         });
 
@@ -1022,6 +1026,7 @@ export const calendarRouter = createTRPCRouter({
 
         const userOrganizations = await ctx.prisma.organizationMembership.findMany({
           where: { userId: currentUser.id },
+          take: 20, // Pagination: User's organization memberships (users typically have <20)
           select: { organizationId: true },
         });
 
@@ -1259,6 +1264,7 @@ export const calendarRouter = createTRPCRouter({
             },
           },
         },
+        take: 50, // Pagination: Provider search results
         include: {
           user: {
             select: {
@@ -1309,7 +1315,9 @@ export const calendarRouter = createTRPCRouter({
       const endDate = parseUTC(input.endDate);
 
       // Find all services
-      const services = await ctx.prisma.service.findMany({});
+      const services = await ctx.prisma.service.findMany({
+        take: 100, // Pagination: Service search results
+      });
 
       return services;
     }),
@@ -1576,6 +1584,7 @@ export const calendarRouter = createTRPCRouter({
 
       const slots = await ctx.prisma.calculatedAvailabilitySlot.findMany({
         where,
+        take: 1000, // Pagination: Provider calendar slots (calendar view typically shows 1-3 months)
         include: {
           service: {
             select: {
@@ -2192,6 +2201,7 @@ async function fetchAvailabilitiesWithRelations(
 ) {
   return tx.availability.findMany({
     where: { id: { in: availabilityIds } },
+    take: 500, // Pagination: Helper function for fetching specific availabilities by IDs
     include: {
       provider: {
         include: {
