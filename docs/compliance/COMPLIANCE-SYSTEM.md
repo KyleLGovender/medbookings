@@ -15,10 +15,11 @@ This document describes the automated compliance system that ensures code change
 1. [Architecture](#architecture)
 2. [Quality Gates](#quality-gates)
 3. [Compliance Rules](#compliance-rules)
-4. [Setup & Installation](#setup--installation)
-5. [Usage](#usage)
-6. [Troubleshooting](#troubleshooting)
-7. [Extending the System](#extending-the-system)
+4. [Infrastructure File Exclusions](#infrastructure-file-exclusions)
+5. [Setup & Installation](#setup--installation)
+6. [Usage](#usage)
+7. [Troubleshooting](#troubleshooting)
+8. [Extending the System](#extending-the-system)
 
 ---
 
@@ -675,6 +676,158 @@ await ctx.prisma.booking.create({ data: bookingData });
 ```
 
 **Reference:** DEVELOPER-PRINCIPLES.md Section 17 - Form Handling
+
+---
+
+## Infrastructure File Exclusions
+
+### Overview
+
+The CLAUDE.md compliance system **does not validate infrastructure files**. These are files that support development but are not part of the production application.
+
+### What Files Are Excluded?
+
+| Category | Pattern | Examples | Rationale |
+|----------|---------|----------|-----------|
+| **Configuration Files** | `*.config.*`, `.eslintrc.*` | `next.config.mjs`, `tailwind.config.ts`, `.eslintrc.json` | Configuration syntax, not application logic |
+| **E2E Tests** | `e2e/**` | `e2e/tests/booking.spec.ts` | Test utilities, different standards than production |
+| **Compliance Scripts** | `scripts/**` | `scripts/compliance/`, `scripts/commit-gate/` | CLI automation tools (console.log appropriate) |
+| **Workflow Automation** | `workflow/**` | `workflow/scripts/validation/validate.js` | Personal CLI tools for PRP-based development |
+| **ESLint Rules** | `eslint-rules/**` | `eslint-rules/no-new-date.js` | Metaprogramming, analyzes code structure |
+| **Workflow Documentation** | `.claude/WORKFLOW.md`, `.claude/commands/**` | `.claude/WORKFLOW.md` | Contains example code, not production |
+| **Logging Implementation** | `src/lib/logger.ts`, `src/lib/debug.ts` | `src/lib/logger.ts` | Implements console abstraction (needs console) |
+| **Environment Validation** | `src/env/server.ts` | `src/env/server.ts` | Startup validation (uses console) |
+
+### Why Exclude Infrastructure?
+
+**Production Code** (src/app, src/features, src/server):
+- ❌ Must not use `console.log` (use `logger.*` instead)
+- ❌ Must not use `new Date()` (use `nowUTC()` instead)
+- ❌ Must be strictly type-safe (no `as any`)
+- ✅ Runs in production environment
+- ✅ Handles healthcare data (PHI)
+- ✅ Requires POPIA compliance
+
+**Infrastructure Code** (scripts, workflow, e2e, config):
+- ✅ Can use `console.log` (CLI feedback)
+- ✅ Can use `new Date()` (file timestamps, not healthcare data)
+- ✅ Can be more permissive with types (tooling code)
+- ❌ Never deployed to production
+- ❌ Never accesses production database
+- ❌ No PHI exposure risk
+
+### How Exclusions Are Managed
+
+Exclusions are centrally managed in `scripts/compliance/exclusion-patterns.sh`:
+
+```bash
+is_infrastructure_file() {
+  local file="$1"
+
+  # Configuration files
+  if [[ "$file" =~ (\.eslintrc\.|next\.config\.) ]]; then
+    return 0  # Exclude
+  fi
+
+  # Infrastructure directories
+  if [[ "$file" =~ ^(e2e|scripts|workflow|eslint-rules)/ ]]; then
+    return 0  # Exclude
+  fi
+
+  # Production code - validate
+  return 1
+}
+```
+
+This single source of truth is used by:
+- Pre-commit hook (`.husky/pre-commit`)
+- CI/CD workflow (`.github/workflows/claude-compliance.yml`)
+
+### How to Request Exclusion
+
+If you're adding a new infrastructure directory:
+
+1. **Verify it's truly infrastructure** (not production code):
+   - Ask: "Does this run in production?" If YES → Don't exclude
+   - Ask: "Does this access production database?" If YES → Don't exclude
+   - Ask: "Does this handle PHI?" If YES → Don't exclude
+
+2. **Add to centralized pattern** (`scripts/compliance/exclusion-patterns.sh`):
+   ```bash
+   # Your new directory
+   if [[ "$file" =~ ^your-new-dir/ ]]; then
+     return 0  # Exclude from compliance
+   fi
+   ```
+
+3. **Add test cases** (`scripts/compliance/test-exclusions.sh`):
+   ```bash
+   test_should_skip "your-new-dir/example.ts" "Reason for exclusion"
+   ```
+
+4. **Document in this section** with justification
+
+5. **Commit with explanation** in commit message
+
+### Verifying Exclusions
+
+Test that exclusion patterns work:
+
+```bash
+# Run test suite
+bash scripts/compliance/test-exclusions.sh
+
+# Expected output:
+# Total Tests: 58
+# ✅ Passed: 58
+# ❌ Failed: 0
+# 🎉 All exclusion pattern tests passed!
+```
+
+### Common Mistakes
+
+❌ **Don't exclude production utilities**:
+```bash
+# BAD: This is production code, should be validated
+if [[ "$file" == "src/lib/utils.ts" ]]; then
+  return 0
+fi
+```
+
+❌ **Don't exclude based on file type alone**:
+```bash
+# BAD: TypeScript files in src/ must be validated
+if [[ "$file" =~ \.ts$ ]]; then
+  return 0
+fi
+```
+
+✅ **Do exclude entire infrastructure directories**:
+```bash
+# GOOD: Entire directory is infrastructure
+if [[ "$file" =~ ^workflow/ ]]; then
+  return 0
+fi
+```
+
+✅ **Do exclude specific infrastructure files**:
+```bash
+# GOOD: Specific file that implements console abstraction
+if [[ "$file" == "src/lib/logger.ts" ]]; then
+  return 0
+fi
+```
+
+### Historical Context
+
+**Why workflow/ was added (Commit 0afbd5d):**
+- Commits 37df60b and 4bc8ffc were failing CI/CD
+- 463 console.log statements in workflow CLI tools
+- 16 `new Date()` calls for file timestamps
+- These are legitimate for CLI automation tools
+- Excluding workflow/ unblocked development
+
+**Lesson**: Infrastructure directories must be explicitly excluded to prevent blocking legitimate tooling improvements.
 
 ---
 

@@ -5,6 +5,7 @@ This guide explains how to use the structured logging system in MedBookings.
 ## Table of Contents
 
 - [Overview](#overview)
+- [Console Usage Policy](#console-usage-policy)
 - [Logger Methods](#logger-methods)
 - [Debug Logging with Feature Flags](#debug-logging-with-feature-flags)
 - [Adding Debug Logging for New Features](#adding-debug-logging-for-new-features)
@@ -21,6 +22,207 @@ MedBookings uses a structured logging system located in `/src/lib/logger.ts` tha
 - **PHI protection** - Built-in sanitization for sensitive data
 - **Environment awareness** - Different behavior in development vs production
 - **ESLint compliance** - No eslint warnings for using the logger
+
+## Console Usage Policy
+
+### Quick Reference
+
+| Code Type | console.log | logger.* | Rationale |
+|-----------|-------------|----------|-----------|
+| **Application Code** | ❌ FORBIDDEN | ✅ REQUIRED | PHI protection, structured logging |
+| **CLI Scripts** | ✅ ALLOWED | ❌ NOT NEEDED | User feedback, no PHI access |
+| **Test Files** | ✅ ALLOWED | ⚠️ OPTIONAL | Debugging test failures |
+| **Logger Implementation** | ✅ ALLOWED | N/A | Implements console abstraction |
+| **Config Files** | ✅ ALLOWED | ❌ NOT NEEDED | Startup validation |
+
+### When Console Is Allowed ✅
+
+**1. CLI Scripts** (`scripts/**`, `workflow/**`):
+```javascript
+// ✅ GOOD: CLI tool providing user feedback
+console.log('📋 Processing 15 files...');
+console.log('✅ Validation complete!');
+console.error('❌ Failed to read file:', filename);
+```
+
+**Why:** CLI tools need to communicate with developers. No PHI exposure risk (doesn't access production database).
+
+**2. Test Files** (`e2e/**`, `*.test.*`, `*.spec.*`):
+```javascript
+// ✅ GOOD: Debugging test failure
+test('booking creation', async () => {
+  console.log('Test state:', JSON.stringify(state));
+  expect(result).toBe(expected);
+});
+```
+
+**Why:** Helps debug test failures. Test environment, not production.
+
+**3. Logger Implementation** (`src/lib/logger.ts`):
+```javascript
+// ✅ GOOD: Logger needs console to output
+export function info(message: string, meta?: object) {
+  console.log(JSON.stringify({ level: 'info', message, meta }));
+}
+```
+
+**Why:** Logger is the console abstraction layer. Must use console internally.
+
+**4. Environment/Config Validation** (`src/env/server.ts`, `*.config.*`):
+```javascript
+// ✅ GOOD: Startup validation
+if (!process.env.DATABASE_URL) {
+  console.error('❌ DATABASE_URL not configured!');
+  process.exit(1);
+}
+```
+
+**Why:** Critical startup errors need immediate visibility. Runs once at startup, not during request handling.
+
+### When Console Is Forbidden ❌
+
+**1. Application Routes** (`src/app/**`):
+```javascript
+// ❌ BAD: Use logger instead
+export default function Page() {
+  console.log('Rendering page');  // VIOLATION
+  return <div>...</div>;
+}
+
+// ✅ GOOD: Use logger for observability
+import { logger } from '@/lib/logger';
+
+export default function Page() {
+  logger.info('Page rendered', { page: 'providers' });
+  return <div>...</div>;
+}
+```
+
+**2. Feature Modules** (`src/features/**`):
+```javascript
+// ❌ BAD: PHI may leak to console
+function handleBooking(data: BookingInput) {
+  console.log('Booking:', data);  // VIOLATION - may contain PHI
+}
+
+// ✅ GOOD: Use logger with PHI sanitization
+import { logger, sanitizeBooking } from '@/lib/logger';
+
+function handleBooking(data: BookingInput) {
+  logger.info('Booking created', sanitizeBooking(data));
+}
+```
+
+**3. Server API (tRPC)** (`src/server/api/**`):
+```javascript
+// ❌ BAD: Cannot aggregate/search console logs
+export const bookingRouter = createTRPCRouter({
+  create: protectedProcedure.mutation(async ({ ctx, input }) => {
+    console.log('Creating booking');  // VIOLATION
+    return ctx.prisma.booking.create({ data: input });
+  }),
+});
+
+// ✅ GOOD: Structured logging for observability
+export const bookingRouter = createTRPCRouter({
+  create: protectedProcedure.mutation(async ({ ctx, input }) => {
+    logger.info('Booking creation started', {
+      userId: ctx.session.user.id,
+      providerId: input.providerId
+    });
+    return ctx.prisma.booking.create({ data: input });
+  }),
+});
+```
+
+### Why This Matters
+
+**Production Code Must Use `logger.*`:**
+
+1. **PHI Protection** (POPIA Compliance):
+   ```javascript
+   // ❌ PHI leak - patient name in console
+   console.log('Booking for', patient.name);
+
+   // ✅ PHI sanitized
+   logger.info('Booking created', {
+     patientId: patient.id  // ID is safe, name is not
+   });
+   ```
+
+2. **Log Aggregation** (Observability):
+   ```javascript
+   // ❌ Cannot search/filter console logs
+   console.log('Error:', error);
+
+   // ✅ Structured logs can be searched in log aggregator
+   logger.error('Booking failed', {
+     errorCode: error.code,
+     userId: user.id,
+     timestamp: nowUTC()
+   });
+   ```
+
+3. **Audit Trails** (Compliance):
+   ```javascript
+   // ❌ No audit trail for admin actions
+   console.log('Admin approved provider');
+
+   // ✅ Audit log persisted to database
+   logger.audit('provider:approved', {
+     adminId: admin.id,
+     providerId: provider.id,
+     timestamp: nowUTC()
+   });
+   ```
+
+### Compliance Enforcement
+
+**Automatic Detection:**
+```bash
+# Pre-commit hook blocks console in production code:
+❌ Console statement found:
+   src/features/providers/components/provider-card.tsx:42
+   > console.log('Rendering provider card');
+
+🚫 Commit blocked. Use logger.info() instead.
+```
+
+**Exemptions:**
+Files excluded from console checking (see [Infrastructure File Exclusions](./COMPLIANCE-SYSTEM.md#infrastructure-file-exclusions)):
+- `scripts/**` - CLI automation tools
+- `workflow/**` - Personal workflow automation
+- `e2e/**` - End-to-end tests
+- `src/lib/logger.ts` - Logger implementation
+- `src/lib/debug.ts` - Debug utilities
+- `src/env/server.ts` - Environment validation
+
+### Migration Guide
+
+**Converting from console to logger:**
+
+```typescript
+// Before (❌):
+console.log('User logged in:', user.email);
+console.error('Failed to create booking:', error);
+console.warn('Provider approval pending');
+
+// After (✅):
+import { logger, sanitizeEmail } from '@/lib/logger';
+
+logger.info('User logged in', { email: sanitizeEmail(user.email) });
+logger.error('Booking creation failed', {
+  errorCode: error.code,
+  userId: user.id
+});
+logger.warn('Provider approval pending', { providerId: provider.id });
+```
+
+**Benefits after migration:**
+- ✅ PHI automatically sanitized
+- ✅ Logs searchable in aggregator
+- ✅ Audit trail for compliance
+- ✅ No more CI/CD console violations
 
 ## Logger Methods
 
