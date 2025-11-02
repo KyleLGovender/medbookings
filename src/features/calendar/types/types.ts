@@ -13,6 +13,7 @@
  * - Service configuration and billing integration
  * - Search and filtering capabilities
  * - External integrations (Google Calendar, etc.)
+ * - Modal actions and permissions
  *
  * The types are organized by complexity: Enums → Base Interfaces → Complex Types → Utility Types
  *

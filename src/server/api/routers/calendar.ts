@@ -2259,6 +2259,7 @@ async function deleteSingleAvailability(
     // Get affected availabilities with full relations before deletion
     const affectedAvailabilities = await tx.availability.findMany({
       where: { id: { in: validatedData.affectedAvailabilityIds } },
+      take: 500, // Pagination: Delete availability helper - bounded by input IDs (max 500 per operation)
       include: {
         provider: {
           include: {
