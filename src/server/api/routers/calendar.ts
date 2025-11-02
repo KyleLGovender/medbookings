@@ -856,7 +856,7 @@ export const calendarRouter = createTRPCRouter({
           },
         },
         orderBy: [{ startTime: 'asc' }, { createdAt: 'desc' }],
-        take: input.limit || 1000,
+        take: input.limit || 1000, // Pagination: Availability search with input limit (default 1000)
       });
 
       return availabilities;
@@ -927,7 +927,7 @@ export const calendarRouter = createTRPCRouter({
           },
         },
         orderBy: [{ startTime: 'asc' }, { createdAt: 'desc' }],
-        take: 1000,
+        take: 1000, // Pagination: Provider availability list (hardcoded limit)
       });
 
       return availabilities;
@@ -998,7 +998,7 @@ export const calendarRouter = createTRPCRouter({
           },
         },
         orderBy: [{ startTime: 'asc' }, { createdAt: 'desc' }],
-        take: 1000,
+        take: 1000, // Pagination: Organization availability list (hardcoded limit)
       });
 
       return availabilities;
@@ -1069,7 +1069,7 @@ export const calendarRouter = createTRPCRouter({
           },
         },
         orderBy: [{ startTime: 'asc' }, { createdAt: 'desc' }],
-        take: 1000,
+        take: 1000, // Pagination: Series availability list (hardcoded limit)
       });
 
       return availabilities;
