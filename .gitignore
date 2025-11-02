@@ -43,9 +43,23 @@ docker_data
 /logs/
 logs/
 
-# Personal workflow system
-/workflow/
-.claude/
-.workflow-enabled
+# Personal workflow system (local only - not shared with team)
 package.json.local
+.workflow-enabled
 run-local.js
+
+# Personal workflow working directories (work in progress)
+workflow/prps/
+workflow/patterns/staging/
+workflow/technical-plans/
+
+# Personal Claude settings
+.claude/settings.local.json
+
+# Keep these workflow directories but ignore their contents initially
+workflow/prps/**/*
+!workflow/prps/**/.gitkeep
+workflow/patterns/staging/**/*
+!workflow/patterns/staging/**/.gitkeep
+workflow/technical-plans/**/*
+!workflow/technical-plans/**/.gitkeep

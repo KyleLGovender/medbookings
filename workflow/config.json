@@ -1,0 +1,198 @@
+{
+  "paths": {
+    "root": "workflow",
+    "prps": "workflow/prps",
+    "features": "workflow/prps/features",
+    "issues": "workflow/prps/issues",
+    "technicalPlans": "workflow/technical-plans",
+    "technicalPlansArchive": "workflow/technical-plans/archive",
+    "reference": "workflow/reference",
+    "referencePrp": "workflow/reference/prp",
+    "referenceFeature": "workflow/reference/prp/feature",
+    "referenceIssue": "workflow/reference/prp/issue",
+    "archive": "workflow/archive",
+    "backlog": "workflow/backlog.md",
+    "complete": "workflow/complete.md",
+    "claudeCommands": ".claude/commands"
+  },
+  "templates": {
+    "feature": {
+      "prp": "feature-prp-template.md",
+      "tasks": "feature-prp-tasks-template.md"
+    },
+    "issue": {
+      "prp": "issue-prp-template.md",
+      "tasks": "issue-prp-tasks-template.md"
+    }
+  },
+  "fileNaming": {
+    "feature": {
+      "prp": "{name}-feature-prp.md",
+      "tasks": "{name}-feature-prp-tasks.md",
+      "technicalPlan": "{name}-technical-plan.md"
+    },
+    "issue": {
+      "prp": "{name}-issue-prp.md",
+      "tasks": "{name}-issue-prp-tasks.md",
+      "technicalPlan": "{name}-technical-plan.md"
+    }
+  },
+  "git": {
+    "branchPrefixes": {
+      "feature": "feature/",
+      "issue": "issue/",
+      "hotfix": "hotfix/"
+    }
+  },
+  "backlog": {
+    "sections": {
+      "highPriority": "## High Priority",
+      "mediumPriority": "## Medium Priority",
+      "lowPriority": "## Low Priority",
+      "quickNotes": "## Quick Notes"
+    },
+    "subsections": {
+      "features": "### Features",
+      "issues": "### Issues"
+    },
+    "statistics": {
+      "totalItems": "**Total Items:** [auto-count]",
+      "highPriority": "**High Priority:** [auto-count]",
+      "mediumPriority": "**Medium Priority:** [auto-count]",
+      "lowPriority": "**Low Priority:** [auto-count]",
+      "completed": "**Completed:** [auto-count]",
+      "lastUpdated": "**Last Updated:** [Date]"
+    }
+  },
+  "priorities": {
+    "feature": {
+      "levels": ["High", "Medium", "Low"],
+      "default": "Medium",
+      "labels": {
+        "High": "P1",
+        "Medium": "P2",
+        "Low": "P3"
+      }
+    },
+    "issue": {
+      "levels": ["Critical", "High", "Medium", "Low"],
+      "default": "Medium",
+      "labels": {
+        "Critical": "S1",
+        "High": "S2",
+        "Medium": "S3",
+        "Low": "S4"
+      }
+    }
+  },
+  "types": {
+    "feature": ["New Feature", "Enhancement", "Refactor", "Performance", "Security"],
+    "issue": [
+      "Security Issue",
+      "Performance Issue",
+      "Data Issue",
+      "UI/UX Issue",
+      "Integration Issue",
+      "Bug Fix"
+    ]
+  },
+  "inference": {
+    "priority": {
+      "high": ["critical", "urgent", "blocker", "blocking", "asap", "immediately", "high priority"],
+      "low": ["low priority", "nice to have", "future", "eventually", "minor", "polish"],
+      "userImpact": ["\\d+ users", "many users", "all users", "every user", "entire user base"]
+    },
+    "featureType": {
+      "newFeature": ["new feature", "entirely new", "brand new", "from scratch"],
+      "refactor": ["refactor", "restructure", "cleanup", "technical debt", "code quality"],
+      "performance": ["performance", "optimization", "speed up", "faster", "slow"],
+      "security": ["security", "vulnerability", "authentication", "authorization", "secure"],
+      "enhancement": ["enhance", "improve", "upgrade", "extend", "add to existing"]
+    },
+    "severity": {
+      "critical": [
+        "critical",
+        "blocker",
+        "data loss",
+        "security",
+        "breach",
+        "crash",
+        "down",
+        "not working"
+      ],
+      "high": ["high", "urgent", "important", "blocks", "prevents", "cannot"],
+      "low": ["low", "minor", "cosmetic", "typo", "small", "trivial"],
+      "userImpact": {
+        "critical": ["all users", "every user", "production", "live", "affecting users"],
+        "high": ["many users", "multiple users", "some users"]
+      }
+    },
+    "issueType": {
+      "security": [
+        "security",
+        "vulnerability",
+        "exploit",
+        "breach",
+        "authentication",
+        "authorization"
+      ],
+      "performance": ["performance", "slow", "timeout", "memory", "cpu", "optimization"],
+      "data": ["data", "database", "corruption", "integrity", "migration"],
+      "uiux": ["ui", "ux", "display", "layout", "styling", "visual"],
+      "integration": ["integration", "api", "external", "third[- ]party", "service"]
+    }
+  },
+  "status": {
+    "notStarted": "[ ] Not Started",
+    "inProgress": "[~] In Progress",
+    "completed": "[x] Completed",
+    "blocked": "[!] Blocked"
+  },
+  "formatting": {
+    "dateFormat": "YYYY-MM-DD",
+    "excerptLength": 200,
+    "summaryMaxLines": 3
+  },
+  "validation": {
+    "requiredDirs": [
+      "workflow/prps/features",
+      "workflow/prps/issues",
+      "workflow/technical-plans",
+      "workflow/technical-plans/archive",
+      "workflow/reference/prp/feature",
+      "workflow/reference/prp/issue",
+      "workflow/archive",
+      ".claude/commands"
+    ],
+    "requiredFiles": [
+      "workflow/backlog.md",
+      "workflow/complete.md",
+      "workflow/reference/prp/feature/feature-prp-template.md",
+      "workflow/reference/prp/feature/feature-prp-tasks-template.md",
+      "workflow/reference/prp/issue/issue-prp-template.md",
+      "workflow/reference/prp/issue/issue-prp-tasks-template.md",
+      ".claude/commands/feature-workflow.md",
+      ".claude/commands/issue-workflow.md",
+      ".claude/commands/quick-note-workflow.md",
+      ".claude/commands/tasks-process-enhanced.md",
+      ".claude/commands/technical-planning.md"
+    ],
+    "automate": {
+      "prpValidation": true,
+      "taskValidation": true,
+      "integrationValidation": "prompt",
+      "issueValidation": "prompt",
+      "allValidation": "prompt"
+    },
+    "allowSkip": {
+      "taskValidation": true,
+      "integrationValidation": false,
+      "issueValidation": false
+    }
+  },
+  "quickNotes": {
+    "feature": "## Quick Feature Notes",
+    "issue": "## Quick Issue Notes",
+    "promotedSection": "## Quick Notes Promoted"
+  }
+}

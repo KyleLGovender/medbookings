@@ -1,9 +1,9 @@
 {
-  "claudeMdHash": "c8ef02e418ae8619c657963da7755aa3f05895b754ae8181d6702187edab4ad1",
-  "lastSync": "2025-10-23T19:58:10.041Z",
+  "claudeMdHash": "7b42c1e2c80c3f596c634086e9db7840cec4d68330c0a294b8c01deb6fc20b4c",
+  "lastSync": "2025-11-02T19:26:25.041Z",
   "validatorConfig": {
     "version": "1.0.0",
-    "lastUpdated": "2025-10-23T19:58:10.040Z",
+    "lastUpdated": "2025-11-02T19:26:25.040Z",
     "rules": {
       "timezone": {
         "enabled": true,
@@ -31,7 +31,7 @@
         "reference": "/docs/compliance/TIMEZONE-GUIDELINES.md"
       },
       "typeSafety": {
-        "enabled": false,
+        "enabled": true,
         "patterns": {
           "forbidden": [
             "as any",
@@ -47,7 +47,7 @@
         "reference": "/docs/compliance/TYPE-SAFETY.md"
       },
       "logging": {
-        "enabled": false,
+        "enabled": true,
         "patterns": {
           "forbidden": [
             "console.log",
@@ -123,26 +123,27 @@
   },
   "eslintConfig": {
     "rules": {
-      "rulesdir/no-new-date": "off"
+      "rulesdir/no-new-date": "error"
     }
   },
   "docsAlignment": {
-    "referencedDocs": [],
-    "orphanedDocs": [
-      "compliance/BUG-DETECTION.md",
-      "compliance/CLAUDE-MD-AUTO-SYNC.md",
-      "compliance/COMPLIANCE-SYSTEM.md",
+    "referencedDocs": [
+      "guides/DEVELOPER-PRINCIPLES.md",
       "compliance/CONTEXT-LOADING.md",
-      "compliance/DEPLOYMENT.md",
-      "compliance/DEVELOPMENT-WORKFLOW.md",
-      "compliance/LOGGING.md",
-      "compliance/TIMEZONE-GUIDELINES.md",
       "compliance/TYPE-SAFETY.md",
       "compliance/VERIFICATION-PROTOCOLS.md",
+      "compliance/TIMEZONE-GUIDELINES.md",
+      "compliance/LOGGING.md",
+      "compliance/BUG-DETECTION.md",
+      "compliance/DEVELOPMENT-WORKFLOW.md",
+      "compliance/COMPLIANCE-SYSTEM.md",
+      "compliance/CLAUDE-MD-AUTO-SYNC.md",
+      "compliance/DEPLOYMENT.md"
+    ],
+    "orphanedDocs": [
       "guides/ACTIONABLE-WARNINGS-IMPLEMENTATION.md",
-      "guides/DEVELOPER-PRINCIPLES.md",
       "guides/DOCS-VALIDATION-GUIDE.md"
     ],
-    "lastValidated": "2025-10-23T19:58:10.041Z"
+    "lastValidated": "2025-11-02T19:26:25.041Z"
   }
 }
