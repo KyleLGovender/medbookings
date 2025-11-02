@@ -66,7 +66,7 @@ export default function AuthErrorPage() {
       // TODO: In production, send to monitoring service (e.g., Sentry, LogRocket, etc.)
       // Example:
       // if (process.env.NODE_ENV === 'production') {
-      //   logToMonitoring({ type: 'auth_error', error, timestamp: new Date() });
+      //   logToMonitoring({ type: 'auth_error', error, timestamp: nowUTC() });
       // }
     }
   }, [error]);
