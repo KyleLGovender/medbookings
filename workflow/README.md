@@ -13,6 +13,10 @@ The workflow system provides:
 
 ## Quick Start
 
+## ⚠️ Security Notice
+
+Personal workflow files (`package.json.local`, `run-local.js`, `.workflow-enabled`, `settings.personal.json`) are gitignored and **MUST NEVER be committed**. They may contain credentials and personal configuration. See `.claude/WORKFLOW.md` for complete security guidelines.
+
 ### 1. Initial Setup
 
 ```bash
@@ -20,7 +24,7 @@ The workflow system provides:
 # .claude/WORKFLOW.md - Section "📦 Complete Setup Instructions"
 
 # After creating the required files (package.json.local, run-local.js,
-# .workflow-enabled, .claude/settings.local.json), verify setup:
+# .workflow-enabled, .claude/settings.personal.json), verify setup:
 node run-local.js workflow:check
 
 # Initialize workflow directories (if needed)
@@ -183,7 +187,7 @@ Personal workflow scripts (gitignored). Contains:
 - Personal script configurations
 - Custom workflow aliases
 
-### .claude/settings.local.json
+### .claude/settings.personal.json
 
 Claude Code permissions (gitignored). Contains:
 - Bash command permissions
@@ -228,9 +232,9 @@ cp package.json.local.example package.json.local
 
 ### "Permission denied" errors
 
-Check `.claude/settings.local.json` permissions:
+Check `.claude/settings.personal.json` permissions:
 ```bash
-cp .claude/settings.local.json.example .claude/settings.local.json
+cp .claude/settings.personal.json.example .claude/settings.personal.json
 ```
 
 ### Build or lint errors during validation
@@ -248,7 +252,7 @@ This workflow system is designed to work seamlessly with Claude Code:
 
 1. **Workflow Commands** - Available in `.claude/commands/`
 2. **Workflow Documentation** - See `.claude/WORKFLOW.md`
-3. **Permissions** - Configured in `.claude/settings.local.json`
+3. **Permissions** - Configured in `.claude/settings.personal.json`
 
 ## Documentation
 
@@ -267,6 +271,6 @@ For questions or issues with the workflow system:
 
 ## Notes
 
-- **Gitignored Files**: `package.json.local`, `.workflow-enabled`, `.claude/settings.local.json`, and all `workflow/prps/`, `workflow/patterns/staging/`, `workflow/technical-plans/` contents are personal and not committed
+- **Gitignored Files**: `package.json.local`, `.workflow-enabled`, `.claude/settings.personal.json`, and all `workflow/prps/`, `workflow/patterns/staging/`, `workflow/technical-plans/` contents are personal and not committed
 - **Shared Files**: Scripts, templates, and configuration are committed and shared with the team
 - **Personal Preference**: The workflow system is optional - use what works for you!

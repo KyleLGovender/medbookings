@@ -159,5 +159,19 @@ if [ $TSC_EXIT -ne 0 ]; then
   exit 1
 fi
 
+# Prevent committing personal workflow files
+echo "🔒 Checking for personal workflow files..."
+if git diff --cached --name-only | grep -E "(package\.json\.local|run-local\.js|\.workflow-enabled|settings\.personal\.json)"; then
+  echo ""
+  echo "❌ ERROR: Attempting to commit personal workflow files!"
+  echo "🚫 These files MUST remain local only:"
+  git diff --cached --name-only | grep -E "(package\.json\.local|run-local\.js|\.workflow-enabled|settings\.personal\.json)"
+  echo ""
+  echo "⚠️  These files are gitignored for security reasons and must never be committed."
+  echo "💡 They may contain credentials, API keys, or personal configuration."
+  echo ""
+  exit 1
+fi
+
 echo "✅ All pre-commit checks passed"
 exit 0

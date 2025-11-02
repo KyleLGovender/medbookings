@@ -31,9 +31,37 @@ The workflow system requires these files (gitignored - create manually):
 - `package.json.local` - Workflow npm scripts
 - `run-local.js` - Script runner
 - `.workflow-enabled` - Workflow enablement marker
-- `.claude/settings.local.json` - Claude Code permissions
+- `.claude/settings.personal.json` - Claude Code permissions
 
 **Important**: These files are gitignored and not committed. Each developer creates their own.
+
+---
+
+## ⚠️ CRITICAL SECURITY WARNING
+
+The following files contain personal configuration and **MUST NEVER BE COMMITTED**:
+- `package.json.local` - Personal workflow commands
+- `run-local.js` - Personal script runner
+- `.workflow-enabled` - Personal initialization marker
+- `.claude/settings.personal.json` - **May contain credentials and API keys**
+
+**Why this matters:**
+- These files are gitignored for security and privacy reasons
+- They may contain database credentials, API keys, or personal preferences
+- Committing them exposes sensitive information in git history forever
+
+**If you accidentally commit these files:**
+1. Immediately notify the team
+2. Rotate any exposed credentials (database passwords, API keys)
+3. Use git history rewrite tools (BFG Repo-Cleaner) to remove from history
+4. Force push cleaned history (requires team coordination)
+
+**Protection mechanisms in place:**
+- `.gitignore` prevents accidental staging
+- Pre-commit hook blocks commits containing these files
+- All files use `.local` or `.personal` naming convention
+
+---
 
 ### Step-by-Step Setup
 
@@ -210,12 +238,12 @@ Verify:
 test -f .workflow-enabled && echo "✓ .workflow-enabled created" || echo "✗ Failed to create"
 ```
 
-#### 4. Create .claude/settings.local.json
+#### 4. Create .claude/settings.personal.json
 
-Create a file named `settings.local.json` in the `.claude/` directory:
+Create a file named `settings.personal.json` in the `.claude/` directory:
 
 ```bash
-cat > .claude/settings.local.json << 'EOF'
+cat > .claude/settings.personal.json << 'EOF'
 {
   "permissions": {
     "allow": [
@@ -270,7 +298,7 @@ EOF
 
 Verify:
 ```bash
-test -f .claude/settings.local.json && echo "✓ settings.local.json created" || echo "✗ Failed to create"
+test -f .claude/settings.personal.json && echo "✓ settings.personal.json created" || echo "✗ Failed to create"
 ```
 
 **Note**: These files are gitignored (personal configuration, not shared with team).
@@ -319,7 +347,7 @@ Script runner that executes commands from `package.json.local`. Full source code
 #### .workflow-enabled
 Marker file indicating workflow system is enabled for this developer.
 
-#### .claude/settings.local.json
+#### .claude/settings.personal.json
 Claude Code permissions configuration. Defines what bash commands and operations Claude can execute during workflow automation. Full permission list in template above.
 
 ### Troubleshooting
@@ -346,8 +374,8 @@ ls -la .workflow-enabled
 
 **"Permission denied" during workflow**:
 ```bash
-# Check .claude/settings.local.json exists
-ls -la .claude/settings.local.json
+# Check .claude/settings.personal.json exists
+ls -la .claude/settings.personal.json
 
 # If missing, recreate using template from setup instructions above
 ```

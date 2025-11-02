@@ -44,6 +44,7 @@ docker_data
 logs/
 
 # Personal workflow system (local only - not shared with team)
+# SECURITY: These files may contain credentials - NEVER commit them
 package.json.local
 .workflow-enabled
 run-local.js
@@ -53,8 +54,9 @@ workflow/prps/
 workflow/patterns/staging/
 workflow/technical-plans/
 
-# Personal Claude settings
-.claude/settings.local.json
+# Personal Claude settings (may contain API keys and credentials)
+# SECURITY: Contains permissions and potentially sensitive configuration
+.claude/settings.personal.json
 
 # Keep these workflow directories but ignore their contents initially
 workflow/prps/**/*
