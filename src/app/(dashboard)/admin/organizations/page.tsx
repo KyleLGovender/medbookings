@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { OrganizationStatus } from '@prisma/client';
 
-import { OrganizationList } from '@/features/admin/components/organizations';
+import { OrganizationList } from '@/features/admin/components/organizations/organization-list';
 import { getCurrentUser } from '@/lib/auth';
 
 // Extract page props type for admin organizations page

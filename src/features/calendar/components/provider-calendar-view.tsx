@@ -16,8 +16,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { UserAvatar } from '@/components/user-avatar';
-import { CalendarErrorBoundary } from '@/features/calendar/components/error-boundary';
-import { CalendarSkeleton } from '@/features/calendar/components/loading';
+import { CalendarErrorBoundary } from '@/features/calendar/components/error-boundary/calendar-error-boundary';
+import { CalendarSkeleton } from '@/features/calendar/components/loading/calendar-skeleton';
 import { AvailabilityDayView } from '@/features/calendar/components/views/availability-day-view';
 import { AvailabilityMonthView } from '@/features/calendar/components/views/availability-month-view';
 import { AvailabilityThreeDayView } from '@/features/calendar/components/views/availability-three-day-view';

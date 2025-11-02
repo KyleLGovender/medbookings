@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 
-import { ProviderDetail } from '@/features/admin/components/providers';
+import { ProviderDetail } from '@/features/admin/components/providers/provider-detail';
 import { getCurrentUser } from '@/lib/auth';
 
 // Extract page props type for admin provider detail page

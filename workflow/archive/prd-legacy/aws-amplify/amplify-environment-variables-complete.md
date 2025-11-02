@@ -1,3 +1,16 @@
+# ⚠️ DEPRECATED - NOT IMPLEMENTED
+
+**Status**: This AWS environment variables guide is archived and NOT implemented.
+**Reason**: Project was deployed to **Vercel**, not AWS Amplify.
+**Date Archived**: 2025-11-02
+**Git Commits**:
+- c7f7803: "chore: remove AWS Amplify and S3 code for clean Vercel deployment"
+- 1144b0b: "feat: add Vercel Blob storage support for AWS to Vercel migration"
+
+**Current Deployment**: See `/docs/deployment/VERCEL-DEPLOYMENT.md` for actual deployment documentation.
+
+---
+
 # AWS Amplify Environment Variables - Complete Checklist
 
 ## 📋 All Environment Variables for MedBookings Deployment

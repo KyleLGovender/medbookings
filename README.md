@@ -94,9 +94,9 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on AWS Amplify
+## Deploy on Vercel
 
-This project is deployed on AWS Amplify. See [DEPLOYMENT.md](./docs/compliance/DEPLOYMENT.md) for complete deployment instructions.
+This project is deployed on Vercel. See [VERCEL-DEPLOYMENT.md](./docs/deployment/VERCEL-DEPLOYMENT.md) for complete deployment instructions.
 
 ## Booking System
 
@@ -193,52 +193,83 @@ The following checks are implemented:
 
 For detailed implementation and usage examples, refer to the documentation in each component and utility file.
 
-## Deployment to AWS Amplify
+## Deployment to Vercel
 
-This project uses AWS Amplify for hosting with AWS RDS PostgreSQL database.
+This project is deployed on **Vercel** with **Neon PostgreSQL** database and **Vercel Blob Storage** for file uploads.
+
+### Quick Deploy
+
+The easiest way to deploy is to use the Vercel Platform:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/KyleLGovender/medbookings)
 
 ### Prerequisites
 
-1. AWS account with Amplify access
-2. AWS RDS PostgreSQL database
-3. AWS S3 bucket for file storage
-4. AWS IAM role for Amplify (with RDS and S3 permissions)
+1. Vercel account (free tier available)
+2. PostgreSQL database (Neon, Supabase, or similar)
+3. Vercel Blob Storage (included with Vercel)
+4. GitHub repository access
 
 ### Deployment Steps
 
-1. **Configure AWS Amplify:**
-   - Connect your GitHub repository
-   - Select the branch (e.g., `master`, `staging`)
-   - Amplify auto-detects Next.js configuration from `amplify.yml`
+1. **Connect Repository to Vercel:**
+   - Log in to [Vercel Dashboard](https://vercel.com/dashboard)
+   - Click "New Project"
+   - Import your GitHub repository
+   - Select the `master` branch for production
 
-2. **Set Environment Variables:**
-   Configure in Amplify Console under "Environment variables":
+2. **Configure Environment Variables:**
+   Add these in Vercel Dashboard → Project → Settings → Environment Variables:
    ```bash
-   DATABASE_URL=postgresql://user:pass@rds-endpoint:5432/db?sslmode=require
-   AUTH_SECRET=your-secure-secret-min-32-chars
-   NEXTAUTH_URL=https://your-domain.com
-   S3_BUCKET_NAME=your-s3-bucket
-   S3_REGION=eu-west-1
-   # Add all other env vars from .env.example
+   # Database
+   DATABASE_URL=postgresql://user:pass@db-host:5432/dbname?sslmode=require
+
+   # Authentication
+   AUTH_SECRET=your-secure-random-string-min-32-chars
+   NEXTAUTH_URL=https://your-domain.vercel.app
+
+   # Google OAuth
+   GOOGLE_CLIENT_ID=your-google-client-id
+   GOOGLE_CLIENT_SECRET=your-google-client-secret
+   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-maps-api-key
+
+   # Vercel Blob Storage (auto-configured)
+   BLOB_READ_WRITE_TOKEN=vercel-auto-generates-this
+
+   # Communications
+   TWILIO_ACCOUNT_SID=your-twilio-sid
+   TWILIO_AUTH_TOKEN=your-twilio-token
+   TWILIO_PHONE_NUMBER=your-phone-number
+   SENDGRID_API_KEY=your-sendgrid-key
+   SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+
+   # Admin
+   ADMIN_EMAILS=admin@yourdomain.com
+   ADMIN_NOTIFICATION_EMAIL=admin@yourdomain.com
    ```
 
-3. **Database Migrations:**
-   Migrations run automatically during build (see `amplify.yml`)
+3. **Database Setup:**
    ```bash
+   # Run migrations
    npx prisma migrate deploy
+
+   # Seed initial data
+   npm run seed:production
    ```
 
-4. **Deployment Triggers:**
-   - Automatic: Push to connected branch
-   - Manual: Amplify Console → "Deploy" button
+4. **Deploy:**
+   - Automatic: Push to `master` branch triggers deployment
+   - Manual: Vercel Dashboard → "Deploy" button
 
-For detailed AWS setup, see [DEPLOYMENT.md](./docs/compliance/DEPLOYMENT.md)
+For detailed deployment guide, see [VERCEL-DEPLOYMENT.md](./docs/deployment/VERCEL-DEPLOYMENT.md)
 
 ### Production Considerations
 
-- Make sure to set `NEXTAUTH_URL` to your production URL
-- Configure proper CORS settings if needed
-- Set up proper authentication providers for production
+- Set `NEXTAUTH_URL` to your production domain
+- Configure custom domain in Vercel Dashboard
+- Enable automatic SSL certificates (Vercel handles this)
+- Set up Google OAuth callback URL: `https://your-domain.com/api/auth/callback/google`
+- Configure rate limiting with Upstash Redis (see [DEPLOYMENT.md](./docs/compliance/DEPLOYMENT.md))
 
 //Testing changes to Branch vs Master.
 Changed by Shei 20250416 16:59

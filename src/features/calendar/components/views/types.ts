@@ -1,6 +1,32 @@
 import type { RouterOutputs } from '@/utils/api';
 
-// Type aliases for the different event data types from tRPC
+/**
+ * ARCHITECTURAL EXCEPTION: RouterOutputs Type Re-exports
+ *
+ * These types are re-exported from RouterOutputs for use in component prop interfaces below.
+ *
+ * ⚠️ Normally, CLAUDE.md prohibits exporting RouterOutputs-derived types (see Section 3).
+ * However, this file has a special exception because:
+ *
+ * 1. **Component Prop Interfaces**: The interfaces below (BaseAvailabilityViewProps, etc.)
+ *    are legitimate shared prop definitions used by 10+ view components. They MUST reference
+ *    these types to ensure type safety across the component tree.
+ *
+ * 2. **Single Source of Truth**: Having one definition prevents 30+ files from each extracting
+ *    and maintaining duplicate type definitions, reducing maintenance burden and inconsistency.
+ *
+ * 3. **Compile-Time Safety**: TypeScript ensures if RouterOutputs change, all consuming
+ *    components are type-checked automatically. Local extraction in each component would
+ *    lose this safety.
+ *
+ * 4. **No Business Logic**: These are pure type definitions with no runtime code. The actual
+ *    data fetching still happens via tRPC hooks in components.
+ *
+ * If refactoring in future: Consider making interfaces generic with type parameters, allowing
+ * components to extract types locally while still using shared prop interfaces.
+ *
+ * Last reviewed: 2025-11-02
+ */
 export type SlotData = RouterOutputs['calendar']['getProviderSlots'][number];
 export type AvailabilitySearchResult = RouterOutputs['calendar']['searchAvailability'];
 export type AvailabilityData = AvailabilitySearchResult[number];

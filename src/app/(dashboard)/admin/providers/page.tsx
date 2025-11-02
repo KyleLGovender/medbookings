@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { ProviderStatus } from '@prisma/client';
 
-import { ProviderList } from '@/features/admin/components/providers';
+import { ProviderList } from '@/features/admin/components/providers/provider-list';
 import { getCurrentUser } from '@/lib/auth';
 
 // Extract page props type for admin providers page

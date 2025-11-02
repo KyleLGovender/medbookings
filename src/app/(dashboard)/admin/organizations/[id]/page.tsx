@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 
-import { OrganizationDetail } from '@/features/admin/components/organizations';
+import { OrganizationDetail } from '@/features/admin/components/organizations/organization-detail';
 import { getCurrentUser } from '@/lib/auth';
 
 interface AdminOrganizationDetailPageProps {

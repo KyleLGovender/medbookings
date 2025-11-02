@@ -21,8 +21,8 @@ import {
   BookingSlotModal,
 } from '@/features/calendar/components/booking-slot-modal';
 import { BookingSuccessToast } from '@/features/calendar/components/booking-success-toast';
-import { CalendarErrorBoundary } from '@/features/calendar/components/error-boundary';
-import { CalendarSkeleton } from '@/features/calendar/components/loading';
+import { CalendarErrorBoundary } from '@/features/calendar/components/error-boundary/calendar-error-boundary';
+import { CalendarSkeleton } from '@/features/calendar/components/loading/calendar-skeleton';
 import { SlotDayView } from '@/features/calendar/components/views/slot-day-view';
 import { SlotThreeDayView } from '@/features/calendar/components/views/slot-three-day-view';
 import { SlotWeekView } from '@/features/calendar/components/views/slot-week-view';
