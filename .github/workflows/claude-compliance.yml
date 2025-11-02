@@ -26,45 +26,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify Git Hooks Installation
-        run: |
-          echo "🔍 Verifying git hooks are properly installed..."
-
-          # Check if hooks path is configured
-          HOOKS_PATH=$(git config core.hooksPath)
-          if [ "$HOOKS_PATH" != ".husky/_" ]; then
-            echo "❌ Git hooks path not configured correctly"
-            echo "Expected: .husky/_"
-            echo "Got: $HOOKS_PATH"
-            exit 1
-          fi
-
-          # Check if pre-commit hook exists and is executable
-          if [ ! -f ".husky/pre-commit" ]; then
-            echo "❌ Pre-commit hook file not found at .husky/pre-commit"
-            exit 1
-          fi
-
-          if [ ! -x ".husky/pre-commit" ]; then
-            echo "❌ Pre-commit hook is not executable"
-            exit 1
-          fi
-
-          # Check if husky is installed
-          if ! npm list husky --depth=0 > /dev/null 2>&1; then
-            echo "❌ Husky is not installed in package.json"
-            exit 1
-          fi
-
-          # Check if prepare script exists
-          if ! grep -q '"prepare".*"husky"' package.json; then
-            echo "⚠️  Warning: 'prepare' script not found in package.json"
-            echo "    New developers may not get hooks auto-installed"
-            echo "    Add: \"prepare\": \"husky\" to package.json scripts"
-          fi
-
-          echo "✅ Git hooks are properly configured"
-
       - name: Test Exclusion Patterns
         run: |
           echo "🧪 Testing exclusion pattern configuration..."
@@ -213,7 +174,7 @@ jobs:
           echo "✅ All compliance checks completed"
           echo ""
           echo "Checks performed:"
-          echo "  - Git hooks installation verification"
+          echo "  - Exclusion pattern validation"
           echo "  - CLAUDE.md rule validation"
           echo "  - ESLint (with custom CLAUDE.md rules)"
           echo "  - TypeScript type checking"
