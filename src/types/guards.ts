@@ -3,6 +3,19 @@
 // =============================================================================
 // Runtime type validation for critical business types across all features
 // Organized by: API Response Guards -> User Input Guards -> External Data Guards
+//
+// NOTE: This file uses type assertions extensively for type guard implementations.
+// This is a LEGITIMATE and NECESSARY TypeScript pattern for runtime type checking.
+// When validating unknown values, we must use type assertions to access properties
+// before confirming they exist. This is documented as acceptable in TYPE-SAFETY.md.
+//
+// ✅ ACCEPTABLE USE: Type guards require assertions for property access on unknown values
+// ✅ PATTERN: value is unknown → check typeof → use assertion → validate property
+//
+// Example:
+//   typeof value === 'object' && value !== null &&
+//   'email' in value && typeof (value as any).email === 'string'
+//                                   ^^^^^^^^^^^^ Type assertion required for narrowing
 
 // =============================================================================
 // API RESPONSE GUARDS

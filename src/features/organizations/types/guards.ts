@@ -1,6 +1,11 @@
 // =============================================================================
 // ORGANIZATIONS FEATURE TYPE GUARDS
 // =============================================================================
+//
+// NOTE: This file uses type assertions for type guard implementations (112 instances).
+// ✅ ACCEPTABLE USE: Type guards require assertions for property access on unknown values.
+// This is documented as acceptable in CLAUDE.md TYPE-SAFETY.md Section 3.
+// =============================================================================
 // Runtime type validation for organization-specific types and API responses
 import {
   InvitationStatus,
