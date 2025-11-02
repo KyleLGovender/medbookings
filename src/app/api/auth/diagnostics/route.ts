@@ -140,7 +140,7 @@ export async function GET() {
     });
   } catch (error: any) {
     // If env validation fails, return error details
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- Diagnostics API route: console logging appropriate for environment validation debugging
     console.error('Diagnostics endpoint error:', error);
 
     return NextResponse.json(

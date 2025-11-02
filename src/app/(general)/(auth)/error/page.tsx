@@ -63,7 +63,7 @@ export default function AuthErrorPage() {
   useEffect(() => {
     if (error) {
       // Log to console in development
-      // eslint-disable-next-line no-console
+      // eslint-disable-next-line no-console -- Auth error page: console logging for development debugging until Sentry integrated
       console.error('NextAuth Error:', {
         error,
         timestamp: nowUTC().toISOString(),

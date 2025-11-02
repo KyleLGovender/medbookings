@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get('error') || 'Configuration';
 
   // Log the error for monitoring
-  // eslint-disable-next-line no-console
+  // eslint-disable-next-line no-console -- Auth error API route: console logging for error tracking until monitoring service integrated
   console.error('NextAuth Error Captured:', {
     error,
     allParams: Object.fromEntries(searchParams.entries()),

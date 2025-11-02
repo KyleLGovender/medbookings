@@ -35,6 +35,7 @@ export default function DiagnosticsPage() {
         setLoading(false);
       })
       .catch((err) => {
+        // eslint-disable-next-line no-console -- Diagnostics page: console usage appropriate for debugging
         console.error('Failed to load diagnostics:', err);
         setError(err.message || 'Failed to load diagnostics');
         setLoading(false);
