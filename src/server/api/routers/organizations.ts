@@ -1281,7 +1281,7 @@ export const organizationsRouter = createTRPCRouter({
   /**
    * Reject an organization invitation
    */
-  rejectInvitation: publicProcedure
+  rejectInvitation: protectedProcedure
     .input(z.object({ token: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // Call business logic validation
@@ -1303,6 +1303,11 @@ export const organizationsRouter = createTRPCRouter({
 
       if (invitation.status !== 'PENDING') {
         throw new Error(`Invitation has already been ${invitation.status.toLowerCase()}`);
+      }
+
+      // Security: Verify the invitation is for the current user
+      if (invitation.email.toLowerCase() !== ctx.session.user.email?.toLowerCase()) {
+        throw new Error('This invitation is not for your email address');
       }
 
       // Update invitation status

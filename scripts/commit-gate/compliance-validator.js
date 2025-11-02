@@ -974,6 +974,8 @@ class CodeValidator {
         operation: /approve[A-Z]|reject[A-Z]|updateRole|deleteUser/,
         requires: 'adminProcedure or superAdminProcedure',
         wrongProcedures: ['publicProcedure', 'protectedProcedure'],
+        // Exception: rejectInvitation is a user-level operation (users rejecting their own invitations)
+        exceptions: ['rejectInvitation'],
       },
       {
         operation: /\.(create|update|delete).*[Bb]ooking/,
@@ -985,6 +987,16 @@ class CodeValidator {
     lines.forEach((line, idx) => {
       sensitivePatterns.forEach(pattern => {
         if (pattern.operation.test(line)) {
+          // Check if this matches an exception
+          if (pattern.exceptions) {
+            const isException = pattern.exceptions.some(exception =>
+              line.includes(exception)
+            );
+            if (isException) {
+              return; // Skip validation for exceptions
+            }
+          }
+
           // Look back up to 20 lines for procedure definition
           const contextStart = Math.max(0, idx - 20);
           const context = lines.slice(contextStart, idx + 1).join('\n');
