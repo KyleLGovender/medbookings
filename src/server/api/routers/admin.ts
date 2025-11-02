@@ -63,6 +63,7 @@ export const adminRouter = createTRPCRouter({
   getPendingProviders: adminProcedure.query(async ({ ctx }) => {
     const pendingProvidersData = await ctx.prisma.provider.findMany({
       where: { status: 'PENDING_APPROVAL' },
+      take: 50, // Pagination: Admin dashboard shows first 50 pending providers
       include: {
         user: true,
         typeAssignments: {
@@ -95,6 +96,7 @@ export const adminRouter = createTRPCRouter({
   getPendingOrganizations: adminProcedure.query(async ({ ctx }) => {
     const pendingOrganizationsData = await ctx.prisma.organization.findMany({
       where: { status: 'PENDING_APPROVAL' },
+      take: 50, // Pagination: Admin dashboard shows first 50 pending organizations
       include: {
         locations: true,
         memberships: {
@@ -149,6 +151,7 @@ export const adminRouter = createTRPCRouter({
 
     const providers = await ctx.prisma.provider.findMany({
       where: whereClause,
+      take: 50, // Pagination: Admin list view shows 50 providers per page
       include: {
         user: {
           select: { id: true, email: true, name: true },
@@ -636,6 +639,7 @@ export const adminRouter = createTRPCRouter({
 
     const organizations = await ctx.prisma.organization.findMany({
       where: whereClause,
+      take: 50, // Pagination: Admin list view shows 50 organizations per page
       include: {
         memberships: {
           where: { role: 'OWNER' },

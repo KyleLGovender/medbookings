@@ -37,6 +37,7 @@ export const billingRouter = createTRPCRouter({
 
       const subscriptions = await ctx.prisma.subscription.findMany({
         where: whereClause,
+        take: 100, // Pagination: Limit to 100 subscriptions (prevents unbounded query)
         include: {
           plan: true,
           organization: true,

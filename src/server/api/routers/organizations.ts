@@ -274,6 +274,7 @@ export const organizationsRouter = createTRPCRouter({
             },
           },
         },
+        take: 20, // Pagination: Limit user's organization list to 20
         include: {
           locations: true,
           memberships: {
@@ -305,6 +306,7 @@ export const organizationsRouter = createTRPCRouter({
         where: {
           organizationId: input.organizationId,
         },
+        take: 50, // Pagination: Organization typically has <50 locations
         orderBy: {
           name: 'asc',
         },
@@ -463,6 +465,7 @@ export const organizationsRouter = createTRPCRouter({
         where: {
           organizationId: input.organizationId,
         },
+        take: 100, // Pagination: Organization provider connections
         include: {
           provider: {
             include: {
@@ -651,6 +654,7 @@ export const organizationsRouter = createTRPCRouter({
             gte: nowUTC(),
           },
         },
+        take: 100, // Pagination: Active availabilities check
       });
 
       if (activeAvailabilities.length > 0) {
@@ -700,6 +704,7 @@ export const organizationsRouter = createTRPCRouter({
         where: {
           organizationId: input.organizationId,
         },
+        take: 50, // Pagination: Provider invitations list
         include: {
           invitedBy: {
             select: {
@@ -1023,6 +1028,7 @@ export const organizationsRouter = createTRPCRouter({
           organizationId: input.organizationId,
           status: 'ACTIVE',
         },
+        take: 100, // Pagination: Organization members list
         include: {
           user: {
             select: {
@@ -1064,6 +1070,7 @@ export const organizationsRouter = createTRPCRouter({
         where: {
           organizationId: input.organizationId,
         },
+        take: 50, // Pagination: Organization member invitations
         include: {
           invitedBy: {
             select: {
