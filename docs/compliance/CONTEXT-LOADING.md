@@ -8,7 +8,7 @@
 
 ### Step 1: Read Context Document
 ```
-/docs/claude-agent-context/CLAUDE-AGENT-CONTEXT.md (~2K tokens)
+/docs/core/CLAUDE-AGENT-CONTEXT.md (~2K tokens)
 ```
 This file contains:
 - Quick statistics and overview
@@ -48,7 +48,7 @@ Read specific files only when needed for the current task.
 **Total: ~15K tokens (vs 82K with old approach)**
 
 ### Maintenance
-- **After changes**: Update relevant sections in `/docs/claude-agent-context/CLAUDE-AGENT-CONTEXT.md`
+- **After changes**: Update relevant sections in `/docs/core/CLAUDE-AGENT-CONTEXT.md`
 - **Periodic refresh**: Run full re-scan every ~20 conversations
 - **User command**: "refresh the codebase context" triggers full update
 

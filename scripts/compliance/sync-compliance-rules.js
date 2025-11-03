@@ -263,12 +263,15 @@ class ClaudeMdParser {
       'compliance/BUG-DETECTION.md',
       'compliance/DEVELOPMENT-WORKFLOW.md',
       'compliance/COMPLIANCE-SYSTEM.md',
-      'compliance/DEPLOYMENT.md',
+      'compliance/SECURITY-CHECKLIST.md',
       'compliance/CLAUDE-MD-AUTO-SYNC.md',
+      'core/CLAUDE-AGENT-CONTEXT.md',
+      'core/DATABASE-OPERATIONS.md',
+      'core/TODO-TRACKING.md',
     ];
 
     // Extract all /docs/ references from CLAUDE.md (including subdirectories)
-    const docRefPattern = /\/docs\/((?:compliance|guides)\/[A-Z-]+\.md)/g;
+    const docRefPattern = /\/docs\/((?:compliance|guides|core|deployment)\/[A-Z-]+\.md)/g;
     const matches = this.content.matchAll(docRefPattern);
 
     for (const match of matches) {
